@@ -2,6 +2,7 @@
   "expo": {
     "name": "vix-super-app",
     "slug": "vix-super-app",
+    "owner": "imanuelvic",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -43,6 +44,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8629b439-ff28-4bb2-9bfb-a03b644fcfe8"
+      }
     }
   }
 }

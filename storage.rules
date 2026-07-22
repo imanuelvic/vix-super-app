@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Storage Rules untuk vix-super-app (personal app — SATU pemilik).
+// File hanya bisa diakses oleh akun email pemilik, dan hanya di
+// foldernya sendiri: users/{uid}/...
+//
+// Cara pasang: Firebase Console > Storage > tab "Rules" >
+// paste isi file ini > Publish.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Ganti email di bawah kalau suatu saat email pemilik berubah.
+    function isOwner() {
+      return request.auth != null
+             && request.auth.token.email == 'imanuelvic@gmail.com';
+    }
+
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isOwner() && request.auth.uid == userId;
+    }
+
+    // Default: tolak semua yang lain.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

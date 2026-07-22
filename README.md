@@ -1,50 +1,36 @@
-# Welcome to your Expo app 👋
+# vix-super-app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Personal super app — semua kebutuhan pribadi dalam satu aplikasi (tasks,
+catatan, pelayanan, personal management), tersinkron di semua perangkat lewat
+Firebase.
 
-## Get started
+**Stack:** Expo SDK 54 · expo-router · Firebase JS SDK (Auth + Firestore)
 
-1. Install dependencies
+## Menjalankan
+
+1. Isi `.env` dengan firebaseConfig dari Firebase Console (lihat `.env.example`).
+2. Install & start:
 
    ```bash
    npm install
+   npx expo start -c
    ```
 
-2. Start the app
+3. Buka di **Expo Go** (scan QR), atau tekan `a` (Android) / `i` (iOS simulator).
 
-   ```bash
-   npx expo start
-   ```
+## Struktur penting
 
-In the output, you'll find options to open the app in a
+| Path | Isi |
+| --- | --- |
+| `lib/firebase.ts` | Inisialisasi Firebase (Auth + Firestore) |
+| `lib/tasks.ts` | Data layer Tasks (CRUD + real-time) |
+| `contexts/auth.tsx` | State login global |
+| `app/login.tsx` | Layar login / daftar |
+| `app/(tabs)/index.tsx` | Layar Tasks |
+| `firestore.rules` | Security rules (kunci data per user) |
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Catatan keamanan
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `.env` dan private key Admin SDK **tidak** ikut ke git. Jangan pernah commit
+  file kredensial. Web config (`EXPO_PUBLIC_FIREBASE_*`) aman karena dilindungi
+  Security Rules + Auth.

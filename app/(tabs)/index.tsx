@@ -1,98 +1,114 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Color } from '@/assets/style/color';
+import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAuth } from '@/contexts/auth';
+
+// Nama sapaan di Home — ganti di sini kalau mau ubah.
+const OWNER_NAME = 'Imanuel Victory Rumayar';
+
+// Daftar fitur di Home. Tambah fitur baru = tambah 1 baris di sini.
+const FEATURES: {
+  key: string;
+  label: string;
+  icon: 'checklist';
+  route: Href;
+}[] = [
+  { key: 'tasks', label: 'Task Harian', icon: 'checklist', route: '/tasks' },
+];
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const { logout } = useAuth();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <View style={styles.brandRow}>
+        <VixText heading="header" additionalStyle={styles.brand}>
+          vix <VixText heading="label">Super App</VixText>
+        </VixText>
+        <Pressable onPress={logout} hitSlop={10}>
+          <IconSymbol
+            name="rectangle.portrait.and.arrow.right"
+            size={22}
+            color={Color.MAIN}
+          />
+        </Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.welcomeCard}>
+          <VixText heading="paragraph" additionalStyle={styles.welcomeSmall}>
+            Selamat datang,
+          </VixText>
+          <VixText heading="subheader" additionalStyle={styles.welcomeName}>
+            {OWNER_NAME.toUpperCase()}
+          </VixText>
+        </View>
+
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          Fitur
+        </VixText>
+        <View style={styles.grid}>
+          {FEATURES.map((feature) => (
+            <View key={feature.key} style={styles.gridItem}>
+              <Pressable
+                style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
+                onPress={() => router.push(feature.route)}>
+                <IconSymbol name={feature.icon} size={30} color={Color.TEXT_REVERSE} />
+              </Pressable>
+              <VixText heading="label" additionalStyle={styles.tileLabel}>
+                {feature.label}
+              </VixText>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  brandRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  brand: { color: Color.MAIN },
+  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  welcomeCard: {
+    backgroundColor: Color.MAIN_DARK,
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 24,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  welcomeSmall: { color: Color.TEXT_ON_DARK_MUTED },
+  welcomeName: {
+    color: Color.TEXT_REVERSE,
+    letterSpacing: 0.5,
+    marginTop: 4,
   },
+  sectionTitle: { marginBottom: 14 },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  gridItem: { width: '21.5%', alignItems: 'center' },
+  tile: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 18,
+    backgroundColor: Color.MAIN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tilePressed: { backgroundColor: Color.MAIN_DARK },
+  tileLabel: { textAlign: 'center', marginTop: 8 },
 });

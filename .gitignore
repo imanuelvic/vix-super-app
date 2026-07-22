@@ -31,7 +31,15 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# Firebase / secrets — JANGAN pernah commit file ini
+serviceAccountKey.json
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+google-services.json
+GoogleService-Info.plist
 
 # typescript
 *.tsbuildinfo

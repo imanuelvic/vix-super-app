@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Security Rules untuk vix-super-app (personal app — SATU pemilik).
+// Prinsip: HANYA akun dengan email pemilik yang boleh baca/tulis,
+// dan hanya di dalam data miliknya sendiri (users/{uid}/...).
+//
+// Cara pasang: Firebase Console > Firestore Database > tab "Rules" >
+// paste isi file ini > Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Ganti email di bawah kalau suatu saat email pemilik berubah.
+    function isOwner() {
+      return request.auth != null
+             && request.auth.token.email == 'imanuelvic@gmail.com';
+    }
+
+    // Semua data pribadi: tasks, catatan, dan modul lain menyusul.
+    match /users/{userId}/{document=**} {
+      allow read, write: if isOwner() && request.auth.uid == userId;
+    }
+
+    // Default: tolak semua yang lain.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
