@@ -14,10 +14,11 @@ const OWNER_NAME = 'Imanuel Victory Rumayar';
 const FEATURES: {
   key: string;
   label: string;
-  icon: 'checklist';
+  icon: 'checklist' | 'banknote';
   route: Href;
 }[] = [
-  { key: 'tasks', label: 'Task Harian', icon: 'checklist', route: '/tasks' },
+  { key: 'tasks', label: 'Task', icon: 'checklist', route: '/tasks' },
+  { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance' },
 ];
 
 export default function HomeScreen() {

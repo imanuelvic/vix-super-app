@@ -1,26 +1,28 @@
-// Palet warna utama vix-super-app — Emerald.
+// Palet warna utama vix-super-app — Teal & Krem (mengikuti logo).
 // Semua screen WAJIB ambil warna dari sini, jangan hardcode hex di screen.
 //
-// Palet dasar:
-//   #0B3D2E  emerald paling gelap
-//   #0F6A4B  emerald utama
-//   #1BAA78  emerald terang
-//   #C9B27C  emas/gold
-//   #F3EFE6  ivory (latar)
+// Palet dasar (dari logo):
+//   #0C5C50  teal paling gelap
+//   #1D8D7A  teal utama
+//   #9FE6D5  mint terang
+//   #FFE8CC  krem
+//   #5B4B3A  cokelat
 
 export const Color = {
   // Brand
-  MAIN: '#0F6A4B',
-  MAIN_DARK: '#0B3D2E',
-  MAIN_LIGHT: '#1BAA78',
-  MAIN_TRANSPARENT: '#0F6A4B1A',
-  ACCENT: '#C9B27C',
+  MAIN: '#1D8D7A',
+  MAIN_DARK: '#0C5C50',
+  MAIN_LIGHT: '#9FE6D5',
+  MAIN_TRANSPARENT: '#1D8D7A1A',
+  ACCENT: '#FFE8CC',
+  ACCENT_DARK: '#5B4B3A',
 
-  // Permukaan
-  BACKGROUND: '#F3EFE6',
+  // Permukaan (netral hangat, turunan krem #FFE8CC)
+  BACKGROUND: '#FDF6EC',
   CONTAINER: '#FFFFFF',
-  CONTRAST_CONTAINER: '#EAE4D6',
-  BORDER: '#E0D9CA',
+  CONTRAST_CONTAINER: '#F5E7D2',
+  BORDER: '#EBDCC5',
+  OVERLAY: '#00000066', // latar gelap transparan di belakang modal
 
   // Teks
   TEXT_TITLE: '#10221C',
@@ -30,12 +32,21 @@ export const Color = {
   TEXT_REVERSE: '#FFFFFF',
   TEXT_ON_DARK_MUTED: '#CFE0D8',
 
+  // Warna jenis transaksi Finance (pastel, selaras spreadsheet keuangan lama)
+  FINANCE_INCOME: '#D4EDBC',
+  FINANCE_EXPENSE: '#FFCFC9',
+  FINANCE_SAVING: '#FFE5A0',
+  FINANCE_INVESTMENT: '#BFE1F6',
+
+  // Warna irisan grafik donat di Dashboard Finance (dipakai bergiliran)
+  CHART_COLORS: [
+    '#1D8D7A', '#0C5C50', '#5B4B3A', '#5B95F9', '#E96479', '#8989EB',
+    '#F7CB4D', '#63D297', '#978070', '#26A69A', '#FF8A65', '#7DB9B6',
+  ],
+
   // Status
-  SUCCESS: '#1BAA78',
-  SUCCESS_TRANSPARENT: '#1BAA781A',
-  WARNING: '#C9B27C',
-  WARNING_TRANSPARENT: '#C9B27C26',
+  SUCCESS: '#1D8D7A',
+  WARNING: '#5B4B3A',
+  WARNING_TRANSPARENT: '#5B4B3A1A',
   DANGER: '#C0392B',
-  DANGER_TRANSPARENT: '#C0392B1A',
-  DISABLED: '#D8D2C6',
 } as const;

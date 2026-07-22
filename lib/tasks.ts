@@ -8,6 +8,7 @@ import {
   query,
   serverTimestamp,
   updateDoc,
+  type FirestoreError,
   type Timestamp,
 } from 'firebase/firestore';
 
@@ -29,17 +30,27 @@ function tasksCollection(uid: string) {
 /**
  * Dengarkan perubahan task secara real-time. Setiap kali data berubah
  * (dari HP ini atau HP lain), callback dipanggil dengan daftar terbaru.
+ * Kalau listener gagal (offline, ditolak rules), `onError` dipanggil —
+ * tanpa ini kegagalan diam-diam dan UI menunggu selamanya.
  * Mengembalikan fungsi untuk berhenti mendengarkan.
  */
-export function subscribeTasks(uid: string, onChange: (tasks: Task[]) => void) {
+export function subscribeTasks(
+  uid: string,
+  onChange: (tasks: Task[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
   const q = query(tasksCollection(uid), orderBy('createdAt', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    const tasks = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as Omit<Task, 'id'>),
-    }));
-    onChange(tasks);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const tasks = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Task, 'id'>),
+      }));
+      onChange(tasks);
+    },
+    onError,
+  );
 }
 
 export function addTask(uid: string, title: string) {

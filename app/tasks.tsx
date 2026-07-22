@@ -30,14 +30,25 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     // Real-time: perubahan dari perangkat lain langsung muncul di sini.
-    const unsubscribe = subscribeTasks(user.uid, (next) => {
-      setTasks(next);
-      setLoading(false);
-    });
+    const unsubscribe = subscribeTasks(
+      user.uid,
+      (next) => {
+        setTasks(next);
+        setError(null);
+        setLoading(false);
+      },
+      () => {
+        // Listener gagal (offline / ditolak rules) — beri tahu user,
+        // jangan biarkan loading berputar selamanya.
+        setError('Gagal memuat task. Cek koneksi internet.');
+        setLoading(false);
+      },
+    );
     return unsubscribe;
   }, [user]);
 
@@ -45,10 +56,32 @@ export default function TasksScreen() {
     const value = title.trim();
     if (!value || !user) return;
     setTitle('');
+    setError(null);
     try {
       await addTask(user.uid, value);
     } catch {
       setTitle(value); // kembalikan teks kalau gagal
+      setError('Gagal menambah task. Coba lagi.');
+    }
+  }
+
+  async function handleToggle(item: Task) {
+    if (!user) return;
+    setError(null);
+    try {
+      await setTaskDone(user.uid, item.id, !item.done);
+    } catch {
+      setError('Gagal menyimpan perubahan. Coba lagi.');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!user) return;
+    setError(null);
+    try {
+      await deleteTask(user.uid, id);
+    } catch {
+      setError('Gagal menghapus task. Coba lagi.');
     }
   }
 
@@ -68,7 +101,7 @@ export default function TasksScreen() {
 
         <View style={styles.header}>
           <VixText heading="header" additionalStyle={styles.title}>
-            Task Harian
+            Task
           </VixText>
           <VixText heading="label">
             {remaining} belum selesai · {tasks.length} total
@@ -90,6 +123,12 @@ export default function TasksScreen() {
           </Pressable>
         </View>
 
+        {error && (
+          <VixText heading="label" additionalStyle={styles.error}>
+            {error}
+          </VixText>
+        )}
+
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -108,10 +147,11 @@ export default function TasksScreen() {
               <View style={styles.row}>
                 <Pressable
                   style={styles.rowMain}
-                  onPress={() => user && setTaskDone(user.uid, item.id, !item.done)}>
+                  onPress={() => handleToggle(item)}>
                   <View style={[styles.circle, item.done && styles.circleDone]}>
                     {item.done && (
-                      <IconSymbol name="checkmark" size={16} color={Color.TEXT_REVERSE} />
+                      // Mint terang butuh ikon gelap agar kontras.
+                      <IconSymbol name="checkmark" size={16} color={Color.MAIN_DARK} />
                     )}
                   </View>
                   <VixText
@@ -121,7 +161,7 @@ export default function TasksScreen() {
                   </VixText>
                 </Pressable>
                 <Pressable
-                  onPress={() => user && deleteTask(user.uid, item.id)}
+                  onPress={() => handleDelete(item.id)}
                   hitSlop={10}>
                   <IconSymbol name="xmark" size={18} color={Color.TEXT_PLACEHOLDER} />
                 </Pressable>
@@ -171,6 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 8 },
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
   row: {
     flexDirection: 'row',

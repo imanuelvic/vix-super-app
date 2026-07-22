@@ -1,0 +1,340 @@
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+
+import { Color } from '@/assets/style/color';
+import { CenterDialog } from '@/components/common/CenterDialog';
+import { DualButtons } from '@/components/common/DualButtons';
+import { FormInput } from '@/components/common/FormInput';
+import { VixText } from '@/components/common/VixText';
+import { TypeChips } from '@/components/finance/TypeChips';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAuth } from '@/contexts/auth';
+import { budgetKey, setBudgetAllocation, subscribeBudget, type BudgetMap } from '@/lib/budgets';
+import {
+  categoryOf,
+  FINANCE_CATEGORIES,
+  FINANCE_TYPE_LABEL,
+  type FinanceCategory,
+  type FinanceType,
+} from '@/lib/categories';
+import { groupDigits, parseAmount } from '@/lib/format';
+import { formatRupiah, type Transaction } from '@/lib/transactions';
+
+type BudgetRow = {
+  key: string;
+  category: FinanceCategory;
+  allocated: number; // budget yang di-set manual
+  realized: number; // realisasi otomatis dari transaksi
+};
+
+// Tab Budgeting: budget per kategori per bulan (di-set manual) dibandingkan
+// dengan realisasi yang terhitung otomatis dari transaksi bulan itu.
+export function BudgetingTab({
+  items,
+  year,
+  month,
+}: {
+  items: Transaction[];
+  year: number;
+  month: number;
+}) {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const [type, setType] = useState<FinanceType>('expense');
+  const [budget, setBudget] = useState<BudgetMap>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modal set budget.
+  const [editing, setEditing] = useState<FinanceCategory | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    const unsubscribe = subscribeBudget(
+      user.uid,
+      year,
+      month,
+      (next) => {
+        setBudget(next);
+        setError(null);
+        setLoading(false);
+      },
+      () => {
+        setError('Gagal memuat budget. Cek koneksi internet.');
+        setLoading(false);
+      },
+    );
+    return unsubscribe;
+  }, [user, year, month]);
+
+  // Realisasi per "jenis:kategori" dari seluruh transaksi bulan ini.
+  const realization = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of items) {
+      const key = budgetKey(t.type, t.category);
+      map.set(key, (map.get(key) ?? 0) + t.amount);
+    }
+    return map;
+  }, [items]);
+
+  // Baris kategori: semua kategori aktif + kategori nonaktif yang masih
+  // punya budget/realisasi (biar data lama tidak hilang dari tampilan).
+  const rows = useMemo(() => {
+    return FINANCE_CATEGORIES[type]
+      .map((c) => ({
+        key: c.key,
+        category: categoryOf(type, c.key),
+        allocated: budget[budgetKey(type, c.key)] ?? 0,
+        realized: realization.get(budgetKey(type, c.key)) ?? 0,
+      }))
+      .filter((r) => r.category.active || r.allocated > 0 || r.realized > 0);
+  }, [type, budget, realization]) as BudgetRow[];
+
+  const totalAllocated = rows.reduce((sum, r) => sum + r.allocated, 0);
+  const totalRealized = rows.reduce((sum, r) => sum + r.realized, 0);
+  const totalPercent =
+    totalAllocated > 0 ? (totalRealized / totalAllocated) * 100 : 0;
+
+  function openEdit(category: FinanceCategory) {
+    setEditing(category);
+    const current = budget[budgetKey(type, category.key)] ?? 0;
+    setEditAmount(current > 0 ? groupDigits(String(current)) : '');
+  }
+
+  async function handleSave() {
+    if (!user || !editing || saving) return;
+    const value = parseAmount(editAmount); // 0 = hapus budget
+    setSaving(true);
+    try {
+      await setBudgetAllocation(user.uid, year, month, type, editing.key, value);
+    } catch {
+      setError('Gagal menyimpan budget. Coba lagi.');
+    } finally {
+      setEditing(null);
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.centerFill}>
+        <ActivityIndicator color={Color.MAIN} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.flex}>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Tombol menuju halaman Budget Khusus (mutasi dana per tujuan) */}
+        <Pressable
+          style={styles.fundsButton}
+          onPress={() => router.push('/funds')}>
+          <VixText heading="bold" additionalStyle={styles.fundsButtonText}>
+            💼 Budget Khusus
+          </VixText>
+          <IconSymbol name="chevron.right" size={20} color={Color.ACCENT_DARK} />
+        </Pressable>
+
+        <TypeChips value={type} onChange={setType} />
+
+        {error && (
+          <VixText heading="label" additionalStyle={styles.error}>
+            {error}
+          </VixText>
+        )}
+
+        {/* Ringkasan budget jenis terpilih */}
+        <View style={styles.summaryCard}>
+          <VixText heading="label" additionalStyle={styles.summaryLabel}>
+            Total Budget {FINANCE_TYPE_LABEL[type]}
+          </VixText>
+          <VixText heading="subheader" additionalStyle={styles.summaryValue}>
+            {formatRupiah(totalRealized)}{' '}
+            <VixText heading="label" additionalStyle={styles.summaryLabel}>
+              dari {formatRupiah(totalAllocated)}
+            </VixText>
+          </VixText>
+          <ProgressBar percent={totalPercent} onDark />
+          <VixText heading="label" additionalStyle={styles.summaryLabel}>
+            {totalAllocated > 0
+              ? `${totalPercent.toFixed(1)}% terpakai`
+              : 'Belum ada budget — tekan kategori untuk mengatur.'}
+          </VixText>
+        </View>
+
+        {rows.map((row) => {
+          const percent =
+            row.allocated > 0 ? (row.realized / row.allocated) * 100 : 0;
+          const over = row.allocated > 0 && row.realized > row.allocated;
+          return (
+            // Tekan kategori untuk set/ubah budget-nya.
+            <Pressable
+              key={row.key}
+              style={styles.row}
+              onPress={() => openEdit(row.category)}>
+              <View style={styles.rowTop}>
+                <VixText
+                  heading="bold"
+                  numberOfLines={1}
+                  additionalStyle={styles.rowLabel}>
+                  {row.category.icon} {row.category.label}
+                </VixText>
+                <VixText
+                  heading="label"
+                  additionalStyle={over ? styles.overText : undefined}>
+                  {row.allocated > 0
+                    ? `${percent.toFixed(0)}%`
+                    : row.realized > 0
+                      ? 'tanpa budget'
+                      : '—'}
+                </VixText>
+              </View>
+              <ProgressBar percent={percent} over={over} />
+              <View style={styles.rowBottom}>
+                <VixText heading="label">
+                  Realisasi:{' '}
+                  <VixText
+                    heading="label"
+                    additionalStyle={over ? styles.overText : styles.realText}>
+                    {formatRupiah(row.realized)}
+                  </VixText>
+                </VixText>
+                <VixText heading="label">
+                  Budget: {formatRupiah(row.allocated)}
+                </VixText>
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Modal kecil: set budget kategori */}
+      <CenterDialog visible={!!editing} onClose={() => setEditing(null)}>
+        <VixText heading="title" additionalStyle={styles.modalTitle}>
+          Set Budget
+        </VixText>
+        {editing && (
+          <VixText heading="label" additionalStyle={styles.modalCategory}>
+            {editing.icon} {editing.label} · {FINANCE_TYPE_LABEL[type]}
+          </VixText>
+        )}
+        <FormInput
+          placeholder="Nominal budget (Rp)"
+          keyboardType="number-pad"
+          value={editAmount}
+          onChangeText={(t) => setEditAmount(groupDigits(t))}
+          autoFocus
+          editable={!saving}
+        />
+        <VixText heading="label" additionalStyle={styles.modalHint}>
+          Isi 0 atau kosongkan untuk menghapus budget.
+        </VixText>
+        <DualButtons
+          confirmLabel="Simpan"
+          busy={saving}
+          onCancel={() => setEditing(null)}
+          onConfirm={handleSave}
+        />
+      </CenterDialog>
+    </View>
+  );
+}
+
+// Bar kemajuan realisasi vs budget. Merah kalau melebihi budget.
+function ProgressBar({
+  percent,
+  over = false,
+  onDark = false,
+}: {
+  percent: number;
+  over?: boolean;
+  onDark?: boolean;
+}) {
+  const width = Math.max(0, Math.min(percent, 100));
+  return (
+    <View style={[styles.barTrack, onDark && styles.barTrackDark]}>
+      <View
+        style={[
+          styles.barFill,
+          { width: `${width}%` },
+          over && styles.barFillOver,
+        ]}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  fundsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Color.ACCENT,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 12,
+  },
+  fundsButtonText: { color: Color.ACCENT_DARK },
+  error: { color: Color.DANGER, marginBottom: 8 },
+  summaryCard: {
+    backgroundColor: Color.MAIN_DARK,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 14,
+    gap: 6,
+  },
+  summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },
+  summaryValue: { color: Color.TEXT_REVERSE },
+  row: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    gap: 8,
+  },
+  rowTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  rowLabel: { flex: 1, color: Color.TEXT_TITLE },
+  rowBottom: { flexDirection: 'row', justifyContent: 'space-between' },
+  realText: { color: Color.MAIN },
+  overText: { color: Color.DANGER },
+  barTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    overflow: 'hidden',
+  },
+  barTrackDark: { backgroundColor: Color.MAIN },
+  barFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: Color.MAIN_LIGHT,
+  },
+  barFillOver: { backgroundColor: Color.DANGER },
+  modalTitle: { marginBottom: 2 },
+  modalCategory: { marginBottom: 12 },
+  modalHint: { marginTop: 6 },
+});

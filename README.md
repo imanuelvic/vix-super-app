@@ -26,7 +26,8 @@ Firebase.
 | `lib/tasks.ts` | Data layer Tasks (CRUD + real-time) |
 | `contexts/auth.tsx` | State login global |
 | `app/login.tsx` | Layar login / daftar |
-| `app/(tabs)/index.tsx` | Layar Tasks |
+| `app/(tabs)/index.tsx` | Layar Home (daftar fitur) |
+| `app/tasks.tsx` | Layar Tasks |
 | `firestore.rules` | Security rules (kunci data per user) |
 
 ## Catatan keamanan

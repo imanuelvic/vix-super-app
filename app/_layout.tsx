@@ -61,6 +61,9 @@ function RootNavigator() {
       <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="tasks" options={{ headerShown: false }} />
+        <Stack.Screen name="finance" options={{ headerShown: false }} />
+        <Stack.Screen name="funds" options={{ headerShown: false }} />
+        <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}
