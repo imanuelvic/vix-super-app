@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { BudgetingTab } from '@/components/finance/BudgetingTab';
@@ -16,11 +17,7 @@ import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactio
 type FinanceTab = 'dashboard' | 'transactions' | 'budgeting';
 
 // Tab bar bawah di dalam layar Finance.
-const TABS: {
-  key: FinanceTab;
-  label: string;
-  icon: 'chart.pie.fill' | 'list.bullet' | 'chart.bar.fill';
-}[] = [
+const TABS: BottomTab<FinanceTab>[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'chart.pie.fill' },
   { key: 'transactions', label: 'Transaksi', icon: 'list.bullet' },
   { key: 'budgeting', label: 'Budgeting', icon: 'chart.bar.fill' },
@@ -71,7 +68,7 @@ export default function FinanceScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScreenHeader backLabel="Home" title="Finance">
+      <ScreenHeader backLabel="Home" title="Finance 💵">
         {/* Navigasi bulan — berlaku untuk semua tab */}
         <View style={styles.monthRow}>
           <Pressable onPress={() => shiftMonth(-1)} hitSlop={10}>
@@ -98,7 +95,7 @@ export default function FinanceScreen() {
             <ActivityIndicator color={Color.MAIN} />
           </View>
         ) : tab === 'dashboard' ? (
-          <DashboardTab items={items} />
+          <DashboardTab items={items} year={year} month={month} />
         ) : tab === 'transactions' ? (
           <TransactionsTab items={items} />
         ) : (
@@ -107,28 +104,7 @@ export default function FinanceScreen() {
       </View>
 
       {/* Tab bar bawah khusus layar Finance */}
-      <View style={styles.tabBar}>
-        {TABS.map((t) => {
-          const active = tab === t.key;
-          return (
-            <Pressable
-              key={t.key}
-              style={styles.tabButton}
-              onPress={() => setTab(t.key)}>
-              <IconSymbol
-                name={t.icon}
-                size={24}
-                color={active ? Color.MAIN : Color.TEXT_LABEL}
-              />
-              <VixText
-                heading="label"
-                additionalStyle={active ? styles.tabLabelActive : undefined}>
-                {t.label}
-              </VixText>
-            </Pressable>
-          );
-        })}
-      </View>
+      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
     </SafeAreaView>
   );
 }
@@ -145,13 +121,4 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: Color.CONTAINER,
-    borderTopWidth: 1,
-    borderTopColor: Color.BORDER,
-    paddingVertical: 8,
-  },
-  tabButton: { flex: 1, alignItems: 'center', gap: 2 },
-  tabLabelActive: { color: Color.MAIN },
 });

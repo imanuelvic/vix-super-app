@@ -10,13 +10,21 @@ import {
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import { budgetKey, setBudgetAllocation, subscribeBudget, type BudgetMap } from '@/lib/budgets';
+import {
+  budgetKey,
+  copyBudgetFromPreviousMonth,
+  setBudgetAllocation,
+  subscribeBudget,
+  type BudgetMap,
+} from '@/lib/budgets';
 import {
   categoryOf,
   FINANCE_CATEGORIES,
@@ -53,6 +61,12 @@ export function BudgetingTab({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Tombol "samakan dengan bulan lalu" — abu-abu kalau sudah pernah ditekan
+  // untuk bulan ini (status tersimpan di dokumen budget bulan itu).
+  const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [confirmCopy, setConfirmCopy] = useState(false);
+
   // Modal set budget.
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -66,7 +80,8 @@ export function BudgetingTab({
       year,
       month,
       (next) => {
-        setBudget(next);
+        setBudget(next.allocations);
+        setCopied(next.copiedFromPrev);
         setError(null);
         setLoading(false);
       },
@@ -112,6 +127,27 @@ export function BudgetingTab({
     setEditAmount(current > 0 ? groupDigits(String(current)) : '');
   }
 
+  function handleCopyPress() {
+    // Sudah pernah disamakan → minta konfirmasi dulu sebelum menimpa lagi.
+    if (copied) setConfirmCopy(true);
+    else doCopy();
+  }
+
+  async function doCopy() {
+    if (!user || copying) return;
+    setCopying(true);
+    setError(null);
+    try {
+      const ok = await copyBudgetFromPreviousMonth(user.uid, year, month);
+      if (!ok) setError('Bulan lalu belum ada budget yang bisa disalin.');
+    } catch {
+      setError('Gagal menyalin budget. Coba lagi.');
+    } finally {
+      setConfirmCopy(false);
+      setCopying(false);
+    }
+  }
+
   async function handleSave() {
     if (!user || !editing || saving) return;
     const value = parseAmount(editAmount); // 0 = hapus budget
@@ -146,6 +182,19 @@ export function BudgetingTab({
           </VixText>
           <IconSymbol name="chevron.right" size={20} color={Color.ACCENT_DARK} />
         </Pressable>
+
+        {/* Salin template budget bulan sebelumnya — abu-abu = sudah pernah */}
+        <PrimaryButton
+          label={
+            copied
+              ? '✓ Sudah Disamakan dgn Bulan Lalu'
+              : '📋 Samakan dengan Bulan Lalu'
+          }
+          busy={copying}
+          background={copied ? Color.TEXT_PLACEHOLDER : Color.MAIN}
+          onPress={handleCopyPress}
+          additionalStyle={styles.copyButton}
+        />
 
         <TypeChips value={type} onChange={setType} />
 
@@ -248,6 +297,17 @@ export function BudgetingTab({
           onConfirm={handleSave}
         />
       </CenterDialog>
+
+      {/* Konfirmasi menyamakan ulang (menimpa budget bulan ini) */}
+      <ConfirmDialog
+        visible={confirmCopy}
+        title="Samakan lagi dengan bulan lalu?"
+        detail="Seluruh budget bulan ini akan DITIMPA dengan template bulan sebelumnya."
+        confirmLabel="Samakan"
+        busy={copying}
+        onCancel={() => setConfirmCopy(false)}
+        onConfirm={doCopy}
+      />
     </View>
   );
 }
@@ -291,6 +351,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   fundsButtonText: { color: Color.ACCENT_DARK },
+  copyButton: { marginBottom: 12 },
   error: { color: Color.DANGER, marginBottom: 8 },
   summaryCard: {
     backgroundColor: Color.MAIN_DARK,

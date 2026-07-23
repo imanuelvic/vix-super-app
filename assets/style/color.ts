@@ -44,6 +44,17 @@ export const Color = {
     '#F7CB4D', '#63D297', '#978070', '#26A69A', '#FF8A65', '#7DB9B6',
   ],
 
+  // Fitur Spiritual (tile Home + aksennya)
+  SPIRITUAL: '#E4D7F5', // ungu pastel
+  SPIRITUAL_DARK: '#6B4E9B',
+
+  // Fitur Wheel of Life (tile Home)
+  WHEEL: '#F7D6E6', // merah muda pastel
+  WHEEL_DARK: '#A64D79',
+
+  // Merek luar (tombol chat WhatsApp di fitur CORE)
+  WHATSAPP: '#25D366',
+
   // Status
   SUCCESS: '#1D8D7A',
   WARNING: '#5B4B3A',

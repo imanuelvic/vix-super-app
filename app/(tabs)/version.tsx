@@ -17,12 +17,19 @@ import { formatFullDate } from '@/lib/format';
 
 type Message = { kind: 'info' | 'success' | 'error'; text: string };
 
+// Hari lahir aplikasi ini: Selasa, 21 Juli 2026 🎂
+const APP_BIRTHDAY = new Date(2026, 6, 21);
+
 export default function VersionScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
 
   // Versi app dari app.json — ini yang jadi runtimeVersion (policy appVersion).
   const appVersion = Constants.expoConfig?.version ?? '-';
+
+  // Umur aplikasi sejak pertama dibuat.
+  const appAgeDays =
+    Math.floor((Date.now() - APP_BIRTHDAY.getTime()) / 86_400_000) + 1;
 
   async function handleCheckUpdate() {
     if (busy) return;
@@ -74,14 +81,21 @@ export default function VersionScreen() {
             v{appVersion}
           </VixText>
           <VixText heading="label" additionalStyle={styles.versionLabel}>
-            {Updates.isEmbeddedLaunch || !Updates.createdAt
-              ? 'Bundle bawaan build'
-              : `Update terpasang: ${formatFullDate(Updates.createdAt)}`}
+            🎂 Hari ke-{appAgeDays} sejak dibuat
           </VixText>
         </View>
 
         {/* Detail teknis — berguna saat cek kenapa update tidak masuk */}
         <View style={styles.detailCard}>
+          <DetailRow label="Dibuat" value={formatFullDate(APP_BIRTHDAY)} />
+          <DetailRow
+            label="Update terakhir"
+            value={
+              Updates.isEmbeddedLaunch || !Updates.createdAt
+                ? 'Belum ada — bundle build'
+                : formatFullDate(Updates.createdAt)
+            }
+          />
           <DetailRow label="Runtime" value={Updates.runtimeVersion ?? '-'} />
           <DetailRow label="Channel" value={Updates.channel ?? 'development'} />
           <DetailRow
@@ -165,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
   },
-  detailValue: { color: Color.TEXT_TITLE },
+  detailValue: { color: Color.TEXT_TITLE, flexShrink: 1, textAlign: 'right' },
   updateButton: {
     flexDirection: 'row',
     alignItems: 'center',

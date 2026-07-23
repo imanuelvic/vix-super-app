@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -55,6 +56,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
   // Form tambah transaksi.
   const [type, setType] = useState<FinanceType>('expense');
   const [category, setCategory] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false); // sheet pilih kategori
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -262,25 +264,23 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
           }}
         />
 
-        {/* Pilih kategori */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}>
-          {activeCategories(type).map((c) => (
-            <Pressable
-              key={c.key}
-              style={[
-                styles.categoryChip,
-                category === c.key && styles.categoryChipActive,
-              ]}
-              onPress={() => setCategory(c.key)}>
-              <VixText heading="label" additionalStyle={styles.categoryText}>
-                {c.icon} {c.label}
-              </VixText>
-            </Pressable>
-          ))}
-        </ScrollView>
+        {/* Pilih kategori — buka sheet, tidak perlu scroll ke samping */}
+        <Pressable
+          style={styles.categoryField}
+          onPress={() => setPickerOpen(true)}>
+          <VixText
+            heading="paragraph"
+            additionalStyle={
+              selectedCategory
+                ? styles.categoryValue
+                : styles.categoryPlaceholder
+            }>
+            {selectedCategory
+              ? `${selectedCategory.icon} ${selectedCategory.label}`
+              : 'Pilih kategori…'}
+          </VixText>
+          <IconSymbol name="chevron.down" size={18} color={Color.TEXT_LABEL} />
+        </Pressable>
 
         {/* Nominal + catatan (keduanya wajib), tombol tambah di samping catatan */}
         <FormInput
@@ -321,6 +321,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
     );
   }
 
+  const selectedCategory = category ? categoryOf(type, category) : null;
   const editingCategory = editing
     ? categoryOf(editing.type, editing.category)
     : null;
@@ -394,6 +395,28 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
           );
         }}
       />
+
+      {/* Sheet pilih kategori */}
+      <SheetModal
+        visible={pickerOpen}
+        title={`Kategori ${FINANCE_TYPE_LABEL[type]}`}
+        onClose={() => setPickerOpen(false)}>
+        <ScrollView style={styles.pickerScroll}>
+          <View style={styles.pickerWrap}>
+            {activeCategories(type).map((c) => (
+              <Chip
+                key={c.key}
+                label={`${c.icon} ${c.label}`}
+                active={category === c.key}
+                onPress={() => {
+                  setCategory(c.key);
+                  setPickerOpen(false);
+                }}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </SheetModal>
 
       {/* Bottom sheet: edit transaksi */}
       <SheetModal
@@ -478,20 +501,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  categoryRow: { gap: 8, paddingBottom: 10 },
-  categoryChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
+  categoryField: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: Color.CONTAINER,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: Color.BORDER,
+    marginBottom: 8,
   },
-  categoryChipActive: {
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderColor: Color.MAIN,
+  categoryValue: { color: Color.TEXT_TITLE },
+  categoryPlaceholder: { color: Color.TEXT_PLACEHOLDER },
+  pickerScroll: { maxHeight: 400 },
+  pickerWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingBottom: 8,
   },
-  categoryText: { color: Color.TEXT_PARAGRAPH },
   inputRow: { flexDirection: 'row', gap: 10 },
   inputGap: { marginTop: 8 },
   flexInput: { flex: 1 },

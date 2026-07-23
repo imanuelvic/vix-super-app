@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -13,6 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CheckCircle } from '@/components/common/CheckCircle';
+import { Chip } from '@/components/common/Chip';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -21,7 +24,9 @@ import {
   deleteTask,
   setTaskDone,
   subscribeTasks,
+  TASK_CATEGORIES,
   type Task,
+  type TaskCategory,
 } from '@/lib/tasks';
 
 export default function TasksScreen() {
@@ -30,6 +35,7 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<TaskCategory>('personal');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,7 +64,8 @@ export default function TasksScreen() {
     setTitle('');
     setError(null);
     try {
-      await addTask(user.uid, value);
+      // Task baru masuk ke kategori yang sedang aktif.
+      await addTask(user.uid, value, category);
     } catch {
       setTitle(value); // kembalikan teks kalau gagal
       setError('Gagal menambah task. Coba lagi.');
@@ -85,7 +92,10 @@ export default function TasksScreen() {
     }
   }
 
-  const remaining = tasks.filter((t) => !t.done).length;
+  // Satu listener untuk semua task; filter kategori cukup di sisi app.
+  const shown = tasks.filter((t) => t.category === category);
+  const remaining = shown.filter((t) => !t.done).length;
+  const activeMeta = TASK_CATEGORIES.find((c) => c.key === category)!;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -101,17 +111,49 @@ export default function TasksScreen() {
 
         <View style={styles.header}>
           <VixText heading="header" additionalStyle={styles.title}>
-            Task
+            Task ✅
           </VixText>
           <VixText heading="label">
-            {remaining} belum selesai · {tasks.length} total
+            {remaining} belum selesai · {shown.length} total
           </VixText>
         </View>
+
+        {/* Ganti kategori = ganti to-do list (geser untuk lihat semua) */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipScroll}
+          contentContainerStyle={styles.chipRow}>
+          {TASK_CATEGORIES.map((c) => {
+            // Badge: jumlah task kategori ini yang belum selesai.
+            const count = tasks.filter(
+              (t) => t.category === c.key && !t.done,
+            ).length;
+            return (
+              <View key={c.key} style={styles.chipHolder}>
+                <Chip
+                  label={`${c.icon} ${c.label}`}
+                  active={category === c.key}
+                  onPress={() => setCategory(c.key)}
+                />
+                {count > 0 && (
+                  <View style={styles.chipBadge}>
+                    <VixText
+                      heading="label"
+                      additionalStyle={styles.chipBadgeText}>
+                      {count > 9 ? '9+' : count}
+                    </VixText>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
 
         <View style={styles.inputRow}>
           <TextInput
             style={styles.input}
-            placeholder="Tambah task baru…"
+            placeholder={`Tambah task ${activeMeta.label}…`}
             placeholderTextColor={Color.TEXT_PLACEHOLDER}
             value={title}
             onChangeText={setTitle}
@@ -135,12 +177,15 @@ export default function TasksScreen() {
           </View>
         ) : (
           <FlatList
-            data={tasks}
+            data={shown}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.center}>
-                <VixText heading="label">Belum ada task. Tambahkan di atas 👆</VixText>
+                <VixText heading="label">
+                  Belum ada task {activeMeta.icon} {activeMeta.label}. Tambahkan
+                  di atas 👆
+                </VixText>
               </View>
             }
             renderItem={({ item }) => (
@@ -148,12 +193,7 @@ export default function TasksScreen() {
                 <Pressable
                   style={styles.rowMain}
                   onPress={() => handleToggle(item)}>
-                  <View style={[styles.circle, item.done && styles.circleDone]}>
-                    {item.done && (
-                      // Mint terang butuh ikon gelap agar kontras.
-                      <IconSymbol name="checkmark" size={16} color={Color.MAIN_DARK} />
-                    )}
-                  </View>
+                  <CheckCircle checked={item.done} />
                   <VixText
                     heading="paragraph"
                     additionalStyle={[styles.taskText, item.done && styles.taskTextDone]}>
@@ -184,8 +224,30 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   backText: { color: Color.MAIN },
-  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 },
+  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12 },
   title: { color: Color.MAIN },
+  chipScroll: { flexGrow: 0, marginBottom: 12 },
+  chipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 6, // ruang untuk badge yang menonjol di atas chip
+  },
+  chipHolder: {},
+  chipBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -4,
+    minWidth: 20,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    backgroundColor: Color.DANGER,
+    borderWidth: 2,
+    borderColor: Color.BACKGROUND,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipBadgeText: { color: Color.TEXT_REVERSE },
   inputRow: {
     flexDirection: 'row',
     gap: 10,
@@ -226,16 +288,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  circle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: Color.MAIN_LIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circleDone: { backgroundColor: Color.MAIN_LIGHT },
   taskText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   taskTextDone: {
     color: Color.TEXT_PLACEHOLDER,

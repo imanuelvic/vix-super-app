@@ -60,10 +60,20 @@ function RootNavigator() {
       {/* Hanya bisa diakses kalau sudah login (login cukup SEKALI per perangkat) */}
       <Stack.Protected guard={!!user}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="tasks" options={{ headerShown: false }} />
-        <Stack.Screen name="finance" options={{ headerShown: false }} />
-        <Stack.Screen name="funds" options={{ headerShown: false }} />
-        <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
+          <Stack.Screen name="tasks" options={{ headerShown: false }} />
+          <Stack.Screen name="finance" options={{ headerShown: false }} />
+            <Stack.Screen name="funds" options={{ headerShown: false }} />
+            <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
+          <Stack.Screen name="health" options={{ headerShown: false }} />
+            <Stack.Screen name="diseases" options={{ headerShown: false }} />
+            <Stack.Screen name="health-info" options={{ headerShown: false }} />
+          <Stack.Screen name="timeline" options={{ headerShown: false }} />
+          <Stack.Screen name="core" options={{ headerShown: false }} />
+          <Stack.Screen name="trading" options={{ headerShown: false }} />
+          <Stack.Screen name="car" options={{ headerShown: false }} />
+          <Stack.Screen name="wheel" options={{ headerShown: false }} />
+          <Stack.Screen name="spiritual" options={{ headerShown: false }} />
+          <Stack.Screen name="achievements" options={{ headerShown: false }} />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}

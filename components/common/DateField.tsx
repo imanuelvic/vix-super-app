@@ -45,6 +45,10 @@ export function DateField({
           value={value}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          // App ini selalu terang — paksa picker iOS ikut terang juga,
+          // kalau tidak teksnya putih (mode gelap iPhone) dan tak terbaca.
+          themeVariant="light"
+          textColor={Color.TEXT_TITLE}
           onChange={handlePick}
         />
       )}

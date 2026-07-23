@@ -14,10 +14,33 @@ import {
 
 import { db } from './firebase';
 
+// Kategori task yang sudah pasti — ganti kategori = ganti to-do list.
+export type TaskCategory =
+  | 'personal'
+  | 'work'
+  | 'fun'
+  | 'learning'
+  | 'relax'
+  | 'ministry';
+
+export const TASK_CATEGORIES: {
+  key: TaskCategory;
+  label: string;
+  icon: string;
+}[] = [
+  { key: 'personal', label: 'Personal', icon: '👤' },
+  { key: 'work', label: 'Work', icon: '💼' },
+  { key: 'fun', label: 'Fun Recreation', icon: '🎢' },
+  { key: 'learning', label: 'Learning', icon: '📚' },
+  { key: 'relax', label: 'Relax', icon: '🧘🏻' },
+  { key: 'ministry', label: 'Ministry', icon: '🙏' },
+];
+
 export type Task = {
   id: string;
   title: string;
   done: boolean;
+  category: TaskCategory;
   createdAt: Timestamp | null;
 };
 
@@ -43,20 +66,22 @@ export function subscribeTasks(
   return onSnapshot(
     q,
     (snapshot) => {
-      const tasks = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Task, 'id'>),
-      }));
+      const tasks = snapshot.docs.map((d) => {
+        const data = d.data() as Omit<Task, 'id'>;
+        // Task lama (sebelum ada kategori) dianggap Personal.
+        return { id: d.id, ...data, category: data.category ?? 'personal' };
+      });
       onChange(tasks);
     },
     onError,
   );
 }
 
-export function addTask(uid: string, title: string) {
+export function addTask(uid: string, title: string, category: TaskCategory) {
   return addDoc(tasksCollection(uid), {
     title: title.trim(),
     done: false,
+    category,
     createdAt: serverTimestamp(),
   });
 }
