@@ -201,7 +201,10 @@ export default function WheelScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader backLabel="Home" title="Wheel of Life 🎡">
+      <ScreenHeader
+        backLabel="Home"
+        title="Wheel of Life 🎡"
+        subtitle="8 area hidupmu per quartal">
         {mode === 'overview' && (
           <View style={styles.quarterRow}>
             <Pressable onPress={() => shift(-1)} hitSlop={10}>

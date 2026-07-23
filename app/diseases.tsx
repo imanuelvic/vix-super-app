@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -51,7 +51,6 @@ export default function DiseasesScreen() {
   const [fRecovered, setFRecovered] = useState(false);
   const [fRecoverDate, setFRecoverDate] = useState(new Date());
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -124,7 +123,6 @@ export default function DiseasesScreen() {
     try {
       await deleteDisease(user.uid, editing.id);
     } finally {
-      setConfirmDelete(false);
       setEditing(null);
       setBusy(false);
     }
@@ -255,12 +253,14 @@ export default function DiseasesScreen() {
             {formError}
           </VixText>
         )}
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
-          <Pressable onPress={() => setConfirmDelete(true)} disabled={busy}>
-            <VixText heading="bold" additionalStyle={styles.deleteText}>
-              Hapus catatan ini
-            </VixText>
-          </Pressable>
+          <InlineDelete
+            key={editing.id}
+            label="Hapus catatan ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         )}
         <DualButtons
           confirmLabel="Simpan"
@@ -270,15 +270,6 @@ export default function DiseasesScreen() {
         />
       </SheetModal>
 
-      {/* Konfirmasi hapus */}
-      <ConfirmDialog
-        visible={confirmDelete}
-        title="Hapus catatan sakit?"
-        detail="Catatan ini akan dihapus permanen."
-        busy={busy}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={handleDelete}
-      />
     </SafeAreaView>
   );
 }
@@ -325,5 +316,4 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 4,
   },
-  deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 4 },
 });

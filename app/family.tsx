@@ -5,23 +5,19 @@ import { Color } from '@/assets/style/color';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 
-// Trading — halaman placeholder. Isi fiturnya menyusul.
-export default function TradingScreen() {
+// Family — halaman placeholder. Isi fiturnya menyusul.
+export default function FamilyScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader
-        backLabel="Home"
-        title="Trading 📈"
-        subtitle="Segera hadir"
-      />
+      <ScreenHeader backLabel="Home" title="Family 👨‍👩‍👧‍👦" />
 
       <View style={styles.center}>
-        <VixText additionalStyle={styles.emoji}>📈</VixText>
+        <VixText additionalStyle={styles.emoji}>👨‍👩‍👧‍👦</VixText>
         <VixText heading="subheader" additionalStyle={styles.title}>
           Coming Soon 🚧
         </VixText>
         <VixText heading="label" additionalStyle={styles.text}>
-          Fitur trading sedang disiapkan.{'\n'}Nantikan di update berikutnya!
+          Fitur family sedang disiapkan.{'\n'}Nantikan di update berikutnya!
         </VixText>
       </View>
     </SafeAreaView>
@@ -39,6 +35,6 @@ const styles = StyleSheet.create({
     paddingBottom: 80, // sedikit naik biar terasa di tengah layar
   },
   emoji: { fontSize: 64, lineHeight: 76 },
-  title: { color: Color.MAIN_DARK },
+  title: { color: Color.ACCENT_DARK },
   text: { textAlign: 'center' },
 });

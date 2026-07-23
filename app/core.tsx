@@ -1,10 +1,11 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { FollowupTab } from '@/components/core/FollowupTab';
@@ -32,6 +33,7 @@ const TABS: BottomTab<CoreTab>[] = [
 
 // CORE — penggembalaan sebagai MCL: follow-up harian para CORE Leader.
 export default function CoreScreen() {
+  const router = useRouter();
   const { user } = useAuth();
 
   // Default masuk ke Follow-up: itu tugas harianmu. Bisa dioverride lewat
@@ -81,6 +83,13 @@ export default function CoreScreen() {
         backLabel="Home"
         title="CORE 🙏"
         subtitle="Gembalakan & muridkan CORE Leader-mu"
+        right={
+          // Riwayat seluruh visitasi 🕘
+          <EmojiButton
+            emoji="🕘"
+            onPress={() => router.push('/visitations')}
+          />
+        }
       />
 
       {error && (

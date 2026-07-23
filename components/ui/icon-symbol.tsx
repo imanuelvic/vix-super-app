@@ -37,6 +37,8 @@ const MAPPING = {
   'target': 'track-changes',
   'book.closed.fill': 'menu-book',
   'calendar': 'event',
+  'briefcase.fill': 'work',
+  'person.3.fill': 'family-restroom',
   'wrench.and.screwdriver.fill': 'build',
   'info.circle.fill': 'info',
   'banknote': 'account-balance-wallet',

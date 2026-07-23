@@ -57,7 +57,11 @@ export default function AchievementsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader backLabel="Home" title="Achievement 🏆" />
+      <ScreenHeader
+        backLabel="Home"
+        title="Achievement 🏆"
+        subtitle="Streak, pencapaian & self-reward"
+      />
 
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>

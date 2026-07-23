@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,10 +12,8 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
-import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   budgetKey,
@@ -53,7 +50,6 @@ export function BudgetingTab({
   year: number;
   month: number;
 }) {
-  const router = useRouter();
   const { user } = useAuth();
 
   const [type, setType] = useState<FinanceType>('expense');
@@ -173,29 +169,6 @@ export function BudgetingTab({
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Tombol menuju halaman Budget Khusus (mutasi dana per tujuan) */}
-        <Pressable
-          style={styles.fundsButton}
-          onPress={() => router.push('/funds')}>
-          <VixText heading="bold" additionalStyle={styles.fundsButtonText}>
-            💼 Budget Khusus
-          </VixText>
-          <IconSymbol name="chevron.right" size={20} color={Color.ACCENT_DARK} />
-        </Pressable>
-
-        {/* Salin template budget bulan sebelumnya — abu-abu = sudah pernah */}
-        <PrimaryButton
-          label={
-            copied
-              ? '✓ Sudah Disamakan dgn Bulan Lalu'
-              : '📋 Samakan dengan Bulan Lalu'
-          }
-          busy={copying}
-          background={copied ? Color.TEXT_PLACEHOLDER : Color.MAIN}
-          onPress={handleCopyPress}
-          additionalStyle={styles.copyButton}
-        />
-
         <TypeChips value={type} onChange={setType} />
 
         {error && (
@@ -206,9 +179,25 @@ export function BudgetingTab({
 
         {/* Ringkasan budget jenis terpilih */}
         <View style={styles.summaryCard}>
-          <VixText heading="label" additionalStyle={styles.summaryLabel}>
-            Total Budget {FINANCE_TYPE_LABEL[type]}
-          </VixText>
+          <View style={styles.summaryTop}>
+            <VixText heading="label" additionalStyle={styles.summaryLabel}>
+              Total Budget {FINANCE_TYPE_LABEL[type]}
+            </VixText>
+            {/* 📋 = samakan dengan bulan lalu; abu-abu = sudah pernah */}
+            <Pressable
+              style={[styles.copyChip, copied && styles.copyChipUsed]}
+              onPress={handleCopyPress}
+              disabled={copying}
+              hitSlop={6}>
+              {copying ? (
+                <ActivityIndicator size="small" color={Color.TEXT_REVERSE} />
+              ) : (
+                <VixText heading="label" additionalStyle={styles.copyChipText}>
+                  {copied ? '✓ 📋' : '📋'}
+                </VixText>
+              )}
+            </Pressable>
+          </View>
           <VixText heading="subheader" additionalStyle={styles.summaryValue}>
             {formatRupiah(totalRealized)}{' '}
             <VixText heading="label" additionalStyle={styles.summaryLabel}>
@@ -340,19 +329,24 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  fundsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Color.ACCENT,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 12,
-  },
-  fundsButtonText: { color: Color.ACCENT_DARK },
-  copyButton: { marginBottom: 12 },
   error: { color: Color.DANGER, marginBottom: 8 },
+  summaryTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  copyChip: {
+    backgroundColor: Color.MAIN,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyChipUsed: { backgroundColor: Color.TEXT_PLACEHOLDER },
+  copyChipText: { color: Color.TEXT_REVERSE },
   summaryCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,

@@ -1,0 +1,88 @@
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+
+import { Color } from '@/assets/style/color';
+import { VixText } from '@/components/common/VixText';
+
+// Konfirmasi hapus DI DALAM modal yang sama — iOS tidak mendukung modal
+// bertumpuk (ConfirmDialog di atas SheetModal tidak muncul).
+// Langkah 1: link "Hapus…". Langkah 2: kotak konfirmasi inline.
+// Beri `key` per item di pemanggil supaya state konfirmasi ikut reset.
+export function InlineDelete({
+  label,
+  busy = false,
+  onDelete,
+}: {
+  label: string; // mis. "Hapus wishlist ini"
+  busy?: boolean;
+  onDelete: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <Pressable onPress={() => setConfirming(true)} disabled={busy}>
+        <VixText heading="bold" additionalStyle={styles.link}>
+          {label}
+        </VixText>
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={styles.confirmBox}>
+      <VixText heading="label" additionalStyle={styles.confirmText}>
+        Yakin mau menghapus? Tindakan ini permanen.
+      </VixText>
+      <View style={styles.row}>
+        <Pressable
+          style={styles.cancel}
+          onPress={() => setConfirming(false)}
+          disabled={busy}>
+          <VixText heading="bold">Batal</VixText>
+        </Pressable>
+        <Pressable style={styles.delete} onPress={onDelete} disabled={busy}>
+          {busy ? (
+            <ActivityIndicator color={Color.TEXT_REVERSE} />
+          ) : (
+            <VixText heading="bold" additionalStyle={styles.deleteText}>
+              Ya, Hapus
+            </VixText>
+          )}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  link: { color: Color.DANGER, textAlign: 'center', marginTop: 6 },
+  confirmBox: {
+    borderWidth: 1,
+    borderColor: Color.DANGER,
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 6,
+    gap: 8,
+  },
+  confirmText: { color: Color.DANGER, textAlign: 'center' },
+  row: { flexDirection: 'row', gap: 8 },
+  cancel: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: Color.CONTAINER,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+  },
+  delete: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: Color.DANGER,
+  },
+  deleteText: { color: Color.TEXT_REVERSE },
+});

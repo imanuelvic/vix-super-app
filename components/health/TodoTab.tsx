@@ -326,9 +326,6 @@ export function TodoTab({
                   ? '🎉 Target tercapai — pertahankan!'
                   : `Mulai dari ${formatDecimal(target.startWeightKg)} kg · sisa ${formatDecimal(remaining)} kg lagi 💪`}
               </VixText>
-              <VixText heading="label" additionalStyle={styles.targetHint}>
-                Update berat lewat tab Summary → Data Tubuh.
-              </VixText>
             </>
           ) : (
             <VixText heading="label">
@@ -551,7 +548,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: Color.MAIN,
   },
-  targetHint: { color: Color.TEXT_PLACEHOLDER },
   sectionTitle: { marginTop: 4, marginBottom: 10 },
   inputRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   input: { flex: 1 },

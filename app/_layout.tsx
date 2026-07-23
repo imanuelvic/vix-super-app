@@ -74,6 +74,9 @@ function RootNavigator() {
           <Stack.Screen name="wheel" options={{ headerShown: false }} />
           <Stack.Screen name="spiritual" options={{ headerShown: false }} />
           <Stack.Screen name="achievements" options={{ headerShown: false }} />
+          <Stack.Screen name="visitations" options={{ headerShown: false }} />
+          <Stack.Screen name="career" options={{ headerShown: false }} />
+          <Stack.Screen name="family" options={{ headerShown: false }} />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}

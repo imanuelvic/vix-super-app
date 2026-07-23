@@ -5,13 +5,14 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   newVisitationId,
@@ -44,7 +45,8 @@ export function VisitationTab({
   const [fNote, setFNote] = useState('');
   const [fDone, setFDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  // Dropdown tips — default tertutup biar jadwal tetap fokus utama.
+  const [tipsOpen, setTipsOpen] = useState(false);
 
   const today = new Date();
 
@@ -56,9 +58,6 @@ export function VisitationTab({
   const upcoming = visitations
     .filter((v) => !v.done && visitDaysUntil(v, today) >= 0)
     .sort((a, b) => a.date.toMillis() - b.date.toMillis());
-  const history = visitations
-    .filter((v) => v.done || visitDaysUntil(v, today) < 0)
-    .sort((a, b) => b.date.toMillis() - a.date.toMillis());
 
   function openAdd() {
     setEditing('new');
@@ -118,7 +117,6 @@ export function VisitationTab({
     } catch {
       setError('Gagal menghapus. Coba lagi.');
     } finally {
-      setConfirmDelete(false);
       setEditing(null);
       setBusy(false);
     }
@@ -199,27 +197,31 @@ export function VisitationTab({
           upcoming.map(renderCard)
         )}
 
-        {/* ===== Riwayat ===== */}
-        {history.length > 0 && (
-          <>
-            <VixText heading="title" additionalStyle={styles.sectionTitle}>
-              🗂️ Riwayat
+        {/* ===== Tips visitasi (dropdown, default tertutup) ===== */}
+        <Pressable
+          style={styles.tipsHeader}
+          onPress={() => setTipsOpen((o) => !o)}>
+          <VixText heading="title">💡 Tips Visitasi</VixText>
+          <View style={styles.tipsToggle}>
+            <VixText heading="label">
+              {tipsOpen ? 'Tutup' : `${VISIT_TIPS.length} tips`}
             </VixText>
-            {history.map(renderCard)}
-          </>
+            <IconSymbol
+              name={tipsOpen ? 'chevron.up' : 'chevron.down'}
+              size={18}
+              color={Color.TEXT_LABEL}
+            />
+          </View>
+        </Pressable>
+        {tipsOpen && (
+          <View style={styles.tipsCard}>
+            {VISIT_TIPS.map((tip) => (
+              <VixText key={tip} heading="paragraph" additionalStyle={styles.tip}>
+                {tip}
+              </VixText>
+            ))}
+          </View>
         )}
-
-        {/* ===== Tips visitasi ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          💡 Tips Visitasi
-        </VixText>
-        <View style={styles.tipsCard}>
-          {VISIT_TIPS.map((tip) => (
-            <VixText key={tip} heading="paragraph" additionalStyle={styles.tip}>
-              {tip}
-            </VixText>
-          ))}
-        </View>
       </ScrollView>
 
       {/* Bottom sheet tambah/edit jadwal */}
@@ -274,12 +276,14 @@ export function VisitationTab({
             {formError}
           </VixText>
         )}
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
-          <Pressable onPress={() => setConfirmDelete(true)} disabled={busy}>
-            <VixText heading="bold" additionalStyle={styles.deleteText}>
-              Hapus jadwal ini
-            </VixText>
-          </Pressable>
+          <InlineDelete
+            key={editing.id}
+            label="Hapus jadwal ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         )}
         <DualButtons
           confirmLabel="Simpan"
@@ -289,15 +293,6 @@ export function VisitationTab({
         />
       </SheetModal>
 
-      {/* Konfirmasi hapus */}
-      <ConfirmDialog
-        visible={confirmDelete}
-        title="Hapus jadwal visitasi?"
-        detail="Jadwal ini akan dihapus permanen."
-        busy={busy}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={handleDelete}
-      />
     </View>
   );
 }
@@ -334,6 +329,14 @@ const styles = StyleSheet.create({
   statusToday: { color: Color.DANGER },
   statusDone: { color: Color.SUCCESS },
   statusLate: { color: Color.WARNING },
+  tipsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  tipsToggle: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   tipsCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,
@@ -359,5 +362,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   doneText: { color: Color.TEXT_TITLE },
-  deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 6 },
 });

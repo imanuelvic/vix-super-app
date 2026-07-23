@@ -3,10 +3,10 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -48,7 +48,6 @@ export function LeadersTab({
   const [fBirthday, setFBirthday] = useState(new Date(2000, 0, 1));
   const [fPhone, setFPhone] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Form Main Team (terpisah karena field-nya beda: pilih CL, tanpa hati).
   const [editingMT, setEditingMT] = useState<MainTeamMember | 'new' | null>(null);
@@ -57,7 +56,6 @@ export function LeadersTab({
   const [mtBirthday, setMtBirthday] = useState(new Date(2000, 0, 1));
   const [mtPhone, setMtPhone] = useState('');
   const [mtFormError, setMtFormError] = useState<string | null>(null);
-  const [confirmDeleteMT, setConfirmDeleteMT] = useState(false);
 
   const today = new Date();
 
@@ -133,7 +131,6 @@ export function LeadersTab({
     } catch {
       setError('Gagal menghapus. Coba lagi.');
     } finally {
-      setConfirmDelete(false);
       setEditing(null);
       setBusy(false);
     }
@@ -179,8 +176,7 @@ export function LeadersTab({
       birthMonth: mtBirthday.getMonth(),
       birthDay: mtBirthday.getDate(),
       phone: normalizePhone(mtPhone),
-      lastFollowupDayId:
-        editingMT === 'new' ? null : editingMT.lastFollowupDayId,
+      lastFollowupDayId: editingMT === 'new' ? null : editingMT.lastFollowupDayId,
     };
     const next =
       editingMT === 'new'
@@ -207,7 +203,6 @@ export function LeadersTab({
     } catch {
       setError('Gagal menghapus. Coba lagi.');
     } finally {
-      setConfirmDeleteMT(false);
       setEditingMT(null);
       setBusy(false);
     }
@@ -250,7 +245,7 @@ export function LeadersTab({
                     {currentAge(l, today)} th
                   </VixText>
                   <VixText heading="label" additionalStyle={styles.followupLine}>
-                    📱 {l.phone ? `+62${l.phone}` : 'belum ada nomor'} ·
+                    📱 {l.phone ? `+62${l.phone}` : 'belum ada nomor'} · {"\n"}
                     FU terakhir: {l.lastFollowupDayId ?? 'belum'}
                   </VixText>
                 </View>
@@ -316,7 +311,7 @@ export function LeadersTab({
                     {currentAge(m, today)} th
                   </VixText>
                   <VixText heading="label" additionalStyle={styles.followupLine}>
-                    📱 {m.phone ? `+62${m.phone}` : 'belum ada nomor'} ·
+                    📱 {m.phone ? `+62${m.phone}` : 'belum ada nomor'} · {"\n"}
                     FU terakhir: {m.lastFollowupDayId ?? 'belum'}
                   </VixText>
                 </View>
@@ -403,12 +398,14 @@ export function LeadersTab({
             {formError}
           </VixText>
         )}
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
-          <Pressable onPress={() => setConfirmDelete(true)} disabled={busy}>
-            <VixText heading="bold" additionalStyle={styles.deleteText}>
-              Hapus CORE Leader ini
-            </VixText>
-          </Pressable>
+          <InlineDelete
+            key={editing.id}
+            label="Hapus CORE Leader ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         )}
         <DualButtons
           confirmLabel="Simpan"
@@ -481,12 +478,14 @@ export function LeadersTab({
             {mtFormError}
           </VixText>
         )}
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editingMT !== 'new' && editingMT !== null && (
-          <Pressable onPress={() => setConfirmDeleteMT(true)} disabled={busy}>
-            <VixText heading="bold" additionalStyle={styles.deleteText}>
-              Hapus Main Team ini
-            </VixText>
-          </Pressable>
+          <InlineDelete
+            key={editingMT.id}
+            label="Hapus Main Team ini"
+            busy={busy}
+            onDelete={handleDeleteMT}
+          />
         )}
         <DualButtons
           confirmLabel="Simpan"
@@ -496,25 +495,6 @@ export function LeadersTab({
         />
       </SheetModal>
 
-      {/* Konfirmasi hapus CL */}
-      <ConfirmDialog
-        visible={confirmDelete}
-        title="Hapus CORE Leader?"
-        detail="Data CL ini akan dihapus permanen."
-        busy={busy}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={handleDelete}
-      />
-
-      {/* Konfirmasi hapus Main Team */}
-      <ConfirmDialog
-        visible={confirmDeleteMT}
-        title="Hapus Main Team?"
-        detail="Data Main Team ini akan dihapus permanen."
-        busy={busy}
-        onCancel={() => setConfirmDeleteMT(false)}
-        onConfirm={handleDeleteMT}
-      />
     </View>
   );
 }
@@ -593,5 +573,4 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 4 },
 });

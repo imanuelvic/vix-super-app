@@ -85,7 +85,11 @@ export default function HealthScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScreenHeader backLabel="Home" title="Health 🍎" />
+      <ScreenHeader
+        backLabel="Home"
+        title="Health 🍎"
+        subtitle="Jaga tubuh, kelola energi"
+      />
 
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>

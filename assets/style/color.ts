@@ -52,6 +52,10 @@ export const Color = {
   WHEEL: '#F7D6E6', // merah muda pastel
   WHEEL_DARK: '#A64D79',
 
+  // Tile Home lainnya
+  CAREER: '#E3CBB4', // coklat pastel (fitur Career)
+  PASTEL_GRAY: '#E4E2DC', // abu-abu pastel (tile Trading)
+
   // Merek luar (tombol chat WhatsApp di fitur CORE)
   WHATSAPP: '#25D366',
 

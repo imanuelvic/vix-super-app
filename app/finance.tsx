@@ -1,9 +1,11 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { BudgetingTab } from '@/components/finance/BudgetingTab';
@@ -24,6 +26,7 @@ const TABS: BottomTab<FinanceTab>[] = [
 ];
 
 export default function FinanceScreen() {
+  const router = useRouter();
   const { user } = useAuth();
 
   // Default masuk ke tab Transaksi.
@@ -68,7 +71,14 @@ export default function FinanceScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScreenHeader backLabel="Home" title="Finance 💵">
+      <ScreenHeader
+        backLabel="Home"
+        title="Finance 💵"
+        subtitle="Kelola uang, jangan dikuasai uang"
+        right={
+          // Budget Khusus 💼 (pocket dana per tujuan)
+          <EmojiButton emoji="💼" onPress={() => router.push('/funds')} />
+        }>
         {/* Navigasi bulan — berlaku untuk semua tab */}
         <View style={styles.monthRow}>
           <Pressable onPress={() => shiftMonth(-1)} hitSlop={10}>

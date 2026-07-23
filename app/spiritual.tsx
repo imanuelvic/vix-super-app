@@ -162,7 +162,7 @@ export default function SpiritualScreen() {
           </VixText>
           <FormInput
             style={styles.formGap}
-            placeholder="Judul renungan — mis. ARE YOU TOO BUSY TO BE WITH GOD?"
+            placeholder="Judul Revive"
             value={fTitle}
             onChangeText={setFTitle}
             editable={!busy}
@@ -170,14 +170,14 @@ export default function SpiritualScreen() {
           <View style={styles.rowGap}>
             <FormInput
               style={styles.halfInput}
-              placeholder="Bacaan — Lukas 5:15-16"
+              placeholder="Bacaan Alkitab"
               value={fPassage}
               onChangeText={setFPassage}
               editable={!busy}
             />
             <FormInput
               style={styles.halfInput}
-              placeholder="Hafalan — Lukas 5:16"
+              placeholder="Ayat Hafalan"
               value={fVerse}
               onChangeText={setFVerse}
               editable={!busy}

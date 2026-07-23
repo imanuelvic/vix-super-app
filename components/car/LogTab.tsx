@@ -3,10 +3,10 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -47,7 +47,6 @@ export function LogTab({ items }: { items: CarLog[] }) {
   const [fLiters, setFLiters] = useState('');
   const [fDate, setFDate] = useState(new Date());
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const now = new Date();
@@ -133,7 +132,6 @@ export function LogTab({ items }: { items: CarLog[] }) {
     try {
       await deleteCarLog(user.uid, editing.id);
     } finally {
-      setConfirmDelete(false);
       setEditing(null);
       setBusy(false);
     }
@@ -295,12 +293,14 @@ export function LogTab({ items }: { items: CarLog[] }) {
             {formError}
           </VixText>
         )}
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
-          <Pressable onPress={() => setConfirmDelete(true)} disabled={busy}>
-            <VixText heading="bold" additionalStyle={styles.deleteText}>
-              Hapus catatan ini
-            </VixText>
-          </Pressable>
+          <InlineDelete
+            key={editing.id}
+            label="Hapus catatan ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         )}
         <DualButtons
           confirmLabel="Simpan"
@@ -310,15 +310,6 @@ export function LogTab({ items }: { items: CarLog[] }) {
         />
       </SheetModal>
 
-      {/* Konfirmasi hapus */}
-      <ConfirmDialog
-        visible={confirmDelete}
-        title="Hapus catatan?"
-        detail="Catatan pengeluaran ini akan dihapus permanen."
-        busy={busy}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={handleDelete}
-      />
     </View>
   );
 }
@@ -374,5 +365,4 @@ const styles = StyleSheet.create({
   literInput: { flex: 1 },
   hint: { marginBottom: 8 },
   error: { color: Color.DANGER, marginBottom: 8 },
-  deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 4 },
 });

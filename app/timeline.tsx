@@ -11,9 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -49,7 +49,6 @@ export default function TimelineScreen() {
   const [fCategory, setFCategory] = useState<TimelineCategoryKey>('future');
   const [fMonth, setFMonth] = useState<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -140,7 +139,6 @@ export default function TimelineScreen() {
         items.filter((i) => i.id !== editing.id),
       );
     } finally {
-      setConfirmDelete(false);
       setEditing(null);
       setBusy(false);
     }
@@ -168,7 +166,10 @@ export default function TimelineScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader backLabel="Home" title="My Timeline 📍">
+      <ScreenHeader
+        backLabel="Home"
+        title="My Timeline 📍"
+        subtitle="Wishlist & panggilan hidupmu">
         {/* Navigasi tahun + umur */}
         <View style={styles.yearRow}>
           <Pressable onPress={() => setYear((y) => y - 1)} hitSlop={10}>
@@ -286,7 +287,7 @@ export default function TimelineScreen() {
         onClose={() => setEditing(null)}>
         <FormInput
           style={styles.formGap}
-          placeholder="Wishlist — mis. Have a Car 🚗"
+          placeholder="Wishlist"
           value={fTitle}
           onChangeText={setFTitle}
           editable={!busy}
@@ -330,12 +331,14 @@ export default function TimelineScreen() {
             {formError}
           </VixText>
         )}
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
-          <Pressable onPress={() => setConfirmDelete(true)} disabled={busy}>
-            <VixText heading="bold" additionalStyle={styles.deleteText}>
-              Hapus wishlist ini
-            </VixText>
-          </Pressable>
+          <InlineDelete
+            key={editing.id}
+            label="Hapus wishlist ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         )}
         <DualButtons
           confirmLabel="Simpan"
@@ -345,15 +348,6 @@ export default function TimelineScreen() {
         />
       </SheetModal>
 
-      {/* Konfirmasi hapus */}
-      <ConfirmDialog
-        visible={confirmDelete}
-        title="Hapus wishlist?"
-        detail="Item ini akan dihapus permanen."
-        busy={busy}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={handleDelete}
-      />
     </SafeAreaView>
   );
 }
@@ -450,5 +444,4 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 4 },
 });

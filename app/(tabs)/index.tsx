@@ -51,7 +51,9 @@ const FEATURES: {
     | 'chart.line.uptrend.xyaxis'
     | 'car.fill'
     | 'target'
-    | 'book.closed.fill';
+    | 'book.closed.fill'
+    | 'briefcase.fill'
+    | 'person.3.fill';
   route: Href;
   bg: string;
   fg: string;
@@ -60,10 +62,12 @@ const FEATURES: {
   { key: 'spiritual', label: 'Spiritual', icon: 'book.closed.fill', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
   { key: 'health', label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.FINANCE_EXPENSE, fg: Color.DANGER },
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
-  { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
-  { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
+  { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.MAIN_DARK },
+  { key: 'trading', label: 'Trading', icon: 'chart.line.uptrend.xyaxis', route: '/trading', bg: Color.PASTEL_GRAY, fg: Color.TEXT_LABEL },
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
-  { key: 'trading', label: 'Trading', icon: 'chart.line.uptrend.xyaxis', route: '/trading', bg: Color.FINANCE_INCOME, fg: Color.MAIN_DARK },
+  { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
+  { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
+  { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
 ];
 
 export default function HomeScreen() {
@@ -169,9 +173,15 @@ export default function HomeScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.welcomeCard}>
-          <VixText heading="paragraph" additionalStyle={styles.welcomeSmall}>
-            Selamat datang,
-          </VixText>
+          <View style={styles.welcomeTop}>
+            <VixText heading="paragraph" additionalStyle={styles.welcomeSmall}>
+              Selamat datang,
+            </VixText>
+            {/* Tanggal hari ini di ujung kanan atas card */}
+            <VixText heading="label" additionalStyle={styles.welcomeDate}>
+              📆 {formatDate(new Date())}
+            </VixText>
+          </View>
           <VixText heading="subheader" additionalStyle={styles.welcomeName}>
             {OWNER_NAME.toUpperCase()}
           </VixText>
@@ -208,9 +218,6 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Fitur
-        </VixText>
         <View style={styles.grid}>
           {FEATURES.map((feature) => {
             const badge = badges[feature.key] ?? 0;
@@ -283,7 +290,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   streakPillText: { color: Color.ACCENT_DARK },
+  welcomeTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+  },
   welcomeSmall: { color: Color.TEXT_ON_DARK_MUTED },
+  welcomeDate: { color: Color.TEXT_ON_DARK_MUTED },
   welcomeName: {
     color: Color.TEXT_REVERSE,
     letterSpacing: 0.5,
@@ -300,7 +314,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   timelineText: { color: Color.ACCENT_DARK },
-  sectionTitle: { marginBottom: 14 },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

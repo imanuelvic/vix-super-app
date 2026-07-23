@@ -4,10 +4,10 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -46,7 +46,6 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
   const [editValue, setEditValue] = useState('');
   const [editNote, setEditNote] = useState('');
   const [editDate, setEditDate] = useState(new Date());
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // Pemeriksaan terakhir per jenis (list sudah urut tanggal desc).
@@ -114,7 +113,6 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
     try {
       await deleteCheckup(user.uid, editing.id);
     } finally {
-      setConfirmDelete(false);
       setEditing(null);
       setBusy(false);
     }
@@ -250,11 +248,13 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           {/* key = id supaya state picker internal ikut reset tiap ganti item */}
           <DateField key={editing?.id} value={editDate} onChange={setEditDate} />
         </View>
-        <Pressable onPress={() => setConfirmDelete(true)} disabled={busy}>
-          <VixText heading="bold" additionalStyle={styles.deleteText}>
-            Hapus pemeriksaan ini
-          </VixText>
-        </Pressable>
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
+        <InlineDelete
+          key={editing?.id}
+          label="Hapus pemeriksaan ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}
@@ -263,15 +263,6 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         />
       </SheetModal>
 
-      {/* Konfirmasi hapus */}
-      <ConfirmDialog
-        visible={confirmDelete}
-        title="Hapus pemeriksaan?"
-        detail="Catatan ini akan dihapus permanen."
-        busy={busy}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={handleDelete}
-      />
     </View>
   );
 }
@@ -381,5 +372,4 @@ const styles = StyleSheet.create({
   rowLeft: { flex: 1, gap: 2 },
   rowTitle: { color: Color.TEXT_TITLE },
   rowValue: { color: Color.MAIN_DARK },
-  deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 4 },
 });
