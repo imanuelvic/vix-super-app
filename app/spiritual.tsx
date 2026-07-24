@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -84,7 +85,8 @@ export default function SpiritualScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Tanggal + streak (emoji saja, ala Health) */}
+          {/* Sapaan + (tanggal & streak) */}
+          <Greeting heading="title" style={styles.greeting} />
           <View style={styles.topRow}>
             <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
             <View style={styles.streakPill}>
@@ -149,6 +151,7 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  greeting: { marginBottom: 4 },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

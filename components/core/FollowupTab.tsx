@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -233,6 +234,7 @@ export function FollowupTab({
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      <Greeting heading="title" style={styles.greeting} />
       <VixText heading="label" additionalStyle={styles.dateLine}>
         📆 {formatFullDate(new Date())}
       </VixText>
@@ -327,6 +329,7 @@ export function FollowupTab({
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  greeting: { marginBottom: 4 },
   dateLine: { marginBottom: 10 },
   error: { color: Color.DANGER, marginBottom: 8 },
   birthdayCard: {

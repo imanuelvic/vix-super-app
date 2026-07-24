@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -247,9 +248,8 @@ export default function HomeScreen() {
           entering={FadeInDown.duration(350)}
           style={styles.welcomeCard}>
           <View style={styles.welcomeTop}>
-            <VixText heading="paragraph" additionalStyle={styles.welcomeSmall}>
-              Selamat datang,
-            </VixText>
+            {/* Sapaan sesuai jam menggantikan "Selamat datang," */}
+            <Greeting heading="paragraph" color={Color.TEXT_ON_DARK_MUTED} />
             {/* Tanggal hari ini di ujung kanan atas card */}
             <VixText heading="label" additionalStyle={styles.welcomeDate}>
               📆 {formatShortDayDate(new Date())}
@@ -485,8 +485,9 @@ const styles = StyleSheet.create({
   },
   taskHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  taskCat: { fontSize: 15, lineHeight: 20 },
-  taskText: { flex: 1, color: Color.TEXT_TITLE },
+  taskCat: { fontSize: 13, lineHeight: 18 },
+  // Font sengaja lebih kecil dari label (kartu ringkas sekilas-lihat).
+  taskText: { flex: 1, color: Color.TEXT_TITLE, fontSize: 12, lineHeight: 16 },
   taskTextDone: {
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
@@ -507,7 +508,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  welcomeSmall: { color: Color.TEXT_ON_DARK_MUTED },
   welcomeDate: { color: Color.TEXT_ON_DARK_MUTED },
   welcomeName: {
     color: Color.TEXT_REVERSE,

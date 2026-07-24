@@ -108,9 +108,9 @@ export function debtDaysUntil(debt: Debt, today: Date): number {
   return Math.round(diff / 86_400_000);
 }
 
-/** Reminder Home: belum lunas & jatuh tempo ≤ 7 hari lagi (termasuk lewat). */
+/** Reminder Home: belum lunas & jatuh tempo ≤ 3 hari lagi (termasuk lewat). */
 export function debtReminderWindow(debt: Debt, today: Date): boolean {
-  return !debt.done && debtDaysUntil(debt, today) <= 7;
+  return !debt.done && debtDaysUntil(debt, today) <= 3;
 }
 
 /** Majukan tanggal satu periode (untuk jatuh tempo cicilan berikutnya). */

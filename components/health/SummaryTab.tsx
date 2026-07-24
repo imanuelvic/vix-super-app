@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
+import { Greeting } from '@/components/common/Greeting';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -32,15 +33,6 @@ import {
   requestHealthAccess,
   type DailyHealthSummary,
 } from '@/lib/healthkit';
-
-/** Sapaan sesuai jam perangkat. */
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 11) return 'Selamat pagi ☀️';
-  if (h < 15) return 'Selamat siang 🌤️';
-  if (h < 19) return 'Selamat sore 🌇';
-  return 'Selamat malam 🌙';
-}
 
 // Tab Summary: ringkasan harian dari Apple Health + data tubuh manual (BMI).
 export function SummaryTab({ profile }: { profile: HealthProfile }) {
@@ -142,9 +134,7 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
     <ScrollView contentContainerStyle={styles.content}>
       {/* Sapaan personal + tanggal */}
       <View style={styles.greetingBlock}>
-        <VixText heading="subheader" additionalStyle={styles.greetingText}>
-          {greeting()}
-        </VixText>
+        <Greeting heading="subheader" color={Color.MAIN_DARK} />
         <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
       </View>
 
@@ -392,7 +382,6 @@ function BodyRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   greetingBlock: { marginBottom: 12, gap: 2 },
-  greetingText: { color: Color.MAIN_DARK },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

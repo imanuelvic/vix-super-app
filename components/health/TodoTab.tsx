@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { Greeting } from '@/components/common/Greeting';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -198,7 +199,8 @@ export function TodoTab({
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Tanggal + streak */}
+        {/* Sapaan + (tanggal & streak) */}
+        <Greeting heading="title" style={styles.greeting} />
         <View style={styles.topRow}>
           <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
           <View style={styles.streakChip}>
@@ -445,6 +447,7 @@ export function TodoTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  greeting: { marginBottom: 4 },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
