@@ -2,9 +2,10 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { formatDate, formatFullDate, mergeDate } from '@/lib/format';
@@ -34,7 +35,7 @@ export function DateField({
 
   return (
     <>
-      <Pressable style={styles.field} onPress={() => setOpen((o) => !o)}>
+      <PressableScale style={styles.field} onPress={() => setOpen((o) => !o)}>
         <VixText heading="paragraph" additionalStyle={styles.text}>
           📅 {withDay ? formatFullDate(value) : formatDate(value)}
         </VixText>
@@ -43,7 +44,7 @@ export function DateField({
           size={18}
           color={Color.TEXT_LABEL}
         />
-      </Pressable>
+      </PressableScale>
       {open && (
         <DateTimePicker
           value={value}

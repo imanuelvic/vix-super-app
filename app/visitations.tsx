@@ -1,12 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -16,6 +10,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -166,7 +161,7 @@ export default function VisitationsScreen() {
                   : '⚠️ Terlewat';
             return (
               // Tap → edit status/tanggal/catatan atau hapus permanen.
-              <Pressable
+              <PressableScale
                 key={v.id}
                 style={styles.card}
                 onPress={() => openEdit(v)}>
@@ -192,7 +187,7 @@ export default function VisitationsScreen() {
                 {v.note ? (
                   <VixText heading="label">📝 {v.note}</VixText>
                 ) : null}
-              </Pressable>
+              </PressableScale>
             );
           })}
         </ScrollView>
@@ -235,12 +230,12 @@ export default function VisitationsScreen() {
 
         {/* Toggle sudah selesai / belum — hanya kalau tanggalnya sudah tiba */}
         {!futureDate && (
-          <Pressable style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
+          <PressableScale style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
             <CheckCircle checked={fDone} />
             <VixText heading="paragraph" additionalStyle={styles.doneText}>
               Sudah divisit ✅
             </VixText>
-          </Pressable>
+          </PressableScale>
         )}
 
         {formError && (

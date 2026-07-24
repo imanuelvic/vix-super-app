@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -160,7 +161,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
           const meta = STATUS_META[item.status];
           return (
             // Tekan untuk edit status/prioritas.
-            <Pressable
+            <PressableScale
               key={item.id}
               style={[styles.card, item.status === 'done' && styles.cardDone]}
               onPress={() => openEdit(item)}>
@@ -185,7 +186,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
                   {item.note}
                 </VixText>
               ) : null}
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>

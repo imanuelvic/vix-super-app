@@ -4,7 +4,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -16,6 +15,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
@@ -184,7 +184,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
 
         {/* Ringkasan bulan — bisa diminimize seperti dropdown */}
         <View style={styles.summaryCard}>
-          <Pressable
+          <PressableScale
             style={styles.summaryHeader}
             onPress={() => {
               const nextOpen = !summaryOpen;
@@ -205,7 +205,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
                 color={Color.TEXT_ON_DARK_MUTED}
               />
             </View>
-          </Pressable>
+          </PressableScale>
 
           {summaryOpen ? (
             <View>
@@ -242,7 +242,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
               <VixText heading="bold" additionalStyle={styles.summaryValue}>
                 Sisa: {displayAmount(remaining)}
               </VixText>
-              <Pressable
+              <PressableScale
                 onPress={() => setAmountsHidden((hidden) => !hidden)}
                 hitSlop={10}>
                 <IconSymbol
@@ -250,7 +250,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
                   size={20}
                   color={Color.TEXT_PLACEHOLDER}
                 />
-              </Pressable>
+              </PressableScale>
             </View>
           )}
         </View>
@@ -265,7 +265,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
         />
 
         {/* Pilih kategori — buka sheet, tidak perlu scroll ke samping */}
-        <Pressable
+        <PressableScale
           style={styles.categoryField}
           onPress={() => setPickerOpen(true)}>
           <VixText
@@ -280,7 +280,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
               : 'Pilih kategori'}
           </VixText>
           <IconSymbol name="chevron.down" size={18} color={Color.TEXT_LABEL} />
-        </Pressable>
+        </PressableScale>
 
         {/* Catatan dulu, lalu nominal — urutan sama seperti Saku */}
         <FormInput
@@ -300,7 +300,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
             returnKeyType="done"
             editable={!saving}
           />
-          <Pressable
+          <PressableScale
             style={[styles.addButton, saving && styles.disabled]}
             onPress={handleAdd}
             disabled={saving}>
@@ -309,7 +309,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
             ) : (
               <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
             )}
-          </Pressable>
+          </PressableScale>
         </View>
 
         {error && (
@@ -354,7 +354,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
             : '';
           return (
             // Tekan baris untuk mengedit. Border mengikuti warna jenis.
-            <Pressable
+            <PressableScale
               style={[styles.row, { borderColor: FINANCE_TYPE_COLOR[item.type] }]}
               onPress={() => openEdit(item)}>
               <View style={styles.rowIcon}>
@@ -382,15 +382,15 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
                     ? 'Rp ••••••'
                     : `${isIncome ? '+' : '-'}${formatRupiah(item.amount)}`}
                 </VixText>
-                <Pressable onPress={() => setConfirmDelete(item)} hitSlop={10}>
+                <PressableScale onPress={() => setConfirmDelete(item)} hitSlop={10}>
                   <IconSymbol
                     name="xmark"
                     size={16}
                     color={Color.TEXT_PLACEHOLDER}
                   />
-                </Pressable>
+                </PressableScale>
               </View>
-            </Pressable>
+            </PressableScale>
           );
         }}
       />

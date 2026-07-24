@@ -1,17 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { useAuth } from '@/contexts/auth';
@@ -184,7 +179,7 @@ export function BudgetingTab({
               Total Budget {FINANCE_TYPE_LABEL[type]}
             </VixText>
             {/* 📋 = samakan dengan bulan lalu; abu-abu = sudah pernah */}
-            <Pressable
+            <PressableScale
               style={[styles.copyChip, copied && styles.copyChipUsed]}
               onPress={handleCopyPress}
               disabled={copying}
@@ -196,7 +191,7 @@ export function BudgetingTab({
                   {copied ? '✓ 📋' : '📋'}
                 </VixText>
               )}
-            </Pressable>
+            </PressableScale>
           </View>
           <VixText heading="subheader" additionalStyle={styles.summaryValue}>
             {formatRupiah(totalRealized)}{' '}
@@ -218,7 +213,7 @@ export function BudgetingTab({
           const over = row.allocated > 0 && row.realized > row.allocated;
           return (
             // Tekan kategori untuk set/ubah budget-nya.
-            <Pressable
+            <PressableScale
               key={row.key}
               style={styles.row}
               onPress={() => openEdit(row.category)}>
@@ -253,7 +248,7 @@ export function BudgetingTab({
                   Budget: {formatRupiah(row.allocated)}
                 </VixText>
               </View>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>

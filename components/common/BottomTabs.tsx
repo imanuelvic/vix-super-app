@@ -1,7 +1,8 @@
 import type { ComponentProps } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
@@ -29,7 +30,7 @@ export function BottomTabs<T extends string>({
       {tabs.map((t) => {
         const active = value === t.key;
         return (
-          <Pressable
+          <PressableScale
             key={t.key}
             style={styles.tabButton}
             onPress={() => onChange(t.key)}>
@@ -43,7 +44,7 @@ export function BottomTabs<T extends string>({
               additionalStyle={active ? styles.active : undefined}>
               {t.label}
             </VixText>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>

@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -52,7 +53,7 @@ export default function FundsScreen() {
         {FUNDS.map((fund) => {
           const balance = balances[fund.key] ?? 0;
           return (
-            <Pressable
+            <PressableScale
               key={fund.key}
               style={styles.row}
               onPress={() =>
@@ -79,7 +80,7 @@ export default function FundsScreen() {
                 size={20}
                 color={Color.TEXT_LABEL}
               />
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>

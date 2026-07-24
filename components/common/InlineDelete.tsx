@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
 // Konfirmasi hapus DI DALAM modal yang sama — iOS tidak mendukung modal
@@ -21,11 +22,11 @@ export function InlineDelete({
 
   if (!confirming) {
     return (
-      <Pressable onPress={() => setConfirming(true)} disabled={busy}>
+      <PressableScale onPress={() => setConfirming(true)} disabled={busy}>
         <VixText heading="bold" additionalStyle={styles.link}>
           {label}
         </VixText>
-      </Pressable>
+      </PressableScale>
     );
   }
 
@@ -35,13 +36,13 @@ export function InlineDelete({
         Yakin mau menghapus? Tindakan ini permanen.
       </VixText>
       <View style={styles.row}>
-        <Pressable
+        <PressableScale
           style={styles.cancel}
           onPress={() => setConfirming(false)}
           disabled={busy}>
           <VixText heading="bold">Batal</VixText>
-        </Pressable>
-        <Pressable style={styles.delete} onPress={onDelete} disabled={busy}>
+        </PressableScale>
+        <PressableScale style={styles.delete} onPress={onDelete} disabled={busy}>
           {busy ? (
             <ActivityIndicator color={Color.TEXT_REVERSE} />
           ) : (
@@ -49,7 +50,7 @@ export function InlineDelete({
               Ya, Hapus
             </VixText>
           )}
-        </Pressable>
+        </PressableScale>
       </View>
     </View>
   );

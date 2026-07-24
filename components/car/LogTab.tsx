@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
@@ -7,6 +7,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -191,7 +192,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
               : null;
           return (
             // Tekan untuk edit/hapus.
-            <Pressable
+            <PressableScale
               key={item.id}
               style={styles.row}
               onPress={() => openEdit(item)}>
@@ -214,7 +215,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
               <VixText heading="bold" additionalStyle={styles.rowCost}>
                 {formatRupiah(item.cost)}
               </VixText>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>

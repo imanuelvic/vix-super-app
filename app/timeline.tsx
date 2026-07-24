@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +9,7 @@ import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -164,17 +159,17 @@ export default function TimelineScreen() {
     const meta = TIMELINE_CATEGORY_META[item.category];
     return (
       <View key={item.id} style={styles.itemRow}>
-        <Pressable style={styles.itemMain} onPress={() => handleToggle(item)}>
+        <PressableScale style={styles.itemMain} onPress={() => handleToggle(item)}>
           <CheckCircle checked={item.done} size={22} />
           <VixText
             heading="paragraph"
             additionalStyle={[styles.itemText, item.done && styles.itemTextDone]}>
             {meta.icon} {item.title}
           </VixText>
-        </Pressable>
-        <Pressable onPress={() => openEdit(item)} hitSlop={10}>
+        </PressableScale>
+        <PressableScale onPress={() => openEdit(item)} hitSlop={10}>
           <IconSymbol name="pencil" size={16} color={Color.TEXT_PLACEHOLDER} />
-        </Pressable>
+        </PressableScale>
       </View>
     );
   }
@@ -201,9 +196,9 @@ export default function TimelineScreen() {
               </VixText>
             )}
           </View>
-          <Pressable onPress={() => openAdd(m)} hitSlop={10}>
+          <PressableScale onPress={() => openAdd(m)} hitSlop={10}>
             <IconSymbol name="plus" size={18} color={Color.MAIN} />
-          </Pressable>
+          </PressableScale>
         </View>
         {monthItems.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.emptyMonth}>
@@ -224,7 +219,7 @@ export default function TimelineScreen() {
         subtitle="Wishlist & panggilan hidupku">
         {/* Navigasi tahun + umur */}
         <View style={styles.yearRow}>
-          <Pressable
+          <PressableScale
             onPress={() => setYear((y) => Math.max(MIN_YEAR, y - 1))}
             hitSlop={10}
             disabled={atMinYear}>
@@ -233,13 +228,16 @@ export default function TimelineScreen() {
               size={20}
               color={atMinYear ? Color.BORDER : Color.MAIN}
             />
-          </Pressable>
-          <VixText heading="bold" additionalStyle={styles.yearText}>
-            {year}
-          </VixText>
-          <Pressable onPress={() => setYear((y) => y + 1)} hitSlop={10}>
+          </PressableScale>
+          {/* Tekan tahun → balik ke tahun berjalan */}
+          <PressableScale onPress={() => setYear(now.getFullYear())} hitSlop={10}>
+            <VixText heading="bold" additionalStyle={styles.yearText}>
+              {year}
+            </VixText>
+          </PressableScale>
+          <PressableScale onPress={() => setYear((y) => y + 1)} hitSlop={10}>
             <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
-          </Pressable>
+          </PressableScale>
           <View style={styles.ageChip}>
             <VixText heading="bold" additionalStyle={styles.ageText}>
               🎂 Umur {age}
@@ -309,7 +307,7 @@ export default function TimelineScreen() {
           {hasPast && (
             <View style={styles.monthCard}>
               {/* Tekan header untuk buka/tutup semua bulan lewat sekaligus */}
-              <Pressable
+              <PressableScale
                 style={styles.monthHeader}
                 onPress={() => setPastOpen((o) => !o)}>
                 <View style={styles.monthHeaderLeft}>
@@ -333,7 +331,7 @@ export default function TimelineScreen() {
                     color={Color.TEXT_LABEL}
                   />
                 </View>
-              </Pressable>
+              </PressableScale>
               {pastOpen && (
                 <Animated.View
                   entering={FadeIn.duration(150)}

@@ -5,7 +5,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -222,7 +222,7 @@ export default function FundScreen() {
               ['credit', '⬆️ Keluar', Color.FINANCE_EXPENSE, Color.FINANCE_EXPENSE_DARK],
             ] as const
           ).map(([dir, label, bg, border]) => (
-            <Pressable
+            <PressableScale
               key={dir}
               style={[
                 styles.directionChip,
@@ -235,7 +235,7 @@ export default function FundScreen() {
               <VixText heading="label" additionalStyle={styles.directionText}>
                 {label}
               </VixText>
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
 
@@ -264,7 +264,7 @@ export default function FundScreen() {
             returnKeyType="done"
             editable={!saving}
           />
-          <Pressable
+          <PressableScale
             style={[styles.addButton, saving && styles.disabled]}
             onPress={handleAdd}
             disabled={saving}>
@@ -273,7 +273,7 @@ export default function FundScreen() {
             ) : (
               <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
             )}
-          </Pressable>
+          </PressableScale>
         </View>
 
         {error && (
@@ -322,7 +322,7 @@ export default function FundScreen() {
                 : '';
               return (
                 // Tekan baris untuk mengedit. Border hijau = masuk, merah = keluar.
-                <Pressable
+                <PressableScale
                   style={[
                     styles.row,
                     {
@@ -350,15 +350,15 @@ export default function FundScreen() {
                       {isDebit ? '+' : '-'}
                       {formatRupiah(item.amount)}
                     </VixText>
-                    <Pressable onPress={() => setConfirmDelete(item)} hitSlop={10}>
+                    <PressableScale onPress={() => setConfirmDelete(item)} hitSlop={10}>
                       <IconSymbol
                         name="xmark"
                         size={16}
                         color={Color.TEXT_PLACEHOLDER}
                       />
-                    </Pressable>
+                    </PressableScale>
                   </View>
-                </Pressable>
+                </PressableScale>
               );
             }}
           />

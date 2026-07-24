@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -7,6 +7,7 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -247,20 +248,20 @@ export function TodoTab({
               </VixText>
             </VixText>
             <View style={styles.waterControls}>
-              <Pressable
+              <PressableScale
                 style={styles.waterMinus}
                 onPress={() => handleWater(-1)}
                 hitSlop={6}>
                 <VixText heading="bold" additionalStyle={styles.waterMinusText}>
                   −
                 </VixText>
-              </Pressable>
-              <Pressable
+              </PressableScale>
+              <PressableScale
                 style={styles.waterPlus}
                 onPress={() => handleWater(1)}
                 hitSlop={6}>
                 <IconSymbol name="plus" size={20} color={Color.TEXT_REVERSE} />
-              </Pressable>
+              </PressableScale>
             </View>
           </View>
           <View style={styles.waterDots}>
@@ -287,12 +288,12 @@ export function TodoTab({
             {MOODS.map((m) => {
               const active = day.mood === m;
               return (
-                <Pressable
+                <PressableScale
                   key={m}
                   style={[styles.moodButton, active && styles.moodActive]}
                   onPress={() => handleMood(m)}>
                   <VixText additionalStyle={styles.moodEmoji}>{m}</VixText>
-                </Pressable>
+                </PressableScale>
               );
             })}
           </View>
@@ -302,11 +303,11 @@ export function TodoTab({
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <VixText heading="title">🎯 Target Berat</VixText>
-            <Pressable onPress={openTarget} hitSlop={10}>
+            <PressableScale onPress={openTarget} hitSlop={10}>
               <VixText heading="bold" additionalStyle={styles.editText}>
                 {target ? 'Ubah' : 'Pasang'}
               </VixText>
-            </Pressable>
+            </PressableScale>
           </View>
           {target ? (
             <>
@@ -349,9 +350,9 @@ export function TodoTab({
             onSubmitEditing={handleAdd}
             returnKeyType="done"
           />
-          <Pressable style={styles.addButton} onPress={handleAdd}>
+          <PressableScale style={styles.addButton} onPress={handleAdd}>
             <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
-          </Pressable>
+          </PressableScale>
         </View>
 
         {error && (
@@ -364,10 +365,14 @@ export function TodoTab({
           const checked = !!day.done[habit.id];
           return (
             <View key={habit.id} style={[styles.row, checked && styles.rowDone]}>
-              <Pressable
-                style={styles.rowMain}
-                onPress={() => handleToggle(habit)}>
+              {/* Hanya lingkaran ini yang menandai selesai */}
+              <PressableScale onPress={() => handleToggle(habit)} hitSlop={8}>
                 <CheckCircle checked={checked} />
+              </PressableScale>
+              {/* Tekan teksnya → konfirmasi hapus kebiasaan */}
+              <PressableScale
+                style={styles.rowMain}
+                onPress={() => setRemoving(habit)}>
                 <VixText
                   heading="paragraph"
                   additionalStyle={[
@@ -376,14 +381,7 @@ export function TodoTab({
                   ]}>
                   {habit.label}
                 </VixText>
-              </Pressable>
-              <Pressable onPress={() => setRemoving(habit)} hitSlop={10}>
-                <IconSymbol
-                  name="xmark"
-                  size={18}
-                  color={Color.TEXT_PLACEHOLDER}
-                />
-              </Pressable>
+              </PressableScale>
             </View>
           );
         })}
@@ -413,11 +411,11 @@ export function TodoTab({
           </VixText>
         )}
         {target && (
-          <Pressable onPress={handleClearTarget} disabled={savingTarget}>
+          <PressableScale onPress={handleClearTarget} disabled={savingTarget}>
             <VixText heading="bold" additionalStyle={styles.deleteText}>
               Hapus target
             </VixText>
-          </Pressable>
+          </PressableScale>
         )}
         <DualButtons
           confirmLabel="Simpan"
@@ -571,7 +569,7 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
   },
-  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  rowMain: { flex: 1 },
   habitText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   habitTextDone: {
     color: Color.TEXT_PLACEHOLDER,

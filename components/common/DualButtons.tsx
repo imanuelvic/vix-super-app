@@ -1,6 +1,7 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
 // Sepasang tombol modal: Batal + aksi utama (Simpan/Hapus/dll).
@@ -19,10 +20,10 @@ export function DualButtons({
 }) {
   return (
     <View style={styles.row}>
-      <Pressable style={styles.cancel} onPress={onCancel} disabled={busy}>
+      <PressableScale style={styles.cancel} onPress={onCancel} disabled={busy}>
         <VixText heading="bold">Batal</VixText>
-      </Pressable>
-      <Pressable
+      </PressableScale>
+      <PressableScale
         style={[styles.confirm, danger && styles.danger, busy && styles.busy]}
         onPress={onConfirm}
         disabled={busy}>
@@ -33,7 +34,7 @@ export function DualButtons({
             {confirmLabel}
           </VixText>
         )}
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }

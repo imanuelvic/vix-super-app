@@ -1,15 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -65,7 +60,7 @@ export default function ReviveHistoryScreen() {
             </VixText>
           )}
           {entries.map((e) => (
-            <Pressable
+            <PressableScale
               key={e.id}
               style={styles.card}
               onPress={() =>
@@ -81,7 +76,7 @@ export default function ReviveHistoryScreen() {
               <VixText heading="paragraph" numberOfLines={3}>
                 {e.rhema}
               </VixText>
-            </Pressable>
+            </PressableScale>
           ))}
         </ScrollView>
       )}

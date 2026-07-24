@@ -1,11 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -14,6 +8,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -165,7 +160,7 @@ export default function DiseasesScreen() {
             const ongoing = !d.recover;
             return (
               // Tekan untuk edit / tandai sembuh / hapus.
-              <Pressable key={d.id} style={styles.card} onPress={() => openEdit(d)}>
+              <PressableScale key={d.id} style={styles.card} onPress={() => openEdit(d)}>
                 <View style={styles.cardTop}>
                   <VixText
                     heading="bold"
@@ -194,7 +189,7 @@ export default function DiseasesScreen() {
                     Obat: {d.treatment}
                   </VixText>
                 ) : null}
-              </Pressable>
+              </PressableScale>
             );
           })
         )}
@@ -234,14 +229,14 @@ export default function DiseasesScreen() {
         </View>
 
         {/* Toggle sudah sembuh + tanggal sembuh */}
-        <Pressable
+        <PressableScale
           style={styles.recoverRow}
           onPress={() => setFRecovered((r) => !r)}>
           <CheckCircle checked={fRecovered} />
           <VixText heading="paragraph" additionalStyle={styles.cardText}>
             Sudah sembuh
           </VixText>
-        </Pressable>
+        </PressableScale>
         {fRecovered && (
           <View style={styles.formGap}>
             <DateField value={fRecoverDate} onChange={setFRecoverDate} />

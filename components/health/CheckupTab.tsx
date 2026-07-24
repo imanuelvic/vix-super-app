@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
@@ -8,6 +8,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -123,7 +124,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Tombol menuju riwayat sakit & info kesehatan */}
         <View style={styles.navRow}>
-          <Pressable
+          <PressableScale
             style={styles.navButton}
             onPress={() => router.push('/diseases')}>
             <VixText heading="bold" additionalStyle={styles.navText}>
@@ -132,8 +133,8 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             <VixText heading="label" additionalStyle={styles.navText}>
               Riwayat sakit
             </VixText>
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             style={styles.navButton}
             onPress={() => router.push('/health-info')}>
             <VixText heading="bold" additionalStyle={styles.navText}>
@@ -142,7 +143,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             <VixText heading="label" additionalStyle={styles.navText}>
               QnA & tips sehat
             </VixText>
-          </Pressable>
+          </PressableScale>
         </View>
 
         {/* ===== Informasi penting: pengecekan terakhir per jenis ===== */}
@@ -206,7 +207,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           const meta = TYPE_META[c.type];
           return (
             // Tekan untuk edit/hapus lewat bottom sheet.
-            <Pressable key={c.id} style={styles.row} onPress={() => openEdit(c)}>
+            <PressableScale key={c.id} style={styles.row} onPress={() => openEdit(c)}>
               <View style={styles.rowLeft}>
                 <VixText heading="bold" additionalStyle={styles.rowTitle}>
                   {meta.icon} {meta.label}
@@ -219,7 +220,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
               <VixText heading="bold" additionalStyle={styles.rowValue}>
                 {c.value}
               </VixText>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>

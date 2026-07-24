@@ -29,7 +29,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import { formatDayMonth, MONTH_NAMES } from '@/lib/format';
+import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import {
   addRecurringTasks,
@@ -154,6 +154,12 @@ export default function TasksScreen() {
     setMonth(d.getMonth());
   }
 
+  // Tekan label bulan di tengah → langsung balik ke bulan berjalan.
+  function goNow() {
+    setYear(now.getFullYear());
+    setMonth(now.getMonth());
+  }
+
   const shown = tasks.filter((t) => t.category === category);
   const remaining = shown.filter((t) => !t.done).length;
   const activeMeta = TASK_CATEGORIES.find((c) => c.key === category)!;
@@ -221,11 +227,6 @@ export default function TasksScreen() {
       setEditing(null);
       setBusy(false);
     }
-  }
-
-  function dayIdToDate(dayId: string): Date {
-    const [y, m, d] = dayId.split('-').map(Number);
-    return new Date(y, m - 1, d);
   }
 
   function openRecur() {
@@ -297,12 +298,12 @@ export default function TasksScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <Pressable style={styles.backRow} onPress={() => router.back()} hitSlop={8}>
+      <PressableScale style={styles.backRow} onPress={() => router.back()} hitSlop={8}>
         <IconSymbol name="chevron.left" size={22} color={Color.MAIN} />
         <VixText heading="bold" additionalStyle={styles.backText}>
           Home
         </VixText>
-      </Pressable>
+      </PressableScale>
 
       <View style={styles.header}>
         <VixText heading="header" additionalStyle={styles.title}>
@@ -310,7 +311,7 @@ export default function TasksScreen() {
         </VixText>
         {/* Navigasi bulan — mentok di bulan berjalan */}
         <View style={styles.monthRow}>
-          <Pressable
+          <PressableScale
             onPress={() => shiftMonth(-1)}
             hitSlop={10}
             disabled={atMinMonth}>
@@ -319,13 +320,16 @@ export default function TasksScreen() {
               size={20}
               color={atMinMonth ? Color.BORDER : Color.MAIN}
             />
-          </Pressable>
-          <VixText heading="bold" additionalStyle={styles.monthText}>
-            {MONTH_NAMES[month]} {year}
-          </VixText>
-          <Pressable onPress={() => shiftMonth(1)} hitSlop={10}>
+          </PressableScale>
+          {/* Tekan label bulan → balik ke bulan berjalan */}
+          <PressableScale onPress={goNow} hitSlop={10}>
+            <VixText heading="bold" additionalStyle={styles.monthText}>
+              {MONTH_NAMES[month]} {year}
+            </VixText>
+          </PressableScale>
+          <PressableScale onPress={() => shiftMonth(1)} hitSlop={10}>
             <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
-          </Pressable>
+          </PressableScale>
           <VixText heading="label" additionalStyle={styles.remainingText}>
             {remaining} belum selesai
           </VixText>
@@ -396,20 +400,20 @@ export default function TasksScreen() {
                     {formatDayMonth(date)}
                     {isToday ? ' • HARI INI' : ''}
                   </VixText>
-                  <Pressable onPress={() => openAdd(date)} hitSlop={10}>
+                  <PressableScale onPress={() => openAdd(date)} hitSlop={10}>
                     <IconSymbol name="plus" size={18} color={Color.MAIN} />
-                  </Pressable>
+                  </PressableScale>
                 </View>
                 {dayTasks.map((item) => (
                   <View key={item.id} style={styles.taskRow}>
                     {/* Hanya lingkaran ini yang menandai selesai */}
-                    <Pressable
+                    <PressableScale
                       onPress={() => handleToggle(item)}
                       hitSlop={8}>
                       <CheckCircle checked={item.done} size={22} />
-                    </Pressable>
+                    </PressableScale>
                     {/* Tekan teksnya → edit / pindah hari / hapus */}
-                    <Pressable
+                    <PressableScale
                       style={styles.taskMain}
                       onPress={() => openEdit(item)}>
                       <VixText
@@ -420,7 +424,7 @@ export default function TasksScreen() {
                         ]}>
                         {item.title}
                       </VixText>
-                    </Pressable>
+                    </PressableScale>
                   </View>
                 ))}
               </View>
@@ -429,7 +433,8 @@ export default function TasksScreen() {
         </ScrollView>
       )}
 
-      {/* Backdrop transparan: tap di luar menutup speed-dial */}
+      {/* Backdrop transparan: tap di luar menutup speed-dial.
+          Sengaja Pressable biasa — area penutup tidak perlu animasi tekan. */}
       {fabOpen && (
         <Pressable
           style={styles.fabBackdrop}
@@ -448,12 +453,6 @@ export default function TasksScreen() {
           <>
             <FabAction
               order={3}
-              label="Beres semua hari ini"
-              icon="checkmark"
-              onPress={handleCompleteToday}
-            />
-            <FabAction
-              order={2}
               label="Cari task"
               icon="magnifyingglass"
               onPress={() => {
@@ -461,6 +460,12 @@ export default function TasksScreen() {
                 setQuery('');
                 setSheetView('search');
               }}
+            />
+            <FabAction
+              order={2}
+              label="Beres semua hari ini"
+              icon="checkmark"
+              onPress={handleCompleteToday}
             />
             <FabAction
               order={1}
@@ -513,7 +518,7 @@ export default function TasksScreen() {
               {results.map((t) => {
                 const meta = TASK_CATEGORIES.find((c) => c.key === t.category);
                 return (
-                  <Pressable
+                  <PressableScale
                     key={t.id}
                     style={styles.searchRow}
                     onPress={() => openTaskFromSearch(t)}>
@@ -528,7 +533,7 @@ export default function TasksScreen() {
                       {meta?.icon} {meta?.label} ·{' '}
                       {formatDayMonth(dayIdToDate(t.dayId))}
                     </VixText>
-                  </Pressable>
+                  </PressableScale>
                 );
               })}
               {query.trim() !== '' && results.length === 0 && (
@@ -542,11 +547,13 @@ export default function TasksScreen() {
 
         {sheetView === 'recur' && (
           <>
+            {/* Textarea, sama seperti modal tambah/edit task */}
             <FormInput
-              style={styles.formGap}
+              style={styles.taskInput}
               placeholder={`Task`}
               value={rTitle}
               onChangeText={setRTitle}
+              multiline
               editable={!rBusy}
             />
             <View style={styles.freqRow}>

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -104,20 +105,20 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
             {icon} {label}
           </VixText>
           <View style={styles.counterRow}>
-            <Pressable
+            <PressableScale
               style={styles.counterMinus}
               onPress={() => onDelta(-1)}
               hitSlop={6}>
               <VixText heading="bold" additionalStyle={styles.counterMinusText}>
                 −
               </VixText>
-            </Pressable>
-            <Pressable
+            </PressableScale>
+            <PressableScale
               style={styles.counterPlus}
               onPress={() => onDelta(1)}
               hitSlop={6}>
               <IconSymbol name="plus" size={18} color={Color.TEXT_REVERSE} />
-            </Pressable>
+            </PressableScale>
           </View>
         </View>
         <VixText heading="subheader" additionalStyle={styles.metricValue}>
@@ -152,15 +153,23 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
     <ScrollView contentContainerStyle={styles.content}>
       {/* Navigasi bulan */}
       <View style={styles.monthRow}>
-        <Pressable onPress={() => shiftMonth(-1)} hitSlop={10}>
+        <PressableScale onPress={() => shiftMonth(-1)} hitSlop={10}>
           <IconSymbol name="chevron.left" size={20} color={Color.MAIN} />
-        </Pressable>
-        <VixText heading="bold" additionalStyle={styles.monthText}>
-          {MONTH_NAMES[month]} {year}
-        </VixText>
-        <Pressable onPress={() => shiftMonth(1)} hitSlop={10}>
+        </PressableScale>
+        {/* Tekan label bulan → balik ke bulan berjalan */}
+        <PressableScale
+          onPress={() => {
+            setYear(now.getFullYear());
+            setMonth(now.getMonth());
+          }}
+          hitSlop={10}>
+          <VixText heading="bold" additionalStyle={styles.monthText}>
+            {MONTH_NAMES[month]} {year}
+          </VixText>
+        </PressableScale>
+        <PressableScale onPress={() => shiftMonth(1)} hitSlop={10}>
           <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
-        </Pressable>
+        </PressableScale>
         <VixText heading="label" additionalStyle={styles.roleText}>
           🛡️ Agent Allianz
         </VixText>

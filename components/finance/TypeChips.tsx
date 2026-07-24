@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import {
   FINANCE_TYPES,
@@ -22,7 +23,7 @@ export function TypeChips({
   return (
     <View style={styles.row}>
       {FINANCE_TYPES.map((t) => (
-        <Pressable
+        <PressableScale
           key={t}
           style={[
             styles.chip,
@@ -36,7 +37,7 @@ export function TypeChips({
           <VixText heading="label" additionalStyle={styles.text}>
             {FINANCE_TYPE_LABEL[t]}
           </VixText>
-        </Pressable>
+        </PressableScale>
       ))}
     </View>
   );

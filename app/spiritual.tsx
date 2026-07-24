@@ -1,16 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -111,7 +106,7 @@ export default function SpiritualScreen() {
 
           {/* Rhema hari ini — tampil PENUH kalau sudah diisi */}
           {todayEntry ? (
-            <Pressable
+            <PressableScale
               style={styles.todayCard}
               onPress={() =>
                 router.push({
@@ -135,7 +130,7 @@ export default function SpiritualScreen() {
                   🪞 {todayEntry.reflection}
                 </VixText>
               ) : null}
-            </Pressable>
+            </PressableScale>
           ) : (
             <PrimaryButton
               label="✍️ Tulis Revive Hari Ini"

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -152,13 +153,13 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
         <View style={styles.cardHeader}>
           <VixText heading="title">🍎 Apple Health</VixText>
           {hkStatus === 'ok' && (
-            <Pressable onPress={loadHk} hitSlop={10} disabled={hkBusy}>
+            <PressableScale onPress={loadHk} hitSlop={10} disabled={hkBusy}>
               <IconSymbol
                 name="arrow.triangle.2.circlepath"
                 size={20}
                 color={hkBusy ? Color.TEXT_PLACEHOLDER : Color.MAIN}
               />
-            </Pressable>
+            </PressableScale>
           )}
         </View>
 
@@ -186,14 +187,14 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
                 label="🔥 kkal Aktif"
               />
             </View>
-            <Pressable
+            <PressableScale
               style={[styles.connectButton, hkBusy && styles.busy]}
               onPress={handleConnect}
               disabled={hkBusy}>
               <VixText heading="bold" additionalStyle={styles.connectText}>
                 Hubungkan Apple Health
               </VixText>
-            </Pressable>
+            </PressableScale>
           </>
         )}
       </View>
@@ -202,11 +203,11 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <VixText heading="title">🧍 Data Tubuh</VixText>
-          <Pressable onPress={openEdit} hitSlop={10}>
+          <PressableScale onPress={openEdit} hitSlop={10}>
             <VixText heading="bold" additionalStyle={styles.editText}>
               Ubah
             </VixText>
-          </Pressable>
+          </PressableScale>
         </View>
 
         <BodyRow label="Umur" value={`${age} tahun`} />

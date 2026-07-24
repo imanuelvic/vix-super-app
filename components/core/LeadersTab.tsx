@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
@@ -7,6 +7,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -244,7 +245,7 @@ export function LeadersTab({
         )}
 
         {/* Dropdown CORE Leader (default tertutup) */}
-        <Pressable
+        <PressableScale
           style={styles.toggleHeader}
           onPress={() => setClOpen((o) => !o)}>
           <VixText heading="title">🫶 CORE Leader</VixText>
@@ -258,14 +259,14 @@ export function LeadersTab({
               color={Color.TEXT_LABEL}
             />
           </View>
-        </Pressable>
+        </PressableScale>
 
         {clOpen && leaders.map((l) => {
           const { daysUntil } = nextBirthday(l, today);
           const soon = daysUntil <= 30;
           return (
             // Tekan untuk edit data CL.
-            <Pressable key={l.id} style={styles.card} onPress={() => openEdit(l)}>
+            <PressableScale key={l.id} style={styles.card} onPress={() => openEdit(l)}>
               <View style={styles.cardLeft}>
                 <VixText additionalStyle={styles.heart}>{l.heart}</VixText>
                 <View style={styles.cardInfo}>
@@ -295,12 +296,12 @@ export function LeadersTab({
                   color={Color.TEXT_PLACEHOLDER}
                 />
               </View>
-            </Pressable>
+            </PressableScale>
           );
         })}
 
         {/* ===== Main Team (dropdown, default tertutup) ===== */}
-        <Pressable
+        <PressableScale
           style={styles.toggleHeader}
           onPress={() => setMtOpen((o) => !o)}>
           <VixText heading="title">👥 Main Team</VixText>
@@ -314,7 +315,7 @@ export function LeadersTab({
               color={Color.TEXT_LABEL}
             />
           </View>
-        </Pressable>
+        </PressableScale>
         {mtOpen && (
           <>
         {sortedMT.length === 0 && (
@@ -329,7 +330,7 @@ export function LeadersTab({
           const soon = daysUntil <= 30;
           return (
             // Tekan untuk edit data Main Team.
-            <Pressable
+            <PressableScale
               key={m.id}
               style={styles.card}
               onPress={() => openEditMT(m)}>
@@ -365,7 +366,7 @@ export function LeadersTab({
                   color={Color.TEXT_PLACEHOLDER}
                 />
               </View>
-            </Pressable>
+            </PressableScale>
           );
         })}
           </>
@@ -390,12 +391,12 @@ export function LeadersTab({
         </VixText>
         <View style={styles.heartWrap}>
           {HEARTS.map((h) => (
-            <Pressable
+            <PressableScale
               key={h}
               style={[styles.heartChip, fHeart === h && styles.heartActive]}
               onPress={() => setFHeart(h)}>
               <VixText additionalStyle={styles.heartOption}>{h}</VixText>
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
 

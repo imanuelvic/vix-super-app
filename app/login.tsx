@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
   TextInput,
   View,
@@ -11,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { isFirebaseConfigured } from '@/lib/firebase';
@@ -122,7 +122,7 @@ export default function LoginScreen() {
             </VixText>
           )}
 
-          <Pressable
+          <PressableScale
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleSubmit}
             disabled={loading}>
@@ -133,9 +133,9 @@ export default function LoginScreen() {
                 {isSignup ? 'Daftar' : 'Masuk'}
               </VixText>
             )}
-          </Pressable>
+          </PressableScale>
 
-          <Pressable
+          <PressableScale
             onPress={() => {
               setError(null);
               setMode(isSignup ? 'signin' : 'signup');
@@ -144,7 +144,7 @@ export default function LoginScreen() {
             <VixText heading="label" additionalStyle={styles.switchText}>
               {isSignup ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
             </VixText>
-          </Pressable>
+          </PressableScale>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -169,7 +170,7 @@ export function FollowupTab({
     // gaya "done" yang menang (tidak perlu diarahkan chat lagi).
     const canChat = !!phone && !done;
     return (
-      <Pressable
+      <PressableScale
         key={id}
         style={[styles.card, canChat && styles.cardChat, done && styles.cardDone]}
         onPress={
@@ -212,21 +213,21 @@ export function FollowupTab({
 
         {!done && (
           <View style={styles.buttonRow}>
-            <Pressable
+            <PressableScale
               style={styles.shuffleButton}
               onPress={() => shuffleTopic(id)}>
               <VixText heading="bold" additionalStyle={styles.shuffleText}>
                 🔀 Ganti topik
               </VixText>
-            </Pressable>
-            <Pressable style={styles.doneButton} onPress={onDone}>
+            </PressableScale>
+            <PressableScale style={styles.doneButton} onPress={onDone}>
               <VixText heading="bold" additionalStyle={styles.doneButtonText}>
                 ✅ Selesai
               </VixText>
-            </Pressable>
+            </PressableScale>
           </View>
         )}
-      </Pressable>
+      </PressableScale>
     );
   }
 
@@ -253,7 +254,7 @@ export function FollowupTab({
             kirim ucapan & doa 🥳
           </VixText>
           {b.phone && (
-            <Pressable
+            <PressableScale
               style={styles.waButton}
               onPress={() =>
                 openWhatsApp(
@@ -264,7 +265,7 @@ export function FollowupTab({
               <VixText heading="bold" additionalStyle={styles.waText}>
                 💬 Kirim Ucapan via WA
               </VixText>
-            </Pressable>
+            </PressableScale>
           )}
         </View>
       ))}

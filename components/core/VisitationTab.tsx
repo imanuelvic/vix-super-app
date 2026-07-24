@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -9,6 +9,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -143,7 +144,7 @@ export function VisitationTab({
           : '⚠️ Terlewat';
     return (
       // Tekan untuk edit / tandai selesai.
-      <Pressable
+      <PressableScale
         key={v.id}
         style={[styles.card, soon && styles.cardSoon]}
         onPress={() => openEdit(v)}>
@@ -169,7 +170,7 @@ export function VisitationTab({
         </View>
         <VixText heading="label">📆 {formatFullDate(v.date.toDate())}</VixText>
         {v.note ? <VixText heading="label">📝 {v.note}</VixText> : null}
-      </Pressable>
+      </PressableScale>
     );
   }
 
@@ -202,7 +203,7 @@ export function VisitationTab({
         )}
 
         {/* ===== Tips visitasi (dropdown, default tertutup) ===== */}
-        <Pressable
+        <PressableScale
           style={styles.tipsHeader}
           onPress={() => setTipsOpen((o) => !o)}>
           <VixText heading="title">💡 Tips Visitasi</VixText>
@@ -216,7 +217,7 @@ export function VisitationTab({
               color={Color.TEXT_LABEL}
             />
           </View>
-        </Pressable>
+        </PressableScale>
         {tipsOpen && (
           <View style={styles.tipsCard}>
             {VISIT_TIPS.map((tip) => (
@@ -269,12 +270,12 @@ export function VisitationTab({
 
         {/* Tandai selesai setelah visit — hanya kalau tanggalnya sudah tiba */}
         {!futureDate && (
-          <Pressable style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
+          <PressableScale style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
             <CheckCircle checked={fDone} />
             <VixText heading="paragraph" additionalStyle={styles.doneText}>
               Sudah divisit ✅
             </VixText>
-          </Pressable>
+          </PressableScale>
         )}
 
         {formError && (

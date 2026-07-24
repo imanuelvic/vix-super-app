@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -207,15 +202,23 @@ export default function WheelScreen() {
         subtitle="8 area hidupmu per quartal">
         {mode === 'overview' && (
           <View style={styles.quarterRow}>
-            <Pressable onPress={() => shift(-1)} hitSlop={10}>
+            <PressableScale onPress={() => shift(-1)} hitSlop={10}>
               <IconSymbol name="chevron.left" size={20} color={Color.MAIN} />
-            </Pressable>
-            <VixText heading="bold" additionalStyle={styles.quarterText}>
-              {quarterLabel(year, q)}
-            </VixText>
-            <Pressable onPress={() => shift(1)} hitSlop={10}>
+            </PressableScale>
+            {/* Tekan label quartal → balik ke quartal berjalan */}
+            <PressableScale
+              onPress={() => {
+                setYear(nowQ.year);
+                setQ(nowQ.q);
+              }}
+              hitSlop={10}>
+              <VixText heading="bold" additionalStyle={styles.quarterText}>
+                {quarterLabel(year, q)}
+              </VixText>
+            </PressableScale>
+            <PressableScale onPress={() => shift(1)} hitSlop={10}>
               <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
-            </Pressable>
+            </PressableScale>
           </View>
         )}
       </ScreenHeader>
@@ -258,7 +261,7 @@ export default function WheelScreen() {
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
               const active = draftScores[area.key] === n;
               return (
-                <Pressable
+                <PressableScale
                   key={n}
                   style={[styles.scoreChip, active && styles.scoreActive]}
                   onPress={() =>
@@ -269,7 +272,7 @@ export default function WheelScreen() {
                     additionalStyle={active ? styles.scoreTextActive : undefined}>
                     {n}
                   </VixText>
-                </Pressable>
+                </PressableScale>
               );
             })}
           </View>
@@ -292,12 +295,12 @@ export default function WheelScreen() {
           )}
 
           <View style={styles.navRow}>
-            <Pressable
+            <PressableScale
               style={styles.backButton}
               onPress={() => (idx > 0 ? setIdx(idx - 1) : setMode('overview'))}
               disabled={busy}>
               <VixText heading="bold">{idx > 0 ? 'Kembali' : 'Batal'}</VixText>
-            </Pressable>
+            </PressableScale>
             <PrimaryButton
               label={idx === WHEEL_AREAS.length - 1 ? 'Selesai ✅' : 'Lanjut'}
               busy={busy}
@@ -341,7 +344,7 @@ export default function WheelScreen() {
                   {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
                     const active = targets[key] === n;
                     return (
-                      <Pressable
+                      <PressableScale
                         key={n}
                         style={[styles.scoreChip, active && styles.scoreActive]}
                         onPress={() =>
@@ -354,7 +357,7 @@ export default function WheelScreen() {
                           }>
                           {n}
                         </VixText>
-                      </Pressable>
+                      </PressableScale>
                     );
                   })}
                 </View>
@@ -378,12 +381,12 @@ export default function WheelScreen() {
             </VixText>
           )}
           <View style={styles.navRow}>
-            <Pressable
+            <PressableScale
               style={styles.backButton}
               onPress={() => setMode('overview')}
               disabled={busy}>
               <VixText heading="bold">Batal</VixText>
-            </Pressable>
+            </PressableScale>
             <PrimaryButton
               label="Simpan Fokus"
               busy={busy}
@@ -435,11 +438,11 @@ export default function WheelScreen() {
               {/* Fokus quartal */}
               <View style={styles.sectionHeader}>
                 <VixText heading="title">🎯 Fokus Quartal Ini</VixText>
-                <Pressable onPress={startFocus} hitSlop={10}>
+                <PressableScale onPress={startFocus} hitSlop={10}>
                   <VixText heading="bold" additionalStyle={styles.editText}>
                     {data.focus.length > 0 ? 'Ubah' : 'Pilih'}
                   </VixText>
-                </Pressable>
+                </PressableScale>
               </View>
               {data.focus.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.emptyFocus}>
@@ -498,11 +501,11 @@ export default function WheelScreen() {
                 );
               })}
 
-              <Pressable onPress={startAssess} disabled={busy}>
+              <PressableScale onPress={startAssess} disabled={busy}>
                 <VixText heading="bold" additionalStyle={styles.retakeText}>
                   🔄 Ulangi Assessment
                 </VixText>
-              </Pressable>
+              </PressableScale>
             </>
           )}
         </ScrollView>

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -99,7 +100,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
               const last = status[part.key]?.last;
               return (
                 // Tap = tandai baru diganti/dicek.
-                <Pressable
+                <PressableScale
                   key={part.key}
                   style={[
                     styles.row,
@@ -134,7 +135,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
                       ? `Terakhir: ${formatDate(last.toDate())} · berikutnya ±${dueDate ? formatDate(dueDate) : '-'}`
                       : `Interval: tiap ${part.intervalMonths} bulan`}
                   </VixText>
-                </Pressable>
+                </PressableScale>
               );
             })}
           </View>

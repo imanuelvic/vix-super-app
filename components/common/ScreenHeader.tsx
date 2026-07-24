@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
@@ -24,7 +25,7 @@ export function ScreenHeader({
   const router = useRouter();
   return (
     <View>
-      <Pressable
+      <PressableScale
         style={styles.backRow}
         onPress={() => router.back()}
         hitSlop={8}>
@@ -32,7 +33,7 @@ export function ScreenHeader({
         <VixText heading="bold" additionalStyle={styles.backText}>
           {backLabel}
         </VixText>
-      </Pressable>
+      </PressableScale>
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.titleBox}>

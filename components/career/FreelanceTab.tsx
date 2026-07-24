@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -8,6 +8,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -165,7 +166,7 @@ export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
           const urgent = !p.done && days <= 3;
           return (
             // Tekan untuk edit / tandai selesai.
-            <Pressable
+            <PressableScale
               key={p.id}
               style={[styles.card, urgent && styles.cardUrgent]}
               onPress={() => openEdit(p)}>
@@ -203,7 +204,7 @@ export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
                 }>
                 {status}
               </VixText>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>
@@ -258,12 +259,12 @@ export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
             />
           </View>
           {/* Tandai selesai */}
-          <Pressable style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
+          <PressableScale style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
             <CheckCircle checked={fDone} />
             <VixText heading="paragraph" additionalStyle={styles.doneText}>
               Proyek selesai ✅
             </VixText>
-          </Pressable>
+          </PressableScale>
           {formError && (
             <VixText heading="label" additionalStyle={styles.error}>
               {formError}

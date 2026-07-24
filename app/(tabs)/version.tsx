@@ -1,16 +1,11 @@
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { formatFullDate } from '@/lib/format';
@@ -104,7 +99,7 @@ export default function VersionScreen() {
           />
         </View>
 
-        <Pressable
+        <PressableScale
           style={[styles.updateButton, busy && styles.updateButtonBusy]}
           onPress={handleCheckUpdate}
           disabled={busy}>
@@ -120,7 +115,7 @@ export default function VersionScreen() {
           <VixText heading="bold" additionalStyle={styles.updateButtonText}>
             Update Terbaru
           </VixText>
-        </Pressable>
+        </PressableScale>
 
         {message && (
           <VixText

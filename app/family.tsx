@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -16,6 +15,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -173,7 +173,7 @@ export default function FamilyScreen() {
     highlighted?: boolean;
   }) {
     return (
-      <Pressable
+      <PressableScale
         style={styles.avatarWrap}
         onPress={() => setSelectedId(m.id)}>
         <View
@@ -215,7 +215,7 @@ export default function FamilyScreen() {
         <VixText heading="label" additionalStyle={styles.avatarAge}>
           {m.deceased ? `✝ ${m.birthYear}` : `${currentAge(m, today)} th`}
         </VixText>
-      </Pressable>
+      </PressableScale>
     );
   }
 
@@ -300,13 +300,13 @@ export default function FamilyScreen() {
                 )}
 
                 {/* Edit orang yang sedang dipilih */}
-                <Pressable
+                <PressableScale
                   style={styles.editButton}
                   onPress={() => openEdit(selected)}>
                   <VixText heading="bold" additionalStyle={styles.editButtonText}>
                     ✏️ Edit {selected.name}
                   </VixText>
-                </Pressable>
+                </PressableScale>
               </View>
 
               {/* ===== Semua anggota ===== */}
@@ -337,7 +337,7 @@ export default function FamilyScreen() {
           style={styles.formScroll}
           keyboardShouldPersistTaps="handled">
           {/* Foto — dikompres sangat kecil tapi tetap jelas */}
-          <Pressable
+          <PressableScale
             style={styles.photoPicker}
             onPress={handlePickPhoto}
             disabled={photoBusy || busy}>
@@ -353,7 +353,7 @@ export default function FamilyScreen() {
                 📷{'\n'}Foto
               </VixText>
             )}
-          </Pressable>
+          </PressableScale>
 
           <FormInput
             style={styles.formGap}
@@ -376,14 +376,14 @@ export default function FamilyScreen() {
           </View>
 
           {/* Status meninggal ✝ */}
-          <Pressable
+          <PressableScale
             style={styles.deceasedRow}
             onPress={() => setFDeceased((d) => !d)}>
             <CheckCircle checked={fDeceased} />
             <VixText heading="paragraph" additionalStyle={styles.deceasedText}>
               Sudah meninggal ✝ (tampil hitam-putih di pohon)
             </VixText>
-          </Pressable>
+          </PressableScale>
 
           {/* Orang tua (maks 2) — anak & pasangan otomatis mengikuti */}
           <VixText heading="label" additionalStyle={styles.fieldLabel}>

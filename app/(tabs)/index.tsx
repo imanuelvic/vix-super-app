@@ -1,10 +1,11 @@
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CheckCircle } from '@/components/common/CheckCircle';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -37,7 +38,12 @@ import {
   type HabitDay,
 } from '@/lib/health';
 import { subscribeReviveStreak } from '@/lib/spiritual';
-import { subscribeTasks, type Task } from '@/lib/tasks';
+import {
+  setTaskDone,
+  subscribeTasks,
+  TASK_CATEGORIES,
+  type Task,
+} from '@/lib/tasks';
 
 // Nama sapaan di Home — ganti di sini kalau mau ubah.
 const OWNER_NAME = 'Imanuel Victory Rumayar';
@@ -137,6 +143,23 @@ export default function HomeScreen() {
       revive === undefined ? 0 : revive?.lastDayId === todayId ? 0 : 1,
   };
 
+  // Task hari ini — bisa dicentang langsung dari Home. Belum selesai di atas.
+  const catIcon = (key: string) =>
+    TASK_CATEGORIES.find((c) => c.key === key)?.icon ?? '';
+  const todayTasks = tasks
+    .filter((t) => t.dayId === todayId)
+    .sort((a, b) => Number(a.done) - Number(b.done));
+  const todayUndone = todayTasks.filter((t) => !t.done).length;
+
+  async function toggleTask(t: Task) {
+    if (!user) return;
+    try {
+      await setTaskDone(user.uid, t.id, !t.done);
+    } catch {
+      // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
+    }
+  }
+
   // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan
   // (yang sudah tiada ✝ tidak diikutkan).
   const now = new Date();
@@ -183,13 +206,13 @@ export default function HomeScreen() {
               🏆🔥 {login?.count ?? 0}
             </VixText>
           </PressableScale>
-          <Pressable onPress={logout} hitSlop={10}>
+          <PressableScale onPress={logout} hitSlop={10}>
             <IconSymbol
               name="rectangle.portrait.and.arrow.right"
               size={22}
               color={Color.MAIN}
             />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
 
@@ -259,6 +282,54 @@ export default function HomeScreen() {
               </VixText>
             ))}
           </PressableScale>
+        )}
+
+        {/* Task hari ini — centang langsung tanpa buka fitur Task */}
+        {todayTasks.length > 0 && (
+          <View style={styles.taskCard}>
+            <PressableScale
+              style={styles.taskHeader}
+              onPress={() => router.push('/tasks')}>
+              <VixText heading="title">✅ Task Hari Ini</VixText>
+              <View style={styles.taskHeaderRight}>
+                <VixText heading="label">
+                  {todayUndone > 0 ? `${todayUndone} belum` : 'beres semua 🎉'}
+                </VixText>
+                <IconSymbol
+                  name="chevron.right"
+                  size={18}
+                  color={Color.TEXT_LABEL}
+                />
+              </View>
+            </PressableScale>
+            {todayTasks.slice(0, 5).map((t) => (
+              <View key={t.id} style={styles.taskRow}>
+                {/* Lingkaran ini yang dicentang */}
+                <PressableScale onPress={() => toggleTask(t)} hitSlop={8}>
+                  <CheckCircle checked={t.done} size={22} />
+                </PressableScale>
+                <VixText additionalStyle={styles.taskCat}>
+                  {catIcon(t.category)}
+                </VixText>
+                <VixText
+                  heading="label"
+                  numberOfLines={1}
+                  additionalStyle={[
+                    styles.taskText,
+                    t.done && styles.taskTextDone,
+                  ]}>
+                  {t.title}
+                </VixText>
+              </View>
+            ))}
+            {todayTasks.length > 5 && (
+              <PressableScale onPress={() => router.push('/tasks')}>
+                <VixText heading="label" additionalStyle={styles.taskMore}>
+                  +{todayTasks.length - 5} task lagi →
+                </VixText>
+              </PressableScale>
+            )}
+          </View>
         )}
 
         <View style={styles.grid}>
@@ -339,6 +410,30 @@ const styles = StyleSheet.create({
   },
   famTitle: { color: Color.WHEEL_DARK },
   famText: { color: Color.WHEEL_DARK },
+  taskCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 16,
+    gap: 10,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  taskHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  taskHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  taskCat: { fontSize: 15, lineHeight: 20 },
+  taskText: { flex: 1, color: Color.TEXT_TITLE },
+  taskTextDone: {
+    color: Color.TEXT_PLACEHOLDER,
+    textDecorationLine: 'line-through',
+  },
+  taskMore: { color: Color.MAIN, marginTop: 2 },
   streakPill: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,

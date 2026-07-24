@@ -14,11 +14,6 @@ export function formatFullDate(d: Date): string {
   return `${DAY_NAMES[d.getDay()]}, ${formatDate(d)}`;
 }
 
-/** Kamis, 24 Jul 2026 — bulan singkat, untuk baris info yang sempit. */
-export function formatShortFullDate(d: Date): string {
-  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
-}
-
 /** Jum, 24 Jul 2026 — nama hari & bulan sama-sama 3 huruf. */
 export function formatShortDayDate(d: Date): string {
   return `${DAY_NAMES[d.getDay()].slice(0, 3)}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
