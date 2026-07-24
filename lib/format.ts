@@ -19,6 +19,11 @@ export function formatShortDayDate(d: Date): string {
   return `${DAY_NAMES[d.getDay()].slice(0, 3)}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
 }
 
+/** "Sel" — nama hari 3 huruf. */
+export function dayShort(d: Date): string {
+  return DAY_NAMES[d.getDay()].slice(0, 3);
+}
+
 /** dayId "2026-07-24" → Date lokal (parse manual biar tidak geser zona waktu). */
 export function dayIdToDate(dayId: string): Date {
   const [y, m, d] = dayId.split('-').map(Number);

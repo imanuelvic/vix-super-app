@@ -628,7 +628,6 @@ export default function TasksScreen() {
             key={editing === 'new' ? 'new' : editing?.id}
             value={fDate}
             onChange={setFDate}
-            withDay
           />
         </View>
         {formError && (

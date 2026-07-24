@@ -29,6 +29,7 @@ import {
   type FinanceType,
 } from '@/lib/categories';
 import {
+  dayShort,
   formatFullDate,
   groupDigits,
   MONTH_NAMES,
@@ -349,8 +350,10 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
         renderItem={({ item }) => {
           const cat = categoryOf(item.type, item.category);
           const isIncome = item.type === 'income';
-          const dateLabel = item.date
-            ? `${item.date.toDate().getDate()} ${MONTH_NAMES[item.date.toDate().getMonth()].slice(0, 3)}`
+          const d = item.date ? item.date.toDate() : null;
+          // Nama hari 3 huruf di samping tanggal, mis. "Sel, 14 Jul".
+          const dateLabel = d
+            ? `${dayShort(d)}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)}`
             : '';
           return (
             // Tekan baris untuk mengedit. Border mengikuti warna jenis.

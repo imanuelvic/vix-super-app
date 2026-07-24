@@ -52,6 +52,9 @@ const MAPPING = {
   'plus': 'add',
   'checkmark': 'check',
   'xmark': 'close',
+  'arrow.up.circle.fill': 'arrow-circle-up',
+  'arrow.down.circle.fill': 'arrow-circle-down',
+  'creditcard.fill': 'credit-card',
 } as IconMapping;
 
 /**

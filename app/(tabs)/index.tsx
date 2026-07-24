@@ -28,6 +28,13 @@ import {
   type MainTeamMember,
   type Visitation,
 } from '@/lib/core';
+import {
+  debtDaysUntil,
+  debtRemaining,
+  debtReminderWindow,
+  subscribeDebts,
+  type Debt,
+} from '@/lib/debts';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import { formatDate, formatShortDayDate } from '@/lib/format';
 import {
@@ -44,6 +51,7 @@ import {
   TASK_CATEGORIES,
   type Task,
 } from '@/lib/tasks';
+import { formatRupiah } from '@/lib/transactions';
 
 // Nama sapaan di Home — ganti di sini kalau mau ubah.
 const OWNER_NAME = 'Imanuel Victory Rumayar';
@@ -95,6 +103,7 @@ export default function HomeScreen() {
   const [mainTeam, setMainTeam] = useState<MainTeamMember[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [family, setFamily] = useState<FamilyMember[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
 
   const todayId = dayDocId(new Date());
@@ -110,6 +119,7 @@ export default function HomeScreen() {
       subscribeMainTeam(user.uid, setMainTeam),
       subscribeVisitations(user.uid, setVisitations),
       subscribeFamily(user.uid, setFamily),
+      subscribeDebts(user.uid, setDebts),
       subscribeReviveStreak(user.uid, setRevive),
     ];
     return () => unsubs.forEach((unsub) => unsub());
@@ -188,6 +198,22 @@ export default function HomeScreen() {
         text: `${cl ? `${cl.heart} ${cl.name}` : 'CORE'} — ${
           days === 0 ? 'HARI INI' : `${days} hari lagi`
         } (${formatDate(v.date.toDate())})`,
+      };
+    });
+
+  // Reminder bayar hutang: yang belum lunas & jatuh tempo ≤ 7 hari (termasuk
+  // lewat). Fokus ke "Hutang Saya", tapi tagihan ke orang juga diingatkan.
+  const debtReminders = debts
+    .filter((d) => debtReminderWindow(d, now))
+    .sort((a, b) => a.dueDate.toMillis() - b.dueDate.toMillis())
+    .map((d) => {
+      const days = debtDaysUntil(d, now);
+      const when =
+        days === 0 ? 'HARI INI' : days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
+      const arrow = d.direction === 'mine' ? '💸 Bayar' : '💰 Tagih';
+      return {
+        id: d.id,
+        text: `${arrow} ${d.person} — ${formatRupiah(debtRemaining(d))} · ${when}`,
       };
     });
 
@@ -278,6 +304,25 @@ export default function HomeScreen() {
                 key={r.id}
                 heading="label"
                 additionalStyle={styles.visitText}>
+                {r.text}
+              </VixText>
+            ))}
+          </PressableScale>
+        )}
+
+        {/* Reminder bayar hutang (jatuh tempo ≤ 7 hari / lewat) */}
+        {debtReminders.length > 0 && (
+          <PressableScale
+            style={styles.debtCard}
+            onPress={() => router.push('/debts')}>
+            <VixText heading="bold" additionalStyle={styles.debtTitle}>
+              🤝 Reminder Hutang
+            </VixText>
+            {debtReminders.map((r) => (
+              <VixText
+                key={r.id}
+                heading="label"
+                additionalStyle={styles.debtText}>
                 {r.text}
               </VixText>
             ))}
@@ -410,6 +455,19 @@ const styles = StyleSheet.create({
   },
   famTitle: { color: Color.WHEEL_DARK },
   famText: { color: Color.WHEEL_DARK },
+  debtCard: {
+    backgroundColor: Color.FINANCE_SAVING,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.FINANCE_SAVING_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 3,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  debtTitle: { color: Color.FINANCE_SAVING_DARK },
+  debtText: { color: Color.FINANCE_SAVING_DARK },
   taskCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

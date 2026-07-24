@@ -107,8 +107,12 @@ export default function FinanceScreen() {
         title="Finance 💵"
         subtitle="Kelola uang, jangan dikuasai uang"
         right={
-          // Saku 👛 (dana per tujuan) — beda dari ikon Career
-          <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
+          <View style={styles.headerButtons}>
+            {/* Hutang 🤝 (utang-piutang) */}
+            <EmojiButton emoji="🤝" onPress={() => router.push('/debts')} />
+            {/* Saku 👛 (dana per tujuan) — beda dari ikon Career */}
+            <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
+          </View>
         }>
         {/* Navigasi bulan — berlaku untuk semua tab */}
         <View style={styles.monthRow}>
@@ -161,6 +165,7 @@ const styles = StyleSheet.create({
     gap: 14,
     marginTop: 2,
   },
+  headerButtons: { flexDirection: 'row', gap: 8 },
   monthText: { minWidth: 150, textAlign: 'center' },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
