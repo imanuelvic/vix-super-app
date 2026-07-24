@@ -202,7 +202,7 @@ export function TodoTab({
           <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
           <View style={styles.streakChip}>
             <VixText heading="bold" additionalStyle={styles.streakText}>
-              🔥 {streakDays} hari
+              🔥 {streakDays}
             </VixText>
           </View>
         </View>
@@ -343,7 +343,7 @@ export function TodoTab({
         <View style={styles.inputRow}>
           <FormInput
             style={styles.input}
-            placeholder="Tambah kebiasaan baru…"
+            placeholder="Tambah kebiasaan baru"
             value={text}
             onChangeText={setText}
             onSubmitEditing={handleAdd}
@@ -387,10 +387,6 @@ export function TodoTab({
             </View>
           );
         })}
-
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Ceklis, air, dan mood otomatis reset setiap ganti hari.
-        </VixText>
       </ScrollView>
 
       {/* Modal pasang/ubah target berat */}
@@ -458,7 +454,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   streakChip: {
-    backgroundColor: Color.ACCENT,
+    backgroundColor: Color.FINANCE_EXPENSE,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -581,7 +577,6 @@ const styles = StyleSheet.create({
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
-  hint: { textAlign: 'center', marginTop: 6 },
   modalTitle: { marginBottom: 4 },
   modalHint: { marginBottom: 10 },
   deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 12 },

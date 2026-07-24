@@ -59,24 +59,37 @@ function RootNavigator() {
     <Stack>
       {/* Hanya bisa diakses kalau sudah login (login cukup SEKALI per perangkat) */}
       <Stack.Protected guard={!!user}>
+        {/* Home + tab bar utama */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="tasks" options={{ headerShown: false }} />
-          <Stack.Screen name="finance" options={{ headerShown: false }} />
-            <Stack.Screen name="funds" options={{ headerShown: false }} />
-            <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
-          <Stack.Screen name="health" options={{ headerShown: false }} />
-            <Stack.Screen name="diseases" options={{ headerShown: false }} />
-            <Stack.Screen name="health-info" options={{ headerShown: false }} />
-          <Stack.Screen name="timeline" options={{ headerShown: false }} />
-          <Stack.Screen name="core" options={{ headerShown: false }} />
-          <Stack.Screen name="trading" options={{ headerShown: false }} />
-          <Stack.Screen name="car" options={{ headerShown: false }} />
-          <Stack.Screen name="wheel" options={{ headerShown: false }} />
-          <Stack.Screen name="spiritual" options={{ headerShown: false }} />
-          <Stack.Screen name="achievements" options={{ headerShown: false }} />
-          <Stack.Screen name="visitations" options={{ headerShown: false }} />
-          <Stack.Screen name="career" options={{ headerShown: false }} />
-          <Stack.Screen name="family" options={{ headerShown: false }} />
+
+        {/* Fitur utama — urut mengikuti grid di Home, dikelompokkan per fitur
+            (fitur induk + sub-halamannya dipisah baris kosong antar grup) */}
+        <Stack.Screen name="tasks" options={{ headerShown: false }} />
+
+        <Stack.Screen name="spiritual" options={{ headerShown: false }} />
+        <Stack.Screen name="revive" options={{ headerShown: false }} />
+        <Stack.Screen name="revive-history" options={{ headerShown: false }} />
+
+        <Stack.Screen name="health" options={{ headerShown: false }} />
+        <Stack.Screen name="diseases" options={{ headerShown: false }} />
+        <Stack.Screen name="health-info" options={{ headerShown: false }} />
+
+        <Stack.Screen name="core" options={{ headerShown: false }} />
+        <Stack.Screen name="visitations" options={{ headerShown: false }} />
+
+        <Stack.Screen name="finance" options={{ headerShown: false }} />
+        <Stack.Screen name="funds" options={{ headerShown: false }} />
+        <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
+
+        <Stack.Screen name="trading" options={{ headerShown: false }} />
+        <Stack.Screen name="car" options={{ headerShown: false }} />
+        <Stack.Screen name="wheel" options={{ headerShown: false }} />
+        <Stack.Screen name="career" options={{ headerShown: false }} />
+        <Stack.Screen name="family" options={{ headerShown: false }} />
+
+        {/* Diakses dari kartu welcome & tombol streak di Home */}
+        <Stack.Screen name="timeline" options={{ headerShown: false }} />
+        <Stack.Screen name="achievements" options={{ headerShown: false }} />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}

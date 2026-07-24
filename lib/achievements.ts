@@ -69,31 +69,47 @@ export type AchievementStats = {
   reviveTotal: number; // total jurnal Revive
 };
 
+// Kategori pencapaian (ala Duolingo) — tiap kategori punya daftar
+// pencapaian bertingkat yang tampil di modal saat ditekan.
+export type AchievementCategoryKey = 'login' | 'health' | 'revive';
+
+export const ACHIEVEMENT_CATEGORIES: {
+  key: AchievementCategoryKey;
+  icon: string;
+  label: string;
+  desc: string;
+}[] = [
+  { key: 'login', icon: '🔥', label: 'Login Streak', desc: 'Konsisten buka vix tiap hari' },
+  { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit di fitur Health' },
+  { key: 'revive', icon: '📖', label: 'Revive Rohani', desc: 'Konsisten menulis jurnal Revive' },
+];
+
 export const ACHIEVEMENTS: {
   id: string;
+  category: AchievementCategoryKey;
   icon: string;
   title: string;
   desc: string;
   target: number;
   of: (s: AchievementStats) => number; // nilai saat ini untuk progress
 }[] = [
-  { id: 'first', icon: '🐣', title: 'Langkah Pertama', desc: 'Login pertama kali di vix', target: 1, of: (s) => s.loginTotal },
-  { id: 'streak3', icon: '✨', title: 'Konsisten 3 Hari', desc: 'Login 3 hari beruntun', target: 3, of: (s) => s.loginBest },
-  { id: 'streak7', icon: '🔥', title: 'Seminggu Penuh', desc: 'Login 7 hari beruntun', target: 7, of: (s) => s.loginBest },
-  { id: 'streak14', icon: '⚡', title: 'Dua Minggu Membara', desc: 'Login 14 hari beruntun', target: 14, of: (s) => s.loginBest },
-  { id: 'streak30', icon: '🏅', title: 'Sebulan Tanpa Putus', desc: 'Login 30 hari beruntun', target: 30, of: (s) => s.loginBest },
-  { id: 'streak100', icon: '👑', title: 'Legenda 100 Hari', desc: 'Login 100 hari beruntun', target: 100, of: (s) => s.loginBest },
-  { id: 'total30', icon: '📅', title: '30 Hari Bersama vix', desc: 'Total 30 hari pernah login', target: 30, of: (s) => s.loginTotal },
-  { id: 'total100', icon: '💎', title: '100 Hari Bersama vix', desc: 'Total 100 hari pernah login', target: 100, of: (s) => s.loginTotal },
-  { id: 'habit3', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan Health 3 hari', target: 3, of: (s) => s.habitStreak },
-  { id: 'habit7', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan Health 7 hari', target: 7, of: (s) => s.habitStreak },
-  { id: 'revive1', icon: '📖', title: 'Revive Pertama', desc: 'Tulis jurnal Revive pertamamu', target: 1, of: (s) => s.reviveTotal },
-  { id: 'revive7', icon: '🕊️', title: 'Seminggu Bersama Firman', desc: 'Jurnal Revive 7 hari beruntun', target: 7, of: (s) => s.reviveBest },
-  { id: 'revive30', icon: '⛪', title: 'Sebulan Dalam Hadirat', desc: 'Jurnal Revive 30 hari beruntun', target: 30, of: (s) => s.reviveBest },
+  { id: 'first', category: 'login', icon: '🐣', title: 'Langkah Pertama', desc: 'Login pertama kali di vix', target: 1, of: (s) => s.loginTotal },
+  { id: 'streak3', category: 'login', icon: '✨', title: 'Konsisten 3 Hari', desc: 'Login 3 hari beruntun', target: 3, of: (s) => s.loginBest },
+  { id: 'streak7', category: 'login', icon: '🔥', title: 'Seminggu Penuh', desc: 'Login 7 hari beruntun', target: 7, of: (s) => s.loginBest },
+  { id: 'streak14', category: 'login', icon: '⚡', title: 'Dua Minggu Membara', desc: 'Login 14 hari beruntun', target: 14, of: (s) => s.loginBest },
+  { id: 'streak30', category: 'login', icon: '🏅', title: 'Sebulan Tanpa Putus', desc: 'Login 30 hari beruntun', target: 30, of: (s) => s.loginBest },
+  { id: 'streak100', category: 'login', icon: '👑', title: 'Legenda 100 Hari', desc: 'Login 100 hari beruntun', target: 100, of: (s) => s.loginBest },
+  { id: 'total30', category: 'login', icon: '📅', title: '30 Hari Bersama vix', desc: 'Total 30 hari pernah login', target: 30, of: (s) => s.loginTotal },
+  { id: 'total100', category: 'login', icon: '💎', title: '100 Hari Bersama vix', desc: 'Total 100 hari pernah login', target: 100, of: (s) => s.loginTotal },
+  { id: 'habit3', category: 'health', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan Health 3 hari', target: 3, of: (s) => s.habitStreak },
+  { id: 'habit7', category: 'health', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan Health 7 hari', target: 7, of: (s) => s.habitStreak },
+  { id: 'revive1', category: 'revive', icon: '📖', title: 'Revive Pertama', desc: 'Tulis jurnal Revive pertamamu', target: 1, of: (s) => s.reviveTotal },
+  { id: 'revive7', category: 'revive', icon: '🕊️', title: 'Seminggu Bersama Firman', desc: 'Jurnal Revive 7 hari beruntun', target: 7, of: (s) => s.reviveBest },
+  { id: 'revive30', category: 'revive', icon: '⛪', title: 'Sebulan Dalam Hadirat', desc: 'Jurnal Revive 30 hari beruntun', target: 30, of: (s) => s.reviveBest },
 ];
 
 // ============================ Self-Reward 🏆 ============================
-// Hadiah untuk diri sendiri — dananya dari pocket Budget Khusus "Self-Reward".
+// Hadiah untuk diri sendiri — dananya dari Kantong "Self-Reward".
 
 export const REWARDS: { icon: string; label: string; price: number }[] = [
   { icon: '☕', label: 'Kopi favorit', price: 50_000 },
@@ -104,7 +120,7 @@ export const REWARDS: { icon: string; label: string; price: number }[] = [
   { icon: '🎮', label: 'Gadget / hobi', price: 3_000_000 },
 ];
 
-/** Dengarkan saldo pocket Self-Reward (1 dokumen, bukan seluruh funds). */
+/** Dengarkan saldo Kantong Self-Reward (1 dokumen, bukan seluruh funds). */
 export function subscribeSelfRewardBalance(
   uid: string,
   onChange: (balance: number) => void,

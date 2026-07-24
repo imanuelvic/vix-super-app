@@ -3,8 +3,8 @@ import {
   Modal,
   Platform,
   StyleSheet,
-  View,
 } from 'react-native';
+import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 
@@ -22,14 +22,19 @@ export function CenterDialog({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.overlay}>
-          <View style={styles.box}>{children}</View>
-        </View>
+        {/* Latar memudar masuk, kotak dialog memantul kecil (zoom) */}
+        <Animated.View
+          entering={FadeIn.duration(150)}
+          style={styles.overlay}>
+          <Animated.View entering={ZoomIn.duration(180)} style={styles.box}>
+            {children}
+          </Animated.View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );

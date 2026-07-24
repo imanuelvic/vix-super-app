@@ -34,7 +34,7 @@ import {
 } from '@/lib/funds';
 import { formatRupiah } from '@/lib/transactions';
 
-// Halaman mutasi satu Budget Khusus — seperti sheet Pocket di spreadsheet:
+// Halaman mutasi satu Kantong — seperti sheet Pocket di spreadsheet:
 // Date · Transaction · Catatan · Debit (masuk) · Credit (keluar).
 export default function FundScreen() {
   const { user } = useAuth();
@@ -95,7 +95,7 @@ export default function FundScreen() {
     return { debit, credit, balance: debit - credit };
   }, [entries]);
 
-  // Selaraskan saldo tersimpan di dokumen dompet (untuk daftar Budget Khusus)
+  // Selaraskan saldo tersimpan di dokumen dompet (untuk daftar Kantong)
   // dengan saldo hasil hitung — menulis hanya kalau berbeda.
   useEffect(() => {
     if (!user || !key || loading) return;
@@ -218,15 +218,15 @@ export default function FundScreen() {
         <View style={styles.directionRow}>
           {(
             [
-              ['debit', '⬇️ Masuk', Color.FINANCE_INCOME],
-              ['credit', '⬆️ Keluar', Color.FINANCE_EXPENSE],
+              ['debit', '⬇️ Masuk', Color.FINANCE_INCOME, Color.FINANCE_INCOME_DARK],
+              ['credit', '⬆️ Keluar', Color.FINANCE_EXPENSE, Color.FINANCE_EXPENSE_DARK],
             ] as const
-          ).map(([dir, label, bg]) => (
+          ).map(([dir, label, bg, border]) => (
             <Pressable
               key={dir}
               style={[
                 styles.directionChip,
-                { backgroundColor: bg },
+                { backgroundColor: bg, borderColor: border },
                 direction === dir
                   ? styles.directionActive
                   : styles.directionInactive,
@@ -291,9 +291,9 @@ export default function FundScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScreenHeader
-          backLabel="Budget Khusus"
+          backLabel="Kantong"
           title={`${fund.icon} ${fund.label}`}
-          subtitle="Mutasi masuk & keluar dana ini."
+          subtitle="Mutasi masuk & keluar dari kantong ini."
         />
 
         {loading ? (
@@ -449,10 +449,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1, // border gelap tiap arah (warna diisi inline)
   },
-  directionActive: { borderColor: Color.TEXT_TITLE },
-  directionInactive: { borderColor: 'transparent', opacity: 0.55 },
+  directionActive: { opacity: 1 },
+  directionInactive: { opacity: 0.45 },
   directionText: { color: Color.TEXT_TITLE },
   inputGap: { marginTop: 8 },
   inputRow: { flexDirection: 'row', gap: 10 },

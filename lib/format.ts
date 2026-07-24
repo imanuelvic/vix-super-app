@@ -14,6 +14,27 @@ export function formatFullDate(d: Date): string {
   return `${DAY_NAMES[d.getDay()]}, ${formatDate(d)}`;
 }
 
+/** Kamis, 24 Jul 2026 — bulan singkat, untuk baris info yang sempit. */
+export function formatShortFullDate(d: Date): string {
+  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
+}
+
+/** Jum, 24 Jul 2026 — nama hari & bulan sama-sama 3 huruf. */
+export function formatShortDayDate(d: Date): string {
+  return `${DAY_NAMES[d.getDay()].slice(0, 3)}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
+}
+
+/** dayId "2026-07-24" → Date lokal (parse manual biar tidak geser zona waktu). */
+export function dayIdToDate(dayId: string): Date {
+  const [y, m, d] = dayId.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** Kamis, 6 Agustus (tanpa tahun — untuk daftar harian). */
+export function formatDayMonth(d: Date): string {
+  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
+}
+
 /** "1234567" -> "1.234.567" untuk tampilan input nominal. */
 export function groupDigits(raw: string): string {
   const digits = raw.replace(/\D/g, '').slice(0, 12);

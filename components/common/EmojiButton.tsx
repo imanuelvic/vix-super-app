@@ -1,10 +1,11 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
 // Tombol bundar kecil berisi emoji — untuk pojok kanan atas header
-// (mis. 🕘 riwayat visitasi, 💼 Budget Khusus).
+// (mis. 🕘 riwayat visitasi, 👛 Kantong).
 export function EmojiButton({
   emoji,
   onPress,
@@ -13,9 +14,9 @@ export function EmojiButton({
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.button} onPress={onPress} hitSlop={6}>
+    <PressableScale style={styles.button} onPress={onPress} hitSlop={6}>
       <VixText additionalStyle={styles.emoji}>{emoji}</VixText>
-    </Pressable>
+    </PressableScale>
   );
 }
 

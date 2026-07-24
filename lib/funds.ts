@@ -15,7 +15,7 @@ import {
 import { db } from './firebase';
 
 /**
- * Budget Khusus = "dompet" dana per tujuan (seperti Pocket di bank Jago).
+ * Kantong = "dompet" dana per tujuan (seperti Pocket di bank Jago).
  * Tiap dompet punya mutasi sendiri:
  *   users/{uid}/funds/{fundKey}            -> { balance } (saldo berjalan)
  *   users/{uid}/funds/{fundKey}/entries/.. -> mutasi
@@ -32,7 +32,7 @@ export type Fund = {
   icon: string;
 };
 
-// Daftar Budget Khusus. Tambah dompet baru = tambah 1 baris di sini.
+// Daftar Kantong. Tambah dompet baru = tambah 1 baris di sini.
 export const FUNDS: Fund[] = [
   { key: 'home', label: 'Home', icon: '🏘️' },
   { key: 'car', label: 'Car', icon: '🚗' },
@@ -79,7 +79,7 @@ function signed(direction: FundDirection, amount: number): number {
 
 /**
  * Dengarkan saldo SEMUA dompet sekaligus — 1 listener, dokumen kecil saja
- * (bukan seluruh mutasi). Dipakai halaman daftar Budget Khusus.
+ * (bukan seluruh mutasi). Dipakai halaman daftar Kantong.
  */
 export function subscribeFundBalances(
   uid: string,

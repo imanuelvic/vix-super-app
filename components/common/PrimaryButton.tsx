@@ -1,13 +1,13 @@
 import type { ComponentProps } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
@@ -33,7 +33,7 @@ export function PrimaryButton({
   additionalStyle?: StyleProp<ViewStyle>;
 }) {
   return (
-    <Pressable
+    <PressableScale
       style={[
         styles.button,
         { backgroundColor: background },
@@ -52,7 +52,7 @@ export function PrimaryButton({
           </VixText>
         </>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 

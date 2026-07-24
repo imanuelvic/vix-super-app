@@ -32,7 +32,8 @@ const TABS: BottomTab<CarTab>[] = [
 export default function CarScreen() {
   const { user } = useAuth();
 
-  const [tab, setTab] = useState<CarTab>('log');
+  // Default masuk ke Sparepart — kondisi mobil yang paling penting dilihat.
+  const [tab, setTab] = useState<CarTab>('parts');
   const [logs, setLogs] = useState<CarLog[] | null>(null);
   const [parts, setParts] = useState<PartStatusMap | null>(null);
   const [error, setError] = useState<string | null>(null);

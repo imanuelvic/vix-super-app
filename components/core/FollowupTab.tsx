@@ -19,7 +19,7 @@ import {
 } from '@/lib/core';
 import { formatFullDate, MONTH_NAMES } from '@/lib/format';
 
-// Tab Follow-up: tugas harian MCL — siapa yang di-follow-up hari ini
+// Tab Follow Up: tugas harian MCL — siapa yang di follow up hari ini
 // (CORE Leader + Main Team, dibagi merata dan diacak per hari) +
 // pengingat ulang tahun + ide topik chat yang bisa langsung dikirim ke WA.
 export function FollowupTab({
@@ -145,7 +145,7 @@ export function FollowupTab({
     );
   }
 
-  // Kartu follow-up — dipakai untuk CORE Leader maupun Main Team.
+  // Kartu follow up — dipakai untuk CORE Leader maupun Main Team.
   function renderFollowCard({
     id,
     title,
@@ -164,8 +164,19 @@ export function FollowupTab({
     onDone: () => void;
   }) {
     const topic = topicFor(id);
+    // Ada nomor → seluruh kartu bisa ditekan untuk buka chat WhatsApp,
+    // border-nya diwarnai hijau WA sebagai penanda. Kalau sudah selesai,
+    // gaya "done" yang menang (tidak perlu diarahkan chat lagi).
+    const canChat = !!phone && !done;
     return (
-      <View key={id} style={[styles.card, done && styles.cardDone]}>
+      <Pressable
+        key={id}
+        style={[styles.card, canChat && styles.cardChat, done && styles.cardDone]}
+        onPress={
+          canChat
+            ? () => openWhatsApp(phone!, `Halo ${name}! ${topic.question}`)
+            : undefined
+        }>
         <View style={styles.cardHeader}>
           <View style={styles.cardTitleBox}>
             <VixText heading="bold" additionalStyle={styles.leaderName}>
@@ -187,26 +198,19 @@ export function FollowupTab({
           </VixText>
         </View>
 
-        {/* Tombol WA: buka chat dengan pertanyaan sudah terisi */}
-        {phone ? (
-          <Pressable
-            style={styles.waButton}
-            onPress={() => openWhatsApp(phone, `Halo ${name}! ${topic.question}`)}>
-            <VixText heading="bold" additionalStyle={styles.waText}>
-              💬 Chat via WhatsApp
-            </VixText>
-          </Pressable>
-        ) : (
-          <VixText heading="label" additionalStyle={styles.noPhoneText}>
-            📱 Isi nomor HP di tab CORE Leader untuk tombol WA.
-          </VixText>
-        )}
-
+        {/* Info hanya muncul kalau belum ada nomor; kalau ada, kartu langsung
+            bisa ditekan untuk chat (border hijau WA jadi penanda). */}
         {done ? (
           <VixText heading="label" additionalStyle={styles.doneText}>
-            ✅ Sudah di-follow-up hari ini — mantap, gembala yang setia!
+            ✅ Sudah di follow up hari ini
           </VixText>
-        ) : (
+        ) : !phone ? (
+          <VixText heading="label" additionalStyle={styles.noPhoneText}>
+            📱 Isi nomor HP di tab CORE Leader untuk chat WA.
+          </VixText>
+        ) : null}
+
+        {!done && (
           <View style={styles.buttonRow}>
             <Pressable
               style={styles.shuffleButton}
@@ -222,7 +226,7 @@ export function FollowupTab({
             </Pressable>
           </View>
         )}
-      </View>
+      </Pressable>
     );
   }
 
@@ -278,9 +282,9 @@ export function FollowupTab({
         </View>
       )}
 
-      {/* ===== Follow-up CORE Leader ===== */}
+      {/* ===== Follow Up CORE Leader ===== */}
       <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        🎯 Follow-up CORE Leader
+        🎯 Follow Up CORE Leader
       </VixText>
       {clPicks.map((l) =>
         renderFollowCard({
@@ -294,9 +298,9 @@ export function FollowupTab({
         }),
       )}
 
-      {/* ===== Follow-up Main Team ===== */}
+      {/* ===== Follow Up Main Team ===== */}
       <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        👥 Follow-up Main Team
+        👥 Follow Up Main Team
       </VixText>
       {mainTeam.length === 0 ? (
         <VixText heading="label" additionalStyle={styles.emptyText}>
@@ -316,11 +320,6 @@ export function FollowupTab({
           });
         })
       )}
-
-      <VixText heading="label" additionalStyle={styles.hint}>
-        {FOLLOWUPS_PER_DAY} CL + {FOLLOWUPS_MT_PER_DAY} Main Team per hari,
-        dibagi merata — yang paling lama belum di-follow-up muncul duluan.
-      </VixText>
     </ScrollView>
   );
 }
@@ -356,6 +355,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     gap: 10,
+  },
+  cardChat: {
+    borderColor: Color.WHATSAPP,
+    borderWidth: 1.5,
   },
   cardDone: {
     backgroundColor: Color.MAIN_TRANSPARENT,
@@ -414,5 +417,4 @@ const styles = StyleSheet.create({
   doneButtonText: { color: Color.TEXT_REVERSE },
   doneText: { color: Color.SUCCESS },
   emptyText: { textAlign: 'center', marginBottom: 12 },
-  hint: { textAlign: 'center', marginTop: 4 },
 });

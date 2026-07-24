@@ -42,7 +42,6 @@ export function healthKitStatus(): HealthKitStatus {
 const READ_TYPES = [
   'HKQuantityTypeIdentifierStepCount',
   'HKQuantityTypeIdentifierActiveEnergyBurned',
-  'HKCategoryTypeIdentifierSleepAnalysis',
 ] as const;
 
 /**
@@ -63,7 +62,6 @@ export async function requestHealthAccess(): Promise<boolean> {
 export type DailyHealthSummary = {
   steps: number | null; // langkah hari ini
   activeKcal: number | null; // kalori aktif hari ini
-  sleepHours: number | null; // durasi tidur semalam (jam)
 };
 
 /** Baca ringkasan hari ini. null = HealthKit tidak tersedia. */
@@ -74,12 +72,11 @@ export async function readTodaySummary(): Promise<DailyHealthSummary | null> {
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const [steps, activeKcal, sleepHours] = await Promise.all([
+  const [steps, activeKcal] = await Promise.all([
     readSteps(mod, startOfDay, now),
     readActiveKcal(mod, startOfDay, now),
-    readSleepHours(mod, now),
   ]);
-  return { steps, activeKcal, sleepHours };
+  return { steps, activeKcal };
 }
 
 async function readSteps(
@@ -117,45 +114,3 @@ async function readActiveKcal(
   }
 }
 
-async function readSleepHours(
-  mod: HealthKitModule,
-  now: Date,
-): Promise<number | null> {
-  try {
-    // Jendela tidur semalam: kemarin 18:00 → sekarang.
-    const start = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 1,
-      18,
-    );
-    const samples = await mod.queryCategorySamples(
-      'HKCategoryTypeIdentifierSleepAnalysis',
-      { filter: { date: { startDate: start, endDate: now } }, limit: 0 },
-    );
-    // Nilai 0 = "di tempat tidur", 2 = terbangun — keduanya bukan tidur.
-    // Interval yang tumpang tindih digabung dulu supaya data ganda dari
-    // iPhone + Apple Watch tidak terhitung dua kali.
-    const intervals = samples
-      .filter((s) => s.value !== 0 && s.value !== 2)
-      .map((s) => ({ start: s.startDate.getTime(), end: s.endDate.getTime() }))
-      .sort((a, b) => a.start - b.start);
-
-    let total = 0;
-    let curStart = 0;
-    let curEnd = 0;
-    for (const iv of intervals) {
-      if (iv.start > curEnd) {
-        total += curEnd - curStart;
-        curStart = iv.start;
-        curEnd = iv.end;
-      } else {
-        curEnd = Math.max(curEnd, iv.end);
-      }
-    }
-    total += curEnd - curStart;
-    return total / 3_600_000; // ms → jam
-  } catch {
-    return null;
-  }
-}

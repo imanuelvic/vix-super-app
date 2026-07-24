@@ -1,9 +1,11 @@
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -15,6 +17,7 @@ import {
 import {
   FOLLOWUPS_MT_PER_DAY,
   FOLLOWUPS_PER_DAY,
+  nextBirthday,
   subscribeCoreLeaders,
   subscribeMainTeam,
   subscribeVisitations,
@@ -24,7 +27,8 @@ import {
   type MainTeamMember,
   type Visitation,
 } from '@/lib/core';
-import { formatDate } from '@/lib/format';
+import { subscribeFamily, type FamilyMember } from '@/lib/family';
+import { formatDate, formatShortDayDate } from '@/lib/format';
 import {
   dayDocId,
   subscribeHabitDay,
@@ -63,11 +67,11 @@ const FEATURES: {
   { key: 'health', label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.FINANCE_EXPENSE, fg: Color.DANGER },
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
   { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.MAIN_DARK },
-  { key: 'trading', label: 'Trading', icon: 'chart.line.uptrend.xyaxis', route: '/trading', bg: Color.PASTEL_GRAY, fg: Color.TEXT_LABEL },
-  { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
-  { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
   { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
+  { key: 'trading', label: 'Trading', icon: 'chart.line.uptrend.xyaxis', route: '/trading', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
+  { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
+  { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
 ];
 
 export default function HomeScreen() {
@@ -84,6 +88,7 @@ export default function HomeScreen() {
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
+  const [family, setFamily] = useState<FamilyMember[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
 
   const todayId = dayDocId(new Date());
@@ -98,6 +103,7 @@ export default function HomeScreen() {
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeMainTeam(user.uid, setMainTeam),
       subscribeVisitations(user.uid, setVisitations),
+      subscribeFamily(user.uid, setFamily),
       subscribeReviveStreak(user.uid, setRevive),
     ];
     return () => unsubs.forEach((unsub) => unsub());
@@ -112,7 +118,8 @@ export default function HomeScreen() {
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
   const badges: Record<string, number> = {
-    tasks: tasks.filter((t) => !t.done).length,
+    // Hanya task HARI INI — task tanggal depan tidak dihitung.
+    tasks: tasks.filter((t) => !t.done && t.dayId === todayId).length,
     health: day ? habits.filter((h) => !day.done[h.id]).length : 0,
     core:
       Math.max(
@@ -130,8 +137,23 @@ export default function HomeScreen() {
       revive === undefined ? 0 : revive?.lastDayId === todayId ? 0 : 1,
   };
 
-  // Reminder visitasi CORE: H-3 sampai hari-H, yang belum divisit.
+  // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan
+  // (yang sudah tiada ✝ tidak diikutkan).
   const now = new Date();
+  const famBirthdays = family
+    .filter((m) => !m.deceased)
+    .map((m) => ({ m, ...nextBirthday(m, now) }))
+    .filter((b) => b.daysUntil <= 7)
+    .sort((a, b) => a.daysUntil - b.daysUntil)
+    .map((b) => ({
+      id: b.m.id,
+      text:
+        b.daysUntil === 0
+          ? `${b.m.name} — HARI INI 🎉 (ke-${b.turningAge})`
+          : `${b.m.name} — ${b.daysUntil} hari lagi (ke-${b.turningAge})`,
+    }));
+
+  // Reminder visitasi CORE: H-3 sampai hari-H, yang belum divisit.
   const visitReminders = visitations
     .filter((v) => visitReminderWindow(v, now))
     .sort((a, b) => a.date.toMillis() - b.date.toMillis())
@@ -154,13 +176,13 @@ export default function HomeScreen() {
         </VixText>
         <View style={styles.brandRight}>
           {/* Tombol streak login 🔥 → halaman achievement */}
-          <Pressable
+          <PressableScale
             style={styles.streakPill}
             onPress={() => router.push('/achievements')}>
             <VixText heading="bold" additionalStyle={styles.streakPillText}>
-              🔥 {login?.count ?? 0}
+              🏆🔥 {login?.count ?? 0}
             </VixText>
-          </Pressable>
+          </PressableScale>
           <Pressable onPress={logout} hitSlop={10}>
             <IconSymbol
               name="rectangle.portrait.and.arrow.right"
@@ -172,33 +194,54 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.welcomeCard}>
+        <Animated.View
+          entering={FadeInDown.duration(350)}
+          style={styles.welcomeCard}>
           <View style={styles.welcomeTop}>
             <VixText heading="paragraph" additionalStyle={styles.welcomeSmall}>
               Selamat datang,
             </VixText>
             {/* Tanggal hari ini di ujung kanan atas card */}
             <VixText heading="label" additionalStyle={styles.welcomeDate}>
-              📆 {formatDate(new Date())}
+              📆 {formatShortDayDate(new Date())}
             </VixText>
           </View>
           <VixText heading="subheader" additionalStyle={styles.welcomeName}>
             {OWNER_NAME.toUpperCase()}
           </VixText>
           {/* Tombol spesial: timeline hidup pribadi */}
-          <Pressable
+          <PressableScale
             style={styles.timelineButton}
             onPress={() => router.push('/timeline')}>
             <VixText heading="bold" additionalStyle={styles.timelineText}>
               📍 My Timeline
             </VixText>
             <IconSymbol name="chevron.right" size={18} color={Color.ACCENT_DARK} />
-          </Pressable>
-        </View>
+          </PressableScale>
+        </Animated.View>
+
+        {/* Reminder ulang tahun keluarga (hari ini s/d 7 hari) */}
+        {famBirthdays.length > 0 && (
+          <PressableScale
+            style={styles.famCard}
+            onPress={() => router.push('/family')}>
+            <VixText heading="bold" additionalStyle={styles.famTitle}>
+              🎂 Ulang Tahun Keluarga
+            </VixText>
+            {famBirthdays.map((b) => (
+              <VixText
+                key={b.id}
+                heading="label"
+                additionalStyle={styles.famText}>
+                {b.text}
+              </VixText>
+            ))}
+          </PressableScale>
+        )}
 
         {/* Reminder visitasi CORE (H-3 s/d hari-H) */}
         {visitReminders.length > 0 && (
-          <Pressable
+          <PressableScale
             style={styles.visitCard}
             onPress={() =>
               // Langsung mendarat di tab Visitasi, bukan tab default.
@@ -215,23 +258,23 @@ export default function HomeScreen() {
                 {r.text}
               </VixText>
             ))}
-          </Pressable>
+          </PressableScale>
         )}
 
         <View style={styles.grid}>
-          {FEATURES.map((feature) => {
+          {FEATURES.map((feature, index) => {
             const badge = badges[feature.key] ?? 0;
             return (
-              <View key={feature.key} style={styles.gridItem}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.tile,
-                    { backgroundColor: feature.bg },
-                    pressed && styles.tilePressed,
-                  ]}
+              // Tiap tile muncul berurutan (stagger) saat Home dibuka.
+              <Animated.View
+                key={feature.key}
+                entering={FadeInDown.delay(index * 40).duration(300)}
+                style={styles.gridItem}>
+                <PressableScale
+                  style={[styles.tile, { backgroundColor: feature.bg }]}
                   onPress={() => router.push(feature.route)}>
                   <IconSymbol name={feature.icon} size={30} color={feature.fg} />
-                </Pressable>
+                </PressableScale>
                 {/* Badge merah: tugas harian fitur ini yang belum selesai */}
                 {badge > 0 && (
                   <View style={styles.badge}>
@@ -243,7 +286,7 @@ export default function HomeScreen() {
                 <VixText heading="label" additionalStyle={styles.tileLabel}>
                   {feature.label}
                 </VixText>
-              </View>
+              </Animated.View>
             );
           })}
         </View>
@@ -283,11 +326,26 @@ const styles = StyleSheet.create({
   },
   visitTitle: { color: Color.ACCENT_DARK },
   visitText: { color: Color.ACCENT_DARK },
+  famCard: {
+    backgroundColor: Color.WHEEL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.WHEEL_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 3,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  famTitle: { color: Color.WHEEL_DARK },
+  famText: { color: Color.WHEEL_DARK },
   streakPill: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 4,
+    borderWidth: 0.5,
+    borderColor: Color.ACCENT_DARK,
   },
   streakPillText: { color: Color.ACCENT_DARK },
   welcomeTop: {
@@ -310,8 +368,8 @@ const styles = StyleSheet.create({
     backgroundColor: Color.ACCENT,
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 16,
+    paddingVertical: 8,
+    marginTop: 10,
   },
   timelineText: { color: Color.ACCENT_DARK },
   grid: {
@@ -327,7 +385,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tilePressed: { opacity: 0.7 },
   tileLabel: { textAlign: 'center', marginTop: 8 },
   badge: {
     position: 'absolute',

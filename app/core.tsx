@@ -27,16 +27,16 @@ type CoreTab = 'visitation' | 'followup' | 'leaders';
 // Tab bar bawah di dalam layar CORE.
 const TABS: BottomTab<CoreTab>[] = [
   { key: 'visitation', label: 'Visitasi', icon: 'calendar' },
-  { key: 'followup', label: 'Follow-up', icon: 'bubble.left.fill' },
+  { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
   { key: 'leaders', label: 'Leaders', icon: 'person.2.fill' },
 ];
 
-// CORE — penggembalaan sebagai MCL: follow-up harian para CORE Leader.
+// CORE — penggembalaan sebagai MCL: follow up harian para CORE Leader.
 export default function CoreScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Default masuk ke Follow-up: itu tugas harianmu. Bisa dioverride lewat
+  // Default masuk ke Follow Up: itu tugas harianmu. Bisa dioverride lewat
   // param ?tab=… (mis. kartu reminder visitasi di Home).
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
   const [tab, setTab] = useState<CoreTab>(

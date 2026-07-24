@@ -6,6 +6,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -31,6 +32,10 @@ import {
   type TimelineCategoryKey,
   type TimelineItem,
 } from '@/lib/timeline';
+
+// Tahun paling awal = tahun aplikasi dibuat (2026). Tidak ada data sebelumnya,
+// jadi navigasi tahun mentok di sini (tidak bisa mundur ke 2025 dan sebelumnya).
+const MIN_YEAR = 2026;
 
 // My Timeline 📍 — wishlist & target hidup per tahun: panggilan hidup,
 // pekerjaan, pelayanan, dll. Item bisa nempel di bulan atau jadi target
@@ -70,6 +75,16 @@ export default function TimelineScreen() {
   const doneCount = items?.filter((i) => i.done).length ?? 0;
   const total = items?.length ?? 0;
   const isThisYear = year === now.getFullYear();
+  const atMinYear = year <= MIN_YEAR; // mentok 2026 — tidak bisa ke kiri lagi
+
+  // Semua bulan yang sudah lewat (tahun berjalan) digabung jadi SATU dropdown,
+  // default tertutup — biar bulan ini & mendatang cepat terlihat.
+  const [pastOpen, setPastOpen] = useState(false);
+  const currentMonth = now.getMonth();
+  const hasPast = isThisYear && currentMonth > 0;
+  const pastCount = (items ?? []).filter(
+    (i) => i.month !== null && i.month < currentMonth,
+  ).length;
 
   function openAdd(month: number | null) {
     setEditing('new');
@@ -164,16 +179,60 @@ export default function TimelineScreen() {
     );
   }
 
+  // Isi satu bulan: header (nama + kuartal + tombol +) lalu daftar wishlist.
+  // Dipakai untuk kartu bulan individual & tiap bulan di dalam dropdown lewat.
+  function renderMonthSection(m: number) {
+    const monthItems = (items ?? []).filter((i) => i.month === m);
+    const current = isThisYear && m === now.getMonth();
+    const quarter = Math.floor(m / 3) + 1; // Q1–Q4
+    return (
+      <>
+        <View style={styles.monthHeader}>
+          <View style={styles.monthHeaderLeft}>
+            <VixText heading="bold" additionalStyle={styles.monthTitle}>
+              {MONTH_NAMES[m]}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.quarterText}>
+              • Q{quarter}
+            </VixText>
+            {current && (
+              <VixText heading="label" additionalStyle={styles.nowText}>
+                • bulan ini
+              </VixText>
+            )}
+          </View>
+          <Pressable onPress={() => openAdd(m)} hitSlop={10}>
+            <IconSymbol name="plus" size={18} color={Color.MAIN} />
+          </Pressable>
+        </View>
+        {monthItems.length === 0 ? (
+          <VixText heading="label" additionalStyle={styles.emptyMonth}>
+            —
+          </VixText>
+        ) : (
+          monthItems.map(renderItem)
+        )}
+      </>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Home"
         title="My Timeline 📍"
-        subtitle="Wishlist & panggilan hidupmu">
+        subtitle="Wishlist & panggilan hidupku">
         {/* Navigasi tahun + umur */}
         <View style={styles.yearRow}>
-          <Pressable onPress={() => setYear((y) => y - 1)} hitSlop={10}>
-            <IconSymbol name="chevron.left" size={20} color={Color.MAIN} />
+          <Pressable
+            onPress={() => setYear((y) => Math.max(MIN_YEAR, y - 1))}
+            hitSlop={10}
+            disabled={atMinYear}>
+            <IconSymbol
+              name="chevron.left"
+              size={20}
+              color={atMinYear ? Color.BORDER : Color.MAIN}
+            />
           </Pressable>
           <VixText heading="bold" additionalStyle={styles.yearText}>
             {year}
@@ -246,34 +305,58 @@ export default function TimelineScreen() {
             )}
           </View>
 
-          {/* 12 bulan */}
+          {/* Bulan yang sudah lewat → SATU dropdown gabungan (tahun berjalan) */}
+          {hasPast && (
+            <View style={styles.monthCard}>
+              {/* Tekan header untuk buka/tutup semua bulan lewat sekaligus */}
+              <Pressable
+                style={styles.monthHeader}
+                onPress={() => setPastOpen((o) => !o)}>
+                <View style={styles.monthHeaderLeft}>
+                  <VixText heading="bold" additionalStyle={styles.monthTitle}>
+                    🕗 {MONTH_NAMES[0]} – {MONTH_NAMES[currentMonth - 1]}
+                  </VixText>
+                </View>
+                <View style={styles.monthHeaderRight}>
+                  {!pastOpen && pastCount > 0 && (
+                    <View style={styles.countPill}>
+                      <VixText
+                        heading="label"
+                        additionalStyle={styles.countPillText}>
+                        {pastCount}
+                      </VixText>
+                    </View>
+                  )}
+                  <IconSymbol
+                    name={pastOpen ? 'chevron.up' : 'chevron.down'}
+                    size={16}
+                    color={Color.TEXT_LABEL}
+                  />
+                </View>
+              </Pressable>
+              {pastOpen && (
+                <Animated.View
+                  entering={FadeIn.duration(150)}
+                  style={styles.monthBody}>
+                  {Array.from({ length: currentMonth }, (_, m) => (
+                    <View key={m} style={styles.pastMonthBlock}>
+                      {renderMonthSection(m)}
+                    </View>
+                  ))}
+                </Animated.View>
+              )}
+            </View>
+          )}
+
+          {/* Bulan ini & mendatang → kartu individual, selalu terbuka */}
           {MONTH_NAMES.map((name, m) => {
-            const monthItems = items.filter((i) => i.month === m);
+            if (isThisYear && m < currentMonth) return null; // sudah masuk dropdown
             const current = isThisYear && m === now.getMonth();
             return (
               <View
                 key={name}
                 style={[styles.monthCard, current && styles.monthCurrent]}>
-                <View style={styles.monthHeader}>
-                  <VixText heading="bold" additionalStyle={styles.monthTitle}>
-                    {name}
-                    {current && (
-                      <VixText heading="label" additionalStyle={styles.nowText}>
-                        {'  '}• bulan ini
-                      </VixText>
-                    )}
-                  </VixText>
-                  <Pressable onPress={() => openAdd(m)} hitSlop={10}>
-                    <IconSymbol name="plus" size={18} color={Color.MAIN} />
-                  </Pressable>
-                </View>
-                {monthItems.length === 0 ? (
-                  <VixText heading="label" additionalStyle={styles.emptyMonth}>
-                    —
-                  </VixText>
-                ) : (
-                  monthItems.map(renderItem)
-                )}
+                {renderMonthSection(m)}
               </View>
             );
           })}
@@ -420,9 +503,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
+  monthHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  monthHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   monthTitle: { color: Color.TEXT_TITLE },
+  quarterText: { color: Color.TEXT_LABEL },
   nowText: { color: Color.MAIN },
+  countPill: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  countPillText: { color: Color.MAIN_DARK },
+  monthBody: { gap: 6, marginTop: 6 },
+  // Tiap bulan lewat di dalam dropdown gabungan, dipisah garis tipis.
+  pastMonthBlock: {
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    paddingTop: 8,
+    gap: 6,
+  },
   emptyMonth: { color: Color.TEXT_PLACEHOLDER },
   itemRow: {
     flexDirection: 'row',

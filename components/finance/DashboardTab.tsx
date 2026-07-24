@@ -155,10 +155,19 @@ export function DashboardTab({
           styles.verdictCard,
           hasData && (win ? styles.verdictWin : styles.verdictLose),
         ]}>
-        <VixText heading="label" additionalStyle={styles.verdictLabel}>
+        {/* Tanpa data → card terang, jadi teksnya harus gelap */}
+        <VixText
+          heading="label"
+          additionalStyle={
+            hasData ? styles.verdictLabel : styles.verdictLabelNeutral
+          }>
           Kondisi Bulan Ini
         </VixText>
-        <VixText heading="header" additionalStyle={styles.verdictValue}>
+        <VixText
+          heading="header"
+          additionalStyle={
+            hasData ? styles.verdictValue : styles.verdictValueNeutral
+          }>
           {!hasData ? 'Belum ada data 📭' : win ? 'MENANG 🏆' : 'BOROS 🚨'}
         </VixText>
         {hasData && (
@@ -310,6 +319,8 @@ const styles = StyleSheet.create({
   verdictLose: { backgroundColor: Color.DANGER },
   verdictLabel: { color: Color.TEXT_ON_DARK_MUTED },
   verdictValue: { color: Color.TEXT_REVERSE },
+  verdictLabelNeutral: { color: Color.TEXT_LABEL },
+  verdictValueNeutral: { color: Color.TEXT_TITLE },
   statRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   statTile: {
     flex: 1,

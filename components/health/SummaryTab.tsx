@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
+import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { VixText } from '@/components/common/VixText';
@@ -16,8 +17,11 @@ import {
 } from '@/lib/format';
 import {
   ageFromBirthYear,
+  BLOOD_TYPES,
   bmiCategory,
   bmiValue,
+  bmrMale,
+  dailyWaterLiters,
   saveHealthProfile,
   type HealthProfile,
 } from '@/lib/health';
@@ -73,17 +77,28 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
   const [fHeight, setFHeight] = useState('');
   const [fWeight, setFWeight] = useState('');
   const [fWaist, setFWaist] = useState('');
+  const [fBlood, setFBlood] = useState<string | null>(null);
+  const [fEyeL, setFEyeL] = useState('');
+  const [fEyeR, setFEyeR] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const age = ageFromBirthYear(profile.birthYear);
   const bmi = bmiValue(profile.weightKg, profile.heightCm);
   const cat = bmiCategory(bmi);
+  // Standar kesehatan yang dihitung otomatis dari data tubuh.
+  const bmr = bmrMale(profile.weightKg, profile.heightCm, age);
+  const waterL = dailyWaterLiters(profile.weightKg);
+  const whtr = profile.waistCm ? profile.waistCm / profile.heightCm : null;
 
   function openEdit() {
     setFBirthYear(String(profile.birthYear));
     setFHeight(String(profile.heightCm));
     setFWeight(String(profile.weightKg));
     setFWaist(profile.waistCm ? String(profile.waistCm) : '');
+    setFBlood(profile.bloodType);
+    setFEyeL(profile.eyeLeft != null ? String(profile.eyeLeft) : '');
+    setFEyeR(profile.eyeRight != null ? String(profile.eyeRight) : '');
     setFormError(null);
     setEditOpen(true);
   }
@@ -105,7 +120,15 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
     setSaving(true);
     setFormError(null);
     try {
-      await saveHealthProfile(user.uid, { birthYear, heightCm, weightKg, waistCm });
+      await saveHealthProfile(user.uid, {
+        birthYear,
+        heightCm,
+        weightKg,
+        waistCm,
+        bloodType: fBlood,
+        eyeLeft: fEyeL.trim() ? parseDecimal(fEyeL) : null,
+        eyeRight: fEyeR.trim() ? parseDecimal(fEyeR) : null,
+      });
       setEditOpen(false);
     } catch {
       setFormError('Gagal menyimpan. Cek koneksi internet.');
@@ -162,14 +185,6 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
                 value={hk?.activeKcal != null ? groupDigits(String(hk.activeKcal)) : '–'}
                 label="🔥 kkal Aktif"
               />
-              <StatTile
-                value={
-                  hk?.sleepHours != null
-                    ? `${formatDecimal(hk.sleepHours)} jam`
-                    : '–'
-                }
-                label="😴 Tidur"
-              />
             </View>
             <Pressable
               style={[styles.connectButton, hkBusy && styles.busy]}
@@ -179,10 +194,6 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
                 Hubungkan Apple Health
               </VixText>
             </Pressable>
-            <VixText heading="label" additionalStyle={styles.hint}>
-              Kalau angka tetap kosong, buka app Health → Profil → Privasi →
-              Apps → vix, lalu izinkan akses baca.
-            </VixText>
           </>
         )}
       </View>
@@ -198,12 +209,24 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
           </Pressable>
         </View>
 
-        <BodyRow label="Umur" value={`${ageFromBirthYear(profile.birthYear)} tahun`} />
+        <BodyRow label="Umur" value={`${age} tahun`} />
         <BodyRow label="Tinggi" value={`${profile.heightCm} cm`} />
         <BodyRow label="Berat" value={`${profile.weightKg} kg`} />
         <BodyRow
           label="Lingkar perut"
           value={profile.waistCm ? `${profile.waistCm} cm` : 'belum diisi'}
+        />
+        <BodyRow
+          label="Gol. darah"
+          value={profile.bloodType ?? 'belum diisi'}
+        />
+        <BodyRow
+          label="Minus mata (L/R)"
+          value={
+            profile.eyeLeft != null || profile.eyeRight != null
+              ? `${profile.eyeLeft != null ? formatDecimal(profile.eyeLeft) : '–'} / ${profile.eyeRight != null ? formatDecimal(profile.eyeRight) : '–'}`
+              : 'belum diisi'
+          }
         />
         <View style={styles.bodyRow}>
           <VixText heading="label">BMI</VixText>
@@ -219,8 +242,36 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
             {formatDecimal(bmi)} · {cat.label}
           </VixText>
         </View>
+        {/* Standar kesehatan terhitung otomatis */}
+        <BodyRow
+          label="Kalori basal (BMR)"
+          value={`±${groupDigits(String(Math.round(bmr)))} kkal/hari`}
+        />
+        <BodyRow
+          label="Kebutuhan air"
+          value={`±${formatDecimal(waterL)} L/hari`}
+        />
+        {whtr != null && (
+          <View style={styles.bodyRow}>
+            <VixText heading="label">Rasio pinggang/tinggi</VixText>
+            <VixText
+              heading="bold"
+              additionalStyle={whtr < 0.5 ? styles.bmiOk : styles.bmiWarn}>
+              {whtr.toFixed(2).replace('.', ',')} ·{' '}
+              {whtr < 0.5 ? 'Sehat' : 'Perhatian'}
+            </VixText>
+          </View>
+        )}
         <VixText heading="label" additionalStyle={styles.hint}>
-          BMI memakai ambang Asia-Pasifik (normal 18,5–22,9).
+          BMI ambang Asia-Pasifik (normal 18,5–22,9) · rasio pinggang/tinggi
+          sehat {'<'} 0,50.
+        </VixText>
+        {/* Kapan terakhir data ini diperbarui */}
+        <VixText heading="label" additionalStyle={styles.updatedText}>
+          Diperbarui:{' '}
+          {profile.updatedAt
+            ? formatFullDate(profile.updatedAt.toDate())
+            : 'belum pernah'}
         </VixText>
       </View>
 
@@ -229,38 +280,74 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
         <VixText heading="title" additionalStyle={styles.modalTitle}>
           Ubah Data Tubuh
         </VixText>
-        <VixText heading="label">Tahun lahir</VixText>
-        <FormInput
-          style={styles.modalInput}
-          keyboardType="number-pad"
-          value={fBirthYear}
-          onChangeText={setFBirthYear}
-          editable={!saving}
-        />
-        <VixText heading="label">Tinggi (cm)</VixText>
-        <FormInput
-          style={styles.modalInput}
-          keyboardType="decimal-pad"
-          value={fHeight}
-          onChangeText={setFHeight}
-          editable={!saving}
-        />
-        <VixText heading="label">Berat (kg)</VixText>
-        <FormInput
-          style={styles.modalInput}
-          keyboardType="decimal-pad"
-          value={fWeight}
-          onChangeText={setFWeight}
-          editable={!saving}
-        />
-        <VixText heading="label">Lingkar perut (cm, opsional)</VixText>
-        <FormInput
-          style={styles.modalInput}
-          keyboardType="decimal-pad"
-          value={fWaist}
-          onChangeText={setFWaist}
-          editable={!saving}
-        />
+        {/* Form makin panjang → digulir di dalam dialog */}
+        <ScrollView
+          style={styles.modalScroll}
+          keyboardShouldPersistTaps="handled">
+          <VixText heading="label">Tahun lahir</VixText>
+          <FormInput
+            style={styles.modalInput}
+            keyboardType="number-pad"
+            value={fBirthYear}
+            onChangeText={setFBirthYear}
+            editable={!saving}
+          />
+          <VixText heading="label">Tinggi (cm)</VixText>
+          <FormInput
+            style={styles.modalInput}
+            keyboardType="decimal-pad"
+            value={fHeight}
+            onChangeText={setFHeight}
+            editable={!saving}
+          />
+          <VixText heading="label">Berat (kg)</VixText>
+          <FormInput
+            style={styles.modalInput}
+            keyboardType="decimal-pad"
+            value={fWeight}
+            onChangeText={setFWeight}
+            editable={!saving}
+          />
+          <VixText heading="label">Lingkar perut</VixText>
+          <FormInput
+            style={styles.modalInput}
+            keyboardType="decimal-pad"
+            value={fWaist}
+            onChangeText={setFWaist}
+            editable={!saving}
+          />
+          <VixText heading="label">Golongan darah</VixText>
+          <View style={styles.bloodRow}>
+            {BLOOD_TYPES.map((b) => (
+              <Chip
+                key={b}
+                label={b}
+                active={fBlood === b}
+                onPress={() => setFBlood(fBlood === b ? null : b)}
+                additionalStyle={styles.bloodChip}
+              />
+            ))}
+          </View>
+          <VixText heading="label">Minus mata</VixText>
+          <View style={styles.eyeRow}>
+            <FormInput
+              style={styles.eyeInput}
+              placeholder="Kiri"
+              keyboardType="decimal-pad"
+              value={fEyeL}
+              onChangeText={setFEyeL}
+              editable={!saving}
+            />
+            <FormInput
+              style={styles.eyeInput}
+              placeholder="Kanan"
+              keyboardType="decimal-pad"
+              value={fEyeR}
+              onChangeText={setFEyeR}
+              editable={!saving}
+            />
+          </View>
+        </ScrollView>
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {formError}
@@ -338,6 +425,17 @@ const styles = StyleSheet.create({
   busy: { opacity: 0.6 },
   connectText: { color: Color.TEXT_REVERSE },
   hint: { marginTop: 8 },
+  updatedText: { color: Color.TEXT_PLACEHOLDER, marginTop: 4 },
+  modalScroll: { maxHeight: 420 },
+  bloodRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  bloodChip: { flex: 1 },
+  eyeRow: { flexDirection: 'row', gap: 8, marginTop: 4, marginBottom: 4 },
+  eyeInput: { flex: 1 },
   editText: { color: Color.MAIN },
   bodyRow: {
     flexDirection: 'row',

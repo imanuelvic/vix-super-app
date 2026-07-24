@@ -50,6 +50,12 @@ export function VisitationTab({
 
   const today = new Date();
 
+  // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
+  // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const futureDate = startOfDay(fDate) > startOfDay(today);
+
   function leaderOf(v: Visitation): CoreLeader | undefined {
     return leaders.find((l) => l.id === v.leaderId);
   }
@@ -90,7 +96,8 @@ export function VisitationTab({
       leaderId: fLeaderId,
       date: Timestamp.fromDate(fDate),
       note: fNote.trim(),
-      done: fDone,
+      // Jadwal masa depan dipaksa belum divisit — toggle-nya juga disembunyikan.
+      done: futureDate ? false : fDone,
     };
     const next =
       editing === 'new'
@@ -175,9 +182,6 @@ export function VisitationTab({
           onPress={openAdd}
           additionalStyle={styles.addButton}
         />
-        <VixText heading="label" additionalStyle={styles.hintTop}>
-          Reminder otomatis muncul di Home mulai H-3 sampai hari-H 📍
-        </VixText>
 
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
@@ -263,13 +267,15 @@ export function VisitationTab({
           editable={!busy}
         />
 
-        {/* Tandai selesai setelah visit */}
-        <Pressable style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
-          <CheckCircle checked={fDone} />
-          <VixText heading="paragraph" additionalStyle={styles.doneText}>
-            Sudah divisit ✅
-          </VixText>
-        </Pressable>
+        {/* Tandai selesai setelah visit — hanya kalau tanggalnya sudah tiba */}
+        {!futureDate && (
+          <Pressable style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
+            <CheckCircle checked={fDone} />
+            <VixText heading="paragraph" additionalStyle={styles.doneText}>
+              Sudah divisit ✅
+            </VixText>
+          </Pressable>
+        )}
 
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
@@ -301,7 +307,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 6 },
-  hintTop: { textAlign: 'center', marginBottom: 8 },
   error: { color: Color.DANGER, marginBottom: 8 },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
   empty: { textAlign: 'center', marginBottom: 8 },

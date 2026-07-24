@@ -171,14 +171,14 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         </View>
         <FormInput
           style={styles.formGap}
-          placeholder={`Hasil — ${TYPE_META[type].hint}`}
+          placeholder="Hasil pemeriksaan"
           value={value}
           onChangeText={setValue}
           editable={!saving}
         />
         <FormInput
           style={styles.formGap}
-          placeholder="Catatan (opsional)"
+          placeholder="Catatan"
           value={note}
           onChangeText={setNote}
           editable={!saving}
@@ -239,7 +239,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         />
         <FormInput
           style={styles.formGap}
-          placeholder="Catatan (opsional)"
+          placeholder="Catatan"
           value={editNote}
           onChangeText={setEditNote}
           editable={!busy}

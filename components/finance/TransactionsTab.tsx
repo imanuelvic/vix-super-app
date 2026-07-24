@@ -277,25 +277,25 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
             }>
             {selectedCategory
               ? `${selectedCategory.icon} ${selectedCategory.label}`
-              : 'Pilih kategori…'}
+              : 'Pilih kategori'}
           </VixText>
           <IconSymbol name="chevron.down" size={18} color={Color.TEXT_LABEL} />
         </Pressable>
 
-        {/* Nominal + catatan (keduanya wajib), tombol tambah di samping catatan */}
+        {/* Catatan dulu, lalu nominal — urutan sama seperti Kantong */}
         <FormInput
-          placeholder="Nominal (Rp)"
-          keyboardType="number-pad"
-          value={amount}
-          onChangeText={(t) => setAmount(groupDigits(t))}
+          placeholder="Catatan"
+          value={note}
+          onChangeText={setNote}
           editable={!saving}
         />
         <View style={[styles.inputRow, styles.inputGap]}>
           <FormInput
             style={styles.flexInput}
-            placeholder="Catatan"
-            value={note}
-            onChangeText={setNote}
+            placeholder="Nominal (Rp)"
+            keyboardType="number-pad"
+            value={amount}
+            onChangeText={(t) => setAmount(groupDigits(t))}
             onSubmitEditing={handleAdd}
             returnKeyType="done"
             editable={!saving}
@@ -368,9 +368,8 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
                   {cat.label}
                 </VixText>
                 <VixText heading="label" numberOfLines={1}>
-                  {FINANCE_TYPE_LABEL[item.type]}
+                  {dateLabel ? `${dateLabel}` : ''}
                   {item.note ? ` · ${item.note}` : ''}
-                  {dateLabel ? ` · ${dateLabel}` : ''}
                 </VixText>
               </View>
               <View style={styles.rowRight}>

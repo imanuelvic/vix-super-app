@@ -76,8 +76,8 @@ export default function FinanceScreen() {
         title="Finance 💵"
         subtitle="Kelola uang, jangan dikuasai uang"
         right={
-          // Budget Khusus 💼 (pocket dana per tujuan)
-          <EmojiButton emoji="💼" onPress={() => router.push('/funds')} />
+          // Kantong 👛 (dana per tujuan) — beda dari ikon Career
+          <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
         }>
         {/* Navigasi bulan — berlaku untuk semua tab */}
         <View style={styles.monthRow}>

@@ -8,32 +8,34 @@ import {
   query,
   serverTimestamp,
   updateDoc,
+  writeBatch,
   type FirestoreError,
   type Timestamp,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { dayDocId } from './health';
 
 // Kategori task yang sudah pasti — ganti kategori = ganti to-do list.
 export type TaskCategory =
   | 'personal'
   | 'work'
+  | 'ministry'
   | 'fun'
   | 'learning'
-  | 'relax'
-  | 'ministry';
+  | 'relax';
 
 export const TASK_CATEGORIES: {
   key: TaskCategory;
   label: string;
   icon: string;
 }[] = [
-  { key: 'personal', label: 'Personal', icon: '👤' },
-  { key: 'work', label: 'Work', icon: '💼' },
-  { key: 'fun', label: 'Fun Recreation', icon: '🎢' },
-  { key: 'learning', label: 'Learning', icon: '📚' },
-  { key: 'relax', label: 'Relax', icon: '🧘🏻' },
-  { key: 'ministry', label: 'Ministry', icon: '🙏' },
+  { key: 'personal', label: 'PERSONAL', icon: '👤' },
+  { key: 'work', label: 'WORK', icon: '💼' },
+  { key: 'ministry', label: 'MINISTRY', icon: '🙏' },
+  { key: 'fun', label: 'FUN', icon: '🎢' },
+  { key: 'learning', label: 'LEARNING', icon: '📚' },
+  { key: 'relax', label: 'RELAX', icon: '🧘🏻' },
 ];
 
 export type Task = {
@@ -41,6 +43,7 @@ export type Task = {
   title: string;
   done: boolean;
   category: TaskCategory;
+  dayId: string; // "YYYY-MM-DD" — task milik hari apa
   createdAt: Timestamp | null;
 };
 
@@ -66,10 +69,16 @@ export function subscribeTasks(
   return onSnapshot(
     q,
     (snapshot) => {
+      const today = dayDocId(new Date());
       const tasks = snapshot.docs.map((d) => {
         const data = d.data() as Omit<Task, 'id'>;
-        // Task lama (sebelum ada kategori) dianggap Personal.
-        return { id: d.id, ...data, category: data.category ?? 'personal' };
+        // Task lama: tanpa kategori → Personal; tanpa tanggal → hari ini.
+        return {
+          id: d.id,
+          ...data,
+          category: data.category ?? 'personal',
+          dayId: data.dayId ?? today,
+        };
       });
       onChange(tasks);
     },
@@ -77,17 +86,121 @@ export function subscribeTasks(
   );
 }
 
-export function addTask(uid: string, title: string, category: TaskCategory) {
+export function addTask(
+  uid: string,
+  title: string,
+  category: TaskCategory,
+  dayId: string,
+) {
   return addDoc(tasksCollection(uid), {
     title: title.trim(),
     done: false,
     category,
+    dayId,
     createdAt: serverTimestamp(),
   });
 }
 
+/** Ubah judul dan/atau pindahkan task ke hari lain. */
+export function updateTask(
+  uid: string,
+  id: string,
+  data: { title?: string; dayId?: string },
+) {
+  return updateDoc(doc(db, 'users', uid, 'tasks', id), data);
+}
+
+/** Batas aman jumlah task yang dibuat sekali jalan oleh task berulang. */
+export const MAX_RECURRING = 60;
+
+/**
+ * Daftar tanggal untuk task berulang: mingguan (tiap 7 hari) atau bulanan
+ * (tanggal yang sama tiap bulan, menyesuaikan bulan pendek), dari `start`
+ * sampai `end`. Dibatasi MAX_RECURRING+1 supaya rentang kebablasan ketahuan.
+ */
+export function generateRecurringDays(
+  start: Date,
+  end: Date,
+  freq: 'weekly' | 'monthly',
+): string[] {
+  const days: string[] = [];
+  if (freq === 'weekly') {
+    const d = new Date(start);
+    while (d <= end && days.length <= MAX_RECURRING) {
+      days.push(dayDocId(d));
+      d.setDate(d.getDate() + 7);
+    }
+  } else {
+    const dayOfMonth = start.getDate();
+    let y = start.getFullYear();
+    let m = start.getMonth();
+    while (days.length <= MAX_RECURRING) {
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const d = new Date(y, m, Math.min(dayOfMonth, daysInMonth));
+      if (d > end) break;
+      if (d >= start) days.push(dayDocId(d));
+      m += 1;
+      if (m > 11) {
+        m = 0;
+        y += 1;
+      }
+    }
+  }
+  return days;
+}
+
+/** Buat task berulang sekaligus (satu batch write). */
+export function addRecurringTasks(
+  uid: string,
+  title: string,
+  category: TaskCategory,
+  days: string[],
+) {
+  const batch = writeBatch(db);
+  for (const dayId of days) {
+    batch.set(doc(tasksCollection(uid)), {
+      title: title.trim(),
+      done: false,
+      category,
+      dayId,
+      createdAt: serverTimestamp(),
+    });
+  }
+  return batch.commit();
+}
+
+/**
+ * Beres-beres harian (satu batch):
+ * - task lama yang BELUM selesai → pindah ke hari ini,
+ * - task lama yang SUDAH selesai → dihapus otomatis (biar bersih & hemat).
+ */
+export function rolloverTasks(
+  uid: string,
+  moveTasks: Task[],
+  deleteTasks: Task[],
+  todayId: string,
+) {
+  const batch = writeBatch(db);
+  for (const t of moveTasks) {
+    batch.update(doc(db, 'users', uid, 'tasks', t.id), { dayId: todayId });
+  }
+  for (const t of deleteTasks) {
+    batch.delete(doc(db, 'users', uid, 'tasks', t.id));
+  }
+  return batch.commit();
+}
+
 export function setTaskDone(uid: string, id: string, done: boolean) {
   return updateDoc(doc(db, 'users', uid, 'tasks', id), { done });
+}
+
+/** Tandai banyak task selesai sekaligus (tombol "beres semua hari ini"). */
+export function completeTasks(uid: string, items: Task[]) {
+  const batch = writeBatch(db);
+  for (const t of items) {
+    batch.update(doc(db, 'users', uid, 'tasks', t.id), { done: true });
+  }
+  return batch.commit();
 }
 
 export function deleteTask(uid: string, id: string) {

@@ -1,11 +1,7 @@
-import {
-  Pressable,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
 // Chip pilihan (pill) — kategori, bulan, jenis, dll. Aktif = hijau MAIN.
@@ -21,13 +17,13 @@ export function Chip({
   additionalStyle?: StyleProp<ViewStyle>;
 }) {
   return (
-    <Pressable
+    <PressableScale
       style={[styles.chip, active && styles.active, additionalStyle]}
       onPress={onPress}>
       <VixText heading="label" numberOfLines={1} additionalStyle={styles.text}>
         {label}
       </VixText>
-    </Pressable>
+    </PressableScale>
   );
 }
 

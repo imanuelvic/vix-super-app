@@ -27,8 +27,8 @@ import {
 import { MONTH_NAMES } from '@/lib/format';
 
 // Tab CORE Leader: data semua CL + Main Team yang membantu mereka —
-// nama, warna hati CORE, tanggal lahir, umur, nomor WA, hitung mundur
-// ulang tahun, dan kapan terakhir di-follow-up.
+// nama, warna hati CORE, tanggal lahir, umur, nomor WA, dan hitung
+// mundur ulang tahun.
 export function LeadersTab({
   leaders,
   mainTeam,
@@ -40,6 +40,10 @@ export function LeadersTab({
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Dropdown daftar — default TERTUTUP biar layar tidak langsung penuh list.
+  const [clOpen, setClOpen] = useState(false);
+  const [mtOpen, setMtOpen] = useState(false);
 
   // Form CORE Leader. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<CoreLeader | 'new' | null>(null);
@@ -211,15 +215,26 @@ export function LeadersTab({
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <PrimaryButton
-          label="Tambah CORE Leader"
-          icon="plus"
-          onPress={openAdd}
-          additionalStyle={styles.addButton}
-        />
+        {/* Dua tombol tambah sebelahan: CL (warna utama) & MT (accent) */}
+        <View style={styles.addRow}>
+          <PrimaryButton
+            label="CORE Leader"
+            icon="plus"
+            onPress={openAdd}
+            additionalStyle={styles.addFlex}
+          />
+          <PrimaryButton
+            label="Main Team"
+            icon="plus"
+            background={Color.ACCENT}
+            textColor={Color.ACCENT_DARK}
+            onPress={openAddMT}
+            additionalStyle={styles.addFlex}
+          />
+        </View>
 
         <VixText heading="label" additionalStyle={styles.countLine}>
-          {leaders.length} CORE Leader · {mainTeam.length} Main Team 🙏
+          {leaders.length} CORE Leader · {mainTeam.length} Main Team
         </VixText>
 
         {error && (
@@ -228,7 +243,24 @@ export function LeadersTab({
           </VixText>
         )}
 
-        {leaders.map((l) => {
+        {/* Dropdown CORE Leader (default tertutup) */}
+        <Pressable
+          style={styles.toggleHeader}
+          onPress={() => setClOpen((o) => !o)}>
+          <VixText heading="title">🫶 CORE Leader</VixText>
+          <View style={styles.toggleRight}>
+            <VixText heading="label">
+              {clOpen ? 'Tutup' : `${leaders.length} orang`}
+            </VixText>
+            <IconSymbol
+              name={clOpen ? 'chevron.up' : 'chevron.down'}
+              size={18}
+              color={Color.TEXT_LABEL}
+            />
+          </View>
+        </Pressable>
+
+        {clOpen && leaders.map((l) => {
           const { daysUntil } = nextBirthday(l, today);
           const soon = daysUntil <= 30;
           return (
@@ -245,8 +277,7 @@ export function LeadersTab({
                     {currentAge(l, today)} th
                   </VixText>
                   <VixText heading="label" additionalStyle={styles.followupLine}>
-                    📱 {l.phone ? `+62${l.phone}` : 'belum ada nomor'} · {"\n"}
-                    FU terakhir: {l.lastFollowupDayId ?? 'belum'}
+                    📱 {l.phone ? `+62${l.phone}` : 'belum ada nomor'}
                   </VixText>
                 </View>
               </View>
@@ -268,19 +299,24 @@ export function LeadersTab({
           );
         })}
 
-        {/* ===== Main Team ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          👥 Main Team
-        </VixText>
-        <PrimaryButton
-          label="Tambah Main Team"
-          icon="plus"
-          background={Color.ACCENT}
-          textColor={Color.ACCENT_DARK}
-          onPress={openAddMT}
-          additionalStyle={styles.addButton}
-        />
-
+        {/* ===== Main Team (dropdown, default tertutup) ===== */}
+        <Pressable
+          style={styles.toggleHeader}
+          onPress={() => setMtOpen((o) => !o)}>
+          <VixText heading="title">👥 Main Team</VixText>
+          <View style={styles.toggleRight}>
+            <VixText heading="label">
+              {mtOpen ? 'Tutup' : `${mainTeam.length} orang`}
+            </VixText>
+            <IconSymbol
+              name={mtOpen ? 'chevron.up' : 'chevron.down'}
+              size={18}
+              color={Color.TEXT_LABEL}
+            />
+          </View>
+        </Pressable>
+        {mtOpen && (
+          <>
         {sortedMT.length === 0 && (
           <VixText heading="label" additionalStyle={styles.emptyText}>
             Belum ada Main Team. Tiap CL biasanya punya 2–4 orang.
@@ -304,15 +340,14 @@ export function LeadersTab({
                     {m.name}
                   </VixText>
                   <VixText heading="label">
-                    Bantu: {cl ? `${cl.heart} ${cl.name}` : '(CL tidak ditemukan)'}
+                    MT {cl ? `${cl.name} ${cl.heart}` : '(CL tidak ditemukan)'}
                   </VixText>
                   <VixText heading="label">
                     {m.birthDay} {MONTH_NAMES[m.birthMonth]} {m.birthYear} ·{' '}
                     {currentAge(m, today)} th
                   </VixText>
                   <VixText heading="label" additionalStyle={styles.followupLine}>
-                    📱 {m.phone ? `+62${m.phone}` : 'belum ada nomor'} · {"\n"}
-                    FU terakhir: {m.lastFollowupDayId ?? 'belum'}
+                    📱 {m.phone ? `+62${m.phone}` : 'belum ada nomor'}
                   </VixText>
                 </View>
               </View>
@@ -333,6 +368,8 @@ export function LeadersTab({
             </Pressable>
           );
         })}
+          </>
+        )}
       </ScrollView>
 
       {/* Bottom sheet tambah/edit CL */}
@@ -363,7 +400,7 @@ export function LeadersTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal lahir
+          Tanggal Lahir
         </VixText>
         <View style={styles.formGap}>
           {/* key = id supaya state picker internal reset tiap ganti CL */}
@@ -375,7 +412,7 @@ export function LeadersTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          No. HP (untuk tombol chat WhatsApp)
+          No. HP
         </VixText>
         <View style={styles.phoneRow}>
           <View style={styles.phonePrefix}>
@@ -443,7 +480,7 @@ export function LeadersTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal lahir
+          Tanggal Lahir
         </VixText>
         <View style={styles.formGap}>
           {/* key = id supaya state picker internal reset tiap ganti orang */}
@@ -455,7 +492,7 @@ export function LeadersTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          No. HP (untuk tombol chat WhatsApp)
+          No. HP
         </VixText>
         <View style={styles.phoneRow}>
           <View style={styles.phonePrefix}>
@@ -502,8 +539,17 @@ export function LeadersTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  addButton: { marginBottom: 10 },
+  addRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  addFlex: { flex: 1 },
   countLine: { textAlign: 'center', marginBottom: 12 },
+  toggleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  toggleRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   error: { color: Color.DANGER, marginBottom: 8 },
   sectionTitle: { marginTop: 12, marginBottom: 10 },
   emptyText: { textAlign: 'center', marginBottom: 12 },

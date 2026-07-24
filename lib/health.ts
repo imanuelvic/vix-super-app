@@ -25,7 +25,14 @@ export type HealthProfile = {
   heightCm: number;
   weightKg: number;
   waistCm: number | null; // null = belum pernah diisi
+  bloodType: string | null; // golongan darah — info penting saat darurat
+  eyeLeft: number | null; // minus mata kiri
+  eyeRight: number | null; // minus mata kanan
+  updatedAt: Timestamp | null; // kapan terakhir data ini diperbarui
 };
+
+/** Pilihan golongan darah. */
+export const BLOOD_TYPES = ['A', 'B', 'AB', 'O'];
 
 // Nilai awal sebelum dokumen pernah disimpan (data pemilik app).
 export const DEFAULT_PROFILE: HealthProfile = {
@@ -33,6 +40,10 @@ export const DEFAULT_PROFILE: HealthProfile = {
   heightCm: 169,
   weightKg: 71,
   waistCm: null,
+  bloodType: null,
+  eyeLeft: null,
+  eyeRight: null,
+  updatedAt: null,
 };
 
 export function subscribeHealthProfile(
@@ -81,6 +92,20 @@ export function bmiCategory(bmi: number): { label: string; tone: BmiTone } {
   if (bmi < 25) return { label: 'Berlebih (berisiko)', tone: 'warn' };
   if (bmi < 30) return { label: 'Obesitas I', tone: 'danger' };
   return { label: 'Obesitas II', tone: 'danger' };
+}
+
+/** BMR pria (Mifflin-St Jeor) — kalori yang dibakar tubuh saat istirahat. */
+export function bmrMale(
+  weightKg: number,
+  heightCm: number,
+  age: number,
+): number {
+  return 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+}
+
+/** Kebutuhan air harian (liter) ≈ 35 ml per kg berat badan. */
+export function dailyWaterLiters(weightKg: number): number {
+  return (weightKg * 35) / 1000;
 }
 
 // ============================== Target berat ==============================
@@ -300,10 +325,9 @@ export const CHECKUP_TYPES: {
   key: CheckupType;
   label: string;
   icon: string;
-  hint: string;
 }[] = [
-  { key: 'tensi', label: 'Tekanan Darah', icon: '🩸', hint: 'mis. 120/80 mmHg' },
-  { key: 'gula', label: 'Gula Darah', icon: '🍬', hint: 'mis. 95 mg/dL' },
+  { key: 'tensi', label: 'Tekanan Darah', icon: '🩸' },
+  { key: 'gula', label: 'Gula Darah', icon: '🍬' },
 ];
 
 /** Lewat dari ini (hari) dianggap sudah waktunya periksa lagi. */

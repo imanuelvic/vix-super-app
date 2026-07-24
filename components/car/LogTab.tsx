@@ -236,7 +236,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
         </View>
         <FormInput
           style={styles.formGap}
-          placeholder="Produk — mis. Gasoline (Full)"
+          placeholder="Produk"
           value={fTitle}
           onChangeText={setFTitle}
           editable={!busy}
@@ -250,7 +250,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
         />
         <FormInput
           style={styles.formGap}
-          placeholder="Keterangan (opsional) — mis. 7 sticks left"
+          placeholder="Keterangan (opsional)"
           value={fNote}
           onChangeText={setFNote}
           editable={!busy}

@@ -4,15 +4,20 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   ACHIEVEMENTS,
+  ACHIEVEMENT_CATEGORIES,
   REWARDS,
   subscribeLoginStreak,
   subscribeSelfRewardBalance,
+  type AchievementCategoryKey,
   type AchievementStats,
   type LoginStreak,
 } from '@/lib/achievements';
@@ -21,8 +26,9 @@ import { activeStreak, dayDocId, subscribeStreak, type Streak } from '@/lib/heal
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import { formatRupiah } from '@/lib/transactions';
 
-// Achievement 🏆 — pencapaian dari daily login & kebiasaan sehat,
-// plus daftar self-reward yang nyambung ke saldo pocket Self-Reward.
+// Achievement 🏆 — pencapaian dikelompokkan per kategori (ala Duolingo).
+// Tekan kartu kategori → modal berisi pencapaian bertingkat kategori itu,
+// jadi tidak perlu scroll daftar panjang. Plus self-reward di bawah.
 export default function AchievementsScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -32,6 +38,9 @@ export default function AchievementsScreen() {
   const [revive, setRevive] = useState<LoginStreak | null>(null);
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Kategori yang sedang dibuka di modal (null = tertutup).
+  const [openCat, setOpenCat] = useState<AchievementCategoryKey | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -54,6 +63,18 @@ export default function AchievementsScreen() {
     reviveTotal: revive?.total ?? 0,
   };
   const unlocked = ACHIEVEMENTS.filter((a) => a.of(stats) >= a.target).length;
+
+  // Ringkasan satu kategori: daftar + berapa yang sudah terbuka.
+  function catInfo(key: AchievementCategoryKey) {
+    const list = ACHIEVEMENTS.filter((a) => a.category === key);
+    const done = list.filter((a) => a.of(stats) >= a.target).length;
+    return { list, done, total: list.length };
+  }
+
+  const activeCat = ACHIEVEMENT_CATEGORIES.find((c) => c.key === openCat);
+  const activeList = openCat
+    ? ACHIEVEMENTS.filter((a) => a.category === openCat)
+    : [];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -85,28 +106,48 @@ export default function AchievementsScreen() {
           </VixText>
         </View>
 
-        {/* ===== Daftar achievement ===== */}
+        {/* ===== Kategori pencapaian (tekan → modal) ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          🎖️ Pencapaian
+          🎖️ Kategori Pencapaian
         </VixText>
-        {ACHIEVEMENTS.map((a) => {
-          const value = a.of(stats);
-          const done = value >= a.target;
+        {ACHIEVEMENT_CATEGORIES.map((cat) => {
+          const { done, total } = catInfo(cat.key);
+          const pct = total > 0 ? (done / total) * 100 : 0;
+          const allDone = done === total;
           return (
-            <View key={a.id} style={[styles.row, !done && styles.rowLocked]}>
-              <VixText additionalStyle={styles.rowIcon}>{a.icon}</VixText>
-              <View style={styles.rowMain}>
-                <VixText heading="bold" additionalStyle={styles.rowTitle}>
-                  {a.title}
-                </VixText>
-                <VixText heading="label">{a.desc}</VixText>
+            <PressableScale
+              key={cat.key}
+              style={styles.catCard}
+              onPress={() => setOpenCat(cat.key)}>
+              <VixText additionalStyle={styles.catIcon}>{cat.icon}</VixText>
+              <View style={styles.catMain}>
+                <View style={styles.catTop}>
+                  <VixText heading="bold" additionalStyle={styles.rowTitle}>
+                    {cat.label}
+                  </VixText>
+                  <VixText
+                    heading="bold"
+                    additionalStyle={allDone ? styles.doneText : styles.countText}>
+                    {allDone ? '✅ Lengkap' : `${done}/${total}`}
+                  </VixText>
+                </View>
+                <VixText heading="label">{cat.desc}</VixText>
+                <View style={styles.barTrack}>
+                  <View
+                    style={[
+                      styles.barFill,
+                      { width: `${pct}%` },
+                      allDone && styles.barFillDone,
+                    ]}
+                  />
+                </View>
               </View>
-              <VixText
-                heading="bold"
-                additionalStyle={done ? styles.doneText : styles.lockText}>
-                {done ? '✅' : `${Math.min(value, a.target)}/${a.target}`}
-              </VixText>
-            </View>
+              <IconSymbol
+                name="chevron.right"
+                size={18}
+                color={Color.TEXT_PLACEHOLDER}
+              />
+            </PressableScale>
           );
         })}
 
@@ -116,13 +157,10 @@ export default function AchievementsScreen() {
         </VixText>
         <View style={styles.balanceCard}>
           <VixText heading="label" additionalStyle={styles.balanceLabel}>
-            Saldo pocket Self-Reward 🏆
+            Saldo Kantong Self-Reward 🏆
           </VixText>
           <VixText heading="subheader" additionalStyle={styles.balanceValue}>
             {formatRupiah(balance)}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.balanceLabel}>
-            Kerja kerasmu layak dirayakan — tanpa merusak budget 😉
           </VixText>
         </View>
 
@@ -151,17 +189,57 @@ export default function AchievementsScreen() {
         })}
 
         <PrimaryButton
-          label="Kelola Pocket Self-Reward 🏆"
+          label="Kelola Kantong Self-Reward 🏆"
           onPress={() =>
             router.push({ pathname: '/fund/[key]', params: { key: 'self-reward' } })
           }
           additionalStyle={styles.manageButton}
         />
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Klaim reward = catat pengeluaran di pocket Self-Reward, jadi saldonya
-          ikut berkurang otomatis.
-        </VixText>
       </ScrollView>
+
+      {/* Modal pencapaian satu kategori — daftar bertingkat + progress bar */}
+      <SheetModal
+        visible={openCat !== null}
+        title={activeCat ? `${activeCat.icon} ${activeCat.label}` : ''}
+        subtitle={activeCat?.desc}
+        onClose={() => setOpenCat(null)}>
+        <ScrollView
+          style={styles.modalList}
+          showsVerticalScrollIndicator={false}>
+          {activeList.map((a) => {
+            const value = a.of(stats);
+            const done = value >= a.target;
+            const pct = Math.min((value / a.target) * 100, 100);
+            return (
+              <View key={a.id} style={[styles.row, !done && styles.rowLocked]}>
+                <VixText additionalStyle={styles.rowIcon}>{a.icon}</VixText>
+                <View style={styles.rowMain}>
+                  <View style={styles.catTop}>
+                    <VixText heading="bold" additionalStyle={styles.rowTitle}>
+                      {a.title}
+                    </VixText>
+                    <VixText
+                      heading="bold"
+                      additionalStyle={done ? styles.doneText : styles.lockText}>
+                      {done ? '✅' : `${Math.min(value, a.target)}/${a.target}`}
+                    </VixText>
+                  </View>
+                  <VixText heading="label">{a.desc}</VixText>
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        { width: `${pct}%` },
+                        done && styles.barFillDone,
+                      ]}
+                    />
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </SheetModal>
     </SafeAreaView>
   );
 }
@@ -182,6 +260,29 @@ const styles = StyleSheet.create({
   heroValue: { color: Color.TEXT_REVERSE },
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   sectionTitle: { marginTop: 14, marginBottom: 10 },
+  // Kartu kategori di halaman utama (tekan → modal).
+  catCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 10,
+  },
+  catIcon: { fontSize: 30, lineHeight: 38 },
+  catMain: { flex: 1, gap: 5 },
+  catTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  countText: { color: Color.TEXT_LABEL },
+  // Baris pencapaian / reward.
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -196,10 +297,23 @@ const styles = StyleSheet.create({
   },
   rowLocked: { opacity: 0.55 },
   rowIcon: { fontSize: 26, lineHeight: 32 },
-  rowMain: { flex: 1, gap: 1 },
+  rowMain: { flex: 1, gap: 4 },
   rowTitle: { color: Color.TEXT_TITLE },
   doneText: { color: Color.SUCCESS },
   lockText: { color: Color.TEXT_PLACEHOLDER },
+  // Progress bar (kategori & tiap pencapaian).
+  barTrack: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: Color.MAIN_LIGHT,
+  },
+  barFillDone: { backgroundColor: Color.MAIN },
   balanceCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,
@@ -209,6 +323,6 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { color: Color.ACCENT_DARK },
   balanceValue: { color: Color.ACCENT_DARK },
-  manageButton: { marginTop: 6 },
-  hint: { textAlign: 'center', marginTop: 10 },
+  manageButton: { marginTop: 6, marginBottom: 15 },
+  modalList: { maxHeight: 460 },
 });

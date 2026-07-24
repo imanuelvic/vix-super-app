@@ -14,6 +14,7 @@ export const Color = {
   MAIN_DARK: '#0C5C50',
   MAIN_LIGHT: '#9FE6D5',
   MAIN_TRANSPARENT: '#1D8D7A1A',
+  
   ACCENT: '#FFE8CC',
   ACCENT_DARK: '#5B4B3A',
 
@@ -37,6 +38,12 @@ export const Color = {
   FINANCE_EXPENSE: '#FFCFC9',
   FINANCE_SAVING: '#FFE5A0',
   FINANCE_INVESTMENT: '#BFE1F6',
+  // Versi gelap tiap warna di atas — dipakai jadi borderColor tombol Finance
+  // biar tiap jenis tetap jelas dikenali walau pastelnya lembut.
+  FINANCE_INCOME_DARK: '#4C8C3A',
+  FINANCE_EXPENSE_DARK: '#C4553F',
+  FINANCE_SAVING_DARK: '#B8901F',
+  FINANCE_INVESTMENT_DARK: '#3D82B5',
 
   // Warna irisan grafik donat di Dashboard Finance (dipakai bergiliran)
   CHART_COLORS: [
@@ -54,7 +61,7 @@ export const Color = {
 
   // Tile Home lainnya
   CAREER: '#E3CBB4', // coklat pastel (fitur Career)
-  PASTEL_GRAY: '#E4E2DC', // abu-abu pastel (tile Trading)
+  CAREER_DARK: '#E4E2DC', // abu-abu pastel (tile Trading)
 
   // Merek luar (tombol chat WhatsApp di fitur CORE)
   WHATSAPP: '#25D366',

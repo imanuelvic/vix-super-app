@@ -11,7 +11,7 @@ import { db } from './firebase';
 // CORE — komunitas sel gereja. Pemilik app adalah MCL (Mentor CORE Leader)
 // yang menggembalakan beberapa CORE Leader (CL). Fitur ini membantu:
 // 1) menyimpan data CL (nama, warna hati CORE, tanggal lahir),
-// 2) tugas follow-up harian yang dibagi merata + ide topik chat.
+// 2) tugas follow up harian yang dibagi merata + ide topik chat.
 //
 // Penyimpanan: SATU dokumen (users/{uid}/core/leaders) berisi array CL —
 // daftarnya kecil, jadi 1 read per buka dan tulis utuh saat berubah.
@@ -24,7 +24,7 @@ export type CoreLeader = {
   birthMonth: number; // 0–11 seperti Date JS
   birthDay: number;
   phone: string | null; // digit SETELAH +62 (semua CL orang Indonesia)
-  lastFollowupDayId: string | null; // "YYYY-MM-DD" terakhir di-follow-up
+  lastFollowupDayId: string | null; // "YYYY-MM-DD" terakhir di follow up
 };
 
 // Data awal para CL — tampil sebelum dokumen pernah disimpan.
@@ -43,10 +43,10 @@ export const DEFAULT_LEADERS: CoreLeader[] = [
 /** Pilihan warna hati untuk CL baru. */
 export const HEARTS = ['🩷', '❤️', '🧡', '💛', '💚', '🩵', '💙', '💜', '🖤', '🩶', '🤍', '🤎'];
 
-/** Berapa CL yang di-follow-up per hari (9 CL ≈ semua kebagian tiap ±5 hari). */
+/** Berapa CL yang di follow up per hari (9 CL ≈ semua kebagian tiap ±5 hari). */
 export const FOLLOWUPS_PER_DAY = 2;
 
-/** Berapa Main Team yang di-follow-up per hari. */
+/** Berapa Main Team yang di follow up per hari. */
 export const FOLLOWUPS_MT_PER_DAY = 2;
 
 // Main Team: 2–4 orang yang membantu tiap CORE Leader. Disimpan di dokumen
@@ -190,11 +190,11 @@ export const VISIT_TIPS: string[] = [
   '📖 Siapkan encouragement / firman singkat untuk CL & member.',
   '📸 Foto kegiatan CORE untuk dikirim ke WAG 😄',
   '🕐 Datang lebih awal, pulang jangan buru-buru — ngobrol dengan member.',
-  '📝 Catat kondisi member yang butuh perhatian khusus untuk follow-up.',
+  '📝 Catat kondisi member yang butuh perhatian khusus untuk follow up.',
   '🙏 Tutup dengan mendoakan CL & CORE-nya secara spesifik.',
 ];
 
-// ==================== Kategori topik follow-up ====================
+// ==================== Kategori topik follow up ====================
 // Dari sheet Relationship 🤝: Life Update - Prayer Chain - Growth Partner.
 
 export type CoreCategory = {
@@ -308,12 +308,12 @@ export function dailyTopic(
   return { category, question };
 }
 
-// ==================== Rotasi follow-up harian ====================
+// ==================== Rotasi follow up harian ====================
 
 /**
- * Pilih siapa yang di-follow-up hari ini: yang sudah ditandai hari ini
+ * Pilih siapa yang di follow up hari ini: yang sudah ditandai hari ini
  * tetap tampil (daftar stabil), sisanya diisi dari yang PALING LAMA tidak
- * di-follow-up, dengan urutan diacak per hari — acak tapi merata.
+ * di follow up, dengan urutan diacak per hari — acak tapi merata.
  */
 export function pickDailyFollowups<
   T extends { id: string; lastFollowupDayId: string | null },

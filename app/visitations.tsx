@@ -1,12 +1,27 @@
+import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CheckCircle } from '@/components/common/CheckCircle';
+import { Chip } from '@/components/common/Chip';
+import { DateField } from '@/components/common/DateField';
+import { DualButtons } from '@/components/common/DualButtons';
+import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
+  saveVisitations,
   subscribeCoreLeaders,
   subscribeVisitations,
   visitDaysUntil,
@@ -15,14 +30,24 @@ import {
 } from '@/lib/core';
 import { formatFullDate } from '@/lib/format';
 
-// Riwayat Visitasi 🕘 — seluruh jadwal visitasi CORE dari dulu sampai
-// yang akan datang. Kelola/edit tetap lewat CORE → tab Visitasi.
+// Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
+// Tap kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
+// hapus PERMANEN dari Firestore (benar-benar hilang, bukan nonaktif).
 export default function VisitationsScreen() {
   const { user } = useAuth();
 
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Form edit lewat bottom sheet.
+  const [editing, setEditing] = useState<Visitation | null>(null);
+  const [fLeaderId, setFLeaderId] = useState('');
+  const [fDate, setFDate] = useState(new Date());
+  const [fNote, setFNote] = useState('');
+  const [fDone, setFDone] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -35,17 +60,80 @@ export default function VisitationsScreen() {
   }, [user]);
 
   const today = new Date();
-  const sorted = [...(visitations ?? [])].sort(
+  const all = visitations ?? [];
+
+  // Riwayat = yang SUDAH divisit atau tanggalnya SUDAH lewat.
+  // Jadwal mendatang tidak ikut — tempatnya di CORE → tab Visitasi.
+  const history = all.filter((v) => v.done || visitDaysUntil(v, today) < 0);
+
+  // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
+  // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const futureDate = startOfDay(fDate) > startOfDay(today);
+  const sorted = [...history].sort(
     (a, b) => b.date.toMillis() - a.date.toMillis(),
   );
-  const doneCount = sorted.filter((v) => v.done).length;
+
+  function openEdit(v: Visitation) {
+    setEditing(v);
+    setFLeaderId(v.leaderId);
+    setFDate(v.date.toDate());
+    setFNote(v.note);
+    setFDone(v.done);
+    setFormError(null);
+  }
+
+  async function handleSave() {
+    if (!user || !editing || busy) return;
+    if (!fLeaderId) {
+      setFormError('Pilih CORE Leader-nya dulu.');
+      return;
+    }
+    setBusy(true);
+    setFormError(null);
+    const data: Visitation = {
+      id: editing.id,
+      leaderId: fLeaderId,
+      date: Timestamp.fromDate(fDate),
+      note: fNote.trim(),
+      // Jadwal masa depan dipaksa belum divisit — toggle-nya juga disembunyikan.
+      done: futureDate ? false : fDone,
+    };
+    try {
+      await saveVisitations(
+        user.uid,
+        all.map((v) => (v.id === editing.id ? data : v)),
+      );
+      setEditing(null);
+    } catch {
+      setFormError('Gagal menyimpan. Cek koneksi internet.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Hapus PERMANEN: item dibuang dari array lalu dokumen ditulis ulang —
+  // datanya benar-benar hilang dari Firestore.
+  async function handleDelete() {
+    if (!user || !editing || busy) return;
+    setBusy(true);
+    try {
+      await saveVisitations(user.uid, all.filter((v) => v.id !== editing.id));
+    } catch {
+      setError('Gagal menghapus. Coba lagi.');
+    } finally {
+      setEditing(null);
+      setBusy(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
         title="Riwayat Visitasi 🕘"
-        subtitle={`${sorted.length} jadwal · ${doneCount} selesai`}
+        subtitle={`${sorted.length} riwayat`}
       />
 
       {error && (
@@ -62,7 +150,8 @@ export default function VisitationsScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           {sorted.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Belum ada visitasi — jadwalkan lewat CORE → tab Visitasi 📅
+              Belum ada riwayat — visitasi yang sudah selesai atau terlewat
+              akan muncul di sini 📅
             </VixText>
           )}
           {sorted.map((v) => {
@@ -76,7 +165,11 @@ export default function VisitationsScreen() {
                   ? `${days} hari lagi`
                   : '⚠️ Terlewat';
             return (
-              <View key={v.id} style={styles.card}>
+              // Tap → edit status/tanggal/catatan atau hapus permanen.
+              <Pressable
+                key={v.id}
+                style={styles.card}
+                onPress={() => openEdit(v)}>
                 <View style={styles.cardTop}>
                   <VixText heading="bold" additionalStyle={styles.cardTitle}>
                     {cl ? `${cl.heart} ${cl.name}` : '(CL tidak ditemukan)'}
@@ -99,14 +192,78 @@ export default function VisitationsScreen() {
                 {v.note ? (
                   <VixText heading="label">📝 {v.note}</VixText>
                 ) : null}
-              </View>
+              </Pressable>
             );
           })}
-          <VixText heading="label" additionalStyle={styles.hint}>
-            Ubah / tandai selesai lewat CORE → tab Visitasi.
-          </VixText>
         </ScrollView>
       )}
+
+      {/* Bottom sheet edit visitasi */}
+      <SheetModal
+        visible={!!editing}
+        title="Edit Visitasi"
+        onClose={() => setEditing(null)}>
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          CORE yang divisit
+        </VixText>
+        <View style={styles.leaderWrap}>
+          {leaders.map((l) => (
+            <Chip
+              key={l.id}
+              label={`${l.heart} ${l.name}`}
+              active={fLeaderId === l.id}
+              onPress={() => setFLeaderId(l.id)}
+            />
+          ))}
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Tanggal visit
+        </VixText>
+        <View style={styles.formGap}>
+          {/* key = id supaya state picker internal reset tiap ganti jadwal */}
+          <DateField key={editing?.id} value={fDate} onChange={setFDate} />
+        </View>
+
+        <FormInput
+          style={styles.formGap}
+          placeholder="Catatan — tempat / agenda (opsional)"
+          value={fNote}
+          onChangeText={setFNote}
+          editable={!busy}
+        />
+
+        {/* Toggle sudah selesai / belum — hanya kalau tanggalnya sudah tiba */}
+        {!futureDate && (
+          <Pressable style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
+            <CheckCircle checked={fDone} />
+            <VixText heading="paragraph" additionalStyle={styles.doneText}>
+              Sudah divisit ✅
+            </VixText>
+          </Pressable>
+        )}
+
+        {formError && (
+          <VixText heading="label" additionalStyle={styles.sheetError}>
+            {formError}
+          </VixText>
+        )}
+        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
+        {editing && (
+          <InlineDelete
+            key={editing.id}
+            label="Hapus permanen jadwal ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
+        )}
+        <DualButtons
+          confirmLabel="Simpan"
+          busy={busy}
+          onCancel={() => setEditing(null)}
+          onConfirm={handleSave}
+        />
+      </SheetModal>
     </SafeAreaView>
   );
 }
@@ -136,5 +293,21 @@ const styles = StyleSheet.create({
   statusDone: { color: Color.SUCCESS },
   statusLate: { color: Color.WARNING },
   statusUpcoming: { color: Color.ACCENT_DARK },
-  hint: { textAlign: 'center', marginTop: 8 },
+  fieldLabel: { marginBottom: 6 },
+  leaderWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  formGap: { marginBottom: 10 },
+  doneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+    marginBottom: 4,
+  },
+  doneText: { color: Color.TEXT_TITLE },
+  sheetError: { color: Color.DANGER, marginBottom: 8 },
 });

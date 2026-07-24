@@ -252,9 +252,6 @@ export default function WheelScreen() {
           <VixText heading="paragraph" additionalStyle={styles.assessQuestion}>
             {area.question}
           </VixText>
-          <VixText heading="label" additionalStyle={styles.assessHint}>
-            Menurutmu, berapa nilaimu di area ini?
-          </VixText>
 
           {/* Pilihan nilai 1–10 */}
           <View style={styles.scoreWrap}>
@@ -279,7 +276,7 @@ export default function WheelScreen() {
 
           <FormInput
             style={styles.noteInput}
-            placeholder="Jelaskan alasan penilaianmu (opsional)…"
+            placeholder="Jelaskan alasan penilaianmu (opsional)"
             value={draftNotes[area.key] ?? ''}
             onChangeText={(t) =>
               setDraftNotes((prev) => ({ ...prev, [area.key]: t }))
@@ -543,7 +540,6 @@ const styles = StyleSheet.create({
   assessIcon: { fontSize: 44, lineHeight: 54, textAlign: 'center' },
   assessTitle: { textAlign: 'center', marginTop: 4 },
   assessQuestion: { textAlign: 'center', marginTop: 6 },
-  assessHint: { textAlign: 'center', marginTop: 10, marginBottom: 10 },
   scoreWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',

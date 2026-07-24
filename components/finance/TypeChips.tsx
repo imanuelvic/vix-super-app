@@ -5,6 +5,7 @@ import { VixText } from '@/components/common/VixText';
 import {
   FINANCE_TYPES,
   FINANCE_TYPE_COLOR,
+  FINANCE_TYPE_COLOR_DARK,
   FINANCE_TYPE_LABEL,
   type FinanceType,
 } from '@/lib/categories';
@@ -25,7 +26,10 @@ export function TypeChips({
           key={t}
           style={[
             styles.chip,
-            { backgroundColor: FINANCE_TYPE_COLOR[t] },
+            {
+              backgroundColor: FINANCE_TYPE_COLOR[t],
+              borderColor: FINANCE_TYPE_COLOR_DARK[t], // border versi gelap tiap jenis
+            },
             value === t ? styles.chipActive : styles.chipInactive,
           ]}
           onPress={() => onChange(t)}>
@@ -45,9 +49,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1, // border gelap tiap jenis (warna diisi inline)
   },
-  chipActive: { borderColor: Color.TEXT_TITLE },
-  chipInactive: { borderColor: 'transparent', opacity: 0.55 },
+  // Aktif = tampil penuh & tegas; nonaktif = diredupkan.
+  chipActive: { opacity: 1 },
+  chipInactive: { opacity: 0.45 },
   text: { color: Color.TEXT_TITLE },
 });

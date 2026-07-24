@@ -1,0 +1,230 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Color } from '@/assets/style/color';
+import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
+import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { VixText } from '@/components/common/VixText';
+import { useAuth } from '@/contexts/auth';
+import { type LoginStreak as DayStreak } from '@/lib/achievements';
+import { formatFullDate } from '@/lib/format';
+import { dayDocId } from '@/lib/health';
+import {
+  bumpReviveStreak,
+  deleteReviveEntry,
+  saveReviveEntry,
+  subscribeReviveEntries,
+  subscribeReviveStreak,
+  type ReviveEntry,
+} from '@/lib/spiritual';
+
+// Tulis/edit jurnal REVIVE ✍️ — halaman sendiri (bukan mode di dalam
+// layar Spiritual) dengan KeyboardAvoidingView supaya kolom Refleksi
+// tidak ketutupan keyboard iPhone.
+export default function ReviveEditorScreen() {
+  const router = useRouter();
+  const { user } = useAuth();
+  // ?day=YYYY-MM-DD dari riwayat; tanpa param = jurnal hari ini.
+  const { day } = useLocalSearchParams<{ day?: string }>();
+
+  const todayId = dayDocId(new Date());
+  const targetDay = typeof day === 'string' && day ? day : todayId;
+
+  const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
+  const [streak, setStreak] = useState<DayStreak | null>(null);
+  const [loaded, setLoaded] = useState(false); // prefill sekali saja
+  const [exists, setExists] = useState(false);
+
+  const [editingDate, setEditingDate] = useState(new Date());
+  const [fTitle, setFTitle] = useState('');
+  const [fPassage, setFPassage] = useState('');
+  const [fVerse, setFVerse] = useState(''); // legacy — disimpan, tak ditampilkan
+  const [fRhema, setFRhema] = useState('');
+  const [fReflection, setFReflection] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const fail = () => setFormError('Gagal memuat data. Cek koneksi internet.');
+    const unsubs = [
+      subscribeReviveEntries(user.uid, setEntries, fail),
+      subscribeReviveStreak(user.uid, setStreak, fail),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [user]);
+
+  // Prefill dari jurnal yang sudah ada (sekali, saat data pertama datang).
+  useEffect(() => {
+    if (entries === null || loaded) return;
+    const entry = entries.find((e) => e.id === targetDay) ?? null;
+    if (entry) {
+      setFTitle(entry.title);
+      setFPassage(entry.passage);
+      setFVerse(entry.verse);
+      setFRhema(entry.rhema);
+      setFReflection(entry.reflection);
+      setEditingDate(entry.date.toDate());
+      setExists(true);
+    }
+    setLoaded(true);
+  }, [entries, loaded, targetDay]);
+
+  async function handleSave() {
+    if (!user || busy) return;
+    if (!fTitle.trim()) {
+      setFormError('Judul renungannya diisi dulu ya.');
+      return;
+    }
+    if (!fRhema.trim()) {
+      setFormError('Tulis rhema-nya — firman apa yang ngena di hatimu?');
+      return;
+    }
+    setBusy(true);
+    setFormError(null);
+    try {
+      await saveReviveEntry(user.uid, targetDay, {
+        title: fTitle.trim(),
+        passage: fPassage.trim(),
+        verse: fVerse.trim(),
+        rhema: fRhema.trim(),
+        reflection: fReflection.trim(),
+        date: editingDate,
+      });
+      // Jurnal HARI INI pertama kali → streak naik 🔥
+      if (targetDay === todayId) {
+        await bumpReviveStreak(user.uid, streak, todayId);
+      }
+      router.back();
+    } catch {
+      setFormError('Gagal menyimpan. Cek koneksi internet.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!user || busy) return;
+    setBusy(true);
+    try {
+      await deleteReviveEntry(user.uid, targetDay);
+      router.back();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader
+        backLabel="Spiritual"
+        title="Tulis Revive ✍️"
+        subtitle={`📖 ${formatFullDate(editingDate)}`}
+      />
+
+      {!loaded ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={Color.MAIN} />
+        </View>
+      ) : (
+        /* Keyboard iOS tidak lagi menutupi kolom Refleksi */
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled">
+            <FormInput
+              style={styles.formGap}
+              placeholder="Judul Revive"
+              value={fTitle}
+              onChangeText={setFTitle}
+              autoCapitalize="characters"
+              editable={!busy}
+            />
+            <FormInput
+              style={styles.formGap}
+              placeholder="Bacaan Alkitab"
+              value={fPassage}
+              onChangeText={setFPassage}
+              editable={!busy}
+            />
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              ✨ Rhema
+            </VixText>
+            <FormInput
+              style={styles.bigInput}
+              placeholder="Jujur saja di sini, renungan hari ini bicara apa ke kamu?"
+              value={fRhema}
+              onChangeText={setFRhema}
+              multiline
+              editable={!busy}
+            />
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              🪞 Refleksi & Komitmen (opsional)
+            </VixText>
+            <FormInput
+              style={styles.mediumInput}
+              placeholder="Apa yang mau kamu lakukan menanggapi firman ini?"
+              value={fReflection}
+              onChangeText={setFReflection}
+              multiline
+              editable={!busy}
+            />
+            {formError && (
+              <VixText heading="label" additionalStyle={styles.error}>
+                {formError}
+              </VixText>
+            )}
+            <PrimaryButton
+              label="Simpan"
+              busy={busy}
+              onPress={handleSave}
+              additionalStyle={styles.saveButton}
+            />
+            {exists && (
+              <InlineDelete
+                key={targetDay}
+                label="Hapus jurnal ini"
+                busy={busy}
+                onDelete={handleDelete}
+              />
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  flex: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  formGap: { marginBottom: 10 },
+  fieldLabel: { marginBottom: 6 },
+  bigInput: {
+    minHeight: 140,
+    textAlignVertical: 'top',
+    marginBottom: 12,
+  },
+  mediumInput: {
+    minHeight: 90,
+    textAlignVertical: 'top',
+    marginBottom: 8,
+  },
+  error: { color: Color.DANGER, marginBottom: 8 },
+  saveButton: { marginTop: 4 },
+});

@@ -1,40 +1,103 @@
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { BusinessTab } from '@/components/career/BusinessTab';
+import { FreelanceTab } from '@/components/career/FreelanceTab';
+import { FulltimeTab } from '@/components/career/FulltimeTab';
+import { InsuranceTab } from '@/components/career/InsuranceTab';
+import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
+import { useAuth } from '@/contexts/auth';
+import {
+  subscribeFreelance,
+  subscribeInsurance,
+  subscribeRoadmap,
+  type FreelanceProject,
+  type InsuranceMonths,
+  type RoadmapItem,
+} from '@/lib/career';
 
-// Career — halaman placeholder. Isi fiturnya menyusul.
+type CareerTab = 'fulltime' | 'freelance' | 'insurance' | 'business';
+
+// Tab bar bawah di dalam layar Career.
+const TABS: BottomTab<CareerTab>[] = [
+  { key: 'fulltime', label: 'Fulltime', icon: 'laptopcomputer' },
+  { key: 'freelance', label: 'Freelance', icon: 'globe' },
+  { key: 'insurance', label: 'Insurance', icon: 'shield.fill' },
+  { key: 'business', label: 'Business', icon: 'cart.fill' },
+];
+
+// Career 💼 — empat topi pekerjaan: engineer NDC, freelancer,
+// agent Allianz, dan (nanti) bisnis kuliner Manado.
 export default function CareerScreen() {
-  return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader backLabel="Home" title="Career 💼" />
+  const { user } = useAuth();
 
-      <View style={styles.center}>
-        <VixText additionalStyle={styles.emoji}>💼</VixText>
-        <VixText heading="subheader" additionalStyle={styles.title}>
-          Coming Soon 🚧
+  const [tab, setTab] = useState<CareerTab>('fulltime');
+  const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
+  const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);
+  const [insurance, setInsurance] = useState<InsuranceMonths | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const unsubs = [
+      subscribeRoadmap(
+        user.uid,
+        (next) => {
+          setRoadmap(next);
+          setError(null);
+        },
+        fail,
+      ),
+      subscribeFreelance(user.uid, setFreelance, fail),
+      subscribeInsurance(user.uid, setInsurance, fail),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [user]);
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <ScreenHeader
+        backLabel="Home"
+        title="Career 💼"
+        subtitle="Empat topi, satu panggilan"
+      />
+
+      {error && (
+        <VixText heading="label" additionalStyle={styles.error}>
+          {error}
         </VixText>
-        <VixText heading="label" additionalStyle={styles.text}>
-          Fitur career sedang disiapkan.{'\n'}Nantikan di update berikutnya!
-        </VixText>
+      )}
+
+      <View style={styles.content}>
+        {roadmap === null || freelance === null || insurance === null ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={Color.MAIN} />
+          </View>
+        ) : tab === 'fulltime' ? (
+          <FulltimeTab items={roadmap} />
+        ) : tab === 'freelance' ? (
+          <FreelanceTab projects={freelance} />
+        ) : tab === 'insurance' ? (
+          <InsuranceTab months={insurance} />
+        ) : (
+          <BusinessTab />
+        )}
       </View>
+
+      {/* Tab bar bawah khusus layar Career */}
+      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 40,
-    paddingBottom: 80, // sedikit naik biar terasa di tengah layar
-  },
-  emoji: { fontSize: 64, lineHeight: 76 },
-  title: { color: Color.ACCENT_DARK },
-  text: { textAlign: 'center' },
+  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
+  content: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
