@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/auth';
 import { FUNDS, subscribeFundBalances, type FundBalances } from '@/lib/funds';
 import { formatRupiah } from '@/lib/transactions';
 
-// Daftar Kantong + saldo tersimpan tiap dompet.
+// Daftar Saku + saldo tersimpan tiap dompet.
 // Tekan salah satu untuk membuka mutasinya.
 export default function FundsScreen() {
   const router = useRouter();
@@ -38,7 +38,7 @@ export default function FundsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Finance"
-        title="Kantong"
+        title="Saku"
         subtitle="Dana per tujuan dengan mutasi masuk & keluar sendiri."
       />
 

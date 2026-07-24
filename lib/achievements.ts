@@ -109,7 +109,7 @@ export const ACHIEVEMENTS: {
 ];
 
 // ============================ Self-Reward 🏆 ============================
-// Hadiah untuk diri sendiri — dananya dari Kantong "Self-Reward".
+// Hadiah untuk diri sendiri — dananya dari Saku "Self-Reward".
 
 export const REWARDS: { icon: string; label: string; price: number }[] = [
   { icon: '☕', label: 'Kopi favorit', price: 50_000 },
@@ -120,7 +120,7 @@ export const REWARDS: { icon: string; label: string; price: number }[] = [
   { icon: '🎮', label: 'Gadget / hobi', price: 3_000_000 },
 ];
 
-/** Dengarkan saldo Kantong Self-Reward (1 dokumen, bukan seluruh funds). */
+/** Dengarkan saldo Saku Self-Reward (1 dokumen, bukan seluruh funds). */
 export function subscribeSelfRewardBalance(
   uid: string,
   onChange: (balance: number) => void,

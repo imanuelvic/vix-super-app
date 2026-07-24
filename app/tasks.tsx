@@ -7,6 +7,13 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import Animated, {
+  FadeInDown,
+  FadeOutDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -16,6 +23,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -67,6 +75,11 @@ export default function TasksScreen() {
 
   // FAB speed-dial ⋯: submenu bulat kecil muncul di atas tombolnya.
   const [fabOpen, setFabOpen] = useState(false);
+  // Ikon FAB ikut berputar saat menu dibuka/ditutup.
+  const fabSpin = useSharedValue(0);
+  const fabIconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${fabSpin.value * 90}deg` }],
+  }));
   // Sheet cari / task berulang (satu modal, ganti isi — iOS tidak bisa
   // modal bertumpuk).
   const [sheetView, setSheetView] = useState<'search' | 'recur' | null>(null);
@@ -91,6 +104,10 @@ export default function TasksScreen() {
     }, 60_000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    fabSpin.value = withTiming(fabOpen ? 1 : 0, { duration: 200 });
+  }, [fabOpen, fabSpin]);
 
   useEffect(() => {
     if (!user) return;
@@ -385,10 +402,16 @@ export default function TasksScreen() {
                 </View>
                 {dayTasks.map((item) => (
                   <View key={item.id} style={styles.taskRow}>
+                    {/* Hanya lingkaran ini yang menandai selesai */}
+                    <Pressable
+                      onPress={() => handleToggle(item)}
+                      hitSlop={8}>
+                      <CheckCircle checked={item.done} size={22} />
+                    </Pressable>
+                    {/* Tekan teksnya → edit / pindah hari / hapus */}
                     <Pressable
                       style={styles.taskMain}
-                      onPress={() => handleToggle(item)}>
-                      <CheckCircle checked={item.done} size={22} />
+                      onPress={() => openEdit(item)}>
                       <VixText
                         heading="paragraph"
                         additionalStyle={[
@@ -397,14 +420,6 @@ export default function TasksScreen() {
                         ]}>
                         {item.title}
                       </VixText>
-                    </Pressable>
-                    {/* Tap ✎ → edit / pindah hari / hapus */}
-                    <Pressable onPress={() => openEdit(item)} hitSlop={10}>
-                      <IconSymbol
-                        name="pencil"
-                        size={16}
-                        color={Color.TEXT_PLACEHOLDER}
-                      />
                     </Pressable>
                   </View>
                 ))}
@@ -427,22 +442,18 @@ export default function TasksScreen() {
       <View
         style={[styles.fabArea, { bottom: insets.bottom + 24 }]}
         pointerEvents="box-none">
+        {/* `order` = jarak dari FAB (0 = paling dekat) — dipakai untuk
+            stagger: keluar dari bawah ke atas, masuk dari atas ke bawah. */}
         {fabOpen && (
           <>
             <FabAction
+              order={3}
               label="Beres semua hari ini"
               icon="checkmark"
               onPress={handleCompleteToday}
             />
             <FabAction
-              label="Task berulang"
-              icon="repeat"
-              onPress={() => {
-                setFabOpen(false);
-                openRecur();
-              }}
-            />
-            <FabAction
+              order={2}
               label="Cari task"
               icon="magnifyingglass"
               onPress={() => {
@@ -452,6 +463,16 @@ export default function TasksScreen() {
               }}
             />
             <FabAction
+              order={1}
+              label="Task berulang"
+              icon="repeat"
+              onPress={() => {
+                setFabOpen(false);
+                openRecur();
+              }}
+            />
+            <FabAction
+              order={0}
               label="Tambah hari ini"
               icon="plus"
               onPress={() => {
@@ -461,13 +482,15 @@ export default function TasksScreen() {
             />
           </>
         )}
-        <Pressable style={styles.fab} onPress={() => setFabOpen((o) => !o)}>
-          <IconSymbol
-            name={fabOpen ? 'xmark' : 'ellipsis'}
-            size={26}
-            color={Color.TEXT_REVERSE}
-          />
-        </Pressable>
+        <PressableScale style={styles.fab} onPress={() => setFabOpen((o) => !o)}>
+          <Animated.View style={fabIconStyle}>
+            <IconSymbol
+              name={fabOpen ? 'xmark' : 'ellipsis'}
+              size={26}
+              color={Color.TEXT_REVERSE}
+            />
+          </Animated.View>
+        </PressableScale>
       </View>
 
       {/* Sheet cari / task berulang */}
@@ -580,11 +603,13 @@ export default function TasksScreen() {
         title={editing === 'new' ? 'Tambah Task' : 'Edit Task'}
         subtitle={`${activeMeta.icon} ${activeMeta.label}`}
         onClose={() => setEditing(null)}>
+        {/* Textarea: Enter bikin baris baru, jadi task bisa ditulis paragraf */}
         <FormInput
-          style={styles.formGap}
+          style={styles.taskInput}
           placeholder={`Task`}
           value={fTitle}
           onChangeText={setFTitle}
+          multiline
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -596,6 +621,7 @@ export default function TasksScreen() {
             key={editing === 'new' ? 'new' : editing?.id}
             value={fDate}
             onChange={setFDate}
+            withDay
           />
         </View>
         {formError && (
@@ -613,7 +639,7 @@ export default function TasksScreen() {
           />
         )}
         <DualButtons
-          confirmLabel="Tambah"
+          confirmLabel={editing === 'new' ? 'Tambah' : 'Ganti'}
           busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSaveSheet}
@@ -693,18 +719,26 @@ const styles = StyleSheet.create({
   },
   dayTitle: { color: Color.TEXT_TITLE },
   dayTitleToday: { color: Color.MAIN_DARK },
+  // Task bisa multi-baris → rata atas biar ceklis sejajar baris pertama.
   taskRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 10,
+    paddingVertical: 2,
   },
-  taskMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  taskMain: { flex: 1 },
   taskText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   taskTextDone: {
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
   formGap: { marginBottom: 10 },
+  // Kotak isian task berbentuk textarea — muat beberapa baris sekaligus.
+  taskInput: {
+    marginBottom: 10,
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
   fieldLabel: { marginBottom: 6 },
   fabBackdrop: {
     position: 'absolute',
@@ -768,26 +802,35 @@ const styles = StyleSheet.create({
   sheetError: { color: Color.DANGER, marginBottom: 8 },
 });
 
+const FAB_ACTIONS = 4; // jumlah tombol speed-dial (untuk hitung stagger)
+
 // Satu tombol kecil speed-dial: label pill + lingkaran ikon.
+// Naik mulus sekali dari arah FAB (tanpa mantul), lalu turun kembali saat
+// ditutup — yang paling dekat FAB (order 0) keluar duluan & masuk paling akhir.
 function FabAction({
+  order,
   label,
   icon,
   onPress,
 }: {
+  order: number;
   label: string;
   icon: 'plus' | 'magnifyingglass' | 'repeat' | 'checkmark';
   onPress: () => void;
 }) {
   return (
-    <View style={styles.fabActionRow}>
+    <Animated.View
+      style={styles.fabActionRow}
+      entering={FadeInDown.duration(180).delay(order * 45)}
+      exiting={FadeOutDown.duration(150).delay((FAB_ACTIONS - 1 - order) * 30)}>
       <View style={styles.fabLabel}>
         <VixText heading="label" additionalStyle={styles.fabLabelText}>
           {label}
         </VixText>
       </View>
-      <Pressable style={styles.fabMini} onPress={onPress}>
+      <PressableScale style={styles.fabMini} onPress={onPress}>
         <IconSymbol name={icon} size={20} color={Color.MAIN} />
-      </Pressable>
-    </View>
+      </PressableScale>
+    </Animated.View>
   );
 }

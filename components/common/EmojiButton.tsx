@@ -5,7 +5,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
 // Tombol bundar kecil berisi emoji — untuk pojok kanan atas header
-// (mis. 🕘 riwayat visitasi, 👛 Kantong).
+// (mis. 🕘 riwayat visitasi, 👛 Saku).
 export function EmojiButton({
   emoji,
   onPress,

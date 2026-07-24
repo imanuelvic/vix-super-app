@@ -7,16 +7,20 @@ import { Platform, Pressable, StyleSheet } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { formatDate, mergeDate } from '@/lib/format';
+import { formatDate, formatFullDate, mergeDate } from '@/lib/format';
 
 // Field tanggal: tekan untuk buka date picker. Jam-menit asli dipertahankan
 // saat ganti tanggal supaya urutan dalam satu hari tetap stabil.
+// `withDay` = tampilkan nama harinya juga ("Jumat, 24 Juli 2026") — berguna
+// untuk jadwal/task; tidak dipakai di field tanggal lahir.
 export function DateField({
   value,
   onChange,
+  withDay = false,
 }: {
   value: Date;
   onChange: (date: Date) => void;
+  withDay?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -32,7 +36,7 @@ export function DateField({
     <>
       <Pressable style={styles.field} onPress={() => setOpen((o) => !o)}>
         <VixText heading="paragraph" additionalStyle={styles.text}>
-          📅 {formatDate(value)}
+          📅 {withDay ? formatFullDate(value) : formatDate(value)}
         </VixText>
         <IconSymbol
           name={open ? 'chevron.up' : 'chevron.down'}

@@ -34,7 +34,7 @@ import {
 } from '@/lib/funds';
 import { formatRupiah } from '@/lib/transactions';
 
-// Halaman mutasi satu Kantong — seperti sheet Pocket di spreadsheet:
+// Halaman mutasi satu Saku — seperti sheet Pocket di spreadsheet:
 // Date · Transaction · Catatan · Debit (masuk) · Credit (keluar).
 export default function FundScreen() {
   const { user } = useAuth();
@@ -95,7 +95,7 @@ export default function FundScreen() {
     return { debit, credit, balance: debit - credit };
   }, [entries]);
 
-  // Selaraskan saldo tersimpan di dokumen dompet (untuk daftar Kantong)
+  // Selaraskan saldo tersimpan di dokumen dompet (untuk daftar Saku)
   // dengan saldo hasil hitung — menulis hanya kalau berbeda.
   useEffect(() => {
     if (!user || !key || loading) return;
@@ -291,9 +291,9 @@ export default function FundScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScreenHeader
-          backLabel="Kantong"
+          backLabel="Saku"
           title={`${fund.icon} ${fund.label}`}
-          subtitle="Mutasi masuk & keluar dari kantong ini."
+          subtitle="Mutasi masuk & keluar dari saku ini."
         />
 
         {loading ? (

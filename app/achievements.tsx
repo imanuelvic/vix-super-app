@@ -157,7 +157,7 @@ export default function AchievementsScreen() {
         </VixText>
         <View style={styles.balanceCard}>
           <VixText heading="label" additionalStyle={styles.balanceLabel}>
-            Saldo Kantong Self-Reward 🏆
+            Saldo Saku Self-Reward 🏆
           </VixText>
           <VixText heading="subheader" additionalStyle={styles.balanceValue}>
             {formatRupiah(balance)}
@@ -189,7 +189,7 @@ export default function AchievementsScreen() {
         })}
 
         <PrimaryButton
-          label="Kelola Kantong Self-Reward 🏆"
+          label="Kelola Saku Self-Reward 🏆"
           onPress={() =>
             router.push({ pathname: '/fund/[key]', params: { key: 'self-reward' } })
           }

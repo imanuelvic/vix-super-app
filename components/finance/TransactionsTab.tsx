@@ -282,7 +282,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
           <IconSymbol name="chevron.down" size={18} color={Color.TEXT_LABEL} />
         </Pressable>
 
-        {/* Catatan dulu, lalu nominal — urutan sama seperti Kantong */}
+        {/* Catatan dulu, lalu nominal — urutan sama seperti Saku */}
         <FormInput
           placeholder="Catatan"
           value={note}

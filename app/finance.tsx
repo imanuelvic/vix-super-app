@@ -76,7 +76,7 @@ export default function FinanceScreen() {
         title="Finance 💵"
         subtitle="Kelola uang, jangan dikuasai uang"
         right={
-          // Kantong 👛 (dana per tujuan) — beda dari ikon Career
+          // Saku 👛 (dana per tujuan) — beda dari ikon Career
           <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
         }>
         {/* Navigasi bulan — berlaku untuk semua tab */}
