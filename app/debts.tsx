@@ -39,8 +39,8 @@ import { formatRupiah } from '@/lib/transactions';
 type Tab = DebtDirection;
 
 const TABS: BottomTab<Tab>[] = [
-  { key: 'mine', label: 'Hutang Saya', icon: 'arrow.up.circle.fill' },
   { key: 'theirs', label: 'Hutang Orang', icon: 'arrow.down.circle.fill' },
+  { key: 'mine', label: 'Hutang Saya', icon: 'arrow.up.circle.fill' },
 ];
 
 const PERIODS: DebtPeriod[] = ['once', 'weekly', 'monthly'];
@@ -50,7 +50,7 @@ const PERIODS: DebtPeriod[] = ['once', 'weekly', 'monthly'];
 export default function DebtsScreen() {
   const { user } = useAuth();
 
-  const [tab, setTab] = useState<Tab>('mine');
+  const [tab, setTab] = useState<Tab>('theirs');
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

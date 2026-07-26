@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -12,87 +13,81 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
-  newCareerId,
-  ROADMAP_STATUS,
-  saveRoadmap,
-  type RoadmapItem,
-  type RoadmapStatus,
-} from '@/lib/career';
+  addOtherTask,
+  deleteOtherTask,
+  setOtherTaskDone,
+  updateOtherTask,
+  type OtherTask,
+} from '@/lib/tasks';
 
-const STATUS_META = Object.fromEntries(
-  ROADMAP_STATUS.map((s) => [s.key, s]),
-) as Record<RoadmapStatus, (typeof ROADMAP_STATUS)[number]>;
-
-// Urutan tampil: yang sedang dikerjakan dulu, lalu rencana, terakhir selesai.
-const STATUS_ORDER: Record<RoadmapStatus, number> = {
-  progress: 0,
-  todo: 1,
-  done: 2,
-};
-
-// Tab Fulltime 💻: roadmap prioritas kerja sebagai Software Engineer /
-// Mobile Developer di NDC — biar jelas mana yang dikerjakan duluan.
-export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
+// Tab Other Task 📌 — catatan prioritas/reminder penting yang bisa dikerjakan
+// kapan saja (bukan task harian). Urut: belum selesai dulu, lalu prioritas.
+export function OtherTaskTab({ items }: { items: OtherTask[] }) {
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Form tambah/edit. 'new' = sedang menambah baru.
-  const [editing, setEditing] = useState<RoadmapItem | 'new' | null>(null);
+  const [editing, setEditing] = useState<OtherTask | 'new' | null>(null);
   const [fTitle, setFTitle] = useState('');
   const [fNote, setFNote] = useState('');
   const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
-  const [fStatus, setFStatus] = useState<RoadmapStatus>('todo');
   const [formError, setFormError] = useState<string | null>(null);
 
   const sorted = [...items].sort((a, b) => {
-    if (STATUS_ORDER[a.status] !== STATUS_ORDER[b.status]) {
-      return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-    }
+    if (a.done !== b.done) return a.done ? 1 : -1;
     return a.priority - b.priority;
   });
-  const doneCount = items.filter((i) => i.status === 'done').length;
+  const activeCount = items.filter((i) => !i.done).length;
 
   function openAdd() {
     setEditing('new');
     setFTitle('');
     setFNote('');
     setFPriority(2);
-    setFStatus('todo');
     setFormError(null);
   }
 
-  function openEdit(item: RoadmapItem) {
+  function openEdit(item: OtherTask) {
     setEditing(item);
     setFTitle(item.title);
     setFNote(item.note);
     setFPriority(item.priority);
-    setFStatus(item.status);
     setFormError(null);
+  }
+
+  async function handleToggle(item: OtherTask) {
+    if (!user) return;
+    setError(null);
+    try {
+      await setOtherTaskDone(user.uid, item.id, !item.done);
+    } catch {
+      setError('Gagal menyimpan. Coba lagi.');
+    }
   }
 
   async function handleSave() {
     if (!user || !editing || busy) return;
     if (!fTitle.trim()) {
-      setFormError('Isi judul pekerjaannya dulu.');
+      setFormError('Isi catatannya dulu.');
       return;
     }
     setBusy(true);
     setFormError(null);
-    const data: RoadmapItem = {
-      id: editing === 'new' ? newCareerId() : editing.id,
-      title: fTitle.trim(),
-      note: fNote.trim(),
-      priority: fPriority,
-      status: fStatus,
-    };
-    const next =
-      editing === 'new'
-        ? [...items, data]
-        : items.map((i) => (i.id === editing.id ? data : i));
     try {
-      await saveRoadmap(user.uid, next);
+      if (editing === 'new') {
+        await addOtherTask(user.uid, {
+          title: fTitle.trim(),
+          note: fNote.trim(),
+          priority: fPriority,
+        });
+      } else {
+        await updateOtherTask(user.uid, editing.id, {
+          title: fTitle.trim(),
+          note: fNote.trim(),
+          priority: fPriority,
+        });
+      }
       setEditing(null);
     } catch {
       setFormError('Gagal menyimpan. Cek koneksi internet.');
@@ -105,9 +100,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     if (!user || !editing || editing === 'new' || busy) return;
     setBusy(true);
     try {
-      await saveRoadmap(user.uid, items.filter((i) => i.id !== editing.id));
-    } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      await deleteOtherTask(user.uid, editing.id);
     } finally {
       setEditing(null);
       setBusy(false);
@@ -115,31 +108,29 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
   }
 
   function priorityStyle(p: 1 | 2 | 3) {
-    return p === 1
-      ? styles.p1
-      : p === 2
-        ? styles.p2
-        : styles.p3;
+    return p === 1 ? styles.p1 : p === 2 ? styles.p2 : styles.p3;
   }
 
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Ringkasan roadmap */}
         <View style={styles.heroCard}>
           <VixText heading="label" additionalStyle={styles.heroLabel}>
-            💻 Software Engineer · Mobile Developer NDC
+            📌 Catatan & Prioritas
           </VixText>
           <VixText heading="subheader" additionalStyle={styles.heroValue}>
-            {doneCount}{' '}
+            {activeCount}{' '}
             <VixText heading="label" additionalStyle={styles.heroLabel}>
-              dari {items.length} prioritas selesai
+              belum dikerjakan
             </VixText>
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.heroLabel}>
+            Bukan task harian — kerjakan kapan pun kamu siap 💪
           </VixText>
         </View>
 
         <PrimaryButton
-          label="Tambah Prioritas"
+          label="Tambah Catatan Prioritas"
           icon="plus"
           onPress={openAdd}
           additionalStyle={styles.addButton}
@@ -153,19 +144,21 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
 
         {sorted.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada roadmap — tulis prioritas kerjamu minggu ini 💪
+            Belum ada catatan. Simpan ide/prioritas penting di sini 📝
           </VixText>
         )}
 
-        {sorted.map((item) => {
-          const meta = STATUS_META[item.status];
-          return (
-            // Tekan untuk edit status/prioritas.
-            <PressableScale
-              key={item.id}
-              style={[styles.card, item.status === 'done' && styles.cardDone]}
-              onPress={() => openEdit(item)}>
-              <View style={styles.cardTop}>
+        {sorted.map((item) => (
+          <View
+            key={item.id}
+            style={[styles.card, item.done && styles.cardDone]}>
+            {/* Lingkaran = tandai selesai */}
+            <PressableScale onPress={() => handleToggle(item)} hitSlop={8}>
+              <CheckCircle checked={item.done} size={24} />
+            </PressableScale>
+            {/* Tekan isi → edit */}
+            <PressableScale style={styles.cardMain} onPress={() => openEdit(item)}>
+              <View style={styles.cardTitleRow}>
                 <View style={[styles.priorityBadge, priorityStyle(item.priority)]}>
                   <VixText heading="label" additionalStyle={styles.priorityText}>
                     P{item.priority}
@@ -173,39 +166,39 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
                 </View>
                 <VixText
                   heading="bold"
-                  numberOfLines={2}
-                  additionalStyle={styles.cardTitle}>
+                  additionalStyle={[
+                    styles.cardTitle,
+                    item.done && styles.cardTitleDone,
+                  ]}>
                   {item.title}
-                </VixText>
-                <VixText heading="label">
-                  {meta.icon} {meta.label}
                 </VixText>
               </View>
               {item.note ? (
-                <VixText heading="label" numberOfLines={2}>
+                <VixText heading="label" additionalStyle={styles.cardNote}>
                   {item.note}
                 </VixText>
               ) : null}
             </PressableScale>
-          );
-        })}
+          </View>
+        ))}
       </ScrollView>
 
       {/* Sheet tambah/edit */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Tambah Prioritas' : 'Edit Prioritas'}
+        title={editing === 'new' ? 'Catatan Prioritas' : 'Edit Catatan'}
         onClose={() => setEditing(null)}>
         <FormInput
-          style={styles.formGap}
-          placeholder="Pekerjaan"
+          style={styles.taskInput}
+          placeholder="Catatan / prioritas…"
           value={fTitle}
           onChangeText={setFTitle}
+          multiline
           editable={!busy}
         />
         <FormInput
           style={styles.formGap}
-          placeholder="Catatan/konteks (opsional)"
+          placeholder="Detail (opsional)"
           value={fNote}
           onChangeText={setFNote}
           editable={!busy}
@@ -224,36 +217,21 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
             />
           ))}
         </View>
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Status
-        </VixText>
-        <View style={styles.chipRow}>
-          {ROADMAP_STATUS.map((s) => (
-            <Chip
-              key={s.key}
-              label={`${s.icon} ${s.label}`}
-              active={fStatus === s.key}
-              onPress={() => setFStatus(s.key)}
-              additionalStyle={styles.chipFlex}
-            />
-          ))}
-        </View>
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {formError}
           </VixText>
         )}
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
           <InlineDelete
             key={editing.id}
-            label="Hapus prioritas ini"
+            label="Hapus catatan ini"
             busy={busy}
             onDelete={handleDelete}
           />
         )}
         <DualButtons
-          confirmLabel="Simpan"
+          confirmLabel={editing === 'new' ? 'Tambah' : 'Simpan'}
           busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
@@ -270,8 +248,8 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
     padding: 18,
-    gap: 4,
-    marginBottom: 10,
+    gap: 2,
+    marginBottom: 12,
   },
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   heroValue: { color: Color.TEXT_REVERSE },
@@ -279,26 +257,35 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, marginBottom: 8 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Color.BORDER,
     padding: 14,
     marginBottom: 10,
-    gap: 6,
   },
-  cardDone: { opacity: 0.55 },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  cardTitle: { flex: 1, color: Color.TEXT_TITLE },
-  priorityBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
+  cardDone: { opacity: 0.6 },
+  cardMain: { flex: 1, gap: 4 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  priorityBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
   p1: { backgroundColor: Color.DANGER },
   p2: { backgroundColor: Color.WARNING },
   p3: { backgroundColor: Color.TEXT_PLACEHOLDER },
   priorityText: { color: Color.TEXT_REVERSE },
+  cardTitle: { flex: 1, color: Color.TEXT_TITLE },
+  cardTitleDone: {
+    color: Color.TEXT_PLACEHOLDER,
+    textDecorationLine: 'line-through',
+  },
+  cardNote: { color: Color.TEXT_LABEL },
+  taskInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 10,
+  },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },

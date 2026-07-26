@@ -202,14 +202,14 @@ export default function DiseasesScreen() {
         onClose={() => setEditing(null)}>
         <FormInput
           style={styles.formGap}
-          placeholder="Nama penyakit — mis. Common Cold"
+          placeholder="Nama penyakit"
           value={fName}
           onChangeText={setFName}
           editable={!busy}
         />
         <FormInput
           style={styles.formGap}
-          placeholder="Penyebab — mis. perubahan cuaca ekstrem"
+          placeholder="Penyebab"
           value={fCause}
           onChangeText={setFCause}
           editable={!busy}

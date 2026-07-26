@@ -176,7 +176,7 @@ export function FollowupTab({
         style={[styles.card, canChat && styles.cardChat, done && styles.cardDone]}
         onPress={
           canChat
-            ? () => openWhatsApp(phone!, `Halo ${name}! ${topic.question}`)
+            ? () => openWhatsApp(phone!, `Shalom!`)
             : undefined
         }>
         <View style={styles.cardHeader}>

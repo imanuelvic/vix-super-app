@@ -14,7 +14,7 @@ export function InlineDelete({
   busy = false,
   onDelete,
 }: {
-  label: string; // mis. "Hapus wishlist ini"
+  label: string;
   busy?: boolean;
   onDelete: () => void;
 }) {

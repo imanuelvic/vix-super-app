@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,12 +7,15 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   FadeInDown,
   FadeOutDown,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,6 +30,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { OtherTaskTab } from '@/components/tasks/OtherTaskTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
@@ -40,9 +44,11 @@ import {
   MAX_RECURRING,
   rolloverTasks,
   setTaskDone,
+  subscribeOtherTasks,
   subscribeTasks,
   TASK_CATEGORIES,
   updateTask,
+  type OtherTask,
   type Task,
   type TaskCategory,
 } from '@/lib/tasks';
@@ -57,9 +63,22 @@ export default function TasksScreen() {
   const insets = useSafeAreaInsets();
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<TaskCategory>('personal');
   const [error, setError] = useState<string | null>(null);
+
+  // Tab utama: planner harian atau catatan prioritas (Other).
+  const [mainTab, setMainTab] = useState<'harian' | 'other'>('harian');
+
+  // Drag & drop: task yang sedang diseret + posisi jari (window coords).
+  const [dragTask, setDragTask] = useState<Task | null>(null);
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  // Ref tiap chip kategori & tiap blok hari — diukur saat DILEPAS untuk tahu
+  // task dijatuhkan di target mana (measureInWindow = koordinat layar live).
+  const catRefs = useRef<Record<string, View | null>>({});
+  const dayRefs = useRef<Record<string, View | null>>({});
 
   // Bulan yang dilihat — tidak bisa mundur sebelum bulan berjalan.
   const now = new Date();
@@ -124,6 +143,13 @@ export default function TasksScreen() {
       },
     );
     return unsubscribe;
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeOtherTasks(user.uid, setOtherTasks, () =>
+      setError('Gagal memuat catatan. Cek koneksi internet.'),
+    );
   }, [user]);
 
   // Beres-beres harian: task lama yang belum selesai → pindah ke hari ini;
@@ -296,6 +322,73 @@ export default function TasksScreen() {
     }
   }
 
+  // ===== Drag & drop =====
+  // Callback stabil supaya gesture per-baris tidak dibuat ulang tiap render.
+  const beginDrag = useCallback((t: Task) => setDragTask(t), []);
+
+  const handleDrop = useCallback(
+    async (t: Task, x: number, y: number) => {
+      setDragTask(null);
+      if (!user) return;
+      const rectOf = (node: View | null) =>
+        new Promise<{ x: number; y: number; w: number; h: number } | null>(
+          (resolve) => {
+            if (!node) return resolve(null);
+            node.measureInWindow((mx, my, mw, mh) =>
+              resolve({ x: mx, y: my, w: mw, h: mh }),
+            );
+          },
+        );
+      const inside = (r: { x: number; y: number; w: number; h: number } | null) =>
+        !!r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+
+      // 1) Dijatuhkan di chip kategori → ganti kategori.
+      const catRects = await Promise.all(
+        TASK_CATEGORIES.map((c) => rectOf(catRefs.current[c.key])),
+      );
+      for (let i = 0; i < TASK_CATEGORIES.length; i++) {
+        if (inside(catRects[i])) {
+          const key = TASK_CATEGORIES[i].key;
+          if (key !== t.category) {
+            try {
+              await updateTask(user.uid, t.id, { category: key });
+            } catch {
+              setError('Gagal memindahkan kategori. Coba lagi.');
+            }
+          }
+          return;
+        }
+      }
+
+      // 2) Dijatuhkan di blok hari → pindah tanggal.
+      const dayKeys = Object.keys(dayRefs.current);
+      const dayRects = await Promise.all(
+        dayKeys.map((k) => rectOf(dayRefs.current[k])),
+      );
+      for (let i = 0; i < dayKeys.length; i++) {
+        if (inside(dayRects[i])) {
+          if (dayKeys[i] !== t.dayId) {
+            try {
+              await updateTask(user.uid, t.id, { dayId: dayKeys[i] });
+            } catch {
+              setError('Gagal memindahkan tanggal. Coba lagi.');
+            }
+          }
+          return;
+        }
+      }
+    },
+    [user],
+  );
+
+  // Ghost yang mengikuti jari saat menyeret (dikoreksi inset atas SafeArea).
+  const ghostStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: dragX.value - 24 },
+      { translateY: dragY.value - insets.top - 26 },
+    ],
+  }));
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <PressableScale style={styles.backRow} onPress={() => router.back()} hitSlop={8}>
@@ -309,144 +402,197 @@ export default function TasksScreen() {
         <VixText heading="header" additionalStyle={styles.title}>
           Task ✅
         </VixText>
-        {/* Navigasi bulan — mentok di bulan berjalan */}
-        <View style={styles.monthRow}>
-          <PressableScale
-            onPress={() => shiftMonth(-1)}
-            hitSlop={10}
-            disabled={atMinMonth}>
-            <IconSymbol
-              name="chevron.left"
-              size={20}
-              color={atMinMonth ? Color.BORDER : Color.MAIN}
-            />
-          </PressableScale>
-          {/* Tekan label bulan → balik ke bulan berjalan */}
-          <PressableScale onPress={goNow} hitSlop={10}>
-            <VixText heading="bold" additionalStyle={styles.monthText}>
-              {MONTH_NAMES[month]} {year}
-            </VixText>
-          </PressableScale>
-          <PressableScale onPress={() => shiftMonth(1)} hitSlop={10}>
-            <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
-          </PressableScale>
-          <VixText heading="label" additionalStyle={styles.remainingText}>
-            {remaining} belum selesai
-          </VixText>
+        {/* Tab utama: planner Harian / catatan Other Task */}
+        <View style={styles.segRow}>
+          <Chip
+            label="📅 Harian"
+            active={mainTab === 'harian'}
+            onPress={() => setMainTab('harian')}
+            additionalStyle={styles.segChip}
+          />
+          <Chip
+            label="📌 Other Task"
+            active={mainTab === 'other'}
+            onPress={() => setMainTab('other')}
+            additionalStyle={styles.segChip}
+          />
         </View>
+        {/* Navigasi bulan — khusus tab Harian, mentok di bulan berjalan */}
+        {mainTab === 'harian' && (
+          <View style={styles.monthRow}>
+            <PressableScale
+              onPress={() => shiftMonth(-1)}
+              hitSlop={10}
+              disabled={atMinMonth}>
+              <IconSymbol
+                name="chevron.left"
+                size={20}
+                color={atMinMonth ? Color.BORDER : Color.MAIN}
+              />
+            </PressableScale>
+            {/* Tekan label bulan → balik ke bulan berjalan */}
+            <PressableScale onPress={goNow} hitSlop={10}>
+              <VixText heading="bold" additionalStyle={styles.monthText}>
+                {MONTH_NAMES[month]} {year}
+              </VixText>
+            </PressableScale>
+            <PressableScale onPress={() => shiftMonth(1)} hitSlop={10}>
+              <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
+            </PressableScale>
+            <VixText heading="label" additionalStyle={styles.remainingText}>
+              {remaining} belum selesai
+            </VixText>
+          </View>
+        )}
       </View>
 
-      {/* Ganti kategori = ganti to-do list */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipScroll}
-        contentContainerStyle={styles.chipRow}>
-        {TASK_CATEGORIES.map((c) => {
-          // Badge: task kategori ini yang belum selesai HARI INI saja —
-          // task tanggal depan belum jadi "utang", jangan bikin panik.
-          const count = tasks.filter(
-            (t) => t.category === c.key && !t.done && t.dayId === todayId,
-          ).length;
-          return (
-            <View key={c.key} style={styles.chipHolder}>
-              <Chip
-                label={`${c.icon} ${c.label}`}
-                active={category === c.key}
-                onPress={() => setCategory(c.key)}
-              />
-              {count > 0 && (
-                <View style={styles.chipBadge}>
-                  <VixText heading="label" additionalStyle={styles.chipBadgeText}>
-                    {count > 9 ? '9+' : count}
-                  </VixText>
+      {mainTab === 'other' ? (
+        <OtherTaskTab items={otherTasks} />
+      ) : (
+        <>
+          {/* Ganti kategori = ganti to-do list. Ref tiap chip untuk drop drag. */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipScroll}
+            contentContainerStyle={styles.chipRow}>
+            {TASK_CATEGORIES.map((c) => {
+              const count = tasks.filter(
+                (t) => t.category === c.key && !t.done && t.dayId === todayId,
+              ).length;
+              const target = dragTask && dragTask.category !== c.key;
+              return (
+                <View
+                  key={c.key}
+                  ref={(r) => {
+                    catRefs.current[c.key] = r;
+                  }}
+                  style={[styles.chipHolder, target && styles.chipTarget]}>
+                  <Chip
+                    label={`${c.icon} ${c.label}`}
+                    active={category === c.key}
+                    onPress={() => setCategory(c.key)}
+                  />
+                  {count > 0 && (
+                    <View style={styles.chipBadge}>
+                      <VixText
+                        heading="label"
+                        additionalStyle={styles.chipBadgeText}>
+                        {count > 9 ? '9+' : count}
+                      </VixText>
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
+              );
+            })}
+          </ScrollView>
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
+          {/* Petunjuk muncul saat menyeret task */}
+          {dragTask && (
+            <VixText heading="label" additionalStyle={styles.dragHint}>
+              ✋ Lepas di kategori (atas) atau di tanggal untuk memindahkan
+            </VixText>
+          )}
+
+          {error && (
+            <VixText heading="label" additionalStyle={styles.error}>
+              {error}
+            </VixText>
+          )}
+
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator color={Color.MAIN} />
+            </View>
+          ) : (
+            // Scroll dimatikan saat menyeret biar posisi target stabil.
+            <ScrollView
+              scrollEnabled={dragTask === null}
+              contentContainerStyle={styles.listContent}>
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const date = new Date(year, month, i + 1);
+                const dayId = dayDocId(date);
+                // Tanggal yang sudah terlewat langsung hilang dari tampilan.
+                if (dayId < todayId) return null;
+                const isToday = dayId === todayId;
+                // Urutan dalam satu hari: yang dibuat duluan di atas.
+                const dayTasks = shown.filter((t) => t.dayId === dayId).reverse();
+                return (
+                  <View
+                    key={dayId}
+                    ref={(r) => {
+                      dayRefs.current[dayId] = r;
+                    }}
+                    style={[
+                      styles.dayBlock,
+                      isToday && styles.dayBlockToday,
+                      dragTask ? styles.dayBlockDrop : null,
+                    ]}>
+                    <View style={styles.dayHeader}>
+                      <VixText
+                        heading="bold"
+                        additionalStyle={
+                          isToday ? styles.dayTitleToday : styles.dayTitle
+                        }>
+                        {formatDayMonth(date)}
+                        {isToday ? ' • HARI INI' : ''}
+                      </VixText>
+                      <PressableScale onPress={() => openAdd(date)} hitSlop={10}>
+                        <IconSymbol name="plus" size={18} color={Color.MAIN} />
+                      </PressableScale>
+                    </View>
+                    {dayTasks.map((item) => (
+                      <DraggableTaskRow
+                        key={item.id}
+                        item={item}
+                        dragging={dragTask?.id === item.id}
+                        dragX={dragX}
+                        dragY={dragY}
+                        onStart={beginDrag}
+                        onDrop={handleDrop}
+                        onToggle={handleToggle}
+                        onEdit={openEdit}
+                      />
+                    ))}
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
+        </>
       )}
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.listContent}>
-          {Array.from({ length: daysInMonth }, (_, i) => {
-            const date = new Date(year, month, i + 1);
-            const dayId = dayDocId(date);
-            // Tanggal yang sudah terlewat langsung hilang dari tampilan.
-            if (dayId < todayId) return null;
-            const isToday = dayId === todayId;
-            // Urutan dalam satu hari: yang dibuat duluan di atas.
-            const dayTasks = shown
-              .filter((t) => t.dayId === dayId)
-              .reverse();
-            return (
-              <View
-                key={dayId}
-                style={[styles.dayBlock, isToday && styles.dayBlockToday]}>
-                <View style={styles.dayHeader}>
-                  <VixText
-                    heading="bold"
-                    additionalStyle={isToday ? styles.dayTitleToday : styles.dayTitle}>
-                    {formatDayMonth(date)}
-                    {isToday ? ' • HARI INI' : ''}
-                  </VixText>
-                  <PressableScale onPress={() => openAdd(date)} hitSlop={10}>
-                    <IconSymbol name="plus" size={18} color={Color.MAIN} />
-                  </PressableScale>
-                </View>
-                {dayTasks.map((item) => (
-                  <View key={item.id} style={styles.taskRow}>
-                    {/* Hanya lingkaran ini yang menandai selesai */}
-                    <PressableScale
-                      onPress={() => handleToggle(item)}
-                      hitSlop={8}>
-                      <CheckCircle checked={item.done} size={22} />
-                    </PressableScale>
-                    {/* Tekan teksnya → edit / pindah hari / hapus */}
-                    <PressableScale
-                      style={styles.taskMain}
-                      onPress={() => openEdit(item)}>
-                      <VixText
-                        heading="paragraph"
-                        additionalStyle={[
-                          styles.taskText,
-                          item.done && styles.taskTextDone,
-                        ]}>
-                        {item.title}
-                      </VixText>
-                    </PressableScale>
-                  </View>
-                ))}
-              </View>
-            );
-          })}
-        </ScrollView>
+      {/* Ghost task yang mengikuti jari saat menyeret */}
+      {dragTask && (
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.dragGhost, ghostStyle]}>
+          <VixText
+            heading="bold"
+            numberOfLines={1}
+            additionalStyle={styles.dragGhostText}>
+            {dragTask.title}
+          </VixText>
+        </Animated.View>
       )}
 
       {/* Backdrop transparan: tap di luar menutup speed-dial.
           Sengaja Pressable biasa — area penutup tidak perlu animasi tekan. */}
-      {fabOpen && (
+      {mainTab === 'harian' && fabOpen && (
         <Pressable
           style={styles.fabBackdrop}
           onPress={() => setFabOpen(false)}
         />
       )}
 
-      {/* FAB speed-dial ⋯ — submenu bulat kecil muncul di atasnya.
-          bottom dinaikkan sesuai inset HP biar tidak ketiban tombol back Android. */}
+      {/* FAB speed-dial ⋯ — hanya di tab Harian. */}
       <View
-        style={[styles.fabArea, { bottom: insets.bottom + 24 }]}
-        pointerEvents="box-none">
+        style={[
+          styles.fabArea,
+          { bottom: insets.bottom + 24 },
+          mainTab !== 'harian' && styles.hidden,
+        ]}
+        pointerEvents={mainTab === 'harian' ? 'box-none' : 'none'}>
         {/* `order` = jarak dari FAB (0 = paling dekat) — dipakai untuk
             stagger: keluar dari bawah ke atas, masuk dari atas ke bawah. */}
         {fabOpen && (
@@ -738,6 +884,38 @@ const styles = StyleSheet.create({
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
+  taskRowDragging: { opacity: 0.35 }, // baris yang sedang diseret diredupkan
+  dragHandle: { paddingLeft: 4, paddingVertical: 2 },
+  // Tab utama (segmented)
+  segRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  segChip: { flex: 1 },
+  // Sorotan target saat drag aktif
+  chipTarget: { transform: [{ scale: 1.04 }] },
+  dragHint: {
+    color: Color.MAIN_DARK,
+    textAlign: 'center',
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    marginHorizontal: 20,
+    borderRadius: 10,
+    paddingVertical: 6,
+    marginBottom: 6,
+  },
+  dayBlockDrop: { borderRadius: 12, borderStyle: 'dashed', borderWidth: 1 },
+  // Ghost task yang mengikuti jari
+  dragGhost: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    maxWidth: 240,
+    backgroundColor: Color.MAIN,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    elevation: 8,
+    zIndex: 50,
+  },
+  dragGhostText: { color: Color.TEXT_REVERSE },
+  hidden: { opacity: 0 },
   formGap: { marginBottom: 10 },
   // Kotak isian task berbentuk textarea — muat beberapa baris sekaligus.
   taskInput: {
@@ -807,6 +985,77 @@ const styles = StyleSheet.create({
   recurPreview: { marginBottom: 10 },
   sheetError: { color: Color.DANGER, marginBottom: 8 },
 });
+
+// Satu baris task yang bisa DISERET (tahan ±0,2 detik lalu geser). Identitas
+// komponen sengaja di module-scope agar node Reanimated tidak remount (iOS).
+// Lepas di chip kategori → ganti kategori; di blok hari → pindah tanggal.
+function DraggableTaskRow({
+  item,
+  dragging,
+  dragX,
+  dragY,
+  onStart,
+  onDrop,
+  onToggle,
+  onEdit,
+}: {
+  item: Task;
+  dragging: boolean;
+  dragX: SharedValue<number>;
+  dragY: SharedValue<number>;
+  onStart: (t: Task) => void;
+  onDrop: (t: Task, x: number, y: number) => void;
+  onToggle: (t: Task) => void;
+  onEdit: (t: Task) => void;
+}) {
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .activateAfterLongPress(220)
+        .onStart((e) => {
+          dragX.value = e.absoluteX;
+          dragY.value = e.absoluteY;
+          runOnJS(onStart)(item);
+        })
+        .onUpdate((e) => {
+          dragX.value = e.absoluteX;
+          dragY.value = e.absoluteY;
+        })
+        .onEnd((e) => {
+          runOnJS(onDrop)(item, e.absoluteX, e.absoluteY);
+        }),
+    [item, dragX, dragY, onStart, onDrop],
+  );
+
+  return (
+    <GestureDetector gesture={pan}>
+      <View style={[styles.taskRow, dragging && styles.taskRowDragging]}>
+        {/* Hanya lingkaran ini yang menandai selesai */}
+        <PressableScale onPress={() => onToggle(item)} hitSlop={8}>
+          <CheckCircle checked={item.done} size={22} />
+        </PressableScale>
+        {/* Tekan teksnya → edit; tahan lalu geser → pindah */}
+        <PressableScale style={styles.taskMain} onPress={() => onEdit(item)}>
+          <VixText
+            heading="paragraph"
+            additionalStyle={[
+              styles.taskText,
+              item.done && styles.taskTextDone,
+            ]}>
+            {item.title}
+          </VixText>
+        </PressableScale>
+        <View style={styles.dragHandle}>
+          <IconSymbol
+            name="line.3.horizontal"
+            size={16}
+            color={Color.TEXT_PLACEHOLDER}
+          />
+        </View>
+      </View>
+    </GestureDetector>
+  );
+}
 
 const FAB_ACTIONS = 4; // jumlah tombol speed-dial (untuk hitung stagger)
 

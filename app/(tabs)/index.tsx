@@ -1,6 +1,11 @@
 import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,10 +14,12 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { MorningPrayerGate } from '@/components/spiritual/MorningPrayerGate';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
-  recordDailyLogin,
+  prayerDoneToday,
+  recordDailyPrayer,
   subscribeLoginStreak,
   type LoginStreak,
 } from '@/lib/achievements';
@@ -39,9 +46,18 @@ import {
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import { formatDate, formatShortDayDate } from '@/lib/format';
 import {
+  currentSundayId,
+  sermonReminderActive,
+  subscribeSermons,
+  type SermonNote,
+} from '@/lib/sermon';
+import {
+  checkupDueReminders,
   dayDocId,
+  subscribeCheckups,
   subscribeHabitDay,
   subscribeHabits,
+  type Checkup,
   type Habit,
   type HabitDay,
 } from '@/lib/health';
@@ -105,7 +121,17 @@ export default function HomeScreen() {
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
+  const [checkups, setCheckups] = useState<Checkup[]>([]);
+  const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
+
+  // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
+  // khotbah yang bergantung waktu.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   const todayId = dayDocId(new Date());
 
@@ -121,16 +147,22 @@ export default function HomeScreen() {
       subscribeVisitations(user.uid, setVisitations),
       subscribeFamily(user.uid, setFamily),
       subscribeDebts(user.uid, setDebts),
+      subscribeCheckups(user.uid, setCheckups),
+      subscribeSermons(user.uid, setSermons),
       subscribeReviveStreak(user.uid, setRevive),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
 
-  // Catat login hari ini sekali saja (recordDailyLogin sudah anti-dobel).
-  useEffect(() => {
-    if (!user || login === undefined) return;
-    recordDailyLogin(user.uid, login).catch(() => {});
-  }, [user, login]);
+  // Streak sekarang dicatat lewat konfirmasi doa pagi (bukan otomatis).
+  async function confirmMorningPrayer() {
+    if (!user) return;
+    try {
+      await recordDailyPrayer(user.uid, login ?? null, now);
+    } catch {
+      // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
+    }
+  }
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -173,7 +205,6 @@ export default function HomeScreen() {
 
   // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan
   // (yang sudah tiada ✝ tidak diikutkan).
-  const now = new Date();
   const famBirthdays = family
     .filter((m) => !m.deceased)
     .map((m) => ({ m, ...nextBirthday(m, now) }))
@@ -202,7 +233,7 @@ export default function HomeScreen() {
       };
     });
 
-  // Reminder bayar hutang: yang belum lunas & jatuh tempo ≤ 7 hari (termasuk
+  // Reminder bayar hutang: yang belum lunas & jatuh tempo ≤ 3 hari (termasuk
   // lewat). Fokus ke "Hutang Saya", tapi tagihan ke orang juga diingatkan.
   const debtReminders = debts
     .filter((d) => debtReminderWindow(d, now))
@@ -217,6 +248,43 @@ export default function HomeScreen() {
         text: `${arrow} ${d.person} — ${formatRupiah(debtRemaining(d))} · ${when}`,
       };
     });
+
+  // Reminder cek kesehatan: 6 bulan sejak tensi / gula darah terakhir.
+  const checkupReminders = checkupDueReminders(checkups, now).map((c) => ({
+    id: c.type,
+    text: `${c.icon} ${c.label} — waktunya cek lagi${
+      c.days < 0 ? ` (lewat ${-c.days} hari)` : ''
+    }`,
+  }));
+
+  // Reminder renungan khotbah: Rabu/Jumat 12:30–17:30, kalau catatan khotbah
+  // Minggu ini SUDAH ada. Ditekan → tab Khotbah (ringkasan singkatnya).
+  const sundaySermon =
+    sermonReminderActive(now) &&
+    sermons.find((s) => s.id === currentSundayId(now));
+
+  // Selagi status streak doa belum termuat → loading singkat, biar tidak
+  // "berkedip" Home dulu baru muncul lock screen doa pagi.
+  if (login === undefined) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.loadingCenter}>
+          <ActivityIndicator size="large" color={Color.MAIN} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Doa pagi hari ini (batas jam 4) belum dikonfirmasi → lock screen.
+  if (!prayerDoneToday(login, now)) {
+    return (
+      <MorningPrayerGate
+        streakCount={login?.count ?? 0}
+        onConfirm={confirmMorningPrayer}
+        onOpenRevive={() => router.push('/revive')}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -329,6 +397,49 @@ export default function HomeScreen() {
           </PressableScale>
         )}
 
+        {/* Reminder cek tensi & gula darah (6 bulan sekali) */}
+        {checkupReminders.length > 0 && (
+          <PressableScale
+            style={styles.checkupCard}
+            onPress={() => router.push('/health')}>
+            <VixText heading="bold" additionalStyle={styles.checkupTitle}>
+              🩺 Waktunya Cek Kesehatan
+            </VixText>
+            {checkupReminders.map((r) => (
+              <VixText
+                key={r.id}
+                heading="label"
+                additionalStyle={styles.checkupText}>
+                {r.text}
+              </VixText>
+            ))}
+          </PressableScale>
+        )}
+
+        {/* Reminder renungkan khotbah Minggu (Rabu/Jumat siang) — ungu */}
+        {sundaySermon && (
+          <PressableScale
+            style={styles.sermonCard}
+            onPress={() =>
+              router.push({ pathname: '/spiritual', params: { tab: 'khotbah' } })
+            }>
+            <VixText heading="bold" additionalStyle={styles.sermonTitle}>
+              🙏 Renungkan Khotbah Minggu
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.sermonText}>
+              ⛪ {sundaySermon.title}
+            </VixText>
+            {sundaySermon.quote ? (
+              <VixText
+                heading="label"
+                numberOfLines={2}
+                additionalStyle={styles.sermonText}>
+                “{sundaySermon.quote}”
+              </VixText>
+            ) : null}
+          </PressableScale>
+        )}
+
         {/* Task hari ini — centang langsung tanpa buka fitur Task */}
         {todayTasks.length > 0 && (
           <View style={styles.taskCard}>
@@ -413,6 +524,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   brandRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -456,18 +568,44 @@ const styles = StyleSheet.create({
   famTitle: { color: Color.WHEEL_DARK },
   famText: { color: Color.WHEEL_DARK },
   debtCard: {
-    backgroundColor: Color.FINANCE_SAVING,
+    backgroundColor: Color.FINANCE_EXPENSE,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Color.FINANCE_SAVING_DARK,
+    borderColor: Color.FINANCE_EXPENSE_DARK,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 3,
     marginTop: -12,
     marginBottom: 24,
   },
-  debtTitle: { color: Color.FINANCE_SAVING_DARK },
-  debtText: { color: Color.FINANCE_SAVING_DARK },
+  debtTitle: { color: Color.FINANCE_EXPENSE_DARK },
+  debtText: { color: Color.FINANCE_EXPENSE_DARK },
+  checkupCard: {
+    backgroundColor: Color.MAIN_LIGHT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.MAIN_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 3,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  checkupTitle: { color: Color.MAIN_DARK },
+  checkupText: { color: Color.MAIN_DARK },
+  sermonCard: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.SPIRITUAL_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 3,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  sermonTitle: { color: Color.SPIRITUAL_DARK },
+  sermonText: { color: Color.SPIRITUAL_DARK },
   taskCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

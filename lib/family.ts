@@ -2,14 +2,13 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import {
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
   query,
   setDoc,
   writeBatch,
-  type FirestoreError,
+  type FirestoreError
 } from 'firebase/firestore';
 
 import { db } from './firebase';
@@ -32,6 +31,7 @@ export type FamilyMember = {
   birthDay: number;
   deceased: boolean; // ✝ — tampil hitam-putih di pohon
   parentIds: string[]; // maksimal 2
+  partnerIds: string[]; // pasangan (suami/istri) — relasi dianggap 2 arah
   photo: string | null; // JPEG base64 kecil (tanpa prefix data:)
 };
 
@@ -56,6 +56,7 @@ export function subscribeFamily(
             id: d.id,
             ...data,
             parentIds: data.parentIds ?? [],
+            partnerIds: data.partnerIds ?? [],
             photo: data.photo ?? null,
           };
         }),
@@ -81,12 +82,17 @@ export function deleteFamilyMember(
 ) {
   const batch = writeBatch(db);
   batch.delete(doc(db, 'users', uid, 'familyMembers', id));
+  // Bersihkan referensi ke orang ini dari relasi anggota lain (parent/pasangan).
   for (const m of members) {
-    if (m.parentIds.includes(id)) {
-      batch.update(doc(db, 'users', uid, 'familyMembers', m.id), {
-        parentIds: m.parentIds.filter((p) => p !== id),
-      });
+    const inParents = m.parentIds.includes(id);
+    const inPartners = (m.partnerIds ?? []).includes(id);
+    if (!inParents && !inPartners) continue;
+    const payload: Record<string, string[]> = {};
+    if (inParents) payload.parentIds = m.parentIds.filter((p) => p !== id);
+    if (inPartners) {
+      payload.partnerIds = (m.partnerIds ?? []).filter((p) => p !== id);
     }
+    batch.update(doc(db, 'users', uid, 'familyMembers', m.id), payload);
   }
   return batch.commit();
 }
@@ -111,14 +117,27 @@ export function childrenOf(id: string, all: FamilyMember[]): FamilyMember[] {
   return all.filter((m) => m.parentIds.includes(id));
 }
 
-/** Pasangan = sesama orang tua dari anak yang sama (bisa lebih dari satu). */
+/**
+ * Pasangan (suami/istri) = gabungan dari:
+ *   1. yang ditandai eksplisit sebagai pasangan (2 arah — cek kedua sisi),
+ *   2. sesama orang tua dari anak yang sama (otomatis).
+ * Disimpan satu arah saja, tapi dibaca dua arah supaya selalu sinkron.
+ */
 export function partnersOf(id: string, all: FamilyMember[]): FamilyMember[] {
+  const self = all.find((m) => m.id === id);
   const ids = new Set<string>();
+  // Eksplisit: yang saya tandai, ATAU yang menandai saya.
+  self?.partnerIds?.forEach((p) => ids.add(p));
+  for (const m of all) {
+    if (m.partnerIds?.includes(id)) ids.add(m.id);
+  }
+  // Otomatis: sesama orang tua dari anak yang sama.
   for (const child of childrenOf(id, all)) {
     for (const p of child.parentIds) {
       if (p !== id) ids.add(p);
     }
   }
+  ids.delete(id);
   return [...ids]
     .map((x) => all.find((m) => m.id === x))
     .filter((x): x is FamilyMember => !!x);

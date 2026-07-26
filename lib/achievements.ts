@@ -8,16 +8,17 @@ import {
 import { db } from './firebase';
 import { dayDocId } from './health';
 
-// Daily login streak 🔥 (ala Duolingo) + achievements 🏆.
-// Streak tercatat otomatis saat Home dibuka pertama kali tiap hari,
-// disimpan sebagai SATU dokumen kecil: users/{uid}/app/login.
+// Streak DOA HARIAN 🔥 (ala Duolingo) + achievements 🏆.
+// Dulu "login streak"; sekarang tercatat saat konfirmasi doa pagi (Bapa Kami
+// + Revive) di lock screen Home. Disimpan di SATU dokumen kecil:
+// users/{uid}/app/login (nama doc dipertahankan agar streak lama tidak hilang).
 // Achievement dihitung dari data yang sudah ada — tanpa read tambahan besar.
 
 export type LoginStreak = {
   count: number; // streak berjalan
-  lastDayId: string; // "YYYY-MM-DD" login terakhir
+  lastDayId: string; // "YYYY-MM-DD" doa terakhir
   best: number; // streak terbaik sepanjang masa
-  total: number; // total hari pernah login
+  total: number; // total hari pernah berdoa
 };
 
 export function subscribeLoginStreak(
@@ -35,20 +36,35 @@ export function subscribeLoginStreak(
   );
 }
 
-function yesterdayId(): string {
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  return dayDocId(y);
+/**
+ * "Hari doa" pakai batas jam 04:00 pagi — sebelum jam 4 masih dihitung hari
+ * sebelumnya (biar doa subuh tetap masuk hari kemarin bila diinginkan).
+ */
+export function prayerDayId(now: Date): string {
+  return dayDocId(new Date(now.getTime() - 4 * 3_600_000));
+}
+
+/** Apakah doa hari ini (batas jam 4) sudah dikonfirmasi? */
+export function prayerDoneToday(
+  streak: LoginStreak | null,
+  now: Date,
+): boolean {
+  return streak?.lastDayId === prayerDayId(now);
 }
 
 /**
- * Catat login hari ini — dipanggil dari Home, maksimal menulis 1×/hari
- * (kalau lastDayId sudah hari ini, JANGAN panggil lagi).
+ * Catat doa pagi hari ini — dipanggil saat konfirmasi di lock screen,
+ * maksimal menulis 1×/hari (kalau lastDayId sudah hari ini, no-op).
  */
-export function recordDailyLogin(uid: string, current: LoginStreak | null) {
-  const today = dayDocId(new Date());
+export function recordDailyPrayer(
+  uid: string,
+  current: LoginStreak | null,
+  now: Date,
+) {
+  const today = prayerDayId(now);
   if (current?.lastDayId === today) return Promise.resolve();
-  const continued = current !== null && current.lastDayId === yesterdayId();
+  const yesterday = prayerDayId(new Date(now.getTime() - 86_400_000));
+  const continued = current !== null && current.lastDayId === yesterday;
   const count = continued ? current.count + 1 : 1;
   return setDoc(doc(db, 'users', uid, 'app', 'login'), {
     count,
@@ -79,7 +95,7 @@ export const ACHIEVEMENT_CATEGORIES: {
   label: string;
   desc: string;
 }[] = [
-  { key: 'login', icon: '🔥', label: 'Login Streak', desc: 'Konsisten buka vix tiap hari' },
+  { key: 'login', icon: '🙏', label: 'Doa Harian', desc: 'Konsisten doa pagi & Revive tiap hari' },
   { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit di fitur Health' },
   { key: 'revive', icon: '📖', label: 'Revive Rohani', desc: 'Konsisten menulis jurnal Revive' },
 ];
@@ -93,14 +109,14 @@ export const ACHIEVEMENTS: {
   target: number;
   of: (s: AchievementStats) => number; // nilai saat ini untuk progress
 }[] = [
-  { id: 'first', category: 'login', icon: '🐣', title: 'Langkah Pertama', desc: 'Login pertama kali di vix', target: 1, of: (s) => s.loginTotal },
-  { id: 'streak3', category: 'login', icon: '✨', title: 'Konsisten 3 Hari', desc: 'Login 3 hari beruntun', target: 3, of: (s) => s.loginBest },
-  { id: 'streak7', category: 'login', icon: '🔥', title: 'Seminggu Penuh', desc: 'Login 7 hari beruntun', target: 7, of: (s) => s.loginBest },
-  { id: 'streak14', category: 'login', icon: '⚡', title: 'Dua Minggu Membara', desc: 'Login 14 hari beruntun', target: 14, of: (s) => s.loginBest },
-  { id: 'streak30', category: 'login', icon: '🏅', title: 'Sebulan Tanpa Putus', desc: 'Login 30 hari beruntun', target: 30, of: (s) => s.loginBest },
-  { id: 'streak100', category: 'login', icon: '👑', title: 'Legenda 100 Hari', desc: 'Login 100 hari beruntun', target: 100, of: (s) => s.loginBest },
-  { id: 'total30', category: 'login', icon: '📅', title: '30 Hari Bersama vix', desc: 'Total 30 hari pernah login', target: 30, of: (s) => s.loginTotal },
-  { id: 'total100', category: 'login', icon: '💎', title: '100 Hari Bersama vix', desc: 'Total 100 hari pernah login', target: 100, of: (s) => s.loginTotal },
+  { id: 'first', category: 'login', icon: '🐣', title: 'Langkah Pertama', desc: 'Doa pagi pertamamu', target: 1, of: (s) => s.loginTotal },
+  { id: 'streak3', category: 'login', icon: '✨', title: 'Konsisten 3 Hari', desc: 'Berdoa 3 hari beruntun', target: 3, of: (s) => s.loginBest },
+  { id: 'streak7', category: 'login', icon: '🔥', title: 'Seminggu Penuh', desc: 'Berdoa 7 hari beruntun', target: 7, of: (s) => s.loginBest },
+  { id: 'streak14', category: 'login', icon: '⚡', title: 'Dua Minggu Membara', desc: 'Berdoa 14 hari beruntun', target: 14, of: (s) => s.loginBest },
+  { id: 'streak30', category: 'login', icon: '🏅', title: 'Sebulan Tanpa Putus', desc: 'Berdoa 30 hari beruntun', target: 30, of: (s) => s.loginBest },
+  { id: 'streak100', category: 'login', icon: '👑', title: 'Legenda 100 Hari', desc: 'Berdoa 100 hari beruntun', target: 100, of: (s) => s.loginBest },
+  { id: 'total30', category: 'login', icon: '📅', title: '30 Hari Bersama Tuhan', desc: 'Total 30 hari berdoa pagi', target: 30, of: (s) => s.loginTotal },
+  { id: 'total100', category: 'login', icon: '💎', title: '100 Hari Bersama Tuhan', desc: 'Total 100 hari berdoa pagi', target: 100, of: (s) => s.loginTotal },
   { id: 'habit3', category: 'health', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan Health 3 hari', target: 3, of: (s) => s.habitStreak },
   { id: 'habit7', category: 'health', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan Health 7 hari', target: 7, of: (s) => s.habitStreak },
   { id: 'revive1', category: 'revive', icon: '📖', title: 'Revive Pertama', desc: 'Tulis jurnal Revive pertamamu', target: 1, of: (s) => s.reviveTotal },

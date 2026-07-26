@@ -101,11 +101,11 @@ export function addTask(
   });
 }
 
-/** Ubah judul dan/atau pindahkan task ke hari lain. */
+/** Ubah judul, pindahkan ke hari lain, dan/atau ganti kategori. */
 export function updateTask(
   uid: string,
   id: string,
-  data: { title?: string; dayId?: string },
+  data: { title?: string; dayId?: string; category?: TaskCategory },
 ) {
   return updateDoc(doc(db, 'users', uid, 'tasks', id), data);
 }
@@ -205,4 +205,76 @@ export function completeTasks(uid: string, items: Task[]) {
 
 export function deleteTask(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'tasks', id));
+}
+
+// ===================== Other Task 📌 =====================
+// Bukan task harian — ini catatan prioritas/reminder penting yang bisa
+// dikerjakan kapan saja (mirip "Prioritas" di fitur Career). Disimpan di
+// koleksi terpisah users/{uid}/otherTasks supaya tidak ikut rollover harian.
+
+export type OtherTask = {
+  id: string;
+  title: string;
+  note: string;
+  priority: 1 | 2 | 3; // 1 = paling penting
+  done: boolean;
+  createdAt: Timestamp | null;
+};
+
+function otherTasksCollection(uid: string) {
+  return collection(db, 'users', uid, 'otherTasks');
+}
+
+export function subscribeOtherTasks(
+  uid: string,
+  onChange: (items: OtherTask[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const q = query(otherTasksCollection(uid), orderBy('createdAt', 'desc'));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      onChange(
+        snapshot.docs.map((d) => {
+          const data = d.data() as Omit<OtherTask, 'id'>;
+          return {
+            id: d.id,
+            ...data,
+            priority: data.priority ?? 2,
+            note: data.note ?? '',
+          };
+        }),
+      );
+    },
+    onError,
+  );
+}
+
+export function addOtherTask(
+  uid: string,
+  data: { title: string; note: string; priority: 1 | 2 | 3 },
+) {
+  return addDoc(otherTasksCollection(uid), {
+    title: data.title.trim(),
+    note: data.note.trim(),
+    priority: data.priority,
+    done: false,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export function updateOtherTask(
+  uid: string,
+  id: string,
+  data: { title?: string; note?: string; priority?: 1 | 2 | 3 },
+) {
+  return updateDoc(doc(db, 'users', uid, 'otherTasks', id), data);
+}
+
+export function setOtherTaskDone(uid: string, id: string, done: boolean) {
+  return updateDoc(doc(db, 'users', uid, 'otherTasks', id), { done });
+}
+
+export function deleteOtherTask(uid: string, id: string) {
+  return deleteDoc(doc(db, 'users', uid, 'otherTasks', id));
 }

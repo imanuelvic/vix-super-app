@@ -34,6 +34,71 @@ import {
   type FamilyMember,
 } from '@/lib/family';
 
+// ================= Avatar (module-scope, identitas stabil) =================
+// PENTING: komponen ini WAJIB di luar FamilyScreen. Kalau didefinisikan di
+// dalam, tiap render membuat tipe komponen baru → semua node Reanimated di
+// PressableScale ikut unmount/remount, dan di iOS itu bisa crash (force quit).
+function Avatar({
+  m,
+  size,
+  today,
+  onSelect,
+  highlighted = false,
+}: {
+  m: FamilyMember;
+  size: number;
+  today: Date;
+  onSelect: (id: string) => void;
+  highlighted?: boolean;
+}) {
+  const hasPhoto = !!m.photo && m.photo.length > 0;
+  return (
+    <PressableScale style={styles.avatarWrap} onPress={() => onSelect(m.id)}>
+      <View
+        style={[
+          styles.avatarBox,
+          { width: size, height: size, borderRadius: size * 0.28 },
+          highlighted && styles.avatarSelected,
+          m.deceased && styles.avatarDeceased,
+        ]}>
+        {hasPhoto ? (
+          <Image
+            source={{ uri: `data:image/jpeg;base64,${m.photo}` }}
+            style={[styles.avatarPhoto, m.deceased && styles.photoDeceased]}
+          />
+        ) : (
+          <VixText
+            additionalStyle={{ fontSize: size * 0.46, lineHeight: size * 0.6 }}>
+            {m.deceased ? '🕊️' : '👤'}
+          </VixText>
+        )}
+        {m.deceased && (
+          <View style={styles.crossBadge}>
+            <VixText heading="label" additionalStyle={styles.crossText}>
+              ✝
+            </VixText>
+          </View>
+        )}
+      </View>
+      <VixText
+        heading="label"
+        numberOfLines={1}
+        additionalStyle={[
+          styles.avatarName,
+          { maxWidth: size + 24 },
+          m.deceased && styles.nameDeceased,
+        ]}>
+        {m.name}
+      </VixText>
+      <VixText heading="label" additionalStyle={styles.avatarAge}>
+        {m.deceased ? `✝ ${m.birthYear}` : `${currentAge(m, today)} th`}
+      </VixText>
+    </PressableScale>
+  );
+}
+
+const VConnector = () => <View style={styles.vConnector} />;
+
 // Family Tree 👨‍👩‍👧‍👦 — silsilah ala The Sims: pohon 3 generasi yang
 // berpusat pada orang yang dipilih; tap siapa pun → pohon pindah ke dia.
 export default function FamilyScreen() {
@@ -49,6 +114,7 @@ export default function FamilyScreen() {
   const [fBirthday, setFBirthday] = useState(new Date(1990, 0, 1));
   const [fDeceased, setFDeceased] = useState(false);
   const [fParents, setFParents] = useState<string[]>([]);
+  const [fPartners, setFPartners] = useState<string[]>([]);
   const [fPhoto, setFPhoto] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -86,6 +152,7 @@ export default function FamilyScreen() {
     setFBirthday(new Date(1990, 0, 1));
     setFDeceased(false);
     setFParents([]);
+    setFPartners([]);
     setFPhoto(null);
     setFormError(null);
   }
@@ -96,6 +163,8 @@ export default function FamilyScreen() {
     setFBirthday(new Date(m.birthYear, m.birthMonth, m.birthDay));
     setFDeceased(m.deceased);
     setFParents(m.parentIds);
+    // Tampilkan pasangan 2 arah supaya lengkap saat diedit.
+    setFPartners(partnersOf(m.id, all).map((p) => p.id));
     setFPhoto(m.photo);
     setFormError(null);
   }
@@ -106,6 +175,12 @@ export default function FamilyScreen() {
       if (prev.length >= 2) return prev; // maksimal 2 orang tua
       return [...prev, id];
     });
+  }
+
+  function togglePartner(id: string) {
+    setFPartners((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    );
   }
 
   async function handlePickPhoto() {
@@ -137,6 +212,8 @@ export default function FamilyScreen() {
       birthDay: fBirthday.getDate(),
       deceased: fDeceased,
       parentIds: fParents,
+      // Simpan pasangan di dokumen ini; partnersOf membacanya 2 arah.
+      partnerIds: fPartners,
       photo: fPhoto,
     };
     try {
@@ -162,64 +239,7 @@ export default function FamilyScreen() {
     }
   }
 
-  // ============ Kartu avatar ala The Sims ============
-  function Avatar({
-    m,
-    size,
-    highlighted = false,
-  }: {
-    m: FamilyMember;
-    size: number;
-    highlighted?: boolean;
-  }) {
-    return (
-      <PressableScale
-        style={styles.avatarWrap}
-        onPress={() => setSelectedId(m.id)}>
-        <View
-          style={[
-            styles.avatarBox,
-            { width: size, height: size, borderRadius: size * 0.2 },
-            highlighted && styles.avatarSelected,
-            m.deceased && styles.avatarDeceased,
-          ]}>
-          {m.photo ? (
-            <Image
-              source={{ uri: `data:image/jpeg;base64,${m.photo}` }}
-              style={[styles.avatarPhoto, m.deceased && styles.photoDeceased]}
-            />
-          ) : (
-            <VixText additionalStyle={{ fontSize: size * 0.5, lineHeight: size * 0.62 }}>
-              {m.deceased ? '🕊️' : '👤'}
-            </VixText>
-          )}
-          {/* Tanda salib untuk yang sudah tiada */}
-          {m.deceased && (
-            <View style={styles.crossBadge}>
-              <VixText heading="label" additionalStyle={styles.crossText}>
-                ✝
-              </VixText>
-            </View>
-          )}
-        </View>
-        <VixText
-          heading="label"
-          numberOfLines={1}
-          additionalStyle={[
-            styles.avatarName,
-            { maxWidth: size + 20 },
-            m.deceased && styles.nameDeceased,
-          ]}>
-          {m.name}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.avatarAge}>
-          {m.deceased ? `✝ ${m.birthYear}` : `${currentAge(m, today)} th`}
-        </VixText>
-      </PressableScale>
-    );
-  }
-
-  const Connector = () => <View style={styles.connector} />;
+  const editingId = editing && editing !== 'new' ? editing.id : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -228,7 +248,7 @@ export default function FamilyScreen() {
         title="Family 👨‍👩‍👧‍👦"
         subtitle={
           all.length > 0
-            ? `${all.length} anggota keluarga · ${all.filter((m) => m.deceased).length} telah tiada ✝`
+            ? `${all.length} anggota · ${all.filter((m) => m.deceased).length} telah tiada ✝`
             : 'Silsilah keluarga besarmu'
         }
       />
@@ -259,41 +279,75 @@ export default function FamilyScreen() {
                 Mulai tanam pohon keluargamu
               </VixText>
               <VixText heading="label" additionalStyle={styles.emptyText}>
-                Tambahkan dirimu dulu, lalu orang tua, saudara, dan seterusnya.
-                Tap siapa pun di pohon untuk berpindah seperti di The Sims 🎮
+                Tambahkan dirimu dulu, lalu orang tua, pasangan, anak, dan
+                seterusnya. Tap siapa pun di pohon untuk berpindah seperti di
+                The Sims 🎮
               </VixText>
             </View>
           ) : (
             <>
               {/* ===== Pohon 3 generasi (berpusat di yang dipilih) ===== */}
               <View style={styles.treeCard}>
-                {/* Generasi atas: orang tua */}
+                {/* Generasi atas: orang tua (dengan garis nikah bila 2) */}
                 {parents.length > 0 && (
                   <>
-                    <View style={styles.row}>
-                      {parents.map((p) => (
-                        <Avatar key={p.id} m={p} size={64} />
+                    <View style={styles.coupleRow}>
+                      {parents.map((p, i) => (
+                        <View key={p.id} style={styles.coupleItem}>
+                          {i > 0 && <View style={styles.marryLink} />}
+                          <Avatar
+                            m={p}
+                            size={60}
+                            today={today}
+                            onSelect={setSelectedId}
+                          />
+                        </View>
                       ))}
                     </View>
-                    <Connector />
+                    <VConnector />
                   </>
                 )}
 
-                {/* Generasi tengah: yang dipilih + pasangan */}
-                <View style={styles.row}>
-                  <Avatar m={selected} size={84} highlighted />
+                {/* Generasi tengah: yang dipilih + pasangan (💍) */}
+                <View style={styles.coupleRow}>
+                  <Avatar
+                    m={selected}
+                    size={92}
+                    today={today}
+                    onSelect={setSelectedId}
+                    highlighted
+                  />
                   {partners.map((p) => (
-                    <Avatar key={p.id} m={p} size={64} />
+                    <View key={p.id} style={styles.coupleItem}>
+                      <View style={styles.marryLink}>
+                        <VixText additionalStyle={styles.marryHeart}>💍</VixText>
+                      </View>
+                      <Avatar
+                        m={p}
+                        size={72}
+                        today={today}
+                        onSelect={setSelectedId}
+                      />
+                    </View>
                   ))}
                 </View>
 
                 {/* Generasi bawah: anak-anak */}
                 {children.length > 0 && (
                   <>
-                    <Connector />
-                    <View style={styles.rowWrap}>
+                    <VConnector />
+                    <VixText heading="label" additionalStyle={styles.genLabel}>
+                      {children.length} anak
+                    </VixText>
+                    <View style={styles.childrenRow}>
                       {children.map((c) => (
-                        <Avatar key={c.id} m={c} size={56} />
+                        <Avatar
+                          key={c.id}
+                          m={c}
+                          size={58}
+                          today={today}
+                          onSelect={setSelectedId}
+                        />
                       ))}
                     </View>
                   </>
@@ -318,7 +372,9 @@ export default function FamilyScreen() {
                   <Avatar
                     key={m.id}
                     m={m}
-                    size={56}
+                    size={58}
+                    today={today}
+                    onSelect={setSelectedId}
                     highlighted={m.id === selected.id}
                   />
                 ))}
@@ -385,13 +441,13 @@ export default function FamilyScreen() {
             </VixText>
           </PressableScale>
 
-          {/* Orang tua (maks 2) — anak & pasangan otomatis mengikuti */}
+          {/* Orang tua (maks 2) */}
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Orang tuanya siapa? (maks 2 — anak & pasangan otomatis terhubung)
+            👪 Orang tuanya siapa? (maks 2 — anak otomatis terhubung)
           </VixText>
-          <View style={styles.parentWrap}>
+          <View style={styles.chipWrap}>
             {all
-              .filter((m) => editing === 'new' || m.id !== (editing as FamilyMember).id)
+              .filter((m) => m.id !== editingId)
               .map((m) => (
                 <Chip
                   key={m.id}
@@ -403,6 +459,28 @@ export default function FamilyScreen() {
             {all.length === 0 && (
               <VixText heading="label">
                 Belum ada anggota lain — tambah dulu, hubungkan belakangan.
+              </VixText>
+            )}
+          </View>
+
+          {/* Pasangan (suami/istri) */}
+          <VixText heading="label" additionalStyle={styles.fieldLabel}>
+            💍 Pasangannya siapa? (suami / istri)
+          </VixText>
+          <View style={styles.chipWrap}>
+            {all
+              .filter((m) => m.id !== editingId)
+              .map((m) => (
+                <Chip
+                  key={m.id}
+                  label={`${m.deceased ? '✝ ' : ''}${m.name}`}
+                  active={fPartners.includes(m.id)}
+                  onPress={() => togglePartner(m.id)}
+                />
+              ))}
+            {all.length === 0 && (
+              <VixText heading="label">
+                Tambah dulu calon pasangannya sebagai anggota.
               </VixText>
             )}
           </View>
@@ -455,30 +533,44 @@ const styles = StyleSheet.create({
   treeCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
-    paddingVertical: 18,
+    paddingVertical: 20,
     paddingHorizontal: 12,
     alignItems: 'center',
     marginBottom: 14,
   },
-  row: {
+  // Baris pasangan: avatar + garis nikah horizontal di antaranya.
+  coupleRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-start',
-    gap: 14,
   },
-  rowWrap: {
+  coupleItem: { flexDirection: 'row', alignItems: 'flex-start' },
+  marryLink: {
+    width: 26,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: Color.MAIN_LIGHT,
+    marginTop: 30,
+    marginHorizontal: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  marryHeart: { fontSize: 14, lineHeight: 16, marginTop: -8 },
+  childrenRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 12,
   },
-  connector: {
-    width: 2,
-    height: 16,
+  vConnector: {
+    width: 3,
+    height: 18,
     backgroundColor: Color.MAIN_LIGHT,
+    borderRadius: 2,
     marginVertical: 4,
   },
-  avatarWrap: { alignItems: 'center' },
+  genLabel: { color: Color.TEXT_ON_DARK_MUTED, marginBottom: 8 },
+  avatarWrap: { alignItems: 'center', marginHorizontal: 6 },
   avatarBox: {
     backgroundColor: Color.CONTAINER,
     borderWidth: 2,
@@ -487,8 +579,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarSelected: { borderWidth: 3, borderColor: Color.MAIN_LIGHT },
-  avatarDeceased: { backgroundColor: Color.TEXT_TITLE, borderColor: Color.TEXT_LABEL },
+  avatarSelected: {
+    borderWidth: 3,
+    borderColor: Color.MAIN_LIGHT,
+  },
+  avatarDeceased: {
+    backgroundColor: Color.TEXT_TITLE,
+    borderColor: Color.TEXT_LABEL,
+  },
   avatarPhoto: { width: '100%', height: '100%' },
   photoDeceased: { opacity: 0.35 }, // efek pudar hitam-putih
   crossBadge: {
@@ -504,7 +602,7 @@ const styles = StyleSheet.create({
   nameDeceased: { color: Color.TEXT_ON_DARK_MUTED },
   avatarAge: { color: Color.TEXT_ON_DARK_MUTED },
   editButton: {
-    marginTop: 14,
+    marginTop: 16,
     backgroundColor: Color.MAIN,
     borderRadius: 999,
     paddingHorizontal: 16,
@@ -515,12 +613,12 @@ const styles = StyleSheet.create({
   allGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 14,
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Color.BORDER,
-    padding: 14,
+    padding: 16,
   },
   // Form
   formScroll: { maxHeight: 520 },
@@ -549,11 +647,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   deceasedText: { color: Color.TEXT_TITLE, flexShrink: 1 },
-  parentWrap: {
+  chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   sheetError: { color: Color.DANGER, marginBottom: 8 },
 });

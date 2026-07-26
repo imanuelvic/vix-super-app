@@ -55,6 +55,8 @@ const MAPPING = {
   'arrow.up.circle.fill': 'arrow-circle-up',
   'arrow.down.circle.fill': 'arrow-circle-down',
   'creditcard.fill': 'credit-card',
+  'mic.fill': 'mic',
+  'line.3.horizontal': 'drag-handle',
 } as IconMapping;
 
 /**

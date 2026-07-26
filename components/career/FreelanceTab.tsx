@@ -219,7 +219,7 @@ export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
           keyboardShouldPersistTaps="handled">
           <FormInput
             style={styles.formGap}
-            placeholder="Nama proyek — mis. Website Company Profile"
+            placeholder="Nama proyek"
             value={fName}
             onChangeText={setFName}
             editable={!busy}

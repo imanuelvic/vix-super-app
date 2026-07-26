@@ -16,7 +16,8 @@ import { useAuth } from '@/contexts/auth';
 import { formatDate } from '@/lib/format';
 import {
   addCheckup,
-  CHECKUP_DUE_DAYS,
+  checkupDaysUntil,
+  checkupNextDate,
   CHECKUP_TYPES,
   deleteCheckup,
   updateCheckup,
@@ -122,7 +123,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Tombol menuju riwayat sakit & info kesehatan */}
+        {/* Tombol menuju riwayat sakit, donor darah & info kesehatan */}
         <View style={styles.navRow}>
           <PressableScale
             style={styles.navButton}
@@ -135,13 +136,23 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             </VixText>
           </PressableScale>
           <PressableScale
+            style={[styles.navButton, styles.navButtonDonor]}
+            onPress={() => router.push('/donor')}>
+            <VixText heading="bold" additionalStyle={styles.navTextDonor}>
+              🩸 Donor
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.navTextDonor}>
+              Jadwal donor
+            </VixText>
+          </PressableScale>
+          <PressableScale
             style={styles.navButton}
             onPress={() => router.push('/health-info')}>
             <VixText heading="bold" additionalStyle={styles.navText}>
               💊 Info
             </VixText>
             <VixText heading="label" additionalStyle={styles.navText}>
-              QnA & tips sehat
+              QnA & tips
             </VixText>
           </PressableScale>
         </View>
@@ -289,11 +300,9 @@ function StatusCard({
     );
   }
 
-  const days = Math.max(
-    0,
-    Math.floor((Date.now() - latest.date.toDate().getTime()) / 86_400_000),
-  );
-  const due = days > CHECKUP_DUE_DAYS;
+  const daysUntil = checkupDaysUntil(latest, new Date());
+  const due = daysUntil <= 0;
+  const nextDate = checkupNextDate(latest);
   return (
     <View style={[styles.statusCard, due && styles.statusWarn]}>
       <View style={styles.statusHeader}>
@@ -305,11 +314,16 @@ function StatusCard({
         </VixText>
       </View>
       <VixText heading="label">
-        Terakhir dicek: {formatDate(latest.date.toDate())} · {days} hari lalu
+        Terakhir dicek: {formatDate(latest.date.toDate())}
       </VixText>
-      {due && (
+      {due ? (
         <VixText heading="label" additionalStyle={styles.warnText}>
-          ⚠️ Sudah lebih dari {CHECKUP_DUE_DAYS} hari — waktunya cek lagi.
+          ⚠️ Waktunya cek lagi! Jadwal 6 bulan ({formatDate(nextDate)}) sudah
+          {daysUntil === 0 ? ' tiba hari ini' : ` lewat ${-daysUntil} hari`}.
+        </VixText>
+      ) : (
+        <VixText heading="label" additionalStyle={styles.nextText}>
+          🗓️ Cek lagi: {formatDate(nextDate)} · {daysUntil} hari lagi
         </VixText>
       )}
     </View>
@@ -329,6 +343,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   navText: { color: Color.ACCENT_DARK },
+  navButtonDonor: {
+    backgroundColor: Color.FINANCE_EXPENSE,
+  },
+  navTextDonor: { color: Color.DANGER },
   statusCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -351,6 +369,7 @@ const styles = StyleSheet.create({
   statusTitle: { color: Color.TEXT_TITLE },
   statusValue: { color: Color.MAIN_DARK },
   warnText: { color: Color.WARNING },
+  nextText: { color: Color.MAIN_DARK },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   chipFlex: { flex: 1 },

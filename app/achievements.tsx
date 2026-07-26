@@ -101,8 +101,8 @@ export default function AchievementsScreen() {
             </VixText>
           </VixText>
           <VixText heading="label" additionalStyle={styles.heroLabel}>
-            🔥 Streak {stats.loginCount} hari · terbaik {stats.loginBest} ·
-            total {stats.loginTotal} hari login
+            🙏 Streak doa {stats.loginCount} hari · terbaik {stats.loginBest} ·
+            total {stats.loginTotal} hari
           </VixText>
         </View>
 

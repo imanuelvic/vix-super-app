@@ -330,8 +330,46 @@ export const CHECKUP_TYPES: {
   { key: 'gula', label: 'Gula Darah', icon: '🍬' },
 ];
 
-/** Lewat dari ini (hari) dianggap sudah waktunya periksa lagi. */
+/** Lewat dari ini (hari) dianggap sudah waktunya periksa lagi (≈ 6 bulan). */
 export const CHECKUP_DUE_DAYS = 180;
+
+/** Jadwal cek berikutnya = 6 bulan setelah pemeriksaan terakhir. */
+export function checkupNextDate(latest: Checkup): Date {
+  const next = latest.date.toDate();
+  next.setMonth(next.getMonth() + 6);
+  return next;
+}
+
+/** Sisa hari menuju jadwal cek berikutnya (negatif = sudah lewat). */
+export function checkupDaysUntil(latest: Checkup, today: Date): number {
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return Math.round(
+    (startOfDay(checkupNextDate(latest)) - startOfDay(today)) / 86_400_000,
+  );
+}
+
+/**
+ * Reminder untuk Home: jenis pemeriksaan yang PERNAH dicatat & jadwal cek
+ * berikutnya (6 bulan) sudah tiba/lewat. Yang belum pernah dicatat tidak
+ * diingatkan di Home (belum ada patokan tanggalnya).
+ */
+export function checkupDueReminders(
+  checkups: Checkup[],
+  today: Date,
+): { type: CheckupType; label: string; icon: string; days: number }[] {
+  const out: { type: CheckupType; label: string; icon: string; days: number }[] = [];
+  for (const meta of CHECKUP_TYPES) {
+    // checkups sudah urut tanggal desc → yang pertama = terbaru.
+    const latest = checkups.find((c) => c.type === meta.key);
+    if (!latest) continue;
+    const days = checkupDaysUntil(latest, today);
+    if (days <= 0) {
+      out.push({ type: meta.key, label: meta.label, icon: meta.icon, days });
+    }
+  }
+  return out;
+}
 
 export function subscribeCheckups(
   uid: string,

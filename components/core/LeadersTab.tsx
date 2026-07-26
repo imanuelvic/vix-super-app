@@ -423,7 +423,7 @@ export function LeadersTab({
           </View>
           <FormInput
             style={styles.phoneInput}
-            placeholder="81234567890 (tanpa 0 di depan)"
+            placeholder="81234567890"
             keyboardType="phone-pad"
             value={fPhone}
             onChangeText={(t) => setFPhone(t.replace(/\D/g, ''))}
@@ -503,7 +503,7 @@ export function LeadersTab({
           </View>
           <FormInput
             style={styles.phoneInput}
-            placeholder="81234567890 (tanpa 0 di depan)"
+            placeholder="81234567890"
             keyboardType="phone-pad"
             value={mtPhone}
             onChangeText={(t) => setMtPhone(t.replace(/\D/g, ''))}

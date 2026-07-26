@@ -74,6 +74,7 @@ function RootNavigator() {
         <Stack.Screen name="health" options={{ headerShown: false }} />
         <Stack.Screen name="diseases" options={{ headerShown: false }} />
         <Stack.Screen name="health-info" options={{ headerShown: false }} />
+        <Stack.Screen name="donor" options={{ headerShown: false }} />
 
         <Stack.Screen name="core" options={{ headerShown: false }} />
         <Stack.Screen name="visitations" options={{ headerShown: false }} />
