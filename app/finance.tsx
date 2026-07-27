@@ -15,6 +15,7 @@ import { DashboardTab } from '@/components/finance/DashboardTab';
 import { TransactionsTab } from '@/components/finance/TransactionsTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { subscribeBudget, type BudgetMap } from '@/lib/budgets';
 import { MONTH_NAMES } from '@/lib/format';
 import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactions';
 
@@ -47,6 +48,11 @@ export default function FinanceScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Budget bulan ini — satu langganan dipakai bersama tab Transaksi
+  // (mewarnai pilihan kategori) & tab Budgeting (bar realisasi).
+  const [budget, setBudget] = useState<BudgetMap>({});
+  const [budgetCopied, setBudgetCopied] = useState(false);
+
   // Layar terkunci sampai PIN benar. Selama terkunci, Firestore belum
   // di-subscribe sama sekali — jadi tidak ada biaya read kalau batal masuk.
   const [unlocked, setUnlocked] = useState(false);
@@ -69,6 +75,23 @@ export default function FinanceScreen() {
         setError('Gagal memuat data. Cek koneksi internet.');
         setLoading(false);
       },
+    );
+    return unsubscribe;
+  }, [user, year, month, unlocked]);
+
+  // Langganan budget bulan ini (1 dokumen kecil). Error diabaikan diam-diam —
+  // pewarnaan budget hanya pelengkap, tak boleh mengganggu daftar transaksi.
+  useEffect(() => {
+    if (!user || !unlocked) return;
+    const unsubscribe = subscribeBudget(
+      user.uid,
+      year,
+      month,
+      (next) => {
+        setBudget(next.allocations);
+        setBudgetCopied(next.copiedFromPrev);
+      },
+      () => {},
     );
     return unsubscribe;
   }, [user, year, month, unlocked]);
@@ -145,9 +168,15 @@ export default function FinanceScreen() {
         ) : tab === 'dashboard' ? (
           <DashboardTab items={items} year={year} month={month} />
         ) : tab === 'transactions' ? (
-          <TransactionsTab items={items} />
+          <TransactionsTab items={items} budget={budget} />
         ) : (
-          <BudgetingTab items={items} year={year} month={month} />
+          <BudgetingTab
+            items={items}
+            year={year}
+            month={month}
+            budget={budget}
+            copied={budgetCopied}
+          />
         )}
       </View>
 

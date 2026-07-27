@@ -41,7 +41,25 @@ export type RoadmapItem = {
   note: string; // detail/konteks, boleh kosong
   priority: 1 | 2 | 3; // 1 = paling penting
   status: RoadmapStatus;
+  deadline?: Timestamp | null; // tenggat pengerjaan (opsional utk data lama)
 };
+
+/** Selisih hari ke deadline roadmap (0 = hari ini, negatif = lewat). */
+export function roadmapDaysUntil(deadline: Timestamp, today: Date): number {
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const d = deadline.toDate();
+  const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.round((day.getTime() - start.getTime()) / 86_400_000);
+}
+
+/** Reminder Home: prioritas belum selesai & deadline ≤ 3 hari (termasuk lewat). */
+export function roadmapReminderWindow(item: RoadmapItem, today: Date): boolean {
+  return (
+    item.status !== 'done' &&
+    !!item.deadline &&
+    roadmapDaysUntil(item.deadline, today) <= 3
+  );
+}
 
 export function subscribeRoadmap(
   uid: string,

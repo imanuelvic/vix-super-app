@@ -62,6 +62,10 @@ export const Color = {
   // Tile Home lainnya
   CAREER: '#E3CBB4', // coklat pastel (fitur Career)
   CAREER_DARK: '#E4E2DC', // abu-abu pastel (tile Trading)
+  FUN: '#C7E9C0', // hijau muda (fitur Fun & Recreation)
+  FUN_DARK: '#3E7A3A',
+  FITNESS: '#FBD9B8', // oranye lembut (fitur Fitness — coming soon)
+  FITNESS_DARK: '#B5651D',
 
   // Merek luar (tombol chat WhatsApp di fitur CORE)
   WHATSAPP: '#25D366',
@@ -71,4 +75,6 @@ export const Color = {
   WARNING: '#5B4B3A',
   WARNING_TRANSPARENT: '#5B4B3A1A',
   DANGER: '#C0392B',
+  // Kuning peringatan pemakaian budget (bar & latar pilihan saat ≥75%).
+  BUDGET_WARN: '#EAB308',
 } as const;

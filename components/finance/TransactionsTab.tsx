@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  type ViewStyle,
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -21,6 +22,7 @@ import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { budgetKey, type BudgetMap } from '@/lib/budgets';
 import {
   activeCategories,
   categoryOf,
@@ -45,7 +47,15 @@ import {
 
 // Tab Transaction Log: ringkasan bulan, form tambah, daftar transaksi,
 // modal edit (nominal/catatan/tanggal), dan konfirmasi hapus.
-export function TransactionsTab({ items }: { items: Transaction[] }) {
+// `budget` (alokasi per kategori bulan ini) dipakai untuk mewarnai pilihan
+// kategori: kuning saat pemakaian ≥75%, merah saat ≥100% (over budget).
+export function TransactionsTab({
+  items,
+  budget,
+}: {
+  items: Transaction[];
+  budget: BudgetMap;
+}) {
   const { user } = useAuth();
 
   // Default: kartu ringkasan dikecilkan & semua nominal disembunyikan
@@ -90,6 +100,42 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
   // Sisa = pemasukan dikurangi semua alokasi keluar bulan ini.
   const remaining =
     totals.income - totals.expense - totals.saving - totals.investment;
+
+  // Realisasi per "jenis:kategori" bulan ini (untuk warna pilihan kategori).
+  const realization = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of items) {
+      const key = budgetKey(t.type, t.category);
+      map.set(key, (map.get(key) ?? 0) + t.amount);
+    }
+    return map;
+  }, [items]);
+
+  // Daftar transaksi disaring sesuai jenis terpilih di TypeChips.
+  const filtered = useMemo(
+    () => items.filter((t) => t.type === type),
+    [items, type],
+  );
+
+  // Warna latar pilihan kategori sesuai pemakaian budget-nya:
+  // kuning ≥75%, merah ≥100% (over budget). Kategori tanpa budget → normal.
+  function categoryBudgetStyle(key: string): ViewStyle | undefined {
+    const allocated = budget[budgetKey(type, key)] ?? 0;
+    if (allocated <= 0) return undefined;
+    const percent =
+      ((realization.get(budgetKey(type, key)) ?? 0) / allocated) * 100;
+    if (percent >= 100)
+      return {
+        backgroundColor: Color.FINANCE_EXPENSE,
+        borderColor: Color.FINANCE_EXPENSE_DARK,
+      };
+    if (percent >= 75)
+      return {
+        backgroundColor: Color.FINANCE_SAVING,
+        borderColor: Color.FINANCE_SAVING_DARK,
+      };
+    return undefined;
+  }
 
   // Teks nominal — disamarkan saat mode sembunyi angka aktif.
   function displayAmount(n: number): string {
@@ -335,15 +381,19 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <FlatList
-        data={items}
+        data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator
+        persistentScrollbar
+        indicatorStyle="black"
         ListHeaderComponent={renderHeader()}
         ListEmptyComponent={
           <View style={styles.center}>
             <VixText heading="label">
-              Belum ada transaksi bulan ini. Tambahkan di atas 👆
+              Belum ada transaksi {FINANCE_TYPE_LABEL[type]} bulan ini.
+              Tambahkan di atas 👆
             </VixText>
           </View>
         }
@@ -410,6 +460,7 @@ export function TransactionsTab({ items }: { items: Transaction[] }) {
                 key={c.key}
                 label={`${c.icon} ${c.label}`}
                 active={category === c.key}
+                additionalStyle={categoryBudgetStyle(c.key)}
                 onPress={() => {
                   setCategory(c.key);
                   setPickerOpen(false);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -14,7 +14,6 @@ import {
   budgetKey,
   copyBudgetFromPreviousMonth,
   setBudgetAllocation,
-  subscribeBudget,
   type BudgetMap,
 } from '@/lib/budgets';
 import {
@@ -36,25 +35,28 @@ type BudgetRow = {
 
 // Tab Budgeting: budget per kategori per bulan (di-set manual) dibandingkan
 // dengan realisasi yang terhitung otomatis dari transaksi bulan itu.
+// `budget` & `copied` datang dari layar Finance (satu langganan dipakai
+// bersama tab Transaksi supaya tidak double-read).
 export function BudgetingTab({
   items,
   year,
   month,
+  budget,
+  copied,
 }: {
   items: Transaction[];
   year: number;
   month: number;
+  budget: BudgetMap;
+  copied: boolean;
 }) {
   const { user } = useAuth();
 
   const [type, setType] = useState<FinanceType>('expense');
-  const [budget, setBudget] = useState<BudgetMap>({});
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Tombol "samakan dengan bulan lalu" — abu-abu kalau sudah pernah ditekan
-  // untuk bulan ini (status tersimpan di dokumen budget bulan itu).
-  const [copied, setCopied] = useState(false);
+  // untuk bulan ini (status `copied` disuplai dari layar Finance).
   const [copying, setCopying] = useState(false);
   const [confirmCopy, setConfirmCopy] = useState(false);
 
@@ -62,27 +64,6 @@ export function BudgetingTab({
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    setLoading(true);
-    const unsubscribe = subscribeBudget(
-      user.uid,
-      year,
-      month,
-      (next) => {
-        setBudget(next.allocations);
-        setCopied(next.copiedFromPrev);
-        setError(null);
-        setLoading(false);
-      },
-      () => {
-        setError('Gagal memuat budget. Cek koneksi internet.');
-        setLoading(false);
-      },
-    );
-    return unsubscribe;
-  }, [user, year, month]);
 
   // Realisasi per "jenis:kategori" dari seluruh transaksi bulan ini.
   const realization = useMemo(() => {
@@ -151,14 +132,6 @@ export function BudgetingTab({
       setEditing(null);
       setSaving(false);
     }
-  }
-
-  if (loading) {
-    return (
-      <View style={styles.centerFill}>
-        <ActivityIndicator color={Color.MAIN} />
-      </View>
-    );
   }
 
   return (
@@ -234,7 +207,7 @@ export function BudgetingTab({
                       : '—'}
                 </VixText>
               </View>
-              <ProgressBar percent={percent} over={over} />
+              <ProgressBar percent={percent} />
               <View style={styles.rowBottom}>
                 <VixText heading="label">
                   Realisasi:{' '}
@@ -296,33 +269,31 @@ export function BudgetingTab({
   );
 }
 
-// Bar kemajuan realisasi vs budget. Merah kalau melebihi budget.
+// Bar kemajuan realisasi vs budget.
+// Hijau normal → kuning saat pemakaian ≥75% → merah saat ≥100% (over budget).
 function ProgressBar({
   percent,
-  over = false,
   onDark = false,
 }: {
   percent: number;
-  over?: boolean;
   onDark?: boolean;
 }) {
   const width = Math.max(0, Math.min(percent, 100));
+  const fill =
+    percent >= 100
+      ? Color.DANGER
+      : percent >= 75
+        ? Color.BUDGET_WARN
+        : Color.MAIN_LIGHT;
   return (
     <View style={[styles.barTrack, onDark && styles.barTrackDark]}>
-      <View
-        style={[
-          styles.barFill,
-          { width: `${width}%` },
-          over && styles.barFillOver,
-        ]}
-      />
+      <View style={[styles.barFill, { width: `${width}%`, backgroundColor: fill }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   error: { color: Color.DANGER, marginBottom: 8 },
   summaryTop: {
@@ -381,9 +352,7 @@ const styles = StyleSheet.create({
   barFill: {
     height: '100%',
     borderRadius: 4,
-    backgroundColor: Color.MAIN_LIGHT,
   },
-  barFillOver: { backgroundColor: Color.DANGER },
   modalTitle: { marginBottom: 2 },
   modalCategory: { marginBottom: 12 },
   modalHint: { marginTop: 6 },

@@ -1,8 +1,10 @@
+import { Timestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
+import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -14,10 +16,17 @@ import { useAuth } from '@/contexts/auth';
 import {
   newCareerId,
   ROADMAP_STATUS,
+  roadmapDaysUntil,
   saveRoadmap,
   type RoadmapItem,
   type RoadmapStatus,
 } from '@/lib/career';
+import { formatDate } from '@/lib/format';
+
+// Deadline default untuk prioritas baru: seminggu dari sekarang.
+function defaultDeadline(): Date {
+  return new Date(Date.now() + 7 * 86_400_000);
+}
 
 const STATUS_META = Object.fromEntries(
   ROADMAP_STATUS.map((s) => [s.key, s]),
@@ -44,6 +53,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
   const [fNote, setFNote] = useState('');
   const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
   const [fStatus, setFStatus] = useState<RoadmapStatus>('todo');
+  const [fDeadline, setFDeadline] = useState(defaultDeadline());
   const [formError, setFormError] = useState<string | null>(null);
 
   const sorted = [...items].sort((a, b) => {
@@ -60,6 +70,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     setFNote('');
     setFPriority(2);
     setFStatus('todo');
+    setFDeadline(defaultDeadline());
     setFormError(null);
   }
 
@@ -69,6 +80,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     setFNote(item.note);
     setFPriority(item.priority);
     setFStatus(item.status);
+    setFDeadline(item.deadline ? item.deadline.toDate() : defaultDeadline());
     setFormError(null);
   }
 
@@ -86,6 +98,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
       note: fNote.trim(),
       priority: fPriority,
       status: fStatus,
+      deadline: Timestamp.fromDate(fDeadline),
     };
     const next =
       editing === 'new'
@@ -159,6 +172,20 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
 
         {sorted.map((item) => {
           const meta = STATUS_META[item.status];
+          // Info deadline: berapa hari lagi & apakah mendesak (belum selesai
+          // dan tinggal ≤ 3 hari / sudah lewat).
+          const dl = item.deadline
+            ? roadmapDaysUntil(item.deadline, new Date())
+            : null;
+          const dlWhen =
+            dl === null
+              ? ''
+              : dl === 0
+                ? 'HARI INI'
+                : dl > 0
+                  ? `${dl} hari lagi`
+                  : `lewat ${-dl} hari`;
+          const dlUrgent = item.status !== 'done' && dl !== null && dl <= 3;
           return (
             // Tekan untuk edit status/prioritas.
             <PressableScale
@@ -184,6 +211,13 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
               {item.note ? (
                 <VixText heading="label" numberOfLines={2}>
                   {item.note}
+                </VixText>
+              ) : null}
+              {item.deadline ? (
+                <VixText
+                  heading="label"
+                  additionalStyle={dlUrgent ? styles.deadlineUrgent : styles.deadline}>
+                  🗓️ {formatDate(item.deadline.toDate())} · {dlWhen}
                 </VixText>
               ) : null}
             </PressableScale>
@@ -238,6 +272,17 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
             />
           ))}
         </View>
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Deadline
+        </VixText>
+        <View style={styles.formGap}>
+          {/* key = id supaya state picker internal reset tiap ganti item */}
+          <DateField
+            key={editing === 'new' ? 'new' : editing?.id}
+            value={fDeadline}
+            onChange={setFDeadline}
+          />
+        </View>
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {formError}
@@ -288,6 +333,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardDone: { opacity: 0.55 },
+  deadline: { color: Color.TEXT_LABEL },
+  deadlineUrgent: { color: Color.DANGER },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   priorityBadge: {

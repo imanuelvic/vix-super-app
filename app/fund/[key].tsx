@@ -306,6 +306,9 @@ export default function FundScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator
+            persistentScrollbar
+            indicatorStyle="black"
             ListHeaderComponent={renderHeader()}
             ListEmptyComponent={
               <View style={styles.center}>

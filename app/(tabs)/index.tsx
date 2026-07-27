@@ -22,6 +22,12 @@ import {
   type LoginStreak,
 } from '@/lib/achievements';
 import {
+  roadmapDaysUntil,
+  roadmapReminderWindow,
+  subscribeRoadmap,
+  type RoadmapItem,
+} from '@/lib/career';
+import {
   FOLLOWUPS_MT_PER_DAY,
   FOLLOWUPS_PER_DAY,
   nextBirthday,
@@ -44,12 +50,6 @@ import {
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import { formatDate, formatShortDayDate } from '@/lib/format';
 import {
-  currentSundayId,
-  sermonReminderActive,
-  subscribeSermons,
-  type SermonNote,
-} from '@/lib/sermon';
-import {
   checkupDueReminders,
   dayDocId,
   needsWeighIn,
@@ -62,6 +62,12 @@ import {
   type HabitDay,
   type HealthProfile,
 } from '@/lib/health';
+import {
+  currentSundayId,
+  sermonReminderActive,
+  subscribeSermons,
+  type SermonNote,
+} from '@/lib/sermon';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import {
   setTaskDone,
@@ -89,7 +95,9 @@ const FEATURES: {
     | 'target'
     | 'book.closed.fill'
     | 'briefcase.fill'
-    | 'person.3.fill';
+    | 'person.3.fill'
+    | 'mountain.2.fill'
+    | 'dumbbell.fill';
   route: Href;
   bg: string;
   fg: string;
@@ -104,6 +112,8 @@ const FEATURES: {
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
   { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
+  { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
+  { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
 ];
 
 export default function HomeScreen() {
@@ -126,6 +136,7 @@ export default function HomeScreen() {
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
+  const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
   // khotbah yang bergantung waktu.
@@ -153,6 +164,7 @@ export default function HomeScreen() {
       subscribeHealthProfile(user.uid, setProfile),
       subscribeSermons(user.uid, setSermons),
       subscribeReviveStreak(user.uid, setRevive),
+      subscribeRoadmap(user.uid, setRoadmap),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -249,6 +261,18 @@ export default function HomeScreen() {
       c.days < 0 ? ` (lewat ${-c.days} hari)` : ''
     }`,
   }));
+
+  // Reminder deadline prioritas kerja fulltime: belum selesai & ≤ 3 hari lagi
+  // (termasuk yang sudah lewat).
+  const careerReminders = roadmap
+    .filter((r) => roadmapReminderWindow(r, now))
+    .sort((a, b) => a.deadline!.toMillis() - b.deadline!.toMillis())
+    .map((r) => {
+      const days = roadmapDaysUntil(r.deadline!, now);
+      const when =
+        days === 0 ? 'HARI INI' : days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
+      return { id: r.id, text: `💻 ${r.title} · ${when}` };
+    });
 
   // Reminder timbang berat: tiap Minggu kalau belum update berat hari ini.
   const weighInDue = profile != null && needsWeighIn(profile, now);
@@ -450,6 +474,25 @@ export default function HomeScreen() {
           </PressableScale>
         )}
 
+        {/* Reminder deadline prioritas kerja — warna coklat seperti Career */}
+        {careerReminders.length > 0 && (
+          <PressableScale
+            style={styles.careerCard}
+            onPress={() => router.push('/career')}>
+            <VixText heading="bold" additionalStyle={styles.careerTitle}>
+              💼 Deadline Prioritas Kerja
+            </VixText>
+            {careerReminders.map((r) => (
+              <VixText
+                key={r.id}
+                heading="label"
+                additionalStyle={styles.careerText}>
+                {r.text}
+              </VixText>
+            ))}
+          </PressableScale>
+        )}
+
         {/* Task hari ini — centang langsung tanpa buka fitur Task */}
         {todayTasks.length > 0 && (
           <View style={styles.taskCard}>
@@ -468,7 +511,7 @@ export default function HomeScreen() {
                 />
               </View>
             </PressableScale>
-            {todayTasks.slice(0, 5).map((t) => (
+            {todayTasks.slice(0, 3).map((t) => (
               <View key={t.id} style={styles.taskRow}>
                 {/* Lingkaran ini yang dicentang */}
                 <PressableScale onPress={() => toggleTask(t)} hitSlop={8}>
@@ -498,10 +541,10 @@ export default function HomeScreen() {
                 </PressableScale>
               </View>
             ))}
-            {todayTasks.length > 5 && (
+            {todayTasks.length > 3 && (
               <PressableScale onPress={() => router.push('/tasks')}>
                 <VixText heading="label" additionalStyle={styles.taskMore}>
-                  +{todayTasks.length - 5} task lagi →
+                  +{todayTasks.length - 3} task lagi →
                 </VixText>
               </PressableScale>
             )}
@@ -639,6 +682,19 @@ const styles = StyleSheet.create({
   },
   sermonTitle: { color: Color.SPIRITUAL_DARK },
   sermonText: { color: Color.SPIRITUAL_DARK },
+  careerCard: {
+    backgroundColor: Color.CAREER,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.ACCENT_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 3,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  careerTitle: { color: Color.ACCENT_DARK },
+  careerText: { color: Color.ACCENT_DARK },
   taskCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

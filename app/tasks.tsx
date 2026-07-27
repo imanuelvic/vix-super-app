@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  FadeIn,
   FadeInDown,
   FadeOutDown,
   runOnJS,
@@ -20,6 +21,7 @@ import Animated, {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -53,13 +55,25 @@ import {
   type TaskCategory,
 } from '@/lib/tasks';
 
+type MainTab = 'harian' | 'other';
+
+// Persegi target drop (koordinat window). key = "cat:<kategori>" atau
+// "day:<dayId>" supaya satu daftar bisa memuat chip kategori & blok hari.
+type DropRect = { key: string; x: number; y: number; w: number; h: number };
+
+// Tab bar bawah layar Task — Harian (planner) & Prioritas (catatan penting).
+const MAIN_TABS: BottomTab<MainTab>[] = [
+  { key: 'harian', label: 'Harian', icon: 'calendar' },
+  { key: 'other', label: 'Prioritas', icon: 'flag.fill' },
+];
+
 // Task ✅ — planner harian: semua tanggal sebulan tampil berurutan,
 // task menempel di harinya. Task kemarin yang belum selesai otomatis
 // pindah ke hari ini (rollover), jadi bulan lalu selalu kosong.
 export default function TasksScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  // Inset bawah Android/iOS — biar FAB tidak tabrakan tombol navigasi HP.
+  // Inset atas — untuk mengoreksi posisi ghost drag (koordinat window).
   const insets = useSafeAreaInsets();
   // ?category=... dari kartu Task Hari Ini di Home → buka kategori itu.
   const { category: categoryParam } = useLocalSearchParams<{ category?: string }>();
@@ -88,12 +102,18 @@ export default function TasksScreen() {
 
   // Drag & drop: task yang sedang diseret + posisi jari (window coords).
   const [dragTask, setDragTask] = useState<Task | null>(null);
+  // Target (kategori/hari) yang sedang dilewati jari → disorot agar jelas
+  // task akan pindah ke situ. "cat:<key>" / "day:<id>" / null.
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
   const dragX = useSharedValue(0);
   const dragY = useSharedValue(0);
-  // Ref tiap chip kategori & tiap blok hari — diukur saat DILEPAS untuk tahu
-  // task dijatuhkan di target mana (measureInWindow = koordinat layar live).
+  // Ref tiap chip kategori & tiap blok hari — diukur SEKALI saat mulai
+  // menyeret (scroll dimatikan saat drag → posisi stabil) lalu dipakai ulang
+  // untuk deteksi hover & saat dilepas.
   const catRefs = useRef<Record<string, View | null>>({});
   const dayRefs = useRef<Record<string, View | null>>({});
+  const dropRects = useRef<DropRect[]>([]);
+  const draggingTaskRef = useRef<Task | null>(null);
 
   // Bulan yang dilihat — tidak bisa mundur sebelum bulan berjalan.
   const now = new Date();
@@ -338,62 +358,92 @@ export default function TasksScreen() {
   }
 
   // ===== Drag & drop =====
-  // Callback stabil supaya gesture per-baris tidak dibuat ulang tiap render.
-  const beginDrag = useCallback((t: Task) => setDragTask(t), []);
+  // Ukur posisi (window) semua target: chip kategori + tiap blok hari.
+  const measureTargets = useCallback(() => {
+    const rectOf = (key: string, node: View | null) =>
+      new Promise<DropRect | null>((resolve) => {
+        if (!node) return resolve(null);
+        node.measureInWindow((x, y, w, h) => resolve({ key, x, y, w, h }));
+      });
+    const jobs = [
+      ...TASK_CATEGORIES.map((c) =>
+        rectOf(`cat:${c.key}`, catRefs.current[c.key]),
+      ),
+      ...Object.keys(dayRefs.current).map((k) =>
+        rectOf(`day:${k}`, dayRefs.current[k]),
+      ),
+    ];
+    return Promise.all(jobs).then((list) =>
+      list.filter((r): r is DropRect => r !== null),
+    );
+  }, []);
 
+  // Mulai menyeret: catat task-nya & ukur semua target untuk deteksi hover.
+  const beginDrag = useCallback(
+    (t: Task) => {
+      draggingTaskRef.current = t;
+      setDragTask(t);
+      setHoverKey(null);
+      measureTargets().then((rects) => {
+        dropRects.current = rects;
+      });
+    },
+    [measureTargets],
+  );
+
+  // Selama jari bergerak: sorot target yang sedang dilewati (kalau memang akan
+  // memindahkan — bukan kategori/hari asalnya). Worklet hanya mengoper angka
+  // (aman untuk iOS); pencocokan rect dilakukan di sisi JS ini.
+  const updateHover = useCallback((x: number, y: number) => {
+    const t = draggingTaskRef.current;
+    if (!t) return;
+    const hit =
+      dropRects.current.find(
+        (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h,
+      ) ?? null;
+    const key =
+      hit && hit.key !== `cat:${t.category}` && hit.key !== `day:${t.dayId}`
+        ? hit.key
+        : null;
+    setHoverKey((prev) => (prev === key ? prev : key));
+  }, []);
+
+  // Dilepas: pindahkan ke target di bawah jari (pakai rect yang sudah diukur).
   const handleDrop = useCallback(
     async (t: Task, x: number, y: number) => {
+      const rects = dropRects.current.length
+        ? dropRects.current
+        : await measureTargets();
+      const hit =
+        rects.find(
+          (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h,
+        ) ?? null;
       setDragTask(null);
-      if (!user) return;
-      const rectOf = (node: View | null) =>
-        new Promise<{ x: number; y: number; w: number; h: number } | null>(
-          (resolve) => {
-            if (!node) return resolve(null);
-            node.measureInWindow((mx, my, mw, mh) =>
-              resolve({ x: mx, y: my, w: mw, h: mh }),
-            );
-          },
-        );
-      const inside = (r: { x: number; y: number; w: number; h: number } | null) =>
-        !!r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
-
-      // 1) Dijatuhkan di chip kategori → ganti kategori.
-      const catRects = await Promise.all(
-        TASK_CATEGORIES.map((c) => rectOf(catRefs.current[c.key])),
-      );
-      for (let i = 0; i < TASK_CATEGORIES.length; i++) {
-        if (inside(catRects[i])) {
-          const key = TASK_CATEGORIES[i].key;
-          if (key !== t.category) {
-            try {
-              await updateTask(user.uid, t.id, { category: key });
-            } catch {
-              setError('Gagal memindahkan kategori. Coba lagi.');
-            }
+      setHoverKey(null);
+      draggingTaskRef.current = null;
+      dropRects.current = [];
+      if (!user || !hit) return;
+      if (hit.key.startsWith('cat:')) {
+        const key = hit.key.slice(4) as TaskCategory;
+        if (key !== t.category) {
+          try {
+            await updateTask(user.uid, t.id, { category: key });
+          } catch {
+            setError('Gagal memindahkan kategori. Coba lagi.');
           }
-          return;
         }
-      }
-
-      // 2) Dijatuhkan di blok hari → pindah tanggal.
-      const dayKeys = Object.keys(dayRefs.current);
-      const dayRects = await Promise.all(
-        dayKeys.map((k) => rectOf(dayRefs.current[k])),
-      );
-      for (let i = 0; i < dayKeys.length; i++) {
-        if (inside(dayRects[i])) {
-          if (dayKeys[i] !== t.dayId) {
-            try {
-              await updateTask(user.uid, t.id, { dayId: dayKeys[i] });
-            } catch {
-              setError('Gagal memindahkan tanggal. Coba lagi.');
-            }
+      } else if (hit.key.startsWith('day:')) {
+        const dayId = hit.key.slice(4);
+        if (dayId !== t.dayId) {
+          try {
+            await updateTask(user.uid, t.id, { dayId });
+          } catch {
+            setError('Gagal memindahkan tanggal. Coba lagi.');
           }
-          return;
         }
       }
     },
-    [user],
+    [user, measureTargets],
   );
 
   // Ghost yang mengikuti jari saat menyeret (dikoreksi inset atas SafeArea).
@@ -405,7 +455,7 @@ export default function TasksScreen() {
   }));
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <PressableScale style={styles.backRow} onPress={() => router.back()} hitSlop={8}>
         <IconSymbol name="chevron.left" size={22} color={Color.MAIN} />
         <VixText heading="bold" additionalStyle={styles.backText}>
@@ -417,21 +467,6 @@ export default function TasksScreen() {
         <VixText heading="header" additionalStyle={styles.title}>
           Task ✅
         </VixText>
-        {/* Tab utama: planner Harian / catatan Other Task */}
-        <View style={styles.segRow}>
-          <Chip
-            label="📅 Harian"
-            active={mainTab === 'harian'}
-            onPress={() => setMainTab('harian')}
-            additionalStyle={styles.segChip}
-          />
-          <Chip
-            label="📌 Other Task"
-            active={mainTab === 'other'}
-            onPress={() => setMainTab('other')}
-            additionalStyle={styles.segChip}
-          />
-        </View>
         {/* Navigasi bulan — khusus tab Harian, mentok di bulan berjalan */}
         {mainTab === 'harian' && (
           <View style={styles.monthRow}>
@@ -461,6 +496,7 @@ export default function TasksScreen() {
         )}
       </View>
 
+      <View style={styles.body}>
       {mainTab === 'other' ? (
         <OtherTaskTab items={otherTasks} />
       ) : (
@@ -476,13 +512,18 @@ export default function TasksScreen() {
                 (t) => t.category === c.key && !t.done && t.dayId === todayId,
               ).length;
               const target = dragTask && dragTask.category !== c.key;
+              const hovered = hoverKey === `cat:${c.key}`;
               return (
                 <View
                   key={c.key}
                   ref={(r) => {
                     catRefs.current[c.key] = r;
                   }}
-                  style={[styles.chipHolder, target && styles.chipTarget]}>
+                  style={[
+                    styles.chipHolder,
+                    target && styles.chipTarget,
+                    hovered && styles.chipHovered,
+                  ]}>
                   <Chip
                     label={`${c.icon} ${c.label}`}
                     active={category === c.key}
@@ -496,6 +537,14 @@ export default function TasksScreen() {
                         {count > 9 ? '9+' : count}
                       </VixText>
                     </View>
+                  )}
+                  {/* Cincin sorot muncul (fade-in) saat jari melewati chip ini */}
+                  {hovered && (
+                    <Animated.View
+                      pointerEvents="none"
+                      entering={FadeIn.duration(140)}
+                      style={styles.chipHoverRing}
+                    />
                   )}
                 </View>
               );
@@ -522,6 +571,7 @@ export default function TasksScreen() {
           ) : (
             // Scroll dimatikan saat menyeret biar posisi target stabil.
             <ScrollView
+              style={styles.listScroll}
               scrollEnabled={dragTask === null}
               contentContainerStyle={styles.listContent}>
               {Array.from({ length: daysInMonth }, (_, i) => {
@@ -530,6 +580,7 @@ export default function TasksScreen() {
                 // Tanggal yang sudah terlewat langsung hilang dari tampilan.
                 if (dayId < todayId) return null;
                 const isToday = dayId === todayId;
+                const hovered = hoverKey === `day:${dayId}`;
                 // Urutan dalam satu hari: yang dibuat duluan di atas.
                 const dayTasks = shown.filter((t) => t.dayId === dayId).reverse();
                 return (
@@ -565,10 +616,19 @@ export default function TasksScreen() {
                         dragY={dragY}
                         onStart={beginDrag}
                         onDrop={handleDrop}
+                        onMove={updateHover}
                         onToggle={handleToggle}
                         onEdit={openEdit}
                       />
                     ))}
+                    {/* Sorotan (fade-in) saat jari melewati hari ini */}
+                    {hovered && (
+                      <Animated.View
+                        pointerEvents="none"
+                        entering={FadeIn.duration(140)}
+                        style={styles.dayHoverRing}
+                      />
+                    )}
                   </View>
                 );
               })}
@@ -576,6 +636,10 @@ export default function TasksScreen() {
           )}
         </>
       )}
+      </View>
+
+      {/* Tab bar bawah: Harian (planner) / Prioritas (catatan penting) */}
+      <BottomTabs tabs={MAIN_TABS} value={mainTab} onChange={setMainTab} />
 
       {/* Ghost task yang mengikuti jari saat menyeret */}
       {dragTask && (
@@ -600,13 +664,9 @@ export default function TasksScreen() {
         />
       )}
 
-      {/* FAB speed-dial ⋯ — hanya di tab Harian. */}
+      {/* FAB speed-dial ⋯ — hanya di tab Harian, di atas tab bar bawah. */}
       <View
-        style={[
-          styles.fabArea,
-          { bottom: insets.bottom + 24 },
-          mainTab !== 'harian' && styles.hidden,
-        ]}
+        style={[styles.fabArea, mainTab !== 'harian' && styles.hidden]}
         pointerEvents={mainTab === 'harian' ? 'box-none' : 'none'}>
         {/* `order` = jarak dari FAB (0 = paling dekat) — dipakai untuk
             stagger: keluar dari bawah ke atas, masuk dari atas ke bawah. */}
@@ -818,6 +878,8 @@ export default function TasksScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  body: { flex: 1 },
+  listScroll: { flex: 1 },
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -900,12 +962,34 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   taskRowDragging: { opacity: 0.35 }, // baris yang sedang diseret diredupkan
-  dragHandle: { paddingLeft: 4, paddingVertical: 2 },
-  // Tab utama (segmented)
-  segRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  segChip: { flex: 1 },
   // Sorotan target saat drag aktif
   chipTarget: { transform: [{ scale: 1.04 }] },
+  // Chip yang sedang dilewati jari — membesar sedikit lebih menonjol.
+  chipHovered: { transform: [{ scale: 1.12 }] },
+  // Cincin sorot di atas chip yang di-hover (muncul fade-in).
+  chipHoverRing: {
+    position: 'absolute',
+    top: 6,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: Color.MAIN,
+    backgroundColor: Color.MAIN_TRANSPARENT,
+  },
+  // Cincin sorot menutupi blok hari yang di-hover (muncul fade-in).
+  dayHoverRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Color.MAIN,
+    backgroundColor: Color.MAIN_TRANSPARENT,
+  },
   dragHint: {
     color: Color.MAIN_DARK,
     textAlign: 'center',
@@ -949,6 +1033,7 @@ const styles = StyleSheet.create({
   fabArea: {
     position: 'absolute',
     right: 20,
+    bottom: 78, // di atas tab bar bawah
     alignItems: 'flex-end',
     gap: 12,
   },
@@ -1011,6 +1096,7 @@ function DraggableTaskRow({
   dragY,
   onStart,
   onDrop,
+  onMove,
   onToggle,
   onEdit,
 }: {
@@ -1020,6 +1106,7 @@ function DraggableTaskRow({
   dragY: SharedValue<number>;
   onStart: (t: Task) => void;
   onDrop: (t: Task, x: number, y: number) => void;
+  onMove: (x: number, y: number) => void;
   onToggle: (t: Task) => void;
   onEdit: (t: Task) => void;
 }) {
@@ -1040,11 +1127,13 @@ function DraggableTaskRow({
       .onUpdate((e) => {
         dragX.value = e.absoluteX;
         dragY.value = e.absoluteY;
+        // Sorot target yang dilewati — hanya angka yang dioper (aman iOS).
+        runOnJS(onMove)(e.absoluteX, e.absoluteY);
       })
       .onEnd((e) => {
         runOnJS(dropDrag)(e.absoluteX, e.absoluteY);
       });
-  }, [item, dragX, dragY, onStart, onDrop]);
+  }, [item, dragX, dragY, onStart, onDrop, onMove]);
 
   return (
     <GestureDetector gesture={pan}>
@@ -1064,13 +1153,6 @@ function DraggableTaskRow({
             {item.title}
           </VixText>
         </PressableScale>
-        <View style={styles.dragHandle}>
-          <IconSymbol
-            name="line.3.horizontal"
-            size={16}
-            color={Color.TEXT_PLACEHOLDER}
-          />
-        </View>
       </View>
     </GestureDetector>
   );

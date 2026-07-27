@@ -124,9 +124,6 @@ export function OtherTaskTab({ items }: { items: OtherTask[] }) {
               belum dikerjakan
             </VixText>
           </VixText>
-          <VixText heading="label" additionalStyle={styles.heroLabel}>
-            Bukan task harian — kerjakan kapan pun kamu siap 💪
-          </VixText>
         </View>
 
         <PrimaryButton

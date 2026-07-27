@@ -146,12 +146,12 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             </VixText>
           </PressableScale>
           <PressableScale
-            style={styles.navButton}
+            style={[styles.navButton, styles.navButtonInfo]}
             onPress={() => router.push('/health-info')}>
-            <VixText heading="bold" additionalStyle={styles.navText}>
+            <VixText heading="bold" additionalStyle={styles.navTextInfo}>
               💊 Info
             </VixText>
-            <VixText heading="label" additionalStyle={styles.navText}>
+            <VixText heading="label" additionalStyle={styles.navTextInfo}>
               QnA & tips
             </VixText>
           </PressableScale>
@@ -338,6 +338,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Color.ACCENT,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.ACCENT_DARK,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 2,
@@ -345,8 +347,15 @@ const styles = StyleSheet.create({
   navText: { color: Color.ACCENT_DARK },
   navButtonDonor: {
     backgroundColor: Color.FINANCE_EXPENSE,
+    borderColor: Color.FINANCE_EXPENSE_DARK,
   },
   navTextDonor: { color: Color.DANGER },
+  // Info → biru (warna informasi).
+  navButtonInfo: {
+    backgroundColor: Color.FINANCE_INVESTMENT,
+    borderColor: Color.FINANCE_INVESTMENT_DARK,
+  },
+  navTextInfo: { color: Color.FINANCE_INVESTMENT_DARK },
   statusCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

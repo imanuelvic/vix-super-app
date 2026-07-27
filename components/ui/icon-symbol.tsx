@@ -57,6 +57,12 @@ const MAPPING = {
   'creditcard.fill': 'credit-card',
   'mic.fill': 'mic',
   'line.3.horizontal': 'drag-handle',
+  'flag.fill': 'flag',
+  'mountain.2.fill': 'terrain',
+  'figure.run': 'directions-run',
+  'figure.mind.and.body': 'self-improvement',
+  'beach.umbrella.fill': 'beach-access',
+  'dumbbell.fill': 'fitness-center',
 } as IconMapping;
 
 /**
