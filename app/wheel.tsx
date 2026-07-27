@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
+import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -235,10 +236,7 @@ export default function WheelScreen() {
         </View>
       ) : mode === 'assess' ? (
         /* ===== Wizard assessment: 1 pertanyaan per layar ===== */
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets>
+        <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <VixText heading="label">
             Pertanyaan {idx + 1} dari {WHEEL_AREAS.length}
           </VixText>
@@ -311,13 +309,10 @@ export default function WheelScreen() {
               additionalStyle={styles.nextButton}
             />
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       ) : mode === 'focus' ? (
         /* ===== Editor fokus quartal ===== */
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets>
+        <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <VixText heading="title">🎯 Fokus {quarterLabel(year, q)}</VixText>
           <VixText heading="label" additionalStyle={styles.focusHint}>
             Pilih minimal {MIN_FOCUS} area untuk dikembangkan quartal ini
@@ -400,7 +395,7 @@ export default function WheelScreen() {
               additionalStyle={styles.nextButton}
             />
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       ) : (
         /* ===== Overview ===== */
         <ScrollView contentContainerStyle={styles.content}>

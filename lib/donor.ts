@@ -81,6 +81,17 @@ export function daysUntilEligible(data: DonorData, today: Date): number | null {
   return Math.round((startOfDay(next) - startOfDay(today)) / 86_400_000);
 }
 
+/**
+ * Reminder Home: HANYA hari Minggu & sudah boleh donor lagi (biar tidak
+ * menclok tiap hari — cukup sekali seminggu). Butuh riwayat donor terakhir;
+ * kalau belum pernah donor tidak ada siklus yang perlu diingatkan.
+ */
+export function donorReminderDue(data: DonorData, today: Date): boolean {
+  if (today.getDay() !== 0) return false; // 0 = Minggu
+  const days = daysUntilEligible(data, today);
+  return days !== null && days <= 0;
+}
+
 /** Selisih hari ke jadwal donor (negatif = sudah lewat). */
 export function scheduleDaysUntil(schedule: DonorSchedule, today: Date): number {
   const startOfDay = (x: Date) =>

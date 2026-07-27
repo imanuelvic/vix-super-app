@@ -299,6 +299,82 @@ export const VISIT_TIPS: string[] = [
   '🙏 Tutup dengan mendoakan CL & CORE-nya secara spesifik.',
 ];
 
+// ==================== Idea For CORE 💡 ====================
+// Masukan ide spontan dari MCL untuk CORE, rutin mingguan/bulanan. Sebagian
+// mungkin langsung dikerjakan CL, sebagian tidak — tidak apa-apa. Tiap ide
+// punya catatan yang bisa di-share ke grup Main Team.
+// Satu dokumen kecil: users/{uid}/core/ideas — { ideas[], cadence }.
+
+export type IdeaCadence = 'weekly' | 'monthly';
+
+export const IDEA_CADENCE_LABEL: Record<IdeaCadence, string> = {
+  weekly: 'Mingguan',
+  monthly: 'Bulanan',
+};
+
+export type CoreIdea = {
+  id: string;
+  text: string; // isi idenya
+  note: string; // catatan untuk di-share ke grup MT (opsional)
+  date: Timestamp; // kapan ide dibuat
+};
+
+export type CoreIdeasData = {
+  ideas: CoreIdea[];
+  cadence: IdeaCadence;
+};
+
+export const EMPTY_CORE_IDEAS: CoreIdeasData = { ideas: [], cadence: 'weekly' };
+
+export function newCoreIdeaId(): string {
+  return `idea${Date.now().toString(36)}`;
+}
+
+export function subscribeCoreIdeas(
+  uid: string,
+  onChange: (data: CoreIdeasData) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const ref = doc(db, 'users', uid, 'core', 'ideas');
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const data = snapshot.data();
+      onChange({
+        ideas: (data?.ideas as CoreIdea[]) ?? [],
+        cadence: (data?.cadence as IdeaCadence) ?? 'weekly',
+      });
+    },
+    onError,
+  );
+}
+
+export function saveCoreIdeas(uid: string, data: CoreIdeasData) {
+  return setDoc(doc(db, 'users', uid, 'core', 'ideas'), data);
+}
+
+/** Hari sejak ide terakhir dibuat (null kalau belum ada ide sama sekali). */
+export function daysSinceLastIdea(
+  data: CoreIdeasData,
+  today: Date,
+): number | null {
+  if (data.ideas.length === 0) return null;
+  const last = data.ideas.reduce((max, i) =>
+    i.date.toMillis() > max.date.toMillis() ? i : max,
+  );
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const d = last.date.toDate();
+  const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.round((start.getTime() - day.getTime()) / 86_400_000);
+}
+
+/** Reminder Home: waktunya kasih ide baru (belum ada / sudah lewat 1 periode). */
+export function ideaReminderDue(data: CoreIdeasData, today: Date): boolean {
+  const days = daysSinceLastIdea(data, today);
+  if (days === null) return true; // belum pernah → ajak mulai
+  return days >= (data.cadence === 'weekly' ? 7 : 30);
+}
+
 // ==================== Kategori topik follow up ====================
 // Dari sheet Relationship 🤝: Life Update - Prayer Chain - Growth Partner.
 

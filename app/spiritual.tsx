@@ -81,7 +81,7 @@ export default function SpiritualScreen() {
       <ScreenHeader
         backLabel="Home"
         title="Spiritual ✝️"
-        subtitle="Being with God — bukan sekadar doing for God"
+        subtitle="Being with God, bukan sekadar doing for God"
         right={
           tab === 'revive' ? (
             <EmojiButton

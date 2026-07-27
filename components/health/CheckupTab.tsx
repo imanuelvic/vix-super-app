@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -18,8 +19,10 @@ import {
   addCheckup,
   checkupDaysUntil,
   checkupNextDate,
+  CHECKUP_INFO,
   CHECKUP_TYPES,
   deleteCheckup,
+  evaluateCheckup,
   updateCheckup,
   type Checkup,
   type CheckupType,
@@ -122,7 +125,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         {/* Tombol menuju riwayat sakit, donor darah & info kesehatan */}
         <View style={styles.navRow}>
           <PressableScale
@@ -163,6 +166,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             key={meta.key}
             meta={meta}
             latest={latestByType.get(meta.key)}
+            onInfo={() => router.push('/health-info')}
           />
         ))}
 
@@ -234,7 +238,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             </PressableScale>
           );
         })}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Bottom sheet edit pemeriksaan */}
       <SheetModal
@@ -279,19 +283,26 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
   );
 }
 
-// Kartu "informasi penting": kapan terakhir jenis ini diperiksa.
+// Kartu "informasi penting": nilai normal, hasil terakhir + evaluasinya,
+// kapan terakhir diperiksa, dan (kalau tidak normal) tips + tombol Info.
 function StatusCard({
   meta,
   latest,
+  onInfo,
 }: {
   meta: (typeof CHECKUP_TYPES)[number];
   latest?: Checkup;
+  onInfo: () => void;
 }) {
+  const info = CHECKUP_INFO[meta.key];
   if (!latest) {
     return (
       <View style={[styles.statusCard, styles.statusWarn]}>
         <VixText heading="bold" additionalStyle={styles.statusTitle}>
           {meta.icon} {meta.label}
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.normalText}>
+          Normal: {info.normal}
         </VixText>
         <VixText heading="label" additionalStyle={styles.warnText}>
           ⚠️ Belum pernah dicatat — segera periksa dan catat di bawah.
@@ -303,6 +314,8 @@ function StatusCard({
   const daysUntil = checkupDaysUntil(latest, new Date());
   const due = daysUntil <= 0;
   const nextDate = checkupNextDate(latest);
+  const result = evaluateCheckup(meta.key, latest.value);
+  const abnormal = result.status === 'high' || result.status === 'low';
   return (
     <View style={[styles.statusCard, due && styles.statusWarn]}>
       <View style={styles.statusHeader}>
@@ -313,9 +326,32 @@ function StatusCard({
           {latest.value}
         </VixText>
       </View>
+      <VixText heading="label" additionalStyle={styles.normalText}>
+        Normal: {info.normal}
+      </VixText>
+      {result.label ? (
+        <VixText
+          heading="bold"
+          additionalStyle={result.status === 'normal' ? styles.okText : styles.abnormalText}>
+          Hasil terakhir: {result.label}
+        </VixText>
+      ) : null}
       <VixText heading="label">
         Terakhir dicek: {formatDate(latest.date.toDate())}
       </VixText>
+      {/* Kalau hasil terakhir tidak normal → tips + arahkan ke halaman Info */}
+      {abnormal && result.tip ? (
+        <View style={styles.adviceBox}>
+          <VixText heading="label" additionalStyle={styles.adviceText}>
+            💡 {result.tip}
+          </VixText>
+          <PressableScale style={styles.infoButton} onPress={onInfo}>
+            <VixText heading="bold" additionalStyle={styles.infoButtonText}>
+              ℹ️ Lihat Info Kesehatan
+            </VixText>
+          </PressableScale>
+        </View>
+      ) : null}
       {due ? (
         <VixText heading="label" additionalStyle={styles.warnText}>
           ⚠️ Waktunya cek lagi! Jadwal 6 bulan ({formatDate(nextDate)}) sudah
@@ -379,6 +415,25 @@ const styles = StyleSheet.create({
   statusValue: { color: Color.MAIN_DARK },
   warnText: { color: Color.WARNING },
   nextText: { color: Color.MAIN_DARK },
+  normalText: { color: Color.TEXT_LABEL },
+  okText: { color: Color.SUCCESS },
+  abnormalText: { color: Color.DANGER },
+  adviceBox: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 10,
+    padding: 10,
+    gap: 8,
+    marginTop: 2,
+  },
+  adviceText: { color: Color.TEXT_PARAGRAPH },
+  infoButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Color.FINANCE_INVESTMENT_DARK,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  infoButtonText: { color: Color.TEXT_REVERSE },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   chipFlex: { flex: 1 },

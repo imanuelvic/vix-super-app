@@ -18,7 +18,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
@@ -73,8 +73,6 @@ const MAIN_TABS: BottomTab<MainTab>[] = [
 export default function TasksScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  // Inset atas — untuk mengoreksi posisi ghost drag (koordinat window).
-  const insets = useSafeAreaInsets();
   // ?category=... dari kartu Task Hari Ini di Home → buka kategori itu.
   const { category: categoryParam } = useLocalSearchParams<{ category?: string }>();
   const validCategory = TASK_CATEGORIES.some((c) => c.key === categoryParam)
@@ -446,11 +444,15 @@ export default function TasksScreen() {
     [user, measureTargets],
   );
 
-  // Ghost yang mengikuti jari saat menyeret (dikoreksi inset atas SafeArea).
+  // Ghost mengikuti jari saat menyeret. dragX/dragY = koordinat window (absolut
+  // dari pojok layar), dan ghost ini anak absolute dari SafeAreaView yang juga
+  // mulai dari pojok layar — jadi TIDAK perlu koreksi inset (kalau dikoreksi,
+  // ghost malah melompat jauh ke atas jari di iPhone berponi). Offset kecil
+  // supaya jari kira-kira di tengah kotaknya.
   const ghostStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: dragX.value - 24 },
-      { translateY: dragY.value - insets.top - 26 },
+      { translateY: dragY.value - 22 },
     ],
   }));
 

@@ -729,7 +729,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  pFlex: { flex: 1 },
   // Chip DISC + badge nomor prioritas di pojok.
   discHolder: { position: 'relative' },
   discBadge: {
@@ -768,7 +767,6 @@ const styles = StyleSheet.create({
   },
   toggleRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   error: { color: Color.DANGER, marginBottom: 8 },
-  sectionTitle: { marginTop: 12, marginBottom: 10 },
   emptyText: { textAlign: 'center', marginBottom: 12 },
   card: {
     flexDirection: 'row',

@@ -13,6 +13,7 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -28,14 +29,19 @@ import {
   type RoadmapItem,
 } from '@/lib/career';
 import {
+  EMPTY_CORE_IDEAS,
   FOLLOWUPS_MT_PER_DAY,
   FOLLOWUPS_PER_DAY,
+  IDEA_CADENCE_LABEL,
+  ideaReminderDue,
   nextBirthday,
+  subscribeCoreIdeas,
   subscribeCoreLeaders,
   subscribeMainTeam,
   subscribeVisitations,
   visitDaysUntil,
   visitReminderWindow,
+  type CoreIdeasData,
   type CoreLeader,
   type MainTeamMember,
   type Visitation,
@@ -47,6 +53,14 @@ import {
   subscribeDebts,
   type Debt,
 } from '@/lib/debts';
+import {
+  daysUntilEligible,
+  donorReminderDue,
+  EMPTY_DONOR,
+  nextEligibleDate,
+  subscribeDonor,
+  type DonorData,
+} from '@/lib/donor';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import { formatDate, formatShortDayDate } from '@/lib/format';
 import {
@@ -137,6 +151,8 @@ export default function HomeScreen() {
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
+  const [coreIdeas, setCoreIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
+  const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
   // khotbah yang bergantung waktu.
@@ -165,6 +181,8 @@ export default function HomeScreen() {
       subscribeSermons(user.uid, setSermons),
       subscribeReviveStreak(user.uid, setRevive),
       subscribeRoadmap(user.uid, setRoadmap),
+      subscribeCoreIdeas(user.uid, setCoreIdeas),
+      subscribeDonor(user.uid, setDonor),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -198,6 +216,13 @@ export default function HomeScreen() {
     .filter((t) => t.dayId === todayId)
     .sort((a, b) => Number(a.done) - Number(b.done));
   const todayUndone = todayTasks.filter((t) => !t.done).length;
+  // Kartu hanya menampilkan 3 task teratas (urut: belum selesai dulu). Tombol
+  // "+N task lagi" hanya menghitung task BELUM SELESAI yang tidak ikut tampil —
+  // jadi kalau sisanya sudah selesai, tombolnya tidak muncul.
+  const HOME_TASK_SHOWN = 3;
+  const moreUndone = todayTasks
+    .slice(HOME_TASK_SHOWN)
+    .filter((t) => !t.done).length;
 
   async function toggleTask(t: Task) {
     if (!user) return;
@@ -238,6 +263,9 @@ export default function HomeScreen() {
       };
     });
 
+  // Reminder Idea For CORE: waktunya kasih masukan ide baru (mingguan/bulanan).
+  const coreIdeaDue = ideaReminderDue(coreIdeas, now);
+
   // Reminder bayar hutang: yang belum lunas & jatuh tempo ≤ 3 hari (termasuk
   // lewat). Fokus ke "Hutang Saya", tapi tagihan ke orang juga diingatkan.
   const debtReminders = debts
@@ -276,6 +304,23 @@ export default function HomeScreen() {
 
   // Reminder timbang berat: tiap Minggu kalau belum update berat hari ini.
   const weighInDue = profile != null && needsWeighIn(profile, now);
+
+  // Reminder donor darah: HANYA hari Minggu & sudah boleh donor lagi (biar
+  // tidak muncul tiap hari). Teksnya: kapan terakhir donor + sejak kapan boleh.
+  const donorDue = donorReminderDue(donor, now);
+  const donorTexts: string[] = [];
+  if (donorDue && donor.lastDonation) {
+    const eligible = nextEligibleDate(donor);
+    const since = -(daysUntilEligible(donor, now) ?? 0);
+    donorTexts.push(`Terakhir donor: ${formatDate(donor.lastDonation.toDate())}`);
+    if (eligible) {
+      donorTexts.push(
+        `Sudah boleh sejak ${formatDate(eligible)}${
+          since > 0 ? ` · ${since} hari lalu` : ' · hari ini'
+        }`,
+      );
+    }
+  }
 
   // Reminder renungan khotbah: Rabu/Jumat 12:30–17:30, kalau catatan khotbah
   // Minggu ini SUDAH ada. Ditekan → tab Khotbah (ringkasan singkatnya).
@@ -354,143 +399,140 @@ export default function HomeScreen() {
 
         {/* Reminder ulang tahun keluarga (hari ini s/d 7 hari) */}
         {famBirthdays.length > 0 && (
-          <PressableScale
-            style={styles.famCard}
-            onPress={() => router.push('/family')}>
-            <VixText heading="bold" additionalStyle={styles.famTitle}>
-              🎂 Ulang Tahun Keluarga
-            </VixText>
-            {famBirthdays.map((b) => (
-              <VixText
-                key={b.id}
-                heading="label"
-                additionalStyle={styles.famText}>
-                {b.text}
-              </VixText>
-            ))}
-          </PressableScale>
+          <ReminderCard
+            bg={Color.WHEEL}
+            fg={Color.WHEEL_DARK}
+            title="🎂 Ulang Tahun Keluarga"
+            texts={famBirthdays}
+            onPress={() => router.push('/family')}
+          />
         )}
 
-        {/* Reminder visitasi CORE (H-3 s/d hari-H) */}
-        {visitReminders.length > 0 && (
-          <PressableScale
-            style={styles.visitCard}
-            onPress={() =>
-              // Langsung mendarat di tab Visitasi, bukan tab default.
-              router.push({ pathname: '/core', params: { tab: 'visitation' } })
-            }>
-            <VixText heading="bold" additionalStyle={styles.visitTitle}>
-              📍 Reminder Visitasi CORE
-            </VixText>
-            {visitReminders.map((r) => (
-              <VixText
-                key={r.id}
-                heading="label"
-                additionalStyle={styles.visitText}>
-                {r.text}
-              </VixText>
-            ))}
-          </PressableScale>
+        {/* Reminder CORE: visitasi (H-3 s/d hari-H) + Idea For CORE mingguan */}
+        {(visitReminders.length > 0 || coreIdeaDue) && (
+          <View style={styles.visitCard}>
+            {visitReminders.length > 0 && (
+              <PressableScale
+                // Langsung mendarat di tab Visitasi, bukan tab default.
+                onPress={() =>
+                  router.push({ pathname: '/core', params: { tab: 'visitation' } })
+                }>
+                <VixText heading="bold" additionalStyle={styles.visitTitle}>
+                  📍 Reminder Visitasi CORE
+                </VixText>
+                {visitReminders.map((r) => (
+                  <VixText
+                    key={r.id}
+                    heading="label"
+                    additionalStyle={styles.visitText}>
+                    {r.text}
+                  </VixText>
+                ))}
+              </PressableScale>
+            )}
+            {coreIdeaDue && (
+              <PressableScale
+                style={visitReminders.length > 0 ? styles.ideaReminder : undefined}
+                // Idea For CORE ada di tab Follow Up.
+                onPress={() =>
+                  router.push({ pathname: '/core', params: { tab: 'followup' } })
+                }>
+                <VixText heading="bold" additionalStyle={styles.visitTitle}>
+                  💡 Idea untuk CORE
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.visitText}>
+                  Waktunya kasih masukan ide baru (
+                  {IDEA_CADENCE_LABEL[coreIdeas.cadence].toLowerCase()}) — share
+                  juga ke grup MT 🙌
+                </VixText>
+              </PressableScale>
+            )}
+          </View>
         )}
 
-        {/* Reminder bayar hutang (jatuh tempo ≤ 7 hari / lewat) */}
+        {/* Reminder bayar hutang (jatuh tempo ≤ 3 hari / lewat) */}
         {debtReminders.length > 0 && (
-          <PressableScale
-            style={styles.debtCard}
-            onPress={() => router.push('/debts')}>
-            <VixText heading="bold" additionalStyle={styles.debtTitle}>
-              🤝 Reminder Hutang
-            </VixText>
-            {debtReminders.map((r) => (
-              <VixText
-                key={r.id}
-                heading="label"
-                additionalStyle={styles.debtText}>
-                {r.text}
-              </VixText>
-            ))}
-          </PressableScale>
+          <ReminderCard
+            bg={Color.FINANCE_EXPENSE}
+            fg={Color.FINANCE_EXPENSE_DARK}
+            title="🤝 Reminder Hutang"
+            texts={debtReminders}
+            onPress={() => router.push('/debts')}
+          />
         )}
 
         {/* Reminder cek tensi & gula darah (6 bulan sekali) */}
         {checkupReminders.length > 0 && (
-          <PressableScale
-            style={styles.checkupCard}
-            onPress={() => router.push('/health')}>
-            <VixText heading="bold" additionalStyle={styles.checkupTitle}>
-              🩺 Waktunya Cek Kesehatan
-            </VixText>
-            {checkupReminders.map((r) => (
-              <VixText
-                key={r.id}
-                heading="label"
-                additionalStyle={styles.checkupText}>
-                {r.text}
-              </VixText>
-            ))}
-          </PressableScale>
+          <ReminderCard
+            bg={Color.MAIN_LIGHT}
+            fg={Color.MAIN_DARK}
+            title="🩺 Waktunya Cek Kesehatan"
+            texts={checkupReminders}
+            onPress={() => router.push('/health')}
+          />
         )}
 
         {/* Reminder timbang berat tiap Minggu → langsung buka editor Data Tubuh */}
         {weighInDue && (
-          <PressableScale
-            style={styles.weighCard}
+          <ReminderCard
+            bg={Color.FINANCE_INVESTMENT}
+            fg={Color.FINANCE_INVESTMENT_DARK}
+            title="⚖️ Timbang Berat Minggu Ini"
+            texts={[
+              'Ukur & update berat (kg) — biar progres target beratmu kelihatan.',
+            ]}
             onPress={() =>
               router.push({
                 pathname: '/health',
                 params: { tab: 'summary', weighIn: '1' },
               })
-            }>
-            <VixText heading="bold" additionalStyle={styles.weighTitle}>
-              ⚖️ Timbang Berat Minggu Ini
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.weighText}>
-              Ukur & update berat (kg) — biar progres target beratmu kelihatan.
-            </VixText>
-          </PressableScale>
+            }
+          />
+        )}
+
+        {/* Reminder donor darah (Minggu saja) — warna Health (merah) */}
+        {donorDue && (
+          <ReminderCard
+            bg={Color.FINANCE_EXPENSE}
+            fg={Color.DANGER}
+            title="🩸 Sudah Bisa Donor Darah!"
+            texts={donorTexts}
+            onPress={() => router.push('/donor')}
+          />
         )}
 
         {/* Reminder renungkan khotbah Minggu (Rabu/Jumat siang) — ungu */}
         {sundaySermon && (
-          <PressableScale
-            style={styles.sermonCard}
+          <ReminderCard
+            bg={Color.SPIRITUAL}
+            fg={Color.SPIRITUAL_DARK}
+            title="🙏 Renungkan Khotbah Minggu"
             onPress={() =>
               router.push({ pathname: '/spiritual', params: { tab: 'khotbah' } })
             }>
-            <VixText heading="bold" additionalStyle={styles.sermonTitle}>
-              🙏 Renungkan Khotbah Minggu
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.sermonText}>
+            <VixText heading="label" additionalStyle={styles.onSpiritual}>
               ⛪ {sundaySermon.title}
             </VixText>
             {sundaySermon.quote ? (
               <VixText
                 heading="label"
                 numberOfLines={2}
-                additionalStyle={styles.sermonText}>
+                additionalStyle={styles.onSpiritual}>
                 “{sundaySermon.quote}”
               </VixText>
             ) : null}
-          </PressableScale>
+          </ReminderCard>
         )}
 
         {/* Reminder deadline prioritas kerja — warna coklat seperti Career */}
         {careerReminders.length > 0 && (
-          <PressableScale
-            style={styles.careerCard}
-            onPress={() => router.push('/career')}>
-            <VixText heading="bold" additionalStyle={styles.careerTitle}>
-              💼 Deadline Prioritas Kerja
-            </VixText>
-            {careerReminders.map((r) => (
-              <VixText
-                key={r.id}
-                heading="label"
-                additionalStyle={styles.careerText}>
-                {r.text}
-              </VixText>
-            ))}
-          </PressableScale>
+          <ReminderCard
+            bg={Color.CAREER}
+            fg={Color.ACCENT_DARK}
+            title="💼 Deadline Prioritas Kerja"
+            texts={careerReminders}
+            onPress={() => router.push('/career')}
+          />
         )}
 
         {/* Task hari ini — centang langsung tanpa buka fitur Task */}
@@ -511,7 +553,7 @@ export default function HomeScreen() {
                 />
               </View>
             </PressableScale>
-            {todayTasks.slice(0, 3).map((t) => (
+            {todayTasks.slice(0, HOME_TASK_SHOWN).map((t) => (
               <View key={t.id} style={styles.taskRow}>
                 {/* Lingkaran ini yang dicentang */}
                 <PressableScale onPress={() => toggleTask(t)} hitSlop={8}>
@@ -541,10 +583,10 @@ export default function HomeScreen() {
                 </PressableScale>
               </View>
             ))}
-            {todayTasks.length > 3 && (
+            {moreUndone > 0 && (
               <PressableScale onPress={() => router.push('/tasks')}>
                 <VixText heading="label" additionalStyle={styles.taskMore}>
-                  +{todayTasks.length - 3} task lagi →
+                  +{moreUndone} task lagi →
                 </VixText>
               </PressableScale>
             )}
@@ -617,84 +659,16 @@ const styles = StyleSheet.create({
   },
   visitTitle: { color: Color.ACCENT_DARK },
   visitText: { color: Color.ACCENT_DARK },
-  famCard: {
-    backgroundColor: Color.WHEEL,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.WHEEL_DARK,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  // Pemisah antara reminder visitasi & idea di dalam kartu CORE yang sama.
+  ideaReminder: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Color.ACCENT_DARK,
     gap: 3,
-    marginTop: -12,
-    marginBottom: 24,
   },
-  famTitle: { color: Color.WHEEL_DARK },
-  famText: { color: Color.WHEEL_DARK },
-  debtCard: {
-    backgroundColor: Color.FINANCE_EXPENSE,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.FINANCE_EXPENSE_DARK,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 3,
-    marginTop: -12,
-    marginBottom: 24,
-  },
-  debtTitle: { color: Color.FINANCE_EXPENSE_DARK },
-  debtText: { color: Color.FINANCE_EXPENSE_DARK },
-  checkupCard: {
-    backgroundColor: Color.MAIN_LIGHT,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.MAIN_DARK,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 3,
-    marginTop: -12,
-    marginBottom: 24,
-  },
-  checkupTitle: { color: Color.MAIN_DARK },
-  checkupText: { color: Color.MAIN_DARK },
-  weighCard: {
-    backgroundColor: Color.FINANCE_INVESTMENT,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.FINANCE_INVESTMENT_DARK,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 3,
-    marginTop: -12,
-    marginBottom: 24,
-  },
-  weighTitle: { color: Color.FINANCE_INVESTMENT_DARK },
-  weighText: { color: Color.FINANCE_INVESTMENT_DARK },
-  sermonCard: {
-    backgroundColor: Color.SPIRITUAL,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.SPIRITUAL_DARK,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 3,
-    marginTop: -12,
-    marginBottom: 24,
-  },
-  sermonTitle: { color: Color.SPIRITUAL_DARK },
-  sermonText: { color: Color.SPIRITUAL_DARK },
-  careerCard: {
-    backgroundColor: Color.CAREER,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.ACCENT_DARK,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 3,
-    marginTop: -12,
-    marginBottom: 24,
-  },
-  careerTitle: { color: Color.ACCENT_DARK },
-  careerText: { color: Color.ACCENT_DARK },
+  // Baris teks di dalam ReminderCard khotbah (kutipan di-clamp 2 baris).
+  onSpiritual: { color: Color.SPIRITUAL_DARK },
   taskCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

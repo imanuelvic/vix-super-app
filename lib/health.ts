@@ -351,6 +351,73 @@ export const CHECKUP_TYPES: {
   { key: 'gula', label: 'Gula Darah', icon: '🍬' },
 ];
 
+// Nilai normal (patokan dewasa sehat, kondisi istirahat) + tips kalau hasil di
+// luar normal. Dipakai di tab Check-up (evaluasi hasil terakhir) & halaman Info.
+export const CHECKUP_INFO: Record<
+  CheckupType,
+  { normal: string; highTip: string; lowTip: string }
+> = {
+  tensi: {
+    normal: '90/60 – 120/80 mmHg',
+    highTip:
+      'Kurangi garam & gorengan, kelola stres, olahraga rutin, tidur cukup. Kalau sering di atas 140/90, periksa ke dokter.',
+    lowTip:
+      'Cukup minum, jangan telat makan, bangun/berdiri perlahan. Kalau sering pusing atau mau pingsan, periksa ke dokter.',
+  },
+  gula: {
+    normal: '70 – 99 mg/dL (puasa)',
+    highTip:
+      'Kurangi gula & karbo sederhana, perbanyak serat & gerak, jaga berat badan. Kalau gula puasa menetap ≥100, cek HbA1c ke dokter.',
+    lowTip:
+      'Segera makan/minum manis (jus/permen), jangan telat makan. Kalau sering gemetar & keringat dingin, periksa ke dokter.',
+  },
+};
+
+export type CheckupStatus = 'low' | 'normal' | 'high' | 'unknown';
+
+/**
+ * Evaluasi hasil pemeriksaan dari teks bebas (mis. "120/80" atau "95 mg/dL").
+ * Balikan: status + label singkat + tips (kosong kalau normal / tak terbaca).
+ */
+export function evaluateCheckup(
+  type: CheckupType,
+  value: string,
+): { status: CheckupStatus; label: string; tip: string } {
+  const info = CHECKUP_INFO[type];
+  let status: CheckupStatus = 'unknown';
+
+  if (type === 'tensi') {
+    const m = value.match(/(\d+)\s*\/\s*(\d+)/);
+    if (m) {
+      const sys = Number(m[1]);
+      const dia = Number(m[2]);
+      if (sys < 90 || dia < 60) status = 'low';
+      else if (sys > 120 || dia > 80) status = 'high';
+      else status = 'normal';
+    }
+  } else {
+    const m = value.match(/\d+/);
+    if (m) {
+      const g = Number(m[0]);
+      if (g < 70) status = 'low';
+      else if (g >= 100) status = 'high';
+      else status = 'normal';
+    }
+  }
+
+  const label =
+    status === 'normal'
+      ? '✅ Normal'
+      : status === 'high'
+        ? '⚠️ Cenderung tinggi'
+        : status === 'low'
+          ? '⚠️ Cenderung rendah'
+          : '';
+  const tip =
+    status === 'high' ? info.highTip : status === 'low' ? info.lowTip : '';
+  return { status, label, tip };
+}
+
 /** Lewat dari ini (hari) dianggap sudah waktunya periksa lagi (≈ 6 bulan). */
 export const CHECKUP_DUE_DAYS = 180;
 

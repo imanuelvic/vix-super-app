@@ -13,9 +13,12 @@ import { LeadersTab } from '@/components/core/LeadersTab';
 import { VisitationTab } from '@/components/core/VisitationTab';
 import { useAuth } from '@/contexts/auth';
 import {
+  EMPTY_CORE_IDEAS,
+  subscribeCoreIdeas,
   subscribeCoreLeaders,
   subscribeMainTeam,
   subscribeVisitations,
+  type CoreIdeasData,
   type CoreLeader,
   type MainTeamMember,
   type Visitation,
@@ -55,6 +58,7 @@ export default function CoreScreen() {
   const [leaders, setLeaders] = useState<CoreLeader[] | null>(null);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[] | null>(null);
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
+  const [ideas, setIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
   const [error, setError] = useState<string | null>(null);
 
   const dayId = dayDocId(new Date());
@@ -73,6 +77,7 @@ export default function CoreScreen() {
       ),
       subscribeMainTeam(user.uid, setMainTeam, fail),
       subscribeVisitations(user.uid, setVisitations, fail),
+      subscribeCoreIdeas(user.uid, setIdeas, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -106,7 +111,12 @@ export default function CoreScreen() {
         ) : tab === 'visitation' ? (
           <VisitationTab visitations={visitations} leaders={leaders} />
         ) : tab === 'followup' ? (
-          <FollowupTab leaders={leaders} mainTeam={mainTeam} dayId={dayId} />
+          <FollowupTab
+            leaders={leaders}
+            mainTeam={mainTeam}
+            dayId={dayId}
+            ideas={ideas}
+          />
         ) : (
           <LeadersTab leaders={leaders} mainTeam={mainTeam} />
         )}

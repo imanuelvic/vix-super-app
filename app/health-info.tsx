@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
+import { CHECKUP_INFO, CHECKUP_TYPES } from '@/lib/health';
 
 // Info statis — pengingat pribadi (terjemahan dari catatan QnA lama)
 // + tips sehat. Tidak pakai Firestore, murni tampilan.
@@ -44,6 +45,33 @@ export default function HealthInfoScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          Nilai Normal Pemeriksaan 🩺
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.profileNote}>
+          Patokan untuk pria dewasa sehat sepertimu (±28 th · 169 cm · 71 kg →
+          BMI ±24,9, masih ideal). Ukur saat tenang/istirahat.
+        </VixText>
+        {CHECKUP_TYPES.map((meta) => {
+          const info = CHECKUP_INFO[meta.key];
+          return (
+            <View key={meta.key} style={styles.rangeCard}>
+              <VixText heading="bold" additionalStyle={styles.question}>
+                {meta.icon} {meta.label}
+              </VixText>
+              <VixText heading="bold" additionalStyle={styles.rangeValue}>
+                Normal: {info.normal}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.rangeTip}>
+                ⬆️ Kalau tinggi: {info.highTip}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.rangeTip}>
+                ⬇️ Kalau rendah: {info.lowTip}
+              </VixText>
+            </View>
+          );
+        })}
+
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
           Kalau tubuhmu begini…
         </VixText>
         {QNA.map((item) => (
@@ -81,6 +109,19 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   sectionTitle: { marginTop: 8, marginBottom: 10 },
+  profileNote: { color: Color.TEXT_LABEL, marginBottom: 10 },
+  rangeCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+    gap: 4,
+  },
+  rangeValue: { color: Color.MAIN },
+  rangeTip: { color: Color.TEXT_PARAGRAPH },
   qnaCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

@@ -21,10 +21,12 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
-import { currentAge } from '@/lib/core';
+import { currentAge, nextBirthday } from '@/lib/core';
+import { MONTH_NAMES } from '@/lib/format';
 import {
   childrenOf,
   deleteFamilyMember,
+  displayName,
   newFamilyId,
   parentsOf,
   partnersOf,
@@ -88,7 +90,7 @@ function Avatar({
           { maxWidth: size + 24 },
           m.deceased && styles.nameDeceased,
         ]}>
-        {m.name}
+        {displayName(m)}
       </VixText>
       <VixText heading="label" additionalStyle={styles.avatarAge}>
         {m.deceased ? `✝ ${m.birthYear}` : `${currentAge(m, today)} th`}
@@ -111,6 +113,7 @@ export default function FamilyScreen() {
   // Form tambah/edit. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<FamilyMember | 'new' | null>(null);
   const [fName, setFName] = useState('');
+  const [fNickname, setFNickname] = useState('');
   const [fBirthday, setFBirthday] = useState(new Date(1990, 0, 1));
   const [fDeceased, setFDeceased] = useState(false);
   const [fParents, setFParents] = useState<string[]>([]);
@@ -145,10 +148,23 @@ export default function FamilyScreen() {
   const parents = selected ? parentsOf(selected, all) : [];
   const partners = selected ? partnersOf(selected.id, all) : [];
   const children = selected ? childrenOf(selected.id, all) : [];
+  // Saudara = berbagi minimal satu orang tua dengan yang dipilih.
+  const siblings = selected
+    ? all.filter(
+        (m) =>
+          m.id !== selected.id &&
+          m.parentIds.some((p) => selected.parentIds.includes(p)),
+      )
+    : [];
+  const bday = selected ? nextBirthday(selected, today) : null;
+  // Daftar nama relasi (pakai nama panggilan), "—" kalau kosong.
+  const relNames = (list: FamilyMember[]) =>
+    list.length ? list.map(displayName).join(', ') : '—';
 
   function openAdd() {
     setEditing('new');
     setFName('');
+    setFNickname('');
     setFBirthday(new Date(1990, 0, 1));
     setFDeceased(false);
     setFParents([]);
@@ -160,11 +176,12 @@ export default function FamilyScreen() {
   function openEdit(m: FamilyMember) {
     setEditing(m);
     setFName(m.name);
+    setFNickname(m.nickname ?? '');
     setFBirthday(new Date(m.birthYear, m.birthMonth, m.birthDay));
     setFDeceased(m.deceased);
     setFParents(m.parentIds);
-    // Tampilkan pasangan 2 arah supaya lengkap saat diedit.
-    setFPartners(partnersOf(m.id, all).map((p) => p.id));
+    // Pasangan hanya 1 — ambil satu saja (dibaca 2 arah supaya tetap ketemu).
+    setFPartners(partnersOf(m.id, all).slice(0, 1).map((p) => p.id));
     setFPhoto(m.photo);
     setFormError(null);
   }
@@ -177,10 +194,9 @@ export default function FamilyScreen() {
     });
   }
 
+  // Pasangan hanya boleh 1: tekan = pilih dia (ganti yang lama); tekan lagi = kosong.
   function togglePartner(id: string) {
-    setFPartners((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
-    );
+    setFPartners((prev) => (prev.includes(id) ? [] : [id]));
   }
 
   async function handlePickPhoto() {
@@ -207,6 +223,7 @@ export default function FamilyScreen() {
     const data: FamilyMember = {
       id: editing === 'new' ? newFamilyId() : editing.id,
       name: fName.trim(),
+      nickname: fNickname.trim(),
       birthYear: fBirthday.getFullYear(),
       birthMonth: fBirthday.getMonth(),
       birthDay: fBirthday.getDate(),
@@ -358,9 +375,47 @@ export default function FamilyScreen() {
                   style={styles.editButton}
                   onPress={() => openEdit(selected)}>
                   <VixText heading="bold" additionalStyle={styles.editButtonText}>
-                    ✏️ Edit {selected.name}
+                    ✏️ Edit {displayName(selected)}
                   </VixText>
                 </PressableScale>
+              </View>
+
+              {/* ===== Info ringkas anggota terpilih (biar cepat hafal) ===== */}
+              <View style={styles.infoCard}>
+                <VixText heading="title" additionalStyle={styles.infoName}>
+                  {selected.name}
+                  {selected.deceased ? ' ✝' : ''}
+                </VixText>
+                {displayName(selected) !== selected.name ? (
+                  <VixText heading="label" additionalStyle={styles.infoNick}>
+                    dipanggil “{displayName(selected)}”
+                  </VixText>
+                ) : null}
+                <VixText heading="label" additionalStyle={styles.infoLine}>
+                  🎂 {selected.birthDay} {MONTH_NAMES[selected.birthMonth]}{' '}
+                  {selected.birthYear}
+                  {selected.deceased
+                    ? ' · ✝ telah tiada'
+                    : ` · ${currentAge(selected, today)} th${
+                        bday
+                          ? bday.daysUntil === 0
+                            ? ' · ultah HARI INI 🎉'
+                            : ` · ultah ${bday.daysUntil} hari lagi`
+                          : ''
+                      }`}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.infoLine}>
+                  👪 Orang tua: {relNames(parents)}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.infoLine}>
+                  💍 Pasangan: {relNames(partners)}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.infoLine}>
+                  🧑‍🤝‍🧑 Saudara: {relNames(siblings)}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.infoLine}>
+                  👶 Anak: {relNames(children)}
+                </VixText>
               </View>
 
               {/* ===== Semua anggota ===== */}
@@ -413,9 +468,16 @@ export default function FamilyScreen() {
 
           <FormInput
             style={styles.formGap}
-            placeholder="Nama"
+            placeholder="Nama lengkap"
             value={fName}
             onChangeText={setFName}
+            editable={!busy}
+          />
+          <FormInput
+            style={styles.formGap}
+            placeholder="Nama panggilan (tampil di pohon & daftar)"
+            value={fNickname}
+            onChangeText={setFNickname}
             editable={!busy}
           />
 
@@ -451,7 +513,7 @@ export default function FamilyScreen() {
               .map((m) => (
                 <Chip
                   key={m.id}
-                  label={`${m.deceased ? '✝ ' : ''}${m.name}`}
+                  label={`${m.deceased ? '✝ ' : ''}${displayName(m)}`}
                   active={fParents.includes(m.id)}
                   onPress={() => toggleParent(m.id)}
                 />
@@ -463,9 +525,9 @@ export default function FamilyScreen() {
             )}
           </View>
 
-          {/* Pasangan (suami/istri) */}
+          {/* Pasangan (suami/istri) — hanya 1 */}
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            💍 Pasangannya siapa? (suami / istri)
+            💍 Pasangannya siapa? (pilih 1 — suami / istri)
           </VixText>
           <View style={styles.chipWrap}>
             {all
@@ -473,7 +535,7 @@ export default function FamilyScreen() {
               .map((m) => (
                 <Chip
                   key={m.id}
-                  label={`${m.deceased ? '✝ ' : ''}${m.name}`}
+                  label={`${m.deceased ? '✝ ' : ''}${displayName(m)}`}
                   active={fPartners.includes(m.id)}
                   onPress={() => togglePartner(m.id)}
                 />
@@ -610,6 +672,18 @@ const styles = StyleSheet.create({
   },
   editButtonText: { color: Color.TEXT_REVERSE },
   sectionTitle: { marginBottom: 10 },
+  infoCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 16,
+    gap: 4,
+    marginBottom: 14,
+  },
+  infoName: { color: Color.TEXT_TITLE },
+  infoNick: { color: Color.MAIN },
+  infoLine: { color: Color.TEXT_PARAGRAPH },
   allGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

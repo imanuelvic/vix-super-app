@@ -25,7 +25,8 @@ import { db } from './firebase';
 
 export type FamilyMember = {
   id: string;
-  name: string;
+  name: string; // nama lengkap
+  nickname: string; // nama panggilan — dipakai untuk tampilan di pohon & daftar
   birthYear: number;
   birthMonth: number; // 0–11 seperti Date JS
   birthDay: number;
@@ -34,6 +35,11 @@ export type FamilyMember = {
   partnerIds: string[]; // pasangan (suami/istri) — relasi dianggap 2 arah
   photo: string | null; // JPEG base64 kecil (tanpa prefix data:)
 };
+
+/** Nama untuk ditampilkan: nama panggilan kalau ada, kalau tidak nama lengkap. */
+export function displayName(m: { name: string; nickname?: string }): string {
+  return (m.nickname ?? '').trim() || m.name;
+}
 
 function membersCollection(uid: string) {
   return collection(db, 'users', uid, 'familyMembers');
@@ -55,6 +61,7 @@ export function subscribeFamily(
           return {
             id: d.id,
             ...data,
+            nickname: data.nickname ?? '',
             parentIds: data.parentIds ?? [],
             partnerIds: data.partnerIds ?? [],
             photo: data.photo ?? null,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -8,6 +8,7 @@ import { GreetingHeader } from '@/components/common/Greeting';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
@@ -198,7 +199,7 @@ export function TodoTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         {/* Sapaan + tanggal + streak (komponen bersama) */}
         <GreetingHeader streak={streakDays} />
 
@@ -379,7 +380,7 @@ export function TodoTab({
             </View>
           );
         })}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Modal pasang/ubah target berat */}
       <CenterDialog visible={targetOpen} onClose={() => setTargetOpen(false)}>

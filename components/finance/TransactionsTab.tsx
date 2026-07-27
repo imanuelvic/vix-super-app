@@ -117,17 +117,23 @@ export function TransactionsTab({
     [items, type],
   );
 
-  // Warna latar pilihan kategori sesuai pemakaian budget-nya:
-  // kuning ≥75%, merah ≥100% (over budget). Kategori tanpa budget → normal.
+  // Warna latar pilihan kategori sesuai pemakaian budget-nya: kuning ≥75%,
+  // biru pas 100% (budget habis persis), merah kalau MELEBIHI 100% (over
+  // budget). Kategori tanpa budget → normal.
   function categoryBudgetStyle(key: string): ViewStyle | undefined {
     const allocated = budget[budgetKey(type, key)] ?? 0;
     if (allocated <= 0) return undefined;
     const percent =
       ((realization.get(budgetKey(type, key)) ?? 0) / allocated) * 100;
-    if (percent >= 100)
+    if (percent > 100)
       return {
         backgroundColor: Color.FINANCE_EXPENSE,
         borderColor: Color.FINANCE_EXPENSE_DARK,
+      };
+    if (percent >= 100)
+      return {
+        backgroundColor: Color.FINANCE_INVESTMENT,
+        borderColor: Color.FINANCE_INVESTMENT_DARK,
       };
     if (percent >= 75)
       return {

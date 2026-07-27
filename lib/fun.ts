@@ -53,7 +53,7 @@ export const FUN_CATEGORIES: {
     bg: Color.MAIN_LIGHT,
     fg: Color.MAIN_DARK,
     titleLabel: 'Nama gunung',
-    detailLabel: 'Ketinggian (mis. 2.930 mdpl)',
+    detailLabel: 'Ketinggian',
   },
   {
     key: 'race',
@@ -62,7 +62,7 @@ export const FUN_CATEGORIES: {
     bg: Color.FINANCE_EXPENSE,
     fg: Color.FINANCE_EXPENSE_DARK,
     titleLabel: 'Nama race',
-    detailLabel: 'Jarak & hasil (mis. 10K · 1:05:20)',
+    detailLabel: 'Jarak & hasil',
   },
   {
     key: 'reflection',

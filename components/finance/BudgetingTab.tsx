@@ -269,8 +269,8 @@ export function BudgetingTab({
   );
 }
 
-// Bar kemajuan realisasi vs budget.
-// Hijau normal → kuning saat pemakaian ≥75% → merah saat ≥100% (over budget).
+// Bar kemajuan realisasi vs budget. Hijau normal → kuning saat pemakaian
+// ≥75% → biru saat pas 100% (budget habis persis) → merah saat MELEBIHI 100%.
 function ProgressBar({
   percent,
   onDark = false,
@@ -280,11 +280,13 @@ function ProgressBar({
 }) {
   const width = Math.max(0, Math.min(percent, 100));
   const fill =
-    percent >= 100
+    percent > 100
       ? Color.DANGER
-      : percent >= 75
-        ? Color.BUDGET_WARN
-        : Color.MAIN_LIGHT;
+      : percent >= 100
+        ? Color.FINANCE_INVESTMENT_DARK
+        : percent >= 75
+          ? Color.BUDGET_WARN
+          : Color.MAIN_LIGHT;
   return (
     <View style={[styles.barTrack, onDark && styles.barTrackDark]}>
       <View style={[styles.barFill, { width: `${width}%`, backgroundColor: fill }]} />
