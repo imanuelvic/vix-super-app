@@ -14,7 +14,7 @@ export const Color = {
   MAIN_DARK: '#0C5C50',
   MAIN_LIGHT: '#9FE6D5',
   MAIN_TRANSPARENT: '#1D8D7A1A',
-  
+
   ACCENT: '#FFE8CC',
   ACCENT_DARK: '#5B4B3A',
 
@@ -55,15 +55,15 @@ export const Color = {
   SPIRITUAL: '#E4D7F5', // ungu pastel
   SPIRITUAL_DARK: '#6B4E9B',
 
-  // Fitur Wheel of Life (tile Home)
   WHEEL: '#F7D6E6', // merah muda pastel
   WHEEL_DARK: '#A64D79',
 
-  // Tile Home lainnya
   CAREER: '#E3CBB4', // coklat pastel (fitur Career)
   CAREER_DARK: '#E4E2DC', // abu-abu pastel (tile Trading)
+
   FUN: '#C7E9C0', // hijau muda (fitur Fun & Recreation)
   FUN_DARK: '#3E7A3A',
+
   FITNESS: '#FBD9B8', // oranye lembut (fitur Fitness — coming soon)
   FITNESS_DARK: '#B5651D',
 

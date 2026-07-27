@@ -14,20 +14,18 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
-  CORE_CATEGORIES,
-  dailyTopic,
-  FOLLOWUPS_MT_PER_DAY,
-  FOLLOWUPS_PER_DAY,
   IDEA_CADENCE_LABEL,
   loveLangLabel,
   newCoreIdeaId,
   nextBirthday,
   personalityTips,
-  pickDailyFollowups,
   saveCoreIdeas,
   saveCoreLeaders,
-  saveMainTeam,
   waLink,
+  WEEKLY_FOCUS_COUNT,
+  weeklyFollowupTopic,
+  weeklyLeaders,
+  weekIndex,
   type CoreIdea,
   type CoreIdeasData,
   type CoreLeader,
@@ -36,9 +34,10 @@ import {
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
 
-// Tab Follow Up: tugas harian MCL — siapa yang di follow up hari ini
-// (CORE Leader + Main Team, dibagi merata dan diacak per hari) +
-// pengingat ulang tahun + ide topik chat yang bisa langsung dikirim ke WA.
+// Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
+// membangun hubungan — Senin pertanyaan doa wajib, hari lain pertanyaan acak
+// (8 aspek hidup / obrolan ringan / penggali kepribadian). Plus pengingat
+// ulang tahun & Idea For CORE.
 export function FollowupTab({
   leaders,
   mainTeam,
@@ -52,10 +51,8 @@ export function FollowupTab({
 }) {
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  // Override topik kalau user tekan "Ganti topik" (hanya untuk hari ini).
-  const [topicOverride, setTopicOverride] = useState<
-    Record<string, { c: number; q: number }>
-  >({});
+  // "Ganti pertanyaan" → seed acak per orang untuk memilih pertanyaan lain.
+  const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
 
   // ===== Idea For CORE — form tambah/edit =====
   const [editingIdea, setEditingIdea] = useState<CoreIdea | 'new' | null>(null);
@@ -196,13 +193,14 @@ export function FollowupTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaders, mainTeam, leaderById, dayId]);
 
-  const clPicks = useMemo(
-    () => pickDailyFollowups(leaders, dayId, FOLLOWUPS_PER_DAY),
+  // 2 CORE Leader fokus minggu ini (bergilir tiap minggu). Hari-dalam-minggu
+  // menentukan jenis pertanyaan (Senin = pertanyaan doa wajib).
+  const dow = new Date().getDay(); // 0=Min … 1=Sen
+  const weekLeaders = useMemo(
+    () => weeklyLeaders(leaders, weekIndex(new Date()), WEEKLY_FOCUS_COUNT),
+    // dayId sebagai dependency: pindah hari/minggu → hitung ulang.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [leaders, dayId],
-  );
-  const mtPicks = useMemo(
-    () => pickDailyFollowups(mainTeam, dayId, FOLLOWUPS_MT_PER_DAY),
-    [mainTeam, dayId],
   );
 
   async function handleDoneLeader(leader: CoreLeader) {
@@ -218,39 +216,11 @@ export function FollowupTab({
     }
   }
 
-  async function handleDoneMember(member: MainTeamMember) {
-    if (!user) return;
-    setError(null);
-    const next = mainTeam.map((m) =>
-      m.id === member.id ? { ...m, lastFollowupDayId: dayId } : m,
-    );
-    try {
-      await saveMainTeam(user.uid, next);
-    } catch {
-      setError('Gagal menyimpan. Coba lagi.');
-    }
-  }
-
   function shuffleTopic(personId: string) {
     setTopicOverride((prev) => ({
       ...prev,
-      [personId]: {
-        c: Math.floor(Math.random() * CORE_CATEGORIES.length),
-        q: Math.floor(Math.random() * 3),
-      },
+      [personId]: Math.floor(Math.random() * 100000),
     }));
-  }
-
-  function topicFor(personId: string) {
-    const override = topicOverride[personId];
-    if (override) {
-      const category = CORE_CATEGORIES[override.c];
-      return {
-        category,
-        question: category.questions[override.q % category.questions.length],
-      };
-    }
-    return dailyTopic(personId, dayId);
   }
 
   // Buka chat WhatsApp dengan pesan yang sudah terisi — tinggal kirim.
@@ -278,7 +248,7 @@ export function FollowupTab({
     done: boolean;
     onDone: () => void;
   }) {
-    const topic = topicFor(id);
+    const topic = weeklyFollowupTopic(person, id, dayId, dow, topicOverride[id]);
     const tips = personalityTips(person);
     // Ada nomor → seluruh kartu bisa ditekan untuk buka chat WhatsApp,
     // border-nya diwarnai hijau WA sebagai penanda. Kalau sudah selesai,
@@ -290,7 +260,7 @@ export function FollowupTab({
         style={[styles.card, canChat && styles.cardChat, done && styles.cardDone]}
         onPress={
           canChat
-            ? () => openWhatsApp(phone!, `Shalom!`)
+            ? () => openWhatsApp(phone!, `Shalom! 🙏\n\n${topic.question}`)
             : undefined
         }>
         <View style={styles.cardHeader}>
@@ -302,7 +272,7 @@ export function FollowupTab({
           </View>
           <View style={styles.categoryBadge}>
             <VixText heading="label" additionalStyle={styles.categoryText}>
-              {topic.category.icon} {topic.category.label}
+              {topic.icon} {topic.label}
             </VixText>
           </View>
         </View>
@@ -372,13 +342,16 @@ export function FollowupTab({
 
         {!done && (
           <View style={styles.buttonRow}>
-            <PressableScale
-              style={styles.shuffleButton}
-              onPress={() => shuffleTopic(id)}>
-              <VixText heading="bold" additionalStyle={styles.shuffleText}>
-                🔀 Ganti topik
-              </VixText>
-            </PressableScale>
+            {/* Senin pertanyaannya wajib (doa) → tidak bisa diganti */}
+            {dow !== 1 && (
+              <PressableScale
+                style={styles.shuffleButton}
+                onPress={() => shuffleTopic(id)}>
+                <VixText heading="bold" additionalStyle={styles.shuffleText}>
+                  🔀 Ganti pertanyaan
+                </VixText>
+              </PressableScale>
+            )}
             <PressableScale style={styles.doneButton} onPress={onDone}>
               <VixText heading="bold" additionalStyle={styles.doneButtonText}>
                 ✅ Selesai
@@ -506,11 +479,24 @@ export function FollowupTab({
         ))
       )}
 
-      {/* ===== Follow Up CORE Leader ===== */}
-      <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        🎯 Follow Up CORE Leader
-      </VixText>
-      {clPicks.map((l) =>
+      {/* ===== Follow Up Mingguan: fokus 2 CORE Leader ===== */}
+      <View style={styles.weekCard}>
+        <VixText heading="title" additionalStyle={styles.weekTitle}>
+          🎯 Fokus Minggu Ini
+        </VixText>
+        <VixText heading="subheader" additionalStyle={styles.weekLeadersText}>
+          {weekLeaders.length > 0
+            ? weekLeaders.map((l) => `${l.heart} ${l.name}`).join('  &  ')
+            : 'Belum ada CORE Leader — tambah dulu di tab Leaders.'}
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.weekHint}>
+          Bangun hubungan tiap hari (Sen–Min).{' '}
+          {dow === 1
+            ? 'Hari ini Senin — mulai minggu dengan menanyakan pokok doa mereka 🙏'
+            : 'Senin tanya pokok doa 🙏; hari lain pertanyaan acak — 8 aspek hidup, obrolan ringan, atau gali kepribadian yang belum diketahui.'}
+        </VixText>
+      </View>
+      {weekLeaders.map((l) =>
         renderFollowCard({
           id: l.id,
           title: `${l.heart} ${l.name}`,
@@ -520,29 +506,6 @@ export function FollowupTab({
           done: l.lastFollowupDayId === dayId,
           onDone: () => handleDoneLeader(l),
         }),
-      )}
-
-      {/* ===== Follow Up Main Team ===== */}
-      <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        👥 Follow Up Main Team
-      </VixText>
-      {mainTeam.length === 0 ? (
-        <VixText heading="label" additionalStyle={styles.emptyText}>
-          Belum ada Main Team — isi datanya di tab CORE Leader.
-        </VixText>
-      ) : (
-        mtPicks.map((m) => {
-          const cl = leaderById.get(m.leaderId);
-          return renderFollowCard({
-            id: m.id,
-            title: `👤 ${m.name}`,
-            sub: cl ? `Main Team ${cl.heart} ${cl.name}` : 'Main Team',
-            phone: m.phone,
-            person: m,
-            done: m.lastFollowupDayId === dayId,
-            onDone: () => handleDoneMember(m),
-          });
-        })
       )}
     </ScrollView>
 
@@ -624,7 +587,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 4,
   },
-  sectionTitle: { marginTop: 6, marginBottom: 10 },
+  weekCard: {
+    backgroundColor: Color.MAIN_DARK,
+    borderRadius: 16,
+    padding: 16,
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  weekTitle: { color: Color.TEXT_REVERSE },
+  weekLeadersText: { color: Color.MAIN_LIGHT },
+  weekHint: { color: Color.TEXT_ON_DARK_MUTED },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

@@ -30,20 +30,20 @@ import {
 } from '@/lib/career';
 import {
   EMPTY_CORE_IDEAS,
-  FOLLOWUPS_MT_PER_DAY,
-  FOLLOWUPS_PER_DAY,
   IDEA_CADENCE_LABEL,
   ideaReminderDue,
+  meetingKindMeta,
   nextBirthday,
   subscribeCoreIdeas,
   subscribeCoreLeaders,
-  subscribeMainTeam,
   subscribeVisitations,
   visitDaysUntil,
   visitReminderWindow,
+  weekIndex,
+  WEEKLY_FOCUS_COUNT,
+  weeklyLeaders,
   type CoreIdeasData,
   type CoreLeader,
-  type MainTeamMember,
   type Visitation,
 } from '@/lib/core';
 import {
@@ -56,8 +56,9 @@ import {
 import {
   daysUntilEligible,
   donorReminderDue,
+  donorScheduleReminders,
   EMPTY_DONOR,
-  nextEligibleDate,
+  scheduleDaysUntil,
   subscribeDonor,
   type DonorData,
 } from '@/lib/donor';
@@ -142,7 +143,6 @@ export default function HomeScreen() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
-  const [mainTeam, setMainTeam] = useState<MainTeamMember[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -172,7 +172,6 @@ export default function HomeScreen() {
       subscribeHabits(user.uid, setHabits),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeCoreLeaders(user.uid, setLeaders),
-      subscribeMainTeam(user.uid, setMainTeam),
       subscribeVisitations(user.uid, setVisitations),
       subscribeFamily(user.uid, setFamily),
       subscribeDebts(user.uid, setDebts),
@@ -193,17 +192,10 @@ export default function HomeScreen() {
     // Hanya task HARI INI — task tanggal depan tidak dihitung.
     tasks: tasks.filter((t) => !t.done && t.dayId === todayId).length,
     health: day ? habits.filter((h) => !day.done[h.id]).length : 0,
-    core:
-      Math.max(
-        0,
-        Math.min(FOLLOWUPS_PER_DAY, leaders.length) -
-          leaders.filter((l) => l.lastFollowupDayId === todayId).length,
-      ) +
-      Math.max(
-        0,
-        Math.min(FOLLOWUPS_MT_PER_DAY, mainTeam.length) -
-          mainTeam.filter((m) => m.lastFollowupDayId === todayId).length,
-      ),
+    // 2 CORE Leader fokus minggu ini yang belum di-follow up hari ini.
+    core: weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
+      (l) => l.lastFollowupDayId !== todayId,
+    ).length,
     // Revive belum ditulis hari ini = 1 (streak doc menyimpan hari terakhir).
     spiritual:
       revive === undefined ? 0 : revive?.lastDayId === todayId ? 0 : 1,
@@ -248,7 +240,7 @@ export default function HomeScreen() {
           : `${b.m.name} — ${b.daysUntil} hari lagi (ke-${b.turningAge})`,
     }));
 
-  // Reminder visitasi CORE: H-3 sampai hari-H, yang belum divisit.
+  // Reminder pertemuan CORE: H-3 sampai hari-H, yang belum selesai.
   const visitReminders = visitations
     .filter((v) => visitReminderWindow(v, now))
     .sort((a, b) => a.date.toMillis() - b.date.toMillis())
@@ -257,9 +249,11 @@ export default function HomeScreen() {
       const days = visitDaysUntil(v, now);
       return {
         id: v.id,
-        text: `${cl ? `${cl.heart} ${cl.name}` : 'CORE'} — ${
-          days === 0 ? 'HARI INI' : `${days} hari lagi`
-        } (${formatDate(v.date.toDate())})`,
+        text: `${meetingKindMeta(v.kind).icon} ${
+          cl ? `${cl.heart} ${cl.name}` : 'CORE'
+        } — ${days === 0 ? 'HARI INI' : `${days} hari lagi`} (${formatDate(
+          v.date.toDate(),
+        )})`,
       };
     });
 
@@ -305,21 +299,53 @@ export default function HomeScreen() {
   // Reminder timbang berat: tiap Minggu kalau belum update berat hari ini.
   const weighInDue = profile != null && needsWeighIn(profile, now);
 
-  // Reminder donor darah: HANYA hari Minggu & sudah boleh donor lagi (biar
-  // tidak muncul tiap hari). Teksnya: kapan terakhir donor + sejak kapan boleh.
+  // ===== Reminder Health digabung jadi SATU kartu rapi: cek tensi & gula
+  // darah (6 bulan), timbang berat mingguan, donor darah (sudah boleh lagi +
+  // jadwal donor yang sudah dibuat). Tiap baris bisa ditekan ke tujuannya.
   const donorDue = donorReminderDue(donor, now);
-  const donorTexts: string[] = [];
-  if (donorDue && donor.lastDonation) {
-    const eligible = nextEligibleDate(donor);
+  const healthRows: { id: string; text: string; onPress: () => void }[] = [];
+  // Cek tekanan darah / gula darah.
+  for (const c of checkupReminders) {
+    healthRows.push({
+      id: `chk-${c.id}`,
+      text: c.text,
+      onPress: () =>
+        router.push({ pathname: '/health', params: { tab: 'checkup' } }),
+    });
+  }
+  // Timbang berat mingguan.
+  if (weighInDue) {
+    healthRows.push({
+      id: 'weigh',
+      text: '⚖️ Timbang berat minggu ini — update berat (kg)',
+      onPress: () =>
+        router.push({
+          pathname: '/health',
+          params: { tab: 'summary', weighIn: '1' },
+        }),
+    });
+  }
+  // Donor darah — sudah boleh lagi (hari Minggu).
+  if (donorDue) {
     const since = -(daysUntilEligible(donor, now) ?? 0);
-    donorTexts.push(`Terakhir donor: ${formatDate(donor.lastDonation.toDate())}`);
-    if (eligible) {
-      donorTexts.push(
-        `Sudah boleh sejak ${formatDate(eligible)}${
-          since > 0 ? ` · ${since} hari lalu` : ' · hari ini'
-        }`,
-      );
-    }
+    healthRows.push({
+      id: 'donor-ok',
+      text: `🩸 Sudah boleh donor darah${
+        since > 0 ? ` (sejak ${since} hari lalu)` : ' (mulai hari ini)'
+      }`,
+      onPress: () => router.push('/donor'),
+    });
+  }
+  // Jadwal donor yang sudah dibuat & sudah dekat (≤3 hari).
+  for (const s of donorScheduleReminders(donor, now)) {
+    const d = scheduleDaysUntil(s, now);
+    healthRows.push({
+      id: `donor-sch-${s.id}`,
+      text: `📅 Donor${s.location ? ` di ${s.location}` : ''} — ${
+        d === 0 ? 'HARI INI' : `${d} hari lagi`
+      }`,
+      onPress: () => router.push('/donor'),
+    });
   }
 
   // Reminder renungan khotbah: Rabu/Jumat 12:30–17:30, kalau catatan khotbah
@@ -418,7 +444,7 @@ export default function HomeScreen() {
                   router.push({ pathname: '/core', params: { tab: 'visitation' } })
                 }>
                 <VixText heading="bold" additionalStyle={styles.visitTitle}>
-                  📍 Reminder Visitasi CORE
+                  📍 Reminder Pertemuan CORE
                 </VixText>
                 {visitReminders.map((r) => (
                   <VixText
@@ -461,44 +487,21 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* Reminder cek tensi & gula darah (6 bulan sekali) */}
-        {checkupReminders.length > 0 && (
-          <ReminderCard
-            bg={Color.MAIN_LIGHT}
-            fg={Color.MAIN_DARK}
-            title="🩺 Waktunya Cek Kesehatan"
-            texts={checkupReminders}
-            onPress={() => router.push('/health')}
-          />
-        )}
-
-        {/* Reminder timbang berat tiap Minggu → langsung buka editor Data Tubuh */}
-        {weighInDue && (
-          <ReminderCard
-            bg={Color.FINANCE_INVESTMENT}
-            fg={Color.FINANCE_INVESTMENT_DARK}
-            title="⚖️ Timbang Berat Minggu Ini"
-            texts={[
-              'Ukur & update berat (kg) — biar progres target beratmu kelihatan.',
-            ]}
-            onPress={() =>
-              router.push({
-                pathname: '/health',
-                params: { tab: 'summary', weighIn: '1' },
-              })
-            }
-          />
-        )}
-
-        {/* Reminder donor darah (Minggu saja) — warna Health (merah) */}
-        {donorDue && (
-          <ReminderCard
-            bg={Color.FINANCE_EXPENSE}
-            fg={Color.DANGER}
-            title="🩸 Sudah Bisa Donor Darah!"
-            texts={donorTexts}
-            onPress={() => router.push('/donor')}
-          />
+        {/* Reminder Health digabung: cek tensi/gula, timbang berat, donor.
+            Tiap baris bisa ditekan menuju halaman terkait. */}
+        {healthRows.length > 0 && (
+          <View style={styles.healthCard}>
+            <VixText heading="bold" additionalStyle={styles.healthTitle}>
+              🩺 Reminder Health
+            </VixText>
+            {healthRows.map((r) => (
+              <PressableScale key={r.id} onPress={r.onPress}>
+                <VixText heading="label" additionalStyle={styles.healthText}>
+                  {r.text}
+                </VixText>
+              </PressableScale>
+            ))}
+          </View>
         )}
 
         {/* Reminder renungkan khotbah Minggu (Rabu/Jumat siang) — ungu */}
@@ -669,6 +672,20 @@ const styles = StyleSheet.create({
   },
   // Baris teks di dalam ReminderCard khotbah (kutipan di-clamp 2 baris).
   onSpiritual: { color: Color.SPIRITUAL_DARK },
+  // Kartu Health gabungan (cek tensi/gula + timbang berat + donor).
+  healthCard: {
+    backgroundColor: Color.MAIN_LIGHT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.MAIN_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 4,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  healthTitle: { color: Color.MAIN_DARK },
+  healthText: { color: Color.MAIN_DARK },
   taskCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

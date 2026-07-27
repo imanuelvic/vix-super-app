@@ -107,7 +107,7 @@ export default function HealthScreen() {
             <ActivityIndicator color={Color.MAIN} />
           </View>
         ) : tab === 'summary' ? (
-          <SummaryTab profile={profile} />
+          <SummaryTab profile={profile} streak={streak ?? null} dayId={dayId} />
         ) : tab === 'todo' ? (
           <TodoTab
             habits={habits}

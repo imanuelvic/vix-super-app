@@ -101,6 +101,19 @@ export function scheduleDaysUntil(schedule: DonorSchedule, today: Date): number 
   );
 }
 
+/** Jadwal donor mendatang untuk reminder Home: belum selesai & ≤ 3 hari lagi. */
+export function donorScheduleReminders(
+  data: DonorData,
+  today: Date,
+): DonorSchedule[] {
+  return data.schedules
+    .filter((s) => {
+      const d = scheduleDaysUntil(s, today);
+      return !s.done && d >= 0 && d <= 3;
+    })
+    .sort((a, b) => a.date.toMillis() - b.date.toMillis());
+}
+
 // ---------- Info statis (syarat & tips) ----------
 
 export const DONOR_REQUIREMENTS: string[] = [

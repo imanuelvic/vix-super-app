@@ -16,17 +16,20 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
+  MEETING_KINDS,
+  meetingKindMeta,
   newVisitationId,
   saveVisitations,
   VISIT_TIPS,
   visitDaysUntil,
   type CoreLeader,
+  type MeetingKind,
   type Visitation,
 } from '@/lib/core';
 import { formatFullDate } from '@/lib/format';
 
-// Tab Visitasi 📅: jadwal MCL mengunjungi CORE para CL — diisi manual,
-// reminder H-3 & hari-H muncul otomatis di Home.
+// Tab Pertemuan 📅: jadwal MCL bertemu CORE para CL (Visitasi / Fellowship) —
+// diisi manual, reminder H-3 & hari-H muncul otomatis di Home.
 export function VisitationTab({
   visitations,
   leaders,
@@ -41,6 +44,7 @@ export function VisitationTab({
 
   // Form tambah/edit. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<Visitation | 'new' | null>(null);
+  const [fKind, setFKind] = useState<MeetingKind>('visitasi');
   const [fLeaderId, setFLeaderId] = useState('');
   const [fDate, setFDate] = useState(new Date());
   const [fNote, setFNote] = useState('');
@@ -68,6 +72,7 @@ export function VisitationTab({
 
   function openAdd() {
     setEditing('new');
+    setFKind('visitasi');
     setFLeaderId(leaders[0]?.id ?? '');
     setFDate(new Date());
     setFNote('');
@@ -77,6 +82,7 @@ export function VisitationTab({
 
   function openEdit(v: Visitation) {
     setEditing(v);
+    setFKind(v.kind);
     setFLeaderId(v.leaderId);
     setFDate(v.date.toDate());
     setFNote(v.note);
@@ -87,13 +93,14 @@ export function VisitationTab({
   async function handleSave() {
     if (!user || !editing || busy) return;
     if (!fLeaderId) {
-      setFormError('Pilih CORE Leader yang mau divisit.');
+      setFormError('Pilih CORE Leader-nya dulu.');
       return;
     }
     setBusy(true);
     setFormError(null);
     const data: Visitation = {
       id: editing === 'new' ? newVisitationId() : editing.id,
+      kind: fKind,
       leaderId: fLeaderId,
       date: Timestamp.fromDate(fDate),
       note: fNote.trim(),
@@ -168,6 +175,9 @@ export function VisitationTab({
             {status}
           </VixText>
         </View>
+        <VixText heading="label" additionalStyle={styles.kindLine}>
+          {meetingKindMeta(v.kind).icon} {meetingKindMeta(v.kind).label}
+        </VixText>
         <VixText heading="label">📆 {formatFullDate(v.date.toDate())}</VixText>
         {v.note ? <VixText heading="label">📝 {v.note}</VixText> : null}
       </PressableScale>
@@ -178,7 +188,7 @@ export function VisitationTab({
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         <PrimaryButton
-          label="Jadwalkan Visitasi"
+          label="Jadwalkan Pertemuan"
           icon="plus"
           onPress={openAdd}
           additionalStyle={styles.addButton}
@@ -196,17 +206,17 @@ export function VisitationTab({
         </VixText>
         {upcoming.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada jadwal — CORE mana yang mau kamu kunjungi bulan ini? 😉
+            Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉
           </VixText>
         ) : (
           upcoming.map(renderCard)
         )}
 
-        {/* ===== Tips visitasi (dropdown, default tertutup) ===== */}
+        {/* ===== Tips pertemuan (dropdown, default tertutup) ===== */}
         <PressableScale
           style={styles.tipsHeader}
           onPress={() => setTipsOpen((o) => !o)}>
-          <VixText heading="title">💡 Tips Visitasi</VixText>
+          <VixText heading="title">💡 Tips Pertemuan</VixText>
           <View style={styles.tipsToggle}>
             <VixText heading="label">
               {tipsOpen ? 'Tutup' : `${VISIT_TIPS.length} tips`}
@@ -232,10 +242,24 @@ export function VisitationTab({
       {/* Bottom sheet tambah/edit jadwal */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Jadwalkan Visitasi' : 'Edit Visitasi'}
+        title={editing === 'new' ? 'Jadwalkan Pertemuan' : 'Edit Pertemuan'}
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          CORE yang divisit
+          Jenis pertemuan
+        </VixText>
+        <View style={styles.leaderWrap}>
+          {MEETING_KINDS.map((k) => (
+            <Chip
+              key={k.key}
+              label={`${k.icon} ${k.label}`}
+              active={fKind === k.key}
+              onPress={() => setFKind(k.key)}
+            />
+          ))}
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          CORE-nya siapa?
         </VixText>
         <View style={styles.leaderWrap}>
           {leaders.map((l) => (
@@ -249,7 +273,7 @@ export function VisitationTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal visit
+          Tanggal pertemuan
         </VixText>
         <View style={styles.formGap}>
           {/* key = id supaya state picker internal reset tiap ganti jadwal */}
@@ -273,7 +297,7 @@ export function VisitationTab({
           <PressableScale style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
             <CheckCircle checked={fDone} />
             <VixText heading="paragraph" additionalStyle={styles.doneText}>
-              Sudah divisit ✅
+              Sudah selesai ✅
             </VixText>
           </PressableScale>
         )}
@@ -331,6 +355,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
+  kindLine: { color: Color.MAIN },
   statusSoon: { color: Color.ACCENT_DARK },
   statusToday: { color: Color.DANGER },
   statusDone: { color: Color.SUCCESS },

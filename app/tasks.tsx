@@ -44,6 +44,7 @@ import {
   deleteTask,
   generateRecurringDays,
   MAX_RECURRING,
+  pruneOrphanTasks,
   rolloverTasks,
   setTaskDone,
   subscribeOtherTasks,
@@ -148,6 +149,7 @@ export default function TasksScreen() {
   // walau app dibiarkan terbuka semalaman.
   const [todayId, setTodayId] = useState(() => dayDocId(now));
   const rolling = useRef(false); // cegah rollover dobel saat batch berjalan
+  const pruned = useRef(false); // bersihkan task kategori lama sekali saja
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -200,6 +202,14 @@ export default function TasksScreen() {
         rolling.current = false;
       });
   }, [user, tasks, todayId]);
+
+  // Sekali saja: hapus PERMANEN task dari kategori lama yang sudah dihapus
+  // (mis. 'fun' & 'relax') — biar Firestore ikut bersih.
+  useEffect(() => {
+    if (!user || pruned.current || loading || tasks.length === 0) return;
+    pruned.current = true;
+    pruneOrphanTasks(user.uid, tasks).catch(() => {});
+  }, [user, tasks, loading]);
 
   const atMinMonth =
     year === now.getFullYear() && month === now.getMonth();
@@ -446,13 +456,17 @@ export default function TasksScreen() {
 
   // Ghost mengikuti jari saat menyeret. dragX/dragY = koordinat window (absolut
   // dari pojok layar), dan ghost ini anak absolute dari SafeAreaView yang juga
-  // mulai dari pojok layar — jadi TIDAK perlu koreksi inset (kalau dikoreksi,
-  // ghost malah melompat jauh ke atas jari di iPhone berponi). Offset kecil
-  // supaya jari kira-kira di tengah kotaknya.
+  // mulai dari pojok layar — jadi TIDAK perlu koreksi inset.
+  //
+  // Ukuran ghost diukur (onLayout) supaya kotaknya PAS di tengah jari — jari =
+  // titik tengah kotak DAN titik yang dipakai untuk deteksi drop. Jadi cukup
+  // arahkan tengah kotak ke target: "yang kamu lihat = yang kamu jatuhkan".
+  const ghostW = useSharedValue(0);
+  const ghostH = useSharedValue(0);
   const ghostStyle = useAnimatedStyle(() => ({
     transform: [
-      { translateX: dragX.value - 24 },
-      { translateY: dragY.value - 22 },
+      { translateX: dragX.value - ghostW.value / 2 },
+      { translateY: dragY.value - ghostH.value / 2 },
     ],
   }));
 
@@ -647,6 +661,10 @@ export default function TasksScreen() {
       {dragTask && (
         <Animated.View
           pointerEvents="none"
+          onLayout={(e) => {
+            ghostW.value = e.nativeEvent.layout.width;
+            ghostH.value = e.nativeEvent.layout.height;
+          }}
           style={[styles.dragGhost, ghostStyle]}>
           <VixText
             heading="bold"

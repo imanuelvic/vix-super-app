@@ -47,12 +47,6 @@ export const DEFAULT_LEADERS: CoreLeader[] = [
 /** Pilihan warna hati untuk CL baru. */
 export const HEARTS = ['🩷', '❤️', '🧡', '💛', '💚', '🩵', '💙', '💜', '🖤', '🩶', '🤍', '🤎'];
 
-/** Berapa CL yang di follow up per hari (9 CL ≈ semua kebagian tiap ±5 hari). */
-export const FOLLOWUPS_PER_DAY = 2;
-
-/** Berapa Main Team yang di follow up per hari. */
-export const FOLLOWUPS_MT_PER_DAY = 2;
-
 // Main Team: 2–4 orang yang membantu tiap CORE Leader. Disimpan di dokumen
 // terpisah (users/{uid}/core/mainTeam) supaya dokumen leaders tetap kecil.
 export type MainTeamMember = {
@@ -236,16 +230,31 @@ export function newCoreLeaderId(): string {
   return `c${Date.now().toString(36)}`;
 }
 
-// ==================== Visitasi CORE 📅 ====================
-// Jadwal MCL mengunjungi CORE para CL. Satu dokumen berisi array
-// (users/{uid}/core/visitations) — reminder H-3 & hari-H muncul di Home.
+// ==================== Pertemuan CORE 📅 ====================
+// Jadwal MCL bertemu CORE para CL — dua jenis: Visitasi CORE (berkunjung ke
+// CORE-nya) & Fellowship CORE (hangout/kumpul bareng). Satu dokumen berisi
+// array (users/{uid}/core/visitations) — reminder H-3 & hari-H muncul di Home.
+
+export type MeetingKind = 'visitasi' | 'fellowship';
+
+export const MEETING_KINDS: { key: MeetingKind; label: string; icon: string }[] =
+  [
+    { key: 'visitasi', label: 'Visitasi CORE', icon: '🏠' },
+    { key: 'fellowship', label: 'Fellowship CORE', icon: '🎉' },
+  ];
+
+/** Meta satu jenis pertemuan — fallback ke Visitasi kalau tak dikenal. */
+export function meetingKindMeta(kind: MeetingKind) {
+  return MEETING_KINDS.find((k) => k.key === kind) ?? MEETING_KINDS[0];
+}
 
 export type Visitation = {
   id: string;
-  leaderId: string; // CORE Leader yang CORE-nya divisit
+  kind: MeetingKind; // jenis pertemuan
+  leaderId: string; // CORE Leader yang ditemui
   date: Timestamp;
   note: string; // tempat/agenda, boleh kosong
-  done: boolean; // sudah divisit
+  done: boolean; // sudah selesai
 };
 
 export function subscribeVisitations(
@@ -257,7 +266,9 @@ export function subscribeVisitations(
   return onSnapshot(
     ref,
     (snapshot) => {
-      onChange((snapshot.data()?.list as Visitation[]) ?? []);
+      const list = (snapshot.data()?.list as Visitation[]) ?? [];
+      // Data lama belum punya `kind` → anggap Visitasi.
+      onChange(list.map((v) => ({ ...v, kind: v.kind ?? 'visitasi' })));
     },
     onError,
   );
@@ -475,41 +486,127 @@ export function hashString(s: string): number {
   return Math.abs(h);
 }
 
-/** Topik harian per CL: acak tapi deterministik (tetap sama seharian). */
-export function dailyTopic(
-  leaderId: string,
-  dayId: string,
-): { category: CoreCategory; question: string } {
-  const category =
-    CORE_CATEGORIES[hashString(dayId + leaderId) % CORE_CATEGORIES.length];
-  const question =
-    category.questions[
-      hashString(leaderId + dayId + 'q') % category.questions.length
-    ];
-  return { category, question };
+// ==================== Follow up mingguan (fokus 2 CL) ====================
+// Tiap minggu (Senin–Minggu) fokus ke 2 CORE Leader saja untuk membangun
+// hubungan. Rotasi 2-per-minggu yang deterministik → bergilir & kebagian semua.
+
+export const WEEKLY_FOCUS_COUNT = 2;
+
+/** Nomor minggu global berbasis Senin — stabil sepanjang minggu, +1 tiap minggu. */
+export function weekIndex(d: Date): number {
+  const day = d.getDay(); // 0=Min … 6=Sab
+  const backToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate() + backToMonday,
+  );
+  return Math.floor(monday.getTime() / 86_400_000 / 7);
 }
 
-// ==================== Rotasi follow up harian ====================
+/** CL fokus minggu ini: `count` orang, bergilir tiap minggu. */
+export function weeklyLeaders<T>(
+  leaders: T[],
+  weekIdx: number,
+  count: number,
+): T[] {
+  const n = leaders.length;
+  if (n === 0) return [];
+  const start = (((weekIdx * count) % n) + n) % n;
+  const out: T[] = [];
+  for (let i = 0; i < Math.min(count, n); i++) {
+    out.push(leaders[(start + i) % n]);
+  }
+  return out;
+}
+
+// Pertanyaan wajib tiap Senin — mulai minggu dengan mendoakan mereka.
+export const MONDAY_PRAYER_QUESTION =
+  'Apa yang bisa aku doakan buat kamu minggu ini? 🙏';
+
+// Pertanyaan ringan pembuka obrolan (this-or-that / random).
+export const OPEN_QUESTIONS: string[] = [
+  'Kopi atau teh? ☕🍵',
+  'Kalau bisa liburan sekarang: Thailand atau Singapura? ✈️',
+  'Pagi atau malam orangnya? 🌅🌙',
+  'Gunung atau pantai? ⛰️🏖️',
+  'Manis atau pedas? 🍫🌶️',
+  'Nonton film atau baca buku? 🎬📖',
+  'Kucing atau anjing? 🐱🐶',
+  'Weekend: rebahan atau jalan-jalan? 🛋️🚶',
+  'Masak sendiri atau jajan di luar? 🍳🍜',
+  'Kalau ada waktu luang, paling suka ngapain? 😄',
+];
+
+// Pertanyaan penggali kepribadian — dipakai kalau datanya belum diisi.
+export const PERSONALITY_QUESTIONS: {
+  field: 'disc' | 'mbti' | 'loveLanguage';
+  icon: string;
+  label: string;
+  question: string;
+}[] = [
+  {
+    field: 'disc',
+    icon: '🎨',
+    label: 'DISC',
+    question:
+      'Kalau ngerjain sesuatu bareng tim, kamu lebih ke mimpin, meramaikan, jadi penopang yang setia, atau yang teliti ngecek detail? 😄',
+  },
+  {
+    field: 'mbti',
+    icon: '🧩',
+    label: 'MBTI',
+    question:
+      'Kamu ngecas energi lebih dari rame-rame sama orang, atau dari waktu sendiri yang tenang?',
+  },
+  {
+    field: 'loveLanguage',
+    icon: '💞',
+    label: 'Love Language',
+    question:
+      'Kamu paling ngerasa disayang lewat apa — kata-kata, waktu bareng, hadiah, dibantuin, atau pelukan?',
+  },
+];
+
+export type FollowupTopic = { icon: string; label: string; question: string };
 
 /**
- * Pilih siapa yang di follow up hari ini: yang sudah ditandai hari ini
- * tetap tampil (daftar stabil), sisanya diisi dari yang PALING LAMA tidak
- * di follow up, dengan urutan diacak per hari — acak tapi merata.
+ * Pertanyaan follow up untuk satu CL hari ini:
+ * - Senin → pertanyaan doa wajib (mulai minggu dengan mendoakan).
+ * - Hari lain → acak dari 8 aspek hidup + obrolan ringan + penggali
+ *   kepribadian (HANYA yang datanya belum ada). `seed` opsional untuk "ganti".
  */
-export function pickDailyFollowups<
-  T extends { id: string; lastFollowupDayId: string | null },
->(people: T[], dayId: string, count: number): T[] {
-  const doneToday = people.filter((p) => p.lastFollowupDayId === dayId);
-  const rest = people
-    .filter((p) => p.lastFollowupDayId !== dayId)
-    .sort((a, b) => {
-      const da = a.lastFollowupDayId ?? '';
-      const db = b.lastFollowupDayId ?? '';
-      if (da !== db) return da < db ? -1 : 1;
-      return hashString(dayId + a.id) - hashString(dayId + b.id);
-    });
-  const need = Math.max(0, count - doneToday.length);
-  return [...doneToday, ...rest.slice(0, need)];
+export function weeklyFollowupTopic(
+  person: {
+    disc?: string | null;
+    mbti?: string | null;
+    loveLanguage?: string | null;
+  },
+  personId: string,
+  dayId: string,
+  dayOfWeek: number,
+  seed?: number,
+): FollowupTopic {
+  if (dayOfWeek === 1) {
+    return { icon: '🙏', label: 'Spiritual', question: MONDAY_PRAYER_QUESTION };
+  }
+  const pool: FollowupTopic[] = [];
+  for (const c of CORE_CATEGORIES) {
+    for (const q of c.questions) {
+      pool.push({ icon: c.icon, label: c.label, question: q });
+    }
+  }
+  for (const q of OPEN_QUESTIONS) {
+    pool.push({ icon: '🎲', label: 'Obrolan Ringan', question: q });
+  }
+  for (const p of PERSONALITY_QUESTIONS) {
+    if (!person[p.field]) {
+      pool.push({ icon: p.icon, label: p.label, question: p.question });
+    }
+  }
+  const idx =
+    (seed !== undefined ? seed : hashString(dayId + personId)) % pool.length;
+  return pool[idx];
 }
 
 // ==================== Ulang tahun ====================

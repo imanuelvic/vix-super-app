@@ -17,13 +17,7 @@ import { db } from './firebase';
 import { dayDocId } from './health';
 
 // Kategori task yang sudah pasti — ganti kategori = ganti to-do list.
-export type TaskCategory =
-  | 'personal'
-  | 'work'
-  | 'ministry'
-  | 'fun'
-  | 'learning'
-  | 'relax';
+export type TaskCategory = 'personal' | 'work' | 'ministry' | 'learning';
 
 export const TASK_CATEGORIES: {
   key: TaskCategory;
@@ -33,10 +27,11 @@ export const TASK_CATEGORIES: {
   { key: 'personal', label: 'PERSONAL', icon: '👤' },
   { key: 'work', label: 'WORK', icon: '💼' },
   { key: 'ministry', label: 'MINISTRY', icon: '🙏' },
-  { key: 'fun', label: 'FUN', icon: '🎢' },
   { key: 'learning', label: 'LEARNING', icon: '📚' },
-  { key: 'relax', label: 'RELAX', icon: '🧘🏻' },
 ];
+
+// Set key kategori yang masih berlaku — untuk membersihkan task "yatim".
+const VALID_CATEGORY_KEYS = new Set<string>(TASK_CATEGORIES.map((c) => c.key));
 
 export type Task = {
   id: string;
@@ -205,6 +200,25 @@ export function completeTasks(uid: string, items: Task[]) {
 
 export function deleteTask(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'tasks', id));
+}
+
+/**
+ * Hapus PERMANEN task yang kategorinya sudah tidak ada lagi (mis. kategori
+ * yang dihapus dari TASK_CATEGORIES seperti 'fun' & 'relax') — supaya
+ * Firestore tetap bersih & hemat. Return jumlah yang terhapus.
+ */
+export async function pruneOrphanTasks(
+  uid: string,
+  tasks: Task[],
+): Promise<number> {
+  const orphans = tasks.filter((t) => !VALID_CATEGORY_KEYS.has(t.category));
+  if (orphans.length === 0) return 0;
+  const batch = writeBatch(db);
+  for (const t of orphans) {
+    batch.delete(doc(db, 'users', uid, 'tasks', t.id));
+  }
+  await batch.commit();
+  return orphans.length;
 }
 
 // ===================== Other Task 📌 =====================

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -13,9 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { formatFullDate } from '@/lib/format';
@@ -28,6 +31,20 @@ import {
   subscribeReviveStreak,
   type ReviveEntry,
 } from '@/lib/spiritual';
+
+// Aplikasi Revive resmi ada di dalam app NDC Ministry (App Store id 1452468715).
+// itms-apps:// membuka langsung App Store; https dipakai sebagai cadangan.
+const REVIVE_APP_STORE = 'itms-apps://apps.apple.com/app/id1452468715';
+const REVIVE_APP_WEB =
+  'https://apps.apple.com/id/app/ndc-ministry/id1452468715';
+
+async function openReviveApp() {
+  try {
+    await Linking.openURL(REVIVE_APP_STORE);
+  } catch {
+    Linking.openURL(REVIVE_APP_WEB).catch(() => {});
+  }
+}
 
 // Tulis/edit jurnal REVIVE ✍️ — halaman sendiri (bukan mode di dalam
 // layar Spiritual) dengan KeyboardAvoidingView supaya kolom Application
@@ -145,6 +162,22 @@ export default function ReviveEditorScreen() {
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled">
+            {/* Menuju aplikasi Revive resmi (NDC Ministry) di App Store */}
+            <PressableScale style={styles.appButton} onPress={openReviveApp}>
+              <View style={styles.appButtonMain}>
+                <VixText heading="bold" additionalStyle={styles.appButtonText}>
+                  📱 Buka Aplikasi Revive
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.appButtonSub}>
+                  Baca renungan hari ini di app NDC Ministry
+                </VixText>
+              </View>
+              <IconSymbol
+                name="chevron.right"
+                size={20}
+                color={Color.TEXT_REVERSE}
+              />
+            </PressableScale>
             <FormInput
               style={styles.formGap}
               placeholder="Judul Revive"
@@ -213,6 +246,20 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  appButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    backgroundColor: Color.SPIRITUAL_DARK,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 14,
+  },
+  appButtonMain: { flex: 1, gap: 1 },
+  appButtonText: { color: Color.TEXT_REVERSE },
+  appButtonSub: { color: Color.SPIRITUAL },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   bigInput: {

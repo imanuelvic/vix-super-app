@@ -129,13 +129,13 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         {/* Tombol menuju riwayat sakit, donor darah & info kesehatan */}
         <View style={styles.navRow}>
           <PressableScale
-            style={styles.navButton}
-            onPress={() => router.push('/diseases')}>
-            <VixText heading="bold" additionalStyle={styles.navText}>
-              🤧 Disease
+            style={[styles.navButton, styles.navButtonInfo]}
+            onPress={() => router.push('/health-info')}>
+            <VixText heading="bold" additionalStyle={styles.navTextInfo}>
+              💪🏻 Info
             </VixText>
-            <VixText heading="label" additionalStyle={styles.navText}>
-              Riwayat sakit
+            <VixText heading="label" additionalStyle={styles.navTextInfo}>
+              QnA & tips
             </VixText>
           </PressableScale>
           <PressableScale
@@ -149,13 +149,13 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             </VixText>
           </PressableScale>
           <PressableScale
-            style={[styles.navButton, styles.navButtonInfo]}
-            onPress={() => router.push('/health-info')}>
-            <VixText heading="bold" additionalStyle={styles.navTextInfo}>
-              💊 Info
+            style={styles.navButton}
+            onPress={() => router.push('/diseases')}>
+            <VixText heading="bold" additionalStyle={styles.navText}>
+              🤧 Disease
             </VixText>
-            <VixText heading="label" additionalStyle={styles.navTextInfo}>
-              QnA & tips
+            <VixText heading="label" additionalStyle={styles.navText}>
+              Riwayat sakit
             </VixText>
           </PressableScale>
         </View>
@@ -345,11 +345,6 @@ function StatusCard({
           <VixText heading="label" additionalStyle={styles.adviceText}>
             💡 {result.tip}
           </VixText>
-          <PressableScale style={styles.infoButton} onPress={onInfo}>
-            <VixText heading="bold" additionalStyle={styles.infoButtonText}>
-              ℹ️ Lihat Info Kesehatan
-            </VixText>
-          </PressableScale>
         </View>
       ) : null}
       {due ? (
@@ -426,14 +421,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   adviceText: { color: Color.TEXT_PARAGRAPH },
-  infoButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: Color.FINANCE_INVESTMENT_DARK,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  infoButtonText: { color: Color.TEXT_REVERSE },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   chipFlex: { flex: 1 },

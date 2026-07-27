@@ -16,16 +16,19 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
+  MEETING_KINDS,
+  meetingKindMeta,
   saveVisitations,
   subscribeCoreLeaders,
   subscribeVisitations,
   visitDaysUntil,
   type CoreLeader,
+  type MeetingKind,
   type Visitation,
 } from '@/lib/core';
 import { formatFullDate } from '@/lib/format';
 
-// Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
+// Riwayat Pertemuan 🕘 — seluruh jadwal dari dulu sampai mendatang.
 // Tap kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
 // hapus PERMANEN dari Firestore (benar-benar hilang, bukan nonaktif).
 export default function VisitationsScreen() {
@@ -37,6 +40,7 @@ export default function VisitationsScreen() {
 
   // Form edit lewat bottom sheet.
   const [editing, setEditing] = useState<Visitation | null>(null);
+  const [fKind, setFKind] = useState<MeetingKind>('visitasi');
   const [fLeaderId, setFLeaderId] = useState('');
   const [fDate, setFDate] = useState(new Date());
   const [fNote, setFNote] = useState('');
@@ -72,6 +76,7 @@ export default function VisitationsScreen() {
 
   function openEdit(v: Visitation) {
     setEditing(v);
+    setFKind(v.kind);
     setFLeaderId(v.leaderId);
     setFDate(v.date.toDate());
     setFNote(v.note);
@@ -89,6 +94,7 @@ export default function VisitationsScreen() {
     setFormError(null);
     const data: Visitation = {
       id: editing.id,
+      kind: fKind,
       leaderId: fLeaderId,
       date: Timestamp.fromDate(fDate),
       note: fNote.trim(),
@@ -127,7 +133,7 @@ export default function VisitationsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Riwayat Visitasi 🕘"
+        title="Riwayat Pertemuan 🕘"
         subtitle={`${sorted.length} riwayat`}
       />
 
@@ -145,7 +151,7 @@ export default function VisitationsScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           {sorted.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Belum ada riwayat — visitasi yang sudah selesai atau terlewat
+              Belum ada riwayat — pertemuan yang sudah selesai atau terlewat
               akan muncul di sini 📅
             </VixText>
           )}
@@ -181,6 +187,9 @@ export default function VisitationsScreen() {
                     {status}
                   </VixText>
                 </View>
+                <VixText heading="label" additionalStyle={styles.kindLine}>
+                  {meetingKindMeta(v.kind).icon} {meetingKindMeta(v.kind).label}
+                </VixText>
                 <VixText heading="label">
                   📆 {formatFullDate(v.date.toDate())}
                 </VixText>
@@ -196,10 +205,24 @@ export default function VisitationsScreen() {
       {/* Bottom sheet edit visitasi */}
       <SheetModal
         visible={!!editing}
-        title="Edit Visitasi"
+        title="Edit Pertemuan"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          CORE yang divisit
+          Jenis pertemuan
+        </VixText>
+        <View style={styles.leaderWrap}>
+          {MEETING_KINDS.map((k) => (
+            <Chip
+              key={k.key}
+              label={`${k.icon} ${k.label}`}
+              active={fKind === k.key}
+              onPress={() => setFKind(k.key)}
+            />
+          ))}
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          CORE-nya siapa?
         </VixText>
         <View style={styles.leaderWrap}>
           {leaders.map((l) => (
@@ -213,7 +236,7 @@ export default function VisitationsScreen() {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal visit
+          Tanggal pertemuan
         </VixText>
         <View style={styles.formGap}>
           {/* key = id supaya state picker internal reset tiap ganti jadwal */}
@@ -233,7 +256,7 @@ export default function VisitationsScreen() {
           <PressableScale style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
             <CheckCircle checked={fDone} />
             <VixText heading="paragraph" additionalStyle={styles.doneText}>
-              Sudah divisit ✅
+              Sudah selesai ✅
             </VixText>
           </PressableScale>
         )}
@@ -285,6 +308,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
+  kindLine: { color: Color.MAIN },
   statusDone: { color: Color.SUCCESS },
   statusLate: { color: Color.WARNING },
   statusUpcoming: { color: Color.ACCENT_DARK },

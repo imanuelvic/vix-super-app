@@ -39,7 +39,7 @@ export default function HealthInfoScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Health"
-        title="Info Kesehatan 💊"
+        title="Info Kesehatan 💪🏻"
         subtitle="Pengingat cepat: tubuh lagi butuh apa?"
       />
 
