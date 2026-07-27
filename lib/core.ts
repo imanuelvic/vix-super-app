@@ -203,8 +203,12 @@ export function personalityTips(p: {
   loveLanguage?: string | null;
 }): { label: string; text: string }[] {
   const tips: { label: string; text: string }[] = [];
-  const d = p.disc ? DISC_OPTIONS.find((x) => x.key === p.disc) : undefined;
-  if (d) tips.push({ label: `🧭 DISC ${d.key}`, text: d.chat });
+  // DISC bisa 1–2 huruf urut prioritas (mis. "CS"). Pakai huruf PERTAMA
+  // (dominan) untuk saran pendekatan, tapi tampilkan gabungannya di label.
+  if (p.disc) {
+    const primary = DISC_OPTIONS.find((x) => x.key === p.disc![0]);
+    if (primary) tips.push({ label: `🎨 DISC ${p.disc}`, text: primary.chat });
+  }
   if (p.mbti && MBTI_TIP[p.mbti]) {
     tips.push({ label: `🧩 ${p.mbti}`, text: MBTI_TIP[p.mbti] });
   }

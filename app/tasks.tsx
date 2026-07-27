@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -61,15 +61,30 @@ export default function TasksScreen() {
   const { user } = useAuth();
   // Inset bawah Android/iOS — biar FAB tidak tabrakan tombol navigasi HP.
   const insets = useSafeAreaInsets();
+  // ?category=... dari kartu Task Hari Ini di Home → buka kategori itu.
+  const { category: categoryParam } = useLocalSearchParams<{ category?: string }>();
+  const validCategory = TASK_CATEGORIES.some((c) => c.key === categoryParam)
+    ? (categoryParam as TaskCategory)
+    : null;
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState<TaskCategory>('personal');
+  const [category, setCategory] = useState<TaskCategory>(
+    validCategory ?? 'personal',
+  );
   const [error, setError] = useState<string | null>(null);
 
   // Tab utama: planner harian atau catatan prioritas (Other).
   const [mainTab, setMainTab] = useState<'harian' | 'other'>('harian');
+
+  // Param kategori berubah (mis. tap task lain di Home) → pindah kategori.
+  useEffect(() => {
+    if (validCategory) {
+      setCategory(validCategory);
+      setMainTab('harian');
+    }
+  }, [validCategory]);
 
   // Drag & drop: task yang sedang diseret + posisi jari (window coords).
   const [dragTask, setDragTask] = useState<Task | null>(null);
@@ -1008,24 +1023,28 @@ function DraggableTaskRow({
   onToggle: (t: Task) => void;
   onEdit: (t: Task) => void;
 }) {
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        .activateAfterLongPress(220)
-        .onStart((e) => {
-          dragX.value = e.absoluteX;
-          dragY.value = e.absoluteY;
-          runOnJS(onStart)(item);
-        })
-        .onUpdate((e) => {
-          dragX.value = e.absoluteX;
-          dragY.value = e.absoluteY;
-        })
-        .onEnd((e) => {
-          runOnJS(onDrop)(item, e.absoluteX, e.absoluteY);
-        }),
-    [item, dragX, dragY, onStart, onDrop],
-  );
+  const pan = useMemo(() => {
+    // PENTING (fix crash iOS): `item` mengandung Timestamp (Firestore). Kalau
+    // dikirim sebagai argumen runOnJS, Reanimated mencoba serialize objek itu
+    // ke worklet → crash di iOS. Jadi `item` DITANGKAP di sisi JS (closure di
+    // bawah), worklet hanya mengoper angka (koordinat) — tidak menyentuh item.
+    const startDrag = () => onStart(item);
+    const dropDrag = (x: number, y: number) => onDrop(item, x, y);
+    return Gesture.Pan()
+      .activateAfterLongPress(220)
+      .onStart((e) => {
+        dragX.value = e.absoluteX;
+        dragY.value = e.absoluteY;
+        runOnJS(startDrag)();
+      })
+      .onUpdate((e) => {
+        dragX.value = e.absoluteX;
+        dragY.value = e.absoluteY;
+      })
+      .onEnd((e) => {
+        runOnJS(dropDrag)(e.absoluteX, e.absoluteY);
+      });
+  }, [item, dragX, dragY, onStart, onDrop]);
 
   return (
     <GestureDetector gesture={pan}>

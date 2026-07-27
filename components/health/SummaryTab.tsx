@@ -7,7 +7,7 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
-import { Greeting } from '@/components/common/Greeting';
+import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -151,11 +151,8 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      {/* Sapaan personal + tanggal */}
-      <View style={styles.greetingBlock}>
-        <Greeting heading="title" style={styles.greeting} />
-        <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
-      </View>
+      {/* Sapaan + tanggal (komponen bersama, sama di semua layar) */}
+      <GreetingHeader />
 
       {/* ===== Apple Health ===== */}
       <View style={styles.card}>
@@ -427,8 +424,6 @@ function BodyRow({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  greetingBlock: { marginBottom: 12, gap: 2 },
-  greeting: { marginBottom: 4 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

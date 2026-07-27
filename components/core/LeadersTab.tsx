@@ -612,21 +612,44 @@ function PersonalityFields({
     val: string,
     set: (v: string | null) => void,
   ) => set(cur === val ? null : val);
+
+  // DISC urut prioritas (maks 2). Tekan = tambah ke urutan; tekan lagi =
+  // buang. Huruf pertama = prioritas #1, kedua = #2. Disimpan gabungan "CS".
+  const discOrder = disc ? disc.split('') : [];
+  const toggleDisc = (key: string) => {
+    if (discOrder.includes(key)) {
+      setDisc(discOrder.filter((k) => k !== key).join('') || null);
+    } else if (discOrder.length < 2) {
+      setDisc([...discOrder, key].join(''));
+    }
+    // Sudah 2 & huruf baru → diabaikan (buang salah satu dulu).
+  };
+
   return (
     <>
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        🧭 DISC
+        🎨 DISC (pilih 1–2, urut prioritas)
       </VixText>
       <View style={styles.pWrap}>
-        {DISC_OPTIONS.map((d) => (
-          <Chip
-            key={d.key}
-            label={d.key}
-            active={disc === d.key}
-            onPress={() => pick(disc, d.key, setDisc)}
-            additionalStyle={styles.pFlex}
-          />
-        ))}
+        {DISC_OPTIONS.map((d) => {
+          const order = discOrder.indexOf(d.key); // -1 / 0 / 1
+          return (
+            <View key={d.key} style={styles.discHolder}>
+              <Chip
+                label={d.key}
+                active={order >= 0}
+                onPress={() => toggleDisc(d.key)}
+              />
+              {order >= 0 && (
+                <View style={styles.discBadge}>
+                  <VixText heading="label" additionalStyle={styles.discBadgeText}>
+                    {order + 1}
+                  </VixText>
+                </View>
+              )}
+            </View>
+          );
+        })}
       </View>
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
         💞 Love Language
@@ -675,7 +698,7 @@ function PersonalityBadges({
       {person.disc ? (
         <View style={styles.pBadge}>
           <VixText heading="label" additionalStyle={styles.pBadgeText}>
-            🧭 {person.disc}
+            🎨 {person.disc}
           </VixText>
         </View>
       ) : null}
@@ -707,6 +730,23 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   pFlex: { flex: 1 },
+  // Chip DISC + badge nomor prioritas di pojok.
+  discHolder: { position: 'relative' },
+  discBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: Color.MAIN,
+    borderWidth: 1.5,
+    borderColor: Color.BACKGROUND,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  discBadgeText: { color: Color.TEXT_REVERSE },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   pBadge: {
     backgroundColor: Color.MAIN_TRANSPARENT,

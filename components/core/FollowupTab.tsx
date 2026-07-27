@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { Greeting } from '@/components/common/Greeting';
+import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -21,7 +21,7 @@ import {
   type CoreLeader,
   type MainTeamMember,
 } from '@/lib/core';
-import { formatFullDate, MONTH_NAMES } from '@/lib/format';
+import { MONTH_NAMES } from '@/lib/format';
 
 // Tab Follow Up: tugas harian MCL — siapa yang di follow up hari ini
 // (CORE Leader + Main Team, dibagi merata dan diacak per hari) +
@@ -209,7 +209,7 @@ export function FollowupTab({
             {person.disc ? (
               <View style={styles.persBadge}>
                 <VixText heading="label" additionalStyle={styles.persBadgeText}>
-                  🧭 {person.disc}
+                  🎨 {person.disc}
                 </VixText>
               </View>
             ) : null}
@@ -281,10 +281,7 @@ export function FollowupTab({
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <Greeting heading="title" style={styles.greeting} />
-      <VixText heading="label" additionalStyle={styles.dateLine}>
-        📆 {formatFullDate(new Date())}
-      </VixText>
+      <GreetingHeader />
 
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>
@@ -376,8 +373,6 @@ export function FollowupTab({
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  greeting: { marginBottom: 4 },
-  dateLine: { marginBottom: 10 },
   error: { color: Color.DANGER, marginBottom: 8 },
   birthdayCard: {
     backgroundColor: Color.ACCENT,

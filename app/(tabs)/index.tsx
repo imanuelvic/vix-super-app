@@ -474,18 +474,28 @@ export default function HomeScreen() {
                 <PressableScale onPress={() => toggleTask(t)} hitSlop={8}>
                   <CheckCircle checked={t.done} size={22} />
                 </PressableScale>
-                <VixText additionalStyle={styles.taskCat}>
-                  {catIcon(t.category)}
-                </VixText>
-                <VixText
-                  heading="label"
-                  numberOfLines={1}
-                  additionalStyle={[
-                    styles.taskText,
-                    t.done && styles.taskTextDone,
-                  ]}>
-                  {t.title}
-                </VixText>
+                {/* Tekan isinya → buka Task di kategori task ini */}
+                <PressableScale
+                  style={styles.taskRowMain}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/tasks',
+                      params: { category: t.category },
+                    })
+                  }>
+                  <VixText additionalStyle={styles.taskCat}>
+                    {catIcon(t.category)}
+                  </VixText>
+                  <VixText
+                    heading="label"
+                    numberOfLines={1}
+                    additionalStyle={[
+                      styles.taskText,
+                      t.done && styles.taskTextDone,
+                    ]}>
+                    {t.title}
+                  </VixText>
+                </PressableScale>
               </View>
             ))}
             {todayTasks.length > 5 && (
@@ -646,6 +656,12 @@ const styles = StyleSheet.create({
   },
   taskHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  taskRowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   taskCat: { fontSize: 13, lineHeight: 18 },
   // Font sengaja lebih kecil dari label (kartu ringkas sekilas-lihat).
   taskText: { flex: 1, color: Color.TEXT_TITLE, fontSize: 12, lineHeight: 16 },

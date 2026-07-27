@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { Greeting } from '@/components/common/Greeting';
+import { GreetingHeader } from '@/components/common/Greeting';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -13,7 +13,7 @@ import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import { formatDecimal, formatFullDate, parseDecimal } from '@/lib/format';
+import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
   activeStreak,
   bumpStreak,
@@ -199,16 +199,8 @@ export function TodoTab({
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Sapaan + (tanggal & streak) */}
-        <Greeting heading="title" style={styles.greeting} />
-        <View style={styles.topRow}>
-          <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
-          <View style={styles.streakChip}>
-            <VixText heading="bold" additionalStyle={styles.streakText}>
-              🔥 {streakDays}
-            </VixText>
-          </View>
-        </View>
+        {/* Sapaan + tanggal + streak (komponen bersama) */}
+        <GreetingHeader streak={streakDays} />
 
         {/* ===== Hero: ring progress kebiasaan ===== */}
         <View style={styles.heroCard}>
@@ -447,20 +439,6 @@ export function TodoTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  greeting: { marginBottom: 4 },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  streakChip: {
-    backgroundColor: Color.FINANCE_EXPENSE,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  streakText: { color: Color.ACCENT_DARK },
   heroCard: {
     flexDirection: 'row',
     alignItems: 'center',

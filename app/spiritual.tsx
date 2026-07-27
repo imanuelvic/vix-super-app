@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
-import { Greeting } from '@/components/common/Greeting';
+import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -14,7 +14,6 @@ import { VixText } from '@/components/common/VixText';
 import { KhotbahTab } from '@/components/spiritual/KhotbahTab';
 import { useAuth } from '@/contexts/auth';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
-import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
@@ -106,16 +105,8 @@ export default function SpiritualScreen() {
           </View>
         ) : tab === 'revive' ? (
           <ScrollView contentContainerStyle={styles.content}>
-            {/* Sapaan + (tanggal & streak) */}
-            <Greeting heading="title" style={styles.greeting} />
-            <View style={styles.topRow}>
-              <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
-              <View style={styles.streakPill}>
-                <VixText heading="bold" additionalStyle={styles.streakText}>
-                  🔥 {streakShown}
-                </VixText>
-              </View>
-            </View>
+            {/* Sapaan + tanggal + streak (komponen bersama) */}
+            <GreetingHeader streak={streakShown} />
 
             {/* Reminder harian */}
             <View style={styles.reminderCard}>
@@ -181,20 +172,6 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
-  greeting: { marginBottom: 4 },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  streakPill: {
-    backgroundColor: Color.SPIRITUAL,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  streakText: { color: Color.SPIRITUAL_DARK },
   reminderCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
