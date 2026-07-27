@@ -1,4 +1,4 @@
-import { useRouter, type Href } from 'expo-router';
+import { Redirect, useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,12 +14,10 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
-import { MorningPrayerGate } from '@/components/spiritual/MorningPrayerGate';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   prayerDoneToday,
-  recordDailyPrayer,
   subscribeLoginStreak,
   type LoginStreak,
 } from '@/lib/achievements';
@@ -54,12 +52,15 @@ import {
 import {
   checkupDueReminders,
   dayDocId,
+  needsWeighIn,
   subscribeCheckups,
   subscribeHabitDay,
   subscribeHabits,
+  subscribeHealthProfile,
   type Checkup,
   type Habit,
   type HabitDay,
+  type HealthProfile,
 } from '@/lib/health';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import {
@@ -122,6 +123,7 @@ export default function HomeScreen() {
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [checkups, setCheckups] = useState<Checkup[]>([]);
+  const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
 
@@ -148,21 +150,12 @@ export default function HomeScreen() {
       subscribeFamily(user.uid, setFamily),
       subscribeDebts(user.uid, setDebts),
       subscribeCheckups(user.uid, setCheckups),
+      subscribeHealthProfile(user.uid, setProfile),
       subscribeSermons(user.uid, setSermons),
       subscribeReviveStreak(user.uid, setRevive),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
-
-  // Streak sekarang dicatat lewat konfirmasi doa pagi (bukan otomatis).
-  async function confirmMorningPrayer() {
-    if (!user) return;
-    try {
-      await recordDailyPrayer(user.uid, login ?? null, now);
-    } catch {
-      // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
-    }
-  }
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -257,6 +250,9 @@ export default function HomeScreen() {
     }`,
   }));
 
+  // Reminder timbang berat: tiap Minggu kalau belum update berat hari ini.
+  const weighInDue = profile != null && needsWeighIn(profile, now);
+
   // Reminder renungan khotbah: Rabu/Jumat 12:30–17:30, kalau catatan khotbah
   // Minggu ini SUDAH ada. Ditekan → tab Khotbah (ringkasan singkatnya).
   const sundaySermon =
@@ -275,15 +271,10 @@ export default function HomeScreen() {
     );
   }
 
-  // Doa pagi hari ini (batas jam 4) belum dikonfirmasi → lock screen.
+  // Doa pagi hari ini (batas jam 4) belum dikonfirmasi → lock screen penuh.
+  // Diarahkan ke halaman terpisah (di luar tab) supaya menutupi tab bar.
   if (!prayerDoneToday(login, now)) {
-    return (
-      <MorningPrayerGate
-        streakCount={login?.count ?? 0}
-        onConfirm={confirmMorningPrayer}
-        onOpenRevive={() => router.push('/revive')}
-      />
-    );
+    return <Redirect href="/morning-prayer" />;
   }
 
   return (
@@ -413,6 +404,25 @@ export default function HomeScreen() {
                 {r.text}
               </VixText>
             ))}
+          </PressableScale>
+        )}
+
+        {/* Reminder timbang berat tiap Minggu → langsung buka editor Data Tubuh */}
+        {weighInDue && (
+          <PressableScale
+            style={styles.weighCard}
+            onPress={() =>
+              router.push({
+                pathname: '/health',
+                params: { tab: 'summary', weighIn: '1' },
+              })
+            }>
+            <VixText heading="bold" additionalStyle={styles.weighTitle}>
+              ⚖️ Timbang Berat Minggu Ini
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.weighText}>
+              Ukur & update berat (kg) — biar progres target beratmu kelihatan.
+            </VixText>
           </PressableScale>
         )}
 
@@ -593,6 +603,19 @@ const styles = StyleSheet.create({
   },
   checkupTitle: { color: Color.MAIN_DARK },
   checkupText: { color: Color.MAIN_DARK },
+  weighCard: {
+    backgroundColor: Color.FINANCE_INVESTMENT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.FINANCE_INVESTMENT_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 3,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  weighTitle: { color: Color.FINANCE_INVESTMENT_DARK },
+  weighText: { color: Color.FINANCE_INVESTMENT_DARK },
   sermonCard: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 16,

@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,9 +38,12 @@ const TABS: BottomTab<HealthTab>[] = [
 
 export default function HealthScreen() {
   const { user } = useAuth();
+  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
-  // Default masuk ke tab To-do (permintaan pemilik app).
-  const [tab, setTab] = useState<HealthTab>('todo');
+  // Default masuk ke tab To-do; reminder Home bisa mengarahkan ke tab lain.
+  const [tab, setTab] = useState<HealthTab>(
+    tabParam === 'summary' || tabParam === 'checkup' ? tabParam : 'todo',
+  );
 
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
   // tidak memutus-sambung listener Firestore terus-menerus (hemat read).

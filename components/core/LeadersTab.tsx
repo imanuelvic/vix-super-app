@@ -15,7 +15,11 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   currentAge,
+  DISC_OPTIONS,
   HEARTS,
+  LOVE_LANG_OPTIONS,
+  loveLangLabel,
+  MBTI_TYPES,
   newCoreLeaderId,
   newMainTeamId,
   nextBirthday,
@@ -52,6 +56,9 @@ export function LeadersTab({
   const [fHeart, setFHeart] = useState('❤️');
   const [fBirthday, setFBirthday] = useState(new Date(2000, 0, 1));
   const [fPhone, setFPhone] = useState('');
+  const [fDisc, setFDisc] = useState<string | null>(null);
+  const [fMbti, setFMbti] = useState<string | null>(null);
+  const [fLove, setFLove] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Form Main Team (terpisah karena field-nya beda: pilih CL, tanpa hati).
@@ -60,6 +67,9 @@ export function LeadersTab({
   const [mtLeaderId, setMtLeaderId] = useState('');
   const [mtBirthday, setMtBirthday] = useState(new Date(2000, 0, 1));
   const [mtPhone, setMtPhone] = useState('');
+  const [mtDisc, setMtDisc] = useState<string | null>(null);
+  const [mtMbti, setMtMbti] = useState<string | null>(null);
+  const [mtLove, setMtLove] = useState<string | null>(null);
   const [mtFormError, setMtFormError] = useState<string | null>(null);
 
   const today = new Date();
@@ -84,6 +94,9 @@ export function LeadersTab({
     setFHeart('💚');
     setFBirthday(new Date(2000, 0, 1));
     setFPhone('');
+    setFDisc(null);
+    setFMbti(null);
+    setFLove(null);
     setFormError(null);
   }
 
@@ -93,6 +106,9 @@ export function LeadersTab({
     setFHeart(l.heart);
     setFBirthday(new Date(l.birthYear, l.birthMonth, l.birthDay));
     setFPhone(l.phone ?? '');
+    setFDisc(l.disc ?? null);
+    setFMbti(l.mbti ?? null);
+    setFLove(l.loveLanguage ?? null);
     setFormError(null);
   }
 
@@ -113,6 +129,9 @@ export function LeadersTab({
       birthDay: fBirthday.getDate(),
       phone: normalizePhone(fPhone), // "08…" / "+62…" / "62…" semua dirapikan
       lastFollowupDayId: editing === 'new' ? null : editing.lastFollowupDayId,
+      disc: fDisc,
+      mbti: fMbti,
+      loveLanguage: fLove,
     };
     const next =
       editing === 'new'
@@ -149,6 +168,9 @@ export function LeadersTab({
     setMtLeaderId(leaders[0]?.id ?? '');
     setMtBirthday(new Date(2000, 0, 1));
     setMtPhone('');
+    setMtDisc(null);
+    setMtMbti(null);
+    setMtLove(null);
     setMtFormError(null);
   }
 
@@ -158,6 +180,9 @@ export function LeadersTab({
     setMtLeaderId(m.leaderId);
     setMtBirthday(new Date(m.birthYear, m.birthMonth, m.birthDay));
     setMtPhone(m.phone ?? '');
+    setMtDisc(m.disc ?? null);
+    setMtMbti(m.mbti ?? null);
+    setMtLove(m.loveLanguage ?? null);
     setMtFormError(null);
   }
 
@@ -182,6 +207,9 @@ export function LeadersTab({
       birthDay: mtBirthday.getDate(),
       phone: normalizePhone(mtPhone),
       lastFollowupDayId: editingMT === 'new' ? null : editingMT.lastFollowupDayId,
+      disc: mtDisc,
+      mbti: mtMbti,
+      loveLanguage: mtLove,
     };
     const next =
       editingMT === 'new'
@@ -280,6 +308,7 @@ export function LeadersTab({
                   <VixText heading="label" additionalStyle={styles.followupLine}>
                     📱 {l.phone ? `+62${l.phone}` : 'belum ada nomor'}
                   </VixText>
+                  <PersonalityBadges person={l} />
                 </View>
               </View>
               <View style={styles.cardRight}>
@@ -350,6 +379,7 @@ export function LeadersTab({
                   <VixText heading="label" additionalStyle={styles.followupLine}>
                     📱 {m.phone ? `+62${m.phone}` : 'belum ada nomor'}
                   </VixText>
+                  <PersonalityBadges person={m} />
                 </View>
               </View>
               <View style={styles.cardRight}>
@@ -378,6 +408,7 @@ export function LeadersTab({
         visible={!!editing}
         title={editing === 'new' ? 'Tambah CORE Leader' : 'Edit CORE Leader'}
         onClose={() => setEditing(null)}>
+        <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
         <FormInput
           style={styles.formGap}
           placeholder="Nama"
@@ -431,6 +462,16 @@ export function LeadersTab({
           />
         </View>
 
+        {/* Kepribadian — bantu cara pendekatan & ide chat */}
+        <PersonalityFields
+          disc={fDisc}
+          setDisc={setFDisc}
+          mbti={fMbti}
+          setMbti={setFMbti}
+          love={fLove}
+          setLove={setFLove}
+        />
+
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {formError}
@@ -451,6 +492,7 @@ export function LeadersTab({
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />
+        </ScrollView>
       </SheetModal>
 
       {/* Bottom sheet tambah/edit Main Team */}
@@ -458,6 +500,7 @@ export function LeadersTab({
         visible={!!editingMT}
         title={editingMT === 'new' ? 'Tambah Main Team' : 'Edit Main Team'}
         onClose={() => setEditingMT(null)}>
+        <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
         <FormInput
           style={styles.formGap}
           placeholder="Nama"
@@ -511,6 +554,16 @@ export function LeadersTab({
           />
         </View>
 
+        {/* Kepribadian Main Team */}
+        <PersonalityFields
+          disc={mtDisc}
+          setDisc={setMtDisc}
+          mbti={mtMbti}
+          setMbti={setMtMbti}
+          love={mtLove}
+          setLove={setMtLove}
+        />
+
         {mtFormError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {mtFormError}
@@ -531,14 +584,137 @@ export function LeadersTab({
           onCancel={() => setEditingMT(null)}
           onConfirm={handleSaveMT}
         />
+        </ScrollView>
       </SheetModal>
 
     </View>
   );
 }
 
+// Input kepribadian: pilih 1 tiap kategori, tap lagi untuk mengosongkan.
+function PersonalityFields({
+  disc,
+  setDisc,
+  mbti,
+  setMbti,
+  love,
+  setLove,
+}: {
+  disc: string | null;
+  setDisc: (v: string | null) => void;
+  mbti: string | null;
+  setMbti: (v: string | null) => void;
+  love: string | null;
+  setLove: (v: string | null) => void;
+}) {
+  const pick = (
+    cur: string | null,
+    val: string,
+    set: (v: string | null) => void,
+  ) => set(cur === val ? null : val);
+  return (
+    <>
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        🧭 DISC
+      </VixText>
+      <View style={styles.pWrap}>
+        {DISC_OPTIONS.map((d) => (
+          <Chip
+            key={d.key}
+            label={d.key}
+            active={disc === d.key}
+            onPress={() => pick(disc, d.key, setDisc)}
+            additionalStyle={styles.pFlex}
+          />
+        ))}
+      </View>
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        💞 Love Language
+      </VixText>
+      <View style={styles.pWrap}>
+        {LOVE_LANG_OPTIONS.map((l) => (
+          <Chip
+            key={l.key}
+            label={l.label}
+            active={love === l.key}
+            onPress={() => pick(love, l.key, setLove)}
+          />
+        ))}
+      </View>
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        🧩 MBTI
+      </VixText>
+      <View style={styles.pWrap}>
+        {MBTI_TYPES.map((m) => (
+          <Chip
+            key={m}
+            label={m}
+            active={mbti === m}
+            onPress={() => pick(mbti, m, setMbti)}
+          />
+        ))}
+      </View>
+    </>
+  );
+}
+
+// Badge kecil kepribadian di kartu daftar & follow up.
+function PersonalityBadges({
+  person,
+}: {
+  person: {
+    disc?: string | null;
+    mbti?: string | null;
+    loveLanguage?: string | null;
+  };
+}) {
+  const love = loveLangLabel(person.loveLanguage);
+  if (!person.disc && !person.mbti && !love) return null;
+  return (
+    <View style={styles.badgeRow}>
+      {person.disc ? (
+        <View style={styles.pBadge}>
+          <VixText heading="label" additionalStyle={styles.pBadgeText}>
+            🧭 {person.disc}
+          </VixText>
+        </View>
+      ) : null}
+      {person.mbti ? (
+        <View style={styles.pBadge}>
+          <VixText heading="label" additionalStyle={styles.pBadgeText}>
+            🧩 {person.mbti}
+          </VixText>
+        </View>
+      ) : null}
+      {love ? (
+        <View style={styles.pBadge}>
+          <VixText heading="label" additionalStyle={styles.pBadgeText}>
+            {love}
+          </VixText>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  formScroll: { maxHeight: 480 },
+  pWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  pFlex: { flex: 1 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  pBadge: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  pBadgeText: { color: Color.MAIN_DARK },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   addFlex: { flex: 1 },

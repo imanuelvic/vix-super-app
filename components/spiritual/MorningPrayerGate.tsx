@@ -64,34 +64,12 @@ export function MorningPrayerGate({
           )}
         </Animated.View>
 
-        {/* Langkah 1: Bapa Kami */}
-        <Animated.View
-          entering={FadeInDown.delay(120).duration(350)}
-          style={styles.stepCard}>
-          <VixText heading="title" additionalStyle={styles.stepTitle}>
-            1. Doa Bapa Kami
-          </VixText>
-          <View style={styles.prayerBox}>
-            <VixText heading="paragraph" additionalStyle={styles.prayerText}>
-              {BAPA_KAMI}
-            </VixText>
-          </View>
-          <PressableScale
-            style={styles.checkRow}
-            onPress={() => setPrayed((v) => !v)}>
-            <CheckCircle checked={prayed} />
-            <VixText heading="bold" additionalStyle={styles.checkText}>
-              Sudah berdoa Bapa Kami
-            </VixText>
-          </PressableScale>
-        </Animated.View>
-
-        {/* Langkah 2: Revive */}
+        {/* Langkah 1: Revive */}
         <Animated.View
           entering={FadeInDown.delay(220).duration(350)}
           style={styles.stepCard}>
           <VixText heading="title" additionalStyle={styles.stepTitle}>
-            2. Revive
+            1. Revive
           </VixText>
           <VixText heading="label" additionalStyle={styles.stepHint}>
             Baca firman & tulis rhema hari ini di jurnal Revive.
@@ -107,6 +85,28 @@ export function MorningPrayerGate({
             <CheckCircle checked={revived} />
             <VixText heading="bold" additionalStyle={styles.checkText}>
               Sudah Revive hari ini
+            </VixText>
+          </PressableScale>
+        </Animated.View>
+
+        {/* Langkah 2: Bapa Kami */}
+        <Animated.View
+          entering={FadeInDown.delay(120).duration(350)}
+          style={styles.stepCard}>
+          <VixText heading="title" additionalStyle={styles.stepTitle}>
+            2. Doa Bapa Kami
+          </VixText>
+          <View style={styles.prayerBox}>
+            <VixText heading="paragraph" additionalStyle={styles.prayerText}>
+              {BAPA_KAMI}
+            </VixText>
+          </View>
+          <PressableScale
+            style={styles.checkRow}
+            onPress={() => setPrayed((v) => !v)}>
+            <CheckCircle checked={prayed} />
+            <VixText heading="bold" additionalStyle={styles.checkText}>
+              Sudah berdoa Bapa Kami
             </VixText>
           </PressableScale>
         </Animated.View>

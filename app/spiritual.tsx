@@ -152,7 +152,7 @@ export default function SpiritualScreen() {
                   <VixText
                     heading="label"
                     additionalStyle={styles.todayReflection}>
-                    🪞 {todayEntry.reflection}
+                    🏃🏻‍➡️ {todayEntry.reflection}
                   </VixText>
                 ) : null}
               </PressableScale>

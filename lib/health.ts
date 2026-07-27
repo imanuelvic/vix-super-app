@@ -28,6 +28,8 @@ export type HealthProfile = {
   bloodType: string | null; // golongan darah — info penting saat darurat
   eyeLeft: number | null; // minus mata kiri
   eyeRight: number | null; // minus mata kanan
+  eyeCylLeft?: number | null; // silinder mata kiri
+  eyeCylRight?: number | null; // silinder mata kanan
   updatedAt: Timestamp | null; // kapan terakhir data ini diperbarui
 };
 
@@ -43,6 +45,8 @@ export const DEFAULT_PROFILE: HealthProfile = {
   bloodType: null,
   eyeLeft: null,
   eyeRight: null,
+  eyeCylLeft: null,
+  eyeCylRight: null,
   updatedAt: null,
 };
 
@@ -68,6 +72,23 @@ export function subscribeHealthProfile(
 export function saveHealthProfile(uid: string, data: Partial<HealthProfile>) {
   const ref = doc(db, 'users', uid, 'health', 'profile');
   return setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+/**
+ * Reminder timbang berat: setiap hari MINGGU, kalau data tubuh (berat)
+ * belum diperbarui hari ini. Simpan berat tiap Minggu biar progres target
+ * berat kelihatan naik/turun. (updatedAt selalu ikut ter-set saat menyimpan
+ * Data Tubuh — yang wajib menyertakan berat.)
+ */
+export function needsWeighIn(profile: HealthProfile, now: Date): boolean {
+  if (now.getDay() !== 0) return false; // 0 = Minggu
+  if (!profile.updatedAt) return true;
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  return profile.updatedAt.toDate().getTime() < startOfToday;
 }
 
 /** Umur dari tahun lahir — cukup akurat untuk tampilan. */

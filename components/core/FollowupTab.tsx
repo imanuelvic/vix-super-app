@@ -11,7 +11,9 @@ import {
   dailyTopic,
   FOLLOWUPS_MT_PER_DAY,
   FOLLOWUPS_PER_DAY,
+  loveLangLabel,
   nextBirthday,
+  personalityTips,
   pickDailyFollowups,
   saveCoreLeaders,
   saveMainTeam,
@@ -152,20 +154,21 @@ export function FollowupTab({
     id,
     title,
     sub,
-    name,
     phone,
+    person,
     done,
     onDone,
   }: {
     id: string;
     title: string;
     sub: string | null;
-    name: string;
     phone: string | null;
+    person: { disc?: string | null; mbti?: string | null; loveLanguage?: string | null };
     done: boolean;
     onDone: () => void;
   }) {
     const topic = topicFor(id);
+    const tips = personalityTips(person);
     // Ada nomor → seluruh kartu bisa ditekan untuk buka chat WhatsApp,
     // border-nya diwarnai hijau WA sebagai penanda. Kalau sudah selesai,
     // gaya "done" yang menang (tidak perlu diarahkan chat lagi).
@@ -199,6 +202,50 @@ export function FollowupTab({
             “{topic.question}”
           </VixText>
         </View>
+
+        {/* Badge kepribadian */}
+        {(person.disc || person.mbti || loveLangLabel(person.loveLanguage)) && (
+          <View style={styles.persBadgeRow}>
+            {person.disc ? (
+              <View style={styles.persBadge}>
+                <VixText heading="label" additionalStyle={styles.persBadgeText}>
+                  🧭 {person.disc}
+                </VixText>
+              </View>
+            ) : null}
+            {person.mbti ? (
+              <View style={styles.persBadge}>
+                <VixText heading="label" additionalStyle={styles.persBadgeText}>
+                  🧩 {person.mbti}
+                </VixText>
+              </View>
+            ) : null}
+            {loveLangLabel(person.loveLanguage) ? (
+              <View style={styles.persBadge}>
+                <VixText heading="label" additionalStyle={styles.persBadgeText}>
+                  {loveLangLabel(person.loveLanguage)}
+                </VixText>
+              </View>
+            ) : null}
+          </View>
+        )}
+
+        {/* Ide pendekatan sesuai kepribadian */}
+        {tips.length > 0 && (
+          <View style={styles.tipBox}>
+            <VixText heading="label" additionalStyle={styles.tipHeader}>
+              💡 Ide pendekatan
+            </VixText>
+            {tips.map((t) => (
+              <VixText key={t.label} heading="label" additionalStyle={styles.tipItem}>
+                <VixText heading="bold" additionalStyle={styles.tipItemLabel}>
+                  {t.label}:{' '}
+                </VixText>
+                {t.text}
+              </VixText>
+            ))}
+          </View>
+        )}
 
         {/* Info hanya muncul kalau belum ada nomor; kalau ada, kartu langsung
             bisa ditekan untuk chat (border hijau WA jadi penanda). */}
@@ -294,8 +341,8 @@ export function FollowupTab({
           id: l.id,
           title: `${l.heart} ${l.name}`,
           sub: null,
-          name: l.name,
           phone: l.phone,
+          person: l,
           done: l.lastFollowupDayId === dayId,
           onDone: () => handleDoneLeader(l),
         }),
@@ -316,8 +363,8 @@ export function FollowupTab({
             id: m.id,
             title: `👤 ${m.name}`,
             sub: cl ? `Main Team ${cl.heart} ${cl.name}` : 'Main Team',
-            name: m.name,
             phone: m.phone,
+            person: m,
             done: m.lastFollowupDayId === dayId,
             onDone: () => handleDoneMember(m),
           });
@@ -392,6 +439,23 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   questionText: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
+  persBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  persBadge: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  persBadgeText: { color: Color.MAIN_DARK },
+  tipBox: {
+    backgroundColor: Color.ACCENT,
+    borderRadius: 10,
+    padding: 10,
+    gap: 4,
+  },
+  tipHeader: { color: Color.ACCENT_DARK },
+  tipItem: { color: Color.TEXT_PARAGRAPH },
+  tipItemLabel: { color: Color.ACCENT_DARK },
   waButton: {
     alignItems: 'center',
     paddingVertical: 10,

@@ -170,7 +170,7 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
                 heading="label"
                 numberOfLines={3}
                 additionalStyle={styles.reflectionText}>
-                🪞 {s.reflection}
+                🏃🏻‍➡️ {s.reflection}
               </VixText>
             ) : null}
           </PressableScale>
@@ -231,11 +231,11 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
             editable={!busy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            🪞 Perenungan yang saya dapat
+            🏃🏻‍➡️ Application
           </VixText>
           <FormInput
             style={styles.multiInputTall}
-            placeholder="Apa yang Tuhan bicarakan ke saya lewat khotbah ini?"
+            placeholder="Apa yang mau kamu terapkan dari khotbah ini?"
             value={fReflection}
             onChangeText={setFReflection}
             multiline

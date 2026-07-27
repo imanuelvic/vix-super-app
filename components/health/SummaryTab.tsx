@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
-import { Greeting } from '@/components/common/Greeting';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -58,6 +59,18 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
     if (hkStatus === 'ok') loadHk();
   }, [hkStatus, loadHk]);
 
+  // Dari reminder timbang berat di Home (?weighIn=1) → buka editor sekali.
+  const { weighIn } = useLocalSearchParams<{ weighIn?: string }>();
+  const weighInOpened = useRef(false);
+  useEffect(() => {
+    if (weighIn === '1' && !weighInOpened.current) {
+      weighInOpened.current = true;
+      openEdit();
+    }
+    // openEdit stabil secara fungsional; cukup bereaksi pada param.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weighIn]);
+
   async function handleConnect() {
     setHkBusy(true);
     await requestHealthAccess(); // memunculkan dialog izin iOS
@@ -73,6 +86,8 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
   const [fBlood, setFBlood] = useState<string | null>(null);
   const [fEyeL, setFEyeL] = useState('');
   const [fEyeR, setFEyeR] = useState('');
+  const [fCylL, setFCylL] = useState('');
+  const [fCylR, setFCylR] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -92,6 +107,8 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
     setFBlood(profile.bloodType);
     setFEyeL(profile.eyeLeft != null ? String(profile.eyeLeft) : '');
     setFEyeR(profile.eyeRight != null ? String(profile.eyeRight) : '');
+    setFCylL(profile.eyeCylLeft != null ? String(profile.eyeCylLeft) : '');
+    setFCylR(profile.eyeCylRight != null ? String(profile.eyeCylRight) : '');
     setFormError(null);
     setEditOpen(true);
   }
@@ -121,6 +138,8 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
         bloodType: fBlood,
         eyeLeft: fEyeL.trim() ? parseDecimal(fEyeL) : null,
         eyeRight: fEyeR.trim() ? parseDecimal(fEyeR) : null,
+        eyeCylLeft: fCylL.trim() ? parseDecimal(fCylL) : null,
+        eyeCylRight: fCylR.trim() ? parseDecimal(fCylR) : null,
       });
       setEditOpen(false);
     } catch {
@@ -134,7 +153,7 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
     <ScrollView contentContainerStyle={styles.content}>
       {/* Sapaan personal + tanggal */}
       <View style={styles.greetingBlock}>
-        <Greeting heading="subheader" color={Color.MAIN_DARK} />
+        <Greeting heading="title" style={styles.greeting} />
         <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
       </View>
 
@@ -216,6 +235,14 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
           value={
             profile.eyeLeft != null || profile.eyeRight != null
               ? `${profile.eyeLeft != null ? formatDecimal(profile.eyeLeft) : '–'} / ${profile.eyeRight != null ? formatDecimal(profile.eyeRight) : '–'}`
+              : 'belum diisi'
+          }
+        />
+        <BodyRow
+          label="Silinder mata (L/R)"
+          value={
+            profile.eyeCylLeft != null || profile.eyeCylRight != null
+              ? `${profile.eyeCylLeft != null ? formatDecimal(profile.eyeCylLeft) : '–'} / ${profile.eyeCylRight != null ? formatDecimal(profile.eyeCylRight) : '–'}`
               : 'belum diisi'
           }
         />
@@ -319,11 +346,11 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
               />
             ))}
           </View>
-          <VixText heading="label">Minus mata</VixText>
+          <VixText heading="label">Minus mata (kiri / kanan)</VixText>
           <View style={styles.eyeRow}>
             <FormInput
               style={styles.eyeInput}
-              placeholder="Kiri"
+              placeholder="Minus kiri"
               keyboardType="decimal-pad"
               value={fEyeL}
               onChangeText={setFEyeL}
@@ -331,10 +358,29 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
             />
             <FormInput
               style={styles.eyeInput}
-              placeholder="Kanan"
+              placeholder="Minus kanan"
               keyboardType="decimal-pad"
               value={fEyeR}
               onChangeText={setFEyeR}
+              editable={!saving}
+            />
+          </View>
+          <VixText heading="label">Silinder mata (kiri / kanan)</VixText>
+          <View style={styles.eyeRow}>
+            <FormInput
+              style={styles.eyeInput}
+              placeholder="Silinder kiri"
+              keyboardType="decimal-pad"
+              value={fCylL}
+              onChangeText={setFCylL}
+              editable={!saving}
+            />
+            <FormInput
+              style={styles.eyeInput}
+              placeholder="Silinder kanan"
+              keyboardType="decimal-pad"
+              value={fCylR}
+              onChangeText={setFCylR}
               editable={!saving}
             />
           </View>
@@ -382,6 +428,7 @@ function BodyRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   greetingBlock: { marginBottom: 12, gap: 2 },
+  greeting: { marginBottom: 4 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

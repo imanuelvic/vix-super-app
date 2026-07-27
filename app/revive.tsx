@@ -30,7 +30,7 @@ import {
 } from '@/lib/spiritual';
 
 // Tulis/edit jurnal REVIVE ✍️ — halaman sendiri (bukan mode di dalam
-// layar Spiritual) dengan KeyboardAvoidingView supaya kolom Refleksi
+// layar Spiritual) dengan KeyboardAvoidingView supaya kolom Application
 // tidak ketutupan keyboard iPhone.
 export default function ReviveEditorScreen() {
   const router = useRouter();
@@ -138,7 +138,7 @@ export default function ReviveEditorScreen() {
           <ActivityIndicator color={Color.MAIN} />
         </View>
       ) : (
-        /* Keyboard iOS tidak lagi menutupi kolom Refleksi */
+        /* Keyboard iOS tidak lagi menutupi kolom Application */
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -172,7 +172,7 @@ export default function ReviveEditorScreen() {
               editable={!busy}
             />
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              🪞 Refleksi & Komitmen (opsional)
+              🏃🏻‍➡️ Application
             </VixText>
             <FormInput
               style={styles.mediumInput}

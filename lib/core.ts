@@ -25,6 +25,10 @@ export type CoreLeader = {
   birthDay: number;
   phone: string | null; // digit SETELAH +62 (semua CL orang Indonesia)
   lastFollowupDayId: string | null; // "YYYY-MM-DD" terakhir di follow up
+  // Kepribadian (opsional) — bantu cara pendekatan & ide chat.
+  disc?: string | null; // 'D' | 'I' | 'S' | 'C'
+  mbti?: string | null; // mis. 'INFJ'
+  loveLanguage?: string | null; // key dari LOVE_LANG_OPTIONS
 };
 
 // Data awal para CL — tampil sebelum dokumen pernah disimpan.
@@ -60,6 +64,10 @@ export type MainTeamMember = {
   birthDay: number;
   phone: string | null; // digit setelah +62
   lastFollowupDayId: string | null;
+  // Kepribadian (opsional).
+  disc?: string | null;
+  mbti?: string | null;
+  loveLanguage?: string | null;
 };
 
 export function subscribeMainTeam(
@@ -72,7 +80,7 @@ export function subscribeMainTeam(
     ref,
     (snapshot) => {
       const list = snapshot.data()?.list as MainTeamMember[] | undefined;
-      onChange((list ?? []).map((m) => ({ ...m, phone: m.phone ?? null })));
+      onChange((list ?? []).map((m) => ({ ...m, ...normalizePersonality(m) })));
     },
     onError,
   );
@@ -99,8 +107,10 @@ export function subscribeCoreLeaders(
     ref,
     (snapshot) => {
       const list = snapshot.data()?.list as CoreLeader[] | undefined;
-      // Data lama mungkin belum punya field phone — lengkapi dengan null.
-      onChange((list ?? DEFAULT_LEADERS).map((l) => ({ ...l, phone: l.phone ?? null })));
+      // Data lama mungkin belum punya field baru — lengkapi dengan null.
+      onChange(
+        (list ?? DEFAULT_LEADERS).map((l) => ({ ...l, ...normalizePersonality(l) })),
+      );
     },
     onError,
   );
@@ -118,6 +128,97 @@ export function normalizePhone(raw: string): string | null {
 export function waLink(phone: string, text?: string): string {
   const base = `https://wa.me/62${phone}`;
   return text ? `${base}?text=${encodeURIComponent(text)}` : base;
+}
+
+// ==================== Kepribadian 🧠 (DISC · MBTI · Love Language) ====================
+// Dipakai untuk memahami tiap orang & memberi ide cara chat / pendekatan yang
+// pas dengan kepribadiannya saat menggembalakan.
+
+type HasPersonality = {
+  phone?: string | null;
+  disc?: string | null;
+  mbti?: string | null;
+  loveLanguage?: string | null;
+};
+
+/** Pastikan field opsional bernilai null (bukan undefined) — aman disimpan. */
+function normalizePersonality(p: HasPersonality) {
+  return {
+    phone: p.phone ?? null,
+    disc: p.disc ?? null,
+    mbti: p.mbti ?? null,
+    loveLanguage: p.loveLanguage ?? null,
+  };
+}
+
+/** DISC — gaya dominan + cara chat/pendekatan yang cocok. */
+export const DISC_OPTIONS: { key: string; label: string; chat: string }[] = [
+  { key: 'D', label: 'D · Dominance', chat: 'Langsung ke inti & singkat. Hargai ketegasan, beri target/tantangan, jangan bertele-tele.' },
+  { key: 'I', label: 'I · Influence', chat: 'Ceria & antusias, apresiasi idenya, ajak ngobrol seru atau ketemu rame-rame.' },
+  { key: 'S', label: 'S · Steadiness', chat: 'Lembut, sabar, tanya kabar tulus. Beri rasa aman & konsisten, jangan mendesak.' },
+  { key: 'C', label: 'C · Conscientiousness', chat: 'Jelas, rapi, beri alasan & data. Hargai ketelitian, hindari basa-basi berlebih.' },
+];
+
+/** 5 Love Language + ide tindakan yang bikin dia merasa dikasihi. */
+export const LOVE_LANG_OPTIONS: { key: string; label: string; idea: string }[] = [
+  { key: 'words', label: '💬 Kata Afirmasi', idea: 'Kirim pujian tulus / ayat penguatan — sebut hal spesifik yang kamu hargai darinya.' },
+  { key: 'time', label: '⏳ Waktu Berkualitas', idea: 'Ajak ngopi / video call fokus tanpa main HP — hadir penuh untuk dia.' },
+  { key: 'gifts', label: '🎁 Hadiah', idea: 'Kasih kejutan kecil bermakna (jajan favorit, buku, stiker) — tanda kamu ingat dia.' },
+  { key: 'service', label: '🤝 Melayani', idea: 'Tawarkan bantuan konkret: antar-jemput, doakan hal spesifik, bantu tugas yang berat.' },
+  { key: 'touch', label: '🤗 Sentuhan Fisik', idea: 'Salaman hangat / side-hug / tepuk pundak saat ketemu — kehadiran fisik yang menguatkan.' },
+];
+
+/** 16 tipe MBTI. */
+export const MBTI_TYPES = [
+  'INTJ', 'INTP', 'ENTJ', 'ENTP',
+  'INFJ', 'INFP', 'ENFJ', 'ENFP',
+  'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ',
+  'ISTP', 'ISFP', 'ESTP', 'ESFP',
+];
+
+/** Ide singkat cara terhubung tiap tipe MBTI. */
+export const MBTI_TIP: Record<string, string> = {
+  INTJ: 'Suka visi & strategi. Ajak diskusi ide besar & tujuan jangka panjang, hargai kemandiriannya.',
+  INTP: 'Pemikir logis. Ajak eksplorasi konsep, beri ruang berpikir, jangan paksa basa-basi.',
+  ENTJ: 'Pemimpin natural. Bicara target & solusi, libatkan dalam mengambil keputusan.',
+  ENTP: 'Suka ide baru & debat sehat. Ajak brainstorming seru, tantang dengan pertanyaan.',
+  INFJ: 'Idealis & dalam. Obrolan makna & hati, dengarkan sungguh, jaga privasinya.',
+  INFP: 'Lembut & bernilai. Hargai perasaannya, beri afirmasi, ciptakan ruang aman untuk terbuka.',
+  ENFJ: 'Peduli orang. Ajak melayani bareng, apresiasi kepeduliannya, ngobrol dari hati.',
+  ENFP: 'Ceria & penuh ide. Ajak kegiatan seru & spontan, dukung mimpi-mimpinya.',
+  ISTJ: 'Setia & teratur. Komunikasi jelas & konsisten, hargai tanggung jawabnya, tepati janji.',
+  ISFJ: 'Penuh perhatian. Balas kebaikannya, tanya kabar tulus, buat dia merasa dihargai.',
+  ESTJ: 'Tegas & praktis. To the point, hargai kerja kerasnya, beri arahan yang jelas.',
+  ESFJ: 'Hangat & sosial. Ajak kumpul, apresiasi di depan orang, rawat hubungan.',
+  ISTP: 'Praktis & tenang. Ajak aktivitas nyata, beri ruang, jangan banyak drama.',
+  ISFP: 'Peka & artistik. Hargai keunikannya, ajak hal santai & indah, bersikap tulus.',
+  ESTP: 'Aktif & spontan. Ajak seru-seruan & tantangan, komunikasi langsung & energik.',
+  ESFP: 'Ramai & fun. Ajak hangout & rayakan momen, bawa energi positif.',
+};
+
+/** Ringkasan ide pendekatan sesuai kepribadian yang sudah diisi. */
+export function personalityTips(p: {
+  disc?: string | null;
+  mbti?: string | null;
+  loveLanguage?: string | null;
+}): { label: string; text: string }[] {
+  const tips: { label: string; text: string }[] = [];
+  const d = p.disc ? DISC_OPTIONS.find((x) => x.key === p.disc) : undefined;
+  if (d) tips.push({ label: `🧭 DISC ${d.key}`, text: d.chat });
+  if (p.mbti && MBTI_TIP[p.mbti]) {
+    tips.push({ label: `🧩 ${p.mbti}`, text: MBTI_TIP[p.mbti] });
+  }
+  const ll = p.loveLanguage
+    ? LOVE_LANG_OPTIONS.find((x) => x.key === p.loveLanguage)
+    : undefined;
+  if (ll) tips.push({ label: ll.label, text: ll.idea });
+  return tips;
+}
+
+/** Label ringkas Love Language untuk badge (tanpa deskripsi). */
+export function loveLangLabel(key: string | null | undefined): string | null {
+  if (!key) return null;
+  return LOVE_LANG_OPTIONS.find((x) => x.key === key)?.label ?? null;
 }
 
 /** Simpan seluruh daftar CL (array kecil, ditulis utuh). */

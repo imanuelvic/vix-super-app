@@ -63,6 +63,12 @@ function RootNavigator() {
         {/* Home + tab bar utama */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
+        {/* Lock screen doa pagi — full screen, tak bisa di-swipe balik */}
+        <Stack.Screen
+          name="morning-prayer"
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+
         {/* Fitur utama — urut mengikuti grid di Home, dikelompokkan per fitur
             (fitur induk + sub-halamannya dipisah baris kosong antar grup) */}
         <Stack.Screen name="tasks" options={{ headerShown: false }} />
