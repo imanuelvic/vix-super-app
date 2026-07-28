@@ -66,7 +66,7 @@ export const HOUSE_LOG_TYPES: {
 export type HouseLog = {
   id: string;
   type: HouseLogType;
-  title: string; // keterangan singkat, mis. "Isi token 100rb"
+  title: string;
   note: string; // catatan tambahan, boleh kosong
   cost: number; // Rp
   date: Timestamp;

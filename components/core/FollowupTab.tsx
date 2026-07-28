@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useMemo, useState } from 'react';
-import { Linking, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
@@ -134,18 +134,6 @@ export function FollowupTab({
     } finally {
       setEditingIdea(null);
       setIBusy(false);
-    }
-  }
-
-  // Share ide + catatannya ke grup MT lewat share sheet iOS (pilih WhatsApp).
-  async function shareIdea(idea: CoreIdea) {
-    const message = `💡 Idea For CORE\n\n${idea.text}${
-      idea.note ? `\n\n📝 ${idea.note}` : ''
-    }`;
-    try {
-      await Share.share({ message });
-    } catch {
-      // Dibatalkan user — abaikan.
     }
   }
 

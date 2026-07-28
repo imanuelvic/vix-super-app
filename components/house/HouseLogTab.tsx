@@ -10,6 +10,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
@@ -136,37 +137,33 @@ export function HouseLogTab({
       <ScrollView contentContainerStyle={styles.content}>
         {group === 'utility' ? (
           /* Ringkasan Air-Listrik: total bulan ini per jenis + terakhir isi */
-          <View style={styles.summaryCard}>
-            <VixText heading="label" additionalStyle={styles.summaryLabel}>
+          <SummaryCard>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               Pemakaian bulan ini
             </VixText>
             <View style={styles.utilRow}>
-              <VixText heading="bold" additionalStyle={styles.utilText}>
+              <VixText heading="bold" additionalStyle={summaryText.value}>
                 💧 Air PAM
               </VixText>
-              <VixText heading="bold" additionalStyle={styles.utilText}>
+              <VixText heading="bold" additionalStyle={summaryText.value}>
                 {formatRupiah(monthTotalByType(items, 'water', now))}
               </VixText>
             </View>
             <View style={styles.utilRow}>
-              <VixText heading="bold" additionalStyle={styles.utilText}>
+              <VixText heading="bold" additionalStyle={summaryText.value}>
                 ⚡ Listrik (token)
               </VixText>
-              <VixText heading="bold" additionalStyle={styles.utilText}>
+              <VixText heading="bold" additionalStyle={summaryText.value}>
                 {formatRupiah(monthTotalByType(items, 'electric', now))}
               </VixText>
             </View>
-          </View>
+          </SummaryCard>
         ) : (
           /* Ringkasan Log: total pengeluaran rumah lain bulan ini */
-          <View style={styles.summaryCard}>
-            <VixText heading="label" additionalStyle={styles.summaryLabel}>
-              Pengeluaran rumah bulan ini
-            </VixText>
-            <VixText heading="subheader" additionalStyle={styles.summaryValue}>
-              {formatRupiah(summary.monthTotal)}
-            </VixText>
-          </View>
+          <SummaryCard
+            label="Pengeluaran rumah bulan ini"
+            value={formatRupiah(summary.monthTotal)}
+          />
         )}
 
         {group === 'utility' && (
@@ -243,7 +240,7 @@ export function HouseLogTab({
         </View>
         <FormInput
           style={styles.formGap}
-          placeholder="Keterangan (mis. Isi token 100rb)"
+          placeholder="Keterangan"
           value={fTitle}
           onChangeText={setFTitle}
           editable={!busy}
@@ -297,17 +294,7 @@ export function HouseLogTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  summaryCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 6,
-    marginBottom: 10,
-  },
-  summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  summaryValue: { color: Color.TEXT_REVERSE },
   utilRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  utilText: { color: Color.TEXT_REVERSE },
   quickCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

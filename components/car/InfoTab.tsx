@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { CAR_INFO, nextStnk } from '@/lib/car';
 import { formatDate } from '@/lib/format';
@@ -23,7 +24,7 @@ export function InfoTab() {
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {/* Kartu identitas mobil */}
-      <View style={styles.heroCard}>
+      <SummaryCard center>
         <VixText additionalStyle={styles.heroEmoji}>🚗</VixText>
         <VixText heading="subheader" additionalStyle={styles.heroName}>
           {CAR_INFO.name}
@@ -31,7 +32,7 @@ export function InfoTab() {
         <VixText heading="label" additionalStyle={styles.heroSub}>
           {CAR_INFO.color} · {CAR_INFO.plate}
         </VixText>
-      </View>
+      </SummaryCard>
 
       {/* Pengingat STNK */}
       <View style={[styles.stnkCard, stnkSoon && styles.stnkSoon]}>
@@ -85,14 +86,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  heroCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 10,
-  },
   heroEmoji: { fontSize: 44, lineHeight: 54 },
   heroName: { color: Color.TEXT_REVERSE, textAlign: 'center' },
   heroSub: { color: Color.TEXT_ON_DARK_MUTED },

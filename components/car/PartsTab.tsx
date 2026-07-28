@@ -6,6 +6,7 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -69,21 +70,19 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Ringkasan kondisi */}
-        <View style={styles.summaryCard}>
-          <VixText heading="label" additionalStyle={styles.summaryLabel}>
-            Kondisi perawatan
-          </VixText>
-          <VixText heading="subheader" additionalStyle={styles.summaryValue}>
-            {needsAttention === 0
+        <SummaryCard
+          label="Kondisi perawatan"
+          value={
+            needsAttention === 0
               ? 'Semua terkendali 🙌'
-              : `${needsAttention} bagian perlu perhatian ⚠️`}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.summaryLabel}>
-            {unknownCount > 0
+              : `${needsAttention} bagian perlu perhatian ⚠️`
+          }
+          sub={
+            unknownCount > 0
               ? `${unknownCount} bagian belum pernah dicatat — tap untuk mengisi.`
-              : 'Tap bagian mana pun untuk memperbarui tanggalnya.'}
-          </VixText>
-        </View>
+              : 'Tap bagian mana pun untuk memperbarui tanggalnya.'
+          }
+        />
 
         {PART_GROUPS.map((group) => (
           <View key={group.key}>
@@ -171,15 +170,6 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  summaryCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 4,
-    marginBottom: 6,
-  },
-  summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  summaryValue: { color: Color.TEXT_REVERSE },
   groupTitle: { marginTop: 14, marginBottom: 8 },
   row: {
     backgroundColor: Color.CONTAINER,

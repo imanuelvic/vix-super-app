@@ -10,6 +10,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -142,17 +143,11 @@ export function LogTab({ items }: { items: CarLog[] }) {
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Ringkasan total */}
-        <View style={styles.summaryCard}>
-          <VixText heading="label" additionalStyle={styles.summaryLabel}>
-            Total pengeluaran mobil
-          </VixText>
-          <VixText heading="subheader" additionalStyle={styles.summaryValue}>
-            {formatRupiah(stats.totalAll)}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.summaryLabel}>
-            Bulan ini: {formatRupiah(stats.totalMonth)}
-          </VixText>
-        </View>
+        <SummaryCard
+          label="Total pengeluaran mobil"
+          value={formatRupiah(stats.totalAll)}
+          sub={`Bulan ini: ${formatRupiah(stats.totalMonth)}`}
+        />
 
         {/* Info cepat: terakhir isi bensin & servis */}
         <View style={styles.quickCard}>
@@ -318,15 +313,6 @@ export function LogTab({ items }: { items: CarLog[] }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  summaryCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 4,
-    marginBottom: 10,
-  },
-  summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  summaryValue: { color: Color.TEXT_REVERSE },
   quickCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

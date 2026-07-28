@@ -6,6 +6,7 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -53,14 +54,10 @@ export default function BookScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Ringkasan progres baca */}
-        <View style={styles.summaryCard}>
-          <VixText heading="label" additionalStyle={styles.summaryLabel}>
-            Progres baca
-          </VixText>
-          <VixText heading="subheader" additionalStyle={styles.summaryValue}>
-            {readCount}/{BOOKS.length} buku selesai 📖
-          </VixText>
-        </View>
+        <SummaryCard
+          label="Progres baca"
+          value={`${readCount}/${BOOKS.length} buku selesai 📖`}
+        />
 
         {/* Waktu baca — nyambung ke Morning Task */}
         <View style={styles.noteCard}>
@@ -151,15 +148,6 @@ export default function BookScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
-  summaryCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 4,
-    marginBottom: 10,
-  },
-  summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  summaryValue: { color: Color.TEXT_REVERSE },
   noteCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

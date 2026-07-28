@@ -11,6 +11,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -143,17 +144,17 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Ringkasan roadmap */}
-        <View style={styles.heroCard}>
-          <VixText heading="label" additionalStyle={styles.heroLabel}>
+        <SummaryCard>
+          <VixText heading="label" additionalStyle={summaryText.label}>
             💻 Software Engineer · Mobile Developer NDC
           </VixText>
-          <VixText heading="subheader" additionalStyle={styles.heroValue}>
+          <VixText heading="subheader" additionalStyle={summaryText.value}>
             {doneCount}{' '}
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               dari {items.length} prioritas selesai
             </VixText>
           </VixText>
-        </View>
+        </SummaryCard>
 
         <PrimaryButton
           label="Tambah Prioritas"
@@ -341,15 +342,6 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  heroCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 4,
-    marginBottom: 10,
-  },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  heroValue: { color: Color.TEXT_REVERSE },
   addButton: { marginBottom: 12 },
   error: { color: Color.DANGER, marginBottom: 8 },
   empty: { textAlign: 'center', marginTop: 8 },

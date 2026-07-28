@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { SummaryCard } from '@/components/common/SummaryCard';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
@@ -256,18 +257,13 @@ export default function DebtsScreen() {
         // key=scrollKey → ScrollView re-mount tiap tab ditekan (scroll ke atas)
         <ScrollView key={scrollKey} contentContainerStyle={styles.content}>
           {/* Ringkasan total sisa arah ini */}
-          <View style={styles.heroCard}>
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
-              {isMine ? '💸 Total hutang saya' : '💰 Total ditagih ke orang'}
-            </VixText>
-            <VixText heading="subheader" additionalStyle={styles.heroValue}>
-              {formatRupiah(totalRemaining)}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
-              {list.filter((d) => !d.done).length} belum lunas ·{' '}
-              {list.filter((d) => d.done).length} lunas
-            </VixText>
-          </View>
+          <SummaryCard
+            label={isMine ? '💸 Total hutang saya' : '💰 Total ditagih ke orang'}
+            value={formatRupiah(totalRemaining)}
+            sub={`${list.filter((d) => !d.done).length} belum lunas · ${
+              list.filter((d) => d.done).length
+            } lunas`}
+          />
 
           <PrimaryButton
             label="Tambah Hutang"
@@ -588,15 +584,6 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
-  heroCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 4,
-    marginBottom: 12,
-  },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  heroValue: { color: Color.TEXT_REVERSE },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
