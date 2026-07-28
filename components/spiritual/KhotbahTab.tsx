@@ -231,7 +231,7 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
             editable={!busy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            🏃🏻‍➡️ Application
+            🏃🏻‍➡️ Aplikasi
           </VixText>
           <FormInput
             style={styles.multiInputTall}

@@ -92,11 +92,13 @@ function RootNavigator() {
 
         <Stack.Screen name="trading" options={{ headerShown: false }} />
         <Stack.Screen name="car" options={{ headerShown: false }} />
+        <Stack.Screen name="house" options={{ headerShown: false }} />
         <Stack.Screen name="wheel" options={{ headerShown: false }} />
         <Stack.Screen name="career" options={{ headerShown: false }} />
         <Stack.Screen name="family" options={{ headerShown: false }} />
         <Stack.Screen name="fun" options={{ headerShown: false }} />
         <Stack.Screen name="fitness" options={{ headerShown: false }} />
+        <Stack.Screen name="book" options={{ headerShown: false }} />
 
         {/* Diakses dari kartu welcome & tombol streak di Home */}
         <Stack.Screen name="timeline" options={{ headerShown: false }} />

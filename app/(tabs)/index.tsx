@@ -23,6 +23,11 @@ import {
   type LoginStreak,
 } from '@/lib/achievements';
 import {
+  countCarAttention,
+  subscribePartStatus,
+  type PartStatusMap,
+} from '@/lib/car';
+import {
   roadmapDaysUntil,
   roadmapReminderWindow,
   subscribeRoadmap,
@@ -64,6 +69,13 @@ import {
 } from '@/lib/donor';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import { formatDate, formatShortDayDate } from '@/lib/format';
+import {
+  MORNING_TASKS,
+  morningWindowActive,
+  setMorningDone,
+  subscribeMorningDay,
+  type MorningDayMap,
+} from '@/lib/morning';
 import {
   checkupDueReminders,
   dayDocId,
@@ -109,6 +121,8 @@ const FEATURES: {
     | 'car.fill'
     | 'target'
     | 'book.closed.fill'
+    | 'books.vertical.fill'
+    | 'house.fill'
     | 'briefcase.fill'
     | 'person.3.fill'
     | 'mountain.2.fill'
@@ -129,6 +143,8 @@ const FEATURES: {
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
   { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
   { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
+  { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
+  { key: 'house', label: 'Home', icon: 'house.fill', route: '/house', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
 ];
 
 export default function HomeScreen() {
@@ -153,6 +169,8 @@ export default function HomeScreen() {
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [coreIdeas, setCoreIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
   const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
+  const [carParts, setCarParts] = useState<PartStatusMap>({});
+  const [morningDone, setMorning] = useState<MorningDayMap>({});
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
   // khotbah yang bergantung waktu.
@@ -182,6 +200,8 @@ export default function HomeScreen() {
       subscribeRoadmap(user.uid, setRoadmap),
       subscribeCoreIdeas(user.uid, setCoreIdeas),
       subscribeDonor(user.uid, setDonor),
+      subscribePartStatus(user.uid, setCarParts),
+      subscribeMorningDay(user.uid, todayId, setMorning),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -199,6 +219,8 @@ export default function HomeScreen() {
     // Revive belum ditulis hari ini = 1 (streak doc menyimpan hari terakhir).
     spiritual:
       revive === undefined ? 0 : revive?.lastDayId === todayId ? 0 : 1,
+    // Jumlah part mobil yang perlu perhatian (segera/lewat jadwal).
+    car: countCarAttention(carParts, now),
   };
 
   // Task hari ini — bisa dicentang langsung dari Home. Belum selesai di atas.
@@ -223,6 +245,18 @@ export default function HomeScreen() {
     } catch {
       // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
     }
+  }
+
+  // Morning Task 🌅 — tampil hanya di jendela pagi 04.00–08.00.
+  const morningActive = morningWindowActive(now);
+  const morningUndone = MORNING_TASKS.filter((t) => !morningDone[t.id]).length;
+
+  function toggleMorning(id: string) {
+    if (!user) return;
+    const next = !morningDone[id];
+    // Optimistis: langsung ubah tampilan, snapshot akan mengoreksi bila gagal.
+    setMorning((prev) => ({ ...prev, [id]: next }));
+    setMorningDone(user.uid, todayId, id, next).catch(() => {});
   }
 
   // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan
@@ -426,6 +460,42 @@ export default function HomeScreen() {
           </PressableScale>
         </Animated.View>
 
+        {/* Morning Task 🌅 — checklist rutinitas pagi (tampil 04.00–08.00) */}
+        {morningActive && (
+          <View style={styles.morningCard}>
+            <View style={styles.morningHeader}>
+              <VixText heading="bold" additionalStyle={styles.morningTitle}>
+                🌅 Morning Task
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.morningTitle}>
+                {morningUndone > 0
+                  ? `${morningUndone} belum · 04.00–08.00`
+                  : 'beres semua 🎉'}
+              </VixText>
+            </View>
+            {MORNING_TASKS.map((t) => {
+              const done = !!morningDone[t.id];
+              return (
+                <PressableScale
+                  key={t.id}
+                  style={styles.morningRow}
+                  onPress={() => toggleMorning(t.id)}
+                  hitSlop={4}>
+                  <CheckCircle checked={done} size={22} />
+                  <VixText
+                    heading="label"
+                    additionalStyle={[
+                      styles.morningText,
+                      done && styles.morningTextDone,
+                    ]}>
+                    {t.label}
+                  </VixText>
+                </PressableScale>
+              );
+            })}
+          </View>
+        )}
+
         {/* Reminder ulang tahun keluarga (hari ini s/d 7 hari) */}
         {famBirthdays.length > 0 && (
           <ReminderCard
@@ -547,7 +617,9 @@ export default function HomeScreen() {
             <PressableScale
               style={styles.taskHeader}
               onPress={() => router.push('/tasks')}>
-              <VixText heading="title">✅ Task Hari Ini</VixText>
+              <VixText heading="bold" additionalStyle={styles.taskTitle}>
+                ✅ Task Hari Ini
+              </VixText>
               <View style={styles.taskHeaderRight}>
                 <VixText heading="label">
                   {todayUndone > 0 ? `${todayUndone} belum` : 'beres semua 🎉'}
@@ -658,54 +730,83 @@ const styles = StyleSheet.create({
     padding: 22,
     marginBottom: 24,
   },
-  brandRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  visitCard: {
+  // Morning Task 🌅 — kartu checklist pagi (tema krem, senada suasana pagi).
+  morningCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Color.ACCENT_DARK,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    gap: 8,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  morningHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  morningTitle: { color: Color.ACCENT_DARK },
+  morningRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  morningText: { flex: 1, color: Color.TEXT_TITLE },
+  morningTextDone: {
+    color: Color.ACCENT_DARK,
+    textDecorationLine: 'line-through',
+  },
+  brandRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  // CORE (pertemuan + idea) → kuning, senada identitas CORE.
+  visitCard: {
+    backgroundColor: Color.FINANCE_SAVING,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.FINANCE_SAVING_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 3,
     marginTop: -12,
     marginBottom: 24,
   },
-  visitTitle: { color: Color.ACCENT_DARK },
-  visitText: { color: Color.ACCENT_DARK },
+  visitTitle: { color: Color.FINANCE_SAVING_DARK },
+  visitText: { color: Color.FINANCE_SAVING_DARK },
   // Pemisah antara reminder visitasi & idea di dalam kartu CORE yang sama.
   ideaReminder: {
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: Color.ACCENT_DARK,
+    borderTopColor: Color.FINANCE_SAVING_DARK,
     gap: 3,
   },
   // Baris teks di dalam ReminderCard khotbah (kutipan di-clamp 2 baris).
   onSpiritual: { color: Color.SPIRITUAL_DARK },
-  // Kartu Health gabungan (cek tensi/gula + timbang berat + donor).
+  // Kartu Health gabungan (cek tensi/gula + timbang berat + donor) → pink,
+  // senada tile Health.
   healthCard: {
-    backgroundColor: Color.MAIN_LIGHT,
+    backgroundColor: Color.FINANCE_EXPENSE,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Color.MAIN_DARK,
+    borderColor: Color.FINANCE_EXPENSE_DARK,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 4,
     marginTop: -12,
     marginBottom: 24,
   },
-  healthTitle: { color: Color.MAIN_DARK },
-  healthText: { color: Color.MAIN_DARK },
+  healthTitle: { color: Color.FINANCE_EXPENSE_DARK },
+  healthText: { color: Color.FINANCE_EXPENSE_DARK },
+  // Task Hari Ini → hijau tema, senada tile Task.
   taskCard: {
-    backgroundColor: Color.CONTAINER,
+    backgroundColor: Color.MAIN_LIGHT,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    borderWidth: 1.5,
+    borderColor: Color.MAIN_DARK,
     padding: 16,
     gap: 10,
     marginTop: -12,
     marginBottom: 24,
   },
+  taskTitle: { color: Color.MAIN_DARK },
   taskHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -726,7 +827,7 @@ const styles = StyleSheet.create({
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
-  taskMore: { color: Color.MAIN, marginTop: 2 },
+  taskMore: { color: Color.MAIN_DARK, marginTop: 2 },
   streakPill: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -43,17 +43,25 @@ export function BudgetingTab({
   month,
   budget,
   copied,
+  scrollTick,
 }: {
   items: Transaction[];
   year: number;
   month: number;
   budget: BudgetMap;
   copied: boolean;
+  scrollTick?: number; // naik tiap tab Budgeting ditekan → scroll ke atas
 }) {
   const { user } = useAuth();
 
   const [type, setType] = useState<FinanceType>('expense');
   const [error, setError] = useState<string | null>(null);
+
+  // Scroll ke paling atas saat tombol tab-nya ditekan.
+  const scrollRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [scrollTick]);
 
   // Tombol "samakan dengan bulan lalu" — abu-abu kalau sudah pernah ditekan
   // untuk bulan ini (status `copied` disuplai dari layar Finance).
@@ -136,9 +144,11 @@ export function BudgetingTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* Kategori (jenis) menempel di atas — tetap bisa ditekan saat scroll */}
+      <View style={styles.stickyHeader}>
         <TypeChips value={type} onChange={setType} />
-
+      </View>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
             {error}
@@ -296,7 +306,13 @@ function ProgressBar({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  // Header menempel (tidak ikut scroll) berisi pilihan jenis kategori.
+  stickyHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    backgroundColor: Color.BACKGROUND,
+  },
+  content: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 24 },
   error: { color: Color.DANGER, marginBottom: 8 },
   summaryTop: {
     flexDirection: 'row',

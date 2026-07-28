@@ -9,6 +9,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
+  countCarAttention,
   PART_GROUPS,
   partCondition,
   setPartDate,
@@ -38,12 +39,10 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
 
   const now = new Date();
 
-  // Hitung berapa part yang perlu perhatian (untuk ringkasan atas).
+  // Hitung berapa part yang perlu perhatian (untuk ringkasan atas) — sama
+  // dengan angka badge di Home.
   const allParts = PART_GROUPS.flatMap((g) => g.parts);
-  const needsAttention = allParts.filter((p) => {
-    const { tone } = partCondition(status[p.key]?.last, p.intervalMonths, now);
-    return tone === 'warn' || tone === 'over';
-  }).length;
+  const needsAttention = countCarAttention(status, now);
   const unknownCount = allParts.filter((p) => !status[p.key]).length;
 
   function openEdit(part: CarPart) {
@@ -104,6 +103,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
                   key={part.key}
                   style={[
                     styles.row,
+                    tone === 'ok' && styles.rowOk,
                     tone === 'warn' && styles.rowWarn,
                     tone === 'over' && styles.rowOver,
                   ]}
@@ -140,11 +140,6 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
             })}
           </View>
         ))}
-
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Interval berbasis waktu pemakaian normal — kalau sering macet-macetan
-          Jakarta, boleh lebih cepat 😄
-        </VixText>
       </ScrollView>
 
       {/* Dialog tandai tanggal terakhir diganti/dicek */}
@@ -196,10 +191,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 4,
   },
-  rowWarn: {
-    backgroundColor: Color.WARNING_TRANSPARENT,
-    borderColor: Color.WARNING,
-  },
+  // Border warna status: hijau aman / kuning segera / merah lewat jadwal.
+  rowOk: { borderColor: Color.SUCCESS, borderWidth: 1.5 },
+  rowWarn: { borderColor: Color.BUDGET_WARN, borderWidth: 1.5 },
   rowOver: { borderColor: Color.DANGER, borderWidth: 1.5 },
   rowTop: {
     flexDirection: 'row',
@@ -213,7 +207,6 @@ const styles = StyleSheet.create({
   toneOver: { color: Color.DANGER },
   toneUnknown: { color: Color.TEXT_PLACEHOLDER },
   dateLine: { color: Color.TEXT_PLACEHOLDER },
-  hint: { textAlign: 'center', marginTop: 10 },
   modalTitle: { marginBottom: 2 },
   modalHint: { marginBottom: 10 },
   error: { color: Color.DANGER, marginTop: 8 },

@@ -128,9 +128,6 @@ export function deleteCarLog(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'carLogs', id));
 }
 
-// ===================== Sparepart & perawatan berkala =====================
-// Interval berbasis waktu (bulan) — praktis tanpa pencatatan kilometer.
-
 export type CarPart = {
   key: string;
   label: string;
@@ -236,4 +233,16 @@ export function partCondition(
   const tone: PartTone =
     msLeft < 0 ? 'over' : msLeft <= 30 * 86_400_000 ? 'warn' : 'ok';
   return { tone, dueDate: due };
+}
+
+/**
+ * Jumlah part yang PERLU PERHATIAN (segera ≤30 hari / lewat jadwal) — dipakai
+ * untuk badge merah di tile Car pada Home. Part yang belum pernah dicatat
+ * tidak dihitung (belum ada patokan tanggalnya).
+ */
+export function countCarAttention(status: PartStatusMap, now: Date): number {
+  return PART_GROUPS.flatMap((g) => g.parts).filter((p) => {
+    const { tone } = partCondition(status[p.key]?.last, p.intervalMonths, now);
+    return tone === 'warn' || tone === 'over';
+  }).length;
 }

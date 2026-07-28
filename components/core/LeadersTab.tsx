@@ -628,7 +628,7 @@ function PersonalityFields({
   return (
     <>
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        🎨 DISC (pilih 1–2, urut prioritas)
+        🎨 DISC
       </VixText>
       <View style={styles.pWrap}>
         {DISC_OPTIONS.map((d) => {

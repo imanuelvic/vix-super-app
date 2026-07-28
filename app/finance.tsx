@@ -38,6 +38,14 @@ export default function FinanceScreen() {
 
   // Default masuk ke tab Transaksi.
   const [tab, setTab] = useState<FinanceTab>('transactions');
+  // Naik tiap tombol tab ditekan (termasuk tab yang sedang aktif) → dipakai
+  // tiap tab untuk scroll ke paling atas.
+  const [scrollTick, setScrollTick] = useState(0);
+
+  function handleTabPress(next: FinanceTab) {
+    setTab(next);
+    setScrollTick((t) => t + 1);
+  }
 
   // Bulan yang sedang dilihat (default: bulan ini) — dipakai semua tab.
   const now = new Date();
@@ -166,9 +174,14 @@ export default function FinanceScreen() {
             <ActivityIndicator color={Color.MAIN} />
           </View>
         ) : tab === 'dashboard' ? (
-          <DashboardTab items={items} year={year} month={month} />
+          <DashboardTab
+            items={items}
+            year={year}
+            month={month}
+            scrollTick={scrollTick}
+          />
         ) : tab === 'transactions' ? (
-          <TransactionsTab items={items} budget={budget} />
+          <TransactionsTab items={items} budget={budget} scrollTick={scrollTick} />
         ) : (
           <BudgetingTab
             items={items}
@@ -176,12 +189,13 @@ export default function FinanceScreen() {
             month={month}
             budget={budget}
             copied={budgetCopied}
+            scrollTick={scrollTick}
           />
         )}
       </View>
 
       {/* Tab bar bawah khusus layar Finance */}
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={handleTabPress} />
     </SafeAreaView>
   );
 }

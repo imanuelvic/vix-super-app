@@ -17,7 +17,6 @@ import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { dayDocId } from '@/lib/health';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
-  dailyReminder,
   subscribeReviveEntries,
   subscribeReviveStreak,
   type ReviveEntry,
@@ -70,7 +69,6 @@ export default function SpiritualScreen() {
 
   const todayId = dayDocId(new Date());
   const todayEntry = entries?.find((e) => e.id === todayId) ?? null;
-  const reminder = dailyReminder(todayId);
   const streakShown =
     streak && streak.lastDayId >= dayDocId(new Date(Date.now() - 86_400_000))
       ? streak.count
@@ -107,16 +105,6 @@ export default function SpiritualScreen() {
           <ScrollView contentContainerStyle={styles.content}>
             {/* Sapaan + tanggal + streak (komponen bersama) */}
             <GreetingHeader streak={streakShown} />
-
-            {/* Reminder harian */}
-            <View style={styles.reminderCard}>
-              <VixText heading="label" additionalStyle={styles.reminderLabel}>
-                🕊️ Reminder Hari Ini
-              </VixText>
-              <VixText heading="paragraph" additionalStyle={styles.reminderText}>
-                {reminder}
-              </VixText>
-            </View>
 
             {/* Rhema hari ini — tampil PENUH kalau sudah diisi */}
             {todayEntry ? (
@@ -172,19 +160,6 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
-  reminderCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    borderLeftWidth: 3,
-    borderLeftColor: Color.SPIRITUAL_DARK,
-    padding: 14,
-    gap: 4,
-    marginBottom: 12,
-  },
-  reminderLabel: { color: Color.SPIRITUAL_DARK },
-  reminderText: { color: Color.TEXT_TITLE },
   writeButton: { marginTop: 4 },
   todayCard: {
     backgroundColor: Color.SPIRITUAL,

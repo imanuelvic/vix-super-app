@@ -201,7 +201,7 @@ export function personalityTips(p: {
   // (dominan) untuk saran pendekatan, tapi tampilkan gabungannya di label.
   if (p.disc) {
     const primary = DISC_OPTIONS.find((x) => x.key === p.disc![0]);
-    if (primary) tips.push({ label: `🎨 DISC ${p.disc}`, text: primary.chat });
+    if (primary) tips.push({ label: `🎨 ${p.disc}`, text: primary.chat });
   }
   if (p.mbti && MBTI_TIP[p.mbti]) {
     tips.push({ label: `🧩 ${p.mbti}`, text: MBTI_TIP[p.mbti] });

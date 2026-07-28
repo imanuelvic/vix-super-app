@@ -25,6 +25,7 @@ import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import {
   bumpReviveStreak,
+  dailyReminder,
   deleteReviveEntry,
   saveReviveEntry,
   subscribeReviveEntries,
@@ -32,17 +33,18 @@ import {
   type ReviveEntry,
 } from '@/lib/spiritual';
 
-// Aplikasi Revive resmi ada di dalam app NDC Ministry (App Store id 1452468715).
-// itms-apps:// membuka langsung App Store; https dipakai sebagai cadangan.
-const REVIVE_APP_STORE = 'ndcministry://';
-const REVIVE_APP_WEB =
+// Buka aplikasi Revive lewat deep link resmi 'ndcministry://' (app NDC Ministry).
+// Kalau app-nya belum terpasang / skema tak dikenali, jatuh ke halaman App Store
+// supaya bisa dipasang dulu.
+const REVIVE_DEEPLINK = 'ndcministry://';
+const REVIVE_APP_STORE =
   'https://apps.apple.com/id/app/ndc-ministry/id1452468715';
 
 async function openReviveApp() {
   try {
-    await Linking.openURL(REVIVE_APP_STORE);
+    await Linking.openURL(REVIVE_DEEPLINK);
   } catch {
-    Linking.openURL(REVIVE_APP_WEB).catch(() => {});
+    Linking.openURL(REVIVE_APP_STORE).catch(() => {});
   }
 }
 
@@ -57,6 +59,9 @@ export default function ReviveEditorScreen() {
 
   const todayId = dayDocId(new Date());
   const targetDay = typeof day === 'string' && day ? day : todayId;
+  // Reminder harian (dipindah dari halaman Spiritual) — dibaca dulu sebelum
+  // menulis renungan. Deterministik per hari, ganti otomatis tiap hari.
+  const reminder = dailyReminder(targetDay);
 
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [streak, setStreak] = useState<DayStreak | null>(null);
@@ -162,6 +167,15 @@ export default function ReviveEditorScreen() {
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled">
+            {/* Reminder hari ini — dibaca dulu, baru menulis renungan */}
+            <View style={styles.reminderCard}>
+              <VixText heading="label" additionalStyle={styles.reminderLabel}>
+                🕊️ Reminder Hari Ini
+              </VixText>
+              <VixText heading="paragraph" additionalStyle={styles.reminderText}>
+                {reminder}
+              </VixText>
+            </View>
             {/* Menuju aplikasi Revive resmi (NDC Ministry) di App Store */}
             <PressableScale style={styles.appButton} onPress={openReviveApp}>
               <View style={styles.appButtonMain}>
@@ -205,7 +219,7 @@ export default function ReviveEditorScreen() {
               editable={!busy}
             />
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              🏃🏻‍➡️ Application
+              🏃🏻‍➡️ Aplikasi
             </VixText>
             <FormInput
               style={styles.mediumInput}
@@ -246,6 +260,19 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  reminderCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    borderLeftWidth: 3,
+    borderLeftColor: Color.SPIRITUAL_DARK,
+    padding: 14,
+    gap: 4,
+    marginBottom: 14,
+  },
+  reminderLabel: { color: Color.SPIRITUAL_DARK },
+  reminderText: { color: Color.TEXT_TITLE },
   appButton: {
     flexDirection: 'row',
     alignItems: 'center',

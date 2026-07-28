@@ -417,7 +417,7 @@ export function FollowupTab({
       {/* ===== Follow Up Mingguan: fokus 2 CORE Leader ===== */}
       <View style={styles.weekCard}>
         <VixText heading="title" additionalStyle={styles.weekTitle}>
-          🔗 Doa Rantai
+          🔗  Doa Rantai
         </VixText>
         <VixText additionalStyle={styles.weekLeadersText}>
           {weekLeaders.length > 0
@@ -450,7 +450,6 @@ export function FollowupTab({
         </PressableScale>
       </View>
       <VixText heading="label" additionalStyle={styles.ideaHint}>
-        Masukan spontan buat CORE — boleh dikerjakan, boleh juga tidak 🙂 Rutin{' '}
         {IDEA_CADENCE_LABEL[ideas.cadence].toLowerCase()}.
       </VixText>
       <View style={styles.cadenceRow}>
@@ -511,7 +510,7 @@ export function FollowupTab({
       onClose={() => setEditingIdea(null)}>
       <FormInput
         style={styles.ideaInput}
-        placeholder="Idenya apa? (mis. games ice-breaking tiap CORE)"
+        placeholder="Idenya apa?"
         value={iText}
         onChangeText={setIText}
         multiline

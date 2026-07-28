@@ -54,6 +54,9 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
   const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
   const [fStatus, setFStatus] = useState<RoadmapStatus>('todo');
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
+  // Backlog = tanpa deadline (jadi "PR" sebagai software engineer, tidak
+  // menekan dengan tenggat).
+  const [fBacklog, setFBacklog] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const sorted = [...items].sort((a, b) => {
@@ -71,6 +74,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     setFPriority(2);
     setFStatus('todo');
     setFDeadline(defaultDeadline());
+    setFBacklog(false);
     setFormError(null);
   }
 
@@ -81,6 +85,8 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     setFPriority(item.priority);
     setFStatus(item.status);
     setFDeadline(item.deadline ? item.deadline.toDate() : defaultDeadline());
+    // Data lama tanpa deadline dianggap backlog.
+    setFBacklog(!item.deadline);
     setFormError(null);
   }
 
@@ -98,7 +104,8 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
       note: fNote.trim(),
       priority: fPriority,
       status: fStatus,
-      deadline: Timestamp.fromDate(fDeadline),
+      // Backlog → tanpa deadline (null); selain itu simpan tanggalnya.
+      deadline: fBacklog ? null : Timestamp.fromDate(fDeadline),
     };
     const next =
       editing === 'new'
@@ -208,18 +215,19 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
                   {meta.icon} {meta.label}
                 </VixText>
               </View>
-              {item.note ? (
-                <VixText heading="label" numberOfLines={2}>
-                  {item.note}
-                </VixText>
-              ) : null}
+              {/* Catatan/deskripsi sengaja TIDAK ditampilkan di daftar biar
+                  ringkas — baru terbaca saat kartunya dibuka (diedit). */}
               {item.deadline ? (
                 <VixText
                   heading="label"
                   additionalStyle={dlUrgent ? styles.deadlineUrgent : styles.deadline}>
                   🗓️ {formatDate(item.deadline.toDate())} · {dlWhen}
                 </VixText>
-              ) : null}
+              ) : (
+                <VixText heading="label" additionalStyle={styles.backlog}>
+                  📥 Backlog · PR (tanpa deadline)
+                </VixText>
+              )}
             </PressableScale>
           );
         })}
@@ -237,11 +245,15 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
           onChangeText={setFTitle}
           editable={!busy}
         />
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Deskripsi / catatan (opsional)
+        </VixText>
         <FormInput
-          style={styles.formGap}
-          placeholder="Catatan/konteks (opsional)"
+          style={styles.noteInput}
+          placeholder="Jelaskan detail pekerjaannya di sini — boleh beberapa baris (tekan enter). Ini yang jadi deskripsinya."
           value={fNote}
           onChangeText={setFNote}
+          multiline
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -275,14 +287,35 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Deadline
         </VixText>
-        <View style={styles.formGap}>
-          {/* key = id supaya state picker internal reset tiap ganti item */}
-          <DateField
-            key={editing === 'new' ? 'new' : editing?.id}
-            value={fDeadline}
-            onChange={setFDeadline}
+        <View style={styles.chipRow}>
+          <Chip
+            label="🗓️ Ada deadline"
+            active={!fBacklog}
+            onPress={() => setFBacklog(false)}
+            additionalStyle={styles.chipFlex}
+          />
+          <Chip
+            label="📥 Backlog (PR)"
+            active={fBacklog}
+            onPress={() => setFBacklog(true)}
+            additionalStyle={styles.chipFlex}
           />
         </View>
+        {fBacklog ? (
+          <VixText heading="label" additionalStyle={styles.backlogHint}>
+            Tanpa deadline — masuk backlog, jadi PR yang dikerjakan saat ada
+            waktu. Tidak muncul sebagai reminder mendesak di Home.
+          </VixText>
+        ) : (
+          <View style={styles.formGap}>
+            {/* key = id supaya state picker internal reset tiap ganti item */}
+            <DateField
+              key={editing === 'new' ? 'new' : editing?.id}
+              value={fDeadline}
+              onChange={setFDeadline}
+            />
+          </View>
+        )}
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {formError}
@@ -335,6 +368,7 @@ const styles = StyleSheet.create({
   cardDone: { opacity: 0.55 },
   deadline: { color: Color.TEXT_LABEL },
   deadlineUrgent: { color: Color.DANGER },
+  backlog: { color: Color.CAREER_DARK },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   priorityBadge: {
@@ -348,6 +382,13 @@ const styles = StyleSheet.create({
   priorityText: { color: Color.TEXT_REVERSE },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
+  // Textarea besar untuk deskripsi/catatan — boleh banyak baris.
+  noteInput: {
+    minHeight: 110,
+    textAlignVertical: 'top',
+    marginBottom: 10,
+  },
+  backlogHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   chipFlex: { flex: 1 },
 });

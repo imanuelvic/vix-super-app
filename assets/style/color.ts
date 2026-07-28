@@ -67,6 +67,12 @@ export const Color = {
   FITNESS: '#FBD9B8', // oranye lembut (fitur Fitness — coming soon)
   FITNESS_DARK: '#B5651D',
 
+  BOOK: '#DAD8F7', // ungu-nila pastel (fitur Book)
+  BOOK_DARK: '#4B3F8F',
+
+  HOUSE: '#D3DEE9', // biru-abu slate (fitur Home/rumah)
+  HOUSE_DARK: '#3F5A73',
+
   // Merek luar (tombol chat WhatsApp di fitur CORE)
   WHATSAPP: '#25D366',
 

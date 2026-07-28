@@ -518,7 +518,7 @@ export default function TasksScreen() {
               <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
             </PressableScale>
             <VixText heading="label" additionalStyle={styles.remainingText}>
-              {remaining} belum selesai
+              {remaining} task tercatat
             </VixText>
           </View>
         )}
