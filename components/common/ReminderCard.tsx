@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 
+import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
@@ -27,7 +28,8 @@ export function ReminderCard({
     <PressableScale
       style={[styles.card, { backgroundColor: bg, borderColor: fg }]}
       onPress={onPress}>
-      <VixText heading="bold" additionalStyle={color}>
+      {/* Judul selalu hitam (kontras di semua warna kartu); isi baris ikut fg */}
+      <VixText heading="bold" additionalStyle={styles.title}>
         {title}
       </VixText>
       {texts?.map((t, i) => (
@@ -53,4 +55,5 @@ const styles = StyleSheet.create({
     marginTop: -12,
     marginBottom: 24,
   },
+  title: { color: Color.TEXT_TITLE },
 });

@@ -14,7 +14,6 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
-  IDEA_CADENCE_LABEL,
   loveLangLabel,
   newCoreIdeaId,
   nextBirthday,
@@ -449,9 +448,6 @@ export function FollowupTab({
           </VixText>
         </PressableScale>
       </View>
-      <VixText heading="label" additionalStyle={styles.ideaHint}>
-        {IDEA_CADENCE_LABEL[ideas.cadence].toLowerCase()}.
-      </VixText>
       <View style={styles.cadenceRow}>
         <Chip
           label="🗓️ Mingguan"
@@ -490,13 +486,6 @@ export function FollowupTab({
                 </VixText>
               </View>
             ) : null}
-            <PressableScale
-              style={styles.shareButton}
-              onPress={() => shareIdea(idea)}>
-              <VixText heading="bold" additionalStyle={styles.shareText}>
-                📤 Share ke grup MT
-              </VixText>
-            </PressableScale>
           </PressableScale>
         ))
       )}
@@ -692,7 +681,6 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   ideaAddText: { color: Color.TEXT_REVERSE },
-  ideaHint: { marginBottom: 10 },
   cadenceRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   cadenceChip: { flex: 1 },
   ideaCard: {
@@ -713,13 +701,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   ideaNoteText: { color: Color.ACCENT_DARK },
-  shareButton: {
-    alignItems: 'center',
-    paddingVertical: 9,
-    borderRadius: 12,
-    backgroundColor: Color.WHATSAPP,
-  },
-  shareText: { color: Color.TEXT_REVERSE },
   ideaInput: {
     marginBottom: 10,
     minHeight: 80,

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { PinLock } from '@/components/common/PinLock';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -36,16 +37,8 @@ export default function FinanceScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Default masuk ke tab Transaksi.
-  const [tab, setTab] = useState<FinanceTab>('transactions');
-  // Naik tiap tombol tab ditekan (termasuk tab yang sedang aktif) → dipakai
-  // tiap tab untuk scroll ke paling atas.
-  const [scrollTick, setScrollTick] = useState(0);
-
-  function handleTabPress(next: FinanceTab) {
-    setTab(next);
-    setScrollTick((t) => t + 1);
-  }
+  // Default masuk ke tab Transaksi. Hook bersama: ganti tab + scroll ke atas.
+  const { tab, scrollKey, onTabPress } = useTabScroll<FinanceTab>('transactions');
 
   // Bulan yang sedang dilihat (default: bulan ini) — dipakai semua tab.
   const now = new Date();
@@ -168,20 +161,16 @@ export default function FinanceScreen() {
         </VixText>
       )}
 
-      <View style={styles.content}>
+      {/* key=scrollKey → konten re-mount tiap tab ditekan (scroll ke atas) */}
+      <View style={styles.content} key={scrollKey}>
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
           </View>
         ) : tab === 'dashboard' ? (
-          <DashboardTab
-            items={items}
-            year={year}
-            month={month}
-            scrollTick={scrollTick}
-          />
+          <DashboardTab items={items} year={year} month={month} />
         ) : tab === 'transactions' ? (
-          <TransactionsTab items={items} budget={budget} scrollTick={scrollTick} />
+          <TransactionsTab items={items} budget={budget} />
         ) : (
           <BudgetingTab
             items={items}
@@ -189,13 +178,12 @@ export default function FinanceScreen() {
             month={month}
             budget={budget}
             copied={budgetCopied}
-            scrollTick={scrollTick}
           />
         )}
       </View>
 
       {/* Tab bar bawah khusus layar Finance */}
-      <BottomTabs tabs={TABS} value={tab} onChange={handleTabPress} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

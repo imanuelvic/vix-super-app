@@ -439,9 +439,7 @@ export default function HomeScreen() {
           entering={FadeInDown.duration(350)}
           style={styles.welcomeCard}>
           <View style={styles.welcomeTop}>
-            {/* Sapaan sesuai jam menggantikan "Selamat datang," */}
             <Greeting heading="paragraph" color={Color.TEXT_ON_DARK_MUTED} />
-            {/* Tanggal hari ini di ujung kanan atas card */}
             <VixText heading="label" additionalStyle={styles.welcomeDate}>
               📆 {formatShortDayDate(new Date())}
             </VixText>
@@ -493,6 +491,66 @@ export default function HomeScreen() {
                 </PressableScale>
               );
             })}
+          </View>
+        )}
+
+        {/* Task hari ini — centang langsung tanpa buka fitur Task */}
+        {todayTasks.length > 0 && (
+          <View style={styles.taskCard}>
+            <PressableScale
+              style={styles.taskHeader}
+              onPress={() => router.push('/tasks')}>
+              <VixText heading="bold" additionalStyle={styles.taskTitle}>
+                ✅ Task Hari Ini
+              </VixText>
+              <View style={styles.taskHeaderRight}>
+                <VixText heading="label">
+                  {todayUndone > 0 ? `${todayUndone} belum` : 'beres semua 🎉'}
+                </VixText>
+                <IconSymbol
+                  name="chevron.right"
+                  size={18}
+                  color={Color.TEXT_LABEL}
+                />
+              </View>
+            </PressableScale>
+            {todayTasks.slice(0, HOME_TASK_SHOWN).map((t) => (
+              <View key={t.id} style={styles.taskRow}>
+                {/* Lingkaran ini yang dicentang */}
+                <PressableScale onPress={() => toggleTask(t)} hitSlop={8}>
+                  <CheckCircle checked={t.done} size={22} />
+                </PressableScale>
+                {/* Tekan isinya → buka Task di kategori task ini */}
+                <PressableScale
+                  style={styles.taskRowMain}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/tasks',
+                      params: { category: t.category },
+                    })
+                  }>
+                  <VixText additionalStyle={styles.taskCat}>
+                    {catIcon(t.category)}
+                  </VixText>
+                  <VixText
+                    heading="label"
+                    numberOfLines={1}
+                    additionalStyle={[
+                      styles.taskText,
+                      t.done && styles.taskTextDone,
+                    ]}>
+                    {t.title}
+                  </VixText>
+                </PressableScale>
+              </View>
+            ))}
+            {moreUndone > 0 && (
+              <PressableScale onPress={() => router.push('/tasks')}>
+                <VixText heading="label" additionalStyle={styles.taskMore}>
+                  +{moreUndone} task lagi →
+                </VixText>
+              </PressableScale>
+            )}
           </View>
         )}
 
@@ -600,74 +658,20 @@ export default function HomeScreen() {
           </ReminderCard>
         )}
 
-        {/* Reminder deadline prioritas kerja — warna coklat seperti Career */}
+        {/* Reminder deadline prioritas kerja — TIAP BARIS yang ditekan menuju
+            Career (bukan seluruh kartu), seperti kartu Health. */}
         {careerReminders.length > 0 && (
-          <ReminderCard
-            bg={Color.CAREER}
-            fg={Color.ACCENT_DARK}
-            title="💼 Deadline Prioritas Kerja"
-            texts={careerReminders}
-            onPress={() => router.push('/career')}
-          />
-        )}
-
-        {/* Task hari ini — centang langsung tanpa buka fitur Task */}
-        {todayTasks.length > 0 && (
-          <View style={styles.taskCard}>
-            <PressableScale
-              style={styles.taskHeader}
-              onPress={() => router.push('/tasks')}>
-              <VixText heading="bold" additionalStyle={styles.taskTitle}>
-                ✅ Task Hari Ini
-              </VixText>
-              <View style={styles.taskHeaderRight}>
-                <VixText heading="label">
-                  {todayUndone > 0 ? `${todayUndone} belum` : 'beres semua 🎉'}
-                </VixText>
-                <IconSymbol
-                  name="chevron.right"
-                  size={18}
-                  color={Color.TEXT_LABEL}
-                />
-              </View>
-            </PressableScale>
-            {todayTasks.slice(0, HOME_TASK_SHOWN).map((t) => (
-              <View key={t.id} style={styles.taskRow}>
-                {/* Lingkaran ini yang dicentang */}
-                <PressableScale onPress={() => toggleTask(t)} hitSlop={8}>
-                  <CheckCircle checked={t.done} size={22} />
-                </PressableScale>
-                {/* Tekan isinya → buka Task di kategori task ini */}
-                <PressableScale
-                  style={styles.taskRowMain}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/tasks',
-                      params: { category: t.category },
-                    })
-                  }>
-                  <VixText additionalStyle={styles.taskCat}>
-                    {catIcon(t.category)}
-                  </VixText>
-                  <VixText
-                    heading="label"
-                    numberOfLines={1}
-                    additionalStyle={[
-                      styles.taskText,
-                      t.done && styles.taskTextDone,
-                    ]}>
-                    {t.title}
-                  </VixText>
-                </PressableScale>
-              </View>
-            ))}
-            {moreUndone > 0 && (
-              <PressableScale onPress={() => router.push('/tasks')}>
-                <VixText heading="label" additionalStyle={styles.taskMore}>
-                  +{moreUndone} task lagi →
+          <View style={styles.careerCard}>
+            <VixText heading="bold" additionalStyle={styles.careerTitle}>
+              💼 Deadline Prioritas Kerja
+            </VixText>
+            {careerReminders.map((r) => (
+              <PressableScale key={r.id} onPress={() => router.push('/career')}>
+                <VixText heading="label" additionalStyle={styles.careerText}>
+                  {r.text}
                 </VixText>
               </PressableScale>
-            )}
+            ))}
           </View>
         )}
 
@@ -748,7 +752,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  morningTitle: { color: Color.ACCENT_DARK },
+  morningTitle: { color: Color.TEXT_TITLE },
   morningRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   morningText: { flex: 1, color: Color.TEXT_TITLE },
   morningTextDone: {
@@ -768,7 +772,7 @@ const styles = StyleSheet.create({
     marginTop: -12,
     marginBottom: 24,
   },
-  visitTitle: { color: Color.FINANCE_SAVING_DARK },
+  visitTitle: { color: Color.TEXT_TITLE },
   visitText: { color: Color.FINANCE_SAVING_DARK },
   // Pemisah antara reminder visitasi & idea di dalam kartu CORE yang sama.
   ideaReminder: {
@@ -793,11 +797,27 @@ const styles = StyleSheet.create({
     marginTop: -12,
     marginBottom: 24,
   },
-  healthTitle: { color: Color.FINANCE_EXPENSE_DARK },
+  healthTitle: { color: Color.TEXT_TITLE },
   healthText: { color: Color.FINANCE_EXPENSE_DARK },
-  // Task Hari Ini → hijau tema, senada tile Task.
+  // Kartu Career: tiap baris prioritas bisa ditekan sendiri (menuju Career).
+  careerCard: {
+    backgroundColor: Color.CAREER,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.ACCENT_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 4,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  careerTitle: { color: Color.TEXT_TITLE },
+  careerText: { color: Color.ACCENT_DARK },
+  // Task Hari Ini → putih dengan aksen hijau (border). Latar SENGAJA bukan
+  // mint: CheckCircle warnanya mint, jadi kalau latarnya mint pun ceklisnya
+  // tak terlihat. Judul hitam biar jelas.
   taskCard: {
-    backgroundColor: Color.MAIN_LIGHT,
+    backgroundColor: Color.CONTAINER,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Color.MAIN_DARK,
@@ -806,7 +826,7 @@ const styles = StyleSheet.create({
     marginTop: -12,
     marginBottom: 24,
   },
-  taskTitle: { color: Color.MAIN_DARK },
+  taskTitle: { color: Color.TEXT_TITLE },
   taskHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

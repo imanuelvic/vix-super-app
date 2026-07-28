@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -70,20 +70,12 @@ export function DashboardTab({
   items,
   year,
   month,
-  scrollTick,
 }: {
   items: Transaction[];
   year: number;
   month: number; // 0–11
-  scrollTick?: number; // naik tiap tab Dashboard ditekan → scroll ke atas
 }) {
   const [type, setType] = useState<FinanceType>('expense');
-
-  // Scroll ke paling atas saat tombol tab-nya ditekan.
-  const scrollRef = useRef<ScrollView>(null);
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
-  }, [scrollTick]);
 
   const now = new Date();
   const isCurrentMonth =
@@ -156,7 +148,7 @@ export function DashboardTab({
         : styles.toneDanger;
 
   return (
-    <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={styles.content}>
       {/* ===== Kondisi bulan ini: MENANG / BOROS ===== */}
       <View
         style={[

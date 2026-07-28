@@ -7,6 +7,7 @@ import { InfoTab } from '@/components/car/InfoTab';
 import { LogTab } from '@/components/car/LogTab';
 import { PartsTab } from '@/components/car/PartsTab';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -33,7 +34,8 @@ export default function CarScreen() {
   const { user } = useAuth();
 
   // Default masuk ke Sparepart — kondisi mobil yang paling penting dilihat.
-  const [tab, setTab] = useState<CarTab>('parts');
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  const { tab, scrollKey, onTabPress } = useTabScroll<CarTab>('parts');
   const [logs, setLogs] = useState<CarLog[] | null>(null);
   const [parts, setParts] = useState<PartStatusMap | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +67,7 @@ export default function CarScreen() {
         </VixText>
       )}
 
-      <View style={styles.content}>
+      <View style={styles.content} key={scrollKey}>
         {logs === null || parts === null ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -80,7 +82,7 @@ export default function CarScreen() {
       </View>
 
       {/* Tab bar bawah khusus layar Car */}
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

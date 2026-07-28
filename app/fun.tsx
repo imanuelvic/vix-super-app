@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -41,7 +42,8 @@ const FUN_TABS: BottomTab<FunCategory>[] = [
 export default function FunScreen() {
   const { user } = useAuth();
 
-  const [category, setCategory] = useState<FunCategory>('summit');
+  // Hook bersama: ganti kategori + scroll ke atas tiap tab ditekan.
+  const { tab: category, scrollKey, onTabPress } = useTabScroll<FunCategory>('summit');
   const [data, setData] = useState<FunData>(EMPTY_FUN);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,7 +167,7 @@ export default function FunScreen() {
         subtitle="Arsip petualangan & tempat yang sudah dikunjungi"
       />
 
-      <View style={styles.content}>
+      <View style={styles.content} key={scrollKey}>
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -254,7 +256,7 @@ export default function FunScreen() {
       </View>
 
       {/* Tab bar bawah = kategori arsip */}
-      <BottomTabs tabs={FUN_TABS} value={category} onChange={setCategory} />
+      <BottomTabs tabs={FUN_TABS} value={category} onChange={onTabPress} />
 
       {/* Sheet tambah/edit */}
       <SheetModal

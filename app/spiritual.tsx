@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -36,7 +37,8 @@ export default function SpiritualScreen() {
   const { user } = useAuth();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
-  const [tab, setTab] = useState<Tab>(
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  const { tab, setTab, scrollKey, onTabPress } = useTabScroll<Tab>(
     tabParam === 'khotbah' ? 'khotbah' : 'revive',
   );
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
@@ -47,7 +49,7 @@ export default function SpiritualScreen() {
   // Reminder Home bisa mengarahkan ke tab khotbah lewat param.
   useEffect(() => {
     if (tabParam === 'khotbah' || tabParam === 'revive') setTab(tabParam);
-  }, [tabParam]);
+  }, [tabParam, setTab]);
 
   useEffect(() => {
     if (!user) return;
@@ -96,7 +98,7 @@ export default function SpiritualScreen() {
         </VixText>
       )}
 
-      <View style={styles.body}>
+      <View style={styles.body} key={scrollKey}>
         {entries === null ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -149,7 +151,7 @@ export default function SpiritualScreen() {
       </View>
 
       {/* Tab bar bawah */}
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

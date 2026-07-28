@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -43,25 +43,17 @@ export function BudgetingTab({
   month,
   budget,
   copied,
-  scrollTick,
 }: {
   items: Transaction[];
   year: number;
   month: number;
   budget: BudgetMap;
   copied: boolean;
-  scrollTick?: number; // naik tiap tab Budgeting ditekan → scroll ke atas
 }) {
   const { user } = useAuth();
 
   const [type, setType] = useState<FinanceType>('expense');
   const [error, setError] = useState<string | null>(null);
-
-  // Scroll ke paling atas saat tombol tab-nya ditekan.
-  const scrollRef = useRef<ScrollView>(null);
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
-  }, [scrollTick]);
 
   // Tombol "samakan dengan bulan lalu" — abu-abu kalau sudah pernah ditekan
   // untuk bulan ini (status `copied` disuplai dari layar Finance).
@@ -148,7 +140,7 @@ export function BudgetingTab({
       <View style={styles.stickyHeader}>
         <TypeChips value={type} onChange={setType} />
       </View>
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
             {error}

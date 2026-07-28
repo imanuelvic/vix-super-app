@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { HouseLogTab } from '@/components/house/HouseLogTab';
@@ -13,9 +14,10 @@ import { HOUSE_INFO, subscribeHouseLogs, type HouseLog } from '@/lib/house';
 
 type HouseTab = 'utility' | 'log' | 'info';
 
+// Log di kiri, Air-Listrik di tengah (default), Info di kanan.
 const TABS: BottomTab<HouseTab>[] = [
-  { key: 'utility', label: 'Air-Listrik', icon: 'bolt.fill' },
   { key: 'log', label: 'Log', icon: 'list.bullet' },
+  { key: 'utility', label: 'Air-Listrik', icon: 'bolt.fill' },
   { key: 'info', label: 'Info', icon: 'info.circle.fill' },
 ];
 
@@ -24,7 +26,9 @@ const TABS: BottomTab<HouseTab>[] = [
 export default function HouseScreen() {
   const { user } = useAuth();
 
-  const [tab, setTab] = useState<HouseTab>('utility');
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. Default di
+  // tengah (Air-Listrik).
+  const { tab, scrollKey, onTabPress } = useTabScroll<HouseTab>('utility');
   const [logs, setLogs] = useState<HouseLog[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +55,7 @@ export default function HouseScreen() {
         </VixText>
       )}
 
-      <View style={styles.content}>
+      <View style={styles.content} key={scrollKey}>
         {logs === null ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -65,7 +69,7 @@ export default function HouseScreen() {
         )}
       </View>
 
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

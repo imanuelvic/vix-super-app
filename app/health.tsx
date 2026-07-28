@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { CheckupTab } from '@/components/health/CheckupTab';
@@ -41,7 +42,8 @@ export default function HealthScreen() {
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
   // Default masuk ke tab To-do; reminder Home bisa mengarahkan ke tab lain.
-  const [tab, setTab] = useState<HealthTab>(
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  const { tab, scrollKey, onTabPress } = useTabScroll<HealthTab>(
     tabParam === 'summary' || tabParam === 'checkup' ? tabParam : 'todo',
   );
 
@@ -101,7 +103,7 @@ export default function HealthScreen() {
         </VixText>
       )}
 
-      <View style={styles.content}>
+      <View style={styles.content} key={scrollKey}>
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -123,7 +125,7 @@ export default function HealthScreen() {
       </View>
 
       {/* Tab bar bawah khusus layar Health */}
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

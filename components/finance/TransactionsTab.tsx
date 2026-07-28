@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -57,19 +57,11 @@ const AMOUNTS_HIDDEN_KEY = 'finance:amountsHidden';
 export function TransactionsTab({
   items,
   budget,
-  scrollTick,
 }: {
   items: Transaction[];
   budget: BudgetMap;
-  scrollTick?: number; // naik tiap tab Transaksi ditekan → scroll ke atas
 }) {
   const { user } = useAuth();
-
-  // Scroll daftar ke paling atas saat tombol tab-nya ditekan.
-  const listRef = useRef<FlatList<Transaction>>(null);
-  useEffect(() => {
-    listRef.current?.scrollToOffset({ offset: 0, animated: true });
-  }, [scrollTick]);
 
   // Ringkasan dikecilkan by default. Nominal default TAMPIL — pilihan
   // sembunyi/tampil disimpan & dimuat lagi tiap masuk (tidak tergantung
@@ -413,7 +405,6 @@ export function TransactionsTab({
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <FlatList
-        ref={listRef}
         data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}

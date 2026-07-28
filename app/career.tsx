@@ -8,6 +8,7 @@ import { FreelanceTab } from '@/components/career/FreelanceTab';
 import { FulltimeTab } from '@/components/career/FulltimeTab';
 import { InsuranceTab } from '@/components/career/InsuranceTab';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -35,7 +36,8 @@ const TABS: BottomTab<CareerTab>[] = [
 export default function CareerScreen() {
   const { user } = useAuth();
 
-  const [tab, setTab] = useState<CareerTab>('fulltime');
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  const { tab, scrollKey, onTabPress } = useTabScroll<CareerTab>('fulltime');
   const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
   const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);
   const [insurance, setInsurance] = useState<InsuranceMonths | null>(null);
@@ -73,7 +75,7 @@ export default function CareerScreen() {
         </VixText>
       )}
 
-      <View style={styles.content}>
+      <View style={styles.content} key={scrollKey}>
         {roadmap === null || freelance === null || insurance === null ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -90,7 +92,7 @@ export default function CareerScreen() {
       </View>
 
       {/* Tab bar bawah khusus layar Career */}
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

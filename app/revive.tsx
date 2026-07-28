@@ -36,15 +36,15 @@ import {
 // Buka aplikasi Revive lewat deep link resmi 'ndcministry://' (app NDC Ministry).
 // Kalau app-nya belum terpasang / skema tak dikenali, jatuh ke halaman App Store
 // supaya bisa dipasang dulu.
-const REVIVE_DEEPLINK = 'ndcministry://';
-const REVIVE_APP_STORE =
+const NDC_DEEPLINK = 'ndc://';
+const NDC_APP_STORE =
   'https://apps.apple.com/id/app/ndc-ministry/id1452468715';
 
 async function openReviveApp() {
   try {
-    await Linking.openURL(REVIVE_DEEPLINK);
+    await Linking.openURL(NDC_DEEPLINK);
   } catch {
-    Linking.openURL(REVIVE_APP_STORE).catch(() => {});
+    Linking.openURL(NDC_APP_STORE).catch(() => {});
   }
 }
 
@@ -170,20 +170,16 @@ export default function ReviveEditorScreen() {
             {/* Reminder hari ini — dibaca dulu, baru menulis renungan */}
             <View style={styles.reminderCard}>
               <VixText heading="label" additionalStyle={styles.reminderLabel}>
-                🕊️ Reminder Hari Ini
+                🕊️ Reminder
               </VixText>
               <VixText heading="paragraph" additionalStyle={styles.reminderText}>
                 {reminder}
               </VixText>
             </View>
-            {/* Menuju aplikasi Revive resmi (NDC Ministry) di App Store */}
             <PressableScale style={styles.appButton} onPress={openReviveApp}>
               <View style={styles.appButtonMain}>
                 <VixText heading="bold" additionalStyle={styles.appButtonText}>
-                  📱 Buka Aplikasi Revive
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.appButtonSub}>
-                  Baca renungan hari ini di app NDC Ministry
+                  📱 Buka NDC Ministry
                 </VixText>
               </View>
               <IconSymbol
@@ -286,7 +282,6 @@ const styles = StyleSheet.create({
   },
   appButtonMain: { flex: 1, gap: 1 },
   appButtonText: { color: Color.TEXT_REVERSE },
-  appButtonSub: { color: Color.SPIRITUAL },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   bigInput: {

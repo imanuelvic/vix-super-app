@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -97,7 +98,13 @@ export default function TasksScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Tab utama: planner harian atau catatan prioritas (Other).
-  const [mainTab, setMainTab] = useState<'harian' | 'other'>('harian');
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  const {
+    tab: mainTab,
+    setTab: setMainTab,
+    scrollKey,
+    onTabPress,
+  } = useTabScroll<'harian' | 'other'>('harian');
 
   // Param kategori berubah (mis. tap task lain di Home) → pindah kategori.
   useEffect(() => {
@@ -105,7 +112,7 @@ export default function TasksScreen() {
       setCategory(validCategory);
       setMainTab('harian');
     }
-  }, [validCategory]);
+  }, [validCategory, setMainTab]);
 
   // Drag & drop: task yang sedang diseret + posisi jari (window coords).
   const [dragTask, setDragTask] = useState<Task | null>(null);
@@ -524,7 +531,7 @@ export default function TasksScreen() {
         )}
       </View>
 
-      <View style={styles.body}>
+      <View style={styles.body} key={scrollKey}>
       {mainTab === 'other' ? (
         <OtherTaskTab items={otherTasks} />
       ) : (
@@ -667,7 +674,7 @@ export default function TasksScreen() {
       </View>
 
       {/* Tab bar bawah: Harian (planner) / Prioritas (catatan penting) */}
-      <BottomTabs tabs={MAIN_TABS} value={mainTab} onChange={setMainTab} />
+      <BottomTabs tabs={MAIN_TABS} value={mainTab} onChange={onTabPress} />
 
       {/* Ghost task yang mengikuti jari saat menyeret */}
       {dragTask && (

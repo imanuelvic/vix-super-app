@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -42,7 +43,8 @@ export default function CoreScreen() {
   // Default masuk ke Follow Up: itu tugas harianmu. Bisa dioverride lewat
   // param ?tab=… (mis. kartu reminder visitasi di Home).
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
-  const [tab, setTab] = useState<CoreTab>(
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  const { tab, setTab, scrollKey, onTabPress } = useTabScroll<CoreTab>(
     tabParam === 'visitation' || tabParam === 'leaders' ? tabParam : 'followup',
   );
 
@@ -54,7 +56,7 @@ export default function CoreScreen() {
     ) {
       setTab(tabParam);
     }
-  }, [tabParam]);
+  }, [tabParam, setTab]);
   const [leaders, setLeaders] = useState<CoreLeader[] | null>(null);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[] | null>(null);
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
@@ -103,7 +105,7 @@ export default function CoreScreen() {
         </VixText>
       )}
 
-      <View style={styles.content}>
+      <View style={styles.content} key={scrollKey}>
         {leaders === null || mainTeam === null || visitations === null ? (
           <View style={styles.center}>
             <ActivityIndicator color={Color.MAIN} />
@@ -123,7 +125,7 @@ export default function CoreScreen() {
       </View>
 
       {/* Tab bar bawah khusus layar CORE */}
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

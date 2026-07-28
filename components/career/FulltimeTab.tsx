@@ -54,7 +54,6 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
   const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
   const [fStatus, setFStatus] = useState<RoadmapStatus>('todo');
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
-  // Backlog = tanpa deadline (jadi "PR" sebagai software engineer, tidak
   // menekan dengan tenggat).
   const [fBacklog, setFBacklog] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -85,7 +84,6 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     setFPriority(item.priority);
     setFStatus(item.status);
     setFDeadline(item.deadline ? item.deadline.toDate() : defaultDeadline());
-    // Data lama tanpa deadline dianggap backlog.
     setFBacklog(!item.deadline);
     setFormError(null);
   }
@@ -104,7 +102,6 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
       note: fNote.trim(),
       priority: fPriority,
       status: fStatus,
-      // Backlog → tanpa deadline (null); selain itu simpan tanggalnya.
       deadline: fBacklog ? null : Timestamp.fromDate(fDeadline),
     };
     const next =

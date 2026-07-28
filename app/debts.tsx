@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -50,7 +51,8 @@ const PERIODS: DebtPeriod[] = ['once', 'weekly', 'monthly'];
 export default function DebtsScreen() {
   const { user } = useAuth();
 
-  const [tab, setTab] = useState<Tab>('theirs');
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('theirs');
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -251,7 +253,8 @@ export default function DebtsScreen() {
           <ActivityIndicator color={Color.MAIN} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        // key=scrollKey → ScrollView re-mount tiap tab ditekan (scroll ke atas)
+        <ScrollView key={scrollKey} contentContainerStyle={styles.content}>
           {/* Ringkasan total sisa arah ini */}
           <View style={styles.heroCard}>
             <VixText heading="label" additionalStyle={styles.heroLabel}>
@@ -366,7 +369,7 @@ export default function DebtsScreen() {
       )}
 
       {/* Tab bar bawah */}
-      <BottomTabs tabs={TABS} value={tab} onChange={setTab} />
+      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
 
       {/* ===== Sheet tambah / edit hutang ===== */}
       <SheetModal

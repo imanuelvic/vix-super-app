@@ -8,7 +8,7 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { formatFullDate } from '@/lib/format';
+import { formatFullDate, formatFullDateTime } from '@/lib/format';
 
 type Message = { kind: 'info' | 'success' | 'error'; text: string };
 
@@ -88,7 +88,7 @@ export default function VersionScreen() {
             value={
               Updates.isEmbeddedLaunch || !Updates.createdAt
                 ? 'Belum ada — bundle build'
-                : formatFullDate(Updates.createdAt)
+                : formatFullDateTime(Updates.createdAt)
             }
           />
           <DetailRow label="Runtime" value={Updates.runtimeVersion ?? '-'} />

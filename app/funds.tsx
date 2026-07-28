@@ -39,7 +39,7 @@ export default function FundsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Finance"
-        title="Saku"
+        title="Saku 👛"
         subtitle="Dana per tujuan dengan mutasi masuk & keluar sendiri."
       />
 

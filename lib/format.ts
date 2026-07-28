@@ -14,6 +14,18 @@ export function formatFullDate(d: Date): string {
   return `${DAY_NAMES[d.getDay()]}, ${formatDate(d)}`;
 }
 
+/** "14.05" — jam:menit gaya Indonesia (pemisah titik), selalu 2 digit. */
+export function formatTime(d: Date): string {
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}.${m}`;
+}
+
+/** Rabu, 22 Juli 2026 · 14.05 */
+export function formatFullDateTime(d: Date): string {
+  return `${formatFullDate(d)} · ${formatTime(d)}`;
+}
+
 /** Jum, 24 Jul 2026 — nama hari & bulan sama-sama 3 huruf. */
 export function formatShortDayDate(d: Date): string {
   return `${DAY_NAMES[d.getDay()].slice(0, 3)}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
