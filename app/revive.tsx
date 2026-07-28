@@ -34,7 +34,7 @@ import {
 
 // Aplikasi Revive resmi ada di dalam app NDC Ministry (App Store id 1452468715).
 // itms-apps:// membuka langsung App Store; https dipakai sebagai cadangan.
-const REVIVE_APP_STORE = 'itms-apps://apps.apple.com/app/id1452468715';
+const REVIVE_APP_STORE = 'ndcministry://';
 const REVIVE_APP_WEB =
   'https://apps.apple.com/id/app/ndc-ministry/id1452468715';
 

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -45,6 +46,10 @@ import {
   type Transaction,
 } from '@/lib/transactions';
 
+// Preferensi tampil/sembunyi nominal — disimpan (AsyncStorage) supaya
+// pilihannya global & konsisten tiap kali masuk Finance. "1" = disembunyikan.
+const AMOUNTS_HIDDEN_KEY = 'finance:amountsHidden';
+
 // Tab Transaction Log: ringkasan bulan, form tambah, daftar transaksi,
 // modal edit (nominal/catatan/tanggal), dan konfirmasi hapus.
 // `budget` (alokasi per kategori bulan ini) dipakai untuk mewarnai pilihan
@@ -58,11 +63,28 @@ export function TransactionsTab({
 }) {
   const { user } = useAuth();
 
-  // Default: kartu ringkasan dikecilkan & semua nominal disembunyikan
-  // (privasi dulu — buka/tampilkan hanya saat dibutuhkan).
+  // Ringkasan dikecilkan by default. Nominal default TAMPIL — pilihan
+  // sembunyi/tampil disimpan & dimuat lagi tiap masuk (tidak tergantung
+  // buka/tutup ringkasan).
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [amountsHidden, setAmountsHidden] = useState(true);
+  const [amountsHidden, setAmountsHidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Muat preferensi tersimpan sekali di awal.
+  useEffect(() => {
+    AsyncStorage.getItem(AMOUNTS_HIDDEN_KEY).then((v) => {
+      if (v != null) setAmountsHidden(v === '1');
+    });
+  }, []);
+
+  // Sembunyikan / tampilkan nominal + simpan pilihannya.
+  function toggleAmountsHidden() {
+    setAmountsHidden((hidden) => {
+      const next = !hidden;
+      AsyncStorage.setItem(AMOUNTS_HIDDEN_KEY, next ? '1' : '0').catch(() => {});
+      return next;
+    });
+  }
 
   // Form tambah transaksi.
   const [type, setType] = useState<FinanceType>('expense');
@@ -237,28 +259,34 @@ export function TransactionsTab({
 
         {/* Ringkasan bulan — bisa diminimize seperti dropdown */}
         <View style={styles.summaryCard}>
-          <PressableScale
-            style={styles.summaryHeader}
-            onPress={() => {
-              const nextOpen = !summaryOpen;
-              setSummaryOpen(nextOpen);
-              // Dikecilkan = semua angka ikut disembunyikan; dibuka = tampil lagi.
-              setAmountsHidden(!nextOpen);
-            }}>
-            <VixText heading="label" additionalStyle={styles.summaryLabel}>
-              Ringkasan bulan
-            </VixText>
-            <View style={styles.summaryToggle}>
+          <View style={styles.summaryHeader}>
+            {/* Kiri: perbesar / kecilkan ringkasan (tidak mengubah visibilitas) */}
+            <PressableScale
+              style={styles.summaryHeaderMain}
+              onPress={() => setSummaryOpen((o) => !o)}>
               <VixText heading="label" additionalStyle={styles.summaryLabel}>
-                {summaryOpen ? 'Kecilkan' : 'Perbesar'}
+                Ringkasan bulan
               </VixText>
+              <View style={styles.summaryToggle}>
+                <VixText heading="label" additionalStyle={styles.summaryLabel}>
+                  {summaryOpen ? 'Kecilkan' : 'Perbesar'}
+                </VixText>
+                <IconSymbol
+                  name={summaryOpen ? 'chevron.up' : 'chevron.down'}
+                  size={16}
+                  color={Color.TEXT_ON_DARK_MUTED}
+                />
+              </View>
+            </PressableScale>
+            {/* Kanan: sembunyikan / tampilkan nominal (pilihan tersimpan) */}
+            <PressableScale onPress={toggleAmountsHidden} hitSlop={10}>
               <IconSymbol
-                name={summaryOpen ? 'chevron.up' : 'chevron.down'}
-                size={16}
+                name={amountsHidden ? 'eye.slash' : 'eye'}
+                size={20}
                 color={Color.TEXT_ON_DARK_MUTED}
               />
-            </View>
-          </PressableScale>
+            </PressableScale>
+          </View>
 
           {summaryOpen ? (
             <View>
@@ -290,20 +318,10 @@ export function TransactionsTab({
               </View>
             </View>
           ) : (
-            // Versi kecil: angka tersembunyi — tekan ikon mata untuk melihat.
             <View style={styles.collapsedRow}>
               <VixText heading="bold" additionalStyle={styles.summaryValue}>
                 Sisa: {displayAmount(remaining)}
               </VixText>
-              <PressableScale
-                onPress={() => setAmountsHidden((hidden) => !hidden)}
-                hitSlop={10}>
-                <IconSymbol
-                  name={amountsHidden ? 'eye' : 'eye.slash'}
-                  size={20}
-                  color={Color.TEXT_PLACEHOLDER}
-                />
-              </PressableScale>
             </View>
           )}
         </View>
@@ -545,9 +563,15 @@ const styles = StyleSheet.create({
   },
   summaryHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 6,
+  },
+  summaryHeaderMain: {
+    flex: 1,
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
   },
   summaryToggle: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },

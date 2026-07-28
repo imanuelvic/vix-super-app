@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useMemo, useState } from 'react';
-import { Linking, Share, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, Share, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
@@ -22,10 +22,10 @@ import {
   saveCoreIdeas,
   saveCoreLeaders,
   waLink,
+  weekIndex,
   WEEKLY_FOCUS_COUNT,
   weeklyFollowupTopic,
   weeklyLeaders,
-  weekIndex,
   type CoreIdea,
   type CoreIdeasData,
   type CoreLeader,
@@ -414,7 +414,30 @@ export function FollowupTab({
         </View>
       )}
 
-      {/* ===== Idea For CORE ===== */}
+      {/* ===== Follow Up Mingguan: fokus 2 CORE Leader ===== */}
+      <View style={styles.weekCard}>
+        <VixText heading="title" additionalStyle={styles.weekTitle}>
+          🔗 Doa Rantai
+        </VixText>
+        <VixText additionalStyle={styles.weekLeadersText}>
+          {weekLeaders.length > 0
+            ? weekLeaders.map((l) => `${l.heart} ${l.name}`).join('  &  ')
+            : 'Belum ada CORE Leader — tambah dulu di tab Leaders.'}
+        </VixText>
+      </View>
+      {weekLeaders.map((l) =>
+        renderFollowCard({
+          id: l.id,
+          title: `${l.heart} ${l.name}`,
+          sub: null,
+          phone: l.phone,
+          person: l,
+          done: l.lastFollowupDayId === dayId,
+          onDone: () => handleDoneLeader(l),
+        }),
+      )}
+
+      {/* ===== Idea For CORE (paling bawah) ===== */}
       <View style={styles.ideaHeader}>
         <VixText heading="title">💡 Idea For CORE</VixText>
         <PressableScale
@@ -477,35 +500,6 @@ export function FollowupTab({
             </PressableScale>
           </PressableScale>
         ))
-      )}
-
-      {/* ===== Follow Up Mingguan: fokus 2 CORE Leader ===== */}
-      <View style={styles.weekCard}>
-        <VixText heading="title" additionalStyle={styles.weekTitle}>
-          🎯 Fokus Minggu Ini
-        </VixText>
-        <VixText heading="subheader" additionalStyle={styles.weekLeadersText}>
-          {weekLeaders.length > 0
-            ? weekLeaders.map((l) => `${l.heart} ${l.name}`).join('  &  ')
-            : 'Belum ada CORE Leader — tambah dulu di tab Leaders.'}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.weekHint}>
-          Bangun hubungan tiap hari (Sen–Min).{' '}
-          {dow === 1
-            ? 'Hari ini Senin — mulai minggu dengan menanyakan pokok doa mereka 🙏'
-            : 'Senin tanya pokok doa 🙏; hari lain pertanyaan acak — 8 aspek hidup, obrolan ringan, atau gali kepribadian yang belum diketahui.'}
-        </VixText>
-      </View>
-      {weekLeaders.map((l) =>
-        renderFollowCard({
-          id: l.id,
-          title: `${l.heart} ${l.name}`,
-          sub: null,
-          phone: l.phone,
-          person: l,
-          done: l.lastFollowupDayId === dayId,
-          onDone: () => handleDoneLeader(l),
-        }),
       )}
     </ScrollView>
 
@@ -597,7 +591,6 @@ const styles = StyleSheet.create({
   },
   weekTitle: { color: Color.TEXT_REVERSE },
   weekLeadersText: { color: Color.MAIN_LIGHT },
-  weekHint: { color: Color.TEXT_ON_DARK_MUTED },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

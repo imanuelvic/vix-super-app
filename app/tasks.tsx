@@ -62,6 +62,14 @@ type MainTab = 'harian' | 'other';
 // "day:<dayId>" supaya satu daftar bisa memuat chip kategori & blok hari.
 type DropRect = { key: string; x: number; y: number; w: number; h: number };
 
+// Kotak ghost saat drag: isinya selalu 1 baris → tingginya tetap
+// (paddingVertical 10×2 + lineHeight teks bold 22.5 ≈ 43). Kotak digantung
+// TEPAT DI BAWAH jari (jari memegang sisi atasnya) supaya kotak & isinya tidak
+// ketutupan jempol, dan TITIK JATUH dihitung di TENGAH kotak — jadi tinggal
+// arahkan kotaknya ke target, bukan jarinya.
+const GHOST_HEIGHT = 43;
+const DROP_DY = GHOST_HEIGHT / 2; // jarak dari jari ke tengah kotak (titik jatuh)
+
 // Tab bar bawah layar Task — Harian (planner) & Prioritas (catatan penting).
 const MAIN_TABS: BottomTab<MainTab>[] = [
   { key: 'harian', label: 'Harian', icon: 'calendar' },
@@ -405,9 +413,11 @@ export default function TasksScreen() {
   const updateHover = useCallback((x: number, y: number) => {
     const t = draggingTaskRef.current;
     if (!t) return;
+    // Titik jatuh = tengah kotak = sedikit di bawah jari (DROP_DY).
+    const hy = y + DROP_DY;
     const hit =
       dropRects.current.find(
-        (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h,
+        (r) => x >= r.x && x <= r.x + r.w && hy >= r.y && hy <= r.y + r.h,
       ) ?? null;
     const key =
       hit && hit.key !== `cat:${t.category}` && hit.key !== `day:${t.dayId}`
@@ -422,9 +432,11 @@ export default function TasksScreen() {
       const rects = dropRects.current.length
         ? dropRects.current
         : await measureTargets();
+      // Titik jatuh = tengah kotak = sedikit di bawah jari (DROP_DY).
+      const hy = y + DROP_DY;
       const hit =
         rects.find(
-          (r) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h,
+          (r) => x >= r.x && x <= r.x + r.w && hy >= r.y && hy <= r.y + r.h,
         ) ?? null;
       setDragTask(null);
       setHoverKey(null);
@@ -458,15 +470,15 @@ export default function TasksScreen() {
   // dari pojok layar), dan ghost ini anak absolute dari SafeAreaView yang juga
   // mulai dari pojok layar — jadi TIDAK perlu koreksi inset.
   //
-  // Ukuran ghost diukur (onLayout) supaya kotaknya PAS di tengah jari — jari =
-  // titik tengah kotak DAN titik yang dipakai untuk deteksi drop. Jadi cukup
-  // arahkan tengah kotak ke target: "yang kamu lihat = yang kamu jatuhkan".
+  // Horizontal: lebar diukur (onLayout) supaya jari pas di TENGAH lebar kotak.
+  // Vertikal: sisi ATAS kotak nempel di jari (kotak menggantung di bawah jari),
+  // biar kotak & isinya kelihatan. Titik jatuh dihitung di tengah kotak (lihat
+  // DROP_DY di updateHover & handleDrop) supaya "arahkan kotak = jatuh di situ".
   const ghostW = useSharedValue(0);
-  const ghostH = useSharedValue(0);
   const ghostStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: dragX.value - ghostW.value / 2 },
-      { translateY: dragY.value - ghostH.value / 2 },
+      { translateY: dragY.value },
     ],
   }));
 
@@ -663,7 +675,6 @@ export default function TasksScreen() {
           pointerEvents="none"
           onLayout={(e) => {
             ghostW.value = e.nativeEvent.layout.width;
-            ghostH.value = e.nativeEvent.layout.height;
           }}
           style={[styles.dragGhost, ghostStyle]}>
           <VixText

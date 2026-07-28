@@ -398,6 +398,9 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Kolom dibatasi lebarnya & ditengahkan — di iPad/layar lebar tidak
+            melebar penuh, tetap rapi di tengah seperti di HP. */}
+        <View style={styles.contentInner}>
         <Animated.View
           entering={FadeInDown.duration(350)}
           style={styles.welcomeCard}>
@@ -625,6 +628,7 @@ export default function HomeScreen() {
             );
           })}
         </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -639,9 +643,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
+    // Sejajar dengan kolom konten yang ditengahkan (iPad/layar lebar).
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
   },
   brand: { color: Color.MAIN },
-  content: { paddingHorizontal: 20, paddingBottom: 40 },
+  content: { paddingBottom: 40, alignItems: 'center' },
+  // Lebar konten dibatasi & otomatis di tengah (HP: penuh; iPad: ~680 di tengah).
+  contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20 },
   welcomeCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
@@ -752,6 +762,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 16,
   },
   gridItem: { width: '21.5%', alignItems: 'center' },
