@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -7,6 +7,7 @@ import { InfoTab } from '@/components/car/InfoTab';
 import { LogTab } from '@/components/car/LogTab';
 import { PartsTab } from '@/components/car/PartsTab';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -18,6 +19,7 @@ import {
   type CarLog,
   type PartStatusMap,
 } from '@/lib/car';
+import { LOAD_ERROR } from '@/lib/messages';
 
 type CarTab = 'log' | 'parts' | 'info';
 
@@ -42,7 +44,7 @@ export default function CarScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeCarLogs(
         user.uid,
@@ -69,9 +71,7 @@ export default function CarScreen() {
 
       <View style={styles.content} key={scrollKey}>
         {logs === null || parts === null ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={Color.MAIN} />
-          </View>
+          <LoadingCenter />
         ) : tab === 'log' ? (
           <LogTab items={logs} />
         ) : tab === 'parts' ? (
@@ -91,5 +91,4 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

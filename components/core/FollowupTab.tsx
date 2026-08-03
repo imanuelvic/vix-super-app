@@ -41,6 +41,7 @@ import {
   type MonthlyPrayers,
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
 // membangun hubungan — Senin pertanyaan doa wajib, hari lain pertanyaan acak
@@ -127,7 +128,7 @@ export function FollowupTab({
       await saveCoreIdeas(user.uid, { ...ideas, ideas: nextIdeas });
       setEditingIdea(null);
     } catch {
-      setIError('Gagal menyimpan. Cek koneksi internet.');
+      setIError(SAVE_ERROR);
     } finally {
       setIBusy(false);
     }
@@ -142,7 +143,7 @@ export function FollowupTab({
         ideas: ideas.ideas.filter((i) => i.id !== editingIdea.id),
       });
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditingIdea(null);
       setIBusy(false);

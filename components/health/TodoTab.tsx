@@ -15,6 +15,7 @@ import { DonutChart } from '@/components/finance/DonutChart';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, parseDecimal } from '@/lib/format';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   activeStreak,
   bumpStreak,
@@ -178,7 +179,7 @@ export function TodoTab({
       });
       setTargetOpen(false);
     } catch {
-      setTargetError('Gagal menyimpan. Cek koneksi internet.');
+      setTargetError(SAVE_ERROR);
     } finally {
       setSavingTarget(false);
     }

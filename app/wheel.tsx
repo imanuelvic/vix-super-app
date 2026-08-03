@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -7,6 +7,7 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -15,6 +16,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, formatFullDateTime } from '@/lib/format';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   MIN_FOCUS,
   quarterDocId,
@@ -80,7 +82,7 @@ export default function WheelScreen() {
         setData(next);
         setError(null);
       },
-      () => setError('Gagal memuat data. Cek koneksi internet.'),
+      () => setError(LOAD_ERROR),
     );
     return unsubscribe;
   }, [user, qid]);
@@ -133,7 +135,7 @@ export default function WheelScreen() {
       await saveWheelScores(user.uid, qid, draftScores, draftNotes);
       setMode('overview');
     } catch {
-      setAssessError('Gagal menyimpan. Cek koneksi internet.');
+      setAssessError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -190,7 +192,7 @@ export default function WheelScreen() {
       await saveWheelFocus(user.uid, qid, focus);
       setMode('overview');
     } catch {
-      setFocusError('Gagal menyimpan. Cek koneksi internet.');
+      setFocusError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -237,9 +239,7 @@ export default function WheelScreen() {
       )}
 
       {data === null ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : mode === 'assess' ? (
         /* ===== Wizard assessment: 1 pertanyaan per layar ===== */
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
@@ -583,7 +583,6 @@ const styles = StyleSheet.create({
   },
   quarterText: { minWidth: 80, textAlign: 'center' },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Wizard
   progressTrack: {

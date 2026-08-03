@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { GreetingHeader } from '@/components/common/Greeting';
@@ -16,6 +17,7 @@ import { KhotbahTab } from '@/components/spiritual/KhotbahTab';
 import { useAuth } from '@/contexts/auth';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { dayDocId } from '@/lib/health';
+import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
   subscribeReviveEntries,
@@ -53,7 +55,7 @@ export default function SpiritualScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeReviveEntries(
         user.uid,
@@ -100,9 +102,7 @@ export default function SpiritualScreen() {
 
       <View style={styles.body} key={scrollKey}>
         {entries === null ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={Color.MAIN} />
-          </View>
+          <LoadingCenter />
         ) : tab === 'revive' ? (
           <ScrollView contentContainerStyle={styles.content}>
             {/* Sapaan + tanggal + streak (komponen bersama) */}
@@ -160,7 +160,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   body: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   writeButton: { marginTop: 4 },
   todayCard: {

@@ -28,6 +28,7 @@ import {
   parseAmount,
   parseDecimal,
 } from '@/lib/format';
+import { SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 const TYPE_META = Object.fromEntries(
@@ -122,7 +123,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
       }
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }

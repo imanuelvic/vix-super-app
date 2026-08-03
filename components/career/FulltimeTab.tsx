@@ -23,6 +23,7 @@ import {
   type RoadmapStatus,
 } from '@/lib/career';
 import { formatDate } from '@/lib/format';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Deadline default untuk prioritas baru: seminggu dari sekarang.
 function defaultDeadline(): Date {
@@ -137,7 +138,7 @@ export function FulltimeTab({
       await saveRoadmap(user.uid, next);
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -149,7 +150,7 @@ export function FulltimeTab({
     try {
       await saveRoadmap(user.uid, items.filter((i) => i.id !== editing.id));
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditing(null);
       setBusy(false);

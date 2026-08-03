@@ -1,12 +1,13 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { FollowupTab } from '@/components/core/FollowupTab';
@@ -28,6 +29,7 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { dayDocId } from '@/lib/health';
+import { LOAD_ERROR } from '@/lib/messages';
 
 type CoreTab = 'visitation' | 'followup' | 'leaders';
 
@@ -73,7 +75,7 @@ export default function CoreScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeCoreLeaders(
         user.uid,
@@ -118,9 +120,7 @@ export default function CoreScreen() {
 
       <View style={styles.content} key={scrollKey}>
         {leaders === null || mainTeam === null || visitations === null ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={Color.MAIN} />
-          </View>
+          <LoadingCenter />
         ) : tab === 'visitation' ? (
           <VisitationTab visitations={visitations} leaders={leaders} />
         ) : tab === 'followup' ? (
@@ -146,6 +146,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerButtons: { flexDirection: 'row', gap: 8 },
 });

@@ -12,6 +12,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   addOtherTask,
   deleteOtherTask,
@@ -90,7 +91,7 @@ export function OtherTaskTab({ items }: { items: OtherTask[] }) {
       }
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }

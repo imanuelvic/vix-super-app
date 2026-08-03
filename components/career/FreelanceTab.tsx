@@ -24,6 +24,7 @@ import {
 } from '@/lib/career';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
 import { INVOICE_PRESETS, shareInvoicePdf } from '@/lib/invoice';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Draft item invoice — qty & harga sebagai string supaya enak diedit di input.
@@ -196,7 +197,7 @@ export function FreelanceTab({
       await saveFreelance(user.uid, next);
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -208,7 +209,7 @@ export function FreelanceTab({
     try {
       await saveFreelance(user.uid, projects.filter((p) => p.id !== editing.id));
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditing(null);
       setBusy(false);

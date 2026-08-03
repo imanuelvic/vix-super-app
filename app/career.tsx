@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -9,6 +9,7 @@ import { FreelanceTab } from '@/components/career/FreelanceTab';
 import { FulltimeTab } from '@/components/career/FulltimeTab';
 import { InsuranceTab } from '@/components/career/InsuranceTab';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -21,6 +22,7 @@ import {
   type InsuranceMonths,
   type RoadmapItem,
 } from '@/lib/career';
+import { LOAD_ERROR } from '@/lib/messages';
 
 type CareerTab = 'fulltime' | 'freelance' | 'insurance' | 'business';
 
@@ -64,7 +66,7 @@ export default function CareerScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeRoadmap(
         user.uid,
@@ -96,9 +98,7 @@ export default function CareerScreen() {
 
       <View style={styles.content} key={scrollKey}>
         {roadmap === null || freelance === null || insurance === null ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={Color.MAIN} />
-          </View>
+          <LoadingCenter />
         ) : tab === 'fulltime' ? (
           <FulltimeTab items={roadmap} editId={editParam} />
         ) : tab === 'freelance' ? (
@@ -120,5 +120,4 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

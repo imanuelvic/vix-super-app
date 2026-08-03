@@ -15,6 +15,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -23,6 +24,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { currentAge, nextBirthday } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   childrenOf,
   deleteFamilyMember,
@@ -131,7 +133,7 @@ export default function FamilyScreen() {
         setMembers(next);
         setError(null);
       },
-      () => setError('Gagal memuat data. Cek koneksi internet.'),
+      () => setError(LOAD_ERROR),
     );
     return unsubscribe;
   }, [user]);
@@ -238,7 +240,7 @@ export default function FamilyScreen() {
       setSelectedId(data.id); // pohon langsung berpusat ke dia
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -277,9 +279,7 @@ export default function FamilyScreen() {
       )}
 
       {members === null ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <PrimaryButton
@@ -577,7 +577,6 @@ export default function FamilyScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   addButton: { marginBottom: 12 },
   emptyCard: {

@@ -18,6 +18,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
@@ -38,6 +39,7 @@ import {
   MONTH_NAMES,
   parseAmount,
 } from '@/lib/format';
+import { DELETE_ERROR } from '@/lib/messages';
 import { openPayApp, payAppForCategory } from '@/lib/payapps';
 import {
   addTransaction,
@@ -95,6 +97,11 @@ export function TransactionsTab({
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Mode cari (dibuka via FAB 🔍): cari kata + urutkan terbesar/terkecil.
+  const [searchMode, setSearchMode] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<'recent' | 'high' | 'low'>('recent');
+
   // Modal edit transaksi.
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -134,11 +141,23 @@ export function TransactionsTab({
     return map;
   }, [items]);
 
-  // Daftar transaksi disaring sesuai jenis terpilih di TypeChips.
-  const filtered = useMemo(
-    () => items.filter((t) => t.type === type),
-    [items, type],
-  );
+  // Daftar transaksi: disaring jenis (TypeChips), lalu — saat mode cari aktif —
+  // disaring kata (catatan/kategori) & diurutkan (terbesar/terkecil).
+  const filtered = useMemo(() => {
+    let list = items.filter((t) => t.type === type);
+    if (searchMode) {
+      const q = query.trim().toLowerCase();
+      if (q) {
+        list = list.filter((t) => {
+          const cat = categoryOf(t.type, t.category);
+          return `${cat.label} ${t.note}`.toLowerCase().includes(q);
+        });
+      }
+      if (sort === 'high') list = [...list].sort((a, b) => b.amount - a.amount);
+      else if (sort === 'low') list = [...list].sort((a, b) => a.amount - b.amount);
+    }
+    return list;
+  }, [items, type, searchMode, query, sort]);
 
   // Warna latar pilihan kategori sesuai pemakaian budget-nya: kuning ≥75%,
   // biru pas 100% (budget habis persis), merah kalau MELEBIHI 100% (over
@@ -205,6 +224,18 @@ export function TransactionsTab({
     }
   }
 
+  // Buka/tutup mode cari. Tutup = reset kata & urutan.
+  function toggleSearch() {
+    setSearchMode((s) => {
+      const next = !s;
+      if (!next) {
+        setQuery('');
+        setSort('recent');
+      }
+      return next;
+    });
+  }
+
   function openEdit(item: Transaction) {
     setEditing(item);
     setEditAmount(groupDigits(String(item.amount)));
@@ -243,7 +274,7 @@ export function TransactionsTab({
     try {
       await deleteTransaction(user.uid, confirmDelete.id);
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setConfirmDelete(null);
       setDeleteBusy(false);
@@ -412,6 +443,54 @@ export function TransactionsTab({
     );
   }
 
+  // Header saat mode cari aktif: cari kata + urutkan (terbesar/terkecil).
+  // Hanya mencari transaksi bulan yang sedang dibuka (data `items`).
+  function renderSearchHeader() {
+    const q = query.trim();
+    return (
+      <View>
+        <VixText heading="label" additionalStyle={styles.todayText}>
+          🔍 Cari transaksi bulan ini
+        </VixText>
+        <TypeChips
+          value={type}
+          onChange={(next) => {
+            setType(next);
+            setCategory(null);
+          }}
+        />
+        <View style={styles.searchWrap}>
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Cari catatan / kategori…"
+          />
+        </View>
+        <View style={styles.sortRow}>
+          <Chip
+            label="🕒 Terbaru"
+            active={sort === 'recent'}
+            onPress={() => setSort('recent')}
+          />
+          <Chip
+            label="🔺 Terbesar"
+            active={sort === 'high'}
+            onPress={() => setSort('high')}
+          />
+          <Chip
+            label="🔻 Terkecil"
+            active={sort === 'low'}
+            onPress={() => setSort('low')}
+          />
+        </View>
+        <VixText heading="label" additionalStyle={styles.searchCount}>
+          {filtered.length} transaksi {FINANCE_TYPE_LABEL[type].toLowerCase()}
+          {q ? ` cocok “${q}”` : ''}
+        </VixText>
+      </View>
+    );
+  }
+
   const selectedCategory = category ? categoryOf(type, category) : null;
   const editingCategory = editing
     ? categoryOf(editing.type, editing.category)
@@ -432,12 +511,15 @@ export function TransactionsTab({
         showsVerticalScrollIndicator
         persistentScrollbar
         indicatorStyle="black"
-        ListHeaderComponent={renderHeader()}
+        ListHeaderComponent={searchMode ? renderSearchHeader() : renderHeader()}
         ListEmptyComponent={
           <View style={styles.center}>
             <VixText heading="label">
-              Belum ada transaksi {FINANCE_TYPE_LABEL[type]} bulan ini.
-              Tambahkan di atas 👆
+              {searchMode
+                ? query.trim()
+                  ? 'Tidak ada transaksi yang cocok 🔍'
+                  : `Belum ada transaksi ${FINANCE_TYPE_LABEL[type]} bulan ini.`
+                : `Belum ada transaksi ${FINANCE_TYPE_LABEL[type]} bulan ini. Tambahkan di atas 👆`}
             </VixText>
           </View>
         }
@@ -568,6 +650,15 @@ export function TransactionsTab({
         onCancel={() => setConfirmDelete(null)}
         onConfirm={handleConfirmDelete}
       />
+
+      {/* FAB mengambang (seperti fitur Task): buka/tutup mode cari 🔍 */}
+      <PressableScale style={styles.fab} onPress={toggleSearch}>
+        <IconSymbol
+          name={searchMode ? 'xmark' : 'magnifyingglass'}
+          size={24}
+          color={Color.TEXT_REVERSE}
+        />
+      </PressableScale>
     </KeyboardAvoidingView>
   );
 }
@@ -646,7 +737,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   error: { color: Color.DANGER, marginTop: 8 },
-  listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 88 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -672,4 +763,25 @@ const styles = StyleSheet.create({
   amountIncome: { color: Color.SUCCESS },
   amountOut: { color: Color.TEXT_TITLE },
   center: { alignItems: 'center', justifyContent: 'center', paddingTop: 40 },
+  // Mode cari
+  searchWrap: { marginBottom: 8 },
+  sortRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  searchCount: { color: Color.TEXT_LABEL, marginBottom: 4 },
+  // FAB mengambang (seperti Task).
+  fab: {
+    position: 'absolute',
+    right: 18,
+    bottom: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Color.MAIN,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
 });

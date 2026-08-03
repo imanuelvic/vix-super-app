@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -10,6 +10,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -31,6 +32,7 @@ import {
   type DonorSchedule,
 } from '@/lib/donor';
 import { formatFullDate, formatMonthsDays } from '@/lib/format';
+import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
 
 // Donor Darah 🩸 — jadwal & tempat donor, hitung mundur boleh donor lagi,
@@ -65,7 +67,7 @@ export default function DonorScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeDonor(
         user.uid,
@@ -241,9 +243,7 @@ export default function DonorScreen() {
       )}
 
       {data === null ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           {/* ===== Hero: golongan darah + kelayakan ===== */}
@@ -474,7 +474,6 @@ export default function DonorScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   heroCard: {
     backgroundColor: Color.MAIN_DARK,

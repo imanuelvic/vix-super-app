@@ -11,6 +11,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   currentSundayId,
   deleteSermon,
@@ -77,7 +78,7 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
       });
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }

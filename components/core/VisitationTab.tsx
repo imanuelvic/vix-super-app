@@ -27,6 +27,7 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { formatFullDate } from '@/lib/format';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Tab Pertemuan 📅: jadwal MCL bertemu CORE para CL (Visitasi / Fellowship) —
 // diisi manual, reminder H-3 & hari-H muncul otomatis di Home.
@@ -115,7 +116,7 @@ export function VisitationTab({
       await saveVisitations(user.uid, next);
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -130,7 +131,7 @@ export function VisitationTab({
         visitations.filter((v) => v.id !== editing.id),
       );
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditing(null);
       setBusy(false);

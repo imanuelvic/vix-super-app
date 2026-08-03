@@ -36,6 +36,7 @@ import {
   type FunData,
   type FunEntry,
 } from '@/lib/fun';
+import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Tab bawah = kategori arsip. Ikon SF dipetakan di icon-symbol.tsx.
@@ -101,7 +102,7 @@ export default function FunScreen() {
         setLoading(false);
       },
       () => {
-        setError('Gagal memuat data. Cek koneksi internet.');
+        setError(LOAD_ERROR);
         setLoading(false);
       },
     );
@@ -230,7 +231,7 @@ export default function FunScreen() {
       const nextEntries = data.entries.filter((e) => e.id !== confirmDelete.id);
       await saveFun(user.uid, { entries: nextEntries });
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setConfirmDelete(null);
       setDeleteBusy(false);

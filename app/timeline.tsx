@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +9,7 @@ import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -17,6 +18,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { MONTH_NAMES } from '@/lib/format';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   BIRTH_YEAR,
   newTimelineId,
@@ -61,7 +63,7 @@ export default function TimelineScreen() {
         setItems(next);
         setError(null);
       },
-      () => setError('Gagal memuat data. Cek koneksi internet.'),
+      () => setError(LOAD_ERROR),
     );
     return unsubscribe;
   }, [user, year]);
@@ -133,7 +135,7 @@ export default function TimelineScreen() {
       await saveTimelineYear(user.uid, year, next);
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -253,9 +255,7 @@ export default function TimelineScreen() {
       )}
 
       {items === null ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           {/* Progress tahun ini */}
@@ -451,7 +451,6 @@ const styles = StyleSheet.create({
   },
   ageText: { color: Color.ACCENT_DARK },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   progressCard: {
     backgroundColor: Color.MAIN_DARK,

@@ -1,12 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   FadeIn,
@@ -22,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
@@ -38,6 +33,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   addRecurringTasks,
   addTask,
@@ -295,7 +291,7 @@ export default function TasksScreen() {
       }
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -586,9 +582,7 @@ export default function TasksScreen() {
           )}
 
           {loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={Color.MAIN} />
-            </View>
+            <LoadingCenter />
           ) : (
             // Scroll dimatikan saat menyeret biar posisi target stabil.
             <ScrollView
@@ -941,7 +935,6 @@ const styles = StyleSheet.create({
   },
   chipBadgeText: { color: Color.TEXT_REVERSE },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 8 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 120 },
   dayBlock: {
     paddingVertical: 10,

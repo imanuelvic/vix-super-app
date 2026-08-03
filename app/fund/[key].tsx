@@ -32,6 +32,7 @@ import {
   type FundDirection,
   type FundEntry,
 } from '@/lib/funds';
+import { DELETE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Halaman mutasi satu Saku — seperti sheet Pocket di spreadsheet:
@@ -176,7 +177,7 @@ export default function FundScreen() {
     try {
       await deleteFundEntry(user.uid, key, confirmDelete);
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setConfirmDelete(null);
       setDeleteBusy(false);

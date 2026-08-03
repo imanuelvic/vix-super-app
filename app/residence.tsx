@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -20,6 +21,7 @@ import {
   type ChoreStatusMap,
   type ResidenceLog,
 } from '@/lib/residence';
+import { LOAD_ERROR } from '@/lib/messages';
 import {
   subscribeUtilityTransactions,
   type Transaction,
@@ -50,7 +52,7 @@ export default function ResidenceScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeResidenceLogs(
         user.uid,
@@ -95,25 +97,19 @@ export default function ResidenceScreen() {
       <View style={styles.content} key={scrollKey}>
         {tab === 'utility' ? (
           utilityTx === null ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={Color.MAIN} />
-            </View>
+            <LoadingCenter />
           ) : (
             <ResidenceUtilityTab transactions={utilityTx} />
           )
         ) : tab === 'log' ? (
           logs === null ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={Color.MAIN} />
-            </View>
+            <LoadingCenter />
           ) : (
             <ResidenceLogTab items={logs} />
           )
         ) : tab === 'chores' ? (
           chores === null ? (
-            <View style={styles.center}>
-              <ActivityIndicator color={Color.MAIN} />
-            </View>
+            <LoadingCenter />
           ) : (
             <ResidenceChoreTab status={chores} />
           )
@@ -131,5 +127,4 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

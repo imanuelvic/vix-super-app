@@ -1,10 +1,11 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -27,6 +28,7 @@ import {
   type Streak,
   type WeightTarget,
 } from '@/lib/health';
+import { LOAD_ERROR } from '@/lib/messages';
 
 type HealthTab = 'summary' | 'todo' | 'checkup';
 
@@ -62,7 +64,7 @@ export default function HealthScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeHealthProfile(
         user.uid,
@@ -105,9 +107,7 @@ export default function HealthScreen() {
 
       <View style={styles.content} key={scrollKey}>
         {loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={Color.MAIN} />
-          </View>
+          <LoadingCenter />
         ) : tab === 'summary' ? (
           <SummaryTab profile={profile} streak={streak ?? null} dayId={dayId} />
         ) : tab === 'todo' ? (
@@ -134,5 +134,4 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

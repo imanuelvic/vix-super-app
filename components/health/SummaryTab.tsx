@@ -45,6 +45,7 @@ import {
   requestHealthAccess,
   type DailyHealthSummary,
 } from '@/lib/healthkit';
+import { SAVE_ERROR } from '@/lib/messages';
 
 // Label/rentang tiap tier langkah (selaras STEP_TIERS di lib/health).
 const STEP_TIER_META: Record<
@@ -204,7 +205,7 @@ export function SummaryTab({
       });
       setEditOpen(false);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setSaving(false);
     }

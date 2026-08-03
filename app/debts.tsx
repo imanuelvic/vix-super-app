@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -13,6 +13,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -41,6 +42,7 @@ import {
   groupDigits,
   parseAmount,
 } from '@/lib/format';
+import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 type Tab = DebtDirection;
@@ -90,7 +92,7 @@ export default function DebtsScreen() {
         setDebts(next);
         setError(null);
       },
-      () => setError('Gagal memuat data. Cek koneksi internet.'),
+      () => setError(LOAD_ERROR),
     );
     return unsubscribe;
   }, [user]);
@@ -168,7 +170,7 @@ export default function DebtsScreen() {
       await saveDebt(user.uid, data);
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -180,7 +182,7 @@ export default function DebtsScreen() {
     try {
       await deleteDebt(user.uid, editing.id);
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditing(null);
       setBusy(false);
@@ -220,7 +222,7 @@ export default function DebtsScreen() {
       );
       setPAmount('');
     } catch {
-      setPError('Gagal menyimpan. Cek koneksi internet.');
+      setPError(SAVE_ERROR);
     } finally {
       setPBusy(false);
     }
@@ -231,7 +233,7 @@ export default function DebtsScreen() {
     try {
       await deleteDebtPayment(user.uid, paying, paymentId);
     } catch {
-      setPError('Gagal menghapus. Coba lagi.');
+      setPError(DELETE_ERROR);
     }
   }
 
@@ -255,9 +257,7 @@ export default function DebtsScreen() {
       )}
 
       {debts === null ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : (
         // key=scrollKey → ScrollView re-mount tiap tab ditekan (scroll ke atas)
         <ScrollView key={scrollKey} contentContainerStyle={styles.content}>
@@ -590,7 +590,6 @@ export default function DebtsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },

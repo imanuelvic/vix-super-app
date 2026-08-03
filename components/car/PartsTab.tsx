@@ -19,6 +19,7 @@ import {
   type PartTone,
 } from '@/lib/car';
 import { formatDate } from '@/lib/format';
+import { SAVE_ERROR } from '@/lib/messages';
 
 const TONE_LABEL: Record<PartTone, string> = {
   ok: '✅ Aman',
@@ -60,7 +61,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
       await setPartDate(user.uid, editing.key, fDate);
       setEditing(null);
     } catch {
-      setError('Gagal menyimpan. Cek koneksi internet.');
+      setError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }

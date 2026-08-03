@@ -23,6 +23,7 @@ import {
 } from '@/lib/achievements';
 import { formatShortRupiah } from '@/lib/format';
 import { activeStreak, dayDocId, subscribeStreak, type Streak } from '@/lib/health';
+import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import { formatRupiah } from '@/lib/transactions';
 
@@ -44,7 +45,7 @@ export default function AchievementsScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeLoginStreak(user.uid, setLogin, fail),
       subscribeStreak(user.uid, setHabit, fail),

@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { PinLock } from '@/components/common/PinLock';
@@ -18,6 +19,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { subscribeBudget, type BudgetMap } from '@/lib/budgets';
 import { MONTH_NAMES } from '@/lib/format';
+import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactions';
 
 type FinanceTab = 'dashboard' | 'transactions' | 'budgeting';
@@ -73,7 +75,7 @@ export default function FinanceScreen() {
         setLoading(false);
       },
       () => {
-        setError('Gagal memuat data. Cek koneksi internet.');
+        setError(LOAD_ERROR);
         setLoading(false);
       },
     );
@@ -164,9 +166,7 @@ export default function FinanceScreen() {
       {/* key=scrollKey → konten re-mount tiap tab ditekan (scroll ke atas) */}
       <View style={styles.content} key={scrollKey}>
         {loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={Color.MAIN} />
-          </View>
+          <LoadingCenter />
         ) : tab === 'dashboard' ? (
           <DashboardTab items={items} year={year} month={month} />
         ) : tab === 'transactions' ? (
@@ -200,5 +200,4 @@ const styles = StyleSheet.create({
   monthText: { minWidth: 150, textAlign: 'center' },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

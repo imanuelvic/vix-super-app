@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -14,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/auth';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   bumpReviveStreak,
   dailyReminder,
@@ -79,7 +80,7 @@ export default function ReviveEditorScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setFormError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setFormError(LOAD_ERROR);
     const unsubs = [
       subscribeReviveEntries(user.uid, setEntries, fail),
       subscribeReviveStreak(user.uid, setStreak, fail),
@@ -130,7 +131,7 @@ export default function ReviveEditorScreen() {
       }
       router.back();
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -156,9 +157,7 @@ export default function ReviveEditorScreen() {
       />
 
       {!loaded ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : (
         /* Keyboard iOS tidak lagi menutupi kolom Application */
         <KeyboardAvoidingView
@@ -254,7 +253,6 @@ export default function ReviveEditorScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   flex: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   reminderCard: {
     backgroundColor: Color.CONTAINER,

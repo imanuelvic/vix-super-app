@@ -14,6 +14,7 @@ import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   addResidenceLog,
   deleteResidenceLog,
@@ -105,7 +106,7 @@ export function ResidenceLogTab({ items }: { items: ResidenceLog[] }) {
       }
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }

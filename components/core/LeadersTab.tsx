@@ -30,6 +30,7 @@ import {
   type MainTeamMember,
 } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Tab CORE Leader: data semua CL + Main Team yang membantu mereka —
 // nama, warna hati CORE, tanggal lahir, umur, nomor WA, dan hitung
@@ -141,7 +142,7 @@ export function LeadersTab({
       await saveCoreLeaders(user.uid, next);
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -153,7 +154,7 @@ export function LeadersTab({
     try {
       await saveCoreLeaders(user.uid, leaders.filter((l) => l.id !== editing.id));
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditing(null);
       setBusy(false);
@@ -219,7 +220,7 @@ export function LeadersTab({
       await saveMainTeam(user.uid, next);
       setEditingMT(null);
     } catch {
-      setMtFormError('Gagal menyimpan. Cek koneksi internet.');
+      setMtFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -234,7 +235,7 @@ export function LeadersTab({
         mainTeam.filter((m) => m.id !== editingMT.id),
       );
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditingMT(null);
       setBusy(false);
