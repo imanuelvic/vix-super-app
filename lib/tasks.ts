@@ -189,15 +189,6 @@ export function setTaskDone(uid: string, id: string, done: boolean) {
   return updateDoc(doc(db, 'users', uid, 'tasks', id), { done });
 }
 
-/** Tandai banyak task selesai sekaligus (tombol "beres semua hari ini"). */
-export function completeTasks(uid: string, items: Task[]) {
-  const batch = writeBatch(db);
-  for (const t of items) {
-    batch.update(doc(db, 'users', uid, 'tasks', t.id), { done: true });
-  }
-  return batch.commit();
-}
-
 export function deleteTask(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'tasks', id));
 }

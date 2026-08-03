@@ -65,7 +65,6 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
     }
     setBusy(true);
     setFormError(null);
-    // Baru → id = Minggu ini; edit → pakai id (tanggal Minggu) yang ada.
     const sundayId = editing === 'new' ? todaySundayId : editing.id;
     try {
       await saveSermon(user.uid, sundayId, {
@@ -98,7 +97,6 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Hero */}
         <View style={styles.heroCard}>
           <VixText heading="label" additionalStyle={styles.heroLabel}>
             ⛪ Catatan Khotbah Minggu
@@ -111,22 +109,13 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
           </VixText>
         </View>
 
-        {/* Tombol tambah — hanya Minggu & belum ada catatan Minggu ini */}
-        {canAddToday ? (
+        {canAddToday && (
           <PrimaryButton
             label="Tambah Catatan Khotbah"
             icon="plus"
             onPress={openAdd}
             additionalStyle={styles.addButton}
           />
-        ) : (
-          <View style={styles.lockCard}>
-            <VixText heading="label" additionalStyle={styles.lockText}>
-              {isSunday(now)
-                ? '✅ Catatan khotbah Minggu ini sudah dicatat.'
-                : '🙏 Catatan khotbah hanya bisa ditambahkan di hari Minggu.'}
-            </VixText>
-          </View>
         )}
 
         {sermons.length === 0 && (
@@ -280,15 +269,6 @@ const styles = StyleSheet.create({
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   heroValue: { color: Color.TEXT_REVERSE },
   addButton: { marginBottom: 12 },
-  lockCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    padding: 12,
-    marginBottom: 12,
-  },
-  lockText: { color: Color.TEXT_LABEL, textAlign: 'center' },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     backgroundColor: Color.CONTAINER,

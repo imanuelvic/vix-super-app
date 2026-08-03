@@ -15,7 +15,7 @@ import {
 
 import { db } from './firebase';
 
-// Fitur Home 🏠 — rumah kontrakan Casa Jardin. Mirip fitur Car:
+// Fitur Residence 🏠 — rumah kontrakan Casa Jardin. Mirip fitur Car:
 // 1) Air-Listrik: catatan harian isi token listrik & bayar air PAM.
 // 2) Log: pengeluaran rumah lain (iuran lingkungan, water heater, wifi,
 //    cleaning/disinfektan, dll).

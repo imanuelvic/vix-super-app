@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -15,12 +16,18 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
   deadlineDaysUntil,
+  invoiceTotal,
   newCareerId,
   saveFreelance,
   type FreelanceProject,
+  type InvoiceItem,
 } from '@/lib/career';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
+import { INVOICE_PRESETS, shareInvoicePdf } from '@/lib/invoice';
 import { formatRupiah } from '@/lib/transactions';
+
+// Draft item invoice — qty & harga sebagai string supaya enak diedit di input.
+type ItemDraft = { desc: string; qty: string; price: string };
 
 // Tab Freelance 🌐: proyek website & aplikasi — siapa client-nya,
 // deadline kapan, requirement apa, dan fee-nya berapa.
@@ -45,6 +52,8 @@ export function FreelanceTab({
   const [fFee, setFFee] = useState('');
   const [fDeadline, setFDeadline] = useState(new Date());
   const [fDone, setFDone] = useState(false);
+  const [fItems, setFItems] = useState<ItemDraft[]>([]);
+  const [invoiceBusy, setInvoiceBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const today = new Date();
@@ -64,6 +73,7 @@ export function FreelanceTab({
     setFFee('');
     setFDeadline(new Date());
     setFDone(false);
+    setFItems([]);
     setFormError(null);
   }
 
@@ -75,6 +85,13 @@ export function FreelanceTab({
     setFFee(p.fee > 0 ? groupDigits(String(p.fee)) : '');
     setFDeadline(p.deadline.toDate());
     setFDone(p.done);
+    setFItems(
+      (p.invoiceItems ?? []).map((it) => ({
+        desc: it.desc,
+        qty: String(it.qty),
+        price: it.price > 0 ? groupDigits(String(it.price)) : '',
+      })),
+    );
     setFormError(null);
   }, []);
 
@@ -90,6 +107,64 @@ export function FreelanceTab({
       openEdit(proj);
     }
   }, [editId, projects, openEdit]);
+
+  // ===== Rincian biaya (invoice) =====
+  function addPresetItem(desc: string) {
+    setFItems((prev) => [...prev, { desc, qty: '1', price: '' }]);
+  }
+  function addManualItem() {
+    setFItems((prev) => [...prev, { desc: '', qty: '1', price: '' }]);
+  }
+  function updateItem(idx: number, field: keyof ItemDraft, value: string) {
+    setFItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)),
+    );
+  }
+  function removeItem(idx: number) {
+    setFItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+  // Draft → item bersih (qty minimal 1; item tanpa deskripsi diabaikan).
+  function toInvoiceItems(): InvoiceItem[] {
+    return fItems
+      .filter((it) => it.desc.trim())
+      .map((it) => ({
+        desc: it.desc.trim(),
+        qty: Math.max(1, parseInt(it.qty, 10) || 1),
+        price: parseAmount(it.price),
+      }));
+  }
+
+  // Buat PDF invoice dari isian form saat ini lalu buka share sheet (WA/Files).
+  async function handleGenerateInvoice() {
+    if (!editing || invoiceBusy) return;
+    if (!fName.trim()) {
+      setFormError('Isi nama proyek dulu untuk invoice.');
+      return;
+    }
+    const items = toInvoiceItems();
+    if (items.length === 0) {
+      setFormError('Isi minimal 1 rincian biaya untuk membuat invoice.');
+      return;
+    }
+    setFormError(null);
+    setInvoiceBusy(true);
+    try {
+      await shareInvoicePdf({
+        id: editing === 'new' ? newCareerId() : editing.id,
+        name: fName.trim(),
+        client: fClient.trim(),
+        requirement: fRequirement.trim(),
+        fee: parseAmount(fFee),
+        deadline: Timestamp.fromDate(fDeadline),
+        done: fDone,
+        invoiceItems: items,
+      });
+    } catch {
+      setFormError('Gagal membuat invoice. Coba lagi.');
+    } finally {
+      setInvoiceBusy(false);
+    }
+  }
 
   async function handleSave() {
     if (!user || !editing || busy) return;
@@ -111,6 +186,7 @@ export function FreelanceTab({
       fee: parseAmount(fFee),
       deadline: Timestamp.fromDate(fDeadline),
       done: fDone,
+      invoiceItems: toInvoiceItems(),
     };
     const next =
       editing === 'new'
@@ -286,6 +362,97 @@ export function FreelanceTab({
               Proyek selesai ✅
             </VixText>
           </PressableScale>
+
+          {/* ===== Rincian Biaya → Invoice PDF ===== */}
+          <View style={styles.invoiceSection}>
+            <VixText heading="bold" additionalStyle={styles.invoiceHeader}>
+              🧾 Rincian Biaya (Invoice)
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.invoiceHint}>
+              Ketuk preset untuk menambah cepat, lalu isi qty & harganya.
+            </VixText>
+            <View style={styles.presetWrap}>
+              {INVOICE_PRESETS.map((desc) => (
+                <Chip
+                  key={desc}
+                  label={`+ ${desc}`}
+                  active={false}
+                  onPress={() => addPresetItem(desc)}
+                />
+              ))}
+            </View>
+
+            {fItems.map((it, idx) => (
+              <View key={idx} style={styles.itemCard}>
+                <View style={styles.itemTopRow}>
+                  <FormInput
+                    style={styles.itemDesc}
+                    placeholder="Deskripsi item"
+                    value={it.desc}
+                    onChangeText={(t) => updateItem(idx, 'desc', t)}
+                    editable={!invoiceBusy}
+                  />
+                  <PressableScale onPress={() => removeItem(idx)} hitSlop={8}>
+                    <VixText heading="bold" additionalStyle={styles.itemRemove}>
+                      ✕
+                    </VixText>
+                  </PressableScale>
+                </View>
+                <View style={styles.itemBottomRow}>
+                  <FormInput
+                    style={styles.itemQty}
+                    placeholder="Qty"
+                    keyboardType="number-pad"
+                    value={it.qty}
+                    onChangeText={(t) =>
+                      updateItem(idx, 'qty', t.replace(/[^0-9]/g, ''))
+                    }
+                    editable={!invoiceBusy}
+                  />
+                  <FormInput
+                    style={styles.itemPrice}
+                    placeholder="Harga satuan (Rp)"
+                    keyboardType="number-pad"
+                    value={it.price}
+                    onChangeText={(t) => updateItem(idx, 'price', groupDigits(t))}
+                    editable={!invoiceBusy}
+                  />
+                </View>
+                <VixText heading="label" additionalStyle={styles.itemSub}>
+                  Subtotal:{' '}
+                  {formatRupiah(
+                    Math.max(1, parseInt(it.qty, 10) || 1) *
+                      parseAmount(it.price),
+                  )}
+                </VixText>
+              </View>
+            ))}
+
+            <PressableScale style={styles.addManual} onPress={addManualItem}>
+              <VixText heading="bold" additionalStyle={styles.addManualText}>
+                ＋ Item manual
+              </VixText>
+            </PressableScale>
+
+            <View style={styles.invoiceTotalRow}>
+              <VixText heading="bold" additionalStyle={styles.invoiceTotalLabel}>
+                Total
+              </VixText>
+              <VixText heading="bold" additionalStyle={styles.invoiceTotalValue}>
+                {formatRupiah(invoiceTotal(toInvoiceItems()))}
+              </VixText>
+            </View>
+
+            <PressableScale
+              style={styles.invoiceButton}
+              onPress={handleGenerateInvoice}
+              disabled={invoiceBusy}>
+              <VixText heading="bold" additionalStyle={styles.invoiceButtonText}>
+                {invoiceBusy ? 'Menyiapkan…' : '📄 Buat & Bagikan Invoice PDF'}
+              </VixText>
+            </PressableScale>
+          </View>
+
           {formError && (
             <VixText heading="label" additionalStyle={styles.error}>
               {formError}
@@ -367,4 +534,51 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   doneText: { color: Color.TEXT_TITLE },
+  // Rincian biaya → invoice
+  invoiceSection: {
+    marginTop: 8,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    gap: 8,
+  },
+  invoiceHeader: { color: Color.TEXT_TITLE },
+  invoiceHint: { color: Color.TEXT_LABEL },
+  presetWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  itemCard: {
+    backgroundColor: Color.BACKGROUND,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 10,
+    gap: 8,
+  },
+  itemTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  itemDesc: { flex: 1 },
+  itemRemove: { color: Color.DANGER, paddingHorizontal: 4 },
+  itemBottomRow: { flexDirection: 'row', gap: 8 },
+  itemQty: { width: 72 },
+  itemPrice: { flex: 1 },
+  itemSub: { color: Color.MAIN_DARK, textAlign: 'right' },
+  addManual: { alignSelf: 'flex-start', paddingVertical: 6 },
+  addManualText: { color: Color.MAIN_DARK },
+  invoiceTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    paddingTop: 8,
+    marginTop: 2,
+  },
+  invoiceTotalLabel: { color: Color.TEXT_TITLE },
+  invoiceTotalValue: { color: Color.MAIN_DARK },
+  invoiceButton: {
+    backgroundColor: Color.MAIN_DARK,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  invoiceButtonText: { color: Color.TEXT_REVERSE },
 });

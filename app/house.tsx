@@ -31,7 +31,7 @@ const TABS: BottomTab<HouseTab>[] = [
   { key: 'info', label: 'Info', icon: 'info.circle.fill' },
 ];
 
-// Home 🏠 — rumah kontrakan Casa Jardin: rekap air & listrik (otomatis dari
+// Residence 🏠 — rumah kontrakan Casa Jardin: rekap air & listrik (otomatis dari
 // Finance), log pengeluaran rumah lain, dan identitas rumah.
 export default function HouseScreen() {
   const { user } = useAuth();
@@ -78,7 +78,7 @@ export default function HouseScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScreenHeader backLabel="Home" title="Home 🏠" subtitle={HOUSE_INFO.name} />
+      <ScreenHeader backLabel="Home" title="Residence 🏠" subtitle={HOUSE_INFO.name} />
 
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>

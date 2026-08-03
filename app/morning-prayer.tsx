@@ -8,6 +8,8 @@ import {
   subscribeLoginStreak,
   type LoginStreak,
 } from '@/lib/achievements';
+import { dayDocId } from '@/lib/health';
+import { subscribeReviveStreak } from '@/lib/spiritual';
 
 // Lock screen doa pagi — halaman PENUH di root stack (di luar tab), jadi
 // menutupi seluruh layar termasuk tab bar. Home mengarahkan ke sini kalau
@@ -16,11 +18,20 @@ export default function MorningPrayerScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [login, setLogin] = useState<LoginStreak | null>(null);
+  const [reviveStreak, setReviveStreak] = useState<LoginStreak | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    return subscribeLoginStreak(user.uid, setLogin);
+    const unsubs = [
+      subscribeLoginStreak(user.uid, setLogin),
+      subscribeReviveStreak(user.uid, setReviveStreak),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
+
+  // Sudah Revive hari ini? (streak Revive terupdate saat jurnal hari ini
+  // disimpan) → gate mencentang langkah Revive otomatis.
+  const reviveDone = reviveStreak?.lastDayId === dayDocId(new Date());
 
   async function handleConfirm() {
     // Fire-and-forget: jangan tunggu server (biar tidak hang saat offline);
@@ -34,6 +45,7 @@ export default function MorningPrayerScreen() {
   return (
     <MorningPrayerGate
       streakCount={login?.count ?? 0}
+      reviveDone={reviveDone}
       onConfirm={handleConfirm}
       onOpenRevive={() => router.push('/revive')}
     />

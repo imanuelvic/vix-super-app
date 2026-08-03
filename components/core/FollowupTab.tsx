@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
 import { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
@@ -14,12 +15,19 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
+  isCurrentMonthPrayers,
+  isPrayerFollowupDay,
   loveLangLabel,
+  monthDocId,
+  monthlyPointsFor,
+  monthlyPrayersFilled,
   newCoreIdeaId,
   nextBirthday,
   personalityTips,
+  prayerFollowupLeaders,
   saveCoreIdeas,
   saveCoreLeaders,
+  saveMonthlyPrayers,
   waLink,
   weekIndex,
   WEEKLY_FOCUS_COUNT,
@@ -30,6 +38,7 @@ import {
   type CoreLeader,
   type IdeaCadence,
   type MainTeamMember,
+  type MonthlyPrayers,
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
 
@@ -42,12 +51,15 @@ export function FollowupTab({
   mainTeam,
   dayId,
   ideas,
+  monthlyPrayers,
 }: {
   leaders: CoreLeader[];
   mainTeam: MainTeamMember[];
   dayId: string;
   ideas: CoreIdeasData;
+  monthlyPrayers: MonthlyPrayers;
 }) {
+  const router = useRouter();
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   // "Ganti pertanyaan" → seed acak per orang untuk memilih pertanyaan lain.
@@ -180,9 +192,7 @@ export function FollowupTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaders, mainTeam, leaderById, dayId]);
 
-  // 2 CORE Leader fokus minggu ini (bergilir tiap minggu). Hari-dalam-minggu
-  // menentukan jenis pertanyaan (Senin = pertanyaan doa wajib).
-  const dow = new Date().getDay(); // 0=Min … 1=Sen
+  // 2 CORE Leader fokus minggu ini (bergilir tiap minggu).
   const weekLeaders = useMemo(
     () => weeklyLeaders(leaders, weekIndex(new Date()), WEEKLY_FOCUS_COUNT),
     // dayId sebagai dependency: pindah hari/minggu → hitung ulang.
@@ -198,6 +208,34 @@ export function FollowupTab({
     );
     try {
       await saveCoreLeaders(user.uid, next);
+    } catch {
+      setError('Gagal menyimpan. Coba lagi.');
+    }
+  }
+
+  // ===== Pokok Doa Bulanan =====
+  const nowDate = new Date();
+  const monthTitle = `${MONTH_NAMES[nowDate.getMonth()]} ${nowDate.getFullYear()}`;
+  const monthPoints = monthlyPointsFor(monthlyPrayers, nowDate);
+  const monthNeedsFill = !monthlyPrayersFilled(monthlyPrayers, nowDate);
+  // Sel/Kam/Sab → follow up pokok doa (bergilir beberapa CL per sesi).
+  const isPrayerDay = isPrayerFollowupDay(nowDate);
+  const prayerLeadersToday = prayerFollowupLeaders(leaders, monthPoints, nowDate);
+
+  // Tandai satu CL sudah difollowup pokok doanya pada sesi hari ini.
+  async function handlePrayerDone(leaderId: string) {
+    if (!user) return;
+    setError(null);
+    const monthId = monthDocId(nowDate);
+    const base = isCurrentMonthPrayers(monthlyPrayers, nowDate)
+      ? monthlyPrayers
+      : { monthId, points: {}, followedDayId: {} };
+    try {
+      await saveMonthlyPrayers(user.uid, {
+        monthId,
+        points: base.points,
+        followedDayId: { ...base.followedDayId, [leaderId]: dayId },
+      });
     } catch {
       setError('Gagal menyimpan. Coba lagi.');
     }
@@ -235,7 +273,7 @@ export function FollowupTab({
     done: boolean;
     onDone: () => void;
   }) {
-    const topic = weeklyFollowupTopic(person, id, dayId, dow, topicOverride[id]);
+    const topic = weeklyFollowupTopic(person, id, dayId, topicOverride[id]);
     const tips = personalityTips(person);
     // Ada nomor → seluruh kartu bisa ditekan untuk chat WA. Menekan kartu =
     // menindaklanjuti orang ini, jadi SEKALIGUS menandai "sudah follow up hari
@@ -347,19 +385,89 @@ export function FollowupTab({
 
         {!done && (
           <View style={styles.buttonRow}>
-            {/* Senin pertanyaannya wajib (doa) → tidak bisa diganti */}
-            {dow !== 1 && (
-              <PressableScale
-                style={styles.shuffleButton}
-                onPress={() => shuffleTopic(id)}>
-                <VixText heading="bold" additionalStyle={styles.shuffleText}>
-                  🔀 Ganti pertanyaan
-                </VixText>
-              </PressableScale>
-            )}
+            <PressableScale
+              style={styles.shuffleButton}
+              onPress={() => shuffleTopic(id)}>
+              <VixText heading="bold" additionalStyle={styles.shuffleText}>
+                🔀 Ganti pertanyaan
+              </VixText>
+            </PressableScale>
             <PressableScale style={styles.doneButton} onPress={onDone}>
               <VixText heading="bold" additionalStyle={styles.doneButtonText}>
                 ✅ Selesai
+              </VixText>
+            </PressableScale>
+          </View>
+        )}
+      </PressableScale>
+    );
+  }
+
+  // Kartu follow up pokok doa bulanan untuk satu CL (Sel/Kam/Sab).
+  function renderPrayerCard(leader: CoreLeader) {
+    const pts = monthPoints[leader.id] ?? [];
+    const done =
+      isCurrentMonthPrayers(monthlyPrayers, nowDate) &&
+      monthlyPrayers.followedDayId[leader.id] === dayId;
+    const canChat = !!leader.phone;
+    const waText = `Shalom ${leader.name}! 🙏\n\nAku lagi mendoakan kamu bulan ini. Gimana kabar & perkembangan pergumulanmu?`;
+    return (
+      <PressableScale
+        key={leader.id}
+        style={[
+          styles.card,
+          canChat && !done && styles.cardChat,
+          done && styles.cardDone,
+        ]}
+        onPress={
+          canChat
+            ? () => {
+                openWhatsApp(leader.phone!, waText);
+                if (!done) handlePrayerDone(leader.id);
+              }
+            : undefined
+        }>
+        <View style={styles.cardHeader}>
+          <VixText heading="bold" additionalStyle={styles.leaderName}>
+            {leader.heart} {leader.name}
+          </VixText>
+          <View style={styles.categoryBadge}>
+            <VixText heading="label" additionalStyle={styles.categoryText}>
+              📿 {pts.length} poin
+            </VixText>
+          </View>
+        </View>
+        {/* Daftar pokok doa bulan ini */}
+        <View style={styles.prayerPointsBox}>
+          {pts.map((p, i) => (
+            <VixText
+              key={i}
+              heading="paragraph"
+              additionalStyle={styles.prayerPointText}>
+              🙏 {p}
+            </VixText>
+          ))}
+        </View>
+        {done ? (
+          <VixText heading="label" additionalStyle={styles.doneText}>
+            ✅ Sudah difollowup hari ini
+          </VixText>
+        ) : !leader.phone ? (
+          <VixText heading="label" additionalStyle={styles.noPhoneText}>
+            📱 Isi nomor HP di tab CORE Leader untuk chat WA.
+          </VixText>
+        ) : (
+          <VixText heading="label" additionalStyle={styles.chatHint}>
+            💬 Ketuk kartu untuk chat WA & tandai sudah difollowup
+          </VixText>
+        )}
+        {!done && (
+          <View style={styles.buttonRow}>
+            <PressableScale
+              style={styles.doneButton}
+              onPress={() => handlePrayerDone(leader.id)}>
+              <VixText heading="bold" additionalStyle={styles.doneButtonText}>
+                ✅ Selesai difollowup
               </VixText>
             </PressableScale>
           </View>
@@ -418,6 +526,44 @@ export function FollowupTab({
           ))}
         </View>
       )}
+
+      {/* ===== Pokok Doa Bulanan: isi (awal bulan) / follow up (Sel/Kam/Sab) ===== */}
+      {monthNeedsFill ? (
+        <PressableScale
+          style={styles.prayerFillCard}
+          onPress={() => router.push('/monthly-prayers')}>
+          <VixText heading="title" additionalStyle={styles.prayerFillTitle}>
+            📿 Pokok Doa Bulanan — {monthTitle}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.prayerFillText}>
+            Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader dulu — ini yang
+            jadi dasar follow up Selasa/Kamis/Sabtu 🙏
+          </VixText>
+          <View style={styles.prayerFillButton}>
+            <VixText heading="bold" additionalStyle={styles.prayerFillButtonText}>
+              Isi Sekarang →
+            </VixText>
+          </View>
+        </PressableScale>
+      ) : isPrayerDay && prayerLeadersToday.length > 0 ? (
+        <>
+          <View style={styles.prayerHeader}>
+            <VixText heading="title">📿 Follow Up Pokok Doa</VixText>
+            <PressableScale
+              onPress={() => router.push('/monthly-prayers')}
+              hitSlop={8}>
+              <VixText heading="bold" additionalStyle={styles.prayerEditText}>
+                Lihat semua
+              </VixText>
+            </PressableScale>
+          </View>
+          <VixText heading="label" additionalStyle={styles.prayerSub}>
+            Bergilir — hari ini {prayerLeadersToday.length} CORE Leader. Doakan &
+            tanya perkembangan pergumulan mereka 🙏
+          </VixText>
+          {prayerLeadersToday.map((l) => renderPrayerCard(l))}
+        </>
+      ) : null}
 
       {/* ===== Follow Up Mingguan: fokus 2 CORE Leader ===== */}
       <View style={styles.weekCard}>
@@ -585,6 +731,44 @@ const styles = StyleSheet.create({
   },
   weekTitle: { color: Color.TEXT_REVERSE },
   weekLeadersText: { color: Color.MAIN_LIGHT },
+  // Pokok Doa Bulanan — kartu ajakan isi (awal bulan), tema spiritual (ungu).
+  prayerFillCard: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.SPIRITUAL_DARK,
+    padding: 16,
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  prayerFillTitle: { color: Color.SPIRITUAL_DARK },
+  prayerFillText: { color: Color.SPIRITUAL_DARK },
+  prayerFillButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Color.SPIRITUAL_DARK,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  prayerFillButtonText: { color: Color.TEXT_REVERSE },
+  prayerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  prayerEditText: { color: Color.MAIN },
+  prayerSub: { color: Color.TEXT_LABEL, marginBottom: 10 },
+  prayerPointsBox: {
+    backgroundColor: Color.BACKGROUND,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  prayerPointText: { color: Color.TEXT_TITLE },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

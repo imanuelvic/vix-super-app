@@ -404,7 +404,7 @@ export const CORE_CATEGORIES: CoreCategory[] = [
     questions: [
       'Gimana saat teduhmu minggu ini?',
       'Ada firman yang lagi ngena banget buat kamu?',
-      'Apa pokok doa yang bisa aku doakan minggu ini?',
+      'Lagi belajar percaya Tuhan di hal apa akhir-akhir ini?',
     ],
   },
   {
@@ -520,10 +520,6 @@ export function weeklyLeaders<T>(
   return out;
 }
 
-// Pertanyaan wajib tiap Senin — mulai minggu dengan mendoakan mereka.
-export const MONDAY_PRAYER_QUESTION =
-  'Apa yang bisa aku doakan buat kamu minggu ini? 🙏';
-
 // Pertanyaan ringan pembuka obrolan (this-or-that / random).
 export const OPEN_QUESTIONS: string[] = [
   'Kopi atau teh? ☕🍵',
@@ -571,10 +567,9 @@ export const PERSONALITY_QUESTIONS: {
 export type FollowupTopic = { icon: string; label: string; question: string };
 
 /**
- * Pertanyaan follow up untuk satu CL hari ini:
- * - Senin → pertanyaan doa wajib (mulai minggu dengan mendoakan).
- * - Hari lain → acak dari 8 aspek hidup + obrolan ringan + penggali
- *   kepribadian (HANYA yang datanya belum ada). `seed` opsional untuk "ganti".
+ * Pertanyaan follow up acak untuk satu CL: dari 8 aspek hidup + obrolan ringan
+ * + penggali kepribadian (HANYA yang datanya belum ada). `seed` opsional untuk
+ * "ganti pertanyaan". (Pokok doa dipindah ke Pokok Doa Bulanan.)
  */
 export function weeklyFollowupTopic(
   person: {
@@ -584,12 +579,8 @@ export function weeklyFollowupTopic(
   },
   personId: string,
   dayId: string,
-  dayOfWeek: number,
   seed?: number,
 ): FollowupTopic {
-  if (dayOfWeek === 1) {
-    return { icon: '🙏', label: 'Spiritual', question: MONDAY_PRAYER_QUESTION };
-  }
   const pool: FollowupTopic[] = [];
   for (const c of CORE_CATEGORIES) {
     for (const q of c.questions) {
@@ -607,6 +598,106 @@ export function weeklyFollowupTopic(
   const idx =
     (seed !== undefined ? seed : hashString(dayId + personId)) % pool.length;
   return pool[idx];
+}
+
+// ==================== Pokok Doa Bulanan 🙏 ====================
+// Tiap awal bulan, MCL menanyakan pokok doa/pergumulan tiap CORE Leader untuk
+// bulan ini. Pokok doa inilah yang menentukan follow up berkala Sel/Kam/Sab.
+// Akhir bulan otomatis direset: begitu bulan berganti data lama dianggap kosong
+// & tertimpa PERMANEN saat diisi ulang. Satu dokumen kecil:
+// users/{uid}/core/monthlyPrayers — { monthId, points, followedDayId }.
+
+export type MonthlyPrayers = {
+  monthId: string; // "YYYY-MM" pemilik data ini
+  points: Record<string, string[]>; // leaderId -> daftar poin pokok doa
+  followedDayId: Record<string, string>; // leaderId -> dayId terakhir difollowup
+};
+
+export const EMPTY_MONTHLY_PRAYERS: MonthlyPrayers = {
+  monthId: '',
+  points: {},
+  followedDayId: {},
+};
+
+// Pertanyaan pembuka untuk mengumpulkan pokok doa bulanan tiap CL.
+export const MONTHLY_PRAYER_QUESTION =
+  'Apa yang bisa aku doakan buat kamu bulan ini? 🙏';
+
+/** "2026-08" — id bulan berjalan (dasar dokumen pokok doa bulanan). */
+export function monthDocId(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function subscribeMonthlyPrayers(
+  uid: string,
+  onChange: (data: MonthlyPrayers) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const ref = doc(db, 'users', uid, 'core', 'monthlyPrayers');
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const d = snapshot.data();
+      onChange({
+        monthId: (d?.monthId as string) ?? '',
+        points: (d?.points as Record<string, string[]>) ?? {},
+        followedDayId: (d?.followedDayId as Record<string, string>) ?? {},
+      });
+    },
+    onError,
+  );
+}
+
+/** Tulis ulang seluruh dokumen pokok doa bulanan (dokumen kecil). */
+export function saveMonthlyPrayers(uid: string, data: MonthlyPrayers) {
+  return setDoc(doc(db, 'users', uid, 'core', 'monthlyPrayers'), data);
+}
+
+/** Data ini milik bulan berjalan? Kalau beda bulan → perlu diisi ulang. */
+export function isCurrentMonthPrayers(data: MonthlyPrayers, now: Date): boolean {
+  return data.monthId === monthDocId(now);
+}
+
+/** Poin pokok doa efektif bulan ini (kosong kalau dokumen milik bulan lain). */
+export function monthlyPointsFor(
+  data: MonthlyPrayers,
+  now: Date,
+): Record<string, string[]> {
+  return isCurrentMonthPrayers(data, now) ? data.points : {};
+}
+
+/** Sudah ada minimal satu pokok doa terisi bulan ini? */
+export function monthlyPrayersFilled(data: MonthlyPrayers, now: Date): boolean {
+  const pts = monthlyPointsFor(data, now);
+  return Object.values(pts).some((arr) => (arr?.length ?? 0) > 0);
+}
+
+// Follow up pokok doa berkala: Selasa (2), Kamis (4), Sabtu (6).
+export const PRAYER_FOLLOWUP_DAYS = [2, 4, 6];
+export const PRAYER_FOLLOWUP_COUNT = 3; // CL yang difokuskan tiap sesi (bergilir)
+
+/** Hari ini jadwal follow up pokok doa? (Selasa/Kamis/Sabtu) */
+export function isPrayerFollowupDay(d: Date): boolean {
+  return PRAYER_FOLLOWUP_DAYS.includes(d.getDay());
+}
+
+/** Index sesi — stabil sepanjang hari, berganti tiap hari (untuk rotasi). */
+export function prayerSessionIndex(d: Date): number {
+  const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.floor(midnight.getTime() / 86_400_000);
+}
+
+/**
+ * CL yang difollowup pokok doanya pada sesi ini (bergilir). Hanya CL yang
+ * SUDAH punya pokok doa bulan ini yang ikut rotasi.
+ */
+export function prayerFollowupLeaders<T extends { id: string }>(
+  leaders: T[],
+  points: Record<string, string[]>,
+  now: Date,
+): T[] {
+  const withPoints = leaders.filter((l) => (points[l.id]?.length ?? 0) > 0);
+  return weeklyLeaders(withPoints, prayerSessionIndex(now), PRAYER_FOLLOWUP_COUNT);
 }
 
 // ==================== Ulang tahun ====================

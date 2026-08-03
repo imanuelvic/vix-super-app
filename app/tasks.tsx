@@ -41,7 +41,6 @@ import { dayDocId } from '@/lib/health';
 import {
   addRecurringTasks,
   addTask,
-  completeTasks,
   deleteTask,
   generateRecurringDays,
   MAX_RECURRING,
@@ -365,19 +364,6 @@ export default function TasksScreen() {
     setSheetView(null);
     // Tunggu sheet menutup dulu — iOS tidak suka modal berganti seketika.
     setTimeout(() => openEdit(t), 350);
-  }
-
-  // Sapu bersih: semua task HARI INI (semua kategori) ditandai selesai.
-  async function handleCompleteToday() {
-    if (!user) return;
-    setFabOpen(false);
-    const todays = tasks.filter((t) => t.dayId === todayId && !t.done);
-    if (todays.length === 0) return;
-    try {
-      await completeTasks(user.uid, todays);
-    } catch {
-      setError('Gagal menandai selesai. Coba lagi.');
-    }
   }
 
   // ===== Drag & drop =====
@@ -711,7 +697,7 @@ export default function TasksScreen() {
         {fabOpen && (
           <>
             <FabAction
-              order={3}
+              order={2}
               label="Cari task"
               icon="magnifyingglass"
               onPress={() => {
@@ -719,12 +705,6 @@ export default function TasksScreen() {
                 setQuery('');
                 setSheetView('search');
               }}
-            />
-            <FabAction
-              order={2}
-              label="Beres semua hari ini"
-              icon="checkmark"
-              onPress={handleCompleteToday}
             />
             <FabAction
               order={1}
@@ -1193,7 +1173,7 @@ function DraggableTaskRow({
   );
 }
 
-const FAB_ACTIONS = 4; // jumlah tombol speed-dial (untuk hitung stagger)
+const FAB_ACTIONS = 3; // jumlah tombol speed-dial (untuk hitung stagger)
 
 // Satu tombol kecil speed-dial: label pill + lingkaran ikon.
 // Naik mulus sekali dari arah FAB (tanpa mantul), lalu turun kembali saat
@@ -1206,7 +1186,7 @@ function FabAction({
 }: {
   order: number;
   label: string;
-  icon: 'plus' | 'magnifyingglass' | 'repeat' | 'checkmark';
+  icon: 'plus' | 'magnifyingglass' | 'repeat';
   onPress: () => void;
 }) {
   return (

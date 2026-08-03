@@ -25,15 +25,20 @@ Karena Engkaulah yang empunya Kerajaan dan kuasa dan kemuliaan sampai selama-lam
 // Tidak bisa dilewati; harus doa Bapa Kami + Revive lalu konfirmasi.
 export function MorningPrayerGate({
   streakCount,
+  reviveDone,
   onConfirm,
   onOpenRevive,
 }: {
   streakCount: number;
+  // True kalau jurnal Revive hari ini sudah diisi → langkah Revive auto-centang.
+  reviveDone: boolean;
   onConfirm: () => Promise<void>;
   onOpenRevive: () => void;
 }) {
   const [prayed, setPrayed] = useState(false);
-  const [revived, setRevived] = useState(false);
+  const [manualRevived, setManualRevived] = useState(false);
+  // Sudah Revive kalau terdeteksi otomatis ATAU dicentang manual.
+  const revived = reviveDone || manualRevived;
   const [busy, setBusy] = useState(false);
   const ready = prayed && revived;
 
@@ -81,10 +86,16 @@ export function MorningPrayerGate({
           </PressableScale>
           <PressableScale
             style={styles.checkRow}
-            onPress={() => setRevived((v) => !v)}>
+            onPress={() => {
+              // Kalau sudah terdeteksi otomatis, tidak perlu (dan tidak bisa)
+              // dibatalkan manual.
+              if (!reviveDone) setManualRevived((v) => !v);
+            }}>
             <CheckCircle checked={revived} />
             <VixText heading="bold" additionalStyle={styles.checkText}>
-              Sudah Revive hari ini
+              {reviveDone
+                ? 'Sudah Revive hari ini ✓ (terdeteksi otomatis)'
+                : 'Sudah Revive hari ini'}
             </VixText>
           </PressableScale>
         </Animated.View>

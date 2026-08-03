@@ -45,12 +45,18 @@ import {
 } from '@/lib/career';
 import {
   EMPTY_CORE_IDEAS,
+  EMPTY_MONTHLY_PRAYERS,
   IDEA_CADENCE_LABEL,
   ideaReminderDue,
+  isPrayerFollowupDay,
   meetingKindMeta,
+  monthlyPointsFor,
+  monthlyPrayersFilled,
   nextBirthday,
+  prayerFollowupLeaders,
   subscribeCoreIdeas,
   subscribeCoreLeaders,
+  subscribeMonthlyPrayers,
   subscribeVisitations,
   visitDaysUntil,
   visitReminderWindow,
@@ -59,6 +65,7 @@ import {
   weeklyLeaders,
   type CoreIdeasData,
   type CoreLeader,
+  type MonthlyPrayers,
   type Visitation,
 } from '@/lib/core';
 import {
@@ -79,7 +86,12 @@ import {
   type DonorData,
 } from '@/lib/donor';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
-import { formatDate, formatMonthsDays, formatShortDayDate } from '@/lib/format';
+import {
+  formatDate,
+  formatMonthsDays,
+  formatShortDayDate,
+  MONTH_NAMES,
+} from '@/lib/format';
 import {
   daysSinceLastFun,
   EMPTY_FUN,
@@ -114,7 +126,11 @@ import {
   subscribeSermons,
   type SermonNote,
 } from '@/lib/sermon';
-import { subscribeReviveStreak } from '@/lib/spiritual';
+import {
+  setBibleReadingDone,
+  subscribeBibleReading,
+  subscribeReviveStreak,
+} from '@/lib/spiritual';
 import {
   setTaskDone,
   subscribeTasks,
@@ -169,11 +185,11 @@ const FEATURES: {
   { key: 'trading', label: 'Trading', icon: 'chart.line.uptrend.xyaxis', route: '/trading', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
   { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
-  { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
-  { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
   { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
   { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
-  { key: 'house', label: 'Home', icon: 'house.fill', route: '/house', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
+  { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
+  { key: 'house', label: 'Residence', icon: 'house.fill', route: '/house', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
+  { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
 ];
 
 export default function HomeScreen() {
@@ -204,6 +220,11 @@ export default function HomeScreen() {
   const [insurance, setInsurance] = useState<InsuranceMonths>({});
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
   const [wheel, setWheel] = useState<WheelData | null>(null);
+  const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
+    EMPTY_MONTHLY_PRAYERS,
+  );
+  // Checklist "sudah baca ≥1 pasal hari ini" — lastDayId dokumen bibleReading.
+  const [bibleReadDayId, setBibleReadDayId] = useState<string | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
   // khotbah yang bergantung waktu.
@@ -223,6 +244,8 @@ export default function HomeScreen() {
     const unsubs = [
       subscribeLoginStreak(user.uid, setLogin),
       subscribeWheel(user.uid, wheelQid, setWheel),
+      subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
+      subscribeBibleReading(user.uid, setBibleReadDayId),
       subscribeTasks(user.uid, setTasks),
       subscribeHabits(user.uid, setHabits),
       subscribeHabitDay(user.uid, todayId, setDay),
@@ -468,6 +491,37 @@ export default function HomeScreen() {
   const wheelFocusRows = wheelFocusDue ? wheelFocusReminders(wheel, now) : [];
   const wheelNeedsFill = wheel != null && !wheelHasScores(wheel);
 
+  // ===== Reminder Pokok Doa Bulanan (CORE) 📿 =====
+  // Awal bulan belum diisi → ajak isi. Sel/Kam/Sab → follow up bergilir.
+  const prayerMonthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+  const monthPoints = monthlyPointsFor(monthlyPrayers, now);
+  const prayerNeedsFill =
+    leaders.length > 0 && !monthlyPrayersFilled(monthlyPrayers, now);
+  const prayerLeadersToday = prayerFollowupLeaders(leaders, monthPoints, now);
+  const prayerUndone = isPrayerFollowupDay(now)
+    ? prayerLeadersToday.filter(
+        (l) => monthlyPrayers.followedDayId[l.id] !== todayId,
+      ).length
+    : 0;
+  const prayerFollowupDue = prayerUndone > 0;
+
+  // ===== Reminder Baca Alkitab harian 📖 (tema spiritual) =====
+  // Sudah baca kalau checklist dicentang ATAU sudah Revive hari ini (Revive
+  // termasuk baca firman). Menunggu data streak Revive termuat dulu.
+  const bibleReadDone =
+    bibleReadDayId === todayId ||
+    (revive != null && revive.lastDayId === todayId);
+  const bibleReadDue = revive !== undefined && !bibleReadDone;
+
+  async function markBibleRead() {
+    if (!user) return;
+    try {
+      await setBibleReadingDone(user.uid, todayId, true);
+    } catch {
+      // Diamkan — snapshot akan mengoreksi tampilan otomatis.
+    }
+  }
+
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
   // memutuskan apakah perlu memunculkan fallback produktivitas).
   const hasActionReminder =
@@ -477,8 +531,11 @@ export default function HomeScreen() {
     debtReminders.length > 0 ||
     healthRows.length > 0 ||
     !!sundaySermon ||
+    bibleReadDue ||
     wheelFocusDue ||
     wheelNeedsFill ||
+    prayerNeedsFill ||
+    prayerFollowupDue ||
     careerReminders.length > 0 ||
     todayUndone > 0;
 
@@ -753,6 +810,36 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* Reminder Pokok Doa Bulanan — awal bulan belum diisi (tema spiritual) */}
+        {prayerNeedsFill && (
+          <ReminderCard
+            bg={Color.SPIRITUAL}
+            fg={Color.SPIRITUAL_DARK}
+            title={`📿 Pokok Doa Bulanan — ${prayerMonthTitle}`}
+            onPress={() => router.push('/monthly-prayers')}>
+            <VixText heading="label" additionalStyle={styles.prayerText}>
+              Awal bulan! Isi pokok doa tiap CORE Leader — jadi dasar follow up
+              Selasa/Kamis/Sabtu 🙏
+            </VixText>
+          </ReminderCard>
+        )}
+
+        {/* Reminder follow up pokok doa (Sel/Kam/Sab, bergilir) */}
+        {prayerFollowupDue && (
+          <ReminderCard
+            bg={Color.SPIRITUAL}
+            fg={Color.SPIRITUAL_DARK}
+            title="📿 Follow Up Pokok Doa"
+            onPress={() =>
+              router.push({ pathname: '/core', params: { tab: 'followup' } })
+            }>
+            <VixText heading="label" additionalStyle={styles.prayerText}>
+              Hari ini {prayerUndone} CORE Leader untuk didoakan & ditanya
+              perkembangan pergumulannya 🙏
+            </VixText>
+          </ReminderCard>
+        )}
+
         {/* Reminder bayar pinjaman (jatuh tempo ≤ 3 hari / lewat) */}
         {debtReminders.length > 0 && (
           <ReminderCard
@@ -779,6 +866,21 @@ export default function HomeScreen() {
               </PressableScale>
             ))}
           </View>
+        )}
+
+        {/* Reminder Baca Alkitab harian — checklist minimal 1 pasal (ungu) */}
+        {bibleReadDue && (
+          <PressableScale style={styles.readingCard} onPress={markBibleRead}>
+            <CheckCircle checked={false} size={24} />
+            <View style={styles.readingTextBox}>
+              <VixText heading="bold" additionalStyle={styles.readingTitle}>
+                📖 Baca Alkitab hari ini
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.readingSub}>
+                Minimal 1 pasal — ketuk untuk tandai selesai 🙏
+              </VixText>
+            </View>
+          </PressableScale>
         )}
 
         {/* Reminder renungkan khotbah Minggu (Rabu/Jumat siang) — ungu */}
@@ -1071,6 +1173,25 @@ const styles = StyleSheet.create({
   wheelArea: { color: Color.TEXT_TITLE, fontWeight: '600' },
   wheelTip: { color: Color.WHEEL_DARK },
   wheelText: { color: Color.WHEEL_DARK },
+  // Reminder Pokok Doa Bulanan (CORE) — tema spiritual (ungu).
+  prayerText: { color: Color.SPIRITUAL_DARK },
+  // Reminder Baca Alkitab harian — checklist, warna grid spiritual (ungu).
+  readingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.SPIRITUAL_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  readingTextBox: { flex: 1, gap: 1 },
+  readingTitle: { color: Color.SPIRITUAL_DARK },
+  readingSub: { color: Color.SPIRITUAL_DARK },
   // Kartu fallback produktivitas (income) → hijau, tiap baris bisa ditekan.
   productivityCard: {
     backgroundColor: Color.FINANCE_INCOME,

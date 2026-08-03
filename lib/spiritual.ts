@@ -120,6 +120,36 @@ export function bumpReviveStreak(
   });
 }
 
+// ===================== Bacaan Alkitab harian 📖 =====================
+// Checklist ringan "sudah baca minimal 1 pasal hari ini". Satu dokumen kecil:
+// users/{uid}/app/bibleReading → { lastDayId }. Sudah baca hari ini kalau
+// lastDayId === hari ini. Catatan: kalau sudah Revive hari ini juga dianggap
+// sudah baca (Revive termasuk baca firman) — penggabungan itu dicek di layar.
+
+export function subscribeBibleReading(
+  uid: string,
+  onChange: (lastDayId: string | null) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const ref = doc(db, 'users', uid, 'app', 'bibleReading');
+  return onSnapshot(
+    ref,
+    (snapshot) => onChange((snapshot.data()?.lastDayId as string) ?? null),
+    onError,
+  );
+}
+
+/** Tandai (atau batalkan) sudah baca ≥1 pasal hari ini. */
+export function setBibleReadingDone(
+  uid: string,
+  todayId: string,
+  done: boolean,
+) {
+  return setDoc(doc(db, 'users', uid, 'app', 'bibleReading'), {
+    lastDayId: done ? todayId : '',
+  });
+}
+
 // ===================== Reminder harian 🕊️ =====================
 // Acak tapi deterministik per hari — fokus: hubungan pribadi dengan Tuhan.
 

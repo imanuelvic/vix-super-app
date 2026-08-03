@@ -86,6 +86,13 @@ export function saveRoadmap(uid: string, list: RoadmapItem[]) {
 
 // ==================== 2. Freelance: proyek client ====================
 
+// Baris rincian biaya untuk invoice PDF (deskripsi × qty × harga satuan).
+export type InvoiceItem = {
+  desc: string; // deskripsi item, mis. "Jasa Pembuatan Website"
+  qty: number; // kuantitas (mis. jumlah bulan)
+  price: number; // harga satuan (Rp)
+};
+
 export type FreelanceProject = {
   id: string;
   name: string; // nama proyek, mis. "Website Toko Bunga"
@@ -94,7 +101,13 @@ export type FreelanceProject = {
   fee: number; // Rp (0 = belum disepakati)
   deadline: Timestamp;
   done: boolean;
+  invoiceItems?: InvoiceItem[]; // rincian biaya untuk invoice (opsional)
 };
+
+/** Total invoice = jumlah (qty × harga satuan) semua item. */
+export function invoiceTotal(items: InvoiceItem[]): number {
+  return items.reduce((sum, it) => sum + it.qty * it.price, 0);
+}
 
 export function subscribeFreelance(
   uid: string,

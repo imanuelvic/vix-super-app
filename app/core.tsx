@@ -15,13 +15,16 @@ import { VisitationTab } from '@/components/core/VisitationTab';
 import { useAuth } from '@/contexts/auth';
 import {
   EMPTY_CORE_IDEAS,
+  EMPTY_MONTHLY_PRAYERS,
   subscribeCoreIdeas,
   subscribeCoreLeaders,
   subscribeMainTeam,
+  subscribeMonthlyPrayers,
   subscribeVisitations,
   type CoreIdeasData,
   type CoreLeader,
   type MainTeamMember,
+  type MonthlyPrayers,
   type Visitation,
 } from '@/lib/core';
 import { dayDocId } from '@/lib/health';
@@ -61,6 +64,9 @@ export default function CoreScreen() {
   const [mainTeam, setMainTeam] = useState<MainTeamMember[] | null>(null);
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
   const [ideas, setIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
+  const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
+    EMPTY_MONTHLY_PRAYERS,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const dayId = dayDocId(new Date());
@@ -80,6 +86,7 @@ export default function CoreScreen() {
       subscribeMainTeam(user.uid, setMainTeam, fail),
       subscribeVisitations(user.uid, setVisitations, fail),
       subscribeCoreIdeas(user.uid, setIdeas, fail),
+      subscribeMonthlyPrayers(user.uid, setMonthlyPrayers, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -91,11 +98,15 @@ export default function CoreScreen() {
         title="CORE 🙏"
         subtitle="Gembalakan & muridkan CORE Leader-mu"
         right={
-          // Riwayat seluruh visitasi 🕘
-          <EmojiButton
-            emoji="🕘"
-            onPress={() => router.push('/visitations')}
-          />
+          <View style={styles.headerButtons}>
+            {/* Riwayat seluruh visitasi 🕘 */}
+            <EmojiButton emoji="🕘" onPress={() => router.push('/visitations')} />
+            {/* Pokok Doa Bulanan 📿 */}
+            <EmojiButton
+              emoji="📿"
+              onPress={() => router.push('/monthly-prayers')}
+            />
+          </View>
         }
       />
 
@@ -118,6 +129,7 @@ export default function CoreScreen() {
             mainTeam={mainTeam}
             dayId={dayId}
             ideas={ideas}
+            monthlyPrayers={monthlyPrayers}
           />
         ) : (
           <LeadersTab leaders={leaders} mainTeam={mainTeam} />
@@ -135,4 +147,5 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  headerButtons: { flexDirection: 'row', gap: 8 },
 });
