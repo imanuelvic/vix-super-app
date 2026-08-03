@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
-import { HOUSE_INFO } from '@/lib/house';
+import { RESIDENCE_INFO } from '@/lib/residence';
 
 // Tips ringan biar rumah kontrakan awet & nyaman.
 const TIPS: string[] = [
@@ -21,10 +21,10 @@ export function InfoTab() {
       <View style={styles.heroCard}>
         <VixText additionalStyle={styles.heroEmoji}>🏠</VixText>
         <VixText heading="subheader" additionalStyle={styles.heroName}>
-          {HOUSE_INFO.name}
+          {RESIDENCE_INFO.name}
         </VixText>
         <VixText heading="label" additionalStyle={styles.heroSub}>
-          Pemilik: {HOUSE_INFO.owner}
+          Pemilik: {RESIDENCE_INFO.owner}
         </VixText>
       </View>
 
@@ -34,18 +34,18 @@ export function InfoTab() {
           📍 Alamat
         </VixText>
         <VixText heading="label" additionalStyle={styles.addressText}>
-          {HOUSE_INFO.address}
+          {RESIDENCE_INFO.address}
         </VixText>
       </View>
 
       {/* Detail rumah */}
       <View style={styles.detailCard}>
-        <InfoRow label="Luas" value={HOUSE_INFO.wide} />
-        <InfoRow label="Listrik" value={HOUSE_INFO.electricity} />
-        <InfoRow label="Air" value={HOUSE_INFO.water} />
-        <InfoRow label="Mulai sewa" value={HOUSE_INFO.rentalDate} />
-        <InfoRow label="Iuran lingkungan" value={HOUSE_INFO.managementFeePeriod} />
-        <InfoRow label="Water heater" value={HOUSE_INFO.waterHeater} />
+        <InfoRow label="Luas" value={RESIDENCE_INFO.wide} />
+        <InfoRow label="Listrik" value={RESIDENCE_INFO.electricity} />
+        <InfoRow label="Air" value={RESIDENCE_INFO.water} />
+        <InfoRow label="Mulai sewa" value={RESIDENCE_INFO.rentalDate} />
+        <InfoRow label="Iuran lingkungan" value={RESIDENCE_INFO.managementFeePeriod} />
+        <InfoRow label="Water heater" value={RESIDENCE_INFO.waterHeater} />
       </View>
 
       {/* Tips */}

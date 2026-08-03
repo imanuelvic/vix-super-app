@@ -7,47 +7,52 @@ import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
-import { HouseLogTab } from '@/components/house/HouseLogTab';
-import { HouseUtilityTab } from '@/components/house/HouseUtilityTab';
-import { InfoTab } from '@/components/house/InfoTab';
+import { ResidenceChoreTab } from '@/components/residence/ResidenceChoreTab';
+import { ResidenceLogTab } from '@/components/residence/ResidenceLogTab';
+import { ResidenceUtilityTab } from '@/components/residence/ResidenceUtilityTab';
+import { InfoTab } from '@/components/residence/InfoTab';
 import { useAuth } from '@/contexts/auth';
 import {
-  deleteHouseLogs,
-  HOUSE_INFO,
-  subscribeHouseLogs,
-  type HouseLog,
-} from '@/lib/house';
+  deleteResidenceLogs,
+  RESIDENCE_INFO,
+  subscribeChoreStatus,
+  subscribeResidenceLogs,
+  type ChoreStatusMap,
+  type ResidenceLog,
+} from '@/lib/residence';
 import {
   subscribeUtilityTransactions,
   type Transaction,
 } from '@/lib/transactions';
 
-type HouseTab = 'utility' | 'log' | 'info';
+type ResidenceTab = 'utility' | 'log' | 'chores' | 'info';
 
-// Log di kiri, Air-Listrik di tengah (default), Info di kanan.
-const TABS: BottomTab<HouseTab>[] = [
+// Log · Air-Listrik (default) · Perawatan · Info.
+const TABS: BottomTab<ResidenceTab>[] = [
   { key: 'log', label: 'Log', icon: 'list.bullet' },
   { key: 'utility', label: 'Air-Listrik', icon: 'bolt.fill' },
+  { key: 'chores', label: 'Perawatan', icon: 'wrench.and.screwdriver.fill' },
   { key: 'info', label: 'Info', icon: 'info.circle.fill' },
 ];
 
 // Residence 🏠 — rumah kontrakan Casa Jardin: rekap air & listrik (otomatis dari
 // Finance), log pengeluaran rumah lain, dan identitas rumah.
-export default function HouseScreen() {
+export default function ResidenceScreen() {
   const { user } = useAuth();
 
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. Default di
   // tengah (Air-Listrik).
-  const { tab, scrollKey, onTabPress } = useTabScroll<HouseTab>('utility');
-  const [logs, setLogs] = useState<HouseLog[] | null>(null);
+  const { tab, scrollKey, onTabPress } = useTabScroll<ResidenceTab>('utility');
+  const [logs, setLogs] = useState<ResidenceLog[] | null>(null);
   const [utilityTx, setUtilityTx] = useState<Transaction[] | null>(null);
+  const [chores, setChores] = useState<ChoreStatusMap | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
     const unsubs = [
-      subscribeHouseLogs(
+      subscribeResidenceLogs(
         user.uid,
         (next) => {
           setLogs(next);
@@ -56,6 +61,7 @@ export default function HouseScreen() {
         fail,
       ),
       subscribeUtilityTransactions(user.uid, setUtilityTx, fail),
+      subscribeChoreStatus(user.uid, setChores, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -71,14 +77,14 @@ export default function HouseScreen() {
       .map((l) => l.id);
     if (staleIds.length === 0) return;
     cleanupRan.current = true;
-    deleteHouseLogs(user.uid, staleIds).catch(() => {
+    deleteResidenceLogs(user.uid, staleIds).catch(() => {
       cleanupRan.current = false; // gagal → boleh dicoba lagi nanti
     });
   }, [user, logs]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScreenHeader backLabel="Home" title="Residence 🏠" subtitle={HOUSE_INFO.name} />
+      <ScreenHeader backLabel="Home" title="Residence 🏠" subtitle={RESIDENCE_INFO.name} />
 
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>
@@ -93,7 +99,7 @@ export default function HouseScreen() {
               <ActivityIndicator color={Color.MAIN} />
             </View>
           ) : (
-            <HouseUtilityTab transactions={utilityTx} />
+            <ResidenceUtilityTab transactions={utilityTx} />
           )
         ) : tab === 'log' ? (
           logs === null ? (
@@ -101,7 +107,15 @@ export default function HouseScreen() {
               <ActivityIndicator color={Color.MAIN} />
             </View>
           ) : (
-            <HouseLogTab items={logs} />
+            <ResidenceLogTab items={logs} />
+          )
+        ) : tab === 'chores' ? (
+          chores === null ? (
+            <View style={styles.center}>
+              <ActivityIndicator color={Color.MAIN} />
+            </View>
+          ) : (
+            <ResidenceChoreTab status={chores} />
           )
         ) : (
           <InfoTab />

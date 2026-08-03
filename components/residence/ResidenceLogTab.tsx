@@ -15,31 +15,31 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
 import {
-  addHouseLog,
-  deleteHouseLog,
-  HOUSE_LOG_TYPES,
-  updateHouseLog,
-  type HouseLog,
-  type HouseLogType,
-} from '@/lib/house';
+  addResidenceLog,
+  deleteResidenceLog,
+  RESIDENCE_LOG_TYPES,
+  updateResidenceLog,
+  type ResidenceLog,
+  type ResidenceLogType,
+} from '@/lib/residence';
 import { formatRupiah } from '@/lib/transactions';
 
 const TYPE_META = Object.fromEntries(
-  HOUSE_LOG_TYPES.map((t) => [t.key, t]),
-) as Record<HouseLogType, (typeof HOUSE_LOG_TYPES)[number]>;
+  RESIDENCE_LOG_TYPES.map((t) => [t.key, t]),
+) as Record<ResidenceLogType, (typeof RESIDENCE_LOG_TYPES)[number]>;
 
 // Tab Log 🧾 — pengeluaran rumah selain listrik/air (iuran lingkungan, water
 // heater, wifi, cleaning, dll). Air & listrik direkap terpisah & read-only di
-// tab Air-Listrik (HouseUtilityTab), dibaca dari transaksi Finance.
-export function HouseLogTab({ items }: { items: HouseLog[] }) {
+// tab Air-Listrik (ResidenceUtilityTab), dibaca dari transaksi Finance.
+export function ResidenceLogTab({ items }: { items: ResidenceLog[] }) {
   const { user } = useAuth();
 
-  const types = HOUSE_LOG_TYPES.filter((t) => t.group === 'log');
+  const types = RESIDENCE_LOG_TYPES.filter((t) => t.group === 'log');
   const typeKeys = types.map((t) => t.key);
   const logs = items.filter((l) => typeKeys.includes(l.type));
 
-  const [editing, setEditing] = useState<HouseLog | 'new' | null>(null);
-  const [fType, setFType] = useState<HouseLogType>(types[0].key);
+  const [editing, setEditing] = useState<ResidenceLog | 'new' | null>(null);
+  const [fType, setFType] = useState<ResidenceLogType>(types[0].key);
   const [fTitle, setFTitle] = useState('');
   const [fNote, setFNote] = useState('');
   const [fCost, setFCost] = useState('');
@@ -72,7 +72,7 @@ export function HouseLogTab({ items }: { items: HouseLog[] }) {
     setFormError(null);
   }
 
-  function openEdit(item: HouseLog) {
+  function openEdit(item: ResidenceLog) {
     setEditing(item);
     setFType(item.type);
     setFTitle(item.title);
@@ -99,9 +99,9 @@ export function HouseLogTab({ items }: { items: HouseLog[] }) {
     };
     try {
       if (editing === 'new') {
-        await addHouseLog(user.uid, data);
+        await addResidenceLog(user.uid, data);
       } else {
-        await updateHouseLog(user.uid, editing.id, data);
+        await updateResidenceLog(user.uid, editing.id, data);
       }
       setEditing(null);
     } catch {
@@ -115,7 +115,7 @@ export function HouseLogTab({ items }: { items: HouseLog[] }) {
     if (!user || !editing || editing === 'new' || busy) return;
     setBusy(true);
     try {
-      await deleteHouseLog(user.uid, editing.id);
+      await deleteResidenceLog(user.uid, editing.id);
     } finally {
       setEditing(null);
       setBusy(false);

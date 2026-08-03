@@ -114,6 +114,16 @@ import {
   type HealthProfile,
 } from '@/lib/health';
 import {
+  goldReminderDue,
+  subscribeGold,
+  type GoldEntry,
+} from '@/lib/investment';
+import {
+  countResidenceAttention,
+  subscribeChoreStatus,
+  type ChoreStatusMap,
+} from '@/lib/residence';
+import {
   MORNING_TASKS,
   morningWindowActive,
   setMorningDone,
@@ -182,13 +192,13 @@ const FEATURES: {
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
   { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.MAIN_DARK },
   { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
-  { key: 'trading', label: 'Trading', icon: 'chart.line.uptrend.xyaxis', route: '/trading', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
+  { key: 'investment', label: 'Investment', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
   { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
   { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
   { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
   { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
-  { key: 'house', label: 'Residence', icon: 'house.fill', route: '/house', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
+  { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
 ];
 
@@ -225,6 +235,10 @@ export default function HomeScreen() {
   );
   // Checklist "sudah baca ≥1 pasal hari ini" — lastDayId dokumen bibleReading.
   const [bibleReadDayId, setBibleReadDayId] = useState<string | null>(null);
+  // Status perawatan/kebersihan rumah — untuk badge tile Residence.
+  const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
+  // Entri harga emas (Investment) — untuk reminder catat harga tiap tgl 3-an.
+  const [goldEntries, setGoldEntries] = useState<GoldEntry[]>([]);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
   // khotbah yang bergantung waktu.
@@ -246,6 +260,8 @@ export default function HomeScreen() {
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
       subscribeBibleReading(user.uid, setBibleReadDayId),
+      subscribeChoreStatus(user.uid, setResidenceChores),
+      subscribeGold(user.uid, setGoldEntries),
       subscribeTasks(user.uid, setTasks),
       subscribeHabits(user.uid, setHabits),
       subscribeHabitDay(user.uid, todayId, setDay),
@@ -295,6 +311,8 @@ export default function HomeScreen() {
       revive === undefined ? 0 : revive?.lastDayId === todayId ? 0 : 1,
     // Jumlah part mobil yang perlu perhatian (segera/lewat jadwal).
     car: countCarAttention(carParts, now),
+    // Jumlah perawatan/kebersihan rumah yang perlu perhatian.
+    residence: countResidenceAttention(residenceChores, now),
   };
 
   // Task hari ini di Home — HANYA yang belum selesai. Task yang sudah dicentang
@@ -522,6 +540,9 @@ export default function HomeScreen() {
     }
   }
 
+  // Reminder Investment: sudah tanggal 3-an & harga emas bulan ini belum dicatat.
+  const goldDue = goldReminderDue(goldEntries, now);
+
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
   // memutuskan apakah perlu memunculkan fallback produktivitas).
   const hasActionReminder =
@@ -536,6 +557,7 @@ export default function HomeScreen() {
     wheelNeedsFill ||
     prayerNeedsFill ||
     prayerFollowupDue ||
+    goldDue ||
     careerReminders.length > 0 ||
     todayUndone > 0;
 
@@ -944,6 +966,20 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* Reminder catat harga Emas (tgl 3-an) — warna tile Investment */}
+        {goldDue && (
+          <ReminderCard
+            bg={Color.CAREER_DARK}
+            fg={Color.TEXT_LABEL}
+            title="📈 Catat Harga Emas"
+            onPress={() => router.push('/investment')}>
+            <VixText heading="label" additionalStyle={styles.goldText}>
+              Sudah tanggal 3-an — cek & catat harga emas 1 gr bulan ini di Logam
+              Mulia 🏅
+            </VixText>
+          </ReminderCard>
+        )}
+
         {/* Reminder deadline KERJA (Fulltime + Freelance, H-7) — TIAP BARIS
             ditekan menuju tab yang sesuai (bukan seluruh kartu). */}
         {careerReminders.length > 0 && (
@@ -1175,6 +1211,8 @@ const styles = StyleSheet.create({
   wheelText: { color: Color.WHEEL_DARK },
   // Reminder Pokok Doa Bulanan (CORE) — tema spiritual (ungu).
   prayerText: { color: Color.SPIRITUAL_DARK },
+  // Reminder catat harga Emas (Investment).
+  goldText: { color: Color.TEXT_LABEL },
   // Reminder Baca Alkitab harian — checklist, warna grid spiritual (ungu).
   readingCard: {
     flexDirection: 'row',

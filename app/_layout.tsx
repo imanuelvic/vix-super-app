@@ -90,7 +90,7 @@ function RootNavigator() {
         <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
         <Stack.Screen name="debts" options={{ headerShown: false }} />
 
-        <Stack.Screen name="trading" options={{ headerShown: false }} />
+        <Stack.Screen name="investment" options={{ headerShown: false }} />
         <Stack.Screen name="car" options={{ headerShown: false }} />
         <Stack.Screen name="house" options={{ headerShown: false }} />
         <Stack.Screen name="wheel" options={{ headerShown: false }} />

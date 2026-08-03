@@ -33,6 +33,8 @@ const MAPPING = {
   'person.2.fill': 'groups',
   'bubble.left.fill': 'chat',
   'chart.line.uptrend.xyaxis': 'trending-up',
+  'bitcoinsign.circle.fill': 'currency-bitcoin',
+  'dollarsign.circle.fill': 'paid',
   'car.fill': 'directions-car',
   'target': 'track-changes',
   'book.closed.fill': 'menu-book',
