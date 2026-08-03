@@ -132,7 +132,7 @@ export default function FinanceScreen() {
         subtitle="Kelola uang, jangan dikuasai uang"
         right={
           <View style={styles.headerButtons}>
-            {/* Hutang 🤝 (utang-piutang) */}
+            {/* Pinjaman 🤝 (pinjam-meminjam) */}
             <EmojiButton emoji="🤝" onPress={() => router.push('/debts')} />
             {/* Saku 👛 (dana per tujuan) — beda dari ikon Career */}
             <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />

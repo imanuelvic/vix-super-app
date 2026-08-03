@@ -38,6 +38,7 @@ export const ROADMAP_STATUS: {
 export type RoadmapItem = {
   id: string;
   title: string;
+  pic?: string; // PIC / penanggung jawab (opsional utk data lama)
   note: string; // detail/konteks, boleh kosong
   priority: 1 | 2 | 3; // 1 = paling penting
   status: RoadmapStatus;
@@ -52,12 +53,15 @@ export function roadmapDaysUntil(deadline: Timestamp, today: Date): number {
   return Math.round((day.getTime() - start.getTime()) / 86_400_000);
 }
 
-/** Reminder Home: prioritas belum selesai & deadline ≤ 3 hari (termasuk lewat). */
+// Reminder deadline mulai muncul di Home saat H-7 (termasuk yang sudah lewat).
+export const CAREER_REMINDER_DAYS = 7;
+
+/** Reminder Home: prioritas belum selesai & deadline ≤ 7 hari (H-7, termasuk lewat). */
 export function roadmapReminderWindow(item: RoadmapItem, today: Date): boolean {
   return (
     item.status !== 'done' &&
     !!item.deadline &&
-    roadmapDaysUntil(item.deadline, today) <= 3
+    roadmapDaysUntil(item.deadline, today) <= CAREER_REMINDER_DAYS
   );
 }
 
@@ -117,6 +121,27 @@ export function deadlineDaysUntil(p: FreelanceProject, today: Date): number {
   const d = p.deadline.toDate();
   const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   return Math.round((day.getTime() - start.getTime()) / 86_400_000);
+}
+
+/** Reminder Home: proyek freelance belum selesai & deadline ≤ 7 hari (H-7). */
+export function freelanceReminderWindow(
+  p: FreelanceProject,
+  today: Date,
+): boolean {
+  return !p.done && deadlineDaysUntil(p, today) <= CAREER_REMINDER_DAYS;
+}
+
+/** Sisa target asuransi bulan ini (pitch/close/premi) yang belum tercapai. */
+export function insuranceRemaining(m: InsuranceMonth): {
+  pitch: number;
+  close: number;
+  premi: number;
+} {
+  return {
+    pitch: Math.max(0, m.pitchTarget - m.pitchDone),
+    close: Math.max(0, m.closeTarget - m.closeDone),
+    premi: Math.max(0, m.premiTarget - m.premiDone),
+  };
 }
 
 // ==================== 3. Insurance: target bulanan Allianz ====================

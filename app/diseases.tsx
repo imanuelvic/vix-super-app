@@ -8,12 +8,14 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { usePagination } from '@/hooks/usePagination';
 import { formatDate } from '@/lib/format';
 import {
   addDisease,
@@ -22,6 +24,7 @@ import {
   updateDisease,
   type Disease,
 } from '@/lib/health';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 /** Lama sakit dalam hari (minimal 1). Belum sembuh → dihitung sampai hari ini. */
 function sickDays(d: Disease): number {
@@ -56,10 +59,14 @@ export default function DiseasesScreen() {
         setItems(next);
         setError(null);
       },
-      () => setError('Gagal memuat data. Cek koneksi internet.'),
+      () => setError(LOAD_ERROR),
     );
     return unsubscribe;
   }, [user]);
+
+  const { setPage, currentPage, pageCount, pageItems } = usePagination(
+    items ?? [],
+  );
 
   function openAdd() {
     setEditing('new');
@@ -106,7 +113,7 @@ export default function DiseasesScreen() {
       }
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -131,7 +138,7 @@ export default function DiseasesScreen() {
         subtitle="Riwayat sakit — biar tahu pola & penyebabnya"
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
         <PrimaryButton
           label="Catat Sakit"
           icon="plus"
@@ -156,7 +163,8 @@ export default function DiseasesScreen() {
             </VixText>
           </View>
         ) : (
-          items.map((d) => {
+          <>
+          {pageItems.map((d) => {
             const ongoing = !d.recover;
             return (
               // Tekan untuk edit / tandai sembuh / hapus.
@@ -191,7 +199,13 @@ export default function DiseasesScreen() {
                 ) : null}
               </PressableScale>
             );
-          })
+          })}
+          <Pagination
+            page={currentPage}
+            pageCount={pageCount}
+            onChange={setPage}
+          />
+          </>
         )}
       </ScrollView>
 

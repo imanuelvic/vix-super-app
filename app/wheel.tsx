@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
@@ -13,7 +14,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
 import { useAuth } from '@/contexts/auth';
-import { formatDecimal } from '@/lib/format';
+import { formatDecimal, formatFullDateTime } from '@/lib/format';
 import {
   MIN_FOCUS,
   quarterDocId,
@@ -24,6 +25,7 @@ import {
   shiftQuarter,
   subscribeWheel,
   WHEEL_AREAS,
+  WHEEL_TIPS,
   type WheelAreaKey,
   type WheelData,
   type WheelFocus,
@@ -38,7 +40,7 @@ function scoreTone(score: number) {
   return styles.toneDanger;
 }
 
-// Wheel of Life 🎡 — nilai 8 area hidup per quartal, lihat bentuk "roda"-mu
+// Wheel of Life 🎡 — nilai 8 area hidup per kuartal, lihat bentuk "roda"-mu
 // di radar chart, lalu fokus perbaiki minimal 3 area.
 export default function WheelScreen() {
   const { user } = useAuth();
@@ -65,6 +67,9 @@ export default function WheelScreen() {
   const [plans, setPlans] = useState<Partial<Record<WheelAreaKey, string>>>({});
   const [focusError, setFocusError] = useState<string | null>(null);
 
+  // Modal tips: area yang sedang dilihat tips-nya (null = tertutup).
+  const [tipArea, setTipArea] = useState<WheelAreaKey | null>(null);
+
   useEffect(() => {
     if (!user) return;
     setData(null);
@@ -84,7 +89,7 @@ export default function WheelScreen() {
     const next = shiftQuarter(year, q, delta);
     setYear(next.year);
     setQ(next.q);
-    setMode('overview'); // ganti quartal = kembali ke ringkasan
+    setMode('overview'); // ganti kuartal = kembali ke ringkasan
   }
 
   const hasScores =
@@ -194,19 +199,20 @@ export default function WheelScreen() {
   // ============================ RENDER ============================
 
   const area = WHEEL_AREAS[idx];
+  const tipMeta = tipArea ? WHEEL_AREAS.find((a) => a.key === tipArea)! : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Home"
         title="Wheel of Life 🎡"
-        subtitle="8 area hidupmu per quartal">
+        subtitle="8 area hidupmu per kuartal">
         {mode === 'overview' && (
           <View style={styles.quarterRow}>
             <PressableScale onPress={() => shift(-1)} hitSlop={10}>
               <IconSymbol name="chevron.left" size={20} color={Color.MAIN} />
             </PressableScale>
-            {/* Tekan label quartal → balik ke quartal berjalan */}
+            {/* Tekan label kuartal → balik ke kuartal berjalan */}
             <PressableScale
               onPress={() => {
                 setYear(nowQ.year);
@@ -311,11 +317,11 @@ export default function WheelScreen() {
           </View>
         </KeyboardAwareScrollView>
       ) : mode === 'focus' ? (
-        /* ===== Editor fokus quartal ===== */
+        /* ===== Editor fokus kuartal ===== */
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <VixText heading="title">🎯 Fokus {quarterLabel(year, q)}</VixText>
           <VixText heading="label" additionalStyle={styles.focusHint}>
-            Pilih minimal {MIN_FOCUS} area untuk dikembangkan quartal ini
+            Pilih minimal {MIN_FOCUS} area untuk dikembangkan kuartal ini
             (disarankan {MIN_FOCUS} saja biar fokus). Saran otomatis: area
             dengan skor terendah.
           </VixText>
@@ -340,7 +346,7 @@ export default function WheelScreen() {
                   {meta.icon} {meta.label}{' '}
                   <VixText heading="label">· sekarang {current}</VixText>
                 </VixText>
-                <VixText heading="label">Target skor quartal ini:</VixText>
+                <VixText heading="label">Target skor kuartal ini:</VixText>
                 <View style={styles.scoreWrap}>
                   {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
                     const active = targets[key] === n;
@@ -403,7 +409,7 @@ export default function WheelScreen() {
             <View style={styles.introCard}>
               <VixText additionalStyle={styles.introEmoji}>🎡</VixText>
               <VixText heading="title" additionalStyle={styles.introTitle}>
-                Bagaimana bentuk hidupmu quartal ini?
+                Bagaimana bentuk hidupmu kuartal ini?
               </VixText>
               <VixText heading="label" additionalStyle={styles.introText}>
                 Nilai 8 area hidupmu (1–10), lihat bentuk “roda”-mu di radar
@@ -436,9 +442,9 @@ export default function WheelScreen() {
                 )}
               </View>
 
-              {/* Fokus quartal */}
+              {/* Fokus kuartal */}
               <View style={styles.sectionHeader}>
-                <VixText heading="title">🎯 Fokus Quartal Ini</VixText>
+                <VixText heading="title">🎯 Fokus Kuartal</VixText>
                 <PressableScale onPress={startFocus} hitSlop={10}>
                   <VixText heading="bold" additionalStyle={styles.editText}>
                     {data.focus.length > 0 ? 'Ubah' : 'Pilih'}
@@ -447,7 +453,7 @@ export default function WheelScreen() {
               </View>
               {data.focus.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.emptyFocus}>
-                  Belum ada area fokus — pilih minimal {MIN_FOCUS} untuk quartal
+                  Belum ada area fokus — pilih minimal {MIN_FOCUS} untuk kuartal
                   ini.
                 </VixText>
               ) : (
@@ -455,7 +461,11 @@ export default function WheelScreen() {
                   const meta = WHEEL_AREAS.find((a) => a.key === f.area)!;
                   const current = data.scores[f.area] ?? 0;
                   return (
-                    <View key={f.area} style={styles.focusCard}>
+                    // Tekan kartu → modal tips menaikkan skor area ini.
+                    <PressableScale
+                      key={f.area}
+                      style={styles.focusCard}
+                      onPress={() => setTipArea(f.area)}>
                       <View style={styles.focusRow}>
                         <VixText
                           heading="bold"
@@ -471,9 +481,27 @@ export default function WheelScreen() {
                           {f.plan}
                         </VixText>
                       ) : null}
-                    </View>
+                      <View style={styles.tipsHintRow}>
+                        <VixText heading="label" additionalStyle={styles.tipsHint}>
+                          💡 Tips naikkan skor
+                        </VixText>
+                        <IconSymbol
+                          name="chevron.right"
+                          size={14}
+                          color={Color.MAIN}
+                        />
+                      </View>
+                    </PressableScale>
                   );
                 })
+              )}
+
+              {/* Tanggal & jam terakhir data kuartal ini diubah */}
+              {data.updatedAt && (
+                <VixText heading="label" additionalStyle={styles.updatedLabel}>
+                  🕒 Terakhir diubah:{' '}
+                  {formatFullDateTime(data.updatedAt.toDate())}
+                </VixText>
               )}
 
               {/* Skor per area */}
@@ -511,6 +539,36 @@ export default function WheelScreen() {
           )}
         </ScrollView>
       )}
+
+      {/* Modal tips & ide menaikkan skor area fokus */}
+      <CenterDialog visible={tipArea !== null} onClose={() => setTipArea(null)}>
+        {tipMeta && tipArea ? (
+          <>
+            <VixText heading="subheader" additionalStyle={styles.tipDialogTitle}>
+              {tipMeta.icon} {tipMeta.label}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.tipDialogSub}>
+              💡 Ide & tips menaikkan skor
+            </VixText>
+            <ScrollView style={styles.tipDialogList}>
+              {WHEEL_TIPS[tipArea].map((t) => (
+                <View key={t} style={styles.tipRow}>
+                  <VixText heading="paragraph" additionalStyle={styles.tipRowText}>
+                    {t}
+                  </VixText>
+                </View>
+              ))}
+            </ScrollView>
+            <PressableScale
+              style={styles.tipCloseButton}
+              onPress={() => setTipArea(null)}>
+              <VixText heading="bold" additionalStyle={styles.tipCloseText}>
+                Tutup
+              </VixText>
+            </PressableScale>
+          </>
+        ) : null}
+      </CenterDialog>
     </SafeAreaView>
   );
 }
@@ -599,6 +657,34 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   planText: { color: Color.TEXT_PARAGRAPH },
+  tipsHintRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
+  tipsHint: { color: Color.MAIN },
+  // Modal tips menaikkan skor
+  tipDialogTitle: { textAlign: 'center', marginBottom: 2 },
+  tipDialogSub: {
+    textAlign: 'center',
+    color: Color.TEXT_LABEL,
+    marginBottom: 12,
+  },
+  tipDialogList: { maxHeight: 320 },
+  tipRow: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  tipRowText: { color: Color.TEXT_PARAGRAPH },
+  tipCloseButton: {
+    marginTop: 4,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Color.MAIN,
+  },
+  tipCloseText: { color: Color.TEXT_REVERSE },
   // Overview
   introCard: {
     backgroundColor: Color.CONTAINER,
@@ -633,6 +719,7 @@ const styles = StyleSheet.create({
   },
   editText: { color: Color.MAIN },
   emptyFocus: { marginBottom: 10 },
+  updatedLabel: { color: Color.TEXT_LABEL, marginTop: 2, marginBottom: 4 },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
   areaRow: {
     flexDirection: 'row',

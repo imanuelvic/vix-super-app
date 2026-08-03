@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,8 +37,26 @@ const TABS: BottomTab<CareerTab>[] = [
 export default function CareerScreen() {
   const { user } = useAuth();
 
+  // Reminder Home bisa mengarahkan langsung ke tab tertentu lewat ?tab=…
+  // dan ?edit=<id> untuk otomatis membuka modal edit item yang ditekan.
+  const { tab: tabParam, edit: editParam } = useLocalSearchParams<{
+    tab?: string;
+    edit?: string;
+  }>();
+  const isCareerTab = (t?: string): t is CareerTab =>
+    t === 'fulltime' ||
+    t === 'freelance' ||
+    t === 'insurance' ||
+    t === 'business';
+
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
-  const { tab, scrollKey, onTabPress } = useTabScroll<CareerTab>('fulltime');
+  const { tab, setTab, scrollKey, onTabPress } = useTabScroll<CareerTab>(
+    isCareerTab(tabParam) ? tabParam : 'fulltime',
+  );
+  useEffect(() => {
+    if (isCareerTab(tabParam)) setTab(tabParam);
+  }, [tabParam, setTab]);
+
   const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
   const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);
   const [insurance, setInsurance] = useState<InsuranceMonths | null>(null);
@@ -81,9 +100,9 @@ export default function CareerScreen() {
             <ActivityIndicator color={Color.MAIN} />
           </View>
         ) : tab === 'fulltime' ? (
-          <FulltimeTab items={roadmap} />
+          <FulltimeTab items={roadmap} editId={editParam} />
         ) : tab === 'freelance' ? (
-          <FreelanceTab projects={freelance} />
+          <FreelanceTab projects={freelance} editId={editParam} />
         ) : tab === 'insurance' ? (
           <InsuranceTab months={insurance} />
         ) : (

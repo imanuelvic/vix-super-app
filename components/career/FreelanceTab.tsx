@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -24,7 +24,14 @@ import { formatRupiah } from '@/lib/transactions';
 
 // Tab Freelance 🌐: proyek website & aplikasi — siapa client-nya,
 // deadline kapan, requirement apa, dan fee-nya berapa.
-export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
+export function FreelanceTab({
+  projects,
+  editId,
+}: {
+  projects: FreelanceProject[];
+  // Kalau di-set (dari reminder Home), langsung buka modal edit proyek ini.
+  editId?: string;
+}) {
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +67,7 @@ export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
     setFormError(null);
   }
 
-  function openEdit(p: FreelanceProject) {
+  const openEdit = useCallback((p: FreelanceProject) => {
     setEditing(p);
     setFName(p.name);
     setFClient(p.client);
@@ -69,7 +76,20 @@ export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
     setFDeadline(p.deadline.toDate());
     setFDone(p.done);
     setFormError(null);
-  }
+  }, []);
+
+  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>).
+  // consumedRef mencegah modal terbuka lagi setelah ditutup; tap ulang dari
+  // Home men-mount tab ini fresh, jadi ref-nya reset & modal terbuka lagi.
+  const consumedRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!editId || consumedRef.current === editId) return;
+    const proj = projects.find((p) => p.id === editId);
+    if (proj) {
+      consumedRef.current = editId;
+      openEdit(proj);
+    }
+  }, [editId, projects, openEdit]);
 
   async function handleSave() {
     if (!user || !editing || busy) return;
@@ -213,6 +233,7 @@ export function FreelanceTab({ projects }: { projects: FreelanceProject[] }) {
       <SheetModal
         visible={!!editing}
         title={editing === 'new' ? 'Tambah Proyek' : 'Edit Proyek'}
+        scroll={false}
         onClose={() => setEditing(null)}>
         <ScrollView
           style={styles.formScroll}
@@ -330,7 +351,7 @@ const styles = StyleSheet.create({
   statusDone: { color: Color.SUCCESS },
   statusLate: { color: Color.DANGER },
   statusWarn: { color: Color.WARNING },
-  formScroll: { maxHeight: 500 },
+  formScroll: { flexShrink: 1 },
   formGap: { marginBottom: 10 },
   reqInput: {
     minHeight: 90,

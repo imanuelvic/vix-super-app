@@ -584,3 +584,82 @@ export function updateDisease(
 export function deleteDisease(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'diseases', id));
 }
+
+// ====================== Rekor langkah harian 🏆 ======================
+// users/{uid}/health/steps — SATU dokumen: { days: { [YYYY-MM-DD]: langkah } }.
+// Hanya menyimpan HARI YANG SUDAH SELESAI (kemarin ke belakang) yang tembus
+// minimal tier terendah — diisi otomatis dari riwayat Apple Health saat app
+// dibuka. Tiap hari dihitung SEKALI di tier tertinggi yang dicapainya (mis.
+// 40.000 langkah masuk tier 40rb saja, tidak sekaligus di 20rb).
+
+// Ambang langkah/hari (menaik). Ubah/ tambah di sini kalau mau tier lain.
+export const STEP_TIERS = [20000, 30000, 40000, 50000];
+
+// dayId ("YYYY-MM-DD") → langkah final hari itu.
+export type StepDaysMap = Record<string, number>;
+
+export function subscribeStepDays(
+  uid: string,
+  onChange: (days: StepDaysMap) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const ref = doc(db, 'users', uid, 'health', 'steps');
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      onChange((snapshot.data()?.days as StepDaysMap) ?? {});
+    },
+    onError,
+  );
+}
+
+/** Simpan langkah final beberapa hari sekaligus (merge → hari lain tetap). */
+export function recordStepDays(
+  uid: string,
+  entries: { dayId: string; steps: number }[],
+) {
+  if (entries.length === 0) return Promise.resolve();
+  const days: StepDaysMap = {};
+  for (const e of entries) days[e.dayId] = e.steps;
+  return setDoc(doc(db, 'users', uid, 'health', 'steps'), { days }, { merge: true });
+}
+
+/** Tier tertinggi yang dicapai `steps` (null kalau di bawah tier terendah). */
+export function stepTierOf(steps: number): number | null {
+  let tier: number | null = null;
+  for (const t of STEP_TIERS) if (steps >= t) tier = t;
+  return tier;
+}
+
+export type StepTierStat = {
+  tier: number;
+  count: number; // sudah berapa kali
+  dayIds: string[]; // tanggal-tanggalnya, terbaru dulu
+};
+
+/**
+ * Rekap pencapaian langkah: per tier berapa kali + tanggal-tanggalnya, plus
+ * rekor terbaik. Tiap hari dihitung SEKALI di tier tertingginya.
+ */
+export function stepAchievements(days: StepDaysMap): {
+  tiers: StepTierStat[];
+  best: { dayId: string; steps: number } | null;
+  totalDays: number;
+} {
+  const buckets = new Map<number, string[]>();
+  for (const t of STEP_TIERS) buckets.set(t, []);
+  let best: { dayId: string; steps: number } | null = null;
+  let totalDays = 0;
+  for (const [dayId, steps] of Object.entries(days)) {
+    const tier = stepTierOf(steps);
+    if (tier === null) continue;
+    buckets.get(tier)!.push(dayId);
+    totalDays += 1;
+    if (!best || steps > best.steps) best = { dayId, steps };
+  }
+  const tiers = STEP_TIERS.map((t) => {
+    const dayIds = buckets.get(t)!.sort((a, b) => (a < b ? 1 : -1)); // terbaru dulu
+    return { tier: t, count: dayIds.length, dayIds };
+  });
+  return { tiers, best, totalDays };
+}

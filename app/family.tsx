@@ -443,6 +443,7 @@ export default function FamilyScreen() {
       <SheetModal
         visible={!!editing}
         title={editing === 'new' ? 'Tambah Anggota' : 'Edit Anggota'}
+        scroll={false}
         onClose={() => setEditing(null)}>
         <ScrollView
           style={styles.formScroll}
@@ -695,7 +696,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   // Form
-  formScroll: { maxHeight: 520 },
+  formScroll: { flexShrink: 1 },
   photoPicker: {
     alignSelf: 'center',
     width: 84,

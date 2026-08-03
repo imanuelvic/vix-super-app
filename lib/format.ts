@@ -36,6 +36,35 @@ export function dayShort(d: Date): string {
   return DAY_NAMES[d.getDay()].slice(0, 3);
 }
 
+/**
+ * Durasi antara dua tanggal dalam "X tahun Y bulan Z hari" (akurat kalender,
+ * bukan sekadar bagi 30). Bagian bernilai 0 dihilangkan; kalau kurang dari 1
+ * hari hasilnya "0 hari". `from` dianggap ≤ `to` (urutan otomatis dibetulkan).
+ * Contoh: 233 hari → "7 bulan 21 hari".
+ */
+export function formatMonthsDays(from: Date, to: Date): string {
+  let a = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  let b = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  if (a > b) [a, b] = [b, a];
+  let years = b.getFullYear() - a.getFullYear();
+  let months = b.getMonth() - a.getMonth();
+  let days = b.getDate() - a.getDate();
+  if (days < 0) {
+    months -= 1;
+    // Jumlah hari di bulan sebelum bulan `b` (hari ke-0 = hari terakhir bulan lalu).
+    days += new Date(b.getFullYear(), b.getMonth(), 0).getDate();
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} tahun`);
+  if (months > 0) parts.push(`${months} bulan`);
+  if (days > 0 || parts.length === 0) parts.push(`${days} hari`);
+  return parts.join(' ');
+}
+
 /** dayId "2026-07-24" → Date lokal (parse manual biar tidak geser zona waktu). */
 export function dayIdToDate(dayId: string): Date {
   const [y, m, d] = dayId.split('-').map(Number);

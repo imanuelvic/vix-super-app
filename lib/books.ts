@@ -9,9 +9,11 @@ import { db } from './firebase';
 
 // Fitur Book 📚 — daftar buku yang mau / lagi dibaca, dikelompokkan per tema.
 //
-// Daftar bukunya STATIK di sini (tidak masuk Firestore) supaya ringan & gratis.
-// Yang disimpan ke Firestore hanya status "sudah dibaca", dalam SATU dokumen
-// kecil biar sinkron antar perangkat: users/{uid}/reading/books → { read: {} }.
+// Daftar buku + daftar BAB tiap buku STATIK di sini (tidak masuk Firestore)
+// supaya ringan & gratis. Yang disimpan ke Firestore hanya CENTANG per-bab,
+// dalam SATU dokumen kecil biar sinkron antar perangkat:
+//   users/{uid}/reading/books → { chapters: { [bookKey]: { [idxBab]: true } } }
+// Sebuah buku dianggap "selesai" kalau semua babnya sudah dicentang.
 //
 // Soal LINK: untuk buku yang masih berhak cipta, link mengarah ke sumber GRATIS
 // yang LEGAL (esai/situs resmi penulis atau ringkasan) — bukan salinan bajakan.
@@ -37,6 +39,7 @@ export type Book = {
   info: string; // tentang apa & kenapa penting (Bahasa Indonesia)
   url: string;
   linkKind: BookLinkKind;
+  chapters: string[]; // judul tiap bab — jadi checklist di halaman detail
 };
 
 // Urut per kategori: paling baru di atas (seperti daftar aslinya).
@@ -51,6 +54,28 @@ export const BOOKS: Book[] = [
     info: 'Cara bank sentral (The Fed) mencetak uang murah dan dampaknya ke inflasi, aset, dan kesenjangan. Biar paham "kenapa harga naik terus".',
     url: 'https://www.google.com/search?q=The+Lords+of+Easy+Money+Christopher+Leonard+book',
     linkKind: 'info',
+    // Buku ini bercerita mengikuti Thomas Hoenig; jumlah bab estimasi (bagi
+    // per bab baca). Sesuaikan kalau kamu tahu daftar bab persisnya.
+    chapters: [
+      'Bab 1 — Going Below Zero',
+      'Bab 2',
+      'Bab 3',
+      'Bab 4',
+      'Bab 5',
+      'Bab 6',
+      'Bab 7',
+      'Bab 8 — The Fixer',
+      'Bab 9',
+      'Bab 10',
+      'Bab 11',
+      'Bab 12',
+      'Bab 13',
+      'Bab 14',
+      'Bab 15',
+      'Bab 16',
+      'Bab 17',
+      'Bab 18',
+    ],
   },
   {
     key: 'psychology-of-money',
@@ -61,6 +86,28 @@ export const BOOKS: Book[] = [
     info: 'Sukses finansial lebih soal perilaku daripada kepintaran. Sabar, rendah hati, dan hindari serakah lebih penting dari rumus investasi.',
     url: 'https://collabfund.com/blog/the-psychology-of-money/',
     linkKind: 'free',
+    chapters: [
+      "No One's Crazy",
+      'Luck & Risk',
+      'Never Enough',
+      'Confounding Compounding',
+      'Getting Wealthy vs. Staying Wealthy',
+      'Tails, You Win',
+      'Freedom',
+      'Man in the Car Paradox',
+      "Wealth is What You Don't See",
+      'Save Money',
+      'Reasonable > Rational',
+      'Surprise!',
+      'Room for Error',
+      "You'll Change",
+      "Nothing's Free",
+      'You & Me',
+      'The Seduction of Pessimism',
+      "When You'll Believe Anything",
+      'All Together Now',
+      'Confessions',
+    ],
   },
   {
     key: 'bitcoin-standard',
@@ -71,6 +118,18 @@ export const BOOKS: Book[] = [
     info: 'Sejarah uang dari emas ke fiat, dan kenapa "uang keras" penting. Dasar untuk memahami Bitcoin secara ekonomi, bukan sekadar spekulasi.',
     url: 'https://en.wikipedia.org/wiki/The_Bitcoin_Standard',
     linkKind: 'info',
+    chapters: [
+      'Money',
+      'Primitive Moneys',
+      'Monetary Metals',
+      'Government Money',
+      'Money and Time Preference',
+      "Capitalism's Information System",
+      'Sound Money and Individual Freedom',
+      'Digital Money',
+      'What Is Bitcoin Good For?',
+      'Bitcoin Questions',
+    ],
   },
   {
     key: 'millionaire-master-plan',
@@ -81,6 +140,18 @@ export const BOOKS: Book[] = [
     info: 'Peta 9 level kekayaan bertahap — kenali posisimu sekarang lalu naik selangkah demi selangkah sesuai bakat alamimu.',
     url: 'https://www.google.com/search?q=The+Millionaire+Master+Plan+Roger+James+Hamilton+book',
     linkKind: 'info',
+    // 9 level warna, dikelompokkan dalam 3 prisma (Foundation, Enterprise, Alchemy).
+    chapters: [
+      'Infrared — Prisma Foundation',
+      'Red — Prisma Foundation',
+      'Orange — Prisma Foundation',
+      'Yellow — Prisma Enterprise',
+      'Green — Prisma Enterprise',
+      'Blue — Prisma Enterprise',
+      'Indigo — Prisma Alchemy',
+      'Violet — Prisma Alchemy',
+      'Ultraviolet — Prisma Alchemy',
+    ],
   },
   {
     key: 'zero-to-one',
@@ -91,6 +162,22 @@ export const BOOKS: Book[] = [
     info: 'Bikin sesuatu yang benar-benar baru (0→1), bukan meniru (1→n). Cara berpikir membangun bisnis/startup yang monopoli sehat.',
     url: 'https://en.wikipedia.org/wiki/Zero_to_One',
     linkKind: 'info',
+    chapters: [
+      'The Challenge of the Future',
+      "Party Like It's 1999",
+      'All Happy Companies Are Different',
+      'The Ideology of Competition',
+      'Last Mover Advantage',
+      'You Are Not a Lottery Ticket',
+      'Follow the Money',
+      'Secrets',
+      'Foundations',
+      'The Mechanics of Mafia',
+      'If You Build It, Will They Come?',
+      'Man and Machine',
+      'Seeing Green',
+      "The Founder's Paradox",
+    ],
   },
   {
     key: '4-hour-workweek',
@@ -101,6 +188,24 @@ export const BOOKS: Book[] = [
     info: 'Bekerja lebih cerdas: fokus (aturan 80/20), otomatisasi, dan delegasi supaya waktu & kebebasan lebih banyak, bukan sekadar sibuk.',
     url: 'https://tim.blog/',
     linkKind: 'info',
+    // 4 langkah DEAL: Definition, Elimination, Automation, Liberation.
+    chapters: [
+      'Cautions and Comparisons',
+      'Rules That Change the Rules',
+      'Dodging Bullets (Fear-Setting)',
+      'System Reset',
+      'The End of Time Management',
+      'The Low-Information Diet',
+      'Interrupting Interruption',
+      'Outsourcing Life',
+      'Income Autopilot I: Finding the Muse',
+      'Income Autopilot II: Testing the Muse',
+      'Income Autopilot III: Management by Absence',
+      'Disappearing Act: Escape the Office',
+      'Beyond Repair: Killing Your Job',
+      'Mini-Retirements',
+      'Filling the Void',
+    ],
   },
   {
     key: 'rich-dad-poor-dad',
@@ -111,6 +216,18 @@ export const BOOKS: Book[] = [
     info: 'Beda cara pikir soal uang: beli aset yang menghasilkan, pahami arus kas, dan melek finansial sejak dini.',
     url: 'https://en.wikipedia.org/wiki/Rich_Dad_Poor_Dad',
     linkKind: 'info',
+    chapters: [
+      'Rich Dad, Poor Dad',
+      "Pelajaran 1: The Rich Don't Work for Money",
+      'Pelajaran 2: Why Teach Financial Literacy?',
+      'Pelajaran 3: Mind Your Own Business',
+      'Pelajaran 4: Taxes and Corporations',
+      'Pelajaran 5: The Rich Invent Money',
+      'Pelajaran 6: Work to Learn, Not for Money',
+      'Overcoming Obstacles',
+      'Getting Started',
+      'Still Want More? (To-Do List)',
+    ],
   },
   {
     key: 'richest-man-babylon',
@@ -121,6 +238,18 @@ export const BOOKS: Book[] = [
     info: 'Prinsip abadi lewat kisah Babilonia kuno: sisihkan minimal 10% penghasilan, kendalikan pengeluaran, dan uang bekerja untukmu.',
     url: 'https://archive.org/details/richestmaninbaby0000clas',
     linkKind: 'free',
+    chapters: [
+      'The Man Who Desired Gold',
+      'The Richest Man in Babylon',
+      'Seven Cures for a Lean Purse',
+      'Meet the Goddess of Good Luck',
+      'The Five Laws of Gold',
+      'The Gold Lender of Babylon',
+      'The Walls of Babylon',
+      'The Camel Trader of Babylon',
+      'The Clay Tablets from Babylon',
+      'The Luckiest Man in Babylon',
+    ],
   },
   // ---------- 🧠 Mindset ----------
   {
@@ -132,6 +261,8 @@ export const BOOKS: Book[] = [
     info: 'Hikmat praktis untuk hidup, kerja, mulut, dan uang. Link menuju kitab Amsal (gratis) — 31 pasal, cocok dibaca 1 pasal per hari.',
     url: 'https://alkitab.sabda.org/passage.php?passage=Amsal+1',
     linkKind: 'free',
+    // 31 pasal — 1 pasal per hari.
+    chapters: Array.from({ length: 31 }, (_, i) => `Pasal ${i + 1}`),
   },
   {
     key: 'deep-work',
@@ -142,6 +273,15 @@ export const BOOKS: Book[] = [
     info: 'Kemampuan fokus tanpa gangguan makin langka & bernilai. Cara melatih konsentrasi dalam untuk kerja bermutu tinggi.',
     url: 'https://www.calnewport.com/books/deep-work/',
     linkKind: 'info',
+    chapters: [
+      'Deep Work Is Valuable',
+      'Deep Work Is Rare',
+      'Deep Work Is Meaningful',
+      'Aturan 1: Work Deeply',
+      'Aturan 2: Embrace Boredom',
+      'Aturan 3: Quit Social Media',
+      'Aturan 4: Drain the Shallows',
+    ],
   },
   {
     key: 'atomic-habits',
@@ -152,31 +292,82 @@ export const BOOKS: Book[] = [
     info: 'Perubahan 1% tiap hari yang menumpuk jadi besar. Sistem membangun kebiasaan baik & membuang yang buruk lewat langkah-langkah kecil.',
     url: 'https://jamesclear.com/atomic-habits',
     linkKind: 'info',
+    chapters: [
+      'The Surprising Power of Atomic Habits',
+      'How Your Habits Shape Your Identity',
+      'How to Build Better Habits in 4 Steps',
+      'The Man Who Didn’t Look Right (Make It Obvious)',
+      'The Best Way to Start a New Habit',
+      'Motivation Is Overrated; Environment Matters',
+      'The Secret to Self-Control',
+      'How to Make a Habit Irresistible',
+      'The Role of Family and Friends',
+      'How to Find and Fix the Causes of Your Bad Habits',
+      'Walk Slowly but Never Backward (Make It Easy)',
+      'The Law of Least Effort',
+      'How to Stop Procrastinating (Two-Minute Rule)',
+      'How to Make Good Habits Inevitable',
+      'The Cardinal Rule of Behavior Change (Make It Satisfying)',
+      'How to Stick with Good Habits Every Day',
+      'How an Accountability Partner Can Change Everything',
+      'The Truth About Talent',
+      'The Goldilocks Rule',
+      'The Downside of Creating Good Habits',
+    ],
   },
 ];
 
-// ===================== Status "sudah dibaca" =====================
-// SATU dokumen kecil users/{uid}/reading/books — { read: { [key]: true } }.
+// ===================== Progres baca per-bab =====================
+// SATU dokumen kecil users/{uid}/reading/books —
+//   { chapters: { [bookKey]: { [idxBab]: true } } }
+// idxBab = indeks bab (0-based) dijadikan string oleh Firestore.
 
-export type BooksReadMap = Record<string, boolean>;
+// bookKey → { idxBab → sudah dibaca }
+export type ChaptersReadMap = Record<string, Record<string, boolean>>;
 
-export function subscribeBooksRead(
+export function subscribeReadingProgress(
   uid: string,
-  onChange: (read: BooksReadMap) => void,
+  onChange: (chapters: ChaptersReadMap) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'reading', 'books');
   return onSnapshot(
     ref,
     (snapshot) => {
-      onChange((snapshot.data()?.read as BooksReadMap) ?? {});
+      onChange((snapshot.data()?.chapters as ChaptersReadMap) ?? {});
     },
     onError,
   );
 }
 
-export function setBookRead(uid: string, bookKey: string, read: boolean) {
+/** Centang / hapus centang satu bab. Merge → bab lain tidak terganggu. */
+export function setChapterRead(
+  uid: string,
+  bookKey: string,
+  chapterIndex: number,
+  read: boolean,
+) {
   const ref = doc(db, 'users', uid, 'reading', 'books');
-  // merge: hanya status buku ini yang berubah, buku lain tetap.
-  return setDoc(ref, { read: { [bookKey]: read } }, { merge: true });
+  return setDoc(
+    ref,
+    { chapters: { [bookKey]: { [chapterIndex]: read } } },
+    { merge: true },
+  );
+}
+
+/** Berapa bab buku ini yang sudah dicentang. */
+export function chapterReadCount(
+  chapters: ChaptersReadMap,
+  book: Book,
+): number {
+  const map = chapters[book.key] ?? {};
+  return book.chapters.reduce((n, _c, i) => (map[i] ? n + 1 : n), 0);
+}
+
+/** Buku dianggap selesai kalau SEMUA babnya sudah dicentang. */
+export function isBookComplete(chapters: ChaptersReadMap, book: Book): boolean {
+  return (
+    book.chapters.length > 0 &&
+    chapterReadCount(chapters, book) === book.chapters.length
+  );
 }

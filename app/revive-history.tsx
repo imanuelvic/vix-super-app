@@ -1,24 +1,30 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SearchBar } from '@/components/common/SearchBar';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { usePagination } from '@/hooks/usePagination';
 import { formatFullDate } from '@/lib/format';
+import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
-// Riwayat Revive 📖 — seluruh jurnal yang pernah ditulis.
-// Tap jurnal → buka halaman editor untuk membaca/mengubahnya.
+// Riwayat Revive 📖 — seluruh jurnal yang pernah ditulis, dengan pencarian
+// (judul/isi) & pagination 10 per halaman. Tap jurnal → editor untuk baca/ubah.
 export default function ReviveHistoryScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -28,9 +34,23 @@ export default function ReviveHistoryScreen() {
         setEntries(next);
         setError(null);
       },
-      () => setError('Gagal memuat data. Cek koneksi internet.'),
+      () => setError(LOAD_ERROR),
     );
   }, [user]);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? (entries ?? []).filter((e) =>
+        `${e.title} ${e.rhema} ${e.reflection} ${e.passage} ${e.verse}`
+          .toLowerCase()
+          .includes(q),
+      )
+    : (entries ?? []);
+
+  const { setPage, currentPage, pageCount, pageItems } = usePagination(filtered);
+
+  // Ganti kata kunci → balik ke halaman 1.
+  useEffect(() => setPage(1), [query, setPage]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -49,36 +69,62 @@ export default function ReviveHistoryScreen() {
       )}
 
       {entries === null ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
-          {entries.length === 0 && (
-            <VixText heading="label" additionalStyle={styles.empty}>
-              Belum ada jurnal — mulai hari ini dari layar Spiritual ✍️
-            </VixText>
-          )}
-          {entries.map((e) => (
-            <PressableScale
-              key={e.id}
-              style={styles.card}
-              onPress={() =>
-                router.push({ pathname: '/revive', params: { day: e.id } })
-              }>
-              <VixText heading="label">
-                {formatFullDate(e.date.toDate())}
-                {e.passage ? ` · 📖 ${e.passage}` : ''}
+        <>
+          {/* Pencarian tetap terlihat saat menggulir hasil */}
+          <View style={styles.searchWrap}>
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Cari judul atau isi jurnal…"
+            />
+            {q !== '' && (
+              <VixText heading="label" additionalStyle={styles.resultCount}>
+                {filtered.length} jurnal cocok
               </VixText>
-              <VixText heading="bold" additionalStyle={styles.cardTitle}>
-                {e.title}
+            )}
+          </View>
+
+          {/* key=currentPage → scroll balik ke atas tiap ganti halaman */}
+          <ScrollView key={currentPage} contentContainerStyle={styles.content}>
+            {filtered.length === 0 ? (
+              <VixText heading="label" additionalStyle={styles.empty}>
+                {q !== ''
+                  ? 'Tidak ada jurnal yang cocok dengan pencarianmu.'
+                  : 'Belum ada jurnal — mulai hari ini dari layar Spiritual ✍️'}
               </VixText>
-              <VixText heading="paragraph" numberOfLines={3}>
-                {e.rhema}
-              </VixText>
-            </PressableScale>
-          ))}
-        </ScrollView>
+            ) : (
+              <>
+                {pageItems.map((e) => (
+                  <PressableScale
+                    key={e.id}
+                    style={styles.card}
+                    onPress={() =>
+                      router.push({ pathname: '/revive', params: { day: e.id } })
+                    }>
+                    <VixText heading="label">
+                      {formatFullDate(e.date.toDate())}
+                      {e.passage ? ` · 📖 ${e.passage}` : ''}
+                    </VixText>
+                    <VixText heading="bold" additionalStyle={styles.cardTitle}>
+                      {e.title}
+                    </VixText>
+                    <VixText heading="paragraph" numberOfLines={3}>
+                      {e.rhema}
+                    </VixText>
+                  </PressableScale>
+                ))}
+
+                <Pagination
+                  page={currentPage}
+                  pageCount={pageCount}
+                  onChange={setPage}
+                />
+              </>
+            )}
+          </ScrollView>
+        </>
       )}
     </SafeAreaView>
   );
@@ -87,7 +133,8 @@ export default function ReviveHistoryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  searchWrap: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 6, gap: 4 },
+  resultCount: { color: Color.TEXT_LABEL, paddingHorizontal: 2 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {

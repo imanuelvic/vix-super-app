@@ -237,17 +237,24 @@ export function FollowupTab({
   }) {
     const topic = weeklyFollowupTopic(person, id, dayId, dow, topicOverride[id]);
     const tips = personalityTips(person);
-    // Ada nomor → seluruh kartu bisa ditekan untuk buka chat WhatsApp,
-    // border-nya diwarnai hijau WA sebagai penanda. Kalau sudah selesai,
-    // gaya "done" yang menang (tidak perlu diarahkan chat lagi).
-    const canChat = !!phone && !done;
+    // Ada nomor → seluruh kartu bisa ditekan untuk chat WA. Menekan kartu =
+    // menindaklanjuti orang ini, jadi SEKALIGUS menandai "sudah follow up hari
+    // ini" (badge di Home ikut hilang). Border hijau WA sebagai penanda.
+    const canChat = !!phone;
     return (
       <PressableScale
         key={id}
-        style={[styles.card, canChat && styles.cardChat, done && styles.cardDone]}
+        style={[
+          styles.card,
+          canChat && !done && styles.cardChat,
+          done && styles.cardDone,
+        ]}
         onPress={
           canChat
-            ? () => openWhatsApp(phone!, `Shalom! 🙏\n\n${topic.question}`)
+            ? () => {
+                openWhatsApp(phone!, `Shalom! 🙏\n\n${topic.question}`);
+                if (!done) onDone();
+              }
             : undefined
         }>
         <View style={styles.cardHeader}>
@@ -298,25 +305,32 @@ export function FollowupTab({
           </View>
         )}
 
-        {/* Ide pendekatan sesuai kepribadian */}
+        {/* Ide pendekatan sesuai kepribadian — kartu modern & berlapis:
+            tiap ide punya pill label (bold) + deskripsi cara pendekatannya. */}
         {tips.length > 0 && (
           <View style={styles.tipBox}>
-            <VixText heading="label" additionalStyle={styles.tipHeader}>
-              💡 Ide pendekatan
-            </VixText>
-            {tips.map((t) => (
-              <VixText key={t.label} heading="label" additionalStyle={styles.tipItem}>
-                <VixText heading="bold" additionalStyle={styles.tipItemLabel}>
-                  {t.label}:{' '}
-                </VixText>
-                {t.text}
+            <View style={styles.tipHeaderRow}>
+              <VixText additionalStyle={styles.tipHeaderEmoji}>💡</VixText>
+              <VixText heading="bold" additionalStyle={styles.tipHeader}>
+                Ide Pendekatan
               </VixText>
+            </View>
+            {tips.map((t) => (
+              <View key={t.label} style={styles.tipRow}>
+                <View style={styles.tipBadge}>
+                  <VixText heading="label" additionalStyle={styles.tipBadgeText}>
+                    {t.label}
+                  </VixText>
+                </View>
+                <VixText heading="paragraph" additionalStyle={styles.tipText}>
+                  {t.text}
+                </VixText>
+              </View>
             ))}
           </View>
         )}
 
-        {/* Info hanya muncul kalau belum ada nomor; kalau ada, kartu langsung
-            bisa ditekan untuk chat (border hijau WA jadi penanda). */}
+        {/* Status: sudah follow up, belum ada nomor, atau ajakan ketuk kartu. */}
         {done ? (
           <VixText heading="label" additionalStyle={styles.doneText}>
             ✅ Sudah di follow up hari ini
@@ -325,7 +339,11 @@ export function FollowupTab({
           <VixText heading="label" additionalStyle={styles.noPhoneText}>
             📱 Isi nomor HP di tab CORE Leader untuk chat WA.
           </VixText>
-        ) : null}
+        ) : (
+          <VixText heading="label" additionalStyle={styles.chatHint}>
+            💬 Ketuk kartu untuk chat WA & tandai sudah follow up
+          </VixText>
+        )}
 
         {!done && (
           <View style={styles.buttonRow}>
@@ -617,14 +635,32 @@ const styles = StyleSheet.create({
   },
   persBadgeText: { color: Color.MAIN_DARK },
   tipBox: {
-    backgroundColor: Color.ACCENT,
-    borderRadius: 10,
-    padding: 10,
-    gap: 4,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.ACCENT_DARK,
+    padding: 12,
+    gap: 8,
   },
-  tipHeader: { color: Color.ACCENT_DARK },
-  tipItem: { color: Color.TEXT_PARAGRAPH },
-  tipItemLabel: { color: Color.ACCENT_DARK },
+  tipHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  tipHeaderEmoji: { fontSize: 15, lineHeight: 20 },
+  tipHeader: { color: Color.ACCENT_DARK, letterSpacing: 0.2 },
+  tipRow: {
+    backgroundColor: Color.ACCENT,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  tipBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: Color.ACCENT_DARK,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  tipBadgeText: { color: Color.TEXT_REVERSE },
+  tipText: { color: Color.TEXT_PARAGRAPH },
   waButton: {
     alignItems: 'center',
     paddingVertical: 10,
@@ -633,6 +669,7 @@ const styles = StyleSheet.create({
   },
   waText: { color: Color.TEXT_REVERSE },
   noPhoneText: { color: Color.TEXT_PLACEHOLDER },
+  chatHint: { color: Color.WHATSAPP },
   buttonRow: { flexDirection: 'row', gap: 10 },
   shuffleButton: {
     flex: 1,

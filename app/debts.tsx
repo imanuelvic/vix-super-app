@@ -35,20 +35,25 @@ import {
   type DebtDirection,
   type DebtPeriod,
 } from '@/lib/debts';
-import { formatFullDate, groupDigits, parseAmount } from '@/lib/format';
+import {
+  formatFullDate,
+  formatShortDayDate,
+  groupDigits,
+  parseAmount,
+} from '@/lib/format';
 import { formatRupiah } from '@/lib/transactions';
 
 type Tab = DebtDirection;
 
 const TABS: BottomTab<Tab>[] = [
-  { key: 'theirs', label: 'Hutang Orang', icon: 'arrow.down.circle.fill' },
-  { key: 'mine', label: 'Hutang Saya', icon: 'arrow.up.circle.fill' },
+  { key: 'theirs', label: 'Pinjaman Orang', icon: 'arrow.down.circle.fill' },
+  { key: 'mine', label: 'Pinjaman Saya', icon: 'arrow.up.circle.fill' },
 ];
 
 const PERIODS: DebtPeriod[] = ['once', 'weekly', 'monthly'];
 
-// Hutang 🤝 — catat siapa berutang ke siapa, cicilan, jatuh tempo, dan
-// pelunasan. Dua tab: hutang saya (harus bayar) & hutang orang (ditagih).
+// Pinjaman 🤝 — catat siapa meminjam ke siapa, cicilan, jatuh tempo, dan
+// pelunasan. Dua tab: pinjaman saya (harus bayar) & pinjaman orang (ditagih).
 export default function DebtsScreen() {
   const { user } = useAuth();
 
@@ -57,7 +62,7 @@ export default function DebtsScreen() {
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Sheet tambah/edit hutang. 'new' = sedang menambah.
+  // Sheet tambah/edit pinjaman. 'new' = sedang menambah.
   const [editing, setEditing] = useState<Debt | 'new' | null>(null);
   const [fPerson, setFPerson] = useState('');
   const [fNote, setFNote] = useState('');
@@ -101,9 +106,9 @@ export default function DebtsScreen() {
   const totalRemaining = list.reduce((sum, d) => sum + debtRemaining(d), 0);
 
   const isMine = tab === 'mine';
-  const personLabel = isMine ? 'Saya berutang ke' : 'Yang berutang ke saya';
+  const personLabel = isMine ? 'Saya meminjam dari' : 'Yang meminjam dari saya';
 
-  // ---------- Tambah / edit hutang ----------
+  // ---------- Tambah / edit pinjaman ----------
 
   function openAdd() {
     setEditing('new');
@@ -139,7 +144,7 @@ export default function DebtsScreen() {
     }
     const total = parseAmount(fTotal);
     if (!total) {
-      setFormError('Isi total hutangnya dulu.');
+      setFormError('Isi total pinjamannya dulu.');
       return;
     }
     setBusy(true);
@@ -186,7 +191,7 @@ export default function DebtsScreen() {
 
   function openPay(d: Debt) {
     setPaying(d);
-    // Prefill nominal cicilan kalau ada, kalau tidak sisa hutang.
+    // Prefill nominal cicilan kalau ada, kalau tidak sisa pinjaman.
     const suggest = d.installment > 0 ? d.installment : debtRemaining(d);
     setPAmount(suggest > 0 ? groupDigits(String(suggest)) : '');
     setPDate(new Date());
@@ -239,8 +244,8 @@ export default function DebtsScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Finance"
-        title="Hutang 🤝"
-        subtitle="Utang-piutang, cicilan & jatuh tempo"
+        title="Pinjaman 🤝"
+        subtitle="Pinjam-meminjam, cicilan & jatuh tempo"
       />
 
       {error && (
@@ -258,7 +263,7 @@ export default function DebtsScreen() {
         <ScrollView key={scrollKey} contentContainerStyle={styles.content}>
           {/* Ringkasan total sisa arah ini */}
           <SummaryCard
-            label={isMine ? '💸 Total hutang saya' : '💰 Total ditagih ke orang'}
+            label={isMine ? '💸 Total pinjaman saya' : '💰 Total ditagih ke orang'}
             value={formatRupiah(totalRemaining)}
             sub={`${list.filter((d) => !d.done).length} belum lunas · ${
               list.filter((d) => d.done).length
@@ -266,7 +271,7 @@ export default function DebtsScreen() {
           />
 
           <PrimaryButton
-            label="Tambah Hutang"
+            label="Tambah Pinjaman"
             icon="plus"
             onPress={openAdd}
             additionalStyle={styles.addButton}
@@ -275,8 +280,8 @@ export default function DebtsScreen() {
           {list.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
               {isMine
-                ? 'Belum ada hutang — semoga tetap begini 😌'
-                : 'Belum ada yang berutang ke kamu.'}
+                ? 'Belum ada pinjaman — semoga tetap begini 😌'
+                : 'Belum ada yang meminjam dari kamu.'}
             </VixText>
           )}
 
@@ -336,17 +341,18 @@ export default function DebtsScreen() {
                 <View style={styles.cardBottom}>
                   <VixText
                     heading="label"
-                    additionalStyle={
+                    additionalStyle={[
+                      styles.statusText,
                       d.done
                         ? styles.statusDone
                         : overdue
                           ? styles.statusLate
                           : days === 0
                             ? styles.statusToday
-                            : styles.statusSoon
-                    }>
+                            : styles.statusSoon,
+                    ]}>
                     {status}
-                    {!d.done && ` · ${formatFullDate(d.dueDate.toDate())}`}
+                    {!d.done && ` · ${formatShortDayDate(d.dueDate.toDate())}`}
                   </VixText>
                   {!d.done && (
                     <PressableScale
@@ -367,11 +373,12 @@ export default function DebtsScreen() {
       {/* Tab bar bawah */}
       <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
 
-      {/* ===== Sheet tambah / edit hutang ===== */}
+      {/* ===== Sheet tambah / edit pinjaman ===== */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Tambah Hutang' : 'Edit Hutang'}
-        subtitle={isMine ? 'Hutang Saya' : 'Hutang Orang'}
+        title={editing === 'new' ? 'Tambah Pinjaman' : 'Edit Pinjaman'}
+        subtitle={isMine ? 'Pinjaman Saya' : 'Pinjaman Orang'}
+        scroll={false}
         onClose={() => setEditing(null)}>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -392,7 +399,7 @@ export default function DebtsScreen() {
             editable={!busy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Total hutang (Rp)
+            Total pinjaman (Rp)
           </VixText>
           <FormInput
             style={styles.formGap}
@@ -435,7 +442,7 @@ export default function DebtsScreen() {
           )}
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Mulai berhutang
+            Mulai meminjam
           </VixText>
           <View style={styles.formGap}>
             <DateField
@@ -479,7 +486,7 @@ export default function DebtsScreen() {
           {editing !== 'new' && editing !== null && (
             <InlineDelete
               key={editing.id}
-              label="Hapus hutang ini"
+              label="Hapus pinjaman ini"
               busy={busy}
               onDelete={handleDelete}
             />
@@ -500,6 +507,7 @@ export default function DebtsScreen() {
         subtitle={
           payingLive ? `Sisa ${formatRupiah(debtRemaining(payingLive))}` : undefined
         }
+        scroll={false}
         onClose={() => setPaying(null)}>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -569,7 +577,7 @@ export default function DebtsScreen() {
             <View style={styles.lunasRow}>
               <CheckCircle checked size={22} />
               <VixText heading="bold" additionalStyle={styles.lunasText}>
-                Hutang ini sudah LUNAS 🎉
+                Pinjaman ini sudah LUNAS 🎉
               </VixText>
             </View>
           )}
@@ -624,6 +632,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 2,
   },
+  // flex:1 → teks status+tanggal mengisi ruang & membungkus bila panjang,
+  // jadi tombol Bayar tidak terdorong keluar kartu.
+  statusText: { flex: 1 },
   statusDone: { color: Color.SUCCESS },
   statusLate: { color: Color.DANGER },
   statusToday: { color: Color.DANGER },
@@ -635,7 +646,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   payText: { color: Color.TEXT_REVERSE },
-  formScroll: { maxHeight: 460 },
+  formScroll: { flexShrink: 1 },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },

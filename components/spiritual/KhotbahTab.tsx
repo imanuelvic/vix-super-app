@@ -123,8 +123,8 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
           <View style={styles.lockCard}>
             <VixText heading="label" additionalStyle={styles.lockText}>
               {isSunday(now)
-                ? '✅ Catatan khotbah Minggu ini sudah dicatat — tap kartunya untuk mengedit.'
-                : '🙏 Catatan khotbah hanya bisa ditambah di hari Minggu.'}
+                ? '✅ Catatan khotbah Minggu ini sudah dicatat.'
+                : '🙏 Catatan khotbah hanya bisa ditambahkan di hari Minggu.'}
             </VixText>
           </View>
         )}
@@ -186,6 +186,7 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
             ? formatFullDate(dayIdToDate(editing.id))
             : formatFullDate(dayIdToDate(todaySundayId))
         }
+        scroll={false}
         onClose={() => setEditing(null)}>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -193,18 +194,18 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
           </VixText>
           <FormInput
             style={styles.formGap}
-            placeholder="mis. Hidup Berkemenangan"
+            placeholder="Judul"
             value={fTitle}
             onChangeText={setFTitle}
             autoCapitalize="words"
             editable={!busy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Pendeta / pengkhotbah
+            Pastor / Pembicara
           </VixText>
           <FormInput
             style={styles.formGap}
-            placeholder="mis. Ps. Philip Mantofa"
+            placeholder="Pembicara"
             value={fPreacher}
             onChangeText={setFPreacher}
             editable={!busy}
@@ -214,13 +215,13 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
           </VixText>
           <FormInput
             style={styles.formGap}
-            placeholder="mis. Ibadah 2 · 10.00"
+            placeholder="Jam Ibadah"
             value={fTime}
             onChangeText={setFTime}
             editable={!busy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            💡 Hikmat / quote dari khotbah
+            💡 Hikmat / Quote
           </VixText>
           <FormInput
             style={styles.multiInput}
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
   },
   quoteText: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
   reflectionText: { color: Color.TEXT_PARAGRAPH },
-  formScroll: { maxHeight: 480 },
+  formScroll: { flexShrink: 1 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   multiInput: {

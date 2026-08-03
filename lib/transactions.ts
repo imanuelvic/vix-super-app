@@ -24,10 +24,40 @@ export type Transaction = {
   date: Timestamp;
 };
 
+// Kategori pengeluaran yang direkap di fitur Home (tab Air-Listrik).
+export const UTILITY_CATEGORIES = ['electricity', 'water'] as const;
+
 // Semua transaksi milik satu user: users/{uid}/transactions
 // Path ini otomatis tercakup Security Rules users/{userId}/{document=**}.
 function transactionsCollection(uid: string) {
   return collection(db, 'users', uid, 'transactions');
+}
+
+/**
+ * Dengarkan SEMUA transaksi listrik & air (lintas bulan) untuk rekap read-only
+ * di fitur Home. Filter `in` satu-field memakai index otomatis Firestore
+ * (TIDAK butuh composite index); urutan terbaru-dulu dihitung di klien supaya
+ * tetap tanpa index. Jumlah transaksi jenis ini sedikit → biaya baca ringan.
+ */
+export function subscribeUtilityTransactions(
+  uid: string,
+  onChange: (items: Transaction[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const q = query(
+    transactionsCollection(uid),
+    where('category', 'in', [...UTILITY_CATEGORIES]),
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const items = snapshot.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<Transaction, 'id'>) }))
+        .sort((a, b) => b.date.toMillis() - a.date.toMillis());
+      onChange(items);
+    },
+    onError,
+  );
 }
 
 /**

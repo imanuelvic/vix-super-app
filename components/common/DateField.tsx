@@ -1,11 +1,17 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { useState } from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, Platform, StyleSheet } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
+import {
+  closePickers,
+  nextPickerId,
+  openPicker,
+  subscribePicker,
+} from '@/components/common/pickerBus';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { formatFullDate, mergeDate } from '@/lib/format';
@@ -13,7 +19,8 @@ import { formatFullDate, mergeDate } from '@/lib/format';
 // Field tanggal: tekan untuk buka date picker. Jam-menit asli dipertahankan
 // saat ganti tanggal supaya urutan dalam satu hari tetap stabil.
 // Selalu tampilkan nama harinya juga ("Jumat, 24 Juli 2026") biar langsung
-// tahu itu hari apa.
+// tahu itu hari apa. Hanya SATU picker terbuka di seluruh app (lihat pickerBus):
+// membuka picker/kolom lain otomatis menutup picker ini.
 export function DateField({
   value,
   onChange,
@@ -22,10 +29,35 @@ export function DateField({
   onChange: (date: Date) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const idRef = useRef<number | null>(null);
+  if (idRef.current === null) idRef.current = nextPickerId();
+  const myId = idRef.current;
+
+  // Tutup diri kalau ada picker LAIN yang dibuka (atau semua ditutup).
+  useEffect(
+    () => subscribePicker((openId) => setOpen(openId === myId)),
+    [myId],
+  );
+
+  function toggle() {
+    if (open) {
+      setOpen(false);
+      closePickers();
+    } else {
+      // Tutup keyboard teks dulu supaya spinner tidak menumpuk dengan keyboard.
+      Keyboard.dismiss();
+      // openPicker akan menutup picker lain lewat subscriber, lalu buka ini.
+      setOpen(true);
+      openPicker(myId);
+    }
+  }
 
   function handlePick(event: DateTimePickerEvent, selected?: Date) {
     // Android: dialog menutup sendiri; iOS: spinner tetap tampil.
-    if (Platform.OS === 'android') setOpen(false);
+    if (Platform.OS === 'android') {
+      setOpen(false);
+      closePickers();
+    }
     if (event.type !== 'dismissed' && selected) {
       onChange(mergeDate(value, selected));
     }
@@ -33,7 +65,7 @@ export function DateField({
 
   return (
     <>
-      <PressableScale style={styles.field} onPress={() => setOpen((o) => !o)}>
+      <PressableScale style={styles.field} onPress={toggle}>
         <VixText heading="paragraph" additionalStyle={styles.text}>
           📅 {formatFullDate(value)}
         </VixText>

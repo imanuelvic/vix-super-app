@@ -9,11 +9,13 @@ import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { usePagination } from '@/hooks/usePagination';
 import { formatDate } from '@/lib/format';
 import {
   addCheckup,
@@ -27,6 +29,7 @@ import {
   type Checkup,
   type CheckupType,
 } from '@/lib/health';
+import { SAVE_ERROR } from '@/lib/messages';
 
 const TYPE_META = Object.fromEntries(
   CHECKUP_TYPES.map((t) => [t.key, t]),
@@ -62,6 +65,9 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
     return map;
   }, [checkups]);
 
+  const { setPage, currentPage, pageCount, pageItems } =
+    usePagination(checkups);
+
   async function handleAdd() {
     if (!user || saving) return;
     if (!value.trim()) {
@@ -81,7 +87,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
       setNote('');
       setDate(new Date());
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setSaving(false);
     }
@@ -218,7 +224,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             Belum ada catatan pemeriksaan.
           </VixText>
         )}
-        {checkups.map((c) => {
+        {pageItems.map((c) => {
           const meta = TYPE_META[c.type];
           return (
             // Tekan untuk edit/hapus lewat bottom sheet.
@@ -238,6 +244,12 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             </PressableScale>
           );
         })}
+
+        <Pagination
+          page={currentPage}
+          pageCount={pageCount}
+          onChange={setPage}
+        />
       </KeyboardAwareScrollView>
 
       {/* Bottom sheet edit pemeriksaan */}

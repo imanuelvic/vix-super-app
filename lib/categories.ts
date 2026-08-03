@@ -60,7 +60,6 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     { key: 'food-drink', label: 'Food Drink', icon: '🍛', active: true },
     { key: 'transportation', label: 'Transportation', icon: '🚗', active: true },
     { key: 'travel', label: 'Travel', icon: '✈️', active: true },
-    { key: 'treat-resita', label: 'Treat Resita', icon: '💠', active: true },
     { key: 'snacks', label: 'Snacks', icon: '🍟', active: true },
     { key: 'groceries', label: 'Groceries', icon: '🍗', active: true },
     { key: 'fun-recreation', label: 'Fun Recreation', icon: '🎢', active: true },

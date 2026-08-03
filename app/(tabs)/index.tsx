@@ -18,7 +18,9 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
+  prayerDeadlinePassed,
   prayerDoneToday,
+  resetPrayerStreak,
   subscribeLoginStreak,
   type LoginStreak,
 } from '@/lib/achievements';
@@ -28,9 +30,17 @@ import {
   type PartStatusMap,
 } from '@/lib/car';
 import {
+  deadlineDaysUntil,
+  freelanceReminderWindow,
+  insuranceMonthKey,
+  insuranceRemaining,
   roadmapDaysUntil,
   roadmapReminderWindow,
+  subscribeFreelance,
+  subscribeInsurance,
   subscribeRoadmap,
+  type FreelanceProject,
+  type InsuranceMonths,
   type RoadmapItem,
 } from '@/lib/career';
 import {
@@ -63,19 +73,21 @@ import {
   donorReminderDue,
   donorScheduleReminders,
   EMPTY_DONOR,
+  nextEligibleDate,
   scheduleDaysUntil,
   subscribeDonor,
   type DonorData,
 } from '@/lib/donor';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
-import { formatDate, formatShortDayDate } from '@/lib/format';
+import { formatDate, formatMonthsDays, formatShortDayDate } from '@/lib/format';
 import {
-  MORNING_TASKS,
-  morningWindowActive,
-  setMorningDone,
-  subscribeMorningDay,
-  type MorningDayMap,
-} from '@/lib/morning';
+  daysSinceLastFun,
+  EMPTY_FUN,
+  funIdeasToday,
+  funReminderDue,
+  subscribeFun,
+  type FunData,
+} from '@/lib/fun';
 import {
   checkupDueReminders,
   dayDocId,
@@ -90,6 +102,13 @@ import {
   type HealthProfile,
 } from '@/lib/health';
 import {
+  MORNING_TASKS,
+  morningWindowActive,
+  setMorningDone,
+  subscribeMorningDay,
+  type MorningDayMap,
+} from '@/lib/morning';
+import {
   currentSundayId,
   sermonReminderActive,
   subscribeSermons,
@@ -103,6 +122,16 @@ import {
   type Task,
 } from '@/lib/tasks';
 import { formatRupiah } from '@/lib/transactions';
+import {
+  quarterDocId,
+  quarterLabel,
+  quarterOf,
+  subscribeWheel,
+  wheelFocusReminderActive,
+  wheelFocusReminders,
+  wheelHasScores,
+  type WheelData,
+} from '@/lib/wheel';
 
 // Nama sapaan di Home — ganti di sini kalau mau ubah.
 const OWNER_NAME = 'Imanuel Victory Rumayar';
@@ -171,6 +200,10 @@ export default function HomeScreen() {
   const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
   const [carParts, setCarParts] = useState<PartStatusMap>({});
   const [morningDone, setMorning] = useState<MorningDayMap>({});
+  const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
+  const [insurance, setInsurance] = useState<InsuranceMonths>({});
+  const [fun, setFun] = useState<FunData>(EMPTY_FUN);
+  const [wheel, setWheel] = useState<WheelData | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
   // khotbah yang bergantung waktu.
@@ -184,8 +217,12 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!user) return;
+    // Wheel of Life kuartal yang sedang berjalan (untuk reminder Home).
+    const nowQ = quarterOf(new Date());
+    const wheelQid = quarterDocId(nowQ.year, nowQ.q);
     const unsubs = [
       subscribeLoginStreak(user.uid, setLogin),
+      subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeTasks(user.uid, setTasks),
       subscribeHabits(user.uid, setHabits),
       subscribeHabitDay(user.uid, todayId, setDay),
@@ -202,9 +239,23 @@ export default function HomeScreen() {
       subscribeDonor(user.uid, setDonor),
       subscribePartStatus(user.uid, setCarParts),
       subscribeMorningDay(user.uid, todayId, setMorning),
+      subscribeFreelance(user.uid, setFreelance),
+      subscribeInsurance(user.uid, setInsurance),
+      subscribeFun(user.uid, setFun),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
+
+  // Doa pagi terlewat: sudah lewat jam 11 & belum dikonfirmasi hari ini.
+  // Saat ini terjadi, streak doa dihanguskan (sekali) lalu Home tidak lagi
+  // memaksa lock screen — langsung ke Home meski streak sudah 0.
+  const prayerMissed =
+    login != null && !prayerDoneToday(login, now) && prayerDeadlinePassed(now);
+  useEffect(() => {
+    if (user && prayerMissed && login && login.count > 0) {
+      resetPrayerStreak(user.uid, login).catch(() => {});
+    }
+  }, [user, prayerMissed, login]);
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -223,20 +274,15 @@ export default function HomeScreen() {
     car: countCarAttention(carParts, now),
   };
 
-  // Task hari ini — bisa dicentang langsung dari Home. Belum selesai di atas.
+  // Task hari ini di Home — HANYA yang belum selesai. Task yang sudah dicentang
+  // langsung hilang dari Home; kalau semua beres, kartunya ikut hilang.
   const catIcon = (key: string) =>
     TASK_CATEGORIES.find((c) => c.key === key)?.icon ?? '';
-  const todayTasks = tasks
-    .filter((t) => t.dayId === todayId)
-    .sort((a, b) => Number(a.done) - Number(b.done));
-  const todayUndone = todayTasks.filter((t) => !t.done).length;
-  // Kartu hanya menampilkan 3 task teratas (urut: belum selesai dulu). Tombol
-  // "+N task lagi" hanya menghitung task BELUM SELESAI yang tidak ikut tampil —
-  // jadi kalau sisanya sudah selesai, tombolnya tidak muncul.
+  const todayUndoneTasks = tasks.filter((t) => t.dayId === todayId && !t.done);
+  const todayUndone = todayUndoneTasks.length;
+  // Kartu menampilkan maksimal 3 task; sisanya lewat tombol "+N task lagi".
   const HOME_TASK_SHOWN = 3;
-  const moreUndone = todayTasks
-    .slice(HOME_TASK_SHOWN)
-    .filter((t) => !t.done).length;
+  const moreUndone = Math.max(0, todayUndone - HOME_TASK_SHOWN);
 
   async function toggleTask(t: Task) {
     if (!user) return;
@@ -247,7 +293,7 @@ export default function HomeScreen() {
     }
   }
 
-  // Morning Task 🌅 — tampil hanya di jendela pagi 04.00–08.00.
+  // Morning Task 🌅 — tampil hanya di jendela pagi 04.00–08.30.
   const morningActive = morningWindowActive(now);
   const morningUndone = MORNING_TASKS.filter((t) => !morningDone[t.id]).length;
 
@@ -294,8 +340,8 @@ export default function HomeScreen() {
   // Reminder Idea For CORE: waktunya kasih masukan ide baru (mingguan/bulanan).
   const coreIdeaDue = ideaReminderDue(coreIdeas, now);
 
-  // Reminder bayar hutang: yang belum lunas & jatuh tempo ≤ 3 hari (termasuk
-  // lewat). Fokus ke "Hutang Saya", tapi tagihan ke orang juga diingatkan.
+  // Reminder bayar pinjaman: yang belum lunas & jatuh tempo ≤ 3 hari (termasuk
+  // lewat). Fokus ke "Pinjaman Saya", tapi tagihan ke orang juga diingatkan.
   const debtReminders = debts
     .filter((d) => debtReminderWindow(d, now))
     .sort((a, b) => a.dueDate.toMillis() - b.dueDate.toMillis())
@@ -318,17 +364,37 @@ export default function HomeScreen() {
     }`,
   }));
 
-  // Reminder deadline prioritas kerja fulltime: belum selesai & ≤ 3 hari lagi
-  // (termasuk yang sudah lewat).
-  const careerReminders = roadmap
-    .filter((r) => roadmapReminderWindow(r, now))
-    .sort((a, b) => a.deadline!.toMillis() - b.deadline!.toMillis())
-    .map((r) => {
-      const days = roadmapDaysUntil(r.deadline!, now);
-      const when =
-        days === 0 ? 'HARI INI' : days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
-      return { id: r.id, text: `💻 ${r.title} · ${when}` };
-    });
+  const whenLabel = (days: number) =>
+    days === 0 ? 'HARI INI' : days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
+
+  // Reminder deadline KERJA: prioritas Fulltime + proyek Freelance yang sudah
+  // H-7 (≤ 7 hari, termasuk yang lewat). Tiap baris menuju tab yang sesuai.
+  const careerReminders: {
+    id: string;
+    docId: string;
+    sort: number;
+    tab: string;
+    text: string;
+  }[] = [
+    ...roadmap
+      .filter((r) => roadmapReminderWindow(r, now))
+      .map((r) => ({
+        id: `ft-${r.id}`,
+        docId: r.id,
+        sort: r.deadline!.toMillis(),
+        tab: 'fulltime',
+        text: `💻 ${r.title} · ${whenLabel(roadmapDaysUntil(r.deadline!, now))}`,
+      })),
+    ...freelance.filter((p) => freelanceReminderWindow(p, now)).map((p) => ({
+      id: `fl-${p.id}`,
+      docId: p.id,
+      sort: p.deadline.toMillis(),
+      tab: 'freelance',
+      text: `🌐 ${p.name}${p.client ? ` (${p.client})` : ''} · ${whenLabel(
+        deadlineDaysUntil(p, now),
+      )}`,
+    })),
+  ].sort((a, b) => a.sort - b.sort);
 
   // Reminder timbang berat: tiap Minggu kalau belum update berat hari ini.
   const weighInDue = profile != null && needsWeighIn(profile, now);
@@ -359,13 +425,16 @@ export default function HomeScreen() {
         }),
     });
   }
-  // Donor darah — sudah boleh lagi (hari Minggu).
+  // Donor darah — sudah boleh lagi (hari Minggu). "Sejak" dihitung bulan+hari.
   if (donorDue) {
-    const since = -(daysUntilEligible(donor, now) ?? 0);
+    const eligibleDate = nextEligibleDate(donor);
+    const overdue = -(daysUntilEligible(donor, now) ?? 0); // hari sejak boleh
     healthRows.push({
       id: 'donor-ok',
       text: `🩸 Sudah boleh donor darah${
-        since > 0 ? ` (sejak ${since} hari lalu)` : ' (mulai hari ini)'
+        overdue > 0 && eligibleDate
+          ? ` (sejak ${formatMonthsDays(eligibleDate, now)} lalu)`
+          : ' (mulai hari ini)'
       }`,
       onPress: () => router.push('/donor'),
     });
@@ -388,6 +457,85 @@ export default function HomeScreen() {
     sermonReminderActive(now) &&
     sermons.find((s) => s.id === currentSundayId(now));
 
+  // ===== Reminder Wheel of Life 🎡 =====
+  // Fokus kuartal ini: muncul Senin/Rabu/Jumat jam 09.00–12.30 — tampilkan
+  // angka skor sekarang → target + tips membangun kebiasaan. Kalau kuartal
+  // berjalan belum diisi sama sekali, munculkan ajakan segera mengisi.
+  const nowQuarter = quarterOf(now);
+  const wheelQLabel = quarterLabel(nowQuarter.year, nowQuarter.q);
+  const wheelFocusDue =
+    wheel != null && wheel.focus.length > 0 && wheelFocusReminderActive(now);
+  const wheelFocusRows = wheelFocusDue ? wheelFocusReminders(wheel, now) : [];
+  const wheelNeedsFill = wheel != null && !wheelHasScores(wheel);
+
+  // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
+  // memutuskan apakah perlu memunculkan fallback produktivitas).
+  const hasActionReminder =
+    famBirthdays.length > 0 ||
+    visitReminders.length > 0 ||
+    coreIdeaDue ||
+    debtReminders.length > 0 ||
+    healthRows.length > 0 ||
+    !!sundaySermon ||
+    wheelFocusDue ||
+    wheelNeedsFill ||
+    careerReminders.length > 0 ||
+    todayUndone > 0;
+
+  // Fallback PRODUKTIVITAS: kalau tidak ada reminder aksi & bukan jam pagi,
+  // munculkan "apa yang bisa dikerjakan biar menghasilkan uang" — dari
+  // Freelance (proyek aktif) & Insurance (target bulan ini). Business masih
+  // coming soon, jadi cukup dorongan umum.
+  const productivity: { id: string; tab: string; text: string }[] = [];
+  for (const p of [...freelance]
+    .filter((p) => !p.done)
+    .sort((a, b) => a.deadline.toMillis() - b.deadline.toMillis())
+    .slice(0, 3)) {
+    productivity.push({
+      id: `pf-${p.id}`,
+      tab: 'freelance',
+      text: `🌐 Lanjutkan "${p.name}"${p.client ? ` — ${p.client}` : ''} (${whenLabel(
+        deadlineDaysUntil(p, now),
+      )})`,
+    });
+  }
+  const insM = insurance[insuranceMonthKey(now.getFullYear(), now.getMonth())];
+  if (insM) {
+    const rem = insuranceRemaining(insM);
+    if (rem.pitch > 0)
+      productivity.push({
+        id: 'pi-pitch',
+        tab: 'insurance',
+        text: `☂️ Pitching ${rem.pitch} orang lagi bulan ini`,
+      });
+    if (rem.close > 0)
+      productivity.push({
+        id: 'pi-close',
+        tab: 'insurance',
+        text: `🤝 Closing ${rem.close} polis lagi bulan ini`,
+      });
+    if (rem.premi > 0)
+      productivity.push({
+        id: 'pi-premi',
+        tab: 'insurance',
+        text: `💰 Kejar premi ${formatRupiah(rem.premi)} lagi`,
+      });
+  }
+  if (productivity.length === 0) {
+    productivity.push(
+      { id: 'pg-1', tab: 'freelance', text: '🌐 Cari / follow up 1 proyek freelance baru' },
+      { id: 'pg-2', tab: 'insurance', text: '☂️ Prospek 1 calon nasabah asuransi' },
+      { id: 'pg-3', tab: 'business', text: '🍧 Kembangkan ide bisnis (es cendol & roa)' },
+    );
+  }
+  const showProductivity = !hasActionReminder && !morningActive;
+
+  // Reminder FUN 🎉: sudah lama tidak refreshing (>30 hari) → ajak main +
+  // beri ide biar tidak bingung. Warna mengikuti grid Fun (hijau muda).
+  const funDue = funReminderDue(fun, now);
+  const funGap = daysSinceLastFun(fun, now);
+  const funIdeas = funDue ? funIdeasToday(now, 3) : [];
+
   // Selagi status streak doa belum termuat → loading singkat, biar tidak
   // "berkedip" Home dulu baru muncul lock screen doa pagi.
   if (login === undefined) {
@@ -400,9 +548,10 @@ export default function HomeScreen() {
     );
   }
 
-  // Doa pagi hari ini (batas jam 4) belum dikonfirmasi → lock screen penuh.
-  // Diarahkan ke halaman terpisah (di luar tab) supaya menutupi tab bar.
-  if (!prayerDoneToday(login, now)) {
+  // Doa pagi belum dikonfirmasi & MASIH di jendela pagi (sebelum jam 11) →
+  // lock screen penuh (di luar tab supaya menutupi tab bar). Lewat jam 11
+  // tanpa doa → tidak dipaksa lagi; langsung Home (streak sudah dihanguskan).
+  if (!prayerDoneToday(login, now) && !prayerDeadlinePassed(now)) {
     return <Redirect href="/morning-prayer" />;
   }
 
@@ -458,17 +607,16 @@ export default function HomeScreen() {
           </PressableScale>
         </Animated.View>
 
-        {/* Morning Task 🌅 — checklist rutinitas pagi (tampil 04.00–08.00) */}
-        {morningActive && (
+        {/* Morning Task 🌅 — checklist rutinitas pagi (tampil 04.00–08.30).
+            Otomatis hilang begitu semua tercentang. */}
+        {morningActive && morningUndone > 0 && (
           <View style={styles.morningCard}>
             <View style={styles.morningHeader}>
               <VixText heading="bold" additionalStyle={styles.morningTitle}>
                 🌅 Morning Task
               </VixText>
               <VixText heading="label" additionalStyle={styles.morningTitle}>
-                {morningUndone > 0
-                  ? `${morningUndone} belum · 04.00–08.00`
-                  : 'beres semua 🎉'}
+                {morningUndone} belum · 04.00–08.30
               </VixText>
             </View>
             {MORNING_TASKS.map((t) => {
@@ -495,7 +643,7 @@ export default function HomeScreen() {
         )}
 
         {/* Task hari ini — centang langsung tanpa buka fitur Task */}
-        {todayTasks.length > 0 && (
+        {todayUndone > 0 && (
           <View style={styles.taskCard}>
             <PressableScale
               style={styles.taskHeader}
@@ -504,9 +652,7 @@ export default function HomeScreen() {
                 ✅ Task Hari Ini
               </VixText>
               <View style={styles.taskHeaderRight}>
-                <VixText heading="label">
-                  {todayUndone > 0 ? `${todayUndone} belum` : 'beres semua 🎉'}
-                </VixText>
+                <VixText heading="label">{todayUndone} belum</VixText>
                 <IconSymbol
                   name="chevron.right"
                   size={18}
@@ -514,7 +660,7 @@ export default function HomeScreen() {
                 />
               </View>
             </PressableScale>
-            {todayTasks.slice(0, HOME_TASK_SHOWN).map((t) => (
+            {todayUndoneTasks.slice(0, HOME_TASK_SHOWN).map((t) => (
               <View key={t.id} style={styles.taskRow}>
                 {/* Lingkaran ini yang dicentang */}
                 <PressableScale onPress={() => toggleTask(t)} hitSlop={8}>
@@ -607,12 +753,12 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Reminder bayar hutang (jatuh tempo ≤ 3 hari / lewat) */}
+        {/* Reminder bayar pinjaman (jatuh tempo ≤ 3 hari / lewat) */}
         {debtReminders.length > 0 && (
           <ReminderCard
             bg={Color.FINANCE_EXPENSE}
             fg={Color.FINANCE_EXPENSE_DARK}
-            title="🤝 Reminder Hutang"
+            title="🤝 Reminder Pinjaman"
             texts={debtReminders}
             onPress={() => router.push('/debts')}
           />
@@ -658,21 +804,114 @@ export default function HomeScreen() {
           </ReminderCard>
         )}
 
-        {/* Reminder deadline prioritas kerja — TIAP BARIS yang ditekan menuju
-            Career (bukan seluruh kartu), seperti kartu Health. */}
+        {/* Reminder Wheel of Life 🎡 — kuartal baru belum diisi: ajak isi.
+            Warna senada grid/tile Wheel. */}
+        {wheelNeedsFill && (
+          <ReminderCard
+            bg={Color.WHEEL}
+            fg={Color.WHEEL_DARK}
+            title={`🎡 Kuartal Baru — ${wheelQLabel}`}
+            onPress={() => router.push('/wheel')}>
+            <VixText heading="label" additionalStyle={styles.wheelText}>
+              Yuk isi Wheel of Life kuartal ini — nilai 8 area hidupmu biar tahu
+              progres & area yang perlu dikembangkan 🎯
+            </VixText>
+          </ReminderCard>
+        )}
+
+        {/* Reminder fokus Wheel (Sen/Rab/Jum, 09.00–12.30): angka skor
+            sekarang → target + tips membangun kebiasaan. */}
+        {wheelFocusDue && (
+          <View style={styles.wheelCard}>
+            <VixText heading="bold" additionalStyle={styles.wheelTitle}>
+              🎡 Fokus Wheel of Life · {wheelQLabel}
+            </VixText>
+            {wheelFocusRows.map((r) => (
+              <PressableScale
+                key={r.key}
+                style={styles.wheelRow}
+                onPress={() => router.push('/wheel')}>
+                <VixText heading="label" additionalStyle={styles.wheelArea}>
+                  {r.icon} {r.label} · {r.current} → {r.target}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.wheelTip}>
+                  💡 {r.tip}
+                </VixText>
+              </PressableScale>
+            ))}
+          </View>
+        )}
+
+        {/* Reminder deadline KERJA (Fulltime + Freelance, H-7) — TIAP BARIS
+            ditekan menuju tab yang sesuai (bukan seluruh kartu). */}
         {careerReminders.length > 0 && (
           <View style={styles.careerCard}>
             <VixText heading="bold" additionalStyle={styles.careerTitle}>
-              💼 Deadline Prioritas Kerja
+              💼 Deadline Kerja
             </VixText>
             {careerReminders.map((r) => (
-              <PressableScale key={r.id} onPress={() => router.push('/career')}>
+              <PressableScale
+                key={r.id}
+                // Tap → buka Career di tab yang sesuai & langsung buka modal
+                // edit item ini (lewat param ?edit=<id>).
+                onPress={() =>
+                  router.push({
+                    pathname: '/career',
+                    params: { tab: r.tab, edit: r.docId },
+                  })
+                }>
                 <VixText heading="label" additionalStyle={styles.careerText}>
                   {r.text}
                 </VixText>
               </PressableScale>
             ))}
           </View>
+        )}
+
+        {/* Fallback PRODUKTIVITAS: hari lagi senggang → apa yang bisa dikerjakan
+            biar menghasilkan uang (Freelance/Insurance/Business). */}
+        {showProductivity && (
+          <View style={styles.productivityCard}>
+            <VixText heading="bold" additionalStyle={styles.productivityTitle}>
+              💼 Produktif Hari Ini
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.productivitySub}>
+              Tidak ada agenda mendesak — ini yang bisa kamu kerjakan biar tetap
+              cuan 💪
+            </VixText>
+            {productivity.map((p) => (
+              <PressableScale
+                key={p.id}
+                onPress={() =>
+                  router.push({ pathname: '/career', params: { tab: p.tab } })
+                }>
+                <VixText heading="label" additionalStyle={styles.productivityText}>
+                  {p.text}
+                </VixText>
+              </PressableScale>
+            ))}
+          </View>
+        )}
+
+        {/* Reminder FUN 🎉: sudah lama tidak refreshing → ajak main + kasih ide.
+            Warna mengikuti grid Fun (hijau muda). */}
+        {funDue && (
+          <ReminderCard
+            bg={Color.FUN}
+            fg={Color.FUN_DARK}
+            title="🎉 Waktunya Refreshing"
+            onPress={() => router.push('/fun')}>
+            <VixText heading="label" additionalStyle={styles.funSub}>
+              {funGap === null
+                ? 'Belum ada kegiatan Fun yang tercatat — yuk mulai satu!'
+                : `Sudah ${funGap} hari tanpa kegiatan seru. Jangan lupa refreshing 🙌`}
+            </VixText>
+            {funIdeas.map((idea, i) => (
+              <VixText key={i} heading="label" additionalStyle={styles.funText}>
+                {idea}
+              </VixText>
+            ))}
+          </ReminderCard>
         )}
 
         <View style={styles.grid}>
@@ -734,12 +973,13 @@ const styles = StyleSheet.create({
     padding: 22,
     marginBottom: 24,
   },
-  // Morning Task 🌅 — kartu checklist pagi (tema krem, senada suasana pagi).
+  // Morning Task 🌅 — kartu checklist pagi. Putih + border hijau, senada kartu
+  // "Task Hari Ini" (reminder task) & aman untuk CheckCircle mint.
   morningCard: {
-    backgroundColor: Color.ACCENT,
+    backgroundColor: Color.CONTAINER,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Color.ACCENT_DARK,
+    borderColor: Color.MAIN_DARK,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
@@ -756,7 +996,7 @@ const styles = StyleSheet.create({
   morningRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   morningText: { flex: 1, color: Color.TEXT_TITLE },
   morningTextDone: {
-    color: Color.ACCENT_DARK,
+    color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
   brandRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -813,6 +1053,42 @@ const styles = StyleSheet.create({
   },
   careerTitle: { color: Color.TEXT_TITLE },
   careerText: { color: Color.ACCENT_DARK },
+  // Kartu Wheel of Life: warna senada tile/grid Wheel. Tiap baris fokus
+  // bisa ditekan menuju halaman Wheel.
+  wheelCard: {
+    backgroundColor: Color.WHEEL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.WHEEL_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  wheelTitle: { color: Color.TEXT_TITLE },
+  wheelRow: { gap: 1 },
+  wheelArea: { color: Color.TEXT_TITLE, fontWeight: '600' },
+  wheelTip: { color: Color.WHEEL_DARK },
+  wheelText: { color: Color.WHEEL_DARK },
+  // Kartu fallback produktivitas (income) → hijau, tiap baris bisa ditekan.
+  productivityCard: {
+    backgroundColor: Color.FINANCE_INCOME,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.FINANCE_INCOME_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 4,
+    marginTop: -12,
+    marginBottom: 24,
+  },
+  productivityTitle: { color: Color.TEXT_TITLE },
+  productivitySub: { color: Color.FINANCE_INCOME_DARK, marginBottom: 2 },
+  productivityText: { color: Color.FINANCE_INCOME_DARK },
+  // Teks di dalam ReminderCard Fun (warna gelap senada grid Fun).
+  funSub: { color: Color.FUN_DARK, marginBottom: 2 },
+  funText: { color: Color.FUN_DARK },
   // Task Hari Ini → putih dengan aksen hijau (border). Latar SENGAJA bukan
   // mint: CheckCircle warnanya mint, jadi kalau latarnya mint pun ceklisnya
   // tak terlihat. Judul hitam biar jelas.

@@ -9,6 +9,7 @@ import {
   query,
   Timestamp,
   updateDoc,
+  writeBatch,
   type FirestoreError,
 } from 'firebase/firestore';
 
@@ -123,30 +124,18 @@ export function deleteHouseLog(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'houseLogs', id));
 }
 
-// ===================== Ringkasan bulan ini =====================
-
-/** Total Rp per jenis untuk BULAN yang sama dengan `now`. */
-export function monthTotalByType(
-  logs: HouseLog[],
-  type: HouseLogType,
-  now: Date,
-): number {
-  return logs
-    .filter((l) => {
-      const d = l.date.toDate();
-      return (
-        l.type === type &&
-        d.getFullYear() === now.getFullYear() &&
-        d.getMonth() === now.getMonth()
-      );
-    })
-    .reduce((sum, l) => sum + l.cost, 0);
-}
-
-/** Entri terbaru untuk jenis tertentu (logs sudah urut tanggal desc). */
-export function latestOfType(
-  logs: HouseLog[],
-  type: HouseLogType,
-): HouseLog | undefined {
-  return logs.find((l) => l.type === type);
+/**
+ * Hapus PERMANEN sekumpulan log rumah sekaligus (batch). Dipakai membersihkan
+ * log air/listrik lama yang diinput manual — sekarang angka listrik & air
+ * dibaca otomatis dari transaksi Finance, bukan lagi dicatat di sini.
+ * Ini penghapusan permanen (hard delete), tidak bisa dibatalkan.
+ */
+export async function deleteHouseLogs(uid: string, ids: string[]) {
+  for (let i = 0; i < ids.length; i += 400) {
+    const batch = writeBatch(db);
+    for (const id of ids.slice(i, i + 400)) {
+      batch.delete(doc(db, 'users', uid, 'houseLogs', id));
+    }
+    await batch.commit();
+  }
 }

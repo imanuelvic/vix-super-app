@@ -7,7 +7,7 @@ import {
 
 import { db } from './firebase';
 
-// Morning Task 🌅 — rutinitas pagi tiap jam 04.00–08.00. Checklist harian
+// Morning Task 🌅 — rutinitas pagi tiap jam 04.00–08.30. Checklist harian
 // (reset otomatis tiap ganti hari lewat id dokumen tanggal, seperti habitDays).
 // Disimpan per hari: users/{uid}/morningDays/{YYYY-MM-DD} → { done: {} }.
 
@@ -23,14 +23,17 @@ export const MORNING_TASKS: MorningTask[] = [
   { id: 'mandi', label: '🚿 Mandi' },
 ];
 
-// Jendela wajib menyelesaikan morning task: 04.00–08.00.
+// Jendela wajib menyelesaikan morning task: 04.00–08.30.
 export const MORNING_START_HOUR = 4;
 export const MORNING_END_HOUR = 8;
+export const MORNING_END_MINUTE = 30;
 
-/** True kalau sekarang di dalam jendela pagi (04.00–08.00). */
+/** True kalau sekarang di dalam jendela pagi (04.00–08.30). */
 export function morningWindowActive(now: Date): boolean {
-  const h = now.getHours();
-  return h >= MORNING_START_HOUR && h < MORNING_END_HOUR;
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const start = MORNING_START_HOUR * 60;
+  const end = MORNING_END_HOUR * 60 + MORNING_END_MINUTE; // 08.30
+  return mins >= start && mins < end;
 }
 
 export type MorningDayMap = Record<string, boolean>;

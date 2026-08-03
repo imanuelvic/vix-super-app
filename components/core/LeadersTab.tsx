@@ -407,6 +407,7 @@ export function LeadersTab({
       <SheetModal
         visible={!!editing}
         title={editing === 'new' ? 'Tambah CORE Leader' : 'Edit CORE Leader'}
+        scroll={false}
         onClose={() => setEditing(null)}>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
         <FormInput
@@ -499,6 +500,7 @@ export function LeadersTab({
       <SheetModal
         visible={!!editingMT}
         title={editingMT === 'new' ? 'Tambah Main Team' : 'Edit Main Team'}
+        scroll={false}
         onClose={() => setEditingMT(null)}>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
         <FormInput
@@ -722,7 +724,7 @@ function PersonalityBadges({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  formScroll: { maxHeight: 480 },
+  formScroll: { flexShrink: 1 },
   pWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',

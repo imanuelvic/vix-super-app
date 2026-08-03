@@ -52,6 +52,27 @@ export function prayerDoneToday(
   return streak?.lastDayId === prayerDayId(now);
 }
 
+// Batas waktu menyelesaikan doa pagi (Bapa Kami + Revive). Lewat jam ini &
+// belum selesai → streak hangus dan lock screen tidak lagi dipaksakan.
+export const PRAYER_DEADLINE_HOUR = 11;
+
+/** Sudah lewat jam 11.00 setempat? (jendela doa pagi habis) */
+export function prayerDeadlinePassed(now: Date): boolean {
+  return now.getHours() >= PRAYER_DEADLINE_HOUR;
+}
+
+/**
+ * Hanguskan streak doa (count → 0) karena melewatkan jendela pagi. Rekor
+ * (best) & total hari tetap disimpan — yang hilang hanya rentetan berjalan.
+ */
+export function resetPrayerStreak(uid: string, current: LoginStreak) {
+  if (current.count === 0) return Promise.resolve(); // sudah 0, tak perlu tulis
+  return setDoc(doc(db, 'users', uid, 'app', 'login'), {
+    ...current,
+    count: 0,
+  });
+}
+
 /**
  * Catat doa pagi hari ini — dipanggil saat konfirmasi di lock screen,
  * maksimal menulis 1×/hari (kalau lastDayId sudah hari ini, no-op).

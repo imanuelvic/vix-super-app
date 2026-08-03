@@ -771,9 +771,7 @@ export default function TasksScreen() {
               onChangeText={setQuery}
               autoFocus
             />
-            <ScrollView
-              style={styles.searchList}
-              keyboardShouldPersistTaps="handled">
+            <>
               {results.map((t) => {
                 const meta = TASK_CATEGORIES.find((c) => c.key === t.category);
                 return (
@@ -800,7 +798,7 @@ export default function TasksScreen() {
                   Tidak ada task dengan judul itu.
                 </VixText>
               )}
-            </ScrollView>
+            </>
           </>
         )}
 
@@ -1105,7 +1103,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   fabLabelText: { color: Color.TEXT_TITLE },
-  searchList: { maxHeight: 380 },
   searchRow: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 12,

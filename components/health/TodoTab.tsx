@@ -203,33 +203,67 @@ export function TodoTab({
         {/* Sapaan + tanggal + streak (komponen bersama) */}
         <GreetingHeader streak={streakDays} />
 
-        {/* ===== Hero: ring progress kebiasaan ===== */}
-        <View style={styles.heroCard}>
-          <DonutChart
-            size={96}
-            thickness={12}
-            slices={[
-              { value: doneCount, color: Color.MAIN_LIGHT },
-              { value: habits.length - doneCount, color: Color.MAIN },
-            ]}>
-            <VixText heading="title" additionalStyle={styles.heroRingText}>
-              {doneCount}/{habits.length}
-            </VixText>
-          </DonutChart>
-          <View style={styles.heroRight}>
+        {/* ===== Baris atas: Kebiasaan (ring) + Target berat, bersampingan ===== */}
+        <View style={styles.statsRow}>
+          {/* Kebiasaan hari ini */}
+          <View style={styles.heroCard}>
+            <DonutChart
+              size={84}
+              thickness={11}
+              slices={[
+                { value: doneCount, color: Color.MAIN_LIGHT },
+                { value: habits.length - doneCount, color: Color.MAIN },
+              ]}>
+              <VixText heading="title" additionalStyle={styles.heroRingText}>
+                {doneCount}/{habits.length}
+              </VixText>
+            </DonutChart>
             <VixText heading="label" additionalStyle={styles.heroLabel}>
               Kebiasaan hari ini
             </VixText>
-            <VixText heading="subheader" additionalStyle={styles.heroValue}>
+            <VixText heading="bold" additionalStyle={styles.heroValue}>
               {doneCount === habits.length && habits.length > 0
                 ? 'Beres semua! 🎉'
                 : `${habits.length - doneCount} lagi 💪`}
             </VixText>
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
-              {streakDays > 0
-                ? `Streak ${streakDays} hari — jangan putus!`
-                : 'Selesaikan semua untuk mulai streak 🔥'}
-            </VixText>
+          </View>
+
+          {/* Target berat */}
+          <View style={styles.targetCard}>
+            <View style={styles.cardHeader}>
+              <VixText heading="title">🎯 Target</VixText>
+              <PressableScale onPress={openTarget} hitSlop={10}>
+                <VixText heading="bold" additionalStyle={styles.editText}>
+                  {target ? 'Ubah' : 'Pasang'}
+                </VixText>
+              </PressableScale>
+            </View>
+            {target ? (
+              <>
+                <VixText heading="subheader" additionalStyle={styles.targetValue}>
+                  {formatDecimal(profile.weightKg)}
+                  <VixText heading="label">
+                    {' '}
+                    → {formatDecimal(target.targetWeightKg)} kg
+                  </VixText>
+                </VixText>
+                <View style={styles.targetBarTrack}>
+                  <View
+                    style={[styles.targetBarFill, { width: `${targetPercent}%` }]}
+                  />
+                </View>
+                <VixText heading="label" additionalStyle={styles.targetSub}>
+                  {reached
+                    ? 'Tercapai! 🎉'
+                    : `sisa ${formatDecimal(remaining)} kg 💪`}
+                </VixText>
+              </>
+            ) : (
+              <VixText heading="label">
+                Belum ada target. Sehat {formatDecimal(range.min)}–
+                {formatDecimal(range.max)} kg.
+              </VixText>
+            )}
           </View>
         </View>
 
@@ -292,44 +326,6 @@ export function TodoTab({
               );
             })}
           </View>
-        </View>
-
-        {/* ===== Target berat ===== */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <VixText heading="title">🎯 Target Berat</VixText>
-            <PressableScale onPress={openTarget} hitSlop={10}>
-              <VixText heading="bold" additionalStyle={styles.editText}>
-                {target ? 'Ubah' : 'Pasang'}
-              </VixText>
-            </PressableScale>
-          </View>
-          {target ? (
-            <>
-              <VixText heading="subheader" additionalStyle={styles.targetValue}>
-                {formatDecimal(profile.weightKg)} kg{' '}
-                <VixText heading="label">
-                  → target {formatDecimal(target.targetWeightKg)} kg
-                </VixText>
-              </VixText>
-              <View style={styles.targetBarTrack}>
-                <View
-                  style={[styles.targetBarFill, { width: `${targetPercent}%` }]}
-                />
-              </View>
-              <VixText heading="label">
-                {reached
-                  ? '🎉 Target tercapai — pertahankan!'
-                  : `Mulai dari ${formatDecimal(target.startWeightKg)} kg · sisa ${formatDecimal(remaining)} kg lagi 💪`}
-              </VixText>
-            </>
-          ) : (
-            <VixText heading="label">
-              Belum ada target. Rentang berat sehatmu (BMI normal,{' '}
-              {profile.heightCm} cm): {formatDecimal(range.min)}–
-              {formatDecimal(range.max)} kg.
-            </VixText>
-          )}
         </View>
 
         {/* ===== Ceklis kebiasaan ===== */}
@@ -440,19 +436,30 @@ export function TodoTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  // Baris atas: dua kartu bersampingan (Kebiasaan + Target berat), sama tinggi.
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   heroCard: {
-    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
-    padding: 18,
-    marginBottom: 12,
+    padding: 16,
   },
   heroRingText: { color: Color.TEXT_REVERSE },
-  heroRight: { flex: 1, gap: 2 },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  heroValue: { color: Color.TEXT_REVERSE },
+  heroLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
+  heroValue: { color: Color.TEXT_REVERSE, textAlign: 'center' },
+  targetCard: {
+    flex: 1,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 14,
+    gap: 8,
+  },
+  targetSub: { color: Color.TEXT_LABEL },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

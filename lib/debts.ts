@@ -10,13 +10,13 @@ import {
 
 import { db } from './firebase';
 
-// Fitur Hutang 🤝 — dua arah:
-//   'mine'   = Hutang Saya (saya berutang, HARUS bayar ke orang lain)
-//   'theirs' = Hutang Orang (orang lain berutang, mereka harus bayar ke saya)
+// Fitur Pinjaman 🤝 — dua arah:
+//   'mine'   = Pinjaman Saya (saya meminjam, HARUS bayar ke orang lain)
+//   'theirs' = Pinjaman Orang (orang lain meminjam, mereka harus bayar ke saya)
 //
-// Satu dokumen per hutang: users/{uid}/debts/{id}, dengan daftar pembayaran
+// Satu dokumen per pinjaman: users/{uid}/debts/{id}, dengan daftar pembayaran
 // (cicilan) DITANAM di dalam dokumennya sebagai array — jumlah cicilan per
-// hutang sedikit, jadi hemat & cukup 1 listener untuk semua hutang.
+// pinjaman sedikit, jadi hemat & cukup 1 listener untuk semua pinjaman.
 // Path ini otomatis tercakup Security Rules users/{userId}/{document=**}.
 
 export type DebtDirection = 'mine' | 'theirs';
@@ -39,10 +39,10 @@ export type DebtPayment = {
 export type Debt = {
   id: string;
   direction: DebtDirection;
-  person: string; // pihak lain (yang saya utangi / yang mengutang ke saya)
-  note: string; // untuk apa hutangnya
-  total: number; // total hutang (rupiah)
-  startDate: Timestamp; // kapan mulai berhutang
+  person: string; // pihak lain (yang saya pinjami / yang meminjam ke saya)
+  note: string; // untuk apa pinjamannya
+  total: number; // total pinjaman (rupiah)
+  startDate: Timestamp; // kapan mulai meminjam
   dueDate: Timestamp; // jatuh tempo pembayaran BERIKUTNYA (dipakai reminder)
   finalDate: Timestamp | null; // target lunas (opsional, tampilan saja)
   period: DebtPeriod;
@@ -58,7 +58,7 @@ function debtsCollection(uid: string) {
   return collection(db, 'users', uid, 'debts');
 }
 
-/** Dengarkan SEMUA hutang milik user (dua arah). */
+/** Dengarkan SEMUA pinjaman milik user (dua arah). */
 export function subscribeDebts(
   uid: string,
   onChange: (debts: Debt[]) => void,
@@ -77,13 +77,13 @@ export function subscribeDebts(
   );
 }
 
-/** Tambah / ubah hutang (dokumen ditulis penuh, termasuk daftar cicilan). */
+/** Tambah / ubah pinjaman (dokumen ditulis penuh, termasuk daftar cicilan). */
 export function saveDebt(uid: string, debt: Debt) {
   const { id, ...data } = debt;
   return setDoc(doc(debtsCollection(uid), id), data);
 }
 
-/** Hapus PERMANEN satu hutang (beserta seluruh cicilannya). */
+/** Hapus PERMANEN satu pinjaman (beserta seluruh cicilannya). */
 export function deleteDebt(uid: string, id: string) {
   return deleteDoc(doc(debtsCollection(uid), id));
 }
@@ -124,7 +124,7 @@ function addPeriod(date: Date, period: DebtPeriod): Date {
 /**
  * Catat satu pembayaran cicilan. Kalau cicilan (mingguan/bulanan) dan belum
  * lunas, jatuh tempo otomatis maju satu periode. Kalau total sudah tercapai,
- * hutang ditandai lunas.
+ * pinjaman ditandai lunas.
  */
 export function addDebtPayment(uid: string, debt: Debt, payment: DebtPayment) {
   const payments = [...debt.payments, payment];

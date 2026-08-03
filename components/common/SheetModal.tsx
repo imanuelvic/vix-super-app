@@ -1,9 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -23,26 +25,53 @@ import Animated, {
 import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 
+// Celah minimal dari atas layar → backdrop SELALU terlihat & bisa ditekan untuk
+// menutup; sheet tidak pernah menutupi layar penuh.
+const TOP_GAP = 72;
+
 // Bottom sheet standar: overlay gelap + panel dari bawah + judul.
-// Bisa ditutup dengan menyeret gagang/judul ke bawah (drag-to-dismiss) atau
-// menekan area gelap di atasnya. Isi form-nya diberikan lewat `children`.
+// - Tinggi dibatasi (maksimal = layar − keyboard − celah atas), jadi walau
+//   keyboard/date picker muncul, isinya tidak menutup seluruh layar.
+// - Isi form digulir DI DALAM batas itu (ScrollView bawaan; matikan lewat
+//   `scroll={false}` kalau modal sudah punya scroll/daftar sendiri).
+// - Bisa ditutup dengan menyeret gagang/judul ke bawah atau menekan area gelap.
 export function SheetModal({
   visible,
   title,
   subtitle,
   onClose,
+  scroll = true,
   children,
 }: {
   visible: boolean;
   title: string;
   subtitle?: string;
   onClose: () => void;
+  scroll?: boolean;
   children: ReactNode;
 }) {
   const { height } = useWindowDimensions();
   // `rendered` menjaga Modal tetap terpasang selama animasi keluar berjalan.
   const [rendered, setRendered] = useState(visible);
   const translateY = useSharedValue(height);
+
+  // Tinggi keyboard → untuk membatasi tinggi sheet agar tetap ada celah backdrop
+  // di atasnya walau keyboard muncul.
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const showEvt =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvt, (e) =>
+      setKeyboardHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(hideEvt, () => setKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -83,6 +112,21 @@ export function SheetModal({
 
   if (!rendered) return null;
 
+  // Batas tinggi sheet: sisakan celah di atas walau keyboard aktif.
+  const maxSheetHeight = Math.max(220, height - keyboardHeight - TOP_GAP);
+
+  const body = scroll ? (
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}>
+      {children}
+    </ScrollView>
+  ) : (
+    children
+  );
+
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
       {/* GestureHandlerRootView wajib di dalam Modal (hierarki view terpisah) */}
@@ -94,7 +138,8 @@ export function SheetModal({
             <Pressable style={styles.flex} onPress={onClose} />
           </Animated.View>
 
-          <Animated.View style={[styles.sheet, sheetStyle]}>
+          <Animated.View
+            style={[styles.sheet, { maxHeight: maxSheetHeight }, sheetStyle]}>
             {/* Zona seret: gagang + judul (tidak menghalangi form di bawah) */}
             <GestureDetector gesture={pan}>
               <View style={styles.grabZone}>
@@ -109,7 +154,7 @@ export function SheetModal({
                 ) : null}
               </View>
             </GestureDetector>
-            {children}
+            {body}
           </Animated.View>
         </KeyboardAvoidingView>
       </GestureHandlerRootView>
@@ -143,4 +188,7 @@ const styles = StyleSheet.create({
   },
   title: { marginBottom: 2 },
   subtitle: { marginBottom: 14 },
+  // flexShrink:1 → ScrollView menyusut mengikuti batas sheet lalu menggulir isi.
+  scroll: { flexShrink: 1 },
+  scrollContent: { paddingBottom: 4 },
 });

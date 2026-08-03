@@ -10,7 +10,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
-import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
+import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
@@ -18,8 +18,6 @@ import {
   addHouseLog,
   deleteHouseLog,
   HOUSE_LOG_TYPES,
-  latestOfType,
-  monthTotalByType,
   updateHouseLog,
   type HouseLog,
   type HouseLogType,
@@ -30,18 +28,13 @@ const TYPE_META = Object.fromEntries(
   HOUSE_LOG_TYPES.map((t) => [t.key, t]),
 ) as Record<HouseLogType, (typeof HOUSE_LOG_TYPES)[number]>;
 
-// Satu komponen untuk dua tab: Air-Listrik (group 'utility') & Log (group
-// 'log'). Bedanya hanya jenis yang boleh dipilih & ringkasan atasnya.
-export function HouseLogTab({
-  items,
-  group,
-}: {
-  items: HouseLog[];
-  group: 'utility' | 'log';
-}) {
+// Tab Log 🧾 — pengeluaran rumah selain listrik/air (iuran lingkungan, water
+// heater, wifi, cleaning, dll). Air & listrik direkap terpisah & read-only di
+// tab Air-Listrik (HouseUtilityTab), dibaca dari transaksi Finance.
+export function HouseLogTab({ items }: { items: HouseLog[] }) {
   const { user } = useAuth();
 
-  const types = HOUSE_LOG_TYPES.filter((t) => t.group === group);
+  const types = HOUSE_LOG_TYPES.filter((t) => t.group === 'log');
   const typeKeys = types.map((t) => t.key);
   const logs = items.filter((l) => typeKeys.includes(l.type));
 
@@ -129,62 +122,17 @@ export function HouseLogTab({
     }
   }
 
-  const lastWater = latestOfType(items, 'water');
-  const lastElectric = latestOfType(items, 'electric');
-
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {group === 'utility' ? (
-          /* Ringkasan Air-Listrik: total bulan ini per jenis + terakhir isi */
-          <SummaryCard>
-            <VixText heading="label" additionalStyle={summaryText.label}>
-              Pemakaian bulan ini
-            </VixText>
-            <View style={styles.utilRow}>
-              <VixText heading="bold" additionalStyle={summaryText.value}>
-                💧 Air PAM
-              </VixText>
-              <VixText heading="bold" additionalStyle={summaryText.value}>
-                {formatRupiah(monthTotalByType(items, 'water', now))}
-              </VixText>
-            </View>
-            <View style={styles.utilRow}>
-              <VixText heading="bold" additionalStyle={summaryText.value}>
-                ⚡ Listrik (token)
-              </VixText>
-              <VixText heading="bold" additionalStyle={summaryText.value}>
-                {formatRupiah(monthTotalByType(items, 'electric', now))}
-              </VixText>
-            </View>
-          </SummaryCard>
-        ) : (
-          /* Ringkasan Log: total pengeluaran rumah lain bulan ini */
-          <SummaryCard
-            label="Pengeluaran rumah bulan ini"
-            value={formatRupiah(summary.monthTotal)}
-          />
-        )}
-
-        {group === 'utility' && (
-          <View style={styles.quickCard}>
-            <VixText heading="label">
-              💧 Terakhir bayar air:{' '}
-              {lastWater
-                ? `${formatDate(lastWater.date.toDate())} · ${formatRupiah(lastWater.cost)}`
-                : 'belum tercatat'}
-            </VixText>
-            <VixText heading="label">
-              ⚡ Terakhir isi token:{' '}
-              {lastElectric
-                ? `${formatDate(lastElectric.date.toDate())} · ${formatRupiah(lastElectric.cost)}`
-                : 'belum tercatat'}
-            </VixText>
-          </View>
-        )}
+        {/* Ringkasan Log: total pengeluaran rumah (selain air/listrik) bulan ini */}
+        <SummaryCard
+          label="Pengeluaran rumah bulan ini"
+          value={formatRupiah(summary.monthTotal)}
+        />
 
         <PrimaryButton
-          label={group === 'utility' ? 'Catat Air / Listrik' : 'Catat Pengeluaran'}
+          label="Catat Pengeluaran"
           icon="plus"
           onPress={openAdd}
           additionalStyle={styles.addButton}
@@ -192,10 +140,7 @@ export function HouseLogTab({
 
         {logs.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada catatan.{' '}
-            {group === 'utility'
-              ? 'Mulai dari isi token listrik berikutnya ⚡'
-              : 'Catat pengeluaran rumah pertamamu 🏠'}
+            Belum ada catatan. Catat pengeluaran rumah pertamamu 🏠
           </VixText>
         )}
 
@@ -294,16 +239,6 @@ export function HouseLogTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  utilRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  quickCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    padding: 14,
-    gap: 4,
-    marginBottom: 10,
-  },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {

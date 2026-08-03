@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -42,7 +42,14 @@ const STATUS_ORDER: Record<RoadmapStatus, number> = {
 
 // Tab Fulltime 💻: roadmap prioritas kerja sebagai Software Engineer /
 // Mobile Developer di NDC — biar jelas mana yang dikerjakan duluan.
-export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
+export function FulltimeTab({
+  items,
+  editId,
+}: {
+  items: RoadmapItem[];
+  // Kalau di-set (dari reminder Home), langsung buka modal edit item ini.
+  editId?: string;
+}) {
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +58,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
   // Form tambah/edit. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<RoadmapItem | 'new' | null>(null);
   const [fTitle, setFTitle] = useState('');
+  const [fPic, setFPic] = useState('');
   const [fNote, setFNote] = useState('');
   const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
   const [fStatus, setFStatus] = useState<RoadmapStatus>('todo');
@@ -70,6 +78,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
   function openAdd() {
     setEditing('new');
     setFTitle('');
+    setFPic('');
     setFNote('');
     setFPriority(2);
     setFStatus('todo');
@@ -78,16 +87,30 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     setFormError(null);
   }
 
-  function openEdit(item: RoadmapItem) {
+  const openEdit = useCallback((item: RoadmapItem) => {
     setEditing(item);
     setFTitle(item.title);
+    setFPic(item.pic ?? '');
     setFNote(item.note);
     setFPriority(item.priority);
     setFStatus(item.status);
     setFDeadline(item.deadline ? item.deadline.toDate() : defaultDeadline());
     setFBacklog(!item.deadline);
     setFormError(null);
-  }
+  }, []);
+
+  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>).
+  // consumedRef mencegah modal terbuka lagi setelah ditutup; tap ulang dari
+  // Home men-mount tab ini fresh, jadi ref-nya reset & modal terbuka lagi.
+  const consumedRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!editId || consumedRef.current === editId) return;
+    const item = items.find((i) => i.id === editId);
+    if (item) {
+      consumedRef.current = editId;
+      openEdit(item);
+    }
+  }, [editId, items, openEdit]);
 
   async function handleSave() {
     if (!user || !editing || busy) return;
@@ -100,6 +123,7 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
     const data: RoadmapItem = {
       id: editing === 'new' ? newCareerId() : editing.id,
       title: fTitle.trim(),
+      pic: fPic.trim(), // string kosong = tanpa PIC (hindari undefined ke Firestore)
       note: fNote.trim(),
       priority: fPriority,
       status: fStatus,
@@ -213,6 +237,10 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
                   {meta.icon} {meta.label}
                 </VixText>
               </View>
+              {/* PIC dengan avatar emoji (seperti tab Freelance) */}
+              {item.pic ? (
+                <VixText heading="label">👤 {item.pic}</VixText>
+              ) : null}
               {/* Catatan/deskripsi sengaja TIDAK ditampilkan di daftar biar
                   ringkas — baru terbaca saat kartunya dibuka (diedit). */}
               {item.deadline ? (
@@ -241,6 +269,13 @@ export function FulltimeTab({ items }: { items: RoadmapItem[] }) {
           placeholder="Pekerjaan"
           value={fTitle}
           onChangeText={setFTitle}
+          editable={!busy}
+        />
+        <FormInput
+          style={styles.formGap}
+          placeholder="PIC"
+          value={fPic}
+          onChangeText={setFPic}
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>

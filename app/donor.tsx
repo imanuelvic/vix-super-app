@@ -30,7 +30,7 @@ import {
   type DonorData,
   type DonorSchedule,
 } from '@/lib/donor';
-import { formatFullDate } from '@/lib/format';
+import { formatFullDate, formatMonthsDays } from '@/lib/format';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
 
 // Donor Darah 🩸 — jadwal & tempat donor, hitung mundur boleh donor lagi,
@@ -259,7 +259,11 @@ export default function DonorScreen() {
                   🩸 Golongan darah
                 </VixText>
                 <VixText heading="bold" additionalStyle={styles.heroValue}>
-                  {canDonate ? 'Boleh donor sekarang! 🎉' : `${eligibleDays} hari lagi`}
+                  {canDonate
+                    ? 'Boleh donor sekarang! 🎉'
+                    : nextDate
+                      ? `${formatMonthsDays(today, nextDate)} lagi`
+                      : `${eligibleDays} hari lagi`}
                 </VixText>
                 <VixText heading="label" additionalStyle={styles.heroLabel}>
                   {d.lastDonation

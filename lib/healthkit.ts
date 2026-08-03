@@ -114,3 +114,35 @@ async function readActiveKcal(
   }
 }
 
+/** "YYYY-MM-DD" tanggal lokal (samakan format dengan dayDocId di lib/health). */
+function localDayId(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/**
+ * Total langkah PER HARI untuk `days` hari terakhir yang SUDAH SELESAI (tidak
+ * termasuk hari ini — hari ini belum final). Dipakai untuk mengisi rekor
+ * langkah harian dari riwayat Apple Health. null = HealthKit tidak tersedia.
+ */
+export async function readRecentDailySteps(
+  days: number,
+): Promise<{ dayId: string; steps: number }[] | null> {
+  const mod = getModule();
+  if (!mod) return null;
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const out: { dayId: string; steps: number }[] = [];
+  for (let i = 1; i <= days; i++) {
+    const dayStart = new Date(startOfToday);
+    dayStart.setDate(dayStart.getDate() - i);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    const steps = await readSteps(mod, dayStart, dayEnd);
+    if (steps != null) out.push({ dayId: localDayId(dayStart), steps });
+  }
+  return out;
+}
+

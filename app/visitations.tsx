@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -10,11 +10,14 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { usePagination } from '@/hooks/usePagination';
 import {
   MEETING_KINDS,
   meetingKindMeta,
@@ -27,6 +30,7 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { formatFullDate } from '@/lib/format';
+import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Riwayat Pertemuan 🕘 — seluruh jadwal dari dulu sampai mendatang.
 // Tap kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
@@ -50,7 +54,7 @@ export default function VisitationsScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const fail = () => setError('Gagal memuat data. Cek koneksi internet.');
+    const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeVisitations(user.uid, setVisitations, fail),
       subscribeCoreLeaders(user.uid, setLeaders, fail),
@@ -73,6 +77,7 @@ export default function VisitationsScreen() {
   const sorted = [...history].sort(
     (a, b) => b.date.toMillis() - a.date.toMillis(),
   );
+  const { setPage, currentPage, pageCount, pageItems } = usePagination(sorted);
 
   function openEdit(v: Visitation) {
     setEditing(v);
@@ -108,7 +113,7 @@ export default function VisitationsScreen() {
       );
       setEditing(null);
     } catch {
-      setFormError('Gagal menyimpan. Cek koneksi internet.');
+      setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
     }
@@ -122,7 +127,7 @@ export default function VisitationsScreen() {
     try {
       await saveVisitations(user.uid, all.filter((v) => v.id !== editing.id));
     } catch {
-      setError('Gagal menghapus. Coba lagi.');
+      setError(DELETE_ERROR);
     } finally {
       setEditing(null);
       setBusy(false);
@@ -144,18 +149,16 @@ export default function VisitationsScreen() {
       )}
 
       {visitations === null ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Color.MAIN} />
-        </View>
+        <LoadingCenter />
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView key={currentPage} contentContainerStyle={styles.content}>
           {sorted.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
               Belum ada riwayat — pertemuan yang sudah selesai atau terlewat
               akan muncul di sini 📅
             </VixText>
           )}
-          {sorted.map((v) => {
+          {pageItems.map((v) => {
             const cl = leaders.find((l) => l.id === v.leaderId);
             const days = visitDaysUntil(v, today);
             const status = v.done
@@ -199,6 +202,12 @@ export default function VisitationsScreen() {
               </PressableScale>
             );
           })}
+
+          <Pagination
+            page={currentPage}
+            pageCount={pageCount}
+            onChange={setPage}
+          />
         </ScrollView>
       )}
 
@@ -289,7 +298,6 @@ export default function VisitationsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {

@@ -13,8 +13,10 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
+  dayIdToDate,
   formatDecimal,
   formatFullDate,
+  formatShortDayDate,
   groupDigits,
   parseDecimal,
 } from '@/lib/format';
@@ -26,16 +28,34 @@ import {
   bmiValue,
   bmrMale,
   dailyWaterLiters,
+  recordStepDays,
   saveHealthProfile,
+  stepAchievements,
+  STEP_TIERS,
+  stepTierOf,
+  subscribeStepDays,
   type HealthProfile,
+  type StepDaysMap,
   type Streak,
 } from '@/lib/health';
 import {
   healthKitStatus,
+  readRecentDailySteps,
   readTodaySummary,
   requestHealthAccess,
   type DailyHealthSummary,
 } from '@/lib/healthkit';
+
+// Label/rentang tiap tier langkah (selaras STEP_TIERS di lib/health).
+const STEP_TIER_META: Record<
+  number,
+  { emoji: string; label: string; range: string }
+> = {
+  20000: { emoji: '👟', label: '20 ribuan', range: '20.000–29.999' },
+  30000: { emoji: '🎖️', label: '30 ribuan', range: '30.000–39.999' },
+  40000: { emoji: '🏅', label: '40 ribuan', range: '40.000–49.999' },
+  50000: { emoji: '🥇', label: '50 ribuan+', range: '≥ 50.000' },
+};
 
 // Tab Summary: ringkasan harian dari Apple Health + data tubuh manual (BMI).
 export function SummaryTab({
@@ -58,6 +78,10 @@ export function SummaryTab({
   const [hk, setHk] = useState<DailyHealthSummary | null>(null);
   const [hkBusy, setHkBusy] = useState(false);
 
+  // ---- Rekor langkah harian 🏆 ----
+  const [stepDays, setStepDays] = useState<StepDaysMap>({});
+  const [expandedTier, setExpandedTier] = useState<number | null>(null);
+
   const loadHk = useCallback(async () => {
     setHkBusy(true);
     try {
@@ -71,6 +95,26 @@ export function SummaryTab({
     // Kalau izin sudah pernah diberikan, data langsung tampil tanpa tombol.
     if (hkStatus === 'ok') loadHk();
   }, [hkStatus, loadHk]);
+
+  // Dengarkan rekor langkah tersimpan (dokumen kecil, 1 listener).
+  useEffect(() => {
+    if (!user) return;
+    return subscribeStepDays(user.uid, setStepDays);
+  }, [user]);
+
+  // Isi rekor dari riwayat Apple Health — hanya hari yang SUDAH SELESAI (kemarin
+  // ke belakang) & tembus tier terendah. Sekali per buka; 1 tulis (merge).
+  const backfilledRef = useRef(false);
+  useEffect(() => {
+    if (hkStatus !== 'ok' || !user || backfilledRef.current) return;
+    backfilledRef.current = true;
+    (async () => {
+      const recent = await readRecentDailySteps(30);
+      if (!recent) return;
+      const qualifying = recent.filter((d) => d.steps >= STEP_TIERS[0]);
+      await recordStepDays(user.uid, qualifying).catch(() => {});
+    })();
+  }, [hkStatus, user]);
 
   // Dari reminder timbang berat di Home (?weighIn=1) → buka editor sekali.
   const { weighIn } = useLocalSearchParams<{ weighIn?: string }>();
@@ -111,6 +155,10 @@ export function SummaryTab({
   const bmr = bmrMale(profile.weightKg, profile.heightCm, age);
   const waterL = dailyWaterLiters(profile.weightKg);
   const whtr = profile.waistCm ? profile.waistCm / profile.heightCm : null;
+
+  // Rekap pencapaian langkah + tier "hari ini" (live, belum dihitung resmi).
+  const ach = stepAchievements(stepDays);
+  const todayTier = hk?.steps != null ? stepTierOf(hk.steps) : null;
 
   function openEdit() {
     setFBirthYear(String(profile.birthYear));
@@ -216,6 +264,91 @@ export function SummaryTab({
             </PressableScale>
           </>
         )}
+      </View>
+
+      {/* ===== Rekor Langkah Harian 🏆 ===== */}
+      <View style={styles.card}>
+        <VixText heading="title" additionalStyle={styles.stepAchTitle}>
+          🏆 Rekor Langkah Harian
+        </VixText>
+
+        {hkStatus === 'ok' && hk?.steps != null && (
+          <VixText heading="label" additionalStyle={styles.stepToday}>
+            Hari ini {groupDigits(String(hk.steps))} langkah
+            {todayTier != null
+              ? ` · sudah lewat ${groupDigits(String(todayTier))} 👣`
+              : ''}{' '}
+            (dihitung di akhir hari)
+          </VixText>
+        )}
+
+        {ach.best && (
+          <View style={styles.stepBest}>
+            <VixText heading="subheader" additionalStyle={styles.stepBestValue}>
+              🥇 {groupDigits(String(ach.best.steps))}
+              <VixText heading="label"> langkah — rekor terbaik</VixText>
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.stepBestDate}>
+              {formatShortDayDate(dayIdToDate(ach.best.dayId))}
+            </VixText>
+          </View>
+        )}
+
+        {[...ach.tiers].reverse().map((t) => {
+          const meta = STEP_TIER_META[t.tier];
+          const open = expandedTier === t.tier;
+          return (
+            <View key={t.tier}>
+              <PressableScale
+                style={styles.tierRow}
+                onPress={() =>
+                  setExpandedTier((cur) => (cur === t.tier ? null : t.tier))
+                }>
+                <View style={styles.tierLeft}>
+                  <VixText heading="bold" additionalStyle={styles.tierLabel}>
+                    {meta ? `${meta.emoji} ${meta.label}` : String(t.tier)}
+                  </VixText>
+                  {meta ? (
+                    <VixText heading="label" additionalStyle={styles.tierRange}>
+                      {meta.range}
+                    </VixText>
+                  ) : null}
+                </View>
+                <VixText
+                  heading="bold"
+                  additionalStyle={
+                    t.count > 0 ? styles.tierCount : styles.tierZero
+                  }>
+                  {t.count}×
+                </VixText>
+              </PressableScale>
+              {open && t.dayIds.length > 0 && (
+                <View style={styles.tierDates}>
+                  {t.dayIds.map((d) => (
+                    <VixText
+                      key={d}
+                      heading="label"
+                      additionalStyle={styles.tierDate}>
+                      📅 {formatShortDayDate(dayIdToDate(d))}
+                    </VixText>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {ach.totalDays === 0 && (
+          <VixText heading="label" additionalStyle={styles.stepEmpty}>
+            {hkStatus === 'ok'
+              ? 'Belum ada rekor. Jalan ≥ 20.000 langkah dalam sehari untuk membukanya 👟'
+              : 'Rekor terisi otomatis dari Apple Health (aktif di build EAS, bukan Expo Go).'}
+          </VixText>
+        )}
+        <VixText heading="label" additionalStyle={styles.stepNote}>
+          Tiap hari dihitung sekali di tier tertingginya · ketuk tier untuk
+          lihat tanggalnya.
+        </VixText>
       </View>
 
       {/* ===== Data tubuh ===== */}
@@ -469,6 +602,35 @@ const styles = StyleSheet.create({
   },
   busy: { opacity: 0.6 },
   connectText: { color: Color.TEXT_REVERSE },
+  // Rekor langkah harian 🏆
+  stepAchTitle: { marginBottom: 8 },
+  stepToday: { color: Color.TEXT_LABEL, marginBottom: 8 },
+  stepBest: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    gap: 2,
+  },
+  stepBestValue: { color: Color.TEXT_TITLE },
+  stepBestDate: { color: Color.TEXT_LABEL },
+  tierRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+  },
+  tierLeft: { gap: 1 },
+  tierLabel: { color: Color.TEXT_TITLE },
+  tierRange: { color: Color.TEXT_PLACEHOLDER },
+  tierCount: { color: Color.MAIN_DARK },
+  tierZero: { color: Color.TEXT_PLACEHOLDER },
+  tierDates: { paddingBottom: 10, paddingLeft: 4, gap: 3 },
+  tierDate: { color: Color.TEXT_PARAGRAPH },
+  stepEmpty: { marginTop: 8, color: Color.TEXT_LABEL },
+  stepNote: { marginTop: 8, color: Color.TEXT_PLACEHOLDER },
   hint: { marginTop: 8 },
   updatedText: { color: Color.TEXT_PLACEHOLDER, marginTop: 4 },
   modalScroll: { maxHeight: 420 },

@@ -1,10 +1,12 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -13,36 +15,30 @@ import { useAuth } from '@/contexts/auth';
 import {
   BOOK_CATEGORIES,
   BOOKS,
-  setBookRead,
-  subscribeBooksRead,
-  type Book,
-  type BooksReadMap,
+  chapterReadCount,
+  isBookComplete,
+  subscribeReadingProgress,
+  type ChaptersReadMap,
 } from '@/lib/books';
 
-// Book 📚 — daftar buku yang mau/lagi dibaca, dikelompokkan per tema. Tiap buku
-// ada info singkat + link (gratis & legal / info resmi) + tanda "sudah dibaca".
+// Book 📚 — daftar buku per tema. Tiap buku punya halaman detail berisi
+// checklist BAB + progres baca. Buku otomatis "selesai" di sini kalau semua
+// babnya sudah dicentang di halaman detail.
 export default function BookScreen() {
+  const router = useRouter();
   const { user } = useAuth();
-  const [read, setRead] = useState<BooksReadMap>({});
+  const [chapters, setChapters] = useState<ChaptersReadMap>({});
 
   useEffect(() => {
     if (!user) return;
-    return subscribeBooksRead(user.uid, setRead);
+    return subscribeReadingProgress(user.uid, setChapters);
   }, [user]);
 
-  function toggleRead(book: Book) {
-    if (!user) return;
-    const next = !read[book.key];
-    // Optimistis: langsung ubah tampilan, snapshot akan mengoreksi bila gagal.
-    setRead((prev) => ({ ...prev, [book.key]: next }));
-    setBookRead(user.uid, book.key, next).catch(() => {});
+  function openDetail(bookKey: string) {
+    router.push({ pathname: '/book/[key]', params: { key: bookKey } });
   }
 
-  function openBook(book: Book) {
-    Linking.openURL(book.url).catch(() => {});
-  }
-
-  const readCount = BOOKS.filter((b) => read[b.key]).length;
+  const doneCount = BOOKS.filter((b) => isBookComplete(chapters, b)).length;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -56,7 +52,7 @@ export default function BookScreen() {
         {/* Ringkasan progres baca */}
         <SummaryCard
           label="Progres baca"
-          value={`${readCount}/${BOOKS.length} buku selesai 📖`}
+          value={`${doneCount}/${BOOKS.length} buku selesai 📖`}
         />
 
         {/* Waktu baca — nyambung ke Morning Task */}
@@ -73,61 +69,57 @@ export default function BookScreen() {
               {cat.label}
             </VixText>
             {BOOKS.filter((b) => b.category === cat.key).map((book) => {
-              const isRead = !!read[book.key];
+              const total = book.chapters.length;
+              const readCount = chapterReadCount(chapters, book);
+              const complete = isBookComplete(chapters, book);
               return (
-                <View key={book.key} style={styles.row}>
+                <PressableScale
+                  key={book.key}
+                  style={styles.row}
+                  onPress={() => openDetail(book.key)}>
                   <View style={styles.rowTop}>
                     <View style={styles.rowMain}>
                       <VixText
                         heading="bold"
-                        additionalStyle={isRead ? styles.titleRead : undefined}>
+                        additionalStyle={complete ? styles.titleRead : undefined}>
                         {book.title}
                       </VixText>
                       <VixText heading="label" additionalStyle={styles.author}>
                         {book.author} · {book.year}
                       </VixText>
                     </View>
-                    {/* Tandai sudah dibaca */}
-                    <PressableScale onPress={() => toggleRead(book)} hitSlop={8}>
-                      <CheckCircle checked={isRead} size={24} />
-                    </PressableScale>
+                    {/* Indikator selesai (otomatis dari centang bab) */}
+                    <CheckCircle checked={complete} size={24} />
                   </View>
 
                   <VixText heading="paragraph" additionalStyle={styles.info}>
                     {book.info}
                   </VixText>
 
-                  {/* Link baca — gratis & legal / info resmi */}
-                  <PressableScale
-                    style={[
-                      styles.linkButton,
-                      book.linkKind === 'free'
-                        ? styles.linkFree
-                        : styles.linkInfo,
-                    ]}
-                    onPress={() => openBook(book)}>
-                    <VixText
-                      heading="label"
-                      additionalStyle={
-                        book.linkKind === 'free'
-                          ? styles.linkFreeText
-                          : styles.linkInfoText
-                      }>
-                      {book.linkKind === 'free'
-                        ? '📖 Baca gratis (legal)'
-                        : '🔗 Info & ringkasan'}
+                  {/* Progres baca per-bab */}
+                  <ProgressBar
+                    value={readCount}
+                    total={total}
+                    color={complete ? Color.SUCCESS : Color.MAIN}
+                  />
+
+                  {/* Tombol ke halaman detail: baca & checklist bab */}
+                  <View style={styles.openRow}>
+                    <VixText heading="label" additionalStyle={styles.progressText}>
+                      {complete ? '🎉 Selesai' : `${readCount}/${total} bab`}
                     </VixText>
-                    <IconSymbol
-                      name="chevron.right"
-                      size={16}
-                      color={
-                        book.linkKind === 'free'
-                          ? Color.FINANCE_INCOME_DARK
-                          : Color.TEXT_LABEL
-                      }
-                    />
-                  </PressableScale>
-                </View>
+                    <View style={styles.openButton}>
+                      <VixText heading="label" additionalStyle={styles.openText}>
+                        📖 Baca & Checklist Bab
+                      </VixText>
+                      <IconSymbol
+                        name="chevron.right"
+                        size={16}
+                        color={Color.MAIN_DARK}
+                      />
+                    </View>
+                  </View>
+                </PressableScale>
               );
             })}
           </View>
@@ -135,10 +127,10 @@ export default function BookScreen() {
 
         {/* Catatan legalitas — dukung penulisnya */}
         <VixText heading="label" additionalStyle={styles.footer}>
-          ⚖️ Untuk buku yang masih berhak cipta, link mengarah ke sumber gratis
-          yang legal (esai/situs resmi penulis atau ringkasan), bukan salinan
-          bajakan. Kalau cocok, dukung penulisnya dengan membeli / meminjam
-          bukunya 🙏
+          ⚖️ Untuk buku yang masih berhak cipta, link di halaman detail mengarah
+          ke sumber gratis yang legal (esai/situs resmi penulis atau ringkasan),
+          bukan salinan bajakan. Kalau cocok, dukung penulisnya dengan membeli /
+          meminjam bukunya 🙏
         </VixText>
       </ScrollView>
     </SafeAreaView>
@@ -183,26 +175,15 @@ const styles = StyleSheet.create({
   },
   author: { color: Color.TEXT_LABEL },
   info: { color: Color.TEXT_PARAGRAPH },
-  linkButton: {
+  openRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: 10,
   },
-  linkFree: {
-    backgroundColor: Color.FINANCE_INCOME,
-    borderWidth: 1,
-    borderColor: Color.FINANCE_INCOME_DARK,
-  },
-  linkInfo: {
-    backgroundColor: Color.BACKGROUND,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-  },
-  linkFreeText: { color: Color.FINANCE_INCOME_DARK },
-  linkInfoText: { color: Color.TEXT_LABEL },
+  progressText: { color: Color.TEXT_LABEL },
+  openButton: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  openText: { color: Color.MAIN_DARK },
   footer: {
     color: Color.TEXT_LABEL,
     marginTop: 12,
