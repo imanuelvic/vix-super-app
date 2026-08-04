@@ -5,49 +5,57 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { GreetingHeader } from '@/components/common/Greeting';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, parseDecimal } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
+import {
+  dayTypeLabel,
+  HABIT_SLOTS,
+  habitsBySlot,
+  newHabitId,
+  saveDayHabits,
+  type DayType,
+  type HabitSlot,
+  type ScheduledHabit,
+} from '@/lib/habits';
 import {
   activeStreak,
   bumpStreak,
   clearWeightTarget,
   idealWeightRange,
-  MOODS,
-  newHabitId,
-  saveHabits,
   saveWeightTarget,
   setHabitDone,
-  setMood,
   setWater,
   WATER_GOAL,
-  type Habit,
   type HabitDay,
   type HealthProfile,
   type Streak,
   type WeightTarget,
 } from '@/lib/health';
+import { SAVE_ERROR } from '@/lib/messages';
 
-// Tab To-do: pusat rutinitas harian — ring progress kebiasaan + streak 🔥,
-// air minum 💧, mood 🙂, target berat 🎯, dan ceklis kebiasaan.
-// Semua data harian otomatis reset tiap ganti hari (satu dokumen per tanggal).
+// Tab Habit: kebiasaan HARI INI (sesuai jenis hari) dibagi 3 sesi
+// Pagi/Siang/Malam — bisa ditambah, di-rename, diurutkan, & dihapus. Plus
+// ring progress + streak 🔥, air minum 💧, dan target berat 🎯.
 export function TodoTab({
   habits,
+  dayType,
   day,
   dayId,
   profile,
   target,
   streak,
 }: {
-  habits: Habit[];
+  habits: ScheduledHabit[];
+  dayType: DayType;
   day: HabitDay;
   dayId: string;
   profile: HealthProfile;
@@ -56,9 +64,12 @@ export function TodoTab({
 }) {
   const { user } = useAuth();
 
-  const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [removing, setRemoving] = useState<Habit | null>(null);
+
+  // Modal tambah/edit kebiasaan.
+  const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);
+  const [editSlot, setEditSlot] = useState<HabitSlot>('morning');
+  const [fLabel, setFLabel] = useState('');
   const [busy, setBusy] = useState(false);
 
   // Modal pasang/ubah target berat.
@@ -70,9 +81,9 @@ export function TodoTab({
   const doneCount = habits.filter((h) => day.done[h.id]).length;
   const streakDays = activeStreak(streak, dayId);
   const range = idealWeightRange(profile.heightCm);
+  const grouped = habitsBySlot(habits);
 
-  // Progress target: dari berat awal (saat target dipasang) menuju target.
-  // Rumus sama untuk program turun maupun naik (bulking otot).
+  // Progress target berat (rumus sama untuk turun / naik).
   let targetPercent = 0;
   let remaining = 0;
   let reached = false;
@@ -90,13 +101,28 @@ export function TodoTab({
         : profile.weightKg <= target.targetWeightKg;
   }
 
-  async function handleToggle(habit: Habit) {
+  // Simpan seluruh daftar kebiasaan hari ini (urut Pagi→Siang→Malam).
+  async function saveList(next: ScheduledHabit[]) {
+    if (!user) return;
+    setError(null);
+    try {
+      await saveDayHabits(user.uid, dayType, next);
+    } catch {
+      setError('Gagal menyimpan kebiasaan. Coba lagi.');
+    }
+  }
+
+  function reassemble(g: Record<HabitSlot, ScheduledHabit[]>): ScheduledHabit[] {
+    return [...g.morning, ...g.daytime, ...g.night];
+  }
+
+  async function handleToggle(habit: ScheduledHabit) {
     if (!user) return;
     setError(null);
     const nextChecked = !day.done[habit.id];
     try {
       await setHabitDone(user.uid, dayId, habit.id, nextChecked);
-      // Kalau centang ini melengkapi SEMUA kebiasaan → streak naik 🔥
+      // Kalau centang ini melengkapi SEMUA kebiasaan hari ini → streak naik 🔥
       if (nextChecked) {
         const nextDone = { ...day.done, [habit.id]: true };
         const allDone =
@@ -118,41 +144,57 @@ export function TodoTab({
     }
   }
 
-  async function handleMood(mood: string) {
-    if (!user) return;
-    setError(null);
-    try {
-      await setMood(user.uid, dayId, mood);
-    } catch {
-      setError('Gagal menyimpan. Coba lagi.');
-    }
+  function openAdd(slot: HabitSlot) {
+    setEditing('new');
+    setEditSlot(slot);
+    setFLabel('');
   }
 
-  async function handleAdd() {
-    const label = text.trim();
-    if (!label || !user) return;
-    setText('');
-    setError(null);
-    try {
-      await saveHabits(user.uid, [...habits, { id: newHabitId(), label }]);
-    } catch {
-      setText(label); // kembalikan teks kalau gagal
-      setError('Gagal menambah kebiasaan. Coba lagi.');
-    }
+  function openEdit(habit: ScheduledHabit) {
+    setEditing(habit);
+    setEditSlot(habit.slot);
+    setFLabel(habit.label);
   }
 
-  async function handleRemove() {
-    if (!user || !removing || busy) return;
+  async function handleSaveHabit() {
+    if (!user || busy) return;
+    const label = fLabel.trim();
+    if (!label) return;
     setBusy(true);
-    setError(null);
-    try {
-      await saveHabits(user.uid, habits.filter((h) => h.id !== removing.id));
-    } catch {
-      setError('Gagal menghapus kebiasaan. Coba lagi.');
-    } finally {
-      setRemoving(null);
-      setBusy(false);
+    const g = habitsBySlot(habits);
+    if (editing === 'new') {
+      g[editSlot] = [...g[editSlot], { id: newHabitId(), label, slot: editSlot }];
+    } else if (editing) {
+      g[editing.slot] = g[editing.slot].map((h) =>
+        h.id === editing.id ? { ...h, label } : h,
+      );
     }
+    await saveList(reassemble(g));
+    setBusy(false);
+    setEditing(null);
+  }
+
+  async function handleDeleteHabit() {
+    if (!user || !editing || editing === 'new' || busy) return;
+    setBusy(true);
+    const g = habitsBySlot(habits);
+    g[editing.slot] = g[editing.slot].filter((h) => h.id !== editing.id);
+    await saveList(reassemble(g));
+    setBusy(false);
+    setEditing(null);
+  }
+
+  // Geser urutan kebiasaan dalam satu sesi (Naik/Turun).
+  async function moveHabit(dir: -1 | 1) {
+    if (!editing || editing === 'new') return;
+    const g = habitsBySlot(habits);
+    const list = g[editing.slot];
+    const i = list.findIndex((h) => h.id === editing.id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    g[editing.slot] = list;
+    await saveList(reassemble(g));
   }
 
   function openTarget() {
@@ -173,8 +215,6 @@ export function TodoTab({
     try {
       await saveWeightTarget(user.uid, {
         targetWeightKg: value,
-        // Titik mulai dikunci saat target pertama dipasang; ubah angka
-        // target tidak menggeser titik mulai.
         startWeightKg: target?.startWeightKg ?? profile.weightKg,
       });
       setTargetOpen(false);
@@ -198,15 +238,22 @@ export function TodoTab({
     }
   }
 
+  // Posisi kebiasaan yang sedang diedit dalam sesinya (untuk Naik/Turun).
+  const editIndex =
+    editing && editing !== 'new'
+      ? grouped[editing.slot].findIndex((h) => h.id === editing.id)
+      : -1;
+  const editCount =
+    editing && editing !== 'new' ? grouped[editing.slot].length : 0;
+
   return (
     <View style={styles.flex}>
       <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         {/* Sapaan + tanggal + streak (komponen bersama) */}
         <GreetingHeader streak={streakDays} />
 
-        {/* ===== Baris atas: Kebiasaan (ring) + Target berat, bersampingan ===== */}
+        {/* ===== Baris atas: Kebiasaan (ring) + Target berat ===== */}
         <View style={styles.statsRow}>
-          {/* Kebiasaan hari ini */}
           <View style={styles.heroCard}>
             <DonutChart
               size={84}
@@ -220,7 +267,7 @@ export function TodoTab({
               </VixText>
             </DonutChart>
             <VixText heading="label" additionalStyle={styles.heroLabel}>
-              Kebiasaan hari ini
+              Kebiasaan · {dayTypeLabel(dayType)}
             </VixText>
             <VixText heading="bold" additionalStyle={styles.heroValue}>
               {doneCount === habits.length && habits.length > 0
@@ -229,7 +276,6 @@ export function TodoTab({
             </VixText>
           </View>
 
-          {/* Target berat */}
           <View style={styles.targetCard}>
             <View style={styles.cardHeader}>
               <VixText heading="title">🎯 Target</VixText>
@@ -309,75 +355,135 @@ export function TodoTab({
           )}
         </View>
 
-        {/* ===== Mood hari ini ===== */}
-        <View style={styles.card}>
-          <VixText heading="title" additionalStyle={styles.moodTitle}>
-            Perasaan hari ini?
-          </VixText>
-          <View style={styles.moodRow}>
-            {MOODS.map((m) => {
-              const active = day.mood === m;
-              return (
-                <PressableScale
-                  key={m}
-                  style={[styles.moodButton, active && styles.moodActive]}
-                  onPress={() => handleMood(m)}>
-                  <VixText additionalStyle={styles.moodEmoji}>{m}</VixText>
-                </PressableScale>
-              );
-            })}
-          </View>
-        </View>
+        {/* ===== Kebiasaan per sesi: Pagi / Siang / Malam ===== */}
+        {HABIT_SLOTS.map((s) => {
+          const list = grouped[s.key];
+          const slotDone = list.filter((h) => day.done[h.id]).length;
+          return (
+            <View key={s.key} style={styles.slotBlock}>
+              <View style={styles.slotHeader}>
+                <VixText heading="title">
+                  {s.emoji} {s.label}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.slotCount}>
+                  {slotDone}/{list.length}
+                </VixText>
+              </View>
 
-        {/* ===== Ceklis kebiasaan ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Kebiasaan Harian
-        </VixText>
-        <View style={styles.inputRow}>
-          <FormInput
-            style={styles.input}
-            placeholder="Tambah kebiasaan baru"
-            value={text}
-            onChangeText={setText}
-            onSubmitEditing={handleAdd}
-            returnKeyType="done"
-          />
-          <PressableScale style={styles.addButton} onPress={handleAdd}>
-            <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
-          </PressableScale>
-        </View>
+              {list.map((habit) => {
+                const checked = !!day.done[habit.id];
+                return (
+                  <View
+                    key={habit.id}
+                    style={[styles.row, checked && styles.rowDone]}>
+                    <PressableScale
+                      onPress={() => handleToggle(habit)}
+                      hitSlop={8}>
+                      <CheckCircle checked={checked} />
+                    </PressableScale>
+                    {/* Tekan teks → ubah / urutkan / hapus */}
+                    <PressableScale
+                      style={styles.rowMain}
+                      onPress={() => openEdit(habit)}>
+                      <VixText
+                        heading="paragraph"
+                        additionalStyle={[
+                          styles.habitText,
+                          checked && styles.habitTextDone,
+                        ]}>
+                        {habit.label}
+                      </VixText>
+                    </PressableScale>
+                  </View>
+                );
+              })}
+
+              <PressableScale
+                style={styles.addRow}
+                onPress={() => openAdd(s.key)}>
+                <IconSymbol name="plus" size={16} color={Color.MAIN} />
+                <VixText heading="label" additionalStyle={styles.addText}>
+                  Tambah kebiasaan {s.label.toLowerCase()}
+                </VixText>
+              </PressableScale>
+            </View>
+          );
+        })}
 
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
             {error}
           </VixText>
         )}
-
-        {habits.map((habit) => {
-          const checked = !!day.done[habit.id];
-          return (
-            <View key={habit.id} style={[styles.row, checked && styles.rowDone]}>
-              {/* Hanya lingkaran ini yang menandai selesai */}
-              <PressableScale onPress={() => handleToggle(habit)} hitSlop={8}>
-                <CheckCircle checked={checked} />
-              </PressableScale>
-              {/* Tekan teksnya → konfirmasi hapus kebiasaan */}
-              <PressableScale
-                style={styles.rowMain}
-                onPress={() => setRemoving(habit)}>
-                <VixText
-                  heading="paragraph"
-                  additionalStyle={[
-                    styles.habitText,
-                    checked && styles.habitTextDone,
-                  ]}>
-                  {habit.label}
-                </VixText>
-              </PressableScale>
-            </View>
-          );
-        })}
       </KeyboardAwareScrollView>
+
+      {/* Sheet tambah / edit kebiasaan */}
+      <SheetModal
+        visible={!!editing}
+        title={editing === 'new' ? 'Tambah Kebiasaan' : 'Ubah Kebiasaan'}
+        subtitle={
+          editing
+            ? `${HABIT_SLOTS.find((s) => s.key === editSlot)!.emoji} ${
+                HABIT_SLOTS.find((s) => s.key === editSlot)!.label
+              } · ${dayTypeLabel(dayType)}`
+            : undefined
+        }
+        onClose={() => setEditing(null)}>
+        <FormInput
+          placeholder="Nama kebiasaan (boleh pakai emoji)"
+          value={fLabel}
+          onChangeText={setFLabel}
+          autoFocus
+          editable={!busy}
+        />
+
+        {/* Urutkan dalam sesi (Naik/Turun) — hanya saat mengedit */}
+        {editing && editing !== 'new' && (
+          <View style={styles.moveRow}>
+            <PressableScale
+              style={[styles.moveButton, editIndex <= 0 && styles.moveDisabled]}
+              onPress={() => moveHabit(-1)}
+              disabled={editIndex <= 0}>
+              <IconSymbol name="chevron.up" size={18} color={Color.MAIN_DARK} />
+              <VixText heading="label" additionalStyle={styles.moveText}>
+                Naik
+              </VixText>
+            </PressableScale>
+            <PressableScale
+              style={[
+                styles.moveButton,
+                editIndex >= editCount - 1 && styles.moveDisabled,
+              ]}
+              onPress={() => moveHabit(1)}
+              disabled={editIndex >= editCount - 1}>
+              <IconSymbol
+                name="chevron.down"
+                size={18}
+                color={Color.MAIN_DARK}
+              />
+              <VixText heading="label" additionalStyle={styles.moveText}>
+                Turun
+              </VixText>
+            </PressableScale>
+          </View>
+        )}
+
+        {editing && editing !== 'new' && (
+          <InlineDelete
+            key={editing.id}
+            label="Hapus kebiasaan ini"
+            busy={busy}
+            onDelete={handleDeleteHabit}
+          />
+        )}
+
+        <DualButtons
+          confirmLabel="Simpan"
+          busy={busy}
+          onCancel={() => setEditing(null)}
+          onConfirm={handleSaveHabit}
+        />
+      </SheetModal>
 
       {/* Modal pasang/ubah target berat */}
       <CenterDialog visible={targetOpen} onClose={() => setTargetOpen(false)}>
@@ -416,20 +522,6 @@ export function TodoTab({
           onConfirm={handleSaveTarget}
         />
       </CenterDialog>
-
-      {/* Konfirmasi hapus kebiasaan */}
-      <ConfirmDialog
-        visible={!!removing}
-        title="Hapus kebiasaan?"
-        detail={
-          removing
-            ? `${removing.label} — riwayat centang hari-hari sebelumnya tidak ikut terhapus.`
-            : undefined
-        }
-        busy={busy}
-        onCancel={() => setRemoving(null)}
-        onConfirm={handleRemove}
-      />
     </View>
   );
 }
@@ -437,7 +529,6 @@ export function TodoTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  // Baris atas: dua kartu bersampingan (Kebiasaan + Target berat), sama tinggi.
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   heroCard: {
     flex: 1,
@@ -503,22 +594,6 @@ const styles = StyleSheet.create({
   },
   waterDotFull: { backgroundColor: Color.MAIN_LIGHT },
   waterDoneText: { color: Color.SUCCESS },
-  moodTitle: { marginBottom: 2 },
-  moodRow: { flexDirection: 'row', gap: 10 },
-  moodButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
-  },
-  moodActive: {
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderColor: Color.MAIN,
-  },
-  moodEmoji: { fontSize: 24, lineHeight: 30 },
   editText: { color: Color.MAIN },
   targetValue: { color: Color.TEXT_TITLE },
   targetBarTrack: {
@@ -527,22 +602,16 @@ const styles = StyleSheet.create({
     backgroundColor: Color.CONTRAST_CONTAINER,
     overflow: 'hidden',
   },
-  targetBarFill: {
-    height: '100%',
-    borderRadius: 4,
-    backgroundColor: Color.MAIN,
-  },
-  sectionTitle: { marginTop: 4, marginBottom: 10 },
-  inputRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
-  input: { flex: 1 },
-  addButton: {
-    width: 48,
-    borderRadius: 12,
-    backgroundColor: Color.MAIN,
+  targetBarFill: { height: '100%', borderRadius: 4, backgroundColor: Color.MAIN },
+  // Blok sesi (Pagi/Siang/Malam)
+  slotBlock: { marginBottom: 16 },
+  slotHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 8,
   },
-  error: { color: Color.DANGER, marginBottom: 8, marginTop: 6 },
+  slotCount: { color: Color.TEXT_LABEL },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -551,8 +620,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Color.BORDER,
     paddingHorizontal: 14,
-    paddingVertical: 14,
-    marginBottom: 10,
+    paddingVertical: 12,
+    marginBottom: 8,
     gap: 12,
   },
   rowDone: {
@@ -565,6 +634,35 @@ const styles = StyleSheet.create({
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Color.MAIN_LIGHT,
+  },
+  addText: { color: Color.MAIN },
+  // Naik/Turun di sheet edit
+  moveRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  moveButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.CONTAINER,
+  },
+  moveDisabled: { opacity: 0.4 },
+  moveText: { color: Color.MAIN_DARK },
+  error: { color: Color.DANGER, marginBottom: 8, marginTop: 6 },
   modalTitle: { marginBottom: 4 },
   modalHint: { marginBottom: 10 },
   deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 12 },

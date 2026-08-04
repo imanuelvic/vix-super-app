@@ -5,28 +5,28 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
-import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { FollowupTab } from '@/components/core/FollowupTab';
 import { LeadersTab } from '@/components/core/LeadersTab';
 import { VisitationTab } from '@/components/core/VisitationTab';
 import { useAuth } from '@/contexts/auth';
 import {
-  EMPTY_CORE_IDEAS,
-  EMPTY_MONTHLY_PRAYERS,
-  subscribeCoreIdeas,
-  subscribeCoreLeaders,
-  subscribeMainTeam,
-  subscribeMonthlyPrayers,
-  subscribeVisitations,
-  type CoreIdeasData,
-  type CoreLeader,
-  type MainTeamMember,
-  type MonthlyPrayers,
-  type Visitation,
+    EMPTY_CORE_IDEAS,
+    EMPTY_MONTHLY_PRAYERS,
+    subscribeCoreIdeas,
+    subscribeCoreLeaders,
+    subscribeMainTeam,
+    subscribeMonthlyPrayers,
+    subscribeVisitations,
+    type CoreIdeasData,
+    type CoreLeader,
+    type MainTeamMember,
+    type MonthlyPrayers,
+    type Visitation,
 } from '@/lib/core';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
@@ -103,9 +103,9 @@ export default function CoreScreen() {
           <View style={styles.headerButtons}>
             {/* Riwayat seluruh visitasi 🕘 */}
             <EmojiButton emoji="🕘" onPress={() => router.push('/visitations')} />
-            {/* Pokok Doa Bulanan 📿 */}
+            {/* Pokok Doa Bulanan 📅 */}
             <EmojiButton
-              emoji="📿"
+              emoji="📅"
               onPress={() => router.push('/monthly-prayers')}
             />
           </View>

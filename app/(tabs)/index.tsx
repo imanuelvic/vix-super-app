@@ -101,15 +101,20 @@ import {
   type FunData,
 } from '@/lib/fun';
 import {
+  dayTypeOf,
+  slotMeta,
+  slotNow,
+  subscribeHabitSchedule,
+  type HabitSchedule,
+} from '@/lib/habits';
+import {
   checkupDueReminders,
   dayDocId,
   needsWeighIn,
   subscribeCheckups,
   subscribeHabitDay,
-  subscribeHabits,
   subscribeHealthProfile,
   type Checkup,
-  type Habit,
   type HabitDay,
   type HealthProfile,
 } from '@/lib/health';
@@ -123,13 +128,6 @@ import {
   subscribeChoreStatus,
   type ChoreStatusMap,
 } from '@/lib/residence';
-import {
-  MORNING_TASKS,
-  morningWindowActive,
-  setMorningDone,
-  subscribeMorningDay,
-  type MorningDayMap,
-} from '@/lib/morning';
 import {
   currentSundayId,
   sermonReminderActive,
@@ -186,11 +184,10 @@ const FEATURES: {
   bg: string;
   fg: string;
 }[] = [
-  { key: 'tasks', label: 'Task', icon: 'checklist', route: '/tasks', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK },
+  { key: 'tasks', label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK },
   { key: 'spiritual', label: 'Spiritual', icon: 'book.closed.fill', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
   { key: 'health', label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.FINANCE_EXPENSE, fg: Color.DANGER },
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
-  { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.MAIN_DARK },
   { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
   { key: 'investment', label: 'Investment', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
@@ -211,7 +208,7 @@ export default function HomeScreen() {
 
   // Data untuk badge tugas harian per fitur.
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [habits, setHabits] = useState<Habit[]>([]);
+  const [schedule, setSchedule] = useState<HabitSchedule | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
@@ -225,7 +222,6 @@ export default function HomeScreen() {
   const [coreIdeas, setCoreIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
   const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
   const [carParts, setCarParts] = useState<PartStatusMap>({});
-  const [morningDone, setMorning] = useState<MorningDayMap>({});
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
   const [insurance, setInsurance] = useState<InsuranceMonths>({});
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
@@ -263,7 +259,7 @@ export default function HomeScreen() {
       subscribeChoreStatus(user.uid, setResidenceChores),
       subscribeGold(user.uid, setGoldEntries),
       subscribeTasks(user.uid, setTasks),
-      subscribeHabits(user.uid, setHabits),
+      subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeVisitations(user.uid, setVisitations),
@@ -277,7 +273,6 @@ export default function HomeScreen() {
       subscribeCoreIdeas(user.uid, setCoreIdeas),
       subscribeDonor(user.uid, setDonor),
       subscribePartStatus(user.uid, setCarParts),
-      subscribeMorningDay(user.uid, todayId, setMorning),
       subscribeFreelance(user.uid, setFreelance),
       subscribeInsurance(user.uid, setInsurance),
       subscribeFun(user.uid, setFun),
@@ -296,12 +291,15 @@ export default function HomeScreen() {
     }
   }, [user, prayerMissed, login]);
 
+  // Kebiasaan hari ini (sesuai jenis hari) — untuk badge Health & reminder sesi.
+  const daySchedule = schedule ? schedule[dayTypeOf(now)] : [];
+
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
   const badges: Record<string, number> = {
     // Hanya task HARI INI — task tanggal depan tidak dihitung.
     tasks: tasks.filter((t) => !t.done && t.dayId === todayId).length,
-    health: day ? habits.filter((h) => !day.done[h.id]).length : 0,
+    health: day ? daySchedule.filter((h) => !day.done[h.id]).length : 0,
     // 2 CORE Leader fokus minggu ini yang belum di-follow up hari ini.
     core: weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
       (l) => l.lastFollowupDayId !== todayId,
@@ -334,17 +332,11 @@ export default function HomeScreen() {
     }
   }
 
-  // Morning Task 🌅 — tampil hanya di jendela pagi 04.00–08.30.
-  const morningActive = morningWindowActive(now);
-  const morningUndone = MORNING_TASKS.filter((t) => !morningDone[t.id]).length;
-
-  function toggleMorning(id: string) {
-    if (!user) return;
-    const next = !morningDone[id];
-    // Optimistis: langsung ubah tampilan, snapshot akan mengoreksi bila gagal.
-    setMorning((prev) => ({ ...prev, [id]: next }));
-    setMorningDone(user.uid, todayId, id, next).catch(() => {});
-  }
+  // Kebiasaan sesi saat ini (Pagi/Siang/Malam) yang belum dilakukan hari ini.
+  const curSlot = slotNow(now);
+  const slotUndone = day
+    ? daySchedule.filter((h) => h.slot === curSlot && !day.done[h.id])
+    : [];
 
   // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan
   // (yang sudah tiada ✝ tidak diikutkan).
@@ -509,7 +501,7 @@ export default function HomeScreen() {
   const wheelFocusRows = wheelFocusDue ? wheelFocusReminders(wheel, now) : [];
   const wheelNeedsFill = wheel != null && !wheelHasScores(wheel);
 
-  // ===== Reminder Pokok Doa Bulanan (CORE) 📿 =====
+  // ===== Reminder Pokok Doa Bulanan (CORE) � =====
   // Awal bulan belum diisi → ajak isi. Sel/Kam/Sab → follow up bergilir.
   const prayerMonthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
   const monthPoints = monthlyPointsFor(monthlyPrayers, now);
@@ -559,6 +551,7 @@ export default function HomeScreen() {
     prayerFollowupDue ||
     goldDue ||
     careerReminders.length > 0 ||
+    slotUndone.length > 0 ||
     todayUndone > 0;
 
   // Fallback PRODUKTIVITAS: kalau tidak ada reminder aksi & bukan jam pagi,
@@ -607,7 +600,7 @@ export default function HomeScreen() {
       { id: 'pg-3', tab: 'business', text: '🍧 Kembangkan ide bisnis (es cendol & roa)' },
     );
   }
-  const showProductivity = !hasActionReminder && !morningActive;
+  const showProductivity = !hasActionReminder;
 
   // Reminder FUN 🎉: sudah lama tidak refreshing (>30 hari) → ajak main +
   // beri ide biar tidak bingung. Warna mengikuti grid Fun (hijau muda).
@@ -686,39 +679,30 @@ export default function HomeScreen() {
           </PressableScale>
         </Animated.View>
 
-        {/* Morning Task 🌅 — checklist rutinitas pagi (tampil 04.00–08.30).
-            Otomatis hilang begitu semua tercentang. */}
-        {morningActive && morningUndone > 0 && (
-          <View style={styles.morningCard}>
-            <View style={styles.morningHeader}>
-              <VixText heading="bold" additionalStyle={styles.morningTitle}>
-                🌅 Morning Task
+        {/* Reminder kebiasaan sesi saat ini (Pagi/Siang/Malam). Selalu tampil
+            selama masih ada yang belum dilakukan; ketuk → tab Habit. Warna
+            senada Health. */}
+        {slotUndone.length > 0 && (
+          <ReminderCard
+            bg={Color.FINANCE_EXPENSE}
+            fg={Color.FINANCE_EXPENSE_DARK}
+            title={`${slotMeta(curSlot).emoji} Kebiasaan ${slotMeta(curSlot).label}`}
+            onPress={() =>
+              router.push({ pathname: '/health', params: { tab: 'todo' } })
+            }>
+            <VixText heading="label" additionalStyle={styles.habitReminderSub}>
+              {slotUndone.length} kebiasaan belum dilakukan — ketuk untuk buka 💪
+            </VixText>
+            {slotUndone.slice(0, 4).map((h) => (
+              <VixText
+                key={h.id}
+                heading="label"
+                numberOfLines={1}
+                additionalStyle={styles.habitReminderItem}>
+                • {h.label}
               </VixText>
-              <VixText heading="label" additionalStyle={styles.morningTitle}>
-                {morningUndone} belum · 04.00–08.30
-              </VixText>
-            </View>
-            {MORNING_TASKS.map((t) => {
-              const done = !!morningDone[t.id];
-              return (
-                <PressableScale
-                  key={t.id}
-                  style={styles.morningRow}
-                  onPress={() => toggleMorning(t.id)}
-                  hitSlop={4}>
-                  <CheckCircle checked={done} size={22} />
-                  <VixText
-                    heading="label"
-                    additionalStyle={[
-                      styles.morningText,
-                      done && styles.morningTextDone,
-                    ]}>
-                    {t.label}
-                  </VixText>
-                </PressableScale>
-              );
-            })}
-          </View>
+            ))}
+          </ReminderCard>
         )}
 
         {/* Task hari ini — centang langsung tanpa buka fitur Task */}
@@ -728,7 +712,7 @@ export default function HomeScreen() {
               style={styles.taskHeader}
               onPress={() => router.push('/tasks')}>
               <VixText heading="bold" additionalStyle={styles.taskTitle}>
-                ✅ Task Hari Ini
+                🔔 Reminder Hari Ini
               </VixText>
               <View style={styles.taskHeaderRight}>
                 <VixText heading="label">{todayUndone} belum</VixText>
@@ -772,7 +756,7 @@ export default function HomeScreen() {
             {moreUndone > 0 && (
               <PressableScale onPress={() => router.push('/tasks')}>
                 <VixText heading="label" additionalStyle={styles.taskMore}>
-                  +{moreUndone} task lagi →
+                  +{moreUndone} reminder lagi →
                 </VixText>
               </PressableScale>
             )}
@@ -837,7 +821,7 @@ export default function HomeScreen() {
           <ReminderCard
             bg={Color.SPIRITUAL}
             fg={Color.SPIRITUAL_DARK}
-            title={`📿 Pokok Doa Bulanan — ${prayerMonthTitle}`}
+            title={`� Pokok Doa Bulanan — ${prayerMonthTitle}`}
             onPress={() => router.push('/monthly-prayers')}>
             <VixText heading="label" additionalStyle={styles.prayerText}>
               Awal bulan! Isi pokok doa tiap CORE Leader — jadi dasar follow up
@@ -851,7 +835,7 @@ export default function HomeScreen() {
           <ReminderCard
             bg={Color.SPIRITUAL}
             fg={Color.SPIRITUAL_DARK}
-            title="📿 Follow Up Pokok Doa"
+            title="� Follow Up Pokok Doa"
             onPress={() =>
               router.push({ pathname: '/core', params: { tab: 'followup' } })
             }>
@@ -1111,32 +1095,9 @@ const styles = StyleSheet.create({
     padding: 22,
     marginBottom: 24,
   },
-  // Morning Task 🌅 — kartu checklist pagi. Putih + border hijau, senada kartu
-  // "Task Hari Ini" (reminder task) & aman untuk CheckCircle mint.
-  morningCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.MAIN_DARK,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-    marginTop: -12,
-    marginBottom: 24,
-  },
-  morningHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  morningTitle: { color: Color.TEXT_TITLE },
-  morningRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  morningText: { flex: 1, color: Color.TEXT_TITLE },
-  morningTextDone: {
-    color: Color.TEXT_PLACEHOLDER,
-    textDecorationLine: 'line-through',
-  },
+  // Reminder kebiasaan sesi (Pagi/Siang/Malam) — teks di dalam ReminderCard.
+  habitReminderSub: { color: Color.FINANCE_EXPENSE_DARK, marginBottom: 2 },
+  habitReminderItem: { color: Color.FINANCE_EXPENSE_DARK },
   brandRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   // CORE (pertemuan + idea) → kuning, senada identitas CORE.
   visitCard: {

@@ -15,30 +15,30 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
-  isCurrentMonthPrayers,
-  isPrayerFollowupDay,
-  loveLangLabel,
-  monthDocId,
-  monthlyPointsFor,
-  monthlyPrayersFilled,
-  newCoreIdeaId,
-  nextBirthday,
-  personalityTips,
-  prayerFollowupLeaders,
-  saveCoreIdeas,
-  saveCoreLeaders,
-  saveMonthlyPrayers,
-  waLink,
-  weekIndex,
-  WEEKLY_FOCUS_COUNT,
-  weeklyFollowupTopic,
-  weeklyLeaders,
-  type CoreIdea,
-  type CoreIdeasData,
-  type CoreLeader,
-  type IdeaCadence,
-  type MainTeamMember,
-  type MonthlyPrayers,
+    isCurrentMonthPrayers,
+    isPrayerFollowupDay,
+    loveLangLabel,
+    monthDocId,
+    monthlyPointsFor,
+    monthlyPrayersFilled,
+    newCoreIdeaId,
+    nextBirthday,
+    personalityTips,
+    prayerFollowupLeaders,
+    saveCoreIdeas,
+    saveCoreLeaders,
+    saveMonthlyPrayers,
+    waLink,
+    weekIndex,
+    WEEKLY_FOCUS_COUNT,
+    weeklyFollowupTopic,
+    weeklyLeaders,
+    type CoreIdea,
+    type CoreIdeasData,
+    type CoreLeader,
+    type IdeaCadence,
+    type MainTeamMember,
+    type MonthlyPrayers,
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -434,7 +434,7 @@ export function FollowupTab({
           </VixText>
           <View style={styles.categoryBadge}>
             <VixText heading="label" additionalStyle={styles.categoryText}>
-              📿 {pts.length} poin
+              📅 {pts.length} poin
             </VixText>
           </View>
         </View>
@@ -534,7 +534,7 @@ export function FollowupTab({
           style={styles.prayerFillCard}
           onPress={() => router.push('/monthly-prayers')}>
           <VixText heading="title" additionalStyle={styles.prayerFillTitle}>
-            📿 Pokok Doa Bulanan — {monthTitle}
+            📅 Pokok Doa Bulanan — {monthTitle}
           </VixText>
           <VixText heading="label" additionalStyle={styles.prayerFillText}>
             Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader dulu — ini yang
@@ -549,7 +549,7 @@ export function FollowupTab({
       ) : isPrayerDay && prayerLeadersToday.length > 0 ? (
         <>
           <View style={styles.prayerHeader}>
-            <VixText heading="title">📿 Follow Up Pokok Doa</VixText>
+            <VixText heading="title">📅 Follow Up Pokok Doa</VixText>
             <PressableScale
               onPress={() => router.push('/monthly-prayers')}
               hitSlop={8}>

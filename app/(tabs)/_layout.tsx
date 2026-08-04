@@ -5,6 +5,11 @@ import { Color } from '@/assets/style/color';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
+// Home tetap tab pembuka meski Finance dideklarasikan lebih dulu (paling kiri).
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function TabLayout() {
   return (
     <Tabs
@@ -18,6 +23,14 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
+      {/* Finance = tab paling kiri (fitur utama). Urutan: Finance · Home · Version */}
+      <Tabs.Screen
+        name="finance"
+        options={{
+          title: 'Finance',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="banknote" color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="index"
         options={{

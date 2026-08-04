@@ -1,16 +1,14 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
-import { LoadingCenter } from '@/components/common/LoadingCenter';
-import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PinLock } from '@/components/common/PinLock';
 import { PressableScale } from '@/components/common/PressableScale';
-import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { BudgetingTab } from '@/components/finance/BudgetingTab';
 import { DashboardTab } from '@/components/finance/DashboardTab';
@@ -23,13 +21,15 @@ import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactions';
 
 type FinanceTab = 'dashboard' | 'transactions' | 'budgeting';
+type IconName = ComponentProps<typeof IconSymbol>['name'];
 
 // PIN pembuka layar Finance. Kunci privasi (biar isi dompet tidak kelihatan
 // kalau HP dipegang orang lain) — bukan pengamanan data.
 const FINANCE_PIN = '9811';
 
-// Tab bar bawah di dalam layar Finance.
-const TABS: BottomTab<FinanceTab>[] = [
+// Sub-menu Finance — kini SELECTOR di atas (bukan bar bawah), karena Finance
+// sudah jadi tab utama di bar bawah (Finance · Home · Version).
+const SEGMENTS: { key: FinanceTab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'chart.pie.fill' },
   { key: 'transactions', label: 'Transaksi', icon: 'list.bullet' },
   { key: 'budgeting', label: 'Budgeting', icon: 'chart.bar.fill' },
@@ -39,10 +39,11 @@ export default function FinanceScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Default masuk ke tab Transaksi. Hook bersama: ganti tab + scroll ke atas.
+  // Default masuk ke sub-menu Transaksi. Hook bersama: ganti sub-menu + scroll
+  // ke atas tiap ditekan.
   const { tab, scrollKey, onTabPress } = useTabScroll<FinanceTab>('transactions');
 
-  // Bulan yang sedang dilihat (default: bulan ini) — dipakai semua tab.
+  // Bulan yang sedang dilihat (default: bulan ini) — dipakai semua sub-menu.
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth()); // 0–11
@@ -51,8 +52,8 @@ export default function FinanceScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Budget bulan ini — satu langganan dipakai bersama tab Transaksi
-  // (mewarnai pilihan kategori) & tab Budgeting (bar realisasi).
+  // Budget bulan ini — satu langganan dipakai bersama sub-menu Transaksi
+  // (mewarnai pilihan kategori) & Budgeting (bar realisasi).
   const [budget, setBudget] = useState<BudgetMap>({});
   const [budgetCopied, setBudgetCopied] = useState(false);
 
@@ -112,50 +113,72 @@ export default function FinanceScreen() {
   }
 
   // Belum buka PIN → tampilkan keypad, isi Finance belum dirender sama sekali.
+  // Batal → pindah ke tab Home (bukan "back", karena Finance sudah jadi tab).
   if (!unlocked) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <PinLock
           pin={FINANCE_PIN}
           title="Finance Terkunci"
           subtitle="Masukkan PIN untuk membuka"
           onUnlock={() => setUnlocked(true)}
-          onCancel={() => router.back()}
+          onCancel={() => router.navigate('/')}
         />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScreenHeader
-        backLabel="Home"
-        title="Finance 💵"
-        subtitle="Kelola uang, jangan dikuasai uang"
-        right={
-          <View style={styles.headerButtons}>
-            {/* Pinjaman 🤝 (pinjam-meminjam) */}
-            <EmojiButton emoji="🤝" onPress={() => router.push('/debts')} />
-            {/* Saku 👛 (dana per tujuan) — beda dari ikon Career */}
-            <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
-          </View>
-        }>
-        {/* Navigasi bulan — berlaku untuk semua tab */}
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Header ringkas: navigasi bulan + akses cepat Pinjaman/Saku. Sengaja
+          TANPA judul "Finance" — ini sudah jadi tab utama di bar bawah. */}
+      <View style={styles.topBar}>
         <View style={styles.monthRow}>
           <PressableScale onPress={() => shiftMonth(-1)} hitSlop={10}>
-            <IconSymbol name="chevron.left" size={20} color={Color.MAIN} />
+            <IconSymbol name="chevron.left" size={22} color={Color.MAIN} />
           </PressableScale>
           {/* Tekan label bulan → balik ke bulan berjalan */}
           <PressableScale onPress={goNow} hitSlop={10}>
-            <VixText heading="bold" additionalStyle={styles.monthText}>
+            <VixText heading="title" additionalStyle={styles.monthText}>
               {MONTH_NAMES[month]} {year}
             </VixText>
           </PressableScale>
           <PressableScale onPress={() => shiftMonth(1)} hitSlop={10}>
-            <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
+            <IconSymbol name="chevron.right" size={22} color={Color.MAIN} />
           </PressableScale>
         </View>
-      </ScreenHeader>
+        <View style={styles.headerButtons}>
+          {/* Pinjaman 🤝 (pinjam-meminjam) */}
+          <EmojiButton emoji="🤝" onPress={() => router.push('/debts')} />
+          {/* Saku 👛 (dana per tujuan) */}
+          <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
+        </View>
+      </View>
+
+      {/* Sub-menu (selector atas) — segmented control modern: track krem,
+          pilihan aktif jadi pil teal. */}
+      <View style={styles.segment}>
+        {SEGMENTS.map((s) => {
+          const active = tab === s.key;
+          return (
+            <PressableScale
+              key={s.key}
+              style={[styles.segItem, active && styles.segItemActive]}
+              onPress={() => onTabPress(s.key)}>
+              <IconSymbol
+                name={s.icon}
+                size={16}
+                color={active ? Color.TEXT_REVERSE : Color.TEXT_LABEL}
+              />
+              <VixText
+                heading="label"
+                additionalStyle={active ? styles.segTextActive : styles.segText}>
+                {s.label}
+              </VixText>
+            </PressableScale>
+          );
+        })}
+      </View>
 
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>
@@ -163,7 +186,7 @@ export default function FinanceScreen() {
         </VixText>
       )}
 
-      {/* key=scrollKey → konten re-mount tiap tab ditekan (scroll ke atas) */}
+      {/* key=scrollKey → konten re-mount tiap sub-menu ditekan (scroll ke atas) */}
       <View style={styles.content} key={scrollKey}>
         {loading ? (
           <LoadingCenter />
@@ -181,23 +204,54 @@ export default function FinanceScreen() {
           />
         )}
       </View>
-
-      {/* Tab bar bawah khusus layar Finance */}
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  monthRow: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginTop: 2,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 10,
   },
+  monthRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  monthText: { minWidth: 140, textAlign: 'center', color: Color.TEXT_TITLE },
   headerButtons: { flexDirection: 'row', gap: 8 },
-  monthText: { minWidth: 150, textAlign: 'center' },
+  // Segmented control modern untuk sub-menu Finance.
+  segment: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 6,
+    marginBottom: 6,
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+  },
+  segItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 10,
+  },
+  segItemActive: {
+    backgroundColor: Color.MAIN,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  segText: { color: Color.TEXT_LABEL },
+  segTextActive: { color: Color.TEXT_REVERSE },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

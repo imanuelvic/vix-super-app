@@ -333,7 +333,7 @@ export default function TasksScreen() {
   async function handleCreateRecurring() {
     if (!user || rBusy) return;
     if (!rTitle.trim()) {
-      setRError('Isi task-nya dulu ya.');
+      setRError('Isi reminder-nya dulu ya.');
       return;
     }
     if (recurDays.length === 0) {
@@ -350,7 +350,7 @@ export default function TasksScreen() {
       await addRecurringTasks(user.uid, rTitle, category, recurDays);
       setSheetView(null);
     } catch {
-      setRError('Gagal membuat task. Cek koneksi internet.');
+      setRError('Gagal membuat reminder. Cek koneksi internet.');
     } finally {
       setRBusy(false);
     }
@@ -482,7 +482,7 @@ export default function TasksScreen() {
 
       <View style={styles.header}>
         <VixText heading="header" additionalStyle={styles.title}>
-          Task ✅
+          Reminder 🔔
         </VixText>
         {/* Navigasi bulan — khusus tab Harian, mentok di bulan berjalan */}
         {mainTab === 'harian' && (
@@ -702,7 +702,7 @@ export default function TasksScreen() {
             />
             <FabAction
               order={1}
-              label="Task berulang"
+              label="Reminder berulang"
               icon="repeat"
               onPress={() => {
                 setFabOpen(false);
@@ -734,13 +734,13 @@ export default function TasksScreen() {
       {/* Sheet cari / task berulang */}
       <SheetModal
         visible={sheetView !== null}
-        title={sheetView === 'search' ? 'Cari Task 🔍' : 'Task Berulang 🔁'}
+        title={sheetView === 'search' ? 'Cari Reminder 🔍' : 'Reminder Berulang 🔁'}
         onClose={() => setSheetView(null)}>
         {sheetView === 'search' && (
           <>
             <FormInput
               style={styles.formGap}
-              placeholder="Cari Task"
+              placeholder="Cari Reminder"
               value={query}
               onChangeText={setQuery}
               autoFocus
@@ -781,7 +781,7 @@ export default function TasksScreen() {
             {/* Textarea, sama seperti modal tambah/edit task */}
             <FormInput
               style={styles.taskInput}
-              placeholder={`Task`}
+              placeholder={`Reminder`}
               value={rTitle}
               onChangeText={setRTitle}
               multiline
@@ -818,8 +818,8 @@ export default function TasksScreen() {
               {recurDays.length === 0
                 ? 'Rentang tanggal belum valid.'
                 : recurDays.length > MAX_RECURRING
-                  ? `Lebih dari ${MAX_RECURRING} task — persempit rentangnya.`
-                  : `Akan membuat ${recurDays.length} task pada ${activeMeta.label} ${activeMeta.icon}.`}
+                  ? `Lebih dari ${MAX_RECURRING} reminder — persempit rentangnya.`
+                  : `Akan membuat ${recurDays.length} reminder pada ${activeMeta.label} ${activeMeta.icon}.`}
             </VixText>
             {rError && (
               <VixText heading="label" additionalStyle={styles.sheetError}>
@@ -827,7 +827,7 @@ export default function TasksScreen() {
               </VixText>
             )}
             <PrimaryButton
-              label="Buat Task Berulang"
+              label="Buat Reminder Berulang"
               busy={rBusy}
               onPress={handleCreateRecurring}
             />
@@ -838,13 +838,13 @@ export default function TasksScreen() {
       {/* Sheet tambah/edit task */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Tambah Task' : 'Edit Task'}
+        title={editing === 'new' ? 'Tambah Reminder' : 'Edit Reminder'}
         subtitle={`${activeMeta.icon} ${activeMeta.label}`}
         onClose={() => setEditing(null)}>
         {/* Textarea: Enter bikin baris baru, jadi task bisa ditulis paragraf */}
         <FormInput
           style={styles.taskInput}
-          placeholder={`Task`}
+          placeholder={`Reminder`}
           value={fTitle}
           onChangeText={setFTitle}
           multiline

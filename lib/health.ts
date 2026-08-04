@@ -167,47 +167,10 @@ export function idealWeightRange(heightCm: number): { min: number; max: number }
   return { min: 18.5 * m2, max: 22.9 * m2 };
 }
 
-// ========================= Kebiasaan harian (to-do) =========================
-// Daftar kebiasaan: users/{uid}/health/habits — SATU dokumen berisi array.
-// Ceklis harian: users/{uid}/habitDays/{YYYY-MM-DD} — satu dokumen per hari,
-// jadi otomatis "reset" tiap ganti hari tanpa perlu menghapus apa pun.
-
-export type Habit = { id: string; label: string };
-
-// Kebiasaan bawaan — tampil sebelum user menyimpan daftarnya sendiri.
-export const DEFAULT_HABITS: Habit[] = [
-  { id: 'olahraga', label: '🏃 Olahraga minimal 30 menit' },
-  { id: 'makan-sehat', label: '🥗 Makan sehat, porsi terkontrol' },
-  { id: 'air-putih', label: '💧 Minum air putih ±2 liter' },
-  { id: 'tidur', label: '😴 Tidur 7–8 jam' },
-];
-
-export function subscribeHabits(
-  uid: string,
-  onChange: (habits: Habit[]) => void,
-  onError?: (error: FirestoreError) => void,
-) {
-  const ref = doc(db, 'users', uid, 'health', 'habits');
-  return onSnapshot(
-    ref,
-    (snapshot) => {
-      const list = snapshot.data()?.list as Habit[] | undefined;
-      onChange(list ?? DEFAULT_HABITS);
-    },
-    onError,
-  );
-}
-
-/** Simpan seluruh daftar kebiasaan (daftar kecil, ditulis utuh sekaligus). */
-export function saveHabits(uid: string, list: Habit[]) {
-  const ref = doc(db, 'users', uid, 'health', 'habits');
-  return setDoc(ref, { list });
-}
-
-/** Id unik untuk kebiasaan baru. */
-export function newHabitId(): string {
-  return `h${Date.now().toString(36)}`;
-}
+// ========================= Ceklis kebiasaan harian =========================
+// Definisi kebiasaan (terjadwal per jenis hari, sesi Pagi/Siang/Malam) ada di
+// lib/habits.ts. Ceklis harian: users/{uid}/habitDays/{YYYY-MM-DD} — satu
+// dokumen per hari, jadi otomatis "reset" tiap ganti hari.
 
 /** "2026-07-23" — id dokumen ceklis harian (tanggal lokal perangkat). */
 export function dayDocId(d: Date): string {
@@ -218,19 +181,15 @@ export function dayDocId(d: Date): string {
 
 export type HabitDayMap = Record<string, boolean>;
 
-// Satu dokumen per hari menampung ceklis + air minum + mood sekaligus —
-// tiga fitur harian cukup 1 read & tetap otomatis reset tiap ganti hari.
+// Satu dokumen per hari menampung ceklis + air minum — cukup 1 read & tetap
+// otomatis reset tiap ganti hari.
 export type HabitDay = {
   done: HabitDayMap;
   water: number; // gelas air putih hari ini
-  mood: string | null; // emoji perasaan hari ini
 };
 
 /** Target gelas air putih per hari (±2 liter). */
 export const WATER_GOAL = 8;
-
-/** Pilihan mood harian — dari paling senang ke paling capek. */
-export const MOODS = ['😄', '🙂', '😐', '😔', '😫'];
 
 export function subscribeHabitDay(
   uid: string,
@@ -246,7 +205,6 @@ export function subscribeHabitDay(
       onChange({
         done: (data?.done as HabitDayMap) ?? {},
         water: (data?.water as number) ?? 0,
-        mood: (data?.mood as string) ?? null,
       });
     },
     onError,
@@ -271,11 +229,6 @@ export function setWater(uid: string, dayId: string, count: number) {
     { water: Math.max(0, Math.min(count, 20)) },
     { merge: true },
   );
-}
-
-export function setMood(uid: string, dayId: string, mood: string) {
-  const ref = doc(db, 'users', uid, 'habitDays', dayId);
-  return setDoc(ref, { mood }, { merge: true });
 }
 
 // ============================== Streak 🔥 ==============================

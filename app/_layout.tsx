@@ -11,8 +11,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { AuthProvider, useAuth } from '@/contexts/auth';
@@ -85,7 +85,6 @@ function RootNavigator() {
         <Stack.Screen name="core" options={{ headerShown: false }} />
         <Stack.Screen name="visitations" options={{ headerShown: false }} />
 
-        <Stack.Screen name="finance" options={{ headerShown: false }} />
         <Stack.Screen name="funds" options={{ headerShown: false }} />
         <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
         <Stack.Screen name="debts" options={{ headerShown: false }} />
