@@ -4,7 +4,7 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
-import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -255,10 +255,9 @@ export function GoldTab({ entries }: { entries: GoldEntry[] }) {
             onChange={setFDate}
           />
         </View>
-        <FormInput
+        <MoneyInput
           style={styles.formGap}
-          placeholder="Harga per gram (Rp)"
-          keyboardType="number-pad"
+          placeholder="Harga per gram"
           value={fPrice}
           onChangeText={(t) => setFPrice(groupDigits(t))}
           editable={!busy}

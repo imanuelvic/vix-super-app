@@ -6,6 +6,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -198,10 +199,9 @@ export function ResidenceLogTab({ items }: { items: ResidenceLog[] }) {
           onChangeText={setFNote}
           editable={!busy}
         />
-        <FormInput
+        <MoneyInput
           style={styles.formGap}
-          placeholder="Nominal (Rp)"
-          keyboardType="number-pad"
+          placeholder="Nominal"
           value={fCost}
           onChangeText={(t) => setFCost(groupDigits(t))}
           editable={!busy}

@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -38,6 +38,7 @@ const TABS: BottomTab<CareerTab>[] = [
 // agent Allianz, dan (nanti) bisnis kuliner Manado.
 export default function CareerScreen() {
   const { user } = useAuth();
+  const router = useRouter();
 
   // Reminder Home bisa mengarahkan langsung ke tab tertentu lewat ?tab=…
   // dan ?edit=<id> untuk otomatis membuka modal edit item yang ditekan.
@@ -45,6 +46,14 @@ export default function CareerScreen() {
     tab?: string;
     edit?: string;
   }>();
+
+  // Setelah tab memakai ?edit=… (membuka modal), bersihkan param dari URL. Tanpa
+  // ini, modal auto-terbuka lagi tiap kembali ke subtab (konten di-mount ulang
+  // oleh key={scrollKey}). Dipanggil tab lewat onEditConsumed SETELAH modal
+  // dibuka — jadi param tak keburu hilang sebelum datanya termuat.
+  const clearEditParam = useCallback(() => {
+    if (editParam) router.setParams({ edit: '' });
+  }, [editParam, router]);
   const isCareerTab = (t?: string): t is CareerTab =>
     t === 'fulltime' ||
     t === 'freelance' ||
@@ -100,9 +109,17 @@ export default function CareerScreen() {
         {roadmap === null || freelance === null || insurance === null ? (
           <LoadingCenter />
         ) : tab === 'fulltime' ? (
-          <FulltimeTab items={roadmap} editId={editParam} />
+          <FulltimeTab
+            items={roadmap}
+            editId={editParam}
+            onEditConsumed={clearEditParam}
+          />
         ) : tab === 'freelance' ? (
-          <FreelanceTab projects={freelance} editId={editParam} />
+          <FreelanceTab
+            projects={freelance}
+            editId={editParam}
+            onEditConsumed={clearEditParam}
+          />
         ) : tab === 'insurance' ? (
           <InsuranceTab months={insurance} />
         ) : (

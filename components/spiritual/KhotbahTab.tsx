@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -17,6 +17,7 @@ import {
   deleteSermon,
   isSunday,
   saveSermon,
+  sermonEditable,
   type SermonNote,
 } from '@/lib/sermon';
 
@@ -95,6 +96,42 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
     }
   }
 
+  // Catatan yang sedang dibuka (bukan 'new'); null saat menambah baru.
+  const current = editing && editing !== 'new' ? editing : null;
+  // Terkunci = sudah lewat Selasa → cuma view + share (tak bisa diedit/hapus).
+  const locked = current ? !sermonEditable(current.id, now) : false;
+
+  // Template pesan untuk dibagikan ke WhatsApp (lewati bagian yang kosong).
+  function sermonShareText(s: SermonNote): string {
+    const meta = [
+      s.preacher ? `🎤 ${s.preacher}` : '',
+      s.serviceTime ? `🕙 ${s.serviceTime}` : '',
+    ]
+      .filter(Boolean)
+      .join('  ·  ');
+    const lines = [
+      'Catatan Khotbah 🙏',
+      s.title,
+      `🗓️ ${formatFullDate(dayIdToDate(s.id))}`,
+    ];
+    if (meta) lines.push(meta);
+    if (s.quote) lines.push('', `💡 "${s.quote}"`);
+    if (s.reflection) lines.push('', `🏃 Aplikasi: ${s.reflection}`);
+    return lines.join('\n');
+  }
+
+  // Buka WhatsApp dengan teks siap kirim — user tinggal pilih chat tujuannya.
+  async function shareSermon(s: SermonNote) {
+    const encoded = encodeURIComponent(sermonShareText(s));
+    try {
+      await Linking.openURL(`whatsapp://send?text=${encoded}`);
+    } catch {
+      Linking.openURL(`https://wa.me/?text=${encoded}`).catch(() =>
+        setFormError('Gagal membuka WhatsApp. Pastikan WhatsApp terpasang.'),
+      );
+    }
+  }
+
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -125,7 +162,9 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
           </VixText>
         )}
 
-        {sermons.map((s) => (
+        {sermons.map((s) => {
+          const cardLocked = !sermonEditable(s.id, now);
+          return (
           <PressableScale
             key={s.id}
             style={styles.card}
@@ -147,6 +186,11 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
                   🕙 {s.serviceTime}
                 </VixText>
               ) : null}
+              {cardLocked ? (
+                <VixText heading="label" additionalStyle={styles.lockChip}>
+                  🔒 Arsip
+                </VixText>
+              ) : null}
             </View>
             {s.quote ? (
               <View style={styles.quoteBox}>
@@ -164,13 +208,20 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
               </VixText>
             ) : null}
           </PressableScale>
-        ))}
+          );
+        })}
       </ScrollView>
 
-      {/* Sheet tambah/edit catatan */}
+      {/* Sheet tambah/edit/lihat catatan */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Catatan Khotbah' : 'Edit Catatan'}
+        title={
+          locked
+            ? 'Catatan Khotbah 🔒'
+            : editing === 'new'
+              ? 'Catatan Khotbah'
+              : 'Edit Catatan'
+        }
         subtitle={
           editing && editing !== 'new'
             ? formatFullDate(dayIdToDate(editing.id))
@@ -179,78 +230,150 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
         scroll={false}
         onClose={() => setEditing(null)}>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Judul khotbah
-          </VixText>
-          <FormInput
-            style={styles.formGap}
-            placeholder="Judul"
-            value={fTitle}
-            onChangeText={setFTitle}
-            autoCapitalize="words"
-            editable={!busy}
-          />
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Pastor / Pembicara
-          </VixText>
-          <FormInput
-            style={styles.formGap}
-            placeholder="Pembicara"
-            value={fPreacher}
-            onChangeText={setFPreacher}
-            editable={!busy}
-          />
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Ibadah jam
-          </VixText>
-          <FormInput
-            style={styles.formGap}
-            placeholder="Jam Ibadah"
-            value={fTime}
-            onChangeText={setFTime}
-            editable={!busy}
-          />
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            💡 Hikmat / Quote
-          </VixText>
-          <FormInput
-            style={styles.multiInput}
-            placeholder="Kalimat/hikmat yang paling nempel…"
-            value={fQuote}
-            onChangeText={setFQuote}
-            multiline
-            editable={!busy}
-          />
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            🏃🏻‍➡️ Aplikasi
-          </VixText>
-          <FormInput
-            style={styles.multiInputTall}
-            placeholder="Apa yang mau kamu terapkan dari khotbah ini?"
-            value={fReflection}
-            onChangeText={setFReflection}
-            multiline
-            editable={!busy}
-          />
-          {formError && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {formError}
-            </VixText>
+          {locked && current ? (
+            /* ===== MODE VIEW (terkunci sejak Selasa) — hanya lihat + share ===== */
+            <View style={styles.viewBox}>
+              <VixText heading="title" additionalStyle={styles.viewTitle}>
+                {current.title}
+              </VixText>
+              {current.preacher || current.serviceTime ? (
+                <View style={styles.metaRow}>
+                  {current.preacher ? (
+                    <VixText heading="label" additionalStyle={styles.metaChip}>
+                      🎤 {current.preacher}
+                    </VixText>
+                  ) : null}
+                  {current.serviceTime ? (
+                    <VixText heading="label" additionalStyle={styles.metaChip}>
+                      🕙 {current.serviceTime}
+                    </VixText>
+                  ) : null}
+                </View>
+              ) : null}
+              {current.quote ? (
+                <View style={styles.quoteBox}>
+                  <VixText
+                    heading="paragraph"
+                    additionalStyle={styles.quoteText}>
+                    “{current.quote}”
+                  </VixText>
+                </View>
+              ) : null}
+              {current.reflection ? (
+                <>
+                  <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                    🏃🏻‍➡️ Aplikasi
+                  </VixText>
+                  <VixText
+                    heading="paragraph"
+                    additionalStyle={styles.viewReflection}>
+                    {current.reflection}
+                  </VixText>
+                </>
+              ) : null}
+              <VixText heading="label" additionalStyle={styles.lockNote}>
+                🔒 Sudah jadi arsip — tak bisa diedit lagi sejak Selasa.
+              </VixText>
+            </View>
+          ) : (
+            /* ===== MODE FORM (tambah / masih bisa diedit) ===== */
+            <>
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                Judul khotbah
+              </VixText>
+              <FormInput
+                style={styles.formGap}
+                placeholder="Judul"
+                value={fTitle}
+                onChangeText={setFTitle}
+                autoCapitalize="words"
+                editable={!busy}
+              />
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                Pastor / Pembicara
+              </VixText>
+              <FormInput
+                style={styles.formGap}
+                placeholder="Pembicara"
+                value={fPreacher}
+                onChangeText={setFPreacher}
+                editable={!busy}
+              />
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                Ibadah jam
+              </VixText>
+              <FormInput
+                style={styles.formGap}
+                placeholder="Jam Ibadah"
+                value={fTime}
+                onChangeText={setFTime}
+                editable={!busy}
+              />
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                💡 Hikmat / Quote
+              </VixText>
+              <FormInput
+                style={styles.multiInput}
+                placeholder="Kalimat/hikmat yang paling nempel…"
+                value={fQuote}
+                onChangeText={setFQuote}
+                multiline
+                editable={!busy}
+              />
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                🏃🏻‍➡️ Aplikasi
+              </VixText>
+              <FormInput
+                style={styles.multiInputTall}
+                placeholder="Apa yang mau kamu terapkan dari khotbah ini?"
+                value={fReflection}
+                onChangeText={setFReflection}
+                multiline
+                editable={!busy}
+              />
+              {formError && (
+                <VixText heading="label" additionalStyle={styles.error}>
+                  {formError}
+                </VixText>
+              )}
+              {editing !== 'new' && editing !== null && (
+                <InlineDelete
+                  key={editing.id}
+                  label="Hapus catatan ini"
+                  busy={busy}
+                  onDelete={handleDelete}
+                />
+              )}
+              <DualButtons
+                confirmLabel={editing === 'new' ? 'Simpan' : 'Perbarui'}
+                busy={busy}
+                onCancel={() => setEditing(null)}
+                onConfirm={handleSave}
+              />
+            </>
           )}
-          {editing !== 'new' && editing !== null && (
-            <InlineDelete
-              key={editing.id}
-              label="Hapus catatan ini"
-              busy={busy}
-              onDelete={handleDelete}
-            />
-          )}
-          <DualButtons
-            confirmLabel={editing === 'new' ? 'Simpan' : 'Perbarui'}
-            busy={busy}
-            onCancel={() => setEditing(null)}
-            onConfirm={handleSave}
-          />
+
+          {/* Tombol share ke WhatsApp — untuk catatan yang sudah tersimpan */}
+          {current ? (
+            <PressableScale
+              style={styles.waButton}
+              onPress={() => shareSermon(current)}>
+              <VixText heading="bold" additionalStyle={styles.waButtonText}>
+                💬 Share ke WhatsApp
+              </VixText>
+            </PressableScale>
+          ) : null}
+
+          {/* Tutup — di mode view tidak ada tombol Batal/Simpan */}
+          {locked ? (
+            <PressableScale
+              style={styles.closeButton}
+              onPress={() => setEditing(null)}>
+              <VixText heading="bold" additionalStyle={styles.closeText}>
+                Tutup
+              </VixText>
+            </PressableScale>
+          ) : null}
         </ScrollView>
       </SheetModal>
     </View>
@@ -303,6 +426,30 @@ const styles = StyleSheet.create({
   },
   quoteText: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
   reflectionText: { color: Color.TEXT_PARAGRAPH },
+  lockChip: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    color: Color.TEXT_LABEL,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    overflow: 'hidden',
+  },
+  // Mode view (terkunci)
+  viewBox: { gap: 8 },
+  viewTitle: { color: Color.TEXT_TITLE },
+  viewReflection: { color: Color.TEXT_PARAGRAPH },
+  lockNote: { color: Color.TEXT_LABEL, marginTop: 2 },
+  // Tombol share WhatsApp
+  waButton: {
+    backgroundColor: Color.WHATSAPP,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  waButtonText: { color: Color.TEXT_REVERSE },
+  closeButton: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
+  closeText: { color: Color.TEXT_LABEL },
   formScroll: { flexShrink: 1 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },

@@ -110,8 +110,16 @@ export default function ReviveEditorScreen() {
       setFormError('Judul renungannya diisi dulu ya.');
       return;
     }
+    if (!fPassage.trim()) {
+      setFormError('Isi bacaan Alkitabnya dulu ya.');
+      return;
+    }
     if (!fRhema.trim()) {
       setFormError('Tulis rhema-nya — firman apa yang ngena di hatimu?');
+      return;
+    }
+    if (!fReflection.trim()) {
+      setFormError('Isi bagian Aplikasi — mau lakukan apa menanggapi firman ini?');
       return;
     }
     setBusy(true);
@@ -145,6 +153,37 @@ export default function ReviveEditorScreen() {
       router.back();
     } finally {
       setBusy(false);
+    }
+  }
+
+  // Keempat bagian wajib terisi sebelum bisa dibagikan.
+  const allFilled =
+    !!fTitle.trim() &&
+    !!fPassage.trim() &&
+    !!fRhema.trim() &&
+    !!fReflection.trim();
+
+  // Template pesan untuk dibagikan ke WhatsApp (isi placeholder dari form).
+  function buildShareText(): string {
+    return (
+      `Judul Revive ${fTitle.trim()}\n` +
+      `Tgl ${formatFullDate(editingDate)}\n\n` +
+      `Revive hari ini aku belajar ${fRhema.trim()}\n\n` +
+      `kesaksian…\n\n` +
+      `aplikasi, yuk sama2 semangat ${fReflection.trim()}`
+    );
+  }
+
+  // Buka WhatsApp dengan teks siap kirim — user tinggal pilih chat tujuannya.
+  // Kalau WhatsApp tak terpasang, jatuh ke tautan wa.me.
+  async function shareToWhatsApp() {
+    const encoded = encodeURIComponent(buildShareText());
+    try {
+      await Linking.openURL(`whatsapp://send?text=${encoded}`);
+    } catch {
+      Linking.openURL(`https://wa.me/?text=${encoded}`).catch(() =>
+        setFormError('Gagal membuka WhatsApp. Pastikan WhatsApp terpasang.'),
+      );
     }
   }
 
@@ -224,6 +263,26 @@ export default function ReviveEditorScreen() {
               multiline
               editable={!busy}
             />
+            {/* Muncul setelah keempat bagian terisi — bagikan ke WhatsApp */}
+            {allFilled && (
+              <View style={styles.shareCard}>
+                <VixText heading="bold" additionalStyle={styles.shareTitle}>
+                  ✅ Semua terisi — bagikan kesaksianmu 🙌
+                </VixText>
+                <View style={styles.sharePreviewBox}>
+                  <VixText
+                    heading="label"
+                    additionalStyle={styles.sharePreviewText}>
+                    {buildShareText()}
+                  </VixText>
+                </View>
+                <PressableScale style={styles.waButton} onPress={shareToWhatsApp}>
+                  <VixText heading="bold" additionalStyle={styles.waButtonText}>
+                    💬 Share ke WhatsApp
+                  </VixText>
+                </PressableScale>
+              </View>
+            )}
             {formError && (
               <VixText heading="label" additionalStyle={styles.error}>
                 {formError}
@@ -294,4 +353,31 @@ const styles = StyleSheet.create({
   },
   error: { color: Color.DANGER, marginBottom: 8 },
   saveButton: { marginTop: 4 },
+  // Kartu share ke WhatsApp — muncul setelah keempat bagian terisi.
+  shareCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    borderLeftWidth: 3,
+    borderLeftColor: Color.WHATSAPP,
+    padding: 14,
+    gap: 10,
+    marginBottom: 12,
+  },
+  shareTitle: { color: Color.MAIN_DARK },
+  sharePreviewBox: {
+    backgroundColor: Color.BACKGROUND,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  sharePreviewText: { color: Color.TEXT_LABEL },
+  waButton: {
+    backgroundColor: Color.WHATSAPP,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  waButtonText: { color: Color.TEXT_REVERSE },
 });

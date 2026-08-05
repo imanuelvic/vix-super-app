@@ -46,10 +46,13 @@ const STATUS_ORDER: Record<RoadmapStatus, number> = {
 export function FulltimeTab({
   items,
   editId,
+  onEditConsumed,
 }: {
   items: RoadmapItem[];
   // Kalau di-set (dari reminder Home), langsung buka modal edit item ini.
   editId?: string;
+  // Dipanggil setelah editId dipakai — induk membersihkan param dari URL.
+  onEditConsumed?: () => void;
 }) {
   const { user } = useAuth();
 
@@ -100,9 +103,10 @@ export function FulltimeTab({
     setFormError(null);
   }, []);
 
-  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>).
-  // consumedRef mencegah modal terbuka lagi setelah ditutup; tap ulang dari
-  // Home men-mount tab ini fresh, jadi ref-nya reset & modal terbuka lagi.
+  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>). Setelah
+  // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
+  // auto-terbuka lagi saat balik ke subtab ini (yang me-mount ulang tab).
+  // consumedRef = guard tambahan agar tak dobel dalam satu mount.
   const consumedRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!editId || consumedRef.current === editId) return;
@@ -110,8 +114,9 @@ export function FulltimeTab({
     if (item) {
       consumedRef.current = editId;
       openEdit(item);
+      onEditConsumed?.();
     }
-  }, [editId, items, openEdit]);
+  }, [editId, items, openEdit, onEditConsumed]);
 
   async function handleSave() {
     if (!user || !editing || busy) return;

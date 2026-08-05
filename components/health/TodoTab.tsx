@@ -17,12 +17,10 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
-  dayTypeLabel,
   HABIT_SLOTS,
   habitsBySlot,
   newHabitId,
-  saveDayHabits,
-  type DayType,
+  saveHabits,
   type HabitSlot,
   type ScheduledHabit,
 } from '@/lib/habits';
@@ -42,12 +40,11 @@ import {
 } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
 
-// Tab Habit: kebiasaan HARI INI (sesuai jenis hari) dibagi 3 sesi
+// Tab Habits: kebiasaan harian (sama tiap hari) dibagi 3 sesi
 // Pagi/Siang/Malam — bisa ditambah, di-rename, diurutkan, & dihapus. Plus
 // ring progress + streak 🔥, air minum 💧, dan target berat 🎯.
 export function TodoTab({
   habits,
-  dayType,
   day,
   dayId,
   profile,
@@ -55,7 +52,6 @@ export function TodoTab({
   streak,
 }: {
   habits: ScheduledHabit[];
-  dayType: DayType;
   day: HabitDay;
   dayId: string;
   profile: HealthProfile;
@@ -101,12 +97,12 @@ export function TodoTab({
         : profile.weightKg <= target.targetWeightKg;
   }
 
-  // Simpan seluruh daftar kebiasaan hari ini (urut Pagi→Siang→Malam).
+  // Simpan seluruh daftar kebiasaan (urut Pagi→Siang→Malam).
   async function saveList(next: ScheduledHabit[]) {
     if (!user) return;
     setError(null);
     try {
-      await saveDayHabits(user.uid, dayType, next);
+      await saveHabits(user.uid, next);
     } catch {
       setError('Gagal menyimpan kebiasaan. Coba lagi.');
     }
@@ -267,7 +263,7 @@ export function TodoTab({
               </VixText>
             </DonutChart>
             <VixText heading="label" additionalStyle={styles.heroLabel}>
-              Kebiasaan · {dayTypeLabel(dayType)}
+              Kebiasaan Hari Ini
             </VixText>
             <VixText heading="bold" additionalStyle={styles.heroValue}>
               {doneCount === habits.length && habits.length > 0
@@ -425,7 +421,7 @@ export function TodoTab({
           editing
             ? `${HABIT_SLOTS.find((s) => s.key === editSlot)!.emoji} ${
                 HABIT_SLOTS.find((s) => s.key === editSlot)!.label
-              } · ${dayTypeLabel(dayType)}`
+              }`
             : undefined
         }
         onClose={() => setEditing(null)}>

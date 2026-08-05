@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -83,6 +84,7 @@ export default function FunScreen() {
   const [costOT, setCostOT] = useState('');
   const [costRent, setCostRent] = useState('');
   const [costTransport, setCostTransport] = useState('');
+  const [costPermit, setCostPermit] = useState('');
   const [costOther, setCostOther] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -125,6 +127,7 @@ export default function FunScreen() {
     parseAmount(costOT) +
     parseAmount(costRent) +
     parseAmount(costTransport) +
+    parseAmount(costPermit) +
     parseAmount(costOther);
 
   function openAdd() {
@@ -140,6 +143,7 @@ export default function FunScreen() {
     setCostOT('');
     setCostRent('');
     setCostTransport('');
+    setCostPermit('');
     setCostOther('');
     setFormError(null);
     setFormOpen(true);
@@ -160,6 +164,7 @@ export default function FunScreen() {
     setCostTransport(
       entry.costTransport ? groupDigits(String(entry.costTransport)) : '',
     );
+    setCostPermit(entry.costPermit ? groupDigits(String(entry.costPermit)) : '');
     setCostOther(entry.costOther ? groupDigits(String(entry.costOther)) : '');
     setFormError(null);
     setFormOpen(true);
@@ -210,6 +215,7 @@ export default function FunScreen() {
         entry.costOT = parseAmount(costOT);
         entry.costRent = parseAmount(costRent);
         entry.costTransport = parseAmount(costTransport);
+        entry.costPermit = parseAmount(costPermit);
         entry.costOther = parseAmount(costOther);
       }
       const nextEntries = editingId
@@ -335,6 +341,7 @@ export default function FunScreen() {
                       { label: '🧭 Jasa OT', val: item.costOT },
                       { label: '🎒 Sewa barang', val: item.costRent },
                       { label: '🚗 Transportasi', val: item.costTransport },
+                      { label: '🎫 SIMAKSI', val: item.costPermit },
                       { label: '🧾 Lain-lain', val: item.costOther },
                     ].map((row) =>
                       row.val ? (
@@ -428,10 +435,9 @@ export default function FunScreen() {
         />
         {category === 'race' && (
           <>
-            <FormInput
+            <MoneyInput
               style={styles.inputGap}
-              placeholder="Harga pendaftaran (Rp)"
-              keyboardType="number-pad"
+              placeholder="Harga pendaftaran"
               value={price}
               onChangeText={(t) => setPrice(groupDigits(t))}
               editable={!saving}
@@ -454,34 +460,37 @@ export default function FunScreen() {
                 Rincian anggaran pendakian (Rp)
               </VixText>
             </View>
-            <FormInput
+            <MoneyInput
               style={styles.inputGap}
               placeholder="Jasa OT (open trip / guide)"
-              keyboardType="number-pad"
               value={costOT}
               onChangeText={(t) => setCostOT(groupDigits(t))}
               editable={!saving}
             />
-            <FormInput
+            <MoneyInput
               style={styles.inputGap}
               placeholder="Sewa barang / alat"
-              keyboardType="number-pad"
               value={costRent}
               onChangeText={(t) => setCostRent(groupDigits(t))}
               editable={!saving}
             />
-            <FormInput
+            <MoneyInput
               style={styles.inputGap}
               placeholder="Transportasi"
-              keyboardType="number-pad"
               value={costTransport}
               onChangeText={(t) => setCostTransport(groupDigits(t))}
               editable={!saving}
             />
-            <FormInput
+            <MoneyInput
+              style={styles.inputGap}
+              placeholder="SIMAKSI / tiket masuk"
+              value={costPermit}
+              onChangeText={(t) => setCostPermit(groupDigits(t))}
+              editable={!saving}
+            />
+            <MoneyInput
               style={styles.inputGap}
               placeholder="Lain-lain"
-              keyboardType="number-pad"
               value={costOther}
               onChangeText={(t) => setCostOther(groupDigits(t))}
               editable={!saving}

@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -255,10 +256,9 @@ export default function FundScreen() {
           editable={!saving}
         />
         <View style={[styles.inputRow, styles.inputGap]}>
-          <FormInput
+          <MoneyInput
             style={styles.flexInput}
-            placeholder="Nominal (Rp)"
-            keyboardType="number-pad"
+            placeholder="Nominal"
             value={amount}
             onChangeText={(t) => setAmount(groupDigits(t))}
             onSubmitEditing={handleAdd}
@@ -392,10 +392,9 @@ export default function FundScreen() {
           onChangeText={setEditCause}
           editable={!editSaving}
         />
-        <FormInput
+        <MoneyInput
           style={styles.inputGap}
-          placeholder="Nominal (Rp)"
-          keyboardType="number-pad"
+          placeholder="Nominal"
           value={editAmount}
           onChangeText={(t) => setEditAmount(groupDigits(t))}
           editable={!editSaving}

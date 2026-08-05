@@ -5,7 +5,7 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
-import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
@@ -238,9 +238,8 @@ export function BudgetingTab({
             {editing.icon} {editing.label} · {FINANCE_TYPE_LABEL[type]}
           </VixText>
         )}
-        <FormInput
-          placeholder="Nominal budget (Rp)"
-          keyboardType="number-pad"
+        <MoneyInput
+          placeholder="Nominal budget"
           value={editAmount}
           onChangeText={(t) => setEditAmount(groupDigits(t))}
           autoFocus

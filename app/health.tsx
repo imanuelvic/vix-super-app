@@ -13,11 +13,7 @@ import { CheckupTab } from '@/components/health/CheckupTab';
 import { SummaryTab } from '@/components/health/SummaryTab';
 import { TodoTab } from '@/components/health/TodoTab';
 import { useAuth } from '@/contexts/auth';
-import {
-  dayTypeOf,
-  subscribeHabitSchedule,
-  type HabitSchedule,
-} from '@/lib/habits';
+import { subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
 import {
   dayDocId,
   subscribeCheckups,
@@ -38,7 +34,7 @@ type HealthTab = 'summary' | 'todo' | 'checkup';
 // Tab bar bawah di dalam layar Health.
 const TABS: BottomTab<HealthTab>[] = [
   { key: 'summary', label: 'Summary', icon: 'heart.fill' },
-  { key: 'todo', label: 'Habit', icon: 'checklist' },
+  { key: 'todo', label: 'Habits', icon: 'checklist' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
 
@@ -55,7 +51,7 @@ export default function HealthScreen() {
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
   // tidak memutus-sambung listener Firestore terus-menerus (hemat read).
   const [profile, setProfile] = useState<HealthProfile | null>(null);
-  const [schedule, setSchedule] = useState<HabitSchedule | null>(null);
+  const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [checkups, setCheckups] = useState<Checkup[] | null>(null);
   // undefined = belum termuat; null = memang belum ada datanya.
@@ -94,9 +90,8 @@ export default function HealthScreen() {
     target === undefined ||
     streak === undefined;
 
-  // Jenis hari ini → kebiasaan yang tampil (semua sesi Pagi/Siang/Malam).
-  const dayType = dayTypeOf(new Date());
-  const dayHabits = schedule ? schedule[dayType] : [];
+  // Kebiasaan (sama tiap hari) — semua sesi Pagi/Siang/Malam.
+  const dayHabits = schedule ?? [];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -120,7 +115,6 @@ export default function HealthScreen() {
         ) : tab === 'todo' ? (
           <TodoTab
             habits={dayHabits}
-            dayType={dayType}
             day={day}
             dayId={dayId}
             profile={profile}

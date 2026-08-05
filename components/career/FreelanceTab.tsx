@@ -8,6 +8,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -35,10 +36,13 @@ type ItemDraft = { desc: string; qty: string; price: string };
 export function FreelanceTab({
   projects,
   editId,
+  onEditConsumed,
 }: {
   projects: FreelanceProject[];
   // Kalau di-set (dari reminder Home), langsung buka modal edit proyek ini.
   editId?: string;
+  // Dipanggil setelah editId dipakai — induk membersihkan param dari URL.
+  onEditConsumed?: () => void;
 }) {
   const { user } = useAuth();
 
@@ -96,9 +100,10 @@ export function FreelanceTab({
     setFormError(null);
   }, []);
 
-  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>).
-  // consumedRef mencegah modal terbuka lagi setelah ditutup; tap ulang dari
-  // Home men-mount tab ini fresh, jadi ref-nya reset & modal terbuka lagi.
+  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>). Setelah
+  // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
+  // auto-terbuka lagi saat balik ke subtab ini (yang me-mount ulang tab).
+  // consumedRef = guard tambahan agar tak dobel dalam satu mount.
   const consumedRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (!editId || consumedRef.current === editId) return;
@@ -106,8 +111,9 @@ export function FreelanceTab({
     if (proj) {
       consumedRef.current = editId;
       openEdit(proj);
+      onEditConsumed?.();
     }
-  }, [editId, projects, openEdit]);
+  }, [editId, projects, openEdit, onEditConsumed]);
 
   // ===== Rincian biaya (invoice) =====
   function addPresetItem(desc: string) {
@@ -337,10 +343,9 @@ export function FreelanceTab({
             multiline
             editable={!busy}
           />
-          <FormInput
+          <MoneyInput
             style={styles.formGap}
-            placeholder="Fee (Rp, opsional)"
-            keyboardType="number-pad"
+            placeholder="Fee (opsional)"
             value={fFee}
             onChangeText={(t) => setFFee(groupDigits(t))}
             editable={!busy}
@@ -410,10 +415,9 @@ export function FreelanceTab({
                     }
                     editable={!invoiceBusy}
                   />
-                  <FormInput
+                  <MoneyInput
                     style={styles.itemPrice}
-                    placeholder="Harga satuan (Rp)"
-                    keyboardType="number-pad"
+                    placeholder="Harga satuan"
                     value={it.price}
                     onChangeText={(t) => updateItem(idx, 'price', groupDigits(t))}
                     editable={!invoiceBusy}

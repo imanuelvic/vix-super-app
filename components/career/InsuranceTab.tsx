@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
@@ -255,18 +256,16 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
           onChangeText={setFClose}
           editable={!busy}
         />
-        <VixText heading="label">Target premi (Rp)</VixText>
-        <FormInput
+        <VixText heading="label">Target premi</VixText>
+        <MoneyInput
           style={styles.modalInput}
-          keyboardType="number-pad"
           value={fPremiTarget}
           onChangeText={(t) => setFPremiTarget(groupDigits(t))}
           editable={!busy}
         />
-        <VixText heading="label">Premi tercapai sejauh ini (Rp)</VixText>
-        <FormInput
+        <VixText heading="label">Premi tercapai sejauh ini</VixText>
+        <MoneyInput
           style={styles.modalInput}
-          keyboardType="number-pad"
           value={fPremiDone}
           onChangeText={(t) => setFPremiDone(groupDigits(t))}
           editable={!busy}

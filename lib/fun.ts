@@ -39,6 +39,7 @@ export type FunEntry = {
   costOT?: number; // jasa Open Trip / guide
   costRent?: number; // sewa barang / alat
   costTransport?: number; // transportasi
+  costPermit?: number; // SIMAKSI / tiket masuk kawasan
   costOther?: number; // lain-lain
 };
 
@@ -47,12 +48,14 @@ export function summitTotal(e: {
   costOT?: number;
   costRent?: number;
   costTransport?: number;
+  costPermit?: number;
   costOther?: number;
 }): number {
   return (
     (e.costOT ?? 0) +
     (e.costRent ?? 0) +
     (e.costTransport ?? 0) +
+    (e.costPermit ?? 0) +
     (e.costOther ?? 0)
   );
 }

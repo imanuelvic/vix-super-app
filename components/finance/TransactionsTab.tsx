@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -418,10 +419,9 @@ export function TransactionsTab({
           editable={!saving}
         />
         <View style={[styles.inputRow, styles.inputGap]}>
-          <FormInput
+          <MoneyInput
             style={styles.flexInput}
-            placeholder="Nominal (Rp)"
-            keyboardType="number-pad"
+            placeholder="Nominal"
             value={amount}
             onChangeText={(t) => setAmount(groupDigits(t))}
             onSubmitEditing={handleAdd}
@@ -639,9 +639,8 @@ export function TransactionsTab({
             : undefined
         }
         onClose={() => setEditing(null)}>
-        <FormInput
-          placeholder="Nominal (Rp)"
-          keyboardType="number-pad"
+        <MoneyInput
+          placeholder="Nominal"
           value={editAmount}
           onChangeText={(t) => setEditAmount(groupDigits(t))}
           editable={!editSaving}

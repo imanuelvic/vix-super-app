@@ -12,6 +12,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -399,12 +400,11 @@ export default function DebtsScreen() {
             editable={!busy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Total pinjaman (Rp)
+            Total pinjaman
           </VixText>
-          <FormInput
+          <MoneyInput
             style={styles.formGap}
             placeholder="0"
-            keyboardType="number-pad"
             value={fTotal}
             onChangeText={(t) => setFTotal(groupDigits(t))}
             editable={!busy}
@@ -428,12 +428,11 @@ export default function DebtsScreen() {
           {fPeriod !== 'once' && (
             <>
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                Nominal cicilan {PERIOD_META[fPeriod].short} (Rp)
+                Nominal cicilan {PERIOD_META[fPeriod].short}
               </VixText>
-              <FormInput
+              <MoneyInput
                 style={styles.formGap}
                 placeholder="0"
-                keyboardType="number-pad"
                 value={fInstallment}
                 onChangeText={(t) => setFInstallment(groupDigits(t))}
                 editable={!busy}
@@ -511,12 +510,11 @@ export default function DebtsScreen() {
         onClose={() => setPaying(null)}>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Nominal pembayaran (Rp)
+            Nominal pembayaran
           </VixText>
-          <FormInput
+          <MoneyInput
             style={styles.formGap}
             placeholder="0"
-            keyboardType="number-pad"
             value={pAmount}
             onChangeText={(t) => setPAmount(groupDigits(t))}
             editable={!pBusy}

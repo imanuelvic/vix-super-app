@@ -65,6 +65,8 @@ export function FollowupTab({
   const [error, setError] = useState<string | null>(null);
   // "Ganti pertanyaan" → seed acak per orang untuk memilih pertanyaan lain.
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
+  // Ide Pendekatan tiap kartu bisa dibuka/tutup — default tertutup (ringkas).
+  const [openTips, setOpenTips] = useState<Record<string, boolean>>({});
 
   // ===== Idea For CORE — form tambah/edit =====
   const [editingIdea, setEditingIdea] = useState<CoreIdea | 'new' | null>(null);
@@ -276,6 +278,7 @@ export function FollowupTab({
   }) {
     const topic = weeklyFollowupTopic(person, id, dayId, topicOverride[id]);
     const tips = personalityTips(person);
+    const tipsOpen = !!openTips[id];
     // Ada nomor → seluruh kartu bisa ditekan untuk chat WA. Menekan kartu =
     // menindaklanjuti orang ini, jadi SEKALIGUS menandai "sudah follow up hari
     // ini" (badge di Home ikut hilang). Border hijau WA sebagai penanda.
@@ -348,24 +351,37 @@ export function FollowupTab({
             tiap ide punya pill label (bold) + deskripsi cara pendekatannya. */}
         {tips.length > 0 && (
           <View style={styles.tipBox}>
-            <View style={styles.tipHeaderRow}>
+            {/* Header bisa diketuk untuk buka/tutup — default tertutup (ringkas).
+                PressableScale bersarang: menekan header hanya toggle, tidak
+                ikut memicu chat WA kartu (inner menangkap sentuhan). */}
+            <PressableScale
+              style={styles.tipHeaderRow}
+              onPress={() =>
+                setOpenTips((prev) => ({ ...prev, [id]: !prev[id] }))
+              }>
               <VixText additionalStyle={styles.tipHeaderEmoji}>💡</VixText>
               <VixText heading="bold" additionalStyle={styles.tipHeader}>
                 Ide Pendekatan
               </VixText>
-            </View>
-            {tips.map((t) => (
-              <View key={t.label} style={styles.tipRow}>
-                <View style={styles.tipBadge}>
-                  <VixText heading="label" additionalStyle={styles.tipBadgeText}>
-                    {t.label}
+              <VixText heading="label" additionalStyle={styles.tipChevron}>
+                {tipsOpen ? '▴' : `▾ ${tips.length}`}
+              </VixText>
+            </PressableScale>
+            {tipsOpen &&
+              tips.map((t) => (
+                <View key={t.label} style={styles.tipRow}>
+                  <View style={styles.tipBadge}>
+                    <VixText
+                      heading="label"
+                      additionalStyle={styles.tipBadgeText}>
+                      {t.label}
+                    </VixText>
+                  </View>
+                  <VixText heading="paragraph" additionalStyle={styles.tipText}>
+                    {t.text}
                   </VixText>
                 </View>
-                <VixText heading="paragraph" additionalStyle={styles.tipText}>
-                  {t.text}
-                </VixText>
-              </View>
-            ))}
+              ))}
           </View>
         )}
 
@@ -626,7 +642,7 @@ export function FollowupTab({
             key={idea.id}
             style={styles.ideaCard}
             onPress={() => openEditIdea(idea)}>
-            <VixText heading="bold" additionalStyle={styles.ideaText}>
+            <VixText heading="paragraph" additionalStyle={styles.ideaText}>
               {idea.text}
             </VixText>
             <VixText heading="label" additionalStyle={styles.ideaDate}>
@@ -830,6 +846,7 @@ const styles = StyleSheet.create({
   tipHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tipHeaderEmoji: { fontSize: 15, lineHeight: 20 },
   tipHeader: { color: Color.ACCENT_DARK, letterSpacing: 0.2 },
+  tipChevron: { color: Color.ACCENT_DARK, marginLeft: 'auto' },
   tipRow: {
     backgroundColor: Color.ACCENT,
     borderRadius: 12,

@@ -1,3 +1,12 @@
+// ============================================================================
+// LAYAR HOME (rute "/"). Isi file ini = halaman Home aplikasi (sapaan, grid
+// fitur, kartu reminder). Komponennya bernama HomeScreen.
+//
+// CATATAN: nama file WAJIB "index.tsx" — di expo-router, "index" berarti layar
+// utama/default grup (tabs), sehingga file ini menjadi rute "/" dan tab Home.
+// Kalau di-rename (mis. "home.tsx"), rutenya berubah jadi "/home" dan routing
+// harus di-rewire. Jadi biarkan namanya "index.tsx"; anggap ini "Home".
+// ============================================================================
 import { Redirect, useRouter, type Href } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -101,11 +110,10 @@ import {
   type FunData,
 } from '@/lib/fun';
 import {
-  dayTypeOf,
   slotMeta,
   slotNow,
   subscribeHabitSchedule,
-  type HabitSchedule,
+  type ScheduledHabit,
 } from '@/lib/habits';
 import {
   checkupDueReminders,
@@ -208,7 +216,7 @@ export default function HomeScreen() {
 
   // Data untuk badge tugas harian per fitur.
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [schedule, setSchedule] = useState<HabitSchedule | null>(null);
+  const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
@@ -291,8 +299,8 @@ export default function HomeScreen() {
     }
   }, [user, prayerMissed, login]);
 
-  // Kebiasaan hari ini (sesuai jenis hari) — untuk badge Health & reminder sesi.
-  const daySchedule = schedule ? schedule[dayTypeOf(now)] : [];
+  // Kebiasaan harian (sama tiap hari) — untuk badge Health & reminder sesi.
+  const daySchedule = schedule ?? [];
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -501,7 +509,7 @@ export default function HomeScreen() {
   const wheelFocusRows = wheelFocusDue ? wheelFocusReminders(wheel, now) : [];
   const wheelNeedsFill = wheel != null && !wheelHasScores(wheel);
 
-  // ===== Reminder Pokok Doa Bulanan (CORE) � =====
+  // ===== Reminder Pokok Doa Bulanan (CORE) 📅 =====
   // Awal bulan belum diisi → ajak isi. Sel/Kam/Sab → follow up bergilir.
   const prayerMonthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
   const monthPoints = monthlyPointsFor(monthlyPrayers, now);
@@ -821,7 +829,7 @@ export default function HomeScreen() {
           <ReminderCard
             bg={Color.SPIRITUAL}
             fg={Color.SPIRITUAL_DARK}
-            title={`� Pokok Doa Bulanan — ${prayerMonthTitle}`}
+            title={`📅 Pokok Doa Bulanan — ${prayerMonthTitle}`}
             onPress={() => router.push('/monthly-prayers')}>
             <VixText heading="label" additionalStyle={styles.prayerText}>
               Awal bulan! Isi pokok doa tiap CORE Leader — jadi dasar follow up
@@ -835,7 +843,7 @@ export default function HomeScreen() {
           <ReminderCard
             bg={Color.SPIRITUAL}
             fg={Color.SPIRITUAL_DARK}
-            title="� Follow Up Pokok Doa"
+            title="📅 Follow Up Pokok Doa"
             onPress={() =>
               router.push({ pathname: '/core', params: { tab: 'followup' } })
             }>

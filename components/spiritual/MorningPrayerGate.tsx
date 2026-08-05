@@ -37,7 +37,6 @@ export function MorningPrayerGate({
 }) {
   const [prayed, setPrayed] = useState(false);
   const [manualRevived, setManualRevived] = useState(false);
-  // Sudah Revive kalau terdeteksi otomatis ATAU dicentang manual.
   const revived = reviveDone || manualRevived;
   const [busy, setBusy] = useState(false);
   const ready = prayed && revived;
@@ -87,15 +86,11 @@ export function MorningPrayerGate({
           <PressableScale
             style={styles.checkRow}
             onPress={() => {
-              // Kalau sudah terdeteksi otomatis, tidak perlu (dan tidak bisa)
-              // dibatalkan manual.
               if (!reviveDone) setManualRevived((v) => !v);
             }}>
             <CheckCircle checked={revived} />
             <VixText heading="bold" additionalStyle={styles.checkText}>
-              {reviveDone
-                ? 'Sudah Revive hari ini ✓ (terdeteksi otomatis)'
-                : 'Sudah Revive hari ini'}
+              Sudah Revive hari ini
             </VixText>
           </PressableScale>
         </Animated.View>

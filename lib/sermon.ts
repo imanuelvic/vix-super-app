@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { dayIdToDate } from './format';
 import { dayDocId } from './health';
 
 // Catatan Khotbah ⛪ — catatan dari khotbah ibadah Minggu di NDC.
@@ -81,6 +82,17 @@ export function deleteSermon(uid: string, id: string) {
 /** Hari ini hari Minggu? (0 = Minggu di Date JS). */
 export function isSunday(now: Date): boolean {
   return now.getDay() === 0;
+}
+
+/**
+ * Masih boleh diedit? Catatan khotbah TERKUNCI mulai hari SELASA setelah ibadah
+ * Minggu — jadi cuma bisa dirapikan pada Minggu & Senin, setelah itu jadi arsip
+ * (view + share saja). id/date khotbah = hari Minggunya, jadi Selasa = +2 hari.
+ */
+export function sermonEditable(sundayId: string, now: Date): boolean {
+  const lock = dayIdToDate(sundayId); // Minggu, 00:00 lokal
+  lock.setDate(lock.getDate() + 2); // → Selasa, 00:00 (mulai terkunci)
+  return now.getTime() < lock.getTime();
 }
 
 /** dayId hari Minggu terakhir (Minggu minggu ini — hari ini kalau Minggu). */

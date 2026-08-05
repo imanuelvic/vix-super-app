@@ -57,57 +57,58 @@ function RootNavigator() {
   }
 
   return (
-    <Stack>
+    // headerShown: false untuk SEMUA layar — tiap layar sudah punya header
+    // sendiri (ScreenHeader). Diset sekali di sini, jadi layar baru pun otomatis
+    // tanpa header bawaan (tak perlu didaftarkan satu-satu lagi).
+    <Stack screenOptions={{ headerShown: false }}>
       {/* Hanya bisa diakses kalau sudah login (login cukup SEKALI per perangkat) */}
       <Stack.Protected guard={!!user}>
         {/* Home + tab bar utama */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" />
 
         {/* Lock screen doa pagi — full screen, tak bisa di-swipe balik */}
-        <Stack.Screen
-          name="morning-prayer"
-          options={{ headerShown: false, gestureEnabled: false }}
-        />
+        <Stack.Screen name="morning-prayer" options={{ gestureEnabled: false }} />
 
         {/* Fitur utama — urut mengikuti grid di Home, dikelompokkan per fitur
             (fitur induk + sub-halamannya dipisah baris kosong antar grup) */}
-        <Stack.Screen name="tasks" options={{ headerShown: false }} />
+        <Stack.Screen name="tasks" />
 
-        <Stack.Screen name="spiritual" options={{ headerShown: false }} />
-        <Stack.Screen name="revive" options={{ headerShown: false }} />
-        <Stack.Screen name="revive-history" options={{ headerShown: false }} />
+        <Stack.Screen name="spiritual" />
+        <Stack.Screen name="revive" />
+        <Stack.Screen name="revive-history" />
 
-        <Stack.Screen name="health" options={{ headerShown: false }} />
-        <Stack.Screen name="diseases" options={{ headerShown: false }} />
-        <Stack.Screen name="health-info" options={{ headerShown: false }} />
-        <Stack.Screen name="donor" options={{ headerShown: false }} />
+        <Stack.Screen name="health" />
+        <Stack.Screen name="diseases" />
+        <Stack.Screen name="health-info" />
+        <Stack.Screen name="donor" />
 
-        <Stack.Screen name="core" options={{ headerShown: false }} />
-        <Stack.Screen name="visitations" options={{ headerShown: false }} />
+        <Stack.Screen name="core" />
+        <Stack.Screen name="visitations" />
+        <Stack.Screen name="monthly-prayers" />
 
-        <Stack.Screen name="funds" options={{ headerShown: false }} />
-        <Stack.Screen name="fund/[key]" options={{ headerShown: false }} />
-        <Stack.Screen name="debts" options={{ headerShown: false }} />
+        <Stack.Screen name="funds" />
+        <Stack.Screen name="fund/[key]" />
+        <Stack.Screen name="debts" />
 
-        <Stack.Screen name="investment" options={{ headerShown: false }} />
-        <Stack.Screen name="car" options={{ headerShown: false }} />
-        <Stack.Screen name="house" options={{ headerShown: false }} />
-        <Stack.Screen name="wheel" options={{ headerShown: false }} />
-        <Stack.Screen name="career" options={{ headerShown: false }} />
-        <Stack.Screen name="family" options={{ headerShown: false }} />
-        <Stack.Screen name="fun" options={{ headerShown: false }} />
-        <Stack.Screen name="fitness" options={{ headerShown: false }} />
-        <Stack.Screen name="book" options={{ headerShown: false }} />
-        <Stack.Screen name="book/[key]" options={{ headerShown: false }} />
+        <Stack.Screen name="investment" />
+        <Stack.Screen name="car" />
+        <Stack.Screen name="residence" />
+        <Stack.Screen name="wheel" />
+        <Stack.Screen name="career" />
+        <Stack.Screen name="family" />
+        <Stack.Screen name="fun" />
+        <Stack.Screen name="fitness" />
+        <Stack.Screen name="book" />
+        <Stack.Screen name="book/[key]" />
 
         {/* Diakses dari kartu welcome & tombol streak di Home */}
-        <Stack.Screen name="timeline" options={{ headerShown: false }} />
-        <Stack.Screen name="achievements" options={{ headerShown: false }} />
+        <Stack.Screen name="timeline" />
+        <Stack.Screen name="achievements" />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}
       <Stack.Protected guard={!user}>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="login" />
       </Stack.Protected>
     </Stack>
   );

@@ -10,7 +10,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -48,12 +47,16 @@ function Avatar({
   today,
   onSelect,
   highlighted = false,
+  light = false,
 }: {
   m: FamilyMember;
   size: number;
   today: Date;
   onSelect: (id: string) => void;
   highlighted?: boolean;
+  // light = dipakai di atas latar TERANG (grid putih) → teks gelap biar
+  // terbaca. Default (false) = latar gelap kartu pohon → teks putih.
+  light?: boolean;
 }) {
   const hasPhoto = !!m.photo && m.photo.length > 0;
   return (
@@ -91,10 +94,13 @@ function Avatar({
           styles.avatarName,
           { maxWidth: size + 24 },
           m.deceased && styles.nameDeceased,
+          light && (m.deceased ? styles.nameDeceasedLight : styles.avatarNameLight),
         ]}>
         {displayName(m)}
       </VixText>
-      <VixText heading="label" additionalStyle={styles.avatarAge}>
+      <VixText
+        heading="label"
+        additionalStyle={[styles.avatarAge, light && styles.avatarAgeLight]}>
         {m.deceased ? `✝ ${m.birthYear}` : `${currentAge(m, today)} th`}
       </VixText>
     </PressableScale>
@@ -102,6 +108,95 @@ function Avatar({
 }
 
 const VConnector = () => <View style={styles.vConnector} />;
+
+// ============ Picker nama anggota (buka-tutup) — module-scope ============
+// Dipakai untuk memilih Orang tua & Pasangan. Default ringkas 1 baris berisi
+// nama terpilih (tak menumpuk walau anggota banyak); diketuk → daftar nama
+// muncul untuk dicentang. Tidak pakai modal-di-atas-modal (bermasalah di iOS).
+function MemberPicker({
+  label,
+  candidates,
+  selectedIds,
+  open,
+  placeholder,
+  emptyText,
+  onToggleOpen,
+  onPick,
+}: {
+  label: string;
+  candidates: FamilyMember[];
+  selectedIds: string[];
+  open: boolean;
+  placeholder: string;
+  emptyText: string;
+  onToggleOpen: () => void;
+  onPick: (id: string) => void;
+}) {
+  const selectedNames = candidates
+    .filter((m) => selectedIds.includes(m.id))
+    .map((m) => `${m.deceased ? '✝ ' : ''}${displayName(m)}`);
+  const hasSelection = selectedNames.length > 0;
+
+  return (
+    <>
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        {label}
+      </VixText>
+      {candidates.length === 0 ? (
+        <VixText heading="label" additionalStyle={styles.pickerEmpty}>
+          {emptyText}
+        </VixText>
+      ) : (
+        <View style={styles.pickerBlock}>
+          <PressableScale style={styles.pickerField} onPress={onToggleOpen}>
+            <VixText
+              heading="paragraph"
+              numberOfLines={1}
+              additionalStyle={[
+                styles.pickerValue,
+                !hasSelection && styles.pickerPlaceholder,
+              ]}>
+              {hasSelection ? selectedNames.join(', ') : placeholder}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.pickerChevron}>
+              {open ? '▴' : '▾'}
+            </VixText>
+          </PressableScale>
+
+          {open && (
+            <View style={styles.pickerList}>
+              {candidates.map((m, i) => {
+                const active = selectedIds.includes(m.id);
+                return (
+                  <PressableScale
+                    key={m.id}
+                    style={[
+                      styles.pickerRow,
+                      i > 0 && styles.pickerRowDivider,
+                      active && styles.pickerRowActive,
+                    ]}
+                    onPress={() => onPick(m.id)}>
+                    <VixText
+                      heading="paragraph"
+                      numberOfLines={1}
+                      additionalStyle={[
+                        styles.pickerRowText,
+                        active && styles.pickerRowTextActive,
+                      ]}>
+                      {m.deceased ? '✝ ' : ''}
+                      {displayName(m)}
+                    </VixText>
+                    <CheckCircle checked={active} size={24} />
+                  </PressableScale>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      )}
+    </>
+  );
+}
 
 // Family Tree 👨‍👩‍👧‍👦 — silsilah ala The Sims: pohon 3 generasi yang
 // berpusat pada orang yang dipilih; tap siapa pun → pohon pindah ke dia.
@@ -124,6 +219,10 @@ export default function FamilyScreen() {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Picker mana yang sedang terbuka di form (hanya satu sekaligus, biar rapi).
+  const [openPicker, setOpenPicker] = useState<'parents' | 'partners' | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -173,6 +272,7 @@ export default function FamilyScreen() {
     setFPartners([]);
     setFPhoto(null);
     setFormError(null);
+    setOpenPicker(null);
   }
 
   function openEdit(m: FamilyMember) {
@@ -186,6 +286,7 @@ export default function FamilyScreen() {
     setFPartners(partnersOf(m.id, all).slice(0, 1).map((p) => p.id));
     setFPhoto(m.photo);
     setFormError(null);
+    setOpenPicker(null);
   }
 
   function toggleParent(id: string) {
@@ -259,6 +360,8 @@ export default function FamilyScreen() {
   }
 
   const editingId = editing && editing !== 'new' ? editing.id : null;
+  // Kandidat relasi = semua anggota selain yang sedang diedit.
+  const others = all.filter((m) => m.id !== editingId);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -431,6 +534,7 @@ export default function FamilyScreen() {
                     today={today}
                     onSelect={setSelectedId}
                     highlighted={m.id === selected.id}
+                    light
                   />
                 ))}
               </View>
@@ -444,7 +548,10 @@ export default function FamilyScreen() {
         visible={!!editing}
         title={editing === 'new' ? 'Tambah Anggota' : 'Edit Anggota'}
         scroll={false}
-        onClose={() => setEditing(null)}>
+        onClose={() => {
+          setEditing(null);
+          setOpenPicker(null);
+        }}>
         <ScrollView
           style={styles.formScroll}
           keyboardShouldPersistTaps="handled">
@@ -504,49 +611,36 @@ export default function FamilyScreen() {
             </VixText>
           </PressableScale>
 
-          {/* Orang tua (maks 2) */}
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            👪 Orang tuanya siapa? (maks 2 — anak otomatis terhubung)
-          </VixText>
-          <View style={styles.chipWrap}>
-            {all
-              .filter((m) => m.id !== editingId)
-              .map((m) => (
-                <Chip
-                  key={m.id}
-                  label={`${m.deceased ? '✝ ' : ''}${displayName(m)}`}
-                  active={fParents.includes(m.id)}
-                  onPress={() => toggleParent(m.id)}
-                />
-              ))}
-            {all.length === 0 && (
-              <VixText heading="label">
-                Belum ada anggota lain — tambah dulu, hubungkan belakangan.
-              </VixText>
-            )}
-          </View>
+          {/* Orang tua (maks 2) — picker buka-tutup */}
+          <MemberPicker
+            label="👪 Orang tuanya siapa? (maks 2 — anak otomatis terhubung)"
+            candidates={others}
+            selectedIds={fParents}
+            open={openPicker === 'parents'}
+            placeholder="Pilih orang tua…"
+            emptyText="Belum ada anggota lain — tambah dulu, hubungkan belakangan."
+            onToggleOpen={() =>
+              setOpenPicker((p) => (p === 'parents' ? null : 'parents'))
+            }
+            onPick={toggleParent}
+          />
 
-          {/* Pasangan (suami/istri) — hanya 1 */}
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            💍 Pasangannya siapa? (pilih 1 — suami / istri)
-          </VixText>
-          <View style={styles.chipWrap}>
-            {all
-              .filter((m) => m.id !== editingId)
-              .map((m) => (
-                <Chip
-                  key={m.id}
-                  label={`${m.deceased ? '✝ ' : ''}${displayName(m)}`}
-                  active={fPartners.includes(m.id)}
-                  onPress={() => togglePartner(m.id)}
-                />
-              ))}
-            {all.length === 0 && (
-              <VixText heading="label">
-                Tambah dulu calon pasangannya sebagai anggota.
-              </VixText>
-            )}
-          </View>
+          {/* Pasangan (suami/istri) — hanya 1, picker buka-tutup */}
+          <MemberPicker
+            label="💍 Pasangannya siapa? (pilih 1 — suami / istri)"
+            candidates={others}
+            selectedIds={fPartners}
+            open={openPicker === 'partners'}
+            placeholder="Pilih pasangan…"
+            emptyText="Tambah dulu calon pasangannya sebagai anggota."
+            onToggleOpen={() =>
+              setOpenPicker((p) => (p === 'partners' ? null : 'partners'))
+            }
+            onPick={(id) => {
+              togglePartner(id);
+              setOpenPicker(null); // pasangan hanya 1 → langsung tutup
+            }}
+          />
 
           {formError && (
             <VixText heading="label" additionalStyle={styles.sheetError}>
@@ -663,6 +757,10 @@ const styles = StyleSheet.create({
   avatarName: { color: Color.TEXT_REVERSE, marginTop: 4 },
   nameDeceased: { color: Color.TEXT_ON_DARK_MUTED },
   avatarAge: { color: Color.TEXT_ON_DARK_MUTED },
+  // Versi teks untuk latar TERANG (grid "Semua Anggota")
+  avatarNameLight: { color: Color.TEXT_TITLE },
+  nameDeceasedLight: { color: Color.TEXT_PLACEHOLDER },
+  avatarAgeLight: { color: Color.TEXT_LABEL },
   editButton: {
     marginTop: 16,
     backgroundColor: Color.MAIN,
@@ -721,11 +819,41 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   deceasedText: { color: Color.TEXT_TITLE, flexShrink: 1 },
-  chipWrap: {
+  // Picker nama anggota (buka-tutup) — Orang tua & Pasangan
+  pickerEmpty: { color: Color.TEXT_LABEL, marginBottom: 12 },
+  pickerBlock: { marginBottom: 12 },
+  pickerField: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
+  pickerValue: { color: Color.TEXT_TITLE, flexShrink: 1, marginRight: 8 },
+  pickerPlaceholder: { color: Color.TEXT_PLACEHOLDER },
+  pickerChevron: { color: Color.TEXT_LABEL },
+  pickerList: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    borderRadius: 12,
+    backgroundColor: Color.CONTAINER,
+    overflow: 'hidden',
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  pickerRowDivider: { borderTopWidth: 1, borderTopColor: Color.BORDER },
+  pickerRowActive: { backgroundColor: Color.MAIN_TRANSPARENT },
+  pickerRowText: { color: Color.TEXT_TITLE, flexShrink: 1, marginRight: 8 },
+  pickerRowTextActive: { color: Color.MAIN_DARK },
   sheetError: { color: Color.DANGER, marginBottom: 8 },
 });
