@@ -34,9 +34,6 @@ import {
 // jadi navigasi tahun mentok di sini (tidak bisa mundur ke 2025 dan sebelumnya).
 const MIN_YEAR = 2026;
 
-// My Timeline 📍 — wishlist & target hidup per tahun: panggilan hidup,
-// pekerjaan, pelayanan, dll. Item bisa nempel di bulan atau jadi target
-// tahunan, dan dicentang kalau tercapai.
 export default function TimelineScreen() {
   const { user } = useAuth();
 

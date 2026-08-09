@@ -78,6 +78,7 @@ function RootNavigator() {
         <Stack.Screen name="revive-history" />
 
         <Stack.Screen name="health" />
+        <Stack.Screen name="steps" />
         <Stack.Screen name="diseases" />
         <Stack.Screen name="health-info" />
         <Stack.Screen name="donor" />

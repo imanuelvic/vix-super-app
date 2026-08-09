@@ -16,8 +16,8 @@ import { formatFullDate } from '@/lib/format';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
-// Riwayat Revive 📖 — seluruh jurnal yang pernah ditulis, dengan pencarian
-// (judul/isi) & pagination 10 per halaman. Tap jurnal → editor untuk baca/ubah.
+// Riwayat Revive 📖 — seluruh Revive yang pernah ditulis, dengan pencarian
+// (judul/isi) & pagination 10 per halaman. Tap Revive → editor untuk baca/ubah.
 export default function ReviveHistoryScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -58,7 +58,7 @@ export default function ReviveHistoryScreen() {
         backLabel="Spiritual"
         title="Riwayat Revive 📖"
         subtitle={
-          entries ? `${entries.length} jurnal — satu rhema sehari 🌱` : undefined
+          entries ? `${entries.length} Revive — satu rhema sehari 🌱` : undefined
         }
       />
 
@@ -77,11 +77,11 @@ export default function ReviveHistoryScreen() {
             <SearchBar
               value={query}
               onChangeText={setQuery}
-              placeholder="Cari judul atau isi jurnal…"
+              placeholder="Cari judul Revive"
             />
             {q !== '' && (
               <VixText heading="label" additionalStyle={styles.resultCount}>
-                {filtered.length} jurnal cocok
+                {filtered.length} judul Revive yang cocok
               </VixText>
             )}
           </View>
@@ -91,8 +91,8 @@ export default function ReviveHistoryScreen() {
             {filtered.length === 0 ? (
               <VixText heading="label" additionalStyle={styles.empty}>
                 {q !== ''
-                  ? 'Tidak ada jurnal yang cocok dengan pencarianmu.'
-                  : 'Belum ada jurnal — mulai hari ini dari layar Spiritual ✍️'}
+                  ? 'Tidak ada Revive yang cocok dengan pencarianmu.'
+                  : 'Belum ada Revive — mulai hari ini ✍️'}
               </VixText>
             ) : (
               <>

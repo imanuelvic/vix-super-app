@@ -16,18 +16,18 @@ import { db } from './firebase';
 import { dayDocId } from './health';
 import { hashString } from './core';
 
-// Spiritual ✝️ — jurnal REVIVE harian (mengikuti struktur renungan NDC:
+// Spiritual ✝️ — Revive harian (mengikuti struktur renungan NDC:
 // judul, bacaan Alkitab, ayat hafalan, rhema, refleksi) + reminder acak
 // untuk fokus pada hubungan pribadi dengan Tuhan + streak ala Duolingo.
 //
 // "Doing for God without being with God" — fitur ini ruang untuk BERHENTI.
 
 export type ReviveEntry = {
-  id: string; // "YYYY-MM-DD" — satu jurnal per hari
+  id: string; // "YYYY-MM-DD" — satu Revive per hari
   title: string; // judul renungan, mis. "ARE YOU TOO BUSY TO BE WITH GOD?"
   passage: string; // bacaan Alkitab, mis. "Lukas 5:15-16"
   verse: string; // ayat hafalan, mis. "Lukas 5:16"
-  rhema: string; // firman yang merhema di hati (inti journaling)
+  rhema: string; // firman yang merhema di hati
   reflection: string; // refleksi diri & komitmen
   date: Timestamp;
 };
@@ -103,7 +103,7 @@ function yesterdayId(): string {
   return dayDocId(y);
 }
 
-/** Panggil saat jurnal HARI INI pertama kali disimpan — naik maks 1×/hari. */
+/** Panggil saat Revive HARI INI pertama kali disimpan — naik maks 1×/hari. */
 export function bumpReviveStreak(
   uid: string,
   current: DayStreak | null,

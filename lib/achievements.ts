@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { dayIdToDate, formatShortDayDate } from './format';
 import { dayDocId } from './health';
 
 // Streak DOA HARIAN 🔥 (ala Duolingo) + achievements 🏆.
@@ -95,6 +96,24 @@ export function recordDailyPrayer(
   });
 }
 
+/**
+ * Lewati doa pagi (keadaan mendesak): streak berjalan HANGUS (count → 0), tapi
+ * hari ini ditandai "sudah ditangani" (lastDayId = hari ini) supaya lock screen
+ * tidak muncul lagi hari ini. best & total tidak berubah (tidak dihitung berdoa).
+ */
+export function skipDailyPrayer(
+  uid: string,
+  current: LoginStreak | null,
+  now: Date,
+) {
+  return setDoc(doc(db, 'users', uid, 'app', 'login'), {
+    count: 0,
+    lastDayId: prayerDayId(now),
+    best: current?.best ?? 0,
+    total: current?.total ?? 0,
+  });
+}
+
 // ============================ Achievements ============================
 
 export type AchievementStats = {
@@ -102,13 +121,15 @@ export type AchievementStats = {
   loginBest: number;
   loginTotal: number;
   habitStreak: number; // streak kebiasaan Health 🔥
-  reviveBest: number; // streak terbaik jurnal Revive ✝️
-  reviveTotal: number; // total jurnal Revive
+  reviveBest: number; // streak terbaik Revive ✝️
+  reviveTotal: number; // total Revive
+  bestSteps: number; // rekor langkah terbanyak dalam sehari
+  stepTierLastDate: Record<number, string | null>; // tier → dayId terakhir tercapai
 };
 
 // Kategori pencapaian (ala Duolingo) — tiap kategori punya daftar
 // pencapaian bertingkat yang tampil di modal saat ditekan.
-export type AchievementCategoryKey = 'login' | 'health' | 'revive';
+export type AchievementCategoryKey = 'login' | 'health' | 'revive' | 'steps';
 
 export const ACHIEVEMENT_CATEGORIES: {
   key: AchievementCategoryKey;
@@ -118,8 +139,15 @@ export const ACHIEVEMENT_CATEGORIES: {
 }[] = [
   { key: 'login', icon: '🙏', label: 'Doa Harian', desc: 'Konsisten doa pagi & Revive tiap hari' },
   { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit di fitur Health' },
-  { key: 'revive', icon: '📖', label: 'Revive Rohani', desc: 'Konsisten menulis jurnal Revive' },
+  { key: 'revive', icon: '📖', label: 'Revive Rohani', desc: 'Konsisten menulis Revive' },
+  { key: 'steps', icon: '👣', label: 'Langkah Harian', desc: 'Rekor jumlah langkah dalam sehari' },
 ];
+
+/** Detail "terakhir tercapai kapan" untuk achievement langkah (null bila belum). */
+function stepDetail(s: AchievementStats, tier: number): string | null {
+  const d = s.stepTierLastDate[tier];
+  return d ? `📅 Terakhir tercapai ${formatShortDayDate(dayIdToDate(d))}` : null;
+}
 
 export const ACHIEVEMENTS: {
   id: string;
@@ -129,6 +157,7 @@ export const ACHIEVEMENTS: {
   desc: string;
   target: number;
   of: (s: AchievementStats) => number; // nilai saat ini untuk progress
+  detail?: (s: AchievementStats) => string | null; // baris ekstra (mis. tanggal)
 }[] = [
   { id: 'first', category: 'login', icon: '🐣', title: 'Langkah Pertama', desc: 'Doa pagi pertamamu', target: 1, of: (s) => s.loginTotal },
   { id: 'streak3', category: 'login', icon: '✨', title: 'Konsisten 3 Hari', desc: 'Berdoa 3 hari beruntun', target: 3, of: (s) => s.loginBest },
@@ -140,9 +169,13 @@ export const ACHIEVEMENTS: {
   { id: 'total100', category: 'login', icon: '💎', title: '100 Hari Bersama Tuhan', desc: 'Total 100 hari berdoa pagi', target: 100, of: (s) => s.loginTotal },
   { id: 'habit3', category: 'health', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan Health 3 hari', target: 3, of: (s) => s.habitStreak },
   { id: 'habit7', category: 'health', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan Health 7 hari', target: 7, of: (s) => s.habitStreak },
-  { id: 'revive1', category: 'revive', icon: '📖', title: 'Revive Pertama', desc: 'Tulis jurnal Revive pertamamu', target: 1, of: (s) => s.reviveTotal },
-  { id: 'revive7', category: 'revive', icon: '🕊️', title: 'Seminggu Bersama Firman', desc: 'Jurnal Revive 7 hari beruntun', target: 7, of: (s) => s.reviveBest },
-  { id: 'revive30', category: 'revive', icon: '⛪', title: 'Sebulan Dalam Hadirat', desc: 'Jurnal Revive 30 hari beruntun', target: 30, of: (s) => s.reviveBest },
+  { id: 'revive1', category: 'revive', icon: '📖', title: 'Revive Pertama', desc: 'Tulis Revive pertamamu', target: 1, of: (s) => s.reviveTotal },
+  { id: 'revive7', category: 'revive', icon: '🕊️', title: 'Seminggu Bersama Firman', desc: 'Revive 7 hari beruntun', target: 7, of: (s) => s.reviveBest },
+  { id: 'revive30', category: 'revive', icon: '⛪', title: 'Sebulan Dalam Hadirat', desc: 'Revive 30 hari beruntun', target: 30, of: (s) => s.reviveBest },
+  { id: 'steps20k', category: 'steps', icon: '👟', title: '20 Ribu Langkah', desc: 'Pernah jalan ≥ 20.000 langkah dalam sehari', target: 20000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 20000) },
+  { id: 'steps30k', category: 'steps', icon: '🎖️', title: '30 Ribu Langkah', desc: 'Pernah jalan ≥ 30.000 langkah dalam sehari', target: 30000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 30000) },
+  { id: 'steps40k', category: 'steps', icon: '🏅', title: '40 Ribu Langkah', desc: 'Pernah jalan ≥ 40.000 langkah dalam sehari', target: 40000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 40000) },
+  { id: 'steps50k', category: 'steps', icon: '🥇', title: '50 Ribu Langkah', desc: 'Pernah jalan ≥ 50.000 langkah dalam sehari', target: 50000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 50000) },
 ];
 
 // ============================ Self-Reward 🏆 ============================

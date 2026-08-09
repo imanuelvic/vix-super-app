@@ -19,7 +19,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { FormInput } from '@/components/common/FormInput';
 import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
@@ -60,7 +62,7 @@ import {
   isPrayerFollowupDay,
   meetingKindMeta,
   monthlyPointsFor,
-  monthlyPrayersFilled,
+  monthlyPrayerStartReminder,
   nextBirthday,
   prayerFollowupLeaders,
   subscribeCoreIdeas,
@@ -119,23 +121,21 @@ import {
   checkupDueReminders,
   dayDocId,
   needsWeighIn,
+  setWater,
   subscribeCheckups,
   subscribeHabitDay,
   subscribeHealthProfile,
+  WATER_GOAL,
   type Checkup,
   type HabitDay,
   type HealthProfile,
 } from '@/lib/health';
 import {
-  goldReminderDue,
-  subscribeGold,
-  type GoldEntry,
-} from '@/lib/investment';
-import {
   countResidenceAttention,
   subscribeChoreStatus,
   type ChoreStatusMap,
 } from '@/lib/residence';
+import { logFeatureUse } from '@/lib/usage';
 import {
   currentSundayId,
   sermonReminderActive,
@@ -239,10 +239,11 @@ export default function HomeScreen() {
   );
   // Checklist "sudah baca ≥1 pasal hari ini" — lastDayId dokumen bibleReading.
   const [bibleReadDayId, setBibleReadDayId] = useState<string | null>(null);
+  // Modal Baca Alkitab: input kitab (ephemeral, TIDAK disimpan ke Firestore).
+  const [bibleModalOpen, setBibleModalOpen] = useState(false);
+  const [bibleBook, setBibleBook] = useState('');
   // Status perawatan/kebersihan rumah — untuk badge tile Residence.
   const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
-  // Entri harga emas (Investment) — untuk reminder catat harga tiap tgl 3-an.
-  const [goldEntries, setGoldEntries] = useState<GoldEntry[]>([]);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & reminder
   // khotbah yang bergantung waktu.
@@ -265,7 +266,6 @@ export default function HomeScreen() {
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
       subscribeBibleReading(user.uid, setBibleReadDayId),
       subscribeChoreStatus(user.uid, setResidenceChores),
-      subscribeGold(user.uid, setGoldEntries),
       subscribeTasks(user.uid, setTasks),
       subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
@@ -347,9 +347,9 @@ export default function HomeScreen() {
     : [];
 
   // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan
-  // (yang sudah tiada ✝ tidak diikutkan).
+  // (hanya keluarga inti; saudara & yang sudah tiada ✝ tidak diikutkan).
   const famBirthdays = family
-    .filter((m) => !m.deceased)
+    .filter((m) => !m.deceased && m.circle === 'inti')
     .map((m) => ({ m, ...nextBirthday(m, now) }))
     .filter((b) => b.daysUntil <= 7)
     .sort((a, b) => a.daysUntil - b.daysUntil)
@@ -510,11 +510,12 @@ export default function HomeScreen() {
   const wheelNeedsFill = wheel != null && !wheelHasScores(wheel);
 
   // ===== Reminder Pokok Doa Bulanan (CORE) 📅 =====
-  // Awal bulan belum diisi → ajak isi. Sel/Kam/Sab → follow up bergilir.
+  // Awal bulan (tgl 1–2) → ajak follow up & tanya pokok doa. Sel/Kam/Sab →
+  // follow up bergilir.
   const prayerMonthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
   const monthPoints = monthlyPointsFor(monthlyPrayers, now);
   const prayerNeedsFill =
-    leaders.length > 0 && !monthlyPrayersFilled(monthlyPrayers, now);
+    leaders.length > 0 && monthlyPrayerStartReminder(monthlyPrayers, now);
   const prayerLeadersToday = prayerFollowupLeaders(leaders, monthPoints, now);
   const prayerUndone = isPrayerFollowupDay(now)
     ? prayerLeadersToday.filter(
@@ -540,8 +541,26 @@ export default function HomeScreen() {
     }
   }
 
-  // Reminder Investment: sudah tanggal 3-an & harga emas bulan ini belum dicatat.
-  const goldDue = goldReminderDue(goldEntries, now);
+  // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).
+  async function changeWater(delta: number) {
+    if (!user || !day) return;
+    try {
+      await setWater(user.uid, todayId, day.water + delta);
+    } catch {
+      // Diamkan — snapshot akan mengoreksi tampilan otomatis.
+    }
+  }
+
+  function closeBibleModal() {
+    setBibleModalOpen(false);
+    setBibleBook('');
+  }
+
+  // Tombol "Sudah baca": hanya status yang disimpan; teks kitab tidak (ephemeral).
+  function confirmBibleRead() {
+    markBibleRead();
+    closeBibleModal();
+  }
 
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
   // memutuskan apakah perlu memunculkan fallback produktivitas).
@@ -557,7 +576,6 @@ export default function HomeScreen() {
     wheelNeedsFill ||
     prayerNeedsFill ||
     prayerFollowupDue ||
-    goldDue ||
     careerReminders.length > 0 ||
     slotUndone.length > 0 ||
     todayUndone > 0;
@@ -676,15 +694,28 @@ export default function HomeScreen() {
           <VixText heading="subheader" additionalStyle={styles.welcomeName}>
             {OWNER_NAME.toUpperCase()}
           </VixText>
-          {/* Tombol spesial: timeline hidup pribadi */}
-          <PressableScale
-            style={styles.timelineButton}
-            onPress={() => router.push('/timeline')}>
-            <VixText heading="bold" additionalStyle={styles.timelineText}>
-              📍 My Timeline
+          {/* Air putih 💧 — tombol harian yang sering dipencet, dibuat ringkas */}
+          <View style={styles.waterRow}>
+            <VixText heading="bold" additionalStyle={styles.waterLabel}>
+              💧 Air putih {day?.water ?? 0}/{WATER_GOAL} gelas
             </VixText>
-            <IconSymbol name="chevron.right" size={18} color={Color.ACCENT_DARK} />
-          </PressableScale>
+            <View style={styles.waterButtons}>
+              <PressableScale
+                style={styles.waterButton}
+                onPress={() => changeWater(-1)}
+                hitSlop={6}>
+                <VixText heading="bold" additionalStyle={styles.waterButtonText}>
+                  −
+                </VixText>
+              </PressableScale>
+              <PressableScale
+                style={[styles.waterButton, styles.waterButtonPlus]}
+                onPress={() => changeWater(1)}
+                hitSlop={6}>
+                <IconSymbol name="plus" size={16} color={Color.MAIN_DARK} />
+              </PressableScale>
+            </View>
+          </View>
         </Animated.View>
 
         {/* Reminder kebiasaan sesi saat ini (Pagi/Siang/Malam). Selalu tampil
@@ -774,8 +805,8 @@ export default function HomeScreen() {
         {/* Reminder ulang tahun keluarga (hari ini s/d 7 hari) */}
         {famBirthdays.length > 0 && (
           <ReminderCard
-            bg={Color.WHEEL}
-            fg={Color.WHEEL_DARK}
+            bg={Color.FINANCE_SAVING}
+            fg={Color.ACCENT_DARK}
             title="🎂 Ulang Tahun Keluarga"
             texts={famBirthdays}
             onPress={() => router.push('/family')}
@@ -832,8 +863,8 @@ export default function HomeScreen() {
             title={`📅 Pokok Doa Bulanan — ${prayerMonthTitle}`}
             onPress={() => router.push('/monthly-prayers')}>
             <VixText heading="label" additionalStyle={styles.prayerText}>
-              Awal bulan! Isi pokok doa tiap CORE Leader — jadi dasar follow up
-              Selasa/Kamis/Sabtu 🙏
+              Awal bulan! Follow up tiap CORE Leader & tanyakan pokok doa mereka
+              bulan ini 🙏
             </VixText>
           </ReminderCard>
         )}
@@ -884,7 +915,9 @@ export default function HomeScreen() {
 
         {/* Reminder Baca Alkitab harian — checklist minimal 1 pasal (ungu) */}
         {bibleReadDue && (
-          <PressableScale style={styles.readingCard} onPress={markBibleRead}>
+          <PressableScale
+            style={styles.readingCard}
+            onPress={() => setBibleModalOpen(true)}>
             <CheckCircle checked={false} size={24} />
             <View style={styles.readingTextBox}>
               <VixText heading="bold" additionalStyle={styles.readingTitle}>
@@ -958,19 +991,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Reminder catat harga Emas (tgl 3-an) — warna tile Investment */}
-        {goldDue && (
-          <ReminderCard
-            bg={Color.CAREER_DARK}
-            fg={Color.TEXT_LABEL}
-            title="📈 Catat Harga Emas"
-            onPress={() => router.push('/investment')}>
-            <VixText heading="label" additionalStyle={styles.goldText}>
-              Sudah tanggal 3-an — cek & catat harga emas 1 gr bulan ini di Logam
-              Mulia 🏅
-            </VixText>
-          </ReminderCard>
-        )}
 
         {/* Reminder deadline KERJA (Fulltime + Freelance, H-7) — TIAP BARIS
             ditekan menuju tab yang sesuai (bukan seluruh kartu). */}
@@ -1055,7 +1075,11 @@ export default function HomeScreen() {
                 style={styles.gridItem}>
                 <PressableScale
                   style={[styles.tile, { backgroundColor: feature.bg }]}
-                  onPress={() => router.push(feature.route)}>
+                  onPress={() => {
+                    // Catat pemakaian fitur (throttled) untuk laporan di tab System.
+                    if (user) logFeatureUse(user.uid, feature.key, feature.label);
+                    router.push(feature.route);
+                  }}>
                   <IconSymbol name={feature.icon} size={30} color={feature.fg} />
                 </PressableScale>
                 {/* Badge merah: tugas harian fitur ini yang belum selesai */}
@@ -1075,6 +1099,32 @@ export default function HomeScreen() {
         </View>
         </View>
       </ScrollView>
+
+      {/* Modal Baca Alkitab: catat kitab (TIDAK disimpan) lalu tandai sudah baca */}
+      <CenterDialog visible={bibleModalOpen} onClose={closeBibleModal}>
+        <VixText heading="title" additionalStyle={styles.bibleModalTitle}>
+          📖 Baca Alkitab hari ini
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.bibleModalSub}>
+          Kitab apa yang kamu baca hari ini?
+        </VixText>
+        <FormInput
+          style={styles.bibleInput}
+          placeholder="mis. Mazmur 23, Yohanes 3"
+          value={bibleBook}
+          onChangeText={setBibleBook}
+        />
+        <PressableScale style={styles.bibleDoneButton} onPress={confirmBibleRead}>
+          <VixText heading="bold" additionalStyle={styles.bibleDoneText}>
+            ✅ Sudah baca
+          </VixText>
+        </PressableScale>
+        <PressableScale style={styles.bibleClose} onPress={closeBibleModal}>
+          <VixText heading="label" additionalStyle={styles.bibleCloseText}>
+            Tutup
+          </VixText>
+        </PressableScale>
+      </CenterDialog>
     </SafeAreaView>
   );
 }
@@ -1109,10 +1159,11 @@ const styles = StyleSheet.create({
   brandRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   // CORE (pertemuan + idea) → kuning, senada identitas CORE.
   visitCard: {
-    backgroundColor: Color.FINANCE_SAVING,
+    // Warna senada tile CORE (biru muda) — samakan dengan grid.
+    backgroundColor: Color.FINANCE_INVESTMENT,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Color.FINANCE_SAVING_DARK,
+    borderColor: Color.FINANCE_INVESTMENT_DARK,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 3,
@@ -1120,13 +1171,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   visitTitle: { color: Color.TEXT_TITLE },
-  visitText: { color: Color.FINANCE_SAVING_DARK },
+  visitText: { color: Color.FINANCE_INVESTMENT_DARK },
   // Pemisah antara reminder visitasi & idea di dalam kartu CORE yang sama.
   ideaReminder: {
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: Color.FINANCE_SAVING_DARK,
+    borderTopColor: Color.FINANCE_INVESTMENT_DARK,
     gap: 3,
   },
   // Baris teks di dalam ReminderCard khotbah (kutipan di-clamp 2 baris).
@@ -1180,8 +1231,6 @@ const styles = StyleSheet.create({
   wheelText: { color: Color.WHEEL_DARK },
   // Reminder Pokok Doa Bulanan (CORE) — tema spiritual (ungu).
   prayerText: { color: Color.SPIRITUAL_DARK },
-  // Reminder catat harga Emas (Investment).
-  goldText: { color: Color.TEXT_LABEL },
   // Reminder Baca Alkitab harian — checklist, warna grid spiritual (ungu).
   readingCard: {
     flexDirection: 'row',
@@ -1199,6 +1248,19 @@ const styles = StyleSheet.create({
   readingTextBox: { flex: 1, gap: 1 },
   readingTitle: { color: Color.SPIRITUAL_DARK },
   readingSub: { color: Color.SPIRITUAL_DARK },
+  // Modal Baca Alkitab
+  bibleModalTitle: { color: Color.TEXT_TITLE, marginBottom: 2 },
+  bibleModalSub: { color: Color.TEXT_LABEL, marginBottom: 12 },
+  bibleInput: { marginBottom: 14 },
+  bibleDoneButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Color.SPIRITUAL_DARK,
+  },
+  bibleDoneText: { color: Color.TEXT_REVERSE },
+  bibleClose: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
+  bibleCloseText: { color: Color.TEXT_LABEL },
   // Kartu fallback produktivitas (income) → hijau, tiap baris bisa ditekan.
   productivityCard: {
     backgroundColor: Color.FINANCE_INCOME,
@@ -1273,17 +1335,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 4,
   },
-  timelineButton: {
+  // Air putih 💧 — baris ringkas di dalam kartu sapaan (latar gelap).
+  waterRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Color.ACCENT,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginTop: 10,
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
   },
-  timelineText: { color: Color.ACCENT_DARK },
+  waterLabel: { color: Color.MAIN_LIGHT, flexShrink: 1 },
+  waterButtons: { flexDirection: 'row', gap: 8 },
+  waterButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Color.MAIN_LIGHT,
+  },
+  waterButtonPlus: { backgroundColor: Color.ACCENT },
+  waterButtonText: { color: Color.MAIN_DARK, fontSize: 18, lineHeight: 22 },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

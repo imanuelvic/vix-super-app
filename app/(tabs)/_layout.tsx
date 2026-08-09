@@ -23,7 +23,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
-      {/* Finance = tab paling kiri (fitur utama). Urutan: Finance · Home · Version */}
+      {/* Urutan tab: Finance · Home · Profile · System */}
       <Tabs.Screen
         name="finance"
         options={{
@@ -39,11 +39,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.crop.circle.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="version"
         options={{
-          title: 'Version',
+          title: 'System',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="arrow.triangle.2.circlepath" color={color} />
+            <IconSymbol size={28} name="gearshape.fill" color={color} />
           ),
         }}
       />

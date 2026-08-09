@@ -49,7 +49,7 @@ export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
   spirituality: [
     '📖 Saat teduh tiap pagi: baca 1 pasal + doa 10 menit.',
     '⛪ Ibadah & CORE rutin — jangan bolong.',
-    '✍️ Jurnal doa: catat pergumulan & jawaban Tuhan.',
+    '✍️ Revive: catat pergumulan & jawaban Tuhan.',
     '🧠 Hafal 1 ayat tiap minggu.',
     '🙇 Sisihkan waktu puasa/doa khusus 1x sebulan.',
   ],

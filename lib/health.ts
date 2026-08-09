@@ -185,10 +185,9 @@ export type HabitDayMap = Record<string, boolean>;
 // otomatis reset tiap ganti hari.
 export type HabitDay = {
   done: HabitDayMap;
-  water: number; // gelas air putih hari ini
+  water: number;
 };
 
-/** Target gelas air putih per hari (±2 liter). */
 export const WATER_GOAL = 8;
 
 export function subscribeHabitDay(
@@ -615,4 +614,23 @@ export function stepAchievements(days: StepDaysMap): {
     return { tier: t, count: dayIds.length, dayIds };
   });
   return { tiers, best, totalDays };
+}
+
+/**
+ * Untuk tiap tier: tanggal TERAKHIR (dayId) yang langkahnya ≥ tier (mencakup
+ * hari yang menembus tier lebih tinggi). null kalau tier itu belum pernah
+ * tercapai. Dipakai di Achievement untuk "terakhir tercapai kapan".
+ */
+export function stepTierLastDates(
+  days: StepDaysMap,
+): Record<number, string | null> {
+  const result: Record<number, string | null> = {};
+  for (const tier of STEP_TIERS) {
+    let last: string | null = null;
+    for (const [dayId, steps] of Object.entries(days)) {
+      if (steps >= tier && (last === null || dayId > last)) last = dayId;
+    }
+    result[tier] = last;
+  }
+  return result;
 }

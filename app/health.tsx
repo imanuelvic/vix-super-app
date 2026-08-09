@@ -1,10 +1,11 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -40,6 +41,7 @@ const TABS: BottomTab<HealthTab>[] = [
 
 export default function HealthScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
   // Default masuk ke tab To-do; reminder Home bisa mengarahkan ke tab lain.
@@ -99,6 +101,9 @@ export default function HealthScreen() {
         backLabel="Home"
         title="Health 🍎"
         subtitle="Jaga tubuh, kelola energi"
+        right={
+          <EmojiButton emoji="🏆" onPress={() => router.push('/steps')} />
+        }
       />
 
       {error && (

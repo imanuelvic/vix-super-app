@@ -235,12 +235,20 @@ export function newCoreLeaderId(): string {
 // CORE-nya) & Fellowship CORE (hangout/kumpul bareng). Satu dokumen berisi
 // array (users/{uid}/core/visitations) — reminder H-3 & hari-H muncul di Home.
 
-export type MeetingKind = 'visitasi' | 'fellowship';
+export type MeetingKind =
+  | 'visitasi'
+  | 'fellowship'
+  | 'oneOnOne'
+  | 'mentoringMclCl'
+  | 'mentoringMclClMt';
 
 export const MEETING_KINDS: { key: MeetingKind; label: string; icon: string }[] =
   [
-    { key: 'visitasi', label: 'Visitasi CORE', icon: '🏠' },
-    { key: 'fellowship', label: 'Fellowship CORE', icon: '🎉' },
+    { key: 'visitasi', label: 'Visitasi CORE', icon: '🔥' },
+    { key: 'fellowship', label: 'Fellowship CORE', icon: '👥' },
+    { key: 'oneOnOne', label: 'One-on-One', icon: '1️⃣' },
+    { key: 'mentoringMclCl', label: 'Mentoring MCL CL', icon: '🙋🏻‍♂️' },
+    { key: 'mentoringMclClMt', label: 'Mentoring MCL CL MT', icon: '✨' },
   ];
 
 /** Meta satu jenis pertemuan — fallback ke Visitasi kalau tak dikenal. */
@@ -253,7 +261,8 @@ export type Visitation = {
   kind: MeetingKind; // jenis pertemuan
   leaderId: string; // CORE Leader yang ditemui
   date: Timestamp;
-  note: string; // tempat/agenda, boleh kosong
+  agenda: string; // agenda — apa yang akan dibahas ke mereka, boleh kosong
+  note: string; // catatan pertemuan — hasil/observasi, boleh kosong
   done: boolean; // sudah selesai
 };
 
@@ -267,8 +276,14 @@ export function subscribeVisitations(
     ref,
     (snapshot) => {
       const list = (snapshot.data()?.list as Visitation[]) ?? [];
-      // Data lama belum punya `kind` → anggap Visitasi.
-      onChange(list.map((v) => ({ ...v, kind: v.kind ?? 'visitasi' })));
+      // Data lama belum punya `kind`/`agenda` → beri default aman.
+      onChange(
+        list.map((v) => ({
+          ...v,
+          kind: v.kind ?? 'visitasi',
+          agenda: v.agenda ?? '',
+        })),
+      );
     },
     onError,
   );
@@ -603,20 +618,23 @@ export function weeklyFollowupTopic(
 // ==================== Pokok Doa Bulanan 🙏 ====================
 // Tiap awal bulan, MCL menanyakan pokok doa/pergumulan tiap CORE Leader untuk
 // bulan ini. Pokok doa inilah yang menentukan follow up berkala Sel/Kam/Sab.
-// Akhir bulan otomatis direset: begitu bulan berganti data lama dianggap kosong
-// & tertimpa PERMANEN saat diisi ulang. Satu dokumen kecil:
-// users/{uid}/core/monthlyPrayers — { monthId, points, followedDayId }.
+// Poin TIDAK dihapus saat bulan berganti — tetap tersimpan (layar Pokok Doa
+// menampilkannya untuk ditinjau). Untuk follow-up, monthlyPointsFor menganggap
+// perlu diperbarui (kosong) sampai disimpan ulang di bulan berjalan. Satu dokumen
+// kecil: users/{uid}/core/monthlyPrayers — { monthId, points, followedDayId }.
 
 export type MonthlyPrayers = {
   monthId: string; // "YYYY-MM" pemilik data ini
   points: Record<string, string[]>; // leaderId -> daftar poin pokok doa
   followedDayId: Record<string, string>; // leaderId -> dayId terakhir difollowup
+  updatedAt: Record<string, string>; // leaderId -> dayId terakhir poin diinput/diubah
 };
 
 export const EMPTY_MONTHLY_PRAYERS: MonthlyPrayers = {
   monthId: '',
   points: {},
   followedDayId: {},
+  updatedAt: {},
 };
 
 // Pertanyaan pembuka untuk mengumpulkan pokok doa bulanan tiap CL.
@@ -642,6 +660,7 @@ export function subscribeMonthlyPrayers(
         monthId: (d?.monthId as string) ?? '',
         points: (d?.points as Record<string, string[]>) ?? {},
         followedDayId: (d?.followedDayId as Record<string, string>) ?? {},
+        updatedAt: (d?.updatedAt as Record<string, string>) ?? {},
       });
     },
     onError,
@@ -653,9 +672,21 @@ export function saveMonthlyPrayers(uid: string, data: MonthlyPrayers) {
   return setDoc(doc(db, 'users', uid, 'core', 'monthlyPrayers'), data);
 }
 
-/** Data ini milik bulan berjalan? Kalau beda bulan → perlu diisi ulang. */
+/** Data ini milik bulan berjalan? Kalau beda bulan → perlu diperbarui. */
 export function isCurrentMonthPrayers(data: MonthlyPrayers, now: Date): boolean {
   return data.monthId === monthDocId(now);
+}
+
+/**
+ * Pengingat AWAL BULAN (tanggal 1–2 saja) di Home: ajak follow up tiap CORE
+ * Leader & tanyakan pokok doa mereka untuk bulan baru. Aktif selama pokok doa
+ * belum diperbarui untuk bulan berjalan (begitu diperbarui → hilang).
+ */
+export function monthlyPrayerStartReminder(
+  data: MonthlyPrayers,
+  now: Date,
+): boolean {
+  return now.getDate() <= 2 && !isCurrentMonthPrayers(data, now);
 }
 
 /** Poin pokok doa efektif bulan ini (kosong kalau dokumen milik bulan lain). */

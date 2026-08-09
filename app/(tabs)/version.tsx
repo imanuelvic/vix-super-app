@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,7 +8,23 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { formatFullDate, formatFullDateTime } from '@/lib/format';
+import { useAuth } from '@/contexts/auth';
+import {
+  dayIdToDate,
+  formatFullDate,
+  formatFullDateTime,
+  formatShortDayDate,
+} from '@/lib/format';
+import { dayDocId } from '@/lib/health';
+import {
+  aggregateDays,
+  dayTotal,
+  fetchUsageDays,
+  recentDayIds,
+  subscribeUsageDay,
+  topFeatures,
+  type UsageDay,
+} from '@/lib/usage';
 
 type Message = { kind: 'info' | 'success' | 'error'; text: string };
 
@@ -16,8 +32,27 @@ type Message = { kind: 'info' | 'success' | 'error'; text: string };
 const APP_BIRTHDAY = new Date(2026, 6, 21);
 
 export default function VersionScreen() {
+  const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
+
+  // ===== Laporan pemakaian fitur 📊 =====
+  const todayId = dayDocId(new Date());
+  const [today, setToday] = useState<UsageDay | null>(null);
+  const [week, setWeek] = useState<UsageDay[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeUsageDay(user.uid, todayId, setToday);
+    fetchUsageDays(user.uid, recentDayIds(7))
+      .then(setWeek)
+      .catch(() => {});
+    return unsub;
+  }, [user, todayId]);
+
+  const todayTop = today ? topFeatures(today, 5) : [];
+  const weekTop = topFeatures(aggregateDays(week), 1)[0] ?? null;
+  const weekTotal = week.reduce((sum, d) => sum + dayTotal(d), 0);
 
   // Versi app dari app.json — ini yang jadi runtimeVersion (policy appVersion).
   const appVersion = Constants.expoConfig?.version ?? '-';
@@ -64,7 +99,74 @@ export default function VersionScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <VixText heading="header" additionalStyle={styles.title}>
-          Version
+          System
+        </VixText>
+
+        {/* ===== Laporan pemakaian fitur ===== */}
+        <View style={styles.usageHero}>
+          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+            📊 Fitur paling sering (7 hari)
+          </VixText>
+          <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
+            {weekTop ? `${weekTop.label}` : 'Belum ada data'}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+            {weekTop
+              ? `${weekTop.count}× · total ${weekTotal} kali buka fitur`
+              : 'Buka fitur dari grid Home untuk mulai tercatat 📈'}
+          </VixText>
+        </View>
+
+        {/* Hari ini */}
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          Hari Ini
+        </VixText>
+        <View style={styles.usageCard}>
+          {todayTop.length === 0 ? (
+            <VixText heading="label" additionalStyle={styles.usageEmpty}>
+              Belum buka fitur apa pun hari ini.
+            </VixText>
+          ) : (
+            todayTop.map((f, i) => (
+              <View key={f.key} style={styles.usageRow}>
+                <VixText heading="bold" additionalStyle={styles.usageRank}>
+                  {i + 1}
+                </VixText>
+                <VixText heading="paragraph" additionalStyle={styles.usageName}>
+                  {f.label}
+                </VixText>
+                <VixText heading="bold" additionalStyle={styles.usageCount}>
+                  {f.count}×
+                </VixText>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* Per hari (7 hari terakhir) — fitur teratas tiap hari */}
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          7 Hari Terakhir
+        </VixText>
+        <View style={styles.usageCard}>
+          {week.map((d) => {
+            const top = topFeatures(d, 1)[0];
+            return (
+              <View key={d.dayId} style={styles.usageRow}>
+                <VixText heading="label" additionalStyle={styles.usageDay}>
+                  {formatShortDayDate(dayIdToDate(d.dayId))}
+                </VixText>
+                <VixText
+                  heading="paragraph"
+                  additionalStyle={top ? styles.usageName : styles.usageEmpty}>
+                  {top ? `${top.label} (${top.count}×)` : '—'}
+                </VixText>
+              </View>
+            );
+          })}
+        </View>
+
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          Aplikasi
         </VixText>
 
         {/* Kartu versi terpasang */}
@@ -149,6 +251,41 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
   title: { color: Color.MAIN, marginBottom: 16 },
+  sectionTitle: { marginTop: 6, marginBottom: 10 },
+  // Laporan pemakaian 📊
+  usageHero: {
+    backgroundColor: Color.MAIN_DARK,
+    borderRadius: 20,
+    padding: 20,
+    gap: 4,
+    marginBottom: 6,
+  },
+  usageHeroLabel: { color: Color.TEXT_ON_DARK_MUTED },
+  usageHeroValue: { color: Color.TEXT_REVERSE },
+  usageCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginBottom: 16,
+  },
+  usageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  usageRank: {
+    color: Color.MAIN_DARK,
+    width: 20,
+    textAlign: 'center',
+  },
+  usageDay: { color: Color.TEXT_LABEL, width: 96 },
+  usageName: { color: Color.TEXT_TITLE, flex: 1 },
+  usageCount: { color: Color.MAIN_DARK },
+  usageEmpty: { color: Color.TEXT_PLACEHOLDER, flex: 1, paddingVertical: 4 },
   versionCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,

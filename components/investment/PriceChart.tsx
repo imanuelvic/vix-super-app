@@ -1,16 +1,11 @@
 import { View } from 'react-native';
-import Svg, {
-  Circle,
-  Line,
-  Polyline,
-  Text as SvgText,
-} from 'react-native-svg';
+import Svg, { Circle, Line, Polyline, Text as SvgText } from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
 import { formatShortRupiah } from '@/lib/format';
-import type { GoldPoint } from '@/lib/investment';
+import type { MarketPoint } from '@/lib/market';
 
-const GOLD = '#C9A227'; // warna emas untuk garis & titik
+const GOLD = '#C9A227'; // warna default garis & titik (emas)
 const H = 210;
 const PAD_L = 10;
 const PAD_R = 10;
@@ -24,13 +19,16 @@ function shortMonth(dateStr: string): string {
   return `${M3[Number(m) - 1]} '${y.slice(2)}`;
 }
 
-// Grafik garis harga emas berbasis SVG — untuk mempelajari tren tiap tanggal 3.
-export function GoldChart({
+// Grafik garis harga (Rupiah) berbasis SVG — untuk mempelajari tren aset.
+// Dipakai Emas & Bitcoin; `color` mengubah warna garis/label.
+export function PriceChart({
   series,
   width,
+  color = GOLD,
 }: {
-  series: GoldPoint[];
+  series: MarketPoint[];
   width: number;
+  color?: string;
 }) {
   if (series.length < 2 || width <= 0) return null;
 
@@ -68,23 +66,13 @@ export function GoldChart({
         <Polyline
           points={points}
           fill="none"
-          stroke={GOLD}
+          stroke={color}
           strokeWidth={2.5}
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {/* Titik tiap bulan */}
-        {series.map((s, i) => (
-          <Circle
-            key={s.date}
-            cx={x(i)}
-            cy={y(s.price)}
-            r={i === n - 1 ? 4.5 : 2.5}
-            fill={i === n - 1 ? GOLD : Color.CONTAINER}
-            stroke={GOLD}
-            strokeWidth={1.5}
-          />
-        ))}
+        {/* Titik terakhir saja (deret harian rapat, tak perlu titik tiap hari) */}
+        <Circle cx={x(n - 1)} cy={y(last.price)} r={4.5} fill={color} />
         {/* Label harga tertinggi & terendah (kiri) */}
         <SvgText x={PAD_L} y={y(max) - 5} fontSize={10} fill={Color.TEXT_LABEL}>
           {formatShortRupiah(max)}
@@ -98,7 +86,7 @@ export function GoldChart({
           y={y(last.price) - 8}
           fontSize={11}
           fontWeight="bold"
-          fill={GOLD}
+          fill={color}
           textAnchor="end">
           {formatShortRupiah(last.price)}
         </SvgText>

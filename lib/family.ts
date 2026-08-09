@@ -23,6 +23,10 @@ import { db } from './firebase';
 // karena foto base64 (~5 KB) ikut di dalamnya — kalau satu dokumen berisi
 // semua anggota, batas 1 MB Firestore cepat tersentuh.
 
+// Lingkar keluarga: 'inti' = keluarga inti (3 generasi) yang dapat reminder
+// ultah di Home; 'saudara' = saudara/kerabat, border beda & TANPA reminder.
+export type FamilyCircle = 'inti' | 'saudara';
+
 export type FamilyMember = {
   id: string;
   name: string; // nama lengkap
@@ -31,6 +35,8 @@ export type FamilyMember = {
   birthMonth: number; // 0–11 seperti Date JS
   birthDay: number;
   deceased: boolean; // ✝ — tampil hitam-putih di pohon
+  circle: FamilyCircle; // keluarga inti vs saudara (beda warna border & reminder)
+  isSelf: boolean; // "saya" — jadi pusat pohon & default saat buka layar
   parentIds: string[]; // maksimal 2
   partnerIds: string[]; // pasangan (suami/istri) — relasi dianggap 2 arah
   photo: string | null; // JPEG base64 kecil (tanpa prefix data:)
@@ -62,6 +68,9 @@ export function subscribeFamily(
             id: d.id,
             ...data,
             nickname: data.nickname ?? '',
+            // Data lama belum punya circle/isSelf → anggap keluarga inti, bukan saya.
+            circle: data.circle ?? 'inti',
+            isSelf: data.isSelf ?? false,
             parentIds: data.parentIds ?? [],
             partnerIds: data.partnerIds ?? [],
             photo: data.photo ?? null,
@@ -73,8 +82,29 @@ export function subscribeFamily(
   );
 }
 
-export function saveFamilyMember(uid: string, member: FamilyMember) {
+/**
+ * Simpan satu anggota. Kalau dia ditandai "saya" (isSelf) dan daftar anggota
+ * lain diberikan, penanda "saya" pada anggota lain otomatis dimatikan supaya
+ * hanya SATU orang yang jadi "saya" (satu batch, tetap sinkron).
+ */
+export function saveFamilyMember(
+  uid: string,
+  member: FamilyMember,
+  allMembers?: FamilyMember[],
+) {
   const { id, ...data } = member;
+  if (member.isSelf && allMembers) {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'users', uid, 'familyMembers', id), data);
+    for (const m of allMembers) {
+      if (m.id !== id && m.isSelf) {
+        batch.update(doc(db, 'users', uid, 'familyMembers', m.id), {
+          isSelf: false,
+        });
+      }
+    }
+    return batch.commit();
+  }
   return setDoc(doc(db, 'users', uid, 'familyMembers', id), data);
 }
 
@@ -148,6 +178,34 @@ export function partnersOf(id: string, all: FamilyMember[]): FamilyMember[] {
   return [...ids]
     .map((x) => all.find((m) => m.id === x))
     .filter((x): x is FamilyMember => !!x);
+}
+
+/**
+ * Jumlah generasi di dalam satu himpunan anggota = kedalaman terdalam rantai
+ * orang tua→anak + 1. Hanya orang tua yang ADA di himpunan yang dihitung
+ * (mis. lewati saudara). Ada penjaga siklus supaya tak pernah loop tak henti.
+ */
+export function countGenerations(members: FamilyMember[]): number {
+  if (members.length === 0) return 0;
+  const byId = new Map(members.map((m) => [m.id, m]));
+  const memo = new Map<string, number>();
+  const visiting = new Set<string>();
+  function level(id: string): number {
+    const cached = memo.get(id);
+    if (cached !== undefined) return cached;
+    if (visiting.has(id)) return 0; // penjaga siklus
+    visiting.add(id);
+    const parentLevels = (byId.get(id)?.parentIds ?? [])
+      .filter((p) => byId.has(p))
+      .map((p) => level(p));
+    const lvl = parentLevels.length ? Math.max(...parentLevels) + 1 : 0;
+    visiting.delete(id);
+    memo.set(id, lvl);
+    return lvl;
+  }
+  let max = 0;
+  for (const m of members) max = Math.max(max, level(m.id));
+  return max + 1;
 }
 
 // ===================== Foto =====================

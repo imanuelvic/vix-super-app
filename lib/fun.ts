@@ -210,7 +210,7 @@ export const FUN_IDEAS: string[] = [
   '🎬 Nonton film yang lagi hype di bioskop, sendiri atau bareng.',
   '☕ Coba coffee shop baru yang belum pernah kamu datangi.',
   '🚴 Sepedaan pagi keliling kota sebelum panas.',
-  '🧘 Waktu hening di tempat tenang — journaling & refleksi.',
+  '🧘 Waktu hening di tempat tenang — baca Revive.',
   '🍜 Food adventure: cari makanan khas yang belum pernah dicoba.',
   '📸 Jalan sambil foto (street photography) di spot estetik.',
   '🎮 Game night atau board game bareng teman.',

@@ -47,6 +47,7 @@ export default function VisitationsScreen() {
   const [fKind, setFKind] = useState<MeetingKind>('visitasi');
   const [fLeaderId, setFLeaderId] = useState('');
   const [fDate, setFDate] = useState(new Date());
+  const [fAgenda, setFAgenda] = useState('');
   const [fNote, setFNote] = useState('');
   const [fDone, setFDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -84,6 +85,7 @@ export default function VisitationsScreen() {
     setFKind(v.kind);
     setFLeaderId(v.leaderId);
     setFDate(v.date.toDate());
+    setFAgenda(v.agenda);
     setFNote(v.note);
     setFDone(v.done);
     setFormError(null);
@@ -102,6 +104,7 @@ export default function VisitationsScreen() {
       kind: fKind,
       leaderId: fLeaderId,
       date: Timestamp.fromDate(fDate),
+      agenda: fAgenda.trim(),
       note: fNote.trim(),
       // Jadwal masa depan dipaksa belum divisit — toggle-nya juga disembunyikan.
       done: futureDate ? false : fDone,
@@ -196,8 +199,11 @@ export default function VisitationsScreen() {
                 <VixText heading="label">
                   📆 {formatFullDate(v.date.toDate())}
                 </VixText>
+                {v.agenda ? (
+                  <VixText heading="label">🗒️ Agenda: {v.agenda}</VixText>
+                ) : null}
                 {v.note ? (
-                  <VixText heading="label">📝 {v.note}</VixText>
+                  <VixText heading="label">📝 Catatan: {v.note}</VixText>
                 ) : null}
               </PressableScale>
             );
@@ -252,12 +258,28 @@ export default function VisitationsScreen() {
           <DateField key={editing?.id} value={fDate} onChange={setFDate} />
         </View>
 
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🗒️ Agenda pertemuan
+        </VixText>
         <FormInput
-          style={styles.formGap}
-          placeholder="Catatan — tempat / agenda (opsional)"
+          style={[styles.textArea, styles.formGap]}
+          placeholder="Apa yang akan dibahas ke mereka…"
+          value={fAgenda}
+          onChangeText={setFAgenda}
+          editable={!busy}
+          multiline
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          📝 Catatan pertemuan
+        </VixText>
+        <FormInput
+          style={[styles.textArea, styles.formGap]}
+          placeholder="Catatan hasil pertemuan / kondisi CL & member…"
           value={fNote}
           onChangeText={setFNote}
           editable={!busy}
+          multiline
         />
 
         {/* Toggle sudah selesai / belum — hanya kalau tanggalnya sudah tiba */}
@@ -328,6 +350,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   formGap: { marginBottom: 10 },
+  textArea: { minHeight: 96, paddingTop: 12, textAlignVertical: 'top' },
   doneRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -18,6 +20,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -26,6 +29,7 @@ import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   childrenOf,
+  countGenerations,
   deleteFamilyMember,
   displayName,
   newFamilyId,
@@ -34,6 +38,7 @@ import {
   pickCompressedPhoto,
   saveFamilyMember,
   subscribeFamily,
+  type FamilyCircle,
   type FamilyMember,
 } from '@/lib/family';
 
@@ -48,6 +53,7 @@ function Avatar({
   onSelect,
   highlighted = false,
   light = false,
+  colWidth,
 }: {
   m: FamilyMember;
   size: number;
@@ -57,14 +63,24 @@ function Avatar({
   // light = dipakai di atas latar TERANG (grid putih) → teks gelap biar
   // terbaca. Default (false) = latar gelap kartu pohon → teks putih.
   light?: boolean;
+  // colWidth = lebar kolom tetap (dipakai di baris anak biar pas 5 per baris);
+  // saat diisi, margin horizontal dimatikan & nama dibatasi selebar kolom.
+  colWidth?: number;
 }) {
   const hasPhoto = !!m.photo && m.photo.length > 0;
   return (
-    <PressableScale style={styles.avatarWrap} onPress={() => onSelect(m.id)}>
+    <PressableScale
+      style={[
+        styles.avatarWrap,
+        colWidth != null && { width: colWidth, marginHorizontal: 0 },
+      ]}
+      onPress={() => onSelect(m.id)}>
       <View
         style={[
           styles.avatarBox,
           { width: size, height: size, borderRadius: size * 0.28 },
+          // Saudara/kerabat → border cokelat (beda dari keluarga inti yang hijau).
+          m.circle === 'saudara' && styles.avatarSaudara,
           highlighted && styles.avatarSelected,
           m.deceased && styles.avatarDeceased,
         ]}>
@@ -92,7 +108,7 @@ function Avatar({
         numberOfLines={1}
         additionalStyle={[
           styles.avatarName,
-          { maxWidth: size + 24 },
+          { maxWidth: colWidth ?? size + 24 },
           m.deceased && styles.nameDeceased,
           light && (m.deceased ? styles.nameDeceasedLight : styles.avatarNameLight),
         ]}>
@@ -198,6 +214,18 @@ function MemberPicker({
   );
 }
 
+// Baris anak dibuat PAS 5 per baris: lebar kolom dihitung dari lebar layar
+// (dikurangi padding konten 20 + padding kartu pohon 12 di kiri-kanan, lalu
+// dibagi 5 dengan jarak antar-kolom). Avatar sedikit lebih kecil dari kolom.
+// Anak ke-6 dst. otomatis turun ke baris berikutnya.
+const CHILD_ROW_GAP = 8;
+const TREE_INNER_WIDTH = Dimensions.get('window').width - 40 - 24;
+const CHILD_COL_WIDTH = Math.max(
+  44,
+  Math.floor((TREE_INNER_WIDTH - CHILD_ROW_GAP * 4) / 5) - 1,
+);
+const CHILD_AVATAR_SIZE = Math.min(46, CHILD_COL_WIDTH - 12);
+
 // Family Tree 👨‍👩‍👧‍👦 — silsilah ala The Sims: pohon 3 generasi yang
 // berpusat pada orang yang dipilih; tap siapa pun → pohon pindah ke dia.
 export default function FamilyScreen() {
@@ -206,6 +234,10 @@ export default function FamilyScreen() {
   const [members, setMembers] = useState<FamilyMember[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Cari anggota (nama / panggilan) — daftar "Semua Anggota" disembunyikan
+  // sampai diketik, biar tidak muncul list panjang langsung.
+  const [search, setSearch] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
 
   // Form tambah/edit. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<FamilyMember | 'new' | null>(null);
@@ -213,6 +245,8 @@ export default function FamilyScreen() {
   const [fNickname, setFNickname] = useState('');
   const [fBirthday, setFBirthday] = useState(new Date(1990, 0, 1));
   const [fDeceased, setFDeceased] = useState(false);
+  const [fCircle, setFCircle] = useState<FamilyCircle>('inti');
+  const [fIsSelf, setFIsSelf] = useState(false);
   const [fParents, setFParents] = useState<string[]>([]);
   const [fPartners, setFPartners] = useState<string[]>([]);
   const [fPhoto, setFPhoto] = useState<string | null>(null);
@@ -239,9 +273,10 @@ export default function FamilyScreen() {
 
   const today = new Date();
   const all = members ?? [];
-  // Pusat pohon: pilihan user, atau leluhur tertua sebagai awal.
+  // Pusat pohon: pilihan user → "saya" (isSelf) → leluhur tertua → apa saja.
   const selected =
     all.find((m) => m.id === selectedId) ??
+    all.find((m) => m.isSelf) ??
     all.find((m) => m.parentIds.length === 0) ??
     all[0] ??
     null;
@@ -268,6 +303,8 @@ export default function FamilyScreen() {
     setFNickname('');
     setFBirthday(new Date(1990, 0, 1));
     setFDeceased(false);
+    setFCircle('inti');
+    setFIsSelf(false);
     setFParents([]);
     setFPartners([]);
     setFPhoto(null);
@@ -281,6 +318,8 @@ export default function FamilyScreen() {
     setFNickname(m.nickname ?? '');
     setFBirthday(new Date(m.birthYear, m.birthMonth, m.birthDay));
     setFDeceased(m.deceased);
+    setFCircle(m.circle);
+    setFIsSelf(m.isSelf);
     setFParents(m.parentIds);
     // Pasangan hanya 1 — ambil satu saja (dibaca 2 arah supaya tetap ketemu).
     setFPartners(partnersOf(m.id, all).slice(0, 1).map((p) => p.id));
@@ -331,13 +370,16 @@ export default function FamilyScreen() {
       birthMonth: fBirthday.getMonth(),
       birthDay: fBirthday.getDate(),
       deceased: fDeceased,
+      circle: fCircle,
+      isSelf: fIsSelf,
       parentIds: fParents,
       // Simpan pasangan di dokumen ini; partnersOf membacanya 2 arah.
       partnerIds: fPartners,
       photo: fPhoto,
     };
     try {
-      await saveFamilyMember(user.uid, data);
+      // `all` diteruskan supaya penanda "saya" jadi eksklusif (hanya satu orang).
+      await saveFamilyMember(user.uid, data, all);
       setSelectedId(data.id); // pohon langsung berpusat ke dia
       setEditing(null);
     } catch {
@@ -363,6 +405,28 @@ export default function FamilyScreen() {
   // Kandidat relasi = semua anggota selain yang sedang diedit.
   const others = all.filter((m) => m.id !== editingId);
 
+  // Ringkasan "Semua Anggota": jumlah generasi (dihitung dari keluarga inti)
+  // & jumlah orang (total + rincian inti/saudara).
+  const intiMembers = all.filter((m) => m.circle === 'inti');
+  const saudaraCount = all.length - intiMembers.length;
+  const generations = countGenerations(intiMembers);
+
+  // Hasil pencarian (nama / nama panggilan, tanpa peduli huruf besar-kecil).
+  const query = search.trim().toLowerCase();
+  const searchResults = query
+    ? all.filter(
+        (m) =>
+          m.name.toLowerCase().includes(query) ||
+          m.nickname.toLowerCase().includes(query),
+      )
+    : [];
+
+  // Pilih dari hasil cari → jadikan pusat pohon + naik ke atas biar pohonnya kelihatan.
+  function selectFromSearch(id: string) {
+    setSelectedId(id);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
@@ -384,7 +448,7 @@ export default function FamilyScreen() {
       {members === null ? (
         <LoadingCenter />
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
           <PrimaryButton
             label="Tambah Anggota Keluarga"
             icon="plus"
@@ -459,12 +523,14 @@ export default function FamilyScreen() {
                     <VixText heading="label" additionalStyle={styles.genLabel}>
                       {children.length} anak
                     </VixText>
-                    <View style={styles.childrenRow}>
+                    <View
+                      style={[styles.childrenRow, { columnGap: CHILD_ROW_GAP }]}>
                       {children.map((c) => (
                         <Avatar
                           key={c.id}
                           m={c}
-                          size={58}
+                          size={CHILD_AVATAR_SIZE}
+                          colWidth={CHILD_COL_WIDTH}
                           today={today}
                           onSelect={setSelectedId}
                         />
@@ -489,11 +555,6 @@ export default function FamilyScreen() {
                   {selected.name}
                   {selected.deceased ? ' ✝' : ''}
                 </VixText>
-                {displayName(selected) !== selected.name ? (
-                  <VixText heading="label" additionalStyle={styles.infoNick}>
-                    dipanggil “{displayName(selected)}”
-                  </VixText>
-                ) : null}
                 <VixText heading="label" additionalStyle={styles.infoLine}>
                   🎂 {selected.birthDay} {MONTH_NAMES[selected.birthMonth]}{' '}
                   {selected.birthYear}
@@ -525,19 +586,59 @@ export default function FamilyScreen() {
               <VixText heading="title" additionalStyle={styles.sectionTitle}>
                 🌳 Semua Anggota
               </VixText>
-              <View style={styles.allGrid}>
-                {all.map((m) => (
-                  <Avatar
-                    key={m.id}
-                    m={m}
-                    size={58}
-                    today={today}
-                    onSelect={setSelectedId}
-                    highlighted={m.id === selected.id}
-                    light
-                  />
-                ))}
+              <VixText heading="label" additionalStyle={styles.summaryLine}>
+                👨‍👩‍👧‍👦 {generations} generasi · 👥 {all.length} orang
+                {saudaraCount > 0
+                  ? ` (${intiMembers.length} inti · ${saudaraCount} saudara)`
+                  : ''}
+              </VixText>
+              {saudaraCount > 0 && (
+                <View style={styles.legendRow}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, styles.legendDotInti]} />
+                    <VixText heading="label" additionalStyle={styles.legendText}>
+                      Keluarga inti
+                    </VixText>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, styles.legendDotSaudara]} />
+                    <VixText heading="label" additionalStyle={styles.legendText}>
+                      Saudara
+                    </VixText>
+                  </View>
+                </View>
+              )}
+              <View style={styles.searchWrap}>
+                <SearchBar
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Cari nama / panggilan…"
+                />
               </View>
+              {query === '' ? (
+                <VixText heading="label" additionalStyle={styles.searchHint}>
+                  Ketik nama untuk mencari anggota — ketuk hasilnya untuk
+                  menampilkannya di pohon di atas 🌳
+                </VixText>
+              ) : searchResults.length === 0 ? (
+                <VixText heading="label" additionalStyle={styles.searchHint}>
+                  Tidak ada anggota bernama “{search.trim()}”.
+                </VixText>
+              ) : (
+                <View style={styles.allGrid}>
+                  {searchResults.map((m) => (
+                    <Avatar
+                      key={m.id}
+                      m={m}
+                      size={58}
+                      today={today}
+                      onSelect={selectFromSearch}
+                      highlighted={m.id === selected.id}
+                      light
+                    />
+                  ))}
+                </View>
+              )}
             </>
           )}
         </ScrollView>
@@ -583,7 +684,7 @@ export default function FamilyScreen() {
           />
           <FormInput
             style={styles.formGap}
-            placeholder="Nama panggilan (tampil di pohon & daftar)"
+            placeholder="Nama panggilan"
             value={fNickname}
             onChangeText={setFNickname}
             editable={!busy}
@@ -600,6 +701,40 @@ export default function FamilyScreen() {
               onChange={setFBirthday}
             />
           </View>
+
+          {/* Lingkar keluarga: inti (dapat reminder ultah) vs saudara */}
+          <VixText heading="label" additionalStyle={styles.fieldLabel}>
+            Termasuk keluarga apa?
+          </VixText>
+          <View style={styles.circleRow}>
+            <Chip
+              label="🏠 Keluarga Inti"
+              active={fCircle === 'inti'}
+              onPress={() => setFCircle('inti')}
+              additionalStyle={styles.circleChip}
+            />
+            <Chip
+              label="🌿 Saudara"
+              active={fCircle === 'saudara'}
+              onPress={() => setFCircle('saudara')}
+              additionalStyle={styles.circleChip}
+            />
+          </View>
+          <VixText heading="label" additionalStyle={styles.circleHint}>
+            {fCircle === 'inti'
+              ? 'Border hijau · dapat reminder ulang tahun di Home.'
+              : 'Border cokelat · tanpa reminder ultah di Home.'}
+          </VixText>
+
+          {/* Tandai "saya" — jadi pusat pohon & default saat buka layar */}
+          <PressableScale
+            style={styles.deceasedRow}
+            onPress={() => setFIsSelf((s) => !s)}>
+            <CheckCircle checked={fIsSelf} />
+            <VixText heading="paragraph" additionalStyle={styles.deceasedText}>
+              Ini saya 🙋 (jadi pusat pohon & tampil pertama saat buka layar)
+            </VixText>
+          </PressableScale>
 
           {/* Status meninggal ✝ */}
           <PressableScale
@@ -716,7 +851,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 12,
+    rowGap: 12, // jarak vertikal bila anak > 5 (turun ke baris berikutnya)
   },
   vConnector: {
     width: 3,
@@ -734,6 +869,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  avatarSaudara: {
+    borderColor: Color.ACCENT_DARK,
   },
   avatarSelected: {
     borderWidth: 3,
@@ -769,7 +907,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   editButtonText: { color: Color.TEXT_REVERSE },
-  sectionTitle: { marginBottom: 10 },
+  sectionTitle: { marginBottom: 4 },
+  summaryLine: { color: Color.TEXT_LABEL, marginBottom: 8 },
+  legendRow: { flexDirection: 'row', gap: 16, marginBottom: 10 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
+  legendDotInti: { borderColor: Color.MAIN, backgroundColor: Color.CONTAINER },
+  legendDotSaudara: {
+    borderColor: Color.ACCENT_DARK,
+    backgroundColor: Color.CONTAINER,
+  },
+  legendText: { color: Color.TEXT_LABEL },
+  searchWrap: { marginBottom: 10 },
+  searchHint: {
+    color: Color.TEXT_LABEL,
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
   infoCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -780,7 +934,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   infoName: { color: Color.TEXT_TITLE },
-  infoNick: { color: Color.MAIN },
   infoLine: { color: Color.TEXT_PARAGRAPH },
   allGrid: {
     flexDirection: 'row',
@@ -819,6 +972,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   deceasedText: { color: Color.TEXT_TITLE, flexShrink: 1 },
+  circleRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  circleChip: { flex: 1 },
+  circleHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   // Picker nama anggota (buka-tutup) — Orang tua & Pasangan
   pickerEmpty: { color: Color.TEXT_LABEL, marginBottom: 12 },
   pickerBlock: { marginBottom: 12 },

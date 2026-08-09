@@ -15,15 +15,10 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { KhotbahTab } from '@/components/spiritual/KhotbahTab';
 import { useAuth } from '@/contexts/auth';
-import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
-import {
-  subscribeReviveEntries,
-  subscribeReviveStreak,
-  type ReviveEntry,
-} from '@/lib/spiritual';
+import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
 type Tab = 'revive' | 'khotbah';
 
@@ -32,8 +27,6 @@ const TABS: BottomTab<Tab>[] = [
   { key: 'khotbah', label: 'Khotbah', icon: 'mic.fill' },
 ];
 
-// Spiritual ✝️ — dua tab: Revive (jurnal harian) & Khotbah (catatan ibadah
-// Minggu). Rhema hari ini tampil penuh, reminder harian, streak 📖🔥.
 export default function SpiritualScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -45,7 +38,6 @@ export default function SpiritualScreen() {
   );
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
-  const [streak, setStreak] = useState<DayStreak | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Reminder Home bisa mengarahkan ke tab khotbah lewat param.
@@ -66,17 +58,12 @@ export default function SpiritualScreen() {
         fail,
       ),
       subscribeSermons(user.uid, setSermons, fail),
-      subscribeReviveStreak(user.uid, setStreak, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
   const todayId = dayDocId(new Date());
   const todayEntry = entries?.find((e) => e.id === todayId) ?? null;
-  const streakShown =
-    streak && streak.lastDayId >= dayDocId(new Date(Date.now() - 86_400_000))
-      ? streak.count
-      : 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -105,8 +92,8 @@ export default function SpiritualScreen() {
           <LoadingCenter />
         ) : tab === 'revive' ? (
           <ScrollView contentContainerStyle={styles.content}>
-            {/* Sapaan + tanggal + streak (komponen bersama) */}
-            <GreetingHeader streak={streakShown} />
+            {/* Sapaan + tanggal (streak dihapus — sudah ada di Home) */}
+            <GreetingHeader />
 
             {/* Rhema hari ini — tampil PENUH kalau sudah diisi */}
             {todayEntry ? (

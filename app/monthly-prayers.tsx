@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { FormInput } from '@/components/common/FormInput';
@@ -21,12 +22,15 @@ import {
   type CoreLeader,
   type MonthlyPrayers,
 } from '@/lib/core';
-import { MONTH_NAMES } from '@/lib/format';
+import { dayIdToDate, formatDate, MONTH_NAMES } from '@/lib/format';
+import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Pokok Doa Bulanan 🙏 — kumpulkan pergumulan tiap CORE Leader untuk bulan ini.
-// Pokok doa inilah yang menentukan follow up berkala (Sel/Kam/Sab). Otomatis
-// direset saat bulan berganti (data lama tertimpa permanen saat diisi ulang).
+// Pokok doa inilah yang menentukan follow up berkala (Sel/Kam/Sab). Poin TIDAK
+// dihapus otomatis saat bulan berganti — tetap tersimpan & tampil untuk ditinjau;
+// saat bulan baru muncul pengingat memperbaruinya. Tiap kartu bisa dibuka/tutup
+// (default tertutup kalau sudah ada poin).
 export default function MonthlyPrayersScreen() {
   const { user } = useAuth();
 
@@ -34,6 +38,13 @@ export default function MonthlyPrayersScreen() {
   const [data, setData] = useState<MonthlyPrayers>(EMPTY_MONTHLY_PRAYERS);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  // Kartu mana yang sedang dibuka (default tidak ada = tertutup).
+  const [openLeaders, setOpenLeaders] = useState<Record<string, boolean>>({});
+  // Konfirmasi hapus 1 pokok doa.
+  const [confirmDelete, setConfirmDelete] = useState<{
+    leaderId: string;
+    idx: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -54,25 +65,35 @@ export default function MonthlyPrayersScreen() {
 
   const now = new Date();
   const monthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
-  // Poin bulan ini saja (kalau dokumen milik bulan lain → dianggap kosong).
-  const points = isCurrentMonthPrayers(data, now) ? data.points : {};
+  // Poin SELALU ditampilkan — tidak disembunyikan/dihapus saat bulan berganti.
+  const points = data.points;
   const filledCount = (leaders ?? []).filter(
     (l) => (points[l.id]?.length ?? 0) > 0,
   ).length;
+  // "Bulan baru": ada poin dari bulan lalu yang belum ditinjau untuk bulan ini.
+  const stale = filledCount > 0 && !isCurrentMonthPrayers(data, now);
 
   // Tulis ulang dokumen dengan monthId bulan ini. Kalau dokumen sebelumnya milik
   // bulan lain, followedDayId ikut direset (mulai bersih untuk bulan baru).
-  async function persist(nextPoints: Record<string, string[]>) {
+  // changedLeaderId = leader yang poinnya baru diubah → dicap tanggal update-nya.
+  async function persist(
+    nextPoints: Record<string, string[]>,
+    changedLeaderId?: string,
+  ) {
     if (!user) return;
-    const monthId = monthDocId(new Date());
-    const followedDayId = isCurrentMonthPrayers(data, new Date())
+    const today = new Date();
+    const monthId = monthDocId(today);
+    const followedDayId = isCurrentMonthPrayers(data, today)
       ? data.followedDayId
       : {};
+    const updatedAt = { ...data.updatedAt };
+    if (changedLeaderId) updatedAt[changedLeaderId] = dayDocId(today);
     try {
       await saveMonthlyPrayers(user.uid, {
         monthId,
         points: nextPoints,
         followedDayId,
+        updatedAt,
       });
     } catch {
       setError(SAVE_ERROR);
@@ -87,7 +108,7 @@ export default function MonthlyPrayersScreen() {
       [leaderId]: [...(points[leaderId] ?? []), text],
     };
     setDrafts((d) => ({ ...d, [leaderId]: '' }));
-    persist(next);
+    persist(next, leaderId);
   }
 
   function removePoint(leaderId: string, idx: number) {
@@ -95,7 +116,7 @@ export default function MonthlyPrayersScreen() {
     const next = { ...points };
     if (arr.length) next[leaderId] = arr;
     else delete next[leaderId];
-    persist(next);
+    persist(next, leaderId);
   }
 
   return (
@@ -129,22 +150,59 @@ export default function MonthlyPrayersScreen() {
               </VixText>
             </VixText>
             <VixText heading="label" additionalStyle={styles.introNote}>
-              🔄 Otomatis direset awal bulan depan — isi ulang tiap bulan.
+              🗂️ Tidak dihapus otomatis — kamu diingatkan memperbaruinya tiap
+              awal bulan.
             </VixText>
           </View>
 
+          {/* Bulan baru: poin masih dari bulan lalu → ajak tinjau/perbarui */}
+          {stale && (
+            <View style={styles.staleCard}>
+              <VixText heading="bold" additionalStyle={styles.staleText}>
+                🔄 Sudah masuk {monthTitle}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.staleSub}>
+                Pokok doa di bawah masih dari bulan lalu — tinjau & perbarui bila
+                perlu. Yang lama tidak dihapus otomatis.
+              </VixText>
+            </View>
+          )}
+
           {leaders.map((l) => {
             const list = points[l.id] ?? [];
+            const hasPoints = list.length > 0;
+            // Punya poin → default TERTUTUP (minimize). Kosong → selalu terbuka
+            // biar gampang langsung mengisi.
+            const open = hasPoints ? !!openLeaders[l.id] : true;
+            const updatedId = data.updatedAt[l.id];
+            const updatedLabel =
+              hasPoints && updatedId
+                ? `🕒 Diperbarui ${formatDate(dayIdToDate(updatedId))}`
+                : null;
             return (
               <View key={l.id} style={styles.card}>
-                <View style={styles.cardHeader}>
+                <PressableScale
+                  style={styles.cardHeader}
+                  disabled={!hasPoints}
+                  onPress={() =>
+                    setOpenLeaders((o) => ({ ...o, [l.id]: !o[l.id] }))
+                  }>
                   <View style={styles.avatar}>
                     <VixText heading="title">{l.heart}</VixText>
                   </View>
-                  <VixText heading="bold" additionalStyle={styles.name}>
-                    {l.name}
-                  </VixText>
-                  {list.length > 0 && (
+                  <View style={styles.headerText}>
+                    <VixText heading="bold" additionalStyle={styles.name}>
+                      {l.name}
+                    </VixText>
+                    {updatedLabel && (
+                      <VixText
+                        heading="label"
+                        additionalStyle={styles.updatedText}>
+                        {updatedLabel}
+                      </VixText>
+                    )}
+                  </View>
+                  {hasPoints && (
                     <View style={styles.countBadge}>
                       <VixText
                         heading="label"
@@ -153,54 +211,89 @@ export default function MonthlyPrayersScreen() {
                       </VixText>
                     </View>
                   )}
-                </View>
+                  {hasPoints && (
+                    <VixText heading="label" additionalStyle={styles.chevron}>
+                      {open ? '▴' : '▾'}
+                    </VixText>
+                  )}
+                </PressableScale>
 
-                {list.length === 0 ? (
-                  <VixText heading="label" additionalStyle={styles.emptyPoint}>
-                    Belum ada pokok doa — tambahkan di bawah 👇
-                  </VixText>
-                ) : (
-                  list.map((p, i) => (
-                    <View key={`${p}-${i}`} style={styles.pointRow}>
-                      <VixText heading="paragraph" additionalStyle={styles.pointText}>
-                        🙏 {p}
+                {open && (
+                  <>
+                    {hasPoints ? (
+                      list.map((p, i) => (
+                        <View key={`${p}-${i}`} style={styles.pointRow}>
+                          <VixText
+                            heading="paragraph"
+                            additionalStyle={styles.pointText}>
+                            🙏 {p}
+                          </VixText>
+                          <PressableScale
+                            onPress={() =>
+                              setConfirmDelete({ leaderId: l.id, idx: i })
+                            }
+                            hitSlop={8}>
+                            <VixText
+                              heading="label"
+                              additionalStyle={styles.removeText}>
+                              ✕
+                            </VixText>
+                          </PressableScale>
+                        </View>
+                      ))
+                    ) : (
+                      <VixText
+                        heading="label"
+                        additionalStyle={styles.emptyPoint}>
+                        Belum ada pokok doa — tambahkan di bawah 👇
                       </VixText>
+                    )}
+
+                    {/* Tambah pokok doa baru */}
+                    <View style={styles.addRow}>
+                      <FormInput
+                        style={styles.addInput}
+                        placeholder="Tambah pokok doa…"
+                        value={drafts[l.id] ?? ''}
+                        onChangeText={(t) =>
+                          setDrafts((d) => ({ ...d, [l.id]: t }))
+                        }
+                        onSubmitEditing={() => addPoint(l.id)}
+                        returnKeyType="done"
+                      />
                       <PressableScale
-                        onPress={() => removePoint(l.id, i)}
-                        hitSlop={8}>
-                        <VixText heading="label" additionalStyle={styles.removeText}>
-                          ✕
+                        style={styles.addButton}
+                        onPress={() => addPoint(l.id)}>
+                        <VixText
+                          heading="bold"
+                          additionalStyle={styles.addButtonText}>
+                          ＋
                         </VixText>
                       </PressableScale>
                     </View>
-                  ))
+                  </>
                 )}
-
-                {/* Tambah pokok doa baru */}
-                <View style={styles.addRow}>
-                  <FormInput
-                    style={styles.addInput}
-                    placeholder="Tambah pokok doa…"
-                    value={drafts[l.id] ?? ''}
-                    onChangeText={(t) =>
-                      setDrafts((d) => ({ ...d, [l.id]: t }))
-                    }
-                    onSubmitEditing={() => addPoint(l.id)}
-                    returnKeyType="done"
-                  />
-                  <PressableScale
-                    style={styles.addButton}
-                    onPress={() => addPoint(l.id)}>
-                    <VixText heading="bold" additionalStyle={styles.addButtonText}>
-                      ＋
-                    </VixText>
-                  </PressableScale>
-                </View>
               </View>
             );
           })}
         </KeyboardAwareScrollView>
       )}
+
+      {/* Konfirmasi sebelum menghapus 1 pokok doa */}
+      <ConfirmDialog
+        visible={!!confirmDelete}
+        title="Hapus pokok doa ini?"
+        detail={
+          confirmDelete
+            ? points[confirmDelete.leaderId]?.[confirmDelete.idx]
+            : undefined
+        }
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) removePoint(confirmDelete.leaderId, confirmDelete.idx);
+          setConfirmDelete(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -220,6 +313,16 @@ const styles = StyleSheet.create({
   introValue: { color: Color.TEXT_REVERSE },
   introLabel: { color: Color.TEXT_ON_DARK_MUTED },
   introNote: { color: Color.TEXT_ON_DARK_MUTED },
+  // Banner "sudah bulan baru — perbarui"
+  staleCard: {
+    backgroundColor: Color.ACCENT,
+    borderRadius: 16,
+    padding: 14,
+    gap: 4,
+    marginBottom: 12,
+  },
+  staleText: { color: Color.ACCENT_DARK },
+  staleSub: { color: Color.ACCENT_DARK },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -238,7 +341,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  name: { flex: 1, color: Color.TEXT_TITLE },
+  headerText: { flex: 1, gap: 1 },
+  name: { color: Color.TEXT_TITLE },
+  updatedText: { color: Color.TEXT_LABEL },
   countBadge: {
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderRadius: 999,
@@ -246,6 +351,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   countBadgeText: { color: Color.MAIN_DARK },
+  chevron: { color: Color.TEXT_LABEL },
   emptyPoint: { color: Color.TEXT_PLACEHOLDER },
   pointRow: {
     flexDirection: 'row',

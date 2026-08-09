@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -20,6 +20,7 @@ import {
   sermonEditable,
   type SermonNote,
 } from '@/lib/sermon';
+import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
 // Tab Khotbah ⛪ — catatan khotbah ibadah Minggu NDC.
 // Hanya bisa DITAMBAH pada hari Minggu, satu catatan per Minggu.
@@ -121,15 +122,8 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
   }
 
   // Buka WhatsApp dengan teks siap kirim — user tinggal pilih chat tujuannya.
-  async function shareSermon(s: SermonNote) {
-    const encoded = encodeURIComponent(sermonShareText(s));
-    try {
-      await Linking.openURL(`whatsapp://send?text=${encoded}`);
-    } catch {
-      Linking.openURL(`https://wa.me/?text=${encoded}`).catch(() =>
-        setFormError('Gagal membuka WhatsApp. Pastikan WhatsApp terpasang.'),
-      );
-    }
+  function shareSermon(s: SermonNote) {
+    shareTextToWhatsApp(sermonShareText(s), () => setFormError(WHATSAPP_ERROR));
   }
 
   return (
@@ -204,7 +198,7 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
                 heading="label"
                 numberOfLines={3}
                 additionalStyle={styles.reflectionText}>
-                🏃🏻‍➡️ {s.reflection}
+                🏃🏻‍➡️ Aplikasi - {s.reflection}
               </VixText>
             ) : null}
           </PressableScale>
@@ -271,9 +265,6 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
                   </VixText>
                 </>
               ) : null}
-              <VixText heading="label" additionalStyle={styles.lockNote}>
-                🔒 Sudah jadi arsip — tak bisa diedit lagi sejak Selasa.
-              </VixText>
             </View>
           ) : (
             /* ===== MODE FORM (tambah / masih bisa diedit) ===== */
@@ -438,7 +429,6 @@ const styles = StyleSheet.create({
   viewBox: { gap: 8 },
   viewTitle: { color: Color.TEXT_TITLE },
   viewReflection: { color: Color.TEXT_PARAGRAPH },
-  lockNote: { color: Color.TEXT_LABEL, marginTop: 2 },
   // Tombol share WhatsApp
   waButton: {
     backgroundColor: Color.WHATSAPP,

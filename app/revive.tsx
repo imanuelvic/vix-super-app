@@ -33,6 +33,7 @@ import {
   subscribeReviveStreak,
   type ReviveEntry,
 } from '@/lib/spiritual';
+import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
 // Buka aplikasi Revive lewat deep link resmi 'ndcministry://' (app NDC Ministry).
 // Kalau app-nya belum terpasang / skema tak dikenali, jatuh ke halaman App Store
@@ -49,13 +50,13 @@ async function openReviveApp() {
   }
 }
 
-// Tulis/edit jurnal REVIVE ✍️ — halaman sendiri (bukan mode di dalam
+// Tulis/edit Revive ✍️ — halaman sendiri (bukan mode di dalam
 // layar Spiritual) dengan KeyboardAvoidingView supaya kolom Application
 // tidak ketutupan keyboard iPhone.
 export default function ReviveEditorScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  // ?day=YYYY-MM-DD dari riwayat; tanpa param = jurnal hari ini.
+  // ?day=YYYY-MM-DD dari riwayat; tanpa param = Revive hari ini.
   const { day } = useLocalSearchParams<{ day?: string }>();
 
   const todayId = dayDocId(new Date());
@@ -88,7 +89,7 @@ export default function ReviveEditorScreen() {
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
-  // Prefill dari jurnal yang sudah ada (sekali, saat data pertama datang).
+  // Prefill dari Revive yang sudah ada (sekali, saat data pertama datang).
   useEffect(() => {
     if (entries === null || loaded) return;
     const entry = entries.find((e) => e.id === targetDay) ?? null;
@@ -133,7 +134,7 @@ export default function ReviveEditorScreen() {
         reflection: fReflection.trim(),
         date: editingDate,
       });
-      // Jurnal HARI INI pertama kali → streak naik 🔥
+      // Revive HARI INI pertama kali → streak naik 🔥
       if (targetDay === todayId) {
         await bumpReviveStreak(user.uid, streak, todayId);
       }
@@ -175,16 +176,8 @@ export default function ReviveEditorScreen() {
   }
 
   // Buka WhatsApp dengan teks siap kirim — user tinggal pilih chat tujuannya.
-  // Kalau WhatsApp tak terpasang, jatuh ke tautan wa.me.
-  async function shareToWhatsApp() {
-    const encoded = encodeURIComponent(buildShareText());
-    try {
-      await Linking.openURL(`whatsapp://send?text=${encoded}`);
-    } catch {
-      Linking.openURL(`https://wa.me/?text=${encoded}`).catch(() =>
-        setFormError('Gagal membuka WhatsApp. Pastikan WhatsApp terpasang.'),
-      );
-    }
+  function shareToWhatsApp() {
+    shareTextToWhatsApp(buildShareText(), () => setFormError(WHATSAPP_ERROR));
   }
 
   return (
@@ -263,25 +256,16 @@ export default function ReviveEditorScreen() {
               multiline
               editable={!busy}
             />
-            {/* Muncul setelah keempat bagian terisi — bagikan ke WhatsApp */}
+            {/* Setelah keempat bagian terisi → langsung tombol share (tanpa
+                preview isi pesan; teksnya tetap dibuat di shareToWhatsApp). */}
             {allFilled && (
-              <View style={styles.shareCard}>
-                <VixText heading="bold" additionalStyle={styles.shareTitle}>
-                  ✅ Semua terisi — bagikan kesaksianmu 🙌
+              <PressableScale
+                style={[styles.waButton, styles.shareButton]}
+                onPress={shareToWhatsApp}>
+                <VixText heading="bold" additionalStyle={styles.waButtonText}>
+                  💬 Share ke WhatsApp
                 </VixText>
-                <View style={styles.sharePreviewBox}>
-                  <VixText
-                    heading="label"
-                    additionalStyle={styles.sharePreviewText}>
-                    {buildShareText()}
-                  </VixText>
-                </View>
-                <PressableScale style={styles.waButton} onPress={shareToWhatsApp}>
-                  <VixText heading="bold" additionalStyle={styles.waButtonText}>
-                    💬 Share ke WhatsApp
-                  </VixText>
-                </PressableScale>
-              </View>
+              </PressableScale>
             )}
             {formError && (
               <VixText heading="label" additionalStyle={styles.error}>
@@ -297,7 +281,7 @@ export default function ReviveEditorScreen() {
             {exists && (
               <InlineDelete
                 key={targetDay}
-                label="Hapus jurnal ini"
+                label="Hapus Revive ini"
                 busy={busy}
                 onDelete={handleDelete}
               />
@@ -353,31 +337,13 @@ const styles = StyleSheet.create({
   },
   error: { color: Color.DANGER, marginBottom: 8 },
   saveButton: { marginTop: 4 },
-  // Kartu share ke WhatsApp — muncul setelah keempat bagian terisi.
-  shareCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    borderLeftWidth: 3,
-    borderLeftColor: Color.WHATSAPP,
-    padding: 14,
-    gap: 10,
-    marginBottom: 12,
-  },
-  shareTitle: { color: Color.MAIN_DARK },
-  sharePreviewBox: {
-    backgroundColor: Color.BACKGROUND,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  sharePreviewText: { color: Color.TEXT_LABEL },
+  // Tombol share ke WhatsApp — muncul setelah keempat bagian terisi.
   waButton: {
     backgroundColor: Color.WHATSAPP,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
+  shareButton: { marginBottom: 12 },
   waButtonText: { color: Color.TEXT_REVERSE },
 });

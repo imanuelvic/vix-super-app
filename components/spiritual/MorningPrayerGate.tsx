@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
@@ -28,18 +29,21 @@ export function MorningPrayerGate({
   reviveDone,
   onConfirm,
   onOpenRevive,
+  onSkip,
 }: {
   streakCount: number;
-  // True kalau jurnal Revive hari ini sudah diisi → langkah Revive auto-centang.
+  // True kalau Revive hari ini sudah diisi → langkah Revive auto-centang.
   reviveDone: boolean;
   onConfirm: () => Promise<void>;
   onOpenRevive: () => void;
+  // Lewati doa pagi (keadaan mendesak): relakan streak hangus, langsung ke Home.
+  onSkip: () => void;
 }) {
   const [prayed, setPrayed] = useState(false);
-  const [manualRevived, setManualRevived] = useState(false);
-  const revived = reviveDone || manualRevived;
   const [busy, setBusy] = useState(false);
-  const ready = prayed && revived;
+  const [skipConfirm, setSkipConfirm] = useState(false);
+  // Langkah Revive HANYA tercentang otomatis saat Revive hari ini terisi.
+  const ready = prayed && reviveDone;
 
   async function handleConfirm() {
     if (!ready || busy) return;
@@ -76,23 +80,23 @@ export function MorningPrayerGate({
             1. Revive
           </VixText>
           <VixText heading="label" additionalStyle={styles.stepHint}>
-            Baca firman & tulis rhema hari ini di jurnal Revive.
+            Baca firman & tulis rhema hari ini di Revive.
           </VixText>
           <PressableScale style={styles.openRevive} onPress={onOpenRevive}>
             <VixText heading="bold" additionalStyle={styles.openReviveText}>
               📖 Buka Revive →
             </VixText>
           </PressableScale>
-          <PressableScale
-            style={styles.checkRow}
-            onPress={() => {
-              if (!reviveDone) setManualRevived((v) => !v);
-            }}>
-            <CheckCircle checked={revived} />
+          {/* Centang otomatis — TIDAK bisa ditekan manual; tercentang sendiri
+              begitu Revive hari ini tersimpan. */}
+          <View style={styles.checkRow}>
+            <CheckCircle checked={reviveDone} />
             <VixText heading="bold" additionalStyle={styles.checkText}>
-              Sudah Revive hari ini
+              {reviveDone
+                ? 'Sudah Revive hari ini'
+                : 'Terisi otomatis setelah kamu isi Revive'}
             </VixText>
-          </PressableScale>
+          </View>
         </Animated.View>
 
         {/* Langkah 2: Bapa Kami */}
@@ -136,7 +140,29 @@ export function MorningPrayerGate({
             </View>
           )}
         </Animated.View>
+
+        {/* Escape hatch: keadaan mendesak → relakan streak & langsung ke Home */}
+        <PressableScale
+          style={styles.skipButton}
+          onPress={() => setSkipConfirm(true)}>
+          <VixText heading="label" additionalStyle={styles.skipText}>
+            Keadaan mendesak? Lewati doa pagi — streak 🔥 hangus
+          </VixText>
+        </PressableScale>
       </ScrollView>
+
+      {/* Konfirmasi sebelum melewatkan (streak hilang) */}
+      <ConfirmDialog
+        visible={skipConfirm}
+        title="Lewati doa pagi?"
+        detail="Streak 🔥 kamu akan hangus jadi 0. Yakin mau lewati dan langsung ke Home?"
+        confirmLabel="Ya, lewati"
+        onCancel={() => setSkipConfirm(false)}
+        onConfirm={() => {
+          setSkipConfirm(false);
+          onSkip();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -187,6 +213,8 @@ const styles = StyleSheet.create({
   },
   checkText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   confirm: { marginTop: 4 },
+  skipButton: { alignItems: 'center', paddingVertical: 14, marginTop: 8 },
+  skipText: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   confirmDisabled: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 12,

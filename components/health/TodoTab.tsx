@@ -21,6 +21,8 @@ import {
   habitsBySlot,
   newHabitId,
   saveHabits,
+  slotMeta,
+  slotNow,
   type HabitSlot,
   type ScheduledHabit,
 } from '@/lib/habits';
@@ -61,6 +63,10 @@ export function TodoTab({
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
+  // Tab sesi aktif — default ke sesi sesuai jam sekarang (Pagi/Siang/Malam).
+  const [activeSlot, setActiveSlot] = useState<HabitSlot>(() =>
+    slotNow(new Date()),
+  );
 
   // Modal tambah/edit kebiasaan.
   const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);
@@ -78,6 +84,7 @@ export function TodoTab({
   const streakDays = activeStreak(streak, dayId);
   const range = idealWeightRange(profile.heightCm);
   const grouped = habitsBySlot(habits);
+  const activeList = grouped[activeSlot];
 
   // Progress target berat (rumus sama untuk turun / naik).
   let targetPercent = 0;
@@ -351,60 +358,83 @@ export function TodoTab({
           )}
         </View>
 
-        {/* ===== Kebiasaan per sesi: Pagi / Siang / Malam ===== */}
-        {HABIT_SLOTS.map((s) => {
-          const list = grouped[s.key];
-          const slotDone = list.filter((h) => day.done[h.id]).length;
-          return (
-            <View key={s.key} style={styles.slotBlock}>
-              <View style={styles.slotHeader}>
-                <VixText heading="title">
+        {/* ===== Kebiasaan: tab sesi Pagi/Siang/Malam (satu sesi tampil biar
+            tak perlu scroll panjang; default ke sesi jam sekarang) ===== */}
+        <View style={styles.slotTabs}>
+          {HABIT_SLOTS.map((s) => {
+            const list = grouped[s.key];
+            const slotDone = list.filter((h) => day.done[h.id]).length;
+            const active = s.key === activeSlot;
+            const complete = list.length > 0 && slotDone === list.length;
+            return (
+              <PressableScale
+                key={s.key}
+                style={[styles.slotTab, active && styles.slotTabActive]}
+                onPress={() => setActiveSlot(s.key)}>
+                <VixText
+                  heading="bold"
+                  numberOfLines={1}
+                  additionalStyle={[
+                    styles.slotTabLabel,
+                    active && styles.slotTabLabelActive,
+                  ]}>
                   {s.emoji} {s.label}
                 </VixText>
-                <VixText heading="label" additionalStyle={styles.slotCount}>
-                  {slotDone}/{list.length}
-                </VixText>
-              </View>
-
-              {list.map((habit) => {
-                const checked = !!day.done[habit.id];
-                return (
-                  <View
-                    key={habit.id}
-                    style={[styles.row, checked && styles.rowDone]}>
-                    <PressableScale
-                      onPress={() => handleToggle(habit)}
-                      hitSlop={8}>
-                      <CheckCircle checked={checked} />
-                    </PressableScale>
-                    {/* Tekan teks → ubah / urutkan / hapus */}
-                    <PressableScale
-                      style={styles.rowMain}
-                      onPress={() => openEdit(habit)}>
-                      <VixText
-                        heading="paragraph"
-                        additionalStyle={[
-                          styles.habitText,
-                          checked && styles.habitTextDone,
-                        ]}>
-                        {habit.label}
-                      </VixText>
-                    </PressableScale>
-                  </View>
-                );
-              })}
-
-              <PressableScale
-                style={styles.addRow}
-                onPress={() => openAdd(s.key)}>
-                <IconSymbol name="plus" size={16} color={Color.MAIN} />
-                <VixText heading="label" additionalStyle={styles.addText}>
-                  Tambah kebiasaan {s.label.toLowerCase()}
+                <VixText
+                  heading="label"
+                  additionalStyle={[
+                    styles.slotTabCount,
+                    active && styles.slotTabCountActive,
+                  ]}>
+                  {complete ? '✅ beres' : `${slotDone}/${list.length}`}
                 </VixText>
               </PressableScale>
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
+
+        {/* Kebiasaan sesi yang aktif */}
+        <View style={styles.slotBlock}>
+          {activeList.map((habit) => {
+            const checked = !!day.done[habit.id];
+            return (
+              <View
+                key={habit.id}
+                style={[styles.row, checked && styles.rowDone]}>
+                <PressableScale onPress={() => handleToggle(habit)} hitSlop={8}>
+                  <CheckCircle checked={checked} />
+                </PressableScale>
+                {/* Teks tidak bisa ditekan — ubah/urutkan/hapus lewat tombol edit */}
+                <View style={styles.rowMain}>
+                  <VixText
+                    heading="paragraph"
+                    additionalStyle={[
+                      styles.habitText,
+                      checked && styles.habitTextDone,
+                    ]}>
+                    {habit.label}
+                  </VixText>
+                </View>
+                {/* Tombol edit → buka modal ubah / urutkan / hapus */}
+                <PressableScale
+                  style={styles.editButton}
+                  onPress={() => openEdit(habit)}
+                  hitSlop={8}>
+                  <IconSymbol name="pencil" size={18} color={Color.TEXT_LABEL} />
+                </PressableScale>
+              </View>
+            );
+          })}
+
+          <PressableScale
+            style={styles.addRow}
+            onPress={() => openAdd(activeSlot)}>
+            <IconSymbol name="plus" size={16} color={Color.MAIN} />
+            <VixText heading="label" additionalStyle={styles.addText}>
+              Tambah kebiasaan {slotMeta(activeSlot).label.toLowerCase()}
+            </VixText>
+          </PressableScale>
+        </View>
 
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
@@ -599,15 +629,29 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   targetBarFill: { height: '100%', borderRadius: 4, backgroundColor: Color.MAIN },
-  // Blok sesi (Pagi/Siang/Malam)
-  slotBlock: { marginBottom: 16 },
-  slotHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  // Tab sesi (Pagi/Siang/Malam) — segmen yang bisa dipencet.
+  slotTabs: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  slotTab: {
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.CONTAINER,
   },
-  slotCount: { color: Color.TEXT_LABEL },
+  slotTabActive: {
+    borderColor: Color.MAIN,
+    backgroundColor: Color.MAIN_TRANSPARENT,
+  },
+  slotTabLabel: { color: Color.TEXT_LABEL },
+  slotTabLabelActive: { color: Color.MAIN_DARK },
+  slotTabCount: { color: Color.TEXT_PLACEHOLDER },
+  slotTabCountActive: { color: Color.MAIN },
+  // Blok sesi aktif
+  slotBlock: { marginBottom: 16 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -625,6 +669,14 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN_LIGHT,
   },
   rowMain: { flex: 1 },
+  editButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Color.CONTRAST_CONTAINER,
+  },
   habitText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   habitTextDone: {
     color: Color.TEXT_PLACEHOLDER,

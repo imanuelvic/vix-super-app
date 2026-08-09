@@ -41,7 +41,8 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Form catat pemeriksaan baru.
+  // Form catat pemeriksaan baru (muncul di bottom sheet saat tombol ditekan).
+  const [addOpen, setAddOpen] = useState(false);
   const [type, setType] = useState<CheckupType>('tensi');
   const [value, setValue] = useState('');
   const [note, setNote] = useState('');
@@ -86,11 +87,22 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
       setValue('');
       setNote('');
       setDate(new Date());
+      setAddOpen(false); // tutup sheet → langsung terlihat masuk ke Riwayat
     } catch {
       setFormError(SAVE_ERROR);
     } finally {
       setSaving(false);
     }
+  }
+
+  // Buka bottom sheet catat pemeriksaan dengan form yang bersih.
+  function openAdd() {
+    setType('tensi');
+    setValue('');
+    setNote('');
+    setDate(new Date());
+    setFormError(null);
+    setAddOpen(true);
   }
 
   function openEdit(c: Checkup) {
@@ -140,9 +152,6 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             <VixText heading="bold" additionalStyle={styles.navTextInfo}>
               💪🏻 Info
             </VixText>
-            <VixText heading="label" additionalStyle={styles.navTextInfo}>
-              QnA & tips
-            </VixText>
           </PressableScale>
           <PressableScale
             style={[styles.navButton, styles.navButtonDonor]}
@@ -150,18 +159,12 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             <VixText heading="bold" additionalStyle={styles.navTextDonor}>
               🩸 Donor
             </VixText>
-            <VixText heading="label" additionalStyle={styles.navTextDonor}>
-              Jadwal donor
-            </VixText>
           </PressableScale>
           <PressableScale
             style={styles.navButton}
             onPress={() => router.push('/diseases')}>
             <VixText heading="bold" additionalStyle={styles.navText}>
               🤧 Disease
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.navText}>
-              Riwayat sakit
             </VixText>
           </PressableScale>
         </View>
@@ -176,44 +179,13 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           />
         ))}
 
-        {/* ===== Catat pemeriksaan baru ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Catat Pemeriksaan
-        </VixText>
-        <View style={styles.chipRow}>
-          {CHECKUP_TYPES.map((meta) => (
-            <Chip
-              key={meta.key}
-              label={`${meta.icon} ${meta.label}`}
-              active={type === meta.key}
-              onPress={() => setType(meta.key)}
-              additionalStyle={styles.chipFlex}
-            />
-          ))}
-        </View>
-        <FormInput
-          style={styles.formGap}
-          placeholder="Hasil pemeriksaan"
-          value={value}
-          onChangeText={setValue}
-          editable={!saving}
+        {/* ===== Catat pemeriksaan baru → buka bottom sheet ===== */}
+        <PrimaryButton
+          label="Catat Pemeriksaan"
+          icon="plus"
+          onPress={openAdd}
+          additionalStyle={styles.addButton}
         />
-        <FormInput
-          style={styles.formGap}
-          placeholder="Catatan"
-          value={note}
-          onChangeText={setNote}
-          editable={!saving}
-        />
-        <View style={styles.formGap}>
-          <DateField value={date} onChange={setDate} />
-        </View>
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
-        <PrimaryButton label="Simpan" busy={saving} onPress={handleAdd} />
 
         {/* ===== Riwayat ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
@@ -251,6 +223,69 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           onChange={setPage}
         />
       </KeyboardAwareScrollView>
+
+      {/* Bottom sheet catat pemeriksaan baru */}
+      <SheetModal
+        visible={addOpen}
+        title="Catat Pemeriksaan"
+        subtitle="Simpan hasil tekanan / gula darah"
+        onClose={() => setAddOpen(false)}>
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Jenis pemeriksaan
+        </VixText>
+        <View style={styles.chipRow}>
+          {CHECKUP_TYPES.map((meta) => (
+            <Chip
+              key={meta.key}
+              label={`${meta.icon} ${meta.label}`}
+              active={type === meta.key}
+              onPress={() => setType(meta.key)}
+              additionalStyle={styles.chipFlex}
+            />
+          ))}
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Hasil pemeriksaan
+        </VixText>
+        <FormInput
+          style={styles.formGap}
+          placeholder={type === 'tensi' ? 'mis. 120/80' : 'mis. 103'}
+          value={value}
+          onChangeText={setValue}
+          editable={!saving}
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Catatan (opsional)
+        </VixText>
+        <FormInput
+          style={styles.formGap}
+          placeholder="mis. puasa / di Lab NDC"
+          value={note}
+          onChangeText={setNote}
+          editable={!saving}
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Tanggal
+        </VixText>
+        <View style={styles.formGap}>
+          <DateField value={date} onChange={setDate} />
+        </View>
+
+        {formError && (
+          <VixText heading="label" additionalStyle={styles.error}>
+            {formError}
+          </VixText>
+        )}
+        <DualButtons
+          confirmLabel="Simpan"
+          busy={saving}
+          onCancel={() => setAddOpen(false)}
+          onConfirm={handleAdd}
+        />
+      </SheetModal>
 
       {/* Bottom sheet edit pemeriksaan */}
       <SheetModal
@@ -384,7 +419,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Color.ACCENT_DARK,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 16,
     gap: 2,
   },
   navText: { color: Color.ACCENT_DARK },
@@ -434,6 +469,8 @@ const styles = StyleSheet.create({
   },
   adviceText: { color: Color.TEXT_PARAGRAPH },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
+  addButton: { marginTop: 4, marginBottom: 4 },
+  fieldLabel: { marginBottom: 6 },
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   chipFlex: { flex: 1 },
   formGap: { marginBottom: 10 },

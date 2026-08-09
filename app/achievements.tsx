@@ -22,7 +22,16 @@ import {
   type LoginStreak,
 } from '@/lib/achievements';
 import { formatShortRupiah } from '@/lib/format';
-import { activeStreak, dayDocId, subscribeStreak, type Streak } from '@/lib/health';
+import {
+  activeStreak,
+  dayDocId,
+  stepAchievements,
+  stepTierLastDates,
+  subscribeStepDays,
+  subscribeStreak,
+  type StepDaysMap,
+  type Streak,
+} from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import { formatRupiah } from '@/lib/transactions';
@@ -37,6 +46,7 @@ export default function AchievementsScreen() {
   const [login, setLogin] = useState<LoginStreak | null>(null);
   const [habit, setHabit] = useState<Streak | null>(null);
   const [revive, setRevive] = useState<LoginStreak | null>(null);
+  const [stepDays, setStepDays] = useState<StepDaysMap>({});
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,11 +60,13 @@ export default function AchievementsScreen() {
       subscribeLoginStreak(user.uid, setLogin, fail),
       subscribeStreak(user.uid, setHabit, fail),
       subscribeReviveStreak(user.uid, setRevive, fail),
+      subscribeStepDays(user.uid, setStepDays, fail),
       subscribeSelfRewardBalance(user.uid, setBalance, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
+  const stepAch = stepAchievements(stepDays);
   const stats: AchievementStats = {
     loginCount: login?.count ?? 0,
     loginBest: login?.best ?? 0,
@@ -62,6 +74,8 @@ export default function AchievementsScreen() {
     habitStreak: activeStreak(habit, dayDocId(new Date())),
     reviveBest: revive?.best ?? 0,
     reviveTotal: revive?.total ?? 0,
+    bestSteps: stepAch.best?.steps ?? 0,
+    stepTierLastDate: stepTierLastDates(stepDays),
   };
   const unlocked = ACHIEVEMENTS.filter((a) => a.of(stats) >= a.target).length;
 
@@ -226,6 +240,11 @@ export default function AchievementsScreen() {
                     </VixText>
                   </View>
                   <VixText heading="label">{a.desc}</VixText>
+                  {a.detail?.(stats) ? (
+                    <VixText heading="label" additionalStyle={styles.detailText}>
+                      {a.detail(stats)}
+                    </VixText>
+                  ) : null}
                   <View style={styles.barTrack}>
                     <View
                       style={[
@@ -300,6 +319,7 @@ const styles = StyleSheet.create({
   rowIcon: { fontSize: 26, lineHeight: 32 },
   rowMain: { flex: 1, gap: 4 },
   rowTitle: { color: Color.TEXT_TITLE },
+  detailText: { color: Color.MAIN_DARK },
   doneText: { color: Color.SUCCESS },
   lockText: { color: Color.TEXT_PLACEHOLDER },
   // Progress bar (kategori & tiap pencapaian).

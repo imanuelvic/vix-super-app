@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
-import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
+import { CryptoTab } from '@/components/investment/CryptoTab';
 import { GoldTab } from '@/components/investment/GoldTab';
-import { useAuth } from '@/contexts/auth';
-import { subscribeGold, type GoldEntry } from '@/lib/investment';
-import { LOAD_ERROR } from '@/lib/messages';
 
 type InvestmentTab = 'crypto' | 'emas' | 'saham';
 
@@ -22,25 +18,10 @@ const TABS: BottomTab<InvestmentTab>[] = [
   { key: 'saham', label: 'Saham', icon: 'chart.bar.fill' },
 ];
 
-// Investment 📈 — pantau & pelajari harga aset. Emas aktif (grafik + catatan);
-// Crypto & Saham menyusul.
+// Investment 📈 — pantau & pelajari harga aset LIVE dari Yahoo Finance. Emas &
+// Crypto (BTC) aktif; Saham menyusul.
 export default function InvestmentScreen() {
-  const { user } = useAuth();
   const { tab, scrollKey, onTabPress } = useTabScroll<InvestmentTab>('emas');
-  const [gold, setGold] = useState<GoldEntry[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeGold(
-      user.uid,
-      (next) => {
-        setGold(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -50,21 +31,13 @@ export default function InvestmentScreen() {
         subtitle="Pantau & pelajari asetmu"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
-
       <View style={styles.content} key={scrollKey}>
         {tab === 'emas' ? (
-          gold === null ? (
-            <LoadingCenter />
-          ) : (
-            <GoldTab entries={gold} />
-          )
+          <GoldTab />
+        ) : tab === 'crypto' ? (
+          <CryptoTab />
         ) : (
-          <ComingSoon label={tab === 'crypto' ? 'Crypto' : 'Saham'} />
+          <ComingSoon label="Saham" />
         )}
       </View>
 
@@ -89,7 +62,6 @@ function ComingSoon({ label }: { label: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
   center: {
     flex: 1,

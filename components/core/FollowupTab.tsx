@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -65,8 +66,16 @@ export function FollowupTab({
   const [error, setError] = useState<string | null>(null);
   // "Ganti pertanyaan" → seed acak per orang untuk memilih pertanyaan lain.
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
-  // Ide Pendekatan tiap kartu bisa dibuka/tutup — default tertutup (ringkas).
-  const [openTips, setOpenTips] = useState<Record<string, boolean>>({});
+  // Modal tengah: pokok doa 1 CL (follow up), dan ide pendekatan 1 CL.
+  const [prayerModal, setPrayerModal] = useState<CoreLeader | null>(null);
+  const [tipsModal, setTipsModal] = useState<{
+    title: string;
+    phone: string | null;
+    question: string;
+    tips: { label: string; text: string }[];
+    done: boolean;
+    onDone: () => void;
+  } | null>(null);
 
   // ===== Idea For CORE — form tambah/edit =====
   const [editingIdea, setEditingIdea] = useState<CoreIdea | 'new' | null>(null);
@@ -216,7 +225,7 @@ export function FollowupTab({
     }
   }
 
-  // ===== Pokok Doa Bulanan =====
+  // ===== Doa Rantai (pokok doa bergilir) =====
   const nowDate = new Date();
   const monthTitle = `${MONTH_NAMES[nowDate.getMonth()]} ${nowDate.getFullYear()}`;
   const monthPoints = monthlyPointsFor(monthlyPrayers, nowDate);
@@ -230,14 +239,21 @@ export function FollowupTab({
     if (!user) return;
     setError(null);
     const monthId = monthDocId(nowDate);
+    // Bulan baru → reset penanda follow-up, TAPI poin & tanggal update pokok doa
+    // tidak dihapus (tetap tersimpan; saveMonthlyPrayers menulis ulang dokumen).
     const base = isCurrentMonthPrayers(monthlyPrayers, nowDate)
       ? monthlyPrayers
-      : { monthId, points: {}, followedDayId: {} };
+      : {
+          points: monthlyPrayers.points,
+          followedDayId: {} as Record<string, string>,
+          updatedAt: monthlyPrayers.updatedAt,
+        };
     try {
       await saveMonthlyPrayers(user.uid, {
         monthId,
         points: base.points,
         followedDayId: { ...base.followedDayId, [leaderId]: dayId },
+        updatedAt: base.updatedAt,
       });
     } catch {
       setError('Gagal menyimpan. Coba lagi.');
@@ -278,7 +294,6 @@ export function FollowupTab({
   }) {
     const topic = weeklyFollowupTopic(person, id, dayId, topicOverride[id]);
     const tips = personalityTips(person);
-    const tipsOpen = !!openTips[id];
     // Ada nomor → seluruh kartu bisa ditekan untuk chat WA. Menekan kartu =
     // menindaklanjuti orang ini, jadi SEKALIGUS menandai "sudah follow up hari
     // ini" (badge di Home ikut hilang). Border hijau WA sebagai penanda.
@@ -347,42 +362,23 @@ export function FollowupTab({
           </View>
         )}
 
-        {/* Ide pendekatan sesuai kepribadian — kartu modern & berlapis:
-            tiap ide punya pill label (bold) + deskripsi cara pendekatannya. */}
+        {/* Ide pendekatan → buka modal tengah (isi ide + tombol WA).
+            PressableScale bersarang: menekannya membuka modal, tidak ikut
+            memicu chat WA kartu (inner menangkap sentuhan). */}
         {tips.length > 0 && (
-          <View style={styles.tipBox}>
-            {/* Header bisa diketuk untuk buka/tutup — default tertutup (ringkas).
-                PressableScale bersarang: menekan header hanya toggle, tidak
-                ikut memicu chat WA kartu (inner menangkap sentuhan). */}
-            <PressableScale
-              style={styles.tipHeaderRow}
-              onPress={() =>
-                setOpenTips((prev) => ({ ...prev, [id]: !prev[id] }))
-              }>
-              <VixText additionalStyle={styles.tipHeaderEmoji}>💡</VixText>
-              <VixText heading="bold" additionalStyle={styles.tipHeader}>
-                Ide Pendekatan
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.tipChevron}>
-                {tipsOpen ? '▴' : `▾ ${tips.length}`}
-              </VixText>
-            </PressableScale>
-            {tipsOpen &&
-              tips.map((t) => (
-                <View key={t.label} style={styles.tipRow}>
-                  <View style={styles.tipBadge}>
-                    <VixText
-                      heading="label"
-                      additionalStyle={styles.tipBadgeText}>
-                      {t.label}
-                    </VixText>
-                  </View>
-                  <VixText heading="paragraph" additionalStyle={styles.tipText}>
-                    {t.text}
-                  </VixText>
-                </View>
-              ))}
-          </View>
+          <PressableScale
+            style={styles.tipOpenButton}
+            onPress={() =>
+              setTipsModal({ title, phone, question: topic.question, tips, done, onDone })
+            }>
+            <VixText additionalStyle={styles.tipHeaderEmoji}>💡</VixText>
+            <VixText heading="bold" additionalStyle={styles.tipHeader}>
+              Ide Pendekatan
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.tipChevron}>
+              {tips.length} ›
+            </VixText>
+          </PressableScale>
         )}
 
         {/* Status: sudah follow up, belum ada nomor, atau ajakan ketuk kartu. */}
@@ -420,78 +416,34 @@ export function FollowupTab({
     );
   }
 
-  // Kartu follow up pokok doa bulanan untuk satu CL (Sel/Kam/Sab).
+  // Baris ringkas 1 CL untuk follow up pokok doa (Sel/Kam/Sab). Diketuk →
+  // modal tengah berisi seluruh pokok doa + tombol WA.
   function renderPrayerCard(leader: CoreLeader) {
     const pts = monthPoints[leader.id] ?? [];
     const done =
       isCurrentMonthPrayers(monthlyPrayers, nowDate) &&
       monthlyPrayers.followedDayId[leader.id] === dayId;
-    const canChat = !!leader.phone;
-    const waText = `Shalom ${leader.name}! 🙏\n\nAku lagi mendoakan kamu bulan ini. Gimana kabar & perkembangan pergumulanmu?`;
     return (
       <PressableScale
         key={leader.id}
-        style={[
-          styles.card,
-          canChat && !done && styles.cardChat,
-          done && styles.cardDone,
-        ]}
-        onPress={
-          canChat
-            ? () => {
-                openWhatsApp(leader.phone!, waText);
-                if (!done) handlePrayerDone(leader.id);
-              }
-            : undefined
-        }>
-        <View style={styles.cardHeader}>
-          <VixText heading="bold" additionalStyle={styles.leaderName}>
-            {leader.heart} {leader.name}
-          </VixText>
-          <View style={styles.categoryBadge}>
-            <VixText heading="label" additionalStyle={styles.categoryText}>
-              📅 {pts.length} poin
-            </VixText>
-          </View>
-        </View>
-        {/* Daftar pokok doa bulan ini */}
-        <View style={styles.prayerPointsBox}>
-          {pts.map((p, i) => (
-            <VixText
-              key={i}
-              heading="paragraph"
-              additionalStyle={styles.prayerPointText}>
-              🙏 {p}
-            </VixText>
-          ))}
-        </View>
-        {done ? (
-          <VixText heading="label" additionalStyle={styles.doneText}>
-            ✅ Sudah difollowup hari ini
-          </VixText>
-        ) : !leader.phone ? (
-          <VixText heading="label" additionalStyle={styles.noPhoneText}>
-            📱 Isi nomor HP di tab CORE Leader untuk chat WA.
-          </VixText>
-        ) : (
-          <VixText heading="label" additionalStyle={styles.chatHint}>
-            💬 Ketuk kartu untuk chat WA & tandai sudah difollowup
-          </VixText>
-        )}
-        {!done && (
-          <View style={styles.buttonRow}>
-            <PressableScale
-              style={styles.doneButton}
-              onPress={() => handlePrayerDone(leader.id)}>
-              <VixText heading="bold" additionalStyle={styles.doneButtonText}>
-                ✅ Selesai difollowup
-              </VixText>
-            </PressableScale>
-          </View>
-        )}
+        style={[styles.prayerRow, done && styles.prayerRowDone]}
+        onPress={() => setPrayerModal(leader)}>
+        <VixText heading="bold" additionalStyle={styles.prayerRowName}>
+          {leader.heart} {leader.name}
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.prayerRowMeta}>
+          {done ? '✅ Selesai' : `${pts.length} poin ›`}
+        </VixText>
       </PressableScale>
     );
   }
+
+  // Nilai untuk modal pokok doa (tergantung CL yang sedang dipilih).
+  const pmPts = prayerModal ? monthPoints[prayerModal.id] ?? [] : [];
+  const pmDone =
+    prayerModal != null &&
+    isCurrentMonthPrayers(monthlyPrayers, nowDate) &&
+    monthlyPrayers.followedDayId[prayerModal.id] === dayId;
 
   return (
     <>
@@ -544,13 +496,13 @@ export function FollowupTab({
         </View>
       )}
 
-      {/* ===== Pokok Doa Bulanan: isi (awal bulan) / follow up (Sel/Kam/Sab) ===== */}
+      {/* ===== Doa Rantai: isi pokok doa (awal bulan) / follow up (Sel/Kam/Sab) ===== */}
       {monthNeedsFill ? (
         <PressableScale
           style={styles.prayerFillCard}
           onPress={() => router.push('/monthly-prayers')}>
           <VixText heading="title" additionalStyle={styles.prayerFillTitle}>
-            📅 Pokok Doa Bulanan — {monthTitle}
+            🔗 Doa Rantai — {monthTitle}
           </VixText>
           <VixText heading="label" additionalStyle={styles.prayerFillText}>
             Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader dulu — ini yang
@@ -564,20 +516,24 @@ export function FollowupTab({
         </PressableScale>
       ) : isPrayerDay && prayerLeadersToday.length > 0 ? (
         <>
-          <View style={styles.prayerHeader}>
-            <VixText heading="title">📅 Follow Up Pokok Doa</VixText>
-            <PressableScale
-              onPress={() => router.push('/monthly-prayers')}
-              hitSlop={8}>
-              <VixText heading="bold" additionalStyle={styles.prayerEditText}>
-                Lihat semua
+          <View style={styles.doaRantaiCard}>
+            <View style={styles.doaRantaiTop}>
+              <VixText heading="title" additionalStyle={styles.doaRantaiTitle}>
+                🔗  Doa Rantai
               </VixText>
-            </PressableScale>
+              <PressableScale
+                onPress={() => router.push('/monthly-prayers')}
+                hitSlop={8}>
+                <VixText heading="bold" additionalStyle={styles.doaRantaiLink}>
+                  Lihat semua ›
+                </VixText>
+              </PressableScale>
+            </View>
+            <VixText heading="label" additionalStyle={styles.doaRantaiSub}>
+              Bergilir — hari ini {prayerLeadersToday.length} CORE Leader.
+              Doakan & tanya perkembangan pergumulan mereka 🙏
+            </VixText>
           </View>
-          <VixText heading="label" additionalStyle={styles.prayerSub}>
-            Bergilir — hari ini {prayerLeadersToday.length} CORE Leader. Doakan &
-            tanya perkembangan pergumulan mereka 🙏
-          </VixText>
           {prayerLeadersToday.map((l) => renderPrayerCard(l))}
         </>
       ) : null}
@@ -585,7 +541,7 @@ export function FollowupTab({
       {/* ===== Follow Up Mingguan: fokus 2 CORE Leader ===== */}
       <View style={styles.weekCard}>
         <VixText heading="title" additionalStyle={styles.weekTitle}>
-          🔗  Doa Rantai
+          🎯  Follow Up Mingguan
         </VixText>
         <VixText additionalStyle={styles.weekLeadersText}>
           {weekLeaders.length > 0
@@ -713,6 +669,123 @@ export function FollowupTab({
         onConfirm={handleSaveIdea}
       />
     </SheetModal>
+
+    {/* Modal tengah: seluruh pokok doa 1 CL + tombol WA */}
+    <CenterDialog visible={!!prayerModal} onClose={() => setPrayerModal(null)}>
+      {prayerModal && (
+        <>
+          <VixText heading="title" additionalStyle={styles.modalTitle}>
+            {prayerModal.heart} {prayerModal.name}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.modalSub}>
+            🙏 Pokok doa bulan ini
+          </VixText>
+          <ScrollView style={styles.modalScroll}>
+            {pmPts.length > 0 ? (
+              pmPts.map((p, i) => (
+                <View key={i} style={styles.modalPointBox}>
+                  <VixText
+                    heading="paragraph"
+                    additionalStyle={styles.modalPointText}>
+                    🙏 {p}
+                  </VixText>
+                </View>
+              ))
+            ) : (
+              <VixText heading="label" additionalStyle={styles.noPhoneText}>
+                Belum ada pokok doa bulan ini.
+              </VixText>
+            )}
+          </ScrollView>
+          {pmDone ? (
+            <VixText heading="label" additionalStyle={styles.doneText}>
+              ✅ Sudah difollowup hari ini
+            </VixText>
+          ) : !prayerModal.phone ? (
+            <VixText heading="label" additionalStyle={styles.noPhoneText}>
+              📱 Isi nomor HP di tab CORE Leader untuk chat WA.
+            </VixText>
+          ) : (
+            <PressableScale
+              style={styles.modalWaButton}
+              onPress={() => {
+                openWhatsApp(
+                  prayerModal.phone!,
+                  `Shalom ${prayerModal.name}! 🙏\n\nAku lagi mendoakan kamu bulan ini. Gimana kabar & perkembangan pergumulanmu?`,
+                );
+                if (!pmDone) handlePrayerDone(prayerModal.id);
+                setPrayerModal(null);
+              }}>
+              <VixText heading="bold" additionalStyle={styles.modalWaText}>
+                💬 Follow up via WhatsApp
+              </VixText>
+            </PressableScale>
+          )}
+          <PressableScale
+            style={styles.modalClose}
+            onPress={() => setPrayerModal(null)}>
+            <VixText heading="label" additionalStyle={styles.modalCloseText}>
+              Tutup
+            </VixText>
+          </PressableScale>
+        </>
+      )}
+    </CenterDialog>
+
+    {/* Modal tengah: ide pendekatan 1 CL + tombol WA */}
+    <CenterDialog visible={!!tipsModal} onClose={() => setTipsModal(null)}>
+      {tipsModal && (
+        <>
+          <VixText heading="title" additionalStyle={styles.modalTitle}>
+            💡 Ide Pendekatan
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.modalSub}>
+            untuk {tipsModal.title}
+          </VixText>
+          <ScrollView style={styles.modalScroll}>
+            {tipsModal.tips.map((t) => (
+              <View key={t.label} style={styles.tipRow}>
+                <View style={styles.tipBadge}>
+                  <VixText heading="label" additionalStyle={styles.tipBadgeText}>
+                    {t.label}
+                  </VixText>
+                </View>
+                <VixText heading="paragraph" additionalStyle={styles.tipText}>
+                  {t.text}
+                </VixText>
+              </View>
+            ))}
+          </ScrollView>
+          {tipsModal.phone ? (
+            <PressableScale
+              style={styles.modalWaButton}
+              onPress={() => {
+                openWhatsApp(
+                  tipsModal.phone!,
+                  `Shalom! 🙏\n\n${tipsModal.question}`,
+                );
+                if (!tipsModal.done) tipsModal.onDone();
+                setTipsModal(null);
+              }}>
+              <VixText heading="bold" additionalStyle={styles.modalWaText}>
+                💬 Chat via WhatsApp
+              </VixText>
+            </PressableScale>
+          ) : (
+            <VixText heading="label" additionalStyle={styles.noPhoneText}>
+              📱 Isi nomor HP di tab CORE Leader untuk chat WA.
+            </VixText>
+          )}
+          <PressableScale
+            style={styles.modalClose}
+            onPress={() => setTipsModal(null)}>
+            <VixText heading="label" additionalStyle={styles.modalCloseText}>
+              Tutup
+            </VixText>
+          </PressableScale>
+        </>
+      )}
+    </CenterDialog>
     </>
   );
 }
@@ -748,7 +821,7 @@ const styles = StyleSheet.create({
   },
   weekTitle: { color: Color.TEXT_REVERSE },
   weekLeadersText: { color: Color.MAIN_LIGHT },
-  // Pokok Doa Bulanan — kartu ajakan isi (awal bulan), tema spiritual (ungu).
+  // Doa Rantai — kartu ajakan isi pokok doa (awal bulan), tema spiritual (ungu).
   prayerFillCard: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 16,
@@ -769,23 +842,25 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   prayerFillButtonText: { color: Color.TEXT_REVERSE },
-  prayerHeader: {
+  // Kartu header "Doa Rantai" (follow up pokok doa bergilir Sel/Kam/Sab) —
+  // gaya kartu hijau tua yang menonjol, senada dengan kartu Follow Up Mingguan.
+  doaRantaiCard: {
+    backgroundColor: Color.MAIN_DARK,
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  doaRantaiTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 4,
+    gap: 8,
   },
-  prayerEditText: { color: Color.MAIN },
-  prayerSub: { color: Color.TEXT_LABEL, marginBottom: 10 },
-  prayerPointsBox: {
-    backgroundColor: Color.BACKGROUND,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 4,
-  },
-  prayerPointText: { color: Color.TEXT_TITLE },
+  doaRantaiTitle: { flex: 1, color: Color.TEXT_REVERSE },
+  doaRantaiLink: { color: Color.MAIN_LIGHT },
+  doaRantaiSub: { color: Color.TEXT_ON_DARK_MUTED },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -835,15 +910,16 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   persBadgeText: { color: Color.MAIN_DARK },
-  tipBox: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.ACCENT_DARK,
-    padding: 12,
-    gap: 8,
+  // Tombol pembuka modal Ide Pendekatan
+  tipOpenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Color.ACCENT,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  tipHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tipHeaderEmoji: { fontSize: 15, lineHeight: 20 },
   tipHeader: { color: Color.ACCENT_DARK, letterSpacing: 0.2 },
   tipChevron: { color: Color.ACCENT_DARK, marginLeft: 'auto' },
@@ -872,6 +948,49 @@ const styles = StyleSheet.create({
   waText: { color: Color.TEXT_REVERSE },
   noPhoneText: { color: Color.TEXT_PLACEHOLDER },
   chatHint: { color: Color.WHATSAPP },
+  // Baris ringkas CL untuk follow up pokok doa (daftar nama)
+  prayerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Color.WHATSAPP,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 10,
+  },
+  prayerRowDone: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderColor: Color.MAIN_LIGHT,
+  },
+  prayerRowName: { flex: 1, color: Color.TEXT_TITLE },
+  prayerRowMeta: { color: Color.TEXT_LABEL },
+  // Modal tengah (pokok doa & ide pendekatan)
+  modalTitle: { color: Color.TEXT_TITLE, marginBottom: 2 },
+  modalSub: { color: Color.TEXT_LABEL, marginBottom: 10 },
+  modalScroll: { maxHeight: 320, marginBottom: 12 },
+  modalPointBox: {
+    backgroundColor: Color.CONTAINER,
+    borderLeftWidth: 3,
+    borderLeftColor: Color.MAIN,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  modalPointText: { color: Color.TEXT_TITLE },
+  modalWaButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Color.WHATSAPP,
+  },
+  modalWaText: { color: Color.TEXT_REVERSE },
+  modalClose: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
+  modalCloseText: { color: Color.TEXT_LABEL },
   buttonRow: { flexDirection: 'row', gap: 10 },
   shuffleButton: {
     flex: 1,

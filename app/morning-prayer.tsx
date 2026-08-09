@@ -5,6 +5,7 @@ import { MorningPrayerGate } from '@/components/spiritual/MorningPrayerGate';
 import { useAuth } from '@/contexts/auth';
 import {
   recordDailyPrayer,
+  skipDailyPrayer,
   subscribeLoginStreak,
   type LoginStreak,
 } from '@/lib/achievements';
@@ -29,7 +30,6 @@ export default function MorningPrayerScreen() {
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
-  // Sudah Revive hari ini? (streak Revive terupdate saat jurnal hari ini
   // disimpan) → gate mencentang langkah Revive otomatis.
   const reviveDone = reviveStreak?.lastDayId === dayDocId(new Date());
 
@@ -42,12 +42,23 @@ export default function MorningPrayerScreen() {
     router.replace('/');
   }
 
+  function handleSkip() {
+    // Keadaan mendesak: streak hangus tapi hari ini ditandai selesai supaya
+    // lock screen tidak muncul lagi, lalu langsung ke Home. Fire-and-forget
+    // biar tidak hang saat offline.
+    if (user) {
+      skipDailyPrayer(user.uid, login, new Date()).catch(() => {});
+    }
+    router.replace('/');
+  }
+
   return (
     <MorningPrayerGate
       streakCount={login?.count ?? 0}
       reviveDone={reviveDone}
       onConfirm={handleConfirm}
       onOpenRevive={() => router.push('/revive')}
+      onSkip={handleSkip}
     />
   );
 }
