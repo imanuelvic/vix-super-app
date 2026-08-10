@@ -370,9 +370,6 @@ export function evaluateCheckup(
   return { status, label, tip };
 }
 
-/** Lewat dari ini (hari) dianggap sudah waktunya periksa lagi (≈ 6 bulan). */
-export const CHECKUP_DUE_DAYS = 180;
-
 /** Jadwal cek berikutnya = 6 bulan setelah pemeriksaan terakhir. */
 export function checkupNextDate(latest: Checkup): Date {
   const next = latest.date.toDate();

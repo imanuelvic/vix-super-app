@@ -1,10 +1,9 @@
 {
   "name": "vix-super-app",
   "main": "expo-router/entry",
-  "version": "1.0.0",
-  "packageManager": "yarn@1.22.19",
+  "version": "1.2.0",
   "engines": {
-    "node": ">=18.20.4 <19",
+    "node": ">=20.19.4",
     "yarn": "1.22.19"
   },
   "scripts": {

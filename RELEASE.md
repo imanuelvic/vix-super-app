@@ -71,22 +71,22 @@ Profil di `eas.json` → channel → branch update:
 
 ---
 
-## Konsistensi versi antar-mesin (laptop ↔ iMac)
+## Konsistensi versi (antar-mesin & antar-project)
 
-Kerja di 2 mesin (laptop Windows & iMac) yang sinkron lewat `git push/pull`.
-Supaya `pull` lalu `eas update` di iMac berjalan mulus, toolchain dikunci sama.
+Node diatur lewat **fnm** (auto-switch per folder, baca `.node-version`).
+Panduan lengkap setup + workflow 2 project (vix & NDC) ada di
+**`PEDOMAN-VERSI.md`**.
 
-**Toolchain terkunci:** Node **18.20.4** · yarn **1.22.19** · eas-cli **≥ 21.5.0**
-(dipatok lewat `.nvmrc`, `.node-version`, `engines` + `packageManager` di
-`package.json`, dan `cli.version` di `eas.json`).
+**Toolchain vix (SDK 54):** Node **20.19.4** · yarn **1.22.19** · eas-cli **≥ 21**.
+Dipatok lewat `.nvmrc` / `.node-version` (dibaca fnm) + `engines` di
+`package.json` + `cli.version` di `eas.json`.
 
-**Alur wajib tiap habis `git pull` (di mesin mana pun):**
+**Alur tiap habis `git pull` (di mesin mana pun):**
 
-1. Pastikan Node 18.20.4 → `node -v` (di iMac: `nvm use` membaca `.nvmrc`).
-2. `corepack enable` → yarn otomatis 1.22.19 (baca `packageManager`).
-3. `yarn install --frozen-lockfile` → pasang PERSIS dari `yarn.lock`.
-4. `git status` → `yarn.lock` HARUS tetap bersih = dependency identik.
-5. `npx expo-doctor` (`yarn doctor`) → cek kesehatan & native-module mismatch.
+1. `node -v` → v20.19.x (fnm auto-switch begitu `cd` ke folder vix).
+2. `yarn install --frozen-lockfile` → pasang PERSIS dari `yarn.lock`.
+3. `git status` → `yarn.lock` harus tetap bersih = dependency identik.
+4. `npx expo-doctor` (`yarn doctor`) → cek kesehatan & native-module mismatch.
 
 **Aturan emas:** SELALU pakai **`yarn`**, JANGAN `npm install` — `npm` bikin
 `package-lock.json` dan bisa menggeser versi. `yarn.lock` = sumber kebenaran,
@@ -95,13 +95,8 @@ wajib ikut commit.
 **Klarifikasi mitos:** beda versi Node/EAS antar-mesin **BUKAN** sebab `eas
 update` tak nyampai / app force-quit. Sebab sebenarnya ada di bagian
 **Troubleshooting** di bawah (modul native ditambah tanpa build baru, `version`
-naik, atau channel beda). Yang menjaga konsistensi antar-mesin = **lockfile +
-package manager sama**, bukan angka versi Node-nya.
-
-**Catatan Node 18:** 18.20.4 di bawah minimum resmi SDK 54 (≥ 20.19.4) → Metro /
-regen `.expo/types/router.d.ts` tetap manual. Kalau mau mulus nanti, upgrade
-**kedua** mesin ke Node 20 LTS bersamaan (ubah `.nvmrc`, `.node-version`,
-`engines` sekaligus).
+naik, atau channel beda). Yang menjaga konsistensi = **lockfile + Node yang
+sama** (via fnm), bukan sekadar angka versi tool.
 
 ---
 
