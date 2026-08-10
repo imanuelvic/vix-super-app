@@ -320,7 +320,7 @@ export function VisitationTab({
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="Judul singkat (mis. 2nd Visitation)"
+          placeholder="Judul singkat"
           value={fNote}
           onChangeText={setFNote}
           editable={!busy}
@@ -331,7 +331,7 @@ export function VisitationTab({
         </VixText>
         <FormInput
           style={[styles.textArea, styles.formGap]}
-          placeholder="Apa yang akan dibahas ke mereka…"
+          placeholder="Agenda pertemuan"
           value={fAgenda}
           onChangeText={setFAgenda}
           editable={!busy}

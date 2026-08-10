@@ -47,7 +47,7 @@ const SECTIONS: {
       { key: 'fullName', label: 'Nama lengkap' },
       { key: 'nickname', label: 'Nama panggilan' },
       { key: 'birthPlace', label: 'Tempat lahir' },
-      { key: 'birthDate', label: 'Tanggal lahir', placeholder: 'mis. 01 Januari 1998' },
+      { key: 'birthDate', label: 'Tanggal lahir' },
       { key: 'gender', label: 'Jenis kelamin' },
       { key: 'religion', label: 'Agama' },
       { key: 'bloodType', label: 'Golongan darah' },

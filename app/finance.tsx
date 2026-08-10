@@ -27,8 +27,7 @@ type IconName = ComponentProps<typeof IconSymbol>['name'];
 // kalau HP dipegang orang lain) — bukan pengamanan data.
 const FINANCE_PIN = '9811';
 
-// Sub-menu Finance — kini SELECTOR di atas (bukan bar bawah), karena Finance
-// sudah jadi tab utama di bar bawah (Finance · Home · Version).
+// Sub-menu Finance — selector di atas.
 const SEGMENTS: { key: FinanceTab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'chart.pie.fill' },
   { key: 'transactions', label: 'Transaksi', icon: 'list.bullet' },
@@ -113,7 +112,7 @@ export default function FinanceScreen() {
   }
 
   // Belum buka PIN → tampilkan keypad, isi Finance belum dirender sama sekali.
-  // Batal → pindah ke tab Home (bukan "back", karena Finance sudah jadi tab).
+  // Batal → kembali ke layar sebelumnya (Finance kini dibuka dari grid Home).
   if (!unlocked) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
@@ -122,7 +121,7 @@ export default function FinanceScreen() {
           title="Finance Terkunci"
           subtitle="Masukkan PIN untuk membuka"
           onUnlock={() => setUnlocked(true)}
-          onCancel={() => router.navigate('/')}
+          onCancel={() => router.back()}
         />
       </SafeAreaView>
     );
@@ -130,8 +129,18 @@ export default function FinanceScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Header ringkas: navigasi bulan + akses cepat Pinjaman/Saku. Sengaja
-          TANPA judul "Finance" — ini sudah jadi tab utama di bar bawah. */}
+      {/* Tombol kembali ke Home (Finance kini halaman yang di-push dari grid) */}
+      <PressableScale
+        style={styles.backRow}
+        onPress={() => router.back()}
+        hitSlop={8}>
+        <IconSymbol name="chevron.left" size={22} color={Color.MAIN} />
+        <VixText heading="bold" additionalStyle={styles.backText}>
+          Home
+        </VixText>
+      </PressableScale>
+
+      {/* Header ringkas: navigasi bulan + akses cepat Pinjaman/Saku. */}
       <View style={styles.topBar}>
         <View style={styles.monthRow}>
           <PressableScale onPress={() => shiftMonth(-1)} hitSlop={10}>
@@ -210,6 +219,13 @@ export default function FinanceScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 6,
+  },
+  backText: { color: Color.MAIN },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',

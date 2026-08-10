@@ -112,7 +112,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
       title: fTitle.trim(),
       location: fLocation.trim(),
       note: fNote.trim(),
-      cost: parseAmount(fCost), // Rp0 diperbolehkan (mis. isi angin gratis)
+      cost: parseAmount(fCost),
       liters: liters > 0 ? liters : null,
       date: fDate,
     };

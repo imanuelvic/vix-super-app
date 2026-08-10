@@ -3,9 +3,10 @@ import React from 'react';
 
 import { Color } from '@/assets/style/color';
 import { HapticTab } from '@/components/haptic-tab';
+import { RaisedHomeTab } from '@/components/raised-home-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
-// Home tetap tab pembuka meski Finance dideklarasikan lebih dulu (paling kiri).
+// Home tetap tab pembuka meski Dashboard dideklarasikan lebih dulu (paling kiri).
 export const unstable_settings = {
   initialRouteName: 'index',
 };
@@ -23,12 +24,12 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
-      {/* Urutan tab: Finance · Tournament · Home · Profile · System */}
+      {/* Urutan tab: Dashboard · Tournament · Home · Profile · System */}
       <Tabs.Screen
-        name="finance"
+        name="dashboard"
         options={{
-          title: 'Finance',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="banknote" color={color} />,
+          title: 'Dashboard',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bell.fill" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -44,7 +45,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          // Tombol Home menonjol/mengambang di tengah — render sendiri ikon +
+          // labelnya, jadi tabBarIcon default tidak dipakai.
+          tabBarButton: (props) => <RaisedHomeTab {...props} />,
         }}
       />
       <Tabs.Screen

@@ -33,8 +33,6 @@ import {
   idealWeightRange,
   saveWeightTarget,
   setHabitDone,
-  setWater,
-  WATER_GOAL,
   type HabitDay,
   type HealthProfile,
   type Streak,
@@ -134,16 +132,6 @@ export function TodoTab({
       }
     } catch {
       setError('Gagal menyimpan centang. Coba lagi.');
-    }
-  }
-
-  async function handleWater(delta: number) {
-    if (!user) return;
-    setError(null);
-    try {
-      await setWater(user.uid, dayId, day.water + delta);
-    } catch {
-      setError('Gagal menyimpan. Coba lagi.');
     }
   }
 
@@ -315,47 +303,6 @@ export function TodoTab({
               </VixText>
             )}
           </View>
-        </View>
-
-        {/* ===== Air minum ===== */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <VixText heading="title">
-              💧 Air Putih{' '}
-              <VixText heading="label">
-                {day.water}/{WATER_GOAL} gelas
-              </VixText>
-            </VixText>
-            <View style={styles.waterControls}>
-              <PressableScale
-                style={styles.waterMinus}
-                onPress={() => handleWater(-1)}
-                hitSlop={6}>
-                <VixText heading="bold" additionalStyle={styles.waterMinusText}>
-                  −
-                </VixText>
-              </PressableScale>
-              <PressableScale
-                style={styles.waterPlus}
-                onPress={() => handleWater(1)}
-                hitSlop={6}>
-                <IconSymbol name="plus" size={20} color={Color.TEXT_REVERSE} />
-              </PressableScale>
-            </View>
-          </View>
-          <View style={styles.waterDots}>
-            {Array.from({ length: WATER_GOAL }, (_, i) => (
-              <View
-                key={i}
-                style={[styles.waterDot, i < day.water && styles.waterDotFull]}
-              />
-            ))}
-          </View>
-          {day.water >= WATER_GOAL && (
-            <VixText heading="label" additionalStyle={styles.waterDoneText}>
-              Target air tercapai — mantap! 🌊
-            </VixText>
-          )}
         </View>
 
         {/* ===== Kebiasaan: tab sesi Pagi/Siang/Malam (satu sesi tampil biar
@@ -592,34 +539,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  waterControls: { flexDirection: 'row', gap: 8 },
-  waterMinus: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1.5,
-    borderColor: Color.BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  waterMinusText: { color: Color.TEXT_LABEL },
-  waterPlus: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Color.MAIN,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  waterDots: { flexDirection: 'row', gap: 8 },
-  waterDot: {
-    flex: 1,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-  },
-  waterDotFull: { backgroundColor: Color.MAIN_LIGHT },
-  waterDoneText: { color: Color.SUCCESS },
   editText: { color: Color.MAIN },
   targetValue: { color: Color.TEXT_TITLE },
   targetBarTrack: {

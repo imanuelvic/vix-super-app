@@ -251,7 +251,7 @@ export default function TournamentScreen() {
         onClose={() => setCreateOpen(false)}>
         <FormInput
           style={styles.formGap}
-          placeholder="Nama turnamen (mis. Turnamen RT 05)"
+          placeholder="Nama turnamen"
           value={cName}
           onChangeText={setCName}
           editable={!busy}

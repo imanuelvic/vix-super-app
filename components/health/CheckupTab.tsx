@@ -261,7 +261,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. puasa / di Lab NDC"
+          placeholder="Catatan"
           value={note}
           onChangeText={setNote}
           editable={!saving}

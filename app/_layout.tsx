@@ -87,6 +87,8 @@ function RootNavigator() {
         <Stack.Screen name="visitations" />
         <Stack.Screen name="monthly-prayers" />
 
+        {/* Finance: dulu tab utama, kini dibuka dari grid Home */}
+        <Stack.Screen name="finance" />
         <Stack.Screen name="funds" />
         <Stack.Screen name="fund/[key]" />
         <Stack.Screen name="debts" />

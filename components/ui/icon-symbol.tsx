@@ -28,6 +28,7 @@ const MAPPING = {
   'rectangle.portrait.and.arrow.right': 'logout',
   'arrow.triangle.2.circlepath': 'sync',
   'gearshape.fill': 'settings',
+  'bell.fill': 'notifications',
   'heart.fill': 'favorite',
   'stethoscope': 'medical-services',
   'pencil': 'edit',
