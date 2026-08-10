@@ -78,8 +78,9 @@ Panduan lengkap setup + workflow 2 project (vix & NDC) ada di
 **`PEDOMAN-VERSI.md`**.
 
 **Toolchain vix (SDK 54):** Node **20.19.4** · yarn **1.22.19** · eas-cli **≥ 21**.
-Dipatok lewat `.nvmrc` / `.node-version` (dibaca fnm) + `engines` di
-`package.json` + `cli.version` di `eas.json`.
+Dipatok lewat `.nvmrc` / `.node-version` (dibaca fnm) + `cli.version` di
+`eas.json`. (Sengaja TIDAK pakai `engines` di `package.json` — pin `yarn` yang
+persis bisa bikin `yarn install` gagal di server EAS yang yarn-nya beda versi.)
 
 **Alur tiap habis `git pull` (di mesin mana pun):**
 
