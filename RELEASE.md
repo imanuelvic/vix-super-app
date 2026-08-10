@@ -9,6 +9,8 @@ nyampai.
 ## Aturan inti
 
 ### ➜ WAJIB `eas build` (binary baru) kalau ada perubahan NATIVE
+
+
 Karena `eas update` **tidak bisa** menambah kode native ke app yang sudah
 terpasang. Termasuk:
 
@@ -22,18 +24,23 @@ terpasang. Termasuk:
   butuh build baru (update OTA hanya nyampai ke build dengan runtimeVersion sama).
 
 Perintah:
+
 ```bash
 eas build --profile preview --platform ios
 ```
+
 Lalu **pasang hasilnya di HP** (internal distribution / TestFlight).
 
 ### ➜ Cukup `eas update` (OTA) kalau HANYA JS/TS/aset
+
 Warna, teks, logika, tata letak, gambar — tanpa menyentuh yang di atas.
 
 Perintah:
+
 ```bash
 eas update --branch preview --message "deskripsi singkat"
 ```
+
 **JANGAN naikkan `version`** untuk OTA — biar runtimeVersion tetap cocok dengan
 build yang ada di HP.
 
@@ -54,7 +61,7 @@ Cek `git diff` sejak build terakhir:
 Profil di `eas.json` → channel → branch update:
 
 | Profil build | Channel | Branch `eas update` |
-|---|---|---|
+| --- | --- | --- |
 | `development` | `development` | `development` |
 | `preview` | `preview` | `preview` |
 | `production` | `production` | `production` |
