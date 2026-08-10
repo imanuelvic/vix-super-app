@@ -2,12 +2,19 @@
   "name": "vix-super-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "packageManager": "yarn@1.22.19",
+  "engines": {
+    "node": ">=18.20.4 <19",
+    "yarn": "1.22.19"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "doctor": "npx expo-doctor",
+    "deps:check": "expo install --check"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
