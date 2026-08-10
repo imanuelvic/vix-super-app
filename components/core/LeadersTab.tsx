@@ -14,6 +14,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
+  archiveCoreLeader,
   currentAge,
   DISC_OPTIONS,
   HEARTS,
@@ -30,6 +31,7 @@ import {
   type MainTeamMember,
 } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
+import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Tab CORE Leader: data semua CL + Main Team yang membantu mereka —
@@ -61,6 +63,9 @@ export function LeadersTab({
   const [fMbti, setFMbti] = useState<string | null>(null);
   const [fLove, setFLove] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  // Mode "lepas CL": ganti isi modal edit jadi form alasan sebelum diarsipkan.
+  const [archiving, setArchiving] = useState(false);
+  const [archiveReason, setArchiveReason] = useState('');
 
   // Form Main Team (terpisah karena field-nya beda: pilih CL, tanpa hati).
   const [editingMT, setEditingMT] = useState<MainTeamMember | 'new' | null>(null);
@@ -99,6 +104,8 @@ export function LeadersTab({
     setFMbti(null);
     setFLove(null);
     setFormError(null);
+    setArchiving(false);
+    setArchiveReason('');
   }
 
   function openEdit(l: CoreLeader) {
@@ -111,6 +118,8 @@ export function LeadersTab({
     setFMbti(l.mbti ?? null);
     setFLove(l.loveLanguage ?? null);
     setFormError(null);
+    setArchiving(false);
+    setArchiveReason('');
   }
 
   async function handleSave() {
@@ -157,6 +166,32 @@ export function LeadersTab({
       setError(DELETE_ERROR);
     } finally {
       setEditing(null);
+      setBusy(false);
+    }
+  }
+
+  // Lepas CL: pindahkan ke arsip Ex CORE Leader beserta alasannya.
+  async function handleArchive() {
+    if (!user || !editing || editing === 'new' || busy) return;
+    if (!archiveReason.trim()) {
+      setFormError('Isi dulu alasannya.');
+      return;
+    }
+    setBusy(true);
+    setFormError(null);
+    try {
+      await archiveCoreLeader(
+        user.uid,
+        leaders,
+        editing,
+        archiveReason.trim(),
+        dayDocId(new Date()),
+      );
+      setEditing(null);
+      setArchiving(false);
+    } catch {
+      setFormError(SAVE_ERROR);
+    } finally {
       setBusy(false);
     }
   }
@@ -407,93 +442,161 @@ export function LeadersTab({
       {/* Bottom sheet tambah/edit CL */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Tambah CORE Leader' : 'Edit CORE Leader'}
+        title={
+          editing === 'new'
+            ? 'Tambah CORE Leader'
+            : archiving
+              ? 'Lepas CORE Leader'
+              : 'Edit CORE Leader'
+        }
         scroll={false}
-        onClose={() => setEditing(null)}>
+        onClose={() => {
+          setEditing(null);
+          setArchiving(false);
+        }}
+        footer={
+          archiving && editing !== 'new' && editing !== null ? (
+            <DualButtons
+              confirmLabel="Lanjutkan"
+              busy={busy}
+              onCancel={() => setArchiving(false)}
+              onConfirm={handleArchive}
+            />
+          ) : (
+            <DualButtons
+              confirmLabel="Simpan"
+              busy={busy}
+              onCancel={() => setEditing(null)}
+              onConfirm={handleSave}
+            />
+          )
+        }>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
-        <FormInput
-          style={styles.formGap}
-          placeholder="Nama"
-          value={fName}
-          onChangeText={setFName}
-          editable={!busy}
-        />
+          {archiving && editing !== 'new' && editing !== null ? (
+            // ===== Form alasan sebelum diarsipkan =====
+            <>
+              <VixText heading="label" additionalStyle={styles.archiveIntro}>
+                🗂️ {editing.name} akan dipindah ke arsip Ex CORE Leader — tidak
+                lagi muncul di follow up & reminder, tapi riwayatnya tetap
+                tersimpan dan bisa dikembalikan kapan saja.
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                Alasan sudah tidak dipegang
+              </VixText>
+              <FormInput
+                style={styles.archiveInput}
+                placeholder="mis. Pindah kota · naik jadi MCL · gabung CORE lain…"
+                value={archiveReason}
+                onChangeText={setArchiveReason}
+                editable={!busy}
+                multiline
+              />
+              {formError && (
+                <VixText heading="label" additionalStyle={styles.error}>
+                  {formError}
+                </VixText>
+              )}
+            </>
+          ) : (
+            // ===== Form edit/tambah CL =====
+            <>
+              <FormInput
+                style={styles.formGap}
+                placeholder="Nama"
+                value={fName}
+                onChangeText={setFName}
+                editable={!busy}
+              />
 
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Warna CORE
-        </VixText>
-        <View style={styles.heartWrap}>
-          {HEARTS.map((h) => (
-            <PressableScale
-              key={h}
-              style={[styles.heartChip, fHeart === h && styles.heartActive]}
-              onPress={() => setFHeart(h)}>
-              <VixText additionalStyle={styles.heartOption}>{h}</VixText>
-            </PressableScale>
-          ))}
-        </View>
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                Warna CORE
+              </VixText>
+              <View style={styles.heartWrap}>
+                {HEARTS.map((h) => (
+                  <PressableScale
+                    key={h}
+                    style={[styles.heartChip, fHeart === h && styles.heartActive]}
+                    onPress={() => setFHeart(h)}>
+                    <VixText additionalStyle={styles.heartOption}>{h}</VixText>
+                  </PressableScale>
+                ))}
+              </View>
 
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal Lahir
-        </VixText>
-        <View style={styles.formGap}>
-          {/* key = id supaya state picker internal reset tiap ganti CL */}
-          <DateField
-            key={editing === 'new' ? 'new' : editing?.id}
-            value={fBirthday}
-            onChange={setFBirthday}
-          />
-        </View>
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                Tanggal Lahir
+              </VixText>
+              <View style={styles.formGap}>
+                {/* key = id supaya state picker internal reset tiap ganti CL */}
+                <DateField
+                  key={editing === 'new' ? 'new' : editing?.id}
+                  value={fBirthday}
+                  onChange={setFBirthday}
+                />
+              </View>
 
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          No. HP
-        </VixText>
-        <View style={styles.phoneRow}>
-          <View style={styles.phonePrefix}>
-            <VixText heading="bold" additionalStyle={styles.phonePrefixText}>
-              +62
-            </VixText>
-          </View>
-          <FormInput
-            style={styles.phoneInput}
-            placeholder="81234567890"
-            keyboardType="phone-pad"
-            value={fPhone}
-            onChangeText={(t) => setFPhone(t.replace(/\D/g, ''))}
-            editable={!busy}
-          />
-        </View>
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                No. HP
+              </VixText>
+              <View style={styles.phoneRow}>
+                <View style={styles.phonePrefix}>
+                  <VixText
+                    heading="bold"
+                    additionalStyle={styles.phonePrefixText}>
+                    +62
+                  </VixText>
+                </View>
+                <FormInput
+                  style={styles.phoneInput}
+                  placeholder="81234567890"
+                  keyboardType="phone-pad"
+                  value={fPhone}
+                  onChangeText={(t) => setFPhone(t.replace(/\D/g, ''))}
+                  editable={!busy}
+                />
+              </View>
 
-        {/* Kepribadian — bantu cara pendekatan & ide chat */}
-        <PersonalityFields
-          disc={fDisc}
-          setDisc={setFDisc}
-          mbti={fMbti}
-          setMbti={setFMbti}
-          love={fLove}
-          setLove={setFLove}
-        />
+              {/* Kepribadian — bantu cara pendekatan & ide chat */}
+              <PersonalityFields
+                disc={fDisc}
+                setDisc={setFDisc}
+                mbti={fMbti}
+                setMbti={setFMbti}
+                love={fLove}
+                setLove={setFLove}
+              />
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editing !== 'new' && editing !== null && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus CORE Leader ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
-          onCancel={() => setEditing(null)}
-          onConfirm={handleSave}
-        />
+              {formError && (
+                <VixText heading="label" additionalStyle={styles.error}>
+                  {formError}
+                </VixText>
+              )}
+              {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
+              {editing !== 'new' && editing !== null && (
+                <InlineDelete
+                  key={editing.id}
+                  label="Hapus CORE Leader ini"
+                  busy={busy}
+                  onDelete={handleDelete}
+                />
+              )}
+              {/* Lepas CL (arsipkan, beda dari hapus permanen) */}
+              {editing !== 'new' && editing !== null && (
+                <PressableScale
+                  style={styles.archiveButton}
+                  disabled={busy}
+                  onPress={() => {
+                    setArchiving(true);
+                    setFormError(null);
+                  }}>
+                  <VixText
+                    heading="bold"
+                    additionalStyle={styles.archiveButtonText}>
+                    👋 CORE Leader ini sudah tidak saya pegang
+                  </VixText>
+                </PressableScale>
+              )}
+            </>
+          )}
         </ScrollView>
       </SheetModal>
 
@@ -581,13 +684,14 @@ export function LeadersTab({
             onDelete={handleDeleteMT}
           />
         )}
+        </ScrollView>
+        {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}
           onCancel={() => setEditingMT(null)}
           onConfirm={handleSaveMT}
         />
-        </ScrollView>
       </SheetModal>
 
     </View>
@@ -837,4 +941,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
+  // Lepas CL → arsip Ex CORE Leader.
+  archiveIntro: { color: Color.TEXT_PARAGRAPH, marginBottom: 14 },
+  archiveInput: { minHeight: 100, textAlignVertical: 'top', marginBottom: 10 },
+  archiveButton: {
+    marginTop: 8,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+  },
+  archiveButtonText: { color: Color.ACCENT_DARK },
 });

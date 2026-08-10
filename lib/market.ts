@@ -11,6 +11,7 @@ const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 const GOLD_SYMBOL = 'GC=F'; // COMEX Gold futures — USD per troy ounce
 const FX_SYMBOL = 'USDIDR=X'; // kurs USD → IDR
 const BTC_SYMBOL = 'BTC-USD'; // Bitcoin — USD
+const IHSG_SYMBOL = '^JKSE'; // Indeks Harga Saham Gabungan (Bursa Efek Indonesia) — poin
 
 const TROY_OUNCE_G = 31.1034768; // 1 troy ounce = 31,1034768 gram
 const CACHE_TTL = 5 * 60 * 1000; // 5 menit — hindari terlalu sering menembak Yahoo
@@ -95,6 +96,12 @@ function toIdrSeries(
   return out;
 }
 
+/** Deret harga langsung dari satu simbol (tanpa konversi kurs) — untuk aset yang
+ *  memang sudah dalam Rupiah (kurs USD→IDR) atau berupa poin indeks (IHSG). */
+function plainSeries(points: RawPoint[]): MarketPoint[] {
+  return points.map((p) => ({ date: isoDate(p.t), price: p.close }));
+}
+
 /** Sisipkan/timpa titik "hari ini" dengan harga live supaya grafik & angka utama seragam. */
 function withLiveLast(series: MarketPoint[], current: number): MarketPoint[] {
   const today = isoDate(Math.floor(Date.now() / 1000));
@@ -174,6 +181,47 @@ export async function loadBtc(force = false): Promise<BtcData> {
     updatedAt: Date.now(),
   };
   btcCache = { data, at: Date.now() };
+  return data;
+}
+
+export type StockData = {
+  series: MarketPoint[]; // poin indeks, harian ~6 bulan (titik terakhir = live)
+  current: number; // poin IHSG sekarang
+  updatedAt: number;
+};
+
+export type ForexData = {
+  series: MarketPoint[]; // Rupiah per 1 USD, harian ~6 bulan (titik terakhir = live)
+  idr: number; // kurs sekarang (Rupiah per 1 USD)
+  updatedAt: number;
+};
+
+let ihsgCache: { data: StockData; at: number } | null = null;
+let forexCache: { data: ForexData; at: number } | null = null;
+
+/** IHSG (poin indeks) + deret 6 bulan. `force` = abaikan cache. */
+export async function loadIhsg(force = false): Promise<StockData> {
+  if (!force && ihsgCache && Date.now() - ihsgCache.at < CACHE_TTL) {
+    return ihsgCache.data;
+  }
+  const idx = await fetchChart(IHSG_SYMBOL, '6mo', '1d');
+  const current = idx.price;
+  const series = withLiveLast(plainSeries(idx.points), current);
+  const data: StockData = { series, current, updatedAt: Date.now() };
+  ihsgCache = { data, at: Date.now() };
+  return data;
+}
+
+/** Kurs Rupiah (USD→IDR, Rupiah per 1 USD) + deret 6 bulan. `force` = abaikan cache. */
+export async function loadForex(force = false): Promise<ForexData> {
+  if (!force && forexCache && Date.now() - forexCache.at < CACHE_TTL) {
+    return forexCache.data;
+  }
+  const fx = await fetchChart(FX_SYMBOL, '6mo', '1d');
+  const idr = fx.price;
+  const series = withLiveLast(plainSeries(fx.points), idr);
+  const data: ForexData = { series, idr, updatedAt: Date.now() };
+  forexCache = { data, at: Date.now() };
   return data;
 }
 

@@ -472,13 +472,14 @@ export function FreelanceTab({
               onDelete={handleDelete}
             />
           )}
-          <DualButtons
-            confirmLabel="Simpan"
-            busy={busy}
-            onCancel={() => setEditing(null)}
-            onConfirm={handleSave}
-          />
         </ScrollView>
+        {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
+        <DualButtons
+          confirmLabel="Simpan"
+          busy={busy}
+          onCancel={() => setEditing(null)}
+          onConfirm={handleSave}
+        />
       </SheetModal>
     </View>
   );

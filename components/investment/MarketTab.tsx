@@ -61,6 +61,10 @@ type Props = {
   srcText: string; // baris sumber (COMEX/kurs, dsb) — dihitung pemanggil
   noteText: string;
   chartColor?: string;
+  // Cara menulis nilai: default Rupiah ("Rp 1.234"). IHSG memakai poin (tanpa Rp)
+  // dengan mengoper formatValue/formatShort sendiri.
+  formatValue?: (n: number) => string; // angka utama & perubahan
+  formatShort?: (n: number) => string; // statistik tertinggi/terendah & grafik
   loading: boolean;
   error: string | null;
   data: MarketView | null;
@@ -77,6 +81,8 @@ export function MarketTab({
   srcText,
   noteText,
   chartColor,
+  formatValue = (n: number) => formatRupiah(Math.round(n)),
+  formatShort = formatShortRupiah,
   loading,
   error,
   data,
@@ -155,14 +161,13 @@ export function MarketTab({
                     : ''}
                 </VixText>
                 <VixText heading="header" additionalStyle={styles.statValue}>
-                  {formatRupiah(Math.round(data.current))}
+                  {formatValue(data.current)}
                 </VixText>
                 {prev != null && (
                   <VixText
                     heading="label"
                     additionalStyle={up ? styles.upText : styles.downText}>
-                    {up ? '▲' : '▼'}{' '}
-                    {formatRupiah(Math.round(Math.abs(changeAbs)))} (
+                    {up ? '▲' : '▼'} {formatValue(Math.abs(changeAbs))} (
                     {changePct >= 0 ? '+' : ''}
                     {changePct.toFixed(1)}%) vs kemarin
                   </VixText>
@@ -176,13 +181,13 @@ export function MarketTab({
                   <VixText heading="label" additionalStyle={styles.statBoxLabel}>
                     Tertinggi
                   </VixText>
-                  <VixText heading="bold">{formatShortRupiah(high)}</VixText>
+                  <VixText heading="bold">{formatShort(high)}</VixText>
                 </View>
                 <View style={styles.statBox}>
                   <VixText heading="label" additionalStyle={styles.statBoxLabel}>
                     Terendah
                   </VixText>
-                  <VixText heading="bold">{formatShortRupiah(low)}</VixText>
+                  <VixText heading="bold">{formatShort(low)}</VixText>
                 </View>
                 <View style={styles.statBox}>
                   <VixText heading="label" additionalStyle={styles.statBoxLabel}>
@@ -200,7 +205,12 @@ export function MarketTab({
             <View
               style={styles.chartCard}
               onLayout={(e) => setChartW(e.nativeEvent.layout.width - 24)}>
-              <PriceChart series={data.series} width={chartW} color={chartColor} />
+              <PriceChart
+                series={data.series}
+                width={chartW}
+                color={chartColor}
+                format={formatShort}
+              />
               <VixText heading="label" additionalStyle={styles.chartHint}>
                 Pelajari trennya untuk membuat perkiraanmu sendiri 📈
               </VixText>

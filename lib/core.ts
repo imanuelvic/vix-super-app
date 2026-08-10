@@ -1,8 +1,10 @@
 import {
+  arrayUnion,
   doc,
   onSnapshot,
   setDoc,
   Timestamp,
+  writeBatch,
   type FirestoreError,
 } from 'firebase/firestore';
 
@@ -228,6 +230,90 @@ export function saveCoreLeaders(uid: string, list: CoreLeader[]) {
 /** Id unik untuk CL baru. */
 export function newCoreLeaderId(): string {
   return `c${Date.now().toString(36)}`;
+}
+
+// ==================== Ex CORE Leader 🗂️ ====================
+// CL yang sudah tidak digembalakan lagi (pindah/lepas pelayanan). Dipindah dari
+// daftar aktif ke arsip beserta ALASAN & tanggalnya — supaya tidak ikut follow
+// up/reminder, tapi riwayatnya tetap tersimpan. Dokumen terpisah:
+// users/{uid}/core/exLeaders — { list: ExLeader[] }.
+
+export type ExLeader = CoreLeader & {
+  exReason: string; // alasan sudah tidak dipegang
+  exDayId: string; // "YYYY-MM-DD" saat diarsipkan
+};
+
+export function subscribeExLeaders(
+  uid: string,
+  onChange: (list: ExLeader[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const ref = doc(db, 'users', uid, 'core', 'exLeaders');
+  return onSnapshot(
+    ref,
+    (snapshot) => {
+      const list = (snapshot.data()?.list as ExLeader[]) ?? [];
+      onChange(list.map((l) => ({ ...l, ...normalizePersonality(l) })));
+    },
+    onError,
+  );
+}
+
+export function saveExLeaders(uid: string, list: ExLeader[]) {
+  return setDoc(doc(db, 'users', uid, 'core', 'exLeaders'), { list });
+}
+
+/**
+ * Pindahkan satu CL dari daftar aktif ke arsip Ex CORE Leader (dengan alasan &
+ * tanggal). Satu batch: tulis ulang daftar aktif tanpa dia + tambahkan dia ke
+ * arsip. Semua datanya (kepribadian, ultah, dll) ikut terbawa.
+ */
+export function archiveCoreLeader(
+  uid: string,
+  leaders: CoreLeader[],
+  leader: CoreLeader,
+  reason: string,
+  dayId: string,
+) {
+  const ex: ExLeader = { ...leader, exReason: reason, exDayId: dayId };
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'users', uid, 'core', 'leaders'), {
+    list: leaders.filter((l) => l.id !== leader.id),
+  });
+  batch.set(
+    doc(db, 'users', uid, 'core', 'exLeaders'),
+    { list: arrayUnion(ex) },
+    { merge: true },
+  );
+  return batch.commit();
+}
+
+/** Kembalikan Ex CORE Leader jadi CL aktif lagi (field arsipnya dibuang). */
+export function restoreCoreLeader(
+  uid: string,
+  leaders: CoreLeader[],
+  exLeaders: ExLeader[],
+  id: string,
+) {
+  const ex = exLeaders.find((e) => e.id === id);
+  if (!ex) return Promise.resolve();
+  const { exReason, exDayId, ...leader } = ex; // buang field arsip
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'users', uid, 'core', 'leaders'), {
+    list: [...leaders, leader],
+  });
+  batch.set(doc(db, 'users', uid, 'core', 'exLeaders'), {
+    list: exLeaders.filter((e) => e.id !== id),
+  });
+  return batch.commit();
+}
+
+/** Hapus PERMANEN satu Ex CORE Leader dari arsip. */
+export function deleteExLeader(uid: string, exLeaders: ExLeader[], id: string) {
+  return saveExLeaders(
+    uid,
+    exLeaders.filter((e) => e.id !== id),
+  );
 }
 
 // ==================== Pertemuan CORE 📅 ====================

@@ -490,13 +490,14 @@ export default function DebtsScreen() {
               onDelete={handleDelete}
             />
           )}
-          <DualButtons
-            confirmLabel={editing === 'new' ? 'Tambah' : 'Simpan'}
-            busy={busy}
-            onCancel={() => setEditing(null)}
-            onConfirm={handleSave}
-          />
         </ScrollView>
+        {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
+        <DualButtons
+          confirmLabel={editing === 'new' ? 'Tambah' : 'Simpan'}
+          busy={busy}
+          onCancel={() => setEditing(null)}
+          onConfirm={handleSave}
+        />
       </SheetModal>
 
       {/* ===== Sheet bayar cicilan + riwayat ===== */}

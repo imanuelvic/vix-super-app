@@ -809,7 +809,10 @@ export default function HomeScreen() {
             fg={Color.ACCENT_DARK}
             title="🎂 Ulang Tahun Keluarga"
             texts={famBirthdays}
-            onPress={() => router.push('/family')}
+            // Tap satu nama → buka Family & pusatkan pohon ke orang itu.
+            onItemPress={(id) =>
+              router.push({ pathname: '/family', params: { focus: id } })
+            }
           />
         )}
 

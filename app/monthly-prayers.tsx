@@ -22,7 +22,7 @@ import {
   type CoreLeader,
   type MonthlyPrayers,
 } from '@/lib/core';
-import { dayIdToDate, formatDate, MONTH_NAMES } from '@/lib/format';
+import { dayIdToDate, formatShortDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
@@ -38,8 +38,9 @@ export default function MonthlyPrayersScreen() {
   const [data, setData] = useState<MonthlyPrayers>(EMPTY_MONTHLY_PRAYERS);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
-  // Kartu mana yang sedang dibuka (default tidak ada = tertutup).
-  const [openLeaders, setOpenLeaders] = useState<Record<string, boolean>>({});
+  // Kartu mana yang sedang dibuka — HANYA satu sekaligus (accordion): membuka
+  // satu otomatis menutup yang lain. null = tidak ada yang dibuka.
+  const [openLeaderId, setOpenLeaderId] = useState<string | null>(null);
   // Konfirmasi hapus 1 pokok doa.
   const [confirmDelete, setConfirmDelete] = useState<{
     leaderId: string;
@@ -149,10 +150,6 @@ export default function MonthlyPrayersScreen() {
                 dari {leaders.length} CORE Leader sudah terisi
               </VixText>
             </VixText>
-            <VixText heading="label" additionalStyle={styles.introNote}>
-              🗂️ Tidak dihapus otomatis — kamu diingatkan memperbaruinya tiap
-              awal bulan.
-            </VixText>
           </View>
 
           {/* Bulan baru: poin masih dari bulan lalu → ajak tinjau/perbarui */}
@@ -173,11 +170,11 @@ export default function MonthlyPrayersScreen() {
             const hasPoints = list.length > 0;
             // Punya poin → default TERTUTUP (minimize). Kosong → selalu terbuka
             // biar gampang langsung mengisi.
-            const open = hasPoints ? !!openLeaders[l.id] : true;
+            const open = hasPoints ? openLeaderId === l.id : true;
             const updatedId = data.updatedAt[l.id];
             const updatedLabel =
               hasPoints && updatedId
-                ? `🕒 Diperbarui ${formatDate(dayIdToDate(updatedId))}`
+                ? `🕒 Diperbarui ${formatShortDate(dayIdToDate(updatedId))}`
                 : null;
             return (
               <View key={l.id} style={styles.card}>
@@ -185,7 +182,7 @@ export default function MonthlyPrayersScreen() {
                   style={styles.cardHeader}
                   disabled={!hasPoints}
                   onPress={() =>
-                    setOpenLeaders((o) => ({ ...o, [l.id]: !o[l.id] }))
+                    setOpenLeaderId((cur) => (cur === l.id ? null : l.id))
                   }>
                   <View style={styles.avatar}>
                     <VixText heading="title">{l.heart}</VixText>
@@ -312,8 +309,6 @@ const styles = StyleSheet.create({
   introQuote: { color: Color.MAIN_LIGHT, fontStyle: 'italic' },
   introValue: { color: Color.TEXT_REVERSE },
   introLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  introNote: { color: Color.TEXT_ON_DARK_MUTED },
-  // Banner "sudah bulan baru — perbarui"
   staleCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,

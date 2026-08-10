@@ -99,16 +99,20 @@ export default function CoreScreen() {
         backLabel="Home"
         title="CORE 🙏"
         subtitle="Gembalakan & muridkan CORE Leader-mu"
+        // Tombol kanan atas menyesuaikan tab yang aktif:
+        // Pertemuan → 🕘 riwayat pertemuan · Follow Up → 🙏 pokok doa bulanan ·
+        // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang).
         right={
-          <View style={styles.headerButtons}>
-            {/* Riwayat seluruh visitasi 🕘 */}
+          tab === 'visitation' ? (
             <EmojiButton emoji="🕘" onPress={() => router.push('/visitations')} />
-            {/* Pokok Doa Bulanan 📅 */}
+          ) : tab === 'followup' ? (
             <EmojiButton
-              emoji="📅"
+              emoji="🙏"
               onPress={() => router.push('/monthly-prayers')}
             />
-          </View>
+          ) : (
+            <EmojiButton emoji="🗂️" onPress={() => router.push('/ex-leaders')} />
+          )
         }
       />
 
@@ -146,5 +150,4 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
-  headerButtons: { flexDirection: 'row', gap: 8 },
 });

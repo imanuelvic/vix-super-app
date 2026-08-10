@@ -1,4 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -23,6 +29,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
+import { DualButtons } from '@/components/common/DualButtons';
 import { VixText } from '@/components/common/VixText';
 
 // Celah minimal dari atas layar → backdrop SELALU terlihat & bisa ditekan untuk
@@ -30,10 +37,12 @@ import { VixText } from '@/components/common/VixText';
 const TOP_GAP = 72;
 
 // Bottom sheet standar: overlay gelap + panel dari bawah + judul.
-// - Tinggi dibatasi (maksimal = layar − keyboard − celah atas), jadi walau
-//   keyboard/date picker muncul, isinya tidak menutup seluruh layar.
+// - Tinggi dibatasi MAKSIMAL 3/4 layar (dan tak melebihi ruang di atas keyboard),
+//   jadi modal tidak pernah menutupi seluruh tampilan; isi pendek tetap ringkas.
 // - Isi form digulir DI DALAM batas itu (ScrollView bawaan; matikan lewat
 //   `scroll={false}` kalau modal sudah punya scroll/daftar sendiri).
+// - `footer` = area tombol aksi (mis. Batal/Simpan) yang MENEMPEL di bawah —
+//   selalu terlihat tanpa perlu scroll, dengan garis pemisah di atasnya.
 // - Bisa ditutup dengan menyeret gagang/judul ke bawah atau menekan area gelap.
 export function SheetModal({
   visible,
@@ -42,6 +51,7 @@ export function SheetModal({
   onClose,
   scroll = true,
   children,
+  footer,
 }: {
   visible: boolean;
   title: string;
@@ -49,6 +59,7 @@ export function SheetModal({
   onClose: () => void;
   scroll?: boolean;
   children: ReactNode;
+  footer?: ReactNode;
 }) {
   const { height } = useWindowDimensions();
   // `rendered` menjaga Modal tetap terpasang selama animasi keluar berjalan.
@@ -112,8 +123,23 @@ export function SheetModal({
 
   if (!rendered) return null;
 
-  // Batas tinggi sheet: sisakan celah di atas walau keyboard aktif.
-  const maxSheetHeight = Math.max(220, height - keyboardHeight - TOP_GAP);
+  // Batas tinggi sheet: MAKSIMAL 3/4 layar, dan tak melebihi ruang di atas
+  // keyboard (biar backdrop tetap terlihat & tak menutup layar penuh).
+  const maxSheetHeight = Math.max(
+    220,
+    Math.min(height * 0.75, height - keyboardHeight - TOP_GAP),
+  );
+
+  // Bar aksi (Batal/Simpan = DualButtons) OTOMATIS dipisah dari isi lalu dipin
+  // di footer yang menempel — jadi selalu terlihat tanpa perlu scroll. `footer`
+  // eksplisit (bila dioper) menang atas deteksi otomatis.
+  const kids = Children.toArray(children);
+  const autoBar =
+    footer != null
+      ? undefined
+      : kids.find((c) => isValidElement(c) && c.type === DualButtons);
+  const contentKids = autoBar ? kids.filter((c) => c !== autoBar) : kids;
+  const footerContent = footer ?? autoBar;
 
   const body = scroll ? (
     <ScrollView
@@ -121,10 +147,10 @@ export function SheetModal({
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}>
-      {children}
+      {contentKids}
     </ScrollView>
   ) : (
-    children
+    contentKids
   );
 
   return (
@@ -155,6 +181,9 @@ export function SheetModal({
               </View>
             </GestureDetector>
             {body}
+            {footerContent ? (
+              <View style={styles.footer}>{footerContent}</View>
+            ) : null}
           </Animated.View>
         </KeyboardAvoidingView>
       </GestureHandlerRootView>
@@ -191,4 +220,13 @@ const styles = StyleSheet.create({
   // flexShrink:1 → ScrollView menyusut mengikuti batas sheet lalu menggulir isi.
   scroll: { flexShrink: 1 },
   scrollContent: { paddingBottom: 4 },
+  // Footer menempel di bawah: garis pemisah edge-to-edge + latar senada, jadi
+  // tombol aksi (Batal/Simpan) selalu terlihat tanpa perlu scroll.
+  footer: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    backgroundColor: Color.BACKGROUND,
+  },
 });

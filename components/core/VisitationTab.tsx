@@ -7,13 +7,13 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   MEETING_KINDS,
@@ -52,8 +52,11 @@ export function VisitationTab({
   const [fNote, setFNote] = useState('');
   const [fDone, setFDone] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  // Dropdown tips — default tertutup biar jadwal tetap fokus utama.
-  const [tipsOpen, setTipsOpen] = useState(false);
+  // Modal tips + filter jadwal (default tanpa filter → tampil semua).
+  const [tipsModal, setTipsModal] = useState(false);
+  const [filterModal, setFilterModal] = useState(false);
+  const [filterLeaderId, setFilterLeaderId] = useState<string | null>(null);
+  const [filterKind, setFilterKind] = useState<MeetingKind | null>(null);
 
   const today = new Date();
 
@@ -71,6 +74,15 @@ export function VisitationTab({
   const upcoming = visitations
     .filter((v) => !v.done && visitDaysUntil(v, today) >= 0)
     .sort((a, b) => a.date.toMillis() - b.date.toMillis());
+
+  // Filter opsional: per CORE Leader dan/atau per jenis pertemuan.
+  const hasFilter = filterLeaderId !== null || filterKind !== null;
+  const filtered = upcoming.filter(
+    (v) =>
+      (!filterLeaderId || v.leaderId === filterLeaderId) &&
+      (!filterKind || v.kind === filterKind),
+  );
+  const activeLeader = leaders.find((l) => l.id === filterLeaderId);
 
   function openAdd() {
     setEditing('new');
@@ -184,11 +196,11 @@ export function VisitationTab({
           {meetingKindMeta(v.kind).icon} {meetingKindMeta(v.kind).label}
         </VixText>
         <VixText heading="label">📆 {formatFullDate(v.date.toDate())}</VixText>
+        {v.note ? (
+          <VixText heading="label">🏷️ Judul: {v.note}</VixText>
+        ) : null}
         {v.agenda ? (
           <VixText heading="label">🗒️ Agenda: {v.agenda}</VixText>
-        ) : null}
-        {v.note ? (
-          <VixText heading="label">📝 Catatan: {v.note}</VixText>
         ) : null}
       </PressableScale>
     );
@@ -211,41 +223,50 @@ export function VisitationTab({
         )}
 
         {/* ===== Jadwal mendatang ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          📅 Jadwal Mendatang
-        </VixText>
-        {upcoming.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉
+        <View style={styles.sectionRow}>
+          <VixText heading="title" additionalStyle={styles.sectionTitleFlex}>
+            📅 Jadwal Mendatang
           </VixText>
-        ) : (
-          upcoming.map(renderCard)
-        )}
-
-        {/* ===== Tips pertemuan (dropdown, default tertutup) ===== */}
-        <PressableScale
-          style={styles.tipsHeader}
-          onPress={() => setTipsOpen((o) => !o)}>
-          <VixText heading="title">💡 Tips Pertemuan</VixText>
-          <View style={styles.tipsToggle}>
-            <VixText heading="label">
-              {tipsOpen ? 'Tutup' : `${VISIT_TIPS.length} tips`}
-            </VixText>
-            <IconSymbol
-              name={tipsOpen ? 'chevron.up' : 'chevron.down'}
-              size={18}
-              color={Color.TEXT_LABEL}
+          <View style={styles.sectionActions}>
+            {/* Tips pertemuan (buka modal) */}
+            <EmojiButton emoji="💡" onPress={() => setTipsModal(true)} />
+            {/* Filter jadwal (per CL / jenis) — menyala kalau ada filter aktif */}
+            <EmojiButton
+              emoji="🎚️"
+              active={hasFilter}
+              onPress={() => setFilterModal(true)}
             />
           </View>
-        </PressableScale>
-        {tipsOpen && (
-          <View style={styles.tipsCard}>
-            {VISIT_TIPS.map((tip) => (
-              <VixText key={tip} heading="paragraph" additionalStyle={styles.tip}>
-                {tip}
-              </VixText>
-            ))}
+        </View>
+
+        {/* Chip filter yang sedang aktif — ketuk untuk menghapusnya */}
+        {hasFilter && (
+          <View style={styles.activeFilterRow}>
+            {filterLeaderId && (
+              <Chip
+                label={`${activeLeader ? `${activeLeader.heart} ${activeLeader.name}` : 'CL'} ✕`}
+                active
+                onPress={() => setFilterLeaderId(null)}
+              />
+            )}
+            {filterKind && (
+              <Chip
+                label={`${meetingKindMeta(filterKind).icon} ${meetingKindMeta(filterKind).label} ✕`}
+                active
+                onPress={() => setFilterKind(null)}
+              />
+            )}
           </View>
+        )}
+
+        {filtered.length === 0 ? (
+          <VixText heading="label" additionalStyle={styles.empty}>
+            {hasFilter
+              ? 'Tidak ada jadwal yang cocok dengan filter ini.'
+              : 'Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉'}
+          </VixText>
+        ) : (
+          filtered.map(renderCard)
         )}
       </ScrollView>
 
@@ -295,6 +316,17 @@ export function VisitationTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🏷️ Judul Pertemuan
+        </VixText>
+        <FormInput
+          style={styles.formGap}
+          placeholder="Judul singkat (mis. 2nd Visitation)"
+          value={fNote}
+          onChangeText={setFNote}
+          editable={!busy}
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🗒️ Agenda pertemuan
         </VixText>
         <FormInput
@@ -302,18 +334,6 @@ export function VisitationTab({
           placeholder="Apa yang akan dibahas ke mereka…"
           value={fAgenda}
           onChangeText={setFAgenda}
-          editable={!busy}
-          multiline
-        />
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📝 Catatan pertemuan
-        </VixText>
-        <FormInput
-          style={[styles.textArea, styles.formGap]}
-          placeholder="Catatan hasil pertemuan / kondisi CL & member…"
-          value={fNote}
-          onChangeText={setFNote}
           editable={!busy}
           multiline
         />
@@ -350,6 +370,78 @@ export function VisitationTab({
         />
       </SheetModal>
 
+      {/* Modal tips pertemuan */}
+      <SheetModal
+        visible={tipsModal}
+        title="💡 Tips Pertemuan"
+        subtitle="Biar pertemuanmu makin berdampak"
+        onClose={() => setTipsModal(false)}>
+        {VISIT_TIPS.map((tip) => (
+          <VixText key={tip} heading="paragraph" additionalStyle={styles.tip}>
+            {tip}
+          </VixText>
+        ))}
+      </SheetModal>
+
+      {/* Modal filter jadwal — per CORE Leader dan/atau jenis pertemuan */}
+      <SheetModal
+        visible={filterModal}
+        title="🎚️ Filter Jadwal"
+        subtitle="Tampilkan hanya yang cocok"
+        onClose={() => setFilterModal(false)}
+        footer={
+          <View style={styles.filterFooter}>
+            <PressableScale
+              style={styles.clearBtn}
+              onPress={() => {
+                setFilterLeaderId(null);
+                setFilterKind(null);
+              }}>
+              <VixText heading="bold" additionalStyle={styles.clearText}>
+                Bersihkan
+              </VixText>
+            </PressableScale>
+            <PressableScale
+              style={styles.doneBtn}
+              onPress={() => setFilterModal(false)}>
+              <VixText heading="bold" additionalStyle={styles.doneBtnText}>
+                Selesai
+              </VixText>
+            </PressableScale>
+          </View>
+        }>
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🫶 Per CORE Leader
+        </VixText>
+        <View style={styles.leaderWrap}>
+          {leaders.map((l) => (
+            <Chip
+              key={l.id}
+              label={`${l.heart} ${l.name}`}
+              active={filterLeaderId === l.id}
+              onPress={() =>
+                setFilterLeaderId((cur) => (cur === l.id ? null : l.id))
+              }
+            />
+          ))}
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🏸 Per Jenis Pertemuan
+        </VixText>
+        <View style={styles.leaderWrap}>
+          {MEETING_KINDS.map((k) => (
+            <Chip
+              key={k.key}
+              label={`${k.icon} ${k.label}`}
+              active={filterKind === k.key}
+              onPress={() =>
+                setFilterKind((cur) => (cur === k.key ? null : k.key))
+              }
+            />
+          ))}
+        </View>
+      </SheetModal>
     </View>
   );
 }
@@ -359,7 +451,22 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 6 },
   error: { color: Color.DANGER, marginBottom: 8 },
-  sectionTitle: { marginTop: 10, marginBottom: 10 },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  sectionTitleFlex: { flex: 1 },
+  sectionActions: { flexDirection: 'row', gap: 8 },
+  activeFilterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
   empty: { textAlign: 'center', marginBottom: 8 },
   card: {
     backgroundColor: Color.CONTAINER,
@@ -386,23 +493,27 @@ const styles = StyleSheet.create({
   statusToday: { color: Color.DANGER },
   statusDone: { color: Color.SUCCESS },
   statusLate: { color: Color.WARNING },
-  tipsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  tip: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
+  // Footer modal filter: dua tombol (Bersihkan / Selesai).
+  filterFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  clearBtn: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  tipsToggle: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  tipsCard: {
+    paddingVertical: 14,
+    borderRadius: 12,
     backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
     borderWidth: 1,
     borderColor: Color.BORDER,
-    padding: 14,
-    gap: 10,
   },
-  tip: { color: Color.TEXT_PARAGRAPH },
+  clearText: { color: Color.TEXT_TITLE },
+  doneBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: Color.MAIN,
+  },
+  doneBtnText: { color: Color.TEXT_REVERSE },
   fieldLabel: { marginBottom: 6 },
   leaderWrap: {
     flexDirection: 'row',

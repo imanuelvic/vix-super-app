@@ -23,12 +23,21 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
-      {/* Urutan tab: Finance · Home · Profile · System */}
+      {/* Urutan tab: Finance · Tournament · Home · Profile · System */}
       <Tabs.Screen
         name="finance"
         options={{
           title: 'Finance',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="banknote" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="tournament"
+        options={{
+          title: 'Tournament',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="trophy.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen

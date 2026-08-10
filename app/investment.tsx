@@ -5,21 +5,23 @@ import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { VixText } from '@/components/common/VixText';
 import { CryptoTab } from '@/components/investment/CryptoTab';
+import { ForexTab } from '@/components/investment/ForexTab';
 import { GoldTab } from '@/components/investment/GoldTab';
+import { StockTab } from '@/components/investment/StockTab';
 
-type InvestmentTab = 'crypto' | 'emas' | 'saham';
+type InvestmentTab = 'crypto' | 'emas' | 'saham' | 'forex';
 
-// Emas di TENGAH & jadi default — fokus utama saat ini.
+// Emas jadi default — fokus utama saat ini.
 const TABS: BottomTab<InvestmentTab>[] = [
   { key: 'crypto', label: 'Crypto', icon: 'bitcoinsign.circle.fill' },
   { key: 'emas', label: 'Emas', icon: 'dollarsign.circle.fill' },
   { key: 'saham', label: 'Saham', icon: 'chart.bar.fill' },
+  { key: 'forex', label: 'Forex', icon: 'arrow.left.arrow.right' },
 ];
 
-// Investment 📈 — pantau & pelajari harga aset LIVE dari Yahoo Finance. Emas &
-// Crypto (BTC) aktif; Saham menyusul.
+// Investment 📈 — pantau & pelajari harga aset LIVE dari Yahoo Finance:
+// Crypto (BTC), Emas, Saham (IHSG), & Forex (kurs Rupiah/USD).
 export default function InvestmentScreen() {
   const { tab, scrollKey, onTabPress } = useTabScroll<InvestmentTab>('emas');
 
@@ -36,8 +38,10 @@ export default function InvestmentScreen() {
           <GoldTab />
         ) : tab === 'crypto' ? (
           <CryptoTab />
+        ) : tab === 'saham' ? (
+          <StockTab />
         ) : (
-          <ComingSoon label="Saham" />
+          <ForexTab />
         )}
       </View>
 
@@ -46,32 +50,7 @@ export default function InvestmentScreen() {
   );
 }
 
-function ComingSoon({ label }: { label: string }) {
-  return (
-    <View style={styles.center}>
-      <VixText additionalStyle={styles.csEmoji}>🚧</VixText>
-      <VixText heading="subheader" additionalStyle={styles.csTitle}>
-        {label} · Coming Soon
-      </VixText>
-      <VixText heading="label" additionalStyle={styles.csText}>
-        Tracker {label} sedang disiapkan.{'\n'}Fokus dulu ke Emas 🏅
-      </VixText>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { flex: 1 },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 40,
-    paddingBottom: 60,
-  },
-  csEmoji: { fontSize: 60, lineHeight: 72 },
-  csTitle: { color: Color.MAIN_DARK },
-  csText: { textAlign: 'center' },
 });

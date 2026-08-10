@@ -114,6 +114,11 @@ export function formatDate(d: Date): string {
   return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** 22 Jul 2026 — tanggal ringkas (bulan 3 huruf, tanpa nama hari). */
+export function formatShortDate(d: Date): string {
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
+}
+
 /** Ganti tanggal tapi pertahankan jam-menit asli (agar urutan dalam 1 hari stabil). */
 export function mergeDate(original: Date, picked: Date): Date {
   const d = new Date(picked);

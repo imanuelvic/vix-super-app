@@ -1,13 +1,19 @@
 import {
+  collection,
   doc,
   getDoc,
+  getDocs,
   increment,
   onSnapshot,
+  query,
   setDoc,
+  where,
+  writeBatch,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { MONTH_NAMES } from './format';
 import { dayDocId } from './health';
 
 // Pelacakan pemakaian fitur 📊 — berapa kali tiap tile/fitur DIBUKA per hari,
@@ -89,13 +95,58 @@ export async function fetchUsageDays(
   });
 }
 
-/** dayId N hari terakhir (termasuk hari ini), terbaru dulu. */
-export function recentDayIds(days: number, now = new Date()): string[] {
+// ===== Minggu berjalan (Senin–Minggu) =====
+// Laporan pemakaian bersifat MINGGUAN: hanya menampilkan minggu ini. Saat masuk
+// Senin baru, data minggu-minggu sebelumnya DIHAPUS permanen (resetPastWeeks)
+// supaya mulai dari nol lagi — hemat & selalu fokus ke minggu berjalan.
+
+/** Tanggal Senin 00:00 dari minggu yang memuat `now` (waktu lokal). */
+export function weekStart(now = new Date()): Date {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = (d.getDay() + 6) % 7; // Sen→0, Sel→1, …, Min→6
+  d.setDate(d.getDate() - diff);
+  return d;
+}
+
+/** dayId Senin s/d HARI INI (kronologis) untuk minggu berjalan. */
+export function weekDayIds(now = new Date()): string[] {
+  const start = weekStart(now);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const ids: string[] = [];
-  for (let i = 0; i < days; i++) {
-    ids.push(dayDocId(new Date(now.getTime() - i * 86_400_000)));
+  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+    ids.push(dayDocId(d));
   }
   return ids;
+}
+
+/** Rentang minggu berjalan, mis. "10–16 Agustus" atau "29 September – 5 Oktober". */
+export function formatWeekRange(now = new Date()): string {
+  const start = weekStart(now);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6); // Minggu
+  const sm = MONTH_NAMES[start.getMonth()];
+  const em = MONTH_NAMES[end.getMonth()];
+  return start.getMonth() === end.getMonth()
+    ? `${start.getDate()}–${end.getDate()} ${sm}`
+    : `${start.getDate()} ${sm} – ${end.getDate()} ${em}`;
+}
+
+/**
+ * Hapus PERMANEN semua dokumen pemakaian sebelum Senin minggu ini (reset
+ * mingguan). Dipanggil saat membuka tab System; umumnya tak ada yang terhapus
+ * (1 query murah), tapi begitu masuk Senin baru, data minggu lalu ikut hilang.
+ */
+export async function resetPastWeeks(
+  uid: string,
+  now = new Date(),
+): Promise<void> {
+  const boundary = dayDocId(weekStart(now)); // Senin minggu ini (batas simpan)
+  const col = collection(db, 'users', uid, 'usage');
+  const snap = await getDocs(query(col, where('dayId', '<', boundary)));
+  if (snap.empty) return;
+  const batch = writeBatch(db);
+  snap.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
 }
 
 /** Fitur terbanyak di satu hari (urut menurun). */

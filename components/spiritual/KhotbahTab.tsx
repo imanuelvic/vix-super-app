@@ -222,7 +222,17 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
             : formatFullDate(dayIdToDate(todaySundayId))
         }
         scroll={false}
-        onClose={() => setEditing(null)}>
+        onClose={() => setEditing(null)}
+        footer={
+          locked && current ? undefined : (
+            <DualButtons
+              confirmLabel={editing === 'new' ? 'Simpan' : 'Perbarui'}
+              busy={busy}
+              onCancel={() => setEditing(null)}
+              onConfirm={handleSave}
+            />
+          )
+        }>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
           {locked && current ? (
             /* ===== MODE VIEW (terkunci sejak Selasa) — hanya lihat + share ===== */
@@ -335,12 +345,6 @@ export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
                   onDelete={handleDelete}
                 />
               )}
-              <DualButtons
-                confirmLabel={editing === 'new' ? 'Simpan' : 'Perbarui'}
-                busy={busy}
-                onCancel={() => setEditing(null)}
-                onConfirm={handleSave}
-              />
             </>
           )}
 

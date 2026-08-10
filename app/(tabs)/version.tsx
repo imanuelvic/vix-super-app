@@ -20,9 +20,11 @@ import {
   aggregateDays,
   dayTotal,
   fetchUsageDays,
-  recentDayIds,
+  formatWeekRange,
+  resetPastWeeks,
   subscribeUsageDay,
   topFeatures,
+  weekDayIds,
   type UsageDay,
 } from '@/lib/usage';
 
@@ -36,23 +38,30 @@ export default function VersionScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
 
-  // ===== Laporan pemakaian fitur 📊 =====
+  // ===== Laporan pemakaian fitur 📊 (MINGGUAN, Senin–Minggu) =====
   const todayId = dayDocId(new Date());
+  const weekRangeLabel = formatWeekRange();
   const [today, setToday] = useState<UsageDay | null>(null);
   const [week, setWeek] = useState<UsageDay[]>([]);
 
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeUsageDay(user.uid, todayId, setToday);
-    fetchUsageDays(user.uid, recentDayIds(7))
+    // Reset mingguan: hapus data minggu-minggu lalu (tak berpengaruh ke fetch).
+    resetPastWeeks(user.uid).catch(() => {});
+    fetchUsageDays(user.uid, weekDayIds())
       .then(setWeek)
       .catch(() => {});
     return unsub;
   }, [user, todayId]);
 
+  // Gabung hari ini yang LIVE ke deret minggu (hero & daftar ikut ter-update).
+  const weekMerged = week.map((d) =>
+    today && d.dayId === todayId ? today : d,
+  );
   const todayTop = today ? topFeatures(today, 5) : [];
-  const weekTop = topFeatures(aggregateDays(week), 1)[0] ?? null;
-  const weekTotal = week.reduce((sum, d) => sum + dayTotal(d), 0);
+  const weekTop = topFeatures(aggregateDays(weekMerged), 1)[0] ?? null;
+  const weekTotal = weekMerged.reduce((sum, d) => sum + dayTotal(d), 0);
 
   // Versi app dari app.json — ini yang jadi runtimeVersion (policy appVersion).
   const appVersion = Constants.expoConfig?.version ?? '-';
@@ -102,10 +111,10 @@ export default function VersionScreen() {
           System
         </VixText>
 
-        {/* ===== Laporan pemakaian fitur ===== */}
+        {/* ===== Laporan pemakaian fitur (mingguan) ===== */}
         <View style={styles.usageHero}>
           <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            📊 Fitur paling sering (7 hari)
+            📊 Fitur paling sering · minggu ini
           </VixText>
           <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
             {weekTop ? `${weekTop.label}` : 'Belum ada data'}
@@ -114,6 +123,9 @@ export default function VersionScreen() {
             {weekTop
               ? `${weekTop.count}× · total ${weekTotal} kali buka fitur`
               : 'Buka fitur dari grid Home untuk mulai tercatat 📈'}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+            🗓️ {weekRangeLabel} (Sen–Min) · reset tiap Senin
           </VixText>
         </View>
 
@@ -143,26 +155,32 @@ export default function VersionScreen() {
           )}
         </View>
 
-        {/* Per hari (7 hari terakhir) — fitur teratas tiap hari */}
+        {/* Per hari (minggu berjalan) — fitur teratas tiap hari */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          7 Hari Terakhir
+          Per Hari — Minggu Ini
         </VixText>
         <View style={styles.usageCard}>
-          {week.map((d) => {
-            const top = topFeatures(d, 1)[0];
-            return (
-              <View key={d.dayId} style={styles.usageRow}>
-                <VixText heading="label" additionalStyle={styles.usageDay}>
-                  {formatShortDayDate(dayIdToDate(d.dayId))}
-                </VixText>
-                <VixText
-                  heading="paragraph"
-                  additionalStyle={top ? styles.usageName : styles.usageEmpty}>
-                  {top ? `${top.label} (${top.count}×)` : '—'}
-                </VixText>
-              </View>
-            );
-          })}
+          {weekMerged.length === 0 ? (
+            <VixText heading="label" additionalStyle={styles.usageEmpty}>
+              Belum ada aktivitas minggu ini.
+            </VixText>
+          ) : (
+            weekMerged.map((d) => {
+              const top = topFeatures(d, 1)[0];
+              return (
+                <View key={d.dayId} style={styles.usageRow}>
+                  <VixText heading="label" additionalStyle={styles.usageDay}>
+                    {formatShortDayDate(dayIdToDate(d.dayId))}
+                  </VixText>
+                  <VixText
+                    heading="paragraph"
+                    additionalStyle={top ? styles.usageName : styles.usageEmpty}>
+                    {top ? `${top.label} (${top.count}×)` : '—'}
+                  </VixText>
+                </View>
+              );
+            })
+          )}
         </View>
 
         <VixText heading="title" additionalStyle={styles.sectionTitle}>

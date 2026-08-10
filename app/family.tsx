@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -16,6 +17,7 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -230,9 +232,13 @@ const CHILD_AVATAR_SIZE = Math.min(46, CHILD_COL_WIDTH - 12);
 // berpusat pada orang yang dipilih; tap siapa pun → pohon pindah ke dia.
 export default function FamilyScreen() {
   const { user } = useAuth();
+  // `focus` dikirim dari reminder ulang tahun di Home → pusatkan pohon ke orang itu.
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
 
   const [members, setMembers] = useState<FamilyMember[] | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    typeof focus === 'string' ? focus : null,
+  );
   const [error, setError] = useState<string | null>(null);
   // Cari anggota (nama / panggilan) — daftar "Semua Anggota" disembunyikan
   // sampai diketik, biar tidak muncul list panjang langsung.
@@ -270,6 +276,15 @@ export default function FamilyScreen() {
     );
     return unsubscribe;
   }, [user]);
+
+  // Datang dari reminder ulang tahun Home (param `focus`) → pusatkan pohon ke
+  // orang itu & naik ke atas biar pohonnya langsung kelihatan.
+  useEffect(() => {
+    if (typeof focus === 'string' && focus) {
+      setSelectedId(focus);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  }, [focus]);
 
   const today = new Date();
   const all = members ?? [];
@@ -448,7 +463,9 @@ export default function FamilyScreen() {
       {members === null ? (
         <LoadingCenter />
       ) : (
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+        <KeyboardAwareScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.content}>
           <PrimaryButton
             label="Tambah Anggota Keluarga"
             icon="plus"
@@ -641,7 +658,7 @@ export default function FamilyScreen() {
               )}
             </>
           )}
-        </ScrollView>
+        </KeyboardAwareScrollView>
       )}
 
       {/* Sheet tambah/edit anggota */}
@@ -791,13 +808,14 @@ export default function FamilyScreen() {
               onDelete={handleDelete}
             />
           )}
-          <DualButtons
-            confirmLabel="Simpan"
-            busy={busy}
-            onCancel={() => setEditing(null)}
-            onConfirm={handleSave}
-          />
         </ScrollView>
+        {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
+        <DualButtons
+          confirmLabel="Simpan"
+          busy={busy}
+          onCancel={() => setEditing(null)}
+          onConfirm={handleSave}
+        />
       </SheetModal>
     </SafeAreaView>
   );

@@ -19,16 +19,19 @@ function shortMonth(dateStr: string): string {
   return `${M3[Number(m) - 1]} '${y.slice(2)}`;
 }
 
-// Grafik garis harga (Rupiah) berbasis SVG — untuk mempelajari tren aset.
-// Dipakai Emas & Bitcoin; `color` mengubah warna garis/label.
+// Grafik garis harga berbasis SVG — untuk mempelajari tren aset. Dipakai Emas,
+// Bitcoin, Forex & IHSG; `color` mengubah warna garis/label; `format` mengubah
+// cara menulis nilai sumbu (default Rupiah singkat — IHSG memakai poin, bukan Rp).
 export function PriceChart({
   series,
   width,
   color = GOLD,
+  format = formatShortRupiah,
 }: {
   series: MarketPoint[];
   width: number;
   color?: string;
+  format?: (n: number) => string;
 }) {
   if (series.length < 2 || width <= 0) return null;
 
@@ -75,10 +78,10 @@ export function PriceChart({
         <Circle cx={x(n - 1)} cy={y(last.price)} r={4.5} fill={color} />
         {/* Label harga tertinggi & terendah (kiri) */}
         <SvgText x={PAD_L} y={y(max) - 5} fontSize={10} fill={Color.TEXT_LABEL}>
-          {formatShortRupiah(max)}
+          {format(max)}
         </SvgText>
         <SvgText x={PAD_L} y={y(min) + 13} fontSize={10} fill={Color.TEXT_LABEL}>
-          {formatShortRupiah(min)}
+          {format(min)}
         </SvgText>
         {/* Label harga terakhir (dekat titik terakhir) */}
         <SvgText
@@ -88,7 +91,7 @@ export function PriceChart({
           fontWeight="bold"
           fill={color}
           textAnchor="end">
-          {formatShortRupiah(last.price)}
+          {format(last.price)}
         </SvgText>
         {/* Label bulan pertama & terakhir (sumbu X) */}
         <SvgText x={PAD_L} y={H - 8} fontSize={10} fill={Color.TEXT_LABEL}>
