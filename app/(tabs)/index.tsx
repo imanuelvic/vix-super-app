@@ -273,10 +273,9 @@ export default function HomeScreen() {
                 </PressableScale>
               </View>
             </View>
-            {/* Sudah memenuhi target 8 gelas hari ini 🎉 */}
             {water >= WATER_GOAL && (
               <VixText heading="label" additionalStyle={styles.waterDone}>
-                ✅ Anda sudah mencukupi air seharian 🎉
+                ✅ Telah mencukupi air seharian 🎉
               </VixText>
             )}
           </Animated.View>
@@ -363,7 +362,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 10,
-    marginTop: 14,
+    marginTop: 6,
   },
   waterLabel: { color: Color.MAIN_LIGHT, flexShrink: 1 },
   waterButtons: { flexDirection: 'row', gap: 8 },
@@ -377,8 +376,7 @@ const styles = StyleSheet.create({
   },
   waterButtonPlus: { backgroundColor: Color.ACCENT },
   waterButtonText: { color: Color.MAIN_DARK, fontSize: 18, lineHeight: 22 },
-  // Pesan "sudah cukup air seharian" saat mencapai target (latar kartu gelap).
-  waterDone: { color: Color.MAIN_LIGHT, marginTop: 4 },
+  waterDone: { color: Color.MAIN_LIGHT, marginTop: 2 },
   streakPill: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,
