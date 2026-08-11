@@ -25,7 +25,6 @@ import {
   bmiCategory,
   bmiValue,
   bmrMale,
-  dailyWaterLiters,
   saveHealthProfile,
   type HealthProfile,
   type Streak,
@@ -110,7 +109,6 @@ export function SummaryTab({
   const cat = bmiCategory(bmi);
   // Standar kesehatan yang dihitung otomatis dari data tubuh.
   const bmr = bmrMale(profile.weightKg, profile.heightCm, age);
-  const waterL = dailyWaterLiters(profile.weightKg);
   const whtr = profile.waistCm ? profile.waistCm / profile.heightCm : null;
 
   function openEdit() {
@@ -280,10 +278,6 @@ export function SummaryTab({
         <BodyRow
           label="Kalori basal (BMR)"
           value={`±${groupDigits(String(Math.round(bmr)))} kkal/hari`}
-        />
-        <BodyRow
-          label="Kebutuhan air"
-          value={`±${formatDecimal(waterL)} L/hari`}
         />
         {whtr != null && (
           <View style={styles.bodyRow}>

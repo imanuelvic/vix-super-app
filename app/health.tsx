@@ -102,7 +102,7 @@ export default function HealthScreen() {
         title="Health 🍎"
         subtitle="Jaga tubuh, kelola energi"
         right={
-          <EmojiButton emoji="🏆" onPress={() => router.push('/steps')} />
+          <EmojiButton emoji="👣🏆" onPress={() => router.push('/steps')} />
         }
       />
 

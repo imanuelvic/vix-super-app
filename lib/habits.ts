@@ -45,52 +45,33 @@ function mk(slot: HabitSlot, labels: string[]): ScheduledHabit[] {
 }
 
 const morningLabels = [
-  '⏰ Wake Up 6:30 AM',
-  '📵 No Phone 30 Min',
+  '⏰ Wake Up 6:00 AM',
   '🫖 Drink Warm Water',
   '🍞 Holy Communion',
   '✝️ Revive + IG Story',
-  '🙏 5 Min Gratitude',
-  '🙏 5 Min Prayer',
-  '🗣️ Declare Intention',
   '🛏️ Make Your Bed',
   '🏃 Jogging + News',
-  '🏋️ Strength Training',
   '🥚 Eat Eggs + Whey',
   '💊 Take Vitamin C',
-  '🚿 Take a Shower',
 ];
 
 const daytimeLabels = [
-  '💧 Drink 1L Water',
-  '📖 Share Bible Verse',
   '📲 Check-In Platform',
   '🦉 Play Duolingo',
-  '🎧 Listen to Podcast',
   '🍽️ Eat Mindfully',
   '🐟 Take Fish Oil',
-  '🚶 > 5.000 Steps',
-  '📚 Reading / Learning',
-  '💪 Drink Creatine',
-  '🧘 Stretching + News',
+  '⚡ Drink Creatine',
   '☕ Caffè Americano',
   '🤗 Encourage Someone',
-  '🤔 5 Min Reflection',
-  '🏃 Treadmill High Incline',
+  '💪🏻 Dumbbell',
 ];
 
 const nightLabels = [
-  '🍽️ No Eat After 20:00',
-  '🚿 Take a Shower',
   '🧴 Scrub + Lotion',
   '🫖 Fill Warm Water',
   '📝 Prepare Tomorrow',
-  '📵 No Phone 30 Min',
   '📖 Bible Reading',
   '📖 Memorize Verse',
-  '🎶 Worship Song',
-  '🧘 Stretching',
-  '📓 Daily Reflection',
   '🙏 Ask Forgiveness',
   '😴 Sleep 23:00 PM',
 ];

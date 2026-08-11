@@ -87,14 +87,14 @@ export function ReminderCard({
 }
 
 const styles = StyleSheet.create({
+  // Jarak antar-kartu diatur oleh kontainer (gap) di layar pemakainya — kartu
+  // ini sendiri tak lagi punya marginBottom supaya jaraknya selalu seragam.
   card: {
     borderRadius: 16,
     borderWidth: 1.5,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 3,
-    marginTop: -12,
-    marginBottom: 24,
   },
   title: { color: Color.TEXT_TITLE },
   itemRow: {

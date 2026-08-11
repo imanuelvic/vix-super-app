@@ -57,13 +57,21 @@ export function InlineDelete({
 }
 
 const styles = StyleSheet.create({
-  link: { color: Color.DANGER, textAlign: 'center', marginTop: 6 },
+  // marginBottom → beri jarak dari footer (tombol Batal/Simpan yang menempel
+  // dengan garis pemisah) supaya tidak terlalu mepet.
+  link: {
+    color: Color.DANGER,
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 14,
+  },
   confirmBox: {
     borderWidth: 1,
     borderColor: Color.DANGER,
     borderRadius: 12,
     padding: 10,
     marginTop: 6,
+    marginBottom: 14,
     gap: 8,
   },
   confirmText: { color: Color.DANGER, textAlign: 'center' },

@@ -124,11 +124,6 @@ export function bmrMale(
   return 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
 }
 
-/** Kebutuhan air harian (liter) ≈ 35 ml per kg berat badan. */
-export function dailyWaterLiters(weightKg: number): number {
-  return (weightKg * 35) / 1000;
-}
-
 // ============================== Target berat ==============================
 // users/{uid}/health/target — satu dokumen. startWeightKg = berat saat target
 // dipasang, dipakai sebagai titik nol supaya progress dihitung konsisten.

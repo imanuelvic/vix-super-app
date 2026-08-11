@@ -25,7 +25,6 @@ const QNA: { q: string; a: string }[] = [
 
 const TIPS: string[] = [
   '😴 Tidur 7–8 jam di jam yang konsisten — otot pulih & tumbuh saat tidur.',
-  '💧 Minum air putih ±2 liter per hari; mulai segelas begitu bangun.',
   '🏃 Olahraga minimal 150 menit per minggu, plus latihan beban 2–3× kalau mau otot besar.',
   '🍗 Cukupi protein ±1,6 g per kg berat badan untuk membangun otot.',
   '🌅 Kena sinar matahari pagi 10–15 menit — vitamin D alami & mood lebih baik.',

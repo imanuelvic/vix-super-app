@@ -325,7 +325,6 @@ export type MeetingKind =
   | 'visitasi'
   | 'fellowship'
   | 'oneOnOne'
-  | 'mentoringMclCl'
   | 'mentoringMclClMt';
 
 export const MEETING_KINDS: { key: MeetingKind; label: string; icon: string }[] =
@@ -333,7 +332,6 @@ export const MEETING_KINDS: { key: MeetingKind; label: string; icon: string }[] 
     { key: 'visitasi', label: 'Visitasi CORE', icon: '🔥' },
     { key: 'fellowship', label: 'Fellowship CORE', icon: '👥' },
     { key: 'oneOnOne', label: 'One-on-One', icon: '1️⃣' },
-    { key: 'mentoringMclCl', label: 'Mentoring MCL CL', icon: '🙋🏻‍♂️' },
     { key: 'mentoringMclClMt', label: 'Mentoring MCL CL MT', icon: '✨' },
   ];
 

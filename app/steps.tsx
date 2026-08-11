@@ -123,7 +123,7 @@ export default function StepsScreen() {
         {/* Per tier: berapa kali + tanggal-tanggalnya (tekan untuk buka) */}
         <View style={styles.card}>
           <VixText heading="title" additionalStyle={styles.cardTitle}>
-            🏆 Pencapaian per Tier
+            👣🏆 Pencapaian per Tier
           </VixText>
           {[...ach.tiers].reverse().map((t) => {
             const meta = STEP_TIER_META[t.tier];

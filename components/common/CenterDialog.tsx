@@ -2,6 +2,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   StyleSheet,
 } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
@@ -31,6 +32,8 @@ export function CenterDialog({
         <Animated.View
           entering={FadeIn.duration(150)}
           style={styles.overlay}>
+          {/* Tekan area gelap di luar kotak → tutup (di belakang kotak) */}
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
           <Animated.View entering={ZoomIn.duration(180)} style={styles.box}>
             {children}
           </Animated.View>

@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { BottomTabs } from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PinLock } from '@/components/common/PinLock';
@@ -27,7 +28,7 @@ type IconName = ComponentProps<typeof IconSymbol>['name'];
 // kalau HP dipegang orang lain) — bukan pengamanan data.
 const FINANCE_PIN = '9811';
 
-// Sub-menu Finance — selector di atas.
+// Sub-menu Finance — tab bar DI BAWAH (pakai komponen BottomTabs bersama).
 const SEGMENTS: { key: FinanceTab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'chart.pie.fill' },
   { key: 'transactions', label: 'Transaksi', icon: 'list.bullet' },
@@ -128,7 +129,7 @@ export default function FinanceScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Tombol kembali ke Home (Finance kini halaman yang di-push dari grid) */}
       <PressableScale
         style={styles.backRow}
@@ -164,31 +165,6 @@ export default function FinanceScreen() {
         </View>
       </View>
 
-      {/* Sub-menu (selector atas) — segmented control modern: track krem,
-          pilihan aktif jadi pil teal. */}
-      <View style={styles.segment}>
-        {SEGMENTS.map((s) => {
-          const active = tab === s.key;
-          return (
-            <PressableScale
-              key={s.key}
-              style={[styles.segItem, active && styles.segItemActive]}
-              onPress={() => onTabPress(s.key)}>
-              <IconSymbol
-                name={s.icon}
-                size={16}
-                color={active ? Color.TEXT_REVERSE : Color.TEXT_LABEL}
-              />
-              <VixText
-                heading="label"
-                additionalStyle={active ? styles.segTextActive : styles.segText}>
-                {s.label}
-              </VixText>
-            </PressableScale>
-          );
-        })}
-      </View>
-
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>
           {error}
@@ -213,6 +189,9 @@ export default function FinanceScreen() {
           />
         )}
       </View>
+
+      {/* Sub-menu Finance: tab bar DI BAWAH (Dashboard · Transaksi · Budgeting) */}
+      <BottomTabs tabs={SEGMENTS} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }
@@ -238,36 +217,6 @@ const styles = StyleSheet.create({
   monthRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   monthText: { minWidth: 140, textAlign: 'center', color: Color.TEXT_TITLE },
   headerButtons: { flexDirection: 'row', gap: 8 },
-  // Segmented control modern untuk sub-menu Finance.
-  segment: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginTop: 6,
-    marginBottom: 6,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 14,
-    padding: 4,
-    gap: 4,
-  },
-  segItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 9,
-    borderRadius: 10,
-  },
-  segItemActive: {
-    backgroundColor: Color.MAIN,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  segText: { color: Color.TEXT_LABEL },
-  segTextActive: { color: Color.TEXT_REVERSE },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

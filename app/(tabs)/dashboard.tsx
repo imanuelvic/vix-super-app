@@ -21,7 +21,7 @@ import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import { type LoginStreak } from '@/lib/achievements';
+import { subscribeLoginStreak, type LoginStreak } from '@/lib/achievements';
 import {
   deadlineDaysUntil,
   freelanceReminderWindow,
@@ -140,6 +140,8 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
+  // Streak doa pagi 🔥 & Revive 📖 — untuk strip "Streak & Semangat" di atas.
+  const [login, setLogin] = useState<LoginStreak | null | undefined>(undefined);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
@@ -187,6 +189,7 @@ export default function DashboardScreen() {
       subscribeTasks(user.uid, setTasks),
       subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
+      subscribeLoginStreak(user.uid, setLogin),
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeVisitations(user.uid, setVisitations),
       subscribeFamily(user.uid, setFamily),
@@ -515,6 +518,37 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
+          {/* Streak & Semangat 🔥 — konsistensi doa pagi & Revive. Tap → Achievements */}
+          <PressableScale
+            style={styles.streakCard}
+            onPress={() => router.push('/achievements')}>
+            <View style={styles.streakItem}>
+              <VixText additionalStyle={styles.streakIcon}>🔥</VixText>
+              <VixText heading="header" additionalStyle={styles.streakNum}>
+                {login?.count ?? 0}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.streakLabel}>
+                Doa Pagi
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.streakBest}>
+                rekor {login?.best ?? 0} hari
+              </VixText>
+            </View>
+            <View style={styles.streakDivider} />
+            <View style={styles.streakItem}>
+              <VixText additionalStyle={styles.streakIcon}>📖</VixText>
+              <VixText heading="header" additionalStyle={styles.streakNum}>
+                {revive?.count ?? 0}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.streakLabel}>
+                Revive
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.streakBest}>
+                rekor {revive?.best ?? 0} hari
+              </VixText>
+            </View>
+          </PressableScale>
+
           {/* Reminder kebiasaan sesi saat ini (Pagi/Siang/Malam). */}
           {slotUndone.length > 0 && (
             <ReminderCard
@@ -896,8 +930,31 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: Color.MAIN },
   headerDate: { color: Color.TEXT_LABEL },
-  content: { paddingBottom: 40, paddingTop: 4, alignItems: 'center' },
-  contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20 },
+  content: { paddingBottom: 40, paddingTop: 12, alignItems: 'center' },
+  // Jarak antar-kartu diatur SATU tempat di sini (gap) → selalu seragam & rapi.
+  contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20, gap: 20 },
+  // Strip "Streak & Semangat" 🔥 di atas Dashboard (tap → Achievements).
+  streakCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Color.ACCENT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.ACCENT_DARK,
+    paddingVertical: 14,
+  },
+  streakItem: { flex: 1, alignItems: 'center', gap: 1 },
+  streakDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    marginVertical: 6,
+    backgroundColor: Color.ACCENT_DARK,
+    opacity: 0.4,
+  },
+  streakIcon: { fontSize: 22, lineHeight: 26 },
+  streakNum: { color: Color.ACCENT_DARK },
+  streakLabel: { color: Color.ACCENT_DARK, fontWeight: '600' },
+  streakBest: { color: Color.ACCENT_DARK, opacity: 0.8 },
   // Reminder kebiasaan sesi (Pagi/Siang/Malam) — teks di dalam ReminderCard.
   habitReminderSub: { color: Color.FINANCE_EXPENSE_DARK, marginBottom: 2 },
   habitReminderItem: { color: Color.FINANCE_EXPENSE_DARK },
@@ -910,7 +967,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 3,
-    marginBottom: 24,
   },
   visitTitle: { color: Color.TEXT_TITLE },
   visitText: { color: Color.FINANCE_INVESTMENT_DARK },
@@ -930,7 +986,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 4,
-    marginBottom: 24,
   },
   healthTitle: { color: Color.TEXT_TITLE },
   healthText: { color: Color.FINANCE_EXPENSE_DARK },
@@ -942,7 +997,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 4,
-    marginBottom: 24,
   },
   careerTitle: { color: Color.TEXT_TITLE },
   careerText: { color: Color.ACCENT_DARK },
@@ -954,7 +1008,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
-    marginBottom: 24,
   },
   wheelTitle: { color: Color.TEXT_TITLE },
   wheelRow: { gap: 1 },
@@ -972,7 +1025,6 @@ const styles = StyleSheet.create({
     borderColor: Color.SPIRITUAL_DARK,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginBottom: 24,
   },
   readingTextBox: { flex: 1, gap: 1 },
   readingTitle: { color: Color.SPIRITUAL_DARK },
@@ -997,7 +1049,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 4,
-    marginBottom: 24,
   },
   productivityTitle: { color: Color.TEXT_TITLE },
   productivitySub: { color: Color.FINANCE_INCOME_DARK, marginBottom: 2 },
@@ -1011,7 +1062,6 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN_DARK,
     padding: 16,
     gap: 10,
-    marginBottom: 24,
   },
   taskTitle: { color: Color.TEXT_TITLE },
   taskHeader: {

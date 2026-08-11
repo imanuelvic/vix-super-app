@@ -18,7 +18,6 @@ import { useAuth } from '@/contexts/auth';
 import {
     isCurrentMonthPrayers,
     isPrayerFollowupDay,
-    loveLangLabel,
     monthDocId,
     monthlyPointsFor,
     monthlyPrayersFilled,
@@ -68,13 +67,18 @@ export function FollowupTab({
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
   // Modal tengah: pokok doa 1 CL (follow up), dan ide pendekatan 1 CL.
   const [prayerModal, setPrayerModal] = useState<CoreLeader | null>(null);
-  const [tipsModal, setTipsModal] = useState<{
+  // Modal follow up mingguan (mirip Doa Rantai): ketuk kartu CL → lihat
+  // pertanyaan + ide pendekatan, ganti pertanyaan di dalamnya. Menandai
+  // "selesai" lewat tombol kecil di kartu (di luar modal).
+  const [followupModal, setFollowupModal] = useState<{
+    id: string;
     title: string;
     phone: string | null;
-    question: string;
-    tips: { label: string; text: string }[];
-    done: boolean;
-    onDone: () => void;
+    person: {
+      disc?: string | null;
+      mbti?: string | null;
+      loveLanguage?: string | null;
+    };
   } | null>(null);
 
   // ===== Idea For CORE — form tambah/edit =====
@@ -274,7 +278,9 @@ export function FollowupTab({
     );
   }
 
-  // Kartu follow up — dipakai untuk CORE Leader maupun Main Team.
+  // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: ketuk untuk buka
+  // modal (pertanyaan + ide pendekatan). Tombol "Selesai" kecil di kartu (di
+  // luar modal) untuk menandai sudah follow up hari ini.
   function renderFollowCard({
     id,
     title,
@@ -293,124 +299,32 @@ export function FollowupTab({
     onDone: () => void;
   }) {
     const topic = weeklyFollowupTopic(person, id, dayId, topicOverride[id]);
-    const tips = personalityTips(person);
-    // Ada nomor → seluruh kartu bisa ditekan untuk chat WA. Menekan kartu =
-    // menindaklanjuti orang ini, jadi SEKALIGUS menandai "sudah follow up hari
-    // ini" (badge di Home ikut hilang). Border hijau WA sebagai penanda.
-    const canChat = !!phone;
+    // Tombol "Selesai" (PressableScale bersarang) menangkap sentuhannya sendiri
+    // → menandai selesai TANPA ikut membuka modal.
     return (
       <PressableScale
         key={id}
-        style={[
-          styles.card,
-          canChat && !done && styles.cardChat,
-          done && styles.cardDone,
-        ]}
-        onPress={
-          canChat
-            ? () => {
-                openWhatsApp(phone!, `Shalom! 🙏\n\n${topic.question}`);
-                if (!done) onDone();
-              }
-            : undefined
-        }>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardTitleBox}>
-            <VixText heading="bold" additionalStyle={styles.leaderName}>
-              {title}
-            </VixText>
-            {sub && <VixText heading="label">{sub}</VixText>}
-          </View>
-          <View style={styles.categoryBadge}>
-            <VixText heading="label" additionalStyle={styles.categoryText}>
-              {topic.icon} {topic.label}
-            </VixText>
-          </View>
-        </View>
-
-        {/* Ide pembuka chat */}
-        <View style={styles.questionBox}>
-          <VixText heading="paragraph" additionalStyle={styles.questionText}>
-            “{topic.question}”
+        style={[styles.prayerRow, done && styles.prayerRowDone]}
+        onPress={() => setFollowupModal({ id, title, phone, person })}>
+        <View style={styles.followMain}>
+          <VixText heading="bold" additionalStyle={styles.leaderName}>
+            {title}
+          </VixText>
+          {sub && <VixText heading="label">{sub}</VixText>}
+          <VixText heading="label" additionalStyle={styles.followHint}>
+            {topic.icon} {topic.label} · ketuk untuk lihat ›
           </VixText>
         </View>
-
-        {/* Badge kepribadian */}
-        {(person.disc || person.mbti || loveLangLabel(person.loveLanguage)) && (
-          <View style={styles.persBadgeRow}>
-            {person.disc ? (
-              <View style={styles.persBadge}>
-                <VixText heading="label" additionalStyle={styles.persBadgeText}>
-                  🎨 {person.disc}
-                </VixText>
-              </View>
-            ) : null}
-            {person.mbti ? (
-              <View style={styles.persBadge}>
-                <VixText heading="label" additionalStyle={styles.persBadgeText}>
-                  🧩 {person.mbti}
-                </VixText>
-              </View>
-            ) : null}
-            {loveLangLabel(person.loveLanguage) ? (
-              <View style={styles.persBadge}>
-                <VixText heading="label" additionalStyle={styles.persBadgeText}>
-                  {loveLangLabel(person.loveLanguage)}
-                </VixText>
-              </View>
-            ) : null}
-          </View>
-        )}
-
-        {/* Ide pendekatan → buka modal tengah (isi ide + tombol WA).
-            PressableScale bersarang: menekannya membuka modal, tidak ikut
-            memicu chat WA kartu (inner menangkap sentuhan). */}
-        {tips.length > 0 && (
-          <PressableScale
-            style={styles.tipOpenButton}
-            onPress={() =>
-              setTipsModal({ title, phone, question: topic.question, tips, done, onDone })
-            }>
-            <VixText additionalStyle={styles.tipHeaderEmoji}>💡</VixText>
-            <VixText heading="bold" additionalStyle={styles.tipHeader}>
-              Ide Pendekatan
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.tipChevron}>
-              {tips.length} ›
-            </VixText>
-          </PressableScale>
-        )}
-
-        {/* Status: sudah follow up, belum ada nomor, atau ajakan ketuk kartu. */}
         {done ? (
           <VixText heading="label" additionalStyle={styles.doneText}>
-            ✅ Sudah di follow up hari ini
-          </VixText>
-        ) : !phone ? (
-          <VixText heading="label" additionalStyle={styles.noPhoneText}>
-            📱 Isi nomor HP di tab CORE Leader untuk chat WA.
+            ✅ Selesai
           </VixText>
         ) : (
-          <VixText heading="label" additionalStyle={styles.chatHint}>
-            💬 Ketuk kartu untuk chat WA & tandai sudah follow up
-          </VixText>
-        )}
-
-        {!done && (
-          <View style={styles.buttonRow}>
-            <PressableScale
-              style={styles.shuffleButton}
-              onPress={() => shuffleTopic(id)}>
-              <VixText heading="bold" additionalStyle={styles.shuffleText}>
-                🔀 Ganti pertanyaan
-              </VixText>
-            </PressableScale>
-            <PressableScale style={styles.doneButton} onPress={onDone}>
-              <VixText heading="bold" additionalStyle={styles.doneButtonText}>
-                ✅ Selesai
-              </VixText>
-            </PressableScale>
-          </View>
+          <PressableScale style={styles.smallDoneButton} onPress={onDone}>
+            <VixText heading="label" additionalStyle={styles.smallDoneText}>
+              ✅ Selesai
+            </VixText>
+          </PressableScale>
         )}
       </PressableScale>
     );
@@ -444,6 +358,18 @@ export function FollowupTab({
     prayerModal != null &&
     isCurrentMonthPrayers(monthlyPrayers, nowDate) &&
     monthlyPrayers.followedDayId[prayerModal.id] === dayId;
+
+  // Nilai untuk modal follow up mingguan (dihitung live → tombol "Ganti
+  // pertanyaan" langsung memperbarui pertanyaan di modal).
+  const fmTopic = followupModal
+    ? weeklyFollowupTopic(
+        followupModal.person,
+        followupModal.id,
+        dayId,
+        topicOverride[followupModal.id],
+      )
+    : null;
+  const fmTips = followupModal ? personalityTips(followupModal.person) : [];
 
   return (
     <>
@@ -521,13 +447,6 @@ export function FollowupTab({
               <VixText heading="title" additionalStyle={styles.doaRantaiTitle}>
                 🔗  Doa Rantai
               </VixText>
-              <PressableScale
-                onPress={() => router.push('/monthly-prayers')}
-                hitSlop={8}>
-                <VixText heading="bold" additionalStyle={styles.doaRantaiLink}>
-                  Lihat semua ›
-                </VixText>
-              </PressableScale>
             </View>
             <VixText heading="label" additionalStyle={styles.doaRantaiSub}>
               Bergilir — hari ini {prayerLeadersToday.length} CORE Leader.
@@ -717,7 +636,7 @@ export function FollowupTab({
                 setPrayerModal(null);
               }}>
               <VixText heading="bold" additionalStyle={styles.modalWaText}>
-                💬 Follow up via WhatsApp
+                💬 Doakan Pokok Doa
               </VixText>
             </PressableScale>
           )}
@@ -732,43 +651,71 @@ export function FollowupTab({
       )}
     </CenterDialog>
 
-    {/* Modal tengah: ide pendekatan 1 CL + tombol WA */}
-    <CenterDialog visible={!!tipsModal} onClose={() => setTipsModal(null)}>
-      {tipsModal && (
+    {/* Modal follow up mingguan: pertanyaan + ganti pertanyaan + ide pendekatan
+        + chat WA (mirip modal Doa Rantai). "Selesai" ada di kartu, bukan sini. */}
+    <CenterDialog
+      visible={!!followupModal}
+      onClose={() => setFollowupModal(null)}>
+      {followupModal && fmTopic && (
         <>
           <VixText heading="title" additionalStyle={styles.modalTitle}>
-            💡 Ide Pendekatan
+            {followupModal.title}
           </VixText>
           <VixText heading="label" additionalStyle={styles.modalSub}>
-            untuk {tipsModal.title}
+            {fmTopic.icon} {fmTopic.label}
           </VixText>
           <ScrollView style={styles.modalScroll}>
-            {tipsModal.tips.map((t) => (
-              <View key={t.label} style={styles.tipRow}>
-                <View style={styles.tipBadge}>
-                  <VixText heading="label" additionalStyle={styles.tipBadgeText}>
-                    {t.label}
-                  </VixText>
-                </View>
-                <VixText heading="paragraph" additionalStyle={styles.tipText}>
-                  {t.text}
+            {/* Pertanyaan follow up */}
+            <View style={styles.questionBox}>
+              <VixText heading="paragraph" additionalStyle={styles.questionText}>
+                “{fmTopic.question}”
+              </VixText>
+            </View>
+            {/* Ganti pertanyaan — tombol kecil di dalam modal */}
+            <PressableScale
+              style={styles.modalShuffleButton}
+              onPress={() => shuffleTopic(followupModal.id)}>
+              <VixText heading="label" additionalStyle={styles.modalShuffleText}>
+                🔀 Ganti pertanyaan
+              </VixText>
+            </PressableScale>
+            {/* Ide pendekatan sesuai kepribadian */}
+            {fmTips.length > 0 && (
+              <>
+                <VixText
+                  heading="label"
+                  additionalStyle={styles.modalTipsLabel}>
+                  💡 Ide Pendekatan
                 </VixText>
-              </View>
-            ))}
+                {fmTips.map((t) => (
+                  <View key={t.label} style={styles.tipRow}>
+                    <View style={styles.tipBadge}>
+                      <VixText
+                        heading="label"
+                        additionalStyle={styles.tipBadgeText}>
+                        {t.label}
+                      </VixText>
+                    </View>
+                    <VixText heading="paragraph" additionalStyle={styles.tipText}>
+                      {t.text}
+                    </VixText>
+                  </View>
+                ))}
+              </>
+            )}
           </ScrollView>
-          {tipsModal.phone ? (
+          {followupModal.phone ? (
             <PressableScale
               style={styles.modalWaButton}
               onPress={() => {
                 openWhatsApp(
-                  tipsModal.phone!,
-                  `Shalom! 🙏\n\n${tipsModal.question}`,
+                  followupModal.phone!,
+                  `Shalom! 🙏\n\n${fmTopic.question}`,
                 );
-                if (!tipsModal.done) tipsModal.onDone();
-                setTipsModal(null);
+                setFollowupModal(null);
               }}>
               <VixText heading="bold" additionalStyle={styles.modalWaText}>
-                💬 Chat via WhatsApp
+                💬 Chat WA
               </VixText>
             </PressableScale>
           ) : (
@@ -778,7 +725,7 @@ export function FollowupTab({
           )}
           <PressableScale
             style={styles.modalClose}
-            onPress={() => setTipsModal(null)}>
+            onPress={() => setFollowupModal(null)}>
             <VixText heading="label" additionalStyle={styles.modalCloseText}>
               Tutup
             </VixText>
@@ -853,46 +800,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   doaRantaiTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     gap: 8,
   },
-  doaRantaiTitle: { flex: 1, color: Color.TEXT_REVERSE },
-  doaRantaiLink: { color: Color.MAIN_LIGHT },
+  doaRantaiTitle: { color: Color.TEXT_REVERSE },
   doaRantaiSub: { color: Color.TEXT_ON_DARK_MUTED },
-  card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    padding: 16,
-    marginBottom: 12,
-    gap: 10,
-  },
-  cardChat: {
-    borderColor: Color.WHATSAPP,
-    borderWidth: 1.5,
-  },
-  cardDone: {
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderColor: Color.MAIN_LIGHT,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardTitleBox: { flex: 1, gap: 1 },
   leaderName: { color: Color.TEXT_TITLE },
-  categoryBadge: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  categoryText: { color: Color.TEXT_PARAGRAPH },
   questionBox: {
     backgroundColor: Color.BACKGROUND,
     borderLeftWidth: 3,
@@ -902,27 +816,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   questionText: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
-  persBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  persBadge: {
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  persBadgeText: { color: Color.MAIN_DARK },
-  // Tombol pembuka modal Ide Pendekatan
-  tipOpenButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Color.ACCENT,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  tipHeaderEmoji: { fontSize: 15, lineHeight: 20 },
-  tipHeader: { color: Color.ACCENT_DARK, letterSpacing: 0.2 },
-  tipChevron: { color: Color.ACCENT_DARK, marginLeft: 'auto' },
   tipRow: {
     backgroundColor: Color.ACCENT,
     borderRadius: 12,
@@ -947,7 +840,6 @@ const styles = StyleSheet.create({
   },
   waText: { color: Color.TEXT_REVERSE },
   noPhoneText: { color: Color.TEXT_PLACEHOLDER },
-  chatHint: { color: Color.WHATSAPP },
   // Baris ringkas CL untuk follow up pokok doa (daftar nama)
   prayerRow: {
     flexDirection: 'row',
@@ -968,6 +860,31 @@ const styles = StyleSheet.create({
   },
   prayerRowName: { flex: 1, color: Color.TEXT_TITLE },
   prayerRowMeta: { color: Color.TEXT_LABEL },
+  // Kartu follow up mingguan memakai gaya prayerRow (ringkas, ketuk → modal).
+  followMain: { flex: 1, gap: 1 },
+  followHint: { color: Color.TEXT_LABEL },
+  // Tombol "Selesai" kecil di kartu (di luar modal).
+  smallDoneButton: {
+    backgroundColor: Color.MAIN,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  smallDoneText: { color: Color.TEXT_REVERSE },
+  // Tombol "Ganti pertanyaan" kecil di dalam modal follow up.
+  modalShuffleButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Color.CONTAINER,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  modalShuffleText: { color: Color.TEXT_LABEL },
+  modalTipsLabel: { color: Color.TEXT_LABEL, marginTop: 8, marginBottom: 6 },
   // Modal tengah (pokok doa & ide pendekatan)
   modalTitle: { color: Color.TEXT_TITLE, marginBottom: 2 },
   modalSub: { color: Color.TEXT_LABEL, marginBottom: 10 },
@@ -991,25 +908,6 @@ const styles = StyleSheet.create({
   modalWaText: { color: Color.TEXT_REVERSE },
   modalClose: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
   modalCloseText: { color: Color.TEXT_LABEL },
-  buttonRow: { flexDirection: 'row', gap: 10 },
-  shuffleButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
-  },
-  shuffleText: { color: Color.TEXT_LABEL },
-  doneButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: Color.MAIN,
-  },
-  doneButtonText: { color: Color.TEXT_REVERSE },
   doneText: { color: Color.SUCCESS },
   emptyText: { textAlign: 'center', marginBottom: 12 },
   // Idea For CORE

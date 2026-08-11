@@ -84,18 +84,21 @@ const FEATURES: {
   bg: string;
   fg: string;
 }[] = [
-  { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.FINANCE_INCOME_DARK },
   { key: 'tasks', label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK },
   { key: 'spiritual', label: 'Spiritual', icon: 'book.closed.fill', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
   { key: 'health', label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.FINANCE_EXPENSE, fg: Color.DANGER },
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
+
+  { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.FINANCE_INCOME_DARK },
   { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
-  { key: 'investment', label: 'Investment', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
+  { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
+
   { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
+  { key: 'investment', label: 'Investment', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
   { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
   { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
-  { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
+
   { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
 ];
@@ -154,6 +157,10 @@ export default function HomeScreen() {
 
   // Kebiasaan harian (sama tiap hari) — untuk badge Health.
   const daySchedule = schedule ?? [];
+
+  // Air putih 💧 — gelas terminum hari ini (0..). Tersimpan per hari (HabitDay
+  // per dayId) → otomatis kembali 0 tiap ganti hari.
+  const water = day?.water ?? 0;
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -247,7 +254,7 @@ export default function HomeScreen() {
             {/* Air putih 💧 — tombol harian yang sering dipencet, dibuat ringkas */}
             <View style={styles.waterRow}>
               <VixText heading="bold" additionalStyle={styles.waterLabel}>
-                💧 Air putih {day?.water ?? 0}/{WATER_GOAL} gelas
+                💧 Air putih {water}/{WATER_GOAL} gelas
               </VixText>
               <View style={styles.waterButtons}>
                 <PressableScale
@@ -266,6 +273,12 @@ export default function HomeScreen() {
                 </PressableScale>
               </View>
             </View>
+            {/* Sudah memenuhi target 8 gelas hari ini 🎉 */}
+            {water >= WATER_GOAL && (
+              <VixText heading="bold" additionalStyle={styles.waterDone}>
+                ✅ Anda sudah mencukupi air seharian 🎉
+              </VixText>
+            )}
           </Animated.View>
 
           <View style={styles.grid}>
@@ -364,6 +377,8 @@ const styles = StyleSheet.create({
   },
   waterButtonPlus: { backgroundColor: Color.ACCENT },
   waterButtonText: { color: Color.MAIN_DARK, fontSize: 18, lineHeight: 22 },
+  // Pesan "sudah cukup air seharian" saat mencapai target (latar kartu gelap).
+  waterDone: { color: Color.MAIN_LIGHT, marginTop: 8 },
   streakPill: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,

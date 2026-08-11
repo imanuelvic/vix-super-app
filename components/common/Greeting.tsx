@@ -1,6 +1,8 @@
+import { useRouter } from 'expo-router';
 import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText, type VixHeading } from '@/components/common/VixText';
 import { formatFullDate } from '@/lib/format';
 
@@ -39,17 +41,22 @@ export function Greeting({
 // streak, oper `streak` supaya muncul pil 🔥 di samping tanggal. Ubah di sini
 // = semua ikut berubah, biar konsisten & rapi.
 export function GreetingHeader({ streak }: { streak?: string | number }) {
+  const router = useRouter();
   return (
     <View style={styles.block}>
       <Greeting heading="title" />
       <View style={styles.row}>
         <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
         {streak != null && (
-          <View style={styles.streakPill}>
+          // Pil streak 🔥 → buka halaman Achievements (streak & pencapaian).
+          <PressableScale
+            style={styles.streakPill}
+            onPress={() => router.push('/achievements')}
+            hitSlop={8}>
             <VixText heading="bold" additionalStyle={styles.streakText}>
               🔥 {streak}
             </VixText>
-          </View>
+          </PressableScale>
         )}
       </View>
     </View>

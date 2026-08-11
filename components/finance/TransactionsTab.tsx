@@ -54,11 +54,6 @@ import {
 // pilihannya global & konsisten tiap kali masuk Finance. "1" = disembunyikan.
 const AMOUNTS_HIDDEN_KEY = 'finance:amountsHidden';
 
-// Kategori terakhir yang dipilih per jenis. Disimpan lintas sesi supaya tidak
-// perlu pilih ulang tiap kali & tombol app tujuan (mis. JAGO) tidak hilang
-// setelah menambah transaksi atau membuka ulang layar.
-const LAST_CATEGORIES_KEY = 'finance:lastCategories';
-
 // Tab Transaction Log: ringkasan bulan, form tambah, daftar transaksi,
 // modal edit (nominal/catatan/tanggal), dan konfirmasi hapus.
 // `budget` (alokasi per kategori bulan ini) dipakai untuk mewarnai pilihan
@@ -84,12 +79,6 @@ export function TransactionsTab({
     AsyncStorage.getItem(AMOUNTS_HIDDEN_KEY).then((v) => {
       if (v != null) setAmountsHidden(v === '1');
     });
-    AsyncStorage.getItem(LAST_CATEGORIES_KEY).then((v) => {
-      if (!v) return;
-      try {
-        setLastCategories(JSON.parse(v));
-      } catch {}
-    });
   }, []);
 
   // Sembunyikan / tampilkan nominal + simpan pilihannya.
@@ -103,21 +92,12 @@ export function TransactionsTab({
 
   // Form tambah transaksi.
   const [type, setType] = useState<FinanceType>('expense');
+  // Kategori SELALU default kosong (empty pick) — tidak diingat lintas sesi.
   const [category, setCategory] = useState<string | null>(null);
-  // Ingatan kategori terakhir per jenis (dimuat dari AsyncStorage).
-  const [lastCategories, setLastCategories] = useState<
-    Partial<Record<FinanceType, string>>
-  >({});
   const [pickerOpen, setPickerOpen] = useState(false); // sheet pilih kategori
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
-
-  // Saat ingatan termuat / ganti jenis: kalau belum ada kategori terpilih, isi
-  // dengan kategori terakhir jenis itu (tombol app-nya pun ikut muncul lagi).
-  useEffect(() => {
-    setCategory((cur) => cur ?? lastCategories[type] ?? null);
-  }, [lastCategories, type]);
 
   // Mode cari (dibuka via FAB 🔍): cari kata + urutkan terbesar/terkecil.
   const [searchMode, setSearchMode] = useState(false);
@@ -237,6 +217,8 @@ export function TransactionsTab({
         amount: value,
         note: note.trim(),
       });
+      // Reset SEMUA ke default setelah menyimpan: kategori, catatan, nominal.
+      setCategory(null);
       setAmount('');
       setNote('');
     } catch {
@@ -387,9 +369,8 @@ export function TransactionsTab({
           value={type}
           onChange={(next) => {
             setType(next);
-            // Kategori tergantung jenis → pulihkan kategori terakhir jenis itu
-            // (atau kosong kalau belum pernah), bukan selalu dikosongkan.
-            setCategory(lastCategories[next] ?? null);
+            // Ganti jenis → kategori dikosongkan lagi (selalu empty pick).
+            setCategory(null);
           }}
         />
 
@@ -479,7 +460,7 @@ export function TransactionsTab({
           value={type}
           onChange={(next) => {
             setType(next);
-            setCategory(lastCategories[next] ?? null);
+            setCategory(null);
           }}
         />
         <View style={styles.searchWrap}>
@@ -613,15 +594,6 @@ export function TransactionsTab({
                 onPress={() => {
                   setCategory(c.key);
                   setPickerOpen(false);
-                  // Ingat pilihan ini sebagai kategori terakhir jenis tsb.
-                  setLastCategories((prev) => {
-                    const next = { ...prev, [type]: c.key };
-                    AsyncStorage.setItem(
-                      LAST_CATEGORIES_KEY,
-                      JSON.stringify(next),
-                    ).catch(() => {});
-                    return next;
-                  });
                 }}
               />
             ))}
