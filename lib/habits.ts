@@ -34,6 +34,32 @@ export function slotNow(now: Date): HabitSlot {
   return 'night';
 }
 
+/**
+ * Sesi yang WAKTUNYA SUDAH TIBA hari ini — Pagi ≥06:00, Siang ≥12:00,
+ * Malam ≥18:00 (kumulatif: siang tetap membawa sisa pagi). Dini hari (<06:00)
+ * hanya Malam, mengikuti aturan `slotNow` di atas.
+ */
+export function openSlots(now: Date): HabitSlot[] {
+  const h = now.getHours();
+  if (h < 6) return ['night'];
+  if (h < 12) return ['morning'];
+  if (h < 18) return ['morning', 'daytime'];
+  return ['morning', 'daytime', 'night'];
+}
+
+/**
+ * Kebiasaan yang sesinya sudah tiba tapi belum dicentang hari ini — dipakai
+ * badge Health di Home supaya sesi yang belum waktunya tidak ikut dihitung.
+ */
+export function pendingHabits(
+  habits: ScheduledHabit[],
+  done: Record<string, boolean>,
+  now: Date,
+): ScheduledHabit[] {
+  const open = openSlots(now);
+  return habits.filter((h) => open.includes(h.slot) && !done[h.id]);
+}
+
 /** ID unik untuk kebiasaan baru yang dibuat pengguna. */
 export function newHabitId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

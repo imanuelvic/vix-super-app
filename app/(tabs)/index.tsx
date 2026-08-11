@@ -41,7 +41,11 @@ import {
 } from '@/lib/core';
 import { OWNER_NAME } from '@/lib/family';
 import { formatShortDayDate } from '@/lib/format';
-import { subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
+import {
+  pendingHabits,
+  subscribeHabitSchedule,
+  type ScheduledHabit,
+} from '@/lib/habits';
 import {
   dayDocId,
   setWater,
@@ -168,7 +172,9 @@ export default function HomeScreen() {
   const badges: Record<string, number> = {
     // Hanya task HARI INI — task tanggal depan tidak dihitung.
     tasks: tasks.filter((t) => !t.done && t.dayId === todayId).length,
-    health: day ? daySchedule.filter((h) => !day.done[h.id]).length : 0,
+    // Hanya sesi yang waktunya sudah tiba (Pagi ≥06:00 · Siang ≥12:00 ·
+    // Malam ≥18:00) — sesi yang belum waktunya tidak ikut dihitung.
+    health: day ? pendingHabits(daySchedule, day.done, now).length : 0,
     // 2 CORE Leader fokus minggu ini yang belum di-follow up hari ini.
     core: weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
       (l) => l.lastFollowupDayId !== todayId,
@@ -357,13 +363,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 4,
   },
-  // Air putih 💧 — baris ringkas di dalam kartu sapaan (latar gelap).
   waterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 10,
-    marginTop: 6,
   },
   waterLabel: { color: Color.MAIN_LIGHT, flexShrink: 1 },
   waterButtons: { flexDirection: 'row', gap: 8 },

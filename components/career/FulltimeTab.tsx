@@ -361,13 +361,6 @@ export function FulltimeTab({
             );
           })}
         </View>
-        {urgent && (
-          <VixText heading="label" additionalStyle={styles.urgentHint}>
-            🔥 Deadline tinggal ≤ {CAREER_REMINDER_DAYS} hari — otomatis P1 &
-            Dikerjakan, tidak bisa diubah. Tandai ✅ Selesai kalau sudah beres.
-          </VixText>
-        )}
-        {/* Sudah Selesai → pilihan deadline/backlog disembunyikan. */}
         {!isDone && (
           <>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -472,5 +465,4 @@ const styles = StyleSheet.create({
   chipFlex: { flex: 1 },
   // Pilihan yang dikunci saat H-7 — diredupkan biar jelas tak bisa ditekan.
   chipLocked: { opacity: 0.4 },
-  urgentHint: { color: Color.DANGER, marginBottom: 10 },
 });
