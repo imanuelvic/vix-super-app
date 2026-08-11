@@ -235,14 +235,39 @@ export function partCondition(
   return { tone, dueDate: due };
 }
 
+export type CarAttention = {
+  key: string;
+  label: string;
+  tone: PartTone;
+  dueDate: Date;
+};
+
 /**
- * Jumlah part yang PERLU PERHATIAN (segera ≤30 hari / lewat jadwal) — dipakai
- * untuk badge merah di tile Car pada Home. Part yang belum pernah dicatat
- * tidak dihitung (belum ada patokan tanggalnya).
+ * Daftar part yang PERLU PERHATIAN (segera ≤30 hari / lewat jadwal), urut dari
+ * yang paling mendesak. Dipakai untuk kartu reminder Car di Dashboard. Part
+ * yang belum pernah dicatat tidak diikutkan (belum ada patokan tanggalnya).
+ */
+export function carAttentionList(
+  status: PartStatusMap,
+  now: Date,
+): CarAttention[] {
+  const out: CarAttention[] = [];
+  for (const p of PART_GROUPS.flatMap((g) => g.parts)) {
+    const { tone, dueDate } = partCondition(
+      status[p.key]?.last,
+      p.intervalMonths,
+      now,
+    );
+    if ((tone === 'warn' || tone === 'over') && dueDate) {
+      out.push({ key: p.key, label: p.label, tone, dueDate });
+    }
+  }
+  return out.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+}
+
+/**
+ * Jumlah part yang perlu perhatian — untuk badge merah di tile Car pada Home.
  */
 export function countCarAttention(status: PartStatusMap, now: Date): number {
-  return PART_GROUPS.flatMap((g) => g.parts).filter((p) => {
-    const { tone } = partCondition(status[p.key]?.last, p.intervalMonths, now);
-    return tone === 'warn' || tone === 'over';
-  }).length;
+  return carAttentionList(status, now).length;
 }

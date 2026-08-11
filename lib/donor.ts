@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { daysBetween } from './format';
 
 // Fitur Donor Darah 🩸 — jadwal & tempat donor, catatan pribadi, dan hitung
 // mundur "boleh donor lagi" (donor darah lengkap: jeda minimal 3 bulan).
@@ -76,9 +77,7 @@ export function nextEligibleDate(data: DonorData): Date | null {
 export function daysUntilEligible(data: DonorData, today: Date): number | null {
   const next = nextEligibleDate(data);
   if (!next) return null;
-  const startOfDay = (x: Date) =>
-    new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  return Math.round((startOfDay(next) - startOfDay(today)) / 86_400_000);
+  return daysBetween(today, next);
 }
 
 /**
@@ -94,11 +93,7 @@ export function donorReminderDue(data: DonorData, today: Date): boolean {
 
 /** Selisih hari ke jadwal donor (negatif = sudah lewat). */
 export function scheduleDaysUntil(schedule: DonorSchedule, today: Date): number {
-  const startOfDay = (x: Date) =>
-    new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  return Math.round(
-    (startOfDay(schedule.date.toDate()) - startOfDay(today)) / 86_400_000,
-  );
+  return daysBetween(today, schedule.date.toDate());
 }
 
 /** Jadwal donor mendatang untuk reminder Home: belum selesai & ≤ 3 hari lagi. */

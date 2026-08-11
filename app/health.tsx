@@ -97,12 +97,21 @@ export default function HealthScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      {/* Tombol kanan atas menyesuaikan sub-tab yang sedang dibuka:
+          Habits → rekor langkah · Check-up → info kesehatan · Summary → kosong. */}
       <ScreenHeader
         backLabel="Home"
         title="Health 🍎"
         subtitle="Jaga tubuh, kelola energi"
         right={
-          <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
+          tab === 'todo' ? (
+            <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
+          ) : tab === 'checkup' ? (
+            <EmojiButton
+              emoji="💪🏻"
+              onPress={() => router.push('/health-info')}
+            />
+          ) : undefined
         }
       />
 

@@ -65,6 +65,22 @@ export function formatMonthsDays(from: Date, to: Date): string {
   return parts.join(' ');
 }
 
+/** Tengah malam (00:00) dari sebuah tanggal — buang jam/menitnya. */
+export function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/**
+ * Selisih HARI KALENDER antara dua tanggal (`to` − `from`), mengabaikan jam.
+ * Positif = `to` di masa depan, 0 = hari yang sama, negatif = sudah lewat.
+ * Dipakai untuk semua hitungan "x hari lagi" / "lewat x hari".
+ */
+export function daysBetween(from: Date, to: Date): number {
+  return Math.round(
+    (startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000,
+  );
+}
+
 /** dayId "2026-07-24" → Date lokal (parse manual biar tidak geser zona waktu). */
 export function dayIdToDate(dayId: string): Date {
   const [y, m, d] = dayId.split('-').map(Number);

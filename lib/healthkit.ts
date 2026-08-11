@@ -1,6 +1,8 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
+import { startOfDay } from './format';
+
 // Wrapper Apple HealthKit (@kingstinct/react-native-healthkit).
 //
 // Modulnya NATIVE dan tidak ada di Expo Go — kalau di-import langsung,
@@ -70,11 +72,11 @@ export async function readTodaySummary(): Promise<DailyHealthSummary | null> {
   if (!mod) return null;
 
   const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayStart = startOfDay(now);
 
   const [steps, activeKcal] = await Promise.all([
-    readSteps(mod, startOfDay, now),
-    readActiveKcal(mod, startOfDay, now),
+    readSteps(mod, dayStart, now),
+    readActiveKcal(mod, dayStart, now),
   ]);
   return { steps, activeKcal };
 }

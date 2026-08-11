@@ -15,6 +15,8 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
+  CAREER_REMINDER_DAYS,
+  effectiveRoadmap,
   newCareerId,
   ROADMAP_STATUS,
   roadmapDaysUntil,
@@ -22,7 +24,7 @@ import {
   type RoadmapItem,
   type RoadmapStatus,
 } from '@/lib/career';
-import { formatDate } from '@/lib/format';
+import { daysBetween, formatDate } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Deadline default untuk prioritas baru: seminggu dari sekarang.
@@ -71,12 +73,36 @@ export function FulltimeTab({
   const [fBacklog, setFBacklog] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const sorted = [...items].sort((a, b) => {
-    if (STATUS_ORDER[a.status] !== STATUS_ORDER[b.status]) {
-      return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-    }
-    return a.priority - b.priority;
-  });
+  // ===== Aturan H-7 (mendesak) =====
+  // Deadline tinggal ≤ 7 hari (termasuk yang sudah lewat) & belum selesai →
+  // otomatis naik ke P1 dan status "Dikerjakan". Keduanya DIKUNCI (tak bisa
+  // diubah) selama masih dalam jendela ini — memang sudah mendesak.
+  // Backlog (tanpa deadline) & yang sudah Selesai tidak kena aturan ini.
+  const urgent =
+    !fBacklog &&
+    fStatus !== 'done' &&
+    daysBetween(new Date(), fDeadline) <= CAREER_REMINDER_DAYS;
+
+  useEffect(() => {
+    if (!urgent) return;
+    setFPriority((p) => (p === 1 ? p : 1));
+    setFStatus((s) => (s === 'todo' ? 'progress' : s));
+  }, [urgent]);
+
+  // Sudah Selesai → pilihan deadline/backlog disembunyikan (tidak relevan lagi).
+  const isDone = fStatus === 'done';
+
+  // Tampilan & urutan memakai prioritas/status EFEKTIF: item yang sudah H-7
+  // otomatis tampil P1 & "Dikerjakan" tanpa perlu dibuka & disimpan ulang.
+  const today = new Date();
+  const sorted = items
+    .map((i) => effectiveRoadmap(i, today))
+    .sort((a, b) => {
+      if (STATUS_ORDER[a.status] !== STATUS_ORDER[b.status]) {
+        return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      }
+      return a.priority - b.priority;
+    });
   const doneCount = items.filter((i) => i.status === 'done').length;
 
   function openAdd() {
@@ -131,8 +157,9 @@ export function FulltimeTab({
       title: fTitle.trim(),
       pic: fPic.trim(), // string kosong = tanpa PIC (hindari undefined ke Firestore)
       note: fNote.trim(),
-      priority: fPriority,
-      status: fStatus,
+      // Aturan H-7 ditegakkan juga di sini (tidak bergantung timing efek).
+      priority: urgent ? 1 : fPriority,
+      status: urgent && fStatus === 'todo' ? 'progress' : fStatus,
       deadline: fBacklog ? null : Timestamp.fromDate(fDeadline),
     };
     const next =
@@ -289,7 +316,7 @@ export function FulltimeTab({
         </VixText>
         <FormInput
           style={styles.noteInput}
-          placeholder="Jelaskan detail pekerjaannya di sini — boleh beberapa baris (tekan enter). Ini yang jadi deskripsinya."
+          placeholder="Jelaskan detail pekerjaan"
           value={fNote}
           onChangeText={setFNote}
           multiline
@@ -304,8 +331,12 @@ export function FulltimeTab({
               key={p}
               label={`P${p}`}
               active={fPriority === p}
-              onPress={() => setFPriority(p)}
-              additionalStyle={styles.chipFlex}
+              // H-7 → terkunci di P1, pilihan lain tidak bisa ditekan.
+              onPress={urgent ? () => {} : () => setFPriority(p)}
+              additionalStyle={[
+                styles.chipFlex,
+                urgent && fPriority !== p && styles.chipLocked,
+              ]}
             />
           ))}
         </View>
@@ -313,47 +344,65 @@ export function FulltimeTab({
           Status
         </VixText>
         <View style={styles.chipRow}>
-          {ROADMAP_STATUS.map((s) => (
-            <Chip
-              key={s.key}
-              label={`${s.icon} ${s.label}`}
-              active={fStatus === s.key}
-              onPress={() => setFStatus(s.key)}
-              additionalStyle={styles.chipFlex}
-            />
-          ))}
+          {ROADMAP_STATUS.map((s) => {
+            // H-7 → "Rencana" tidak boleh dipilih lagi (sudah harus dikerjakan).
+            const locked = urgent && s.key === 'todo';
+            return (
+              <Chip
+                key={s.key}
+                label={`${s.icon} ${s.label}`}
+                active={fStatus === s.key}
+                onPress={locked ? () => {} : () => setFStatus(s.key)}
+                additionalStyle={[
+                  styles.chipFlex,
+                  locked && styles.chipLocked,
+                ]}
+              />
+            );
+          })}
         </View>
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Deadline
-        </VixText>
-        <View style={styles.chipRow}>
-          <Chip
-            label="🗓️ Ada deadline"
-            active={!fBacklog}
-            onPress={() => setFBacklog(false)}
-            additionalStyle={styles.chipFlex}
-          />
-          <Chip
-            label="📥 Backlog (PR)"
-            active={fBacklog}
-            onPress={() => setFBacklog(true)}
-            additionalStyle={styles.chipFlex}
-          />
-        </View>
-        {fBacklog ? (
-          <VixText heading="label" additionalStyle={styles.backlogHint}>
-            Tanpa deadline — masuk backlog, jadi PR yang dikerjakan saat ada
-            waktu. Tidak muncul sebagai reminder mendesak di Home.
+        {urgent && (
+          <VixText heading="label" additionalStyle={styles.urgentHint}>
+            🔥 Deadline tinggal ≤ {CAREER_REMINDER_DAYS} hari — otomatis P1 &
+            Dikerjakan, tidak bisa diubah. Tandai ✅ Selesai kalau sudah beres.
           </VixText>
-        ) : (
-          <View style={styles.formGap}>
-            {/* key = id supaya state picker internal reset tiap ganti item */}
-            <DateField
-              key={editing === 'new' ? 'new' : editing?.id}
-              value={fDeadline}
-              onChange={setFDeadline}
-            />
-          </View>
+        )}
+        {/* Sudah Selesai → pilihan deadline/backlog disembunyikan. */}
+        {!isDone && (
+          <>
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              Deadline
+            </VixText>
+            <View style={styles.chipRow}>
+              <Chip
+                label="🗓️ Ada deadline"
+                active={!fBacklog}
+                onPress={() => setFBacklog(false)}
+                additionalStyle={styles.chipFlex}
+              />
+              <Chip
+                label="📥 Backlog (PR)"
+                active={fBacklog}
+                onPress={() => setFBacklog(true)}
+                additionalStyle={styles.chipFlex}
+              />
+            </View>
+            {fBacklog ? (
+              <VixText heading="label" additionalStyle={styles.backlogHint}>
+                Tanpa deadline — masuk backlog, jadi PR yang dikerjakan saat ada
+                waktu. Tidak muncul sebagai reminder mendesak di Home.
+              </VixText>
+            ) : (
+              <View style={styles.formGap}>
+                {/* key = id supaya state picker internal reset tiap ganti item */}
+                <DateField
+                  key={editing === 'new' ? 'new' : editing?.id}
+                  value={fDeadline}
+                  onChange={setFDeadline}
+                />
+              </View>
+            )}
+          </>
         )}
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
@@ -421,4 +470,7 @@ const styles = StyleSheet.create({
   backlogHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   chipFlex: { flex: 1 },
+  // Pilihan yang dikunci saat H-7 — diredupkan biar jelas tak bisa ditekan.
+  chipLocked: { opacity: 0.4 },
+  urgentHint: { color: Color.DANGER, marginBottom: 10 },
 });

@@ -75,8 +75,14 @@ import {
   subscribeDonor,
   type DonorData,
 } from '@/lib/donor';
+import {
+  carAttentionList,
+  subscribePartStatus,
+  type PartStatusMap,
+} from '@/lib/car';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import {
+  daysBetween,
   formatDate,
   formatMonthsDays,
   formatShortDayDate,
@@ -107,6 +113,11 @@ import {
   type HabitDay,
   type HealthProfile,
 } from '@/lib/health';
+import {
+  residenceAttentionList,
+  subscribeChoreStatus,
+  type ChoreStatusMap,
+} from '@/lib/residence';
 import {
   currentSundayId,
   sermonReminderActive,
@@ -140,7 +151,6 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Streak doa pagi 🔥 & Revive 📖 — untuk strip "Streak & Semangat" di atas.
   const [login, setLogin] = useState<LoginStreak | null | undefined>(undefined);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
@@ -159,6 +169,10 @@ export default function DashboardScreen() {
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
   const [insurance, setInsurance] = useState<InsuranceMonths>({});
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
+  // Perawatan mobil 🚗 & rumah 🏠 — sumber badge di tile Home, ditampilkan juga
+  // sebagai kartu reminder di sini.
+  const [carParts, setCarParts] = useState<PartStatusMap>({});
+  const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
   const [wheel, setWheel] = useState<WheelData | null>(null);
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
@@ -204,6 +218,8 @@ export default function DashboardScreen() {
       subscribeFreelance(user.uid, setFreelance),
       subscribeInsurance(user.uid, setInsurance),
       subscribeFun(user.uid, setFun),
+      subscribePartStatus(user.uid, setCarParts),
+      subscribeChoreStatus(user.uid, setResidenceChores),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -434,6 +450,20 @@ export default function DashboardScreen() {
     closeBibleModal();
   }
 
+  // ===== Reminder Residence 🏠 & Car 🚗 =====
+  // Sumbernya SAMA dengan badge merah di tile Home: perawatan yang sudah dekat
+  // jadwalnya atau sudah lewat. Jadi badge muncul = kartunya muncul juga.
+  const residenceReminders = residenceAttentionList(residenceChores, now).map(
+    (c) => ({
+      id: c.key,
+      text: `${c.label} — ${whenLabel(daysBetween(now, c.dueDate))}`,
+    }),
+  );
+  const carReminders = carAttentionList(carParts, now).map((p) => ({
+    id: p.key,
+    text: `${p.label} — ${whenLabel(daysBetween(now, p.dueDate))}`,
+  }));
+
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
   // memutuskan apakah perlu memunculkan fallback produktivitas).
   const hasActionReminder =
@@ -449,6 +479,8 @@ export default function DashboardScreen() {
     prayerNeedsFill ||
     prayerFollowupDue ||
     careerReminders.length > 0 ||
+    residenceReminders.length > 0 ||
+    carReminders.length > 0 ||
     slotUndone.length > 0 ||
     todayUndone > 0;
 
@@ -518,7 +550,6 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
-          {/* Streak & Semangat 🔥 — konsistensi doa pagi & Revive. Tap → Achievements */}
           <PressableScale
             style={styles.streakCard}
             onPress={() => router.push('/achievements')}>
@@ -649,22 +680,29 @@ export default function DashboardScreen() {
           {(visitReminders.length > 0 || coreIdeaDue) && (
             <View style={styles.visitCard}>
               {visitReminders.length > 0 && (
-                <PressableScale
-                  onPress={() =>
-                    router.push({ pathname: '/core', params: { tab: 'visitation' } })
-                  }>
+                <View>
                   <VixText heading="bold" additionalStyle={styles.visitTitle}>
                     📍 Reminder Pertemuan CORE
                   </VixText>
+                  {/* TIAP BARIS ditekan → buka CORE tab Pertemuan & langsung
+                      buka modal edit pertemuan itu (lewat param ?edit=<id>). */}
                   {visitReminders.map((r) => (
-                    <VixText
+                    <PressableScale
                       key={r.id}
-                      heading="label"
-                      additionalStyle={styles.visitText}>
-                      {r.text}
-                    </VixText>
+                      onPress={() =>
+                        router.push({
+                          pathname: '/core',
+                          params: { tab: 'visitation', edit: r.id },
+                        })
+                      }>
+                      <VixText
+                        heading="label"
+                        additionalStyle={styles.visitText}>
+                        {r.text}
+                      </VixText>
+                    </PressableScale>
                   ))}
-                </PressableScale>
+                </View>
               )}
               {coreIdeaDue && (
                 <PressableScale
@@ -752,9 +790,6 @@ export default function DashboardScreen() {
                 <VixText heading="bold" additionalStyle={styles.readingTitle}>
                   📖 Baca Alkitab hari ini
                 </VixText>
-                <VixText heading="label" additionalStyle={styles.readingSub}>
-                  Minimal 1 pasal — ketuk untuk tandai selesai 🙏
-                </VixText>
               </View>
             </PressableScale>
           )}
@@ -839,6 +874,30 @@ export default function DashboardScreen() {
                 </PressableScale>
               ))}
             </View>
+          )}
+
+          {/* Reminder Residence 🏠 — perawatan/kebersihan rumah yang perlu
+              perhatian (warna senada tile Residence di Home). */}
+          {residenceReminders.length > 0 && (
+            <ReminderCard
+              bg={Color.HOUSE}
+              fg={Color.HOUSE_DARK}
+              title="🏠 Reminder Residence"
+              texts={residenceReminders}
+              onPress={() => router.push('/residence')}
+            />
+          )}
+
+          {/* Reminder Car 🚗 — servis/part mobil yang perlu perhatian (warna
+              senada tile Car di Home). */}
+          {carReminders.length > 0 && (
+            <ReminderCard
+              bg={Color.ACCENT}
+              fg={Color.ACCENT_DARK}
+              title="🚗 Reminder Car"
+              texts={carReminders}
+              onPress={() => router.push('/car')}
+            />
           )}
 
           {/* Fallback PRODUKTIVITAS: hari lagi senggang → apa yang bisa dikerjakan. */}
@@ -931,9 +990,7 @@ const styles = StyleSheet.create({
   headerTitle: { color: Color.MAIN },
   headerDate: { color: Color.TEXT_LABEL },
   content: { paddingBottom: 40, paddingTop: 12, alignItems: 'center' },
-  // Jarak antar-kartu diatur SATU tempat di sini (gap) → selalu seragam & rapi.
   contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20, gap: 20 },
-  // Strip "Streak & Semangat" 🔥 di atas Dashboard (tap → Achievements).
   streakCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1027,8 +1084,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   readingTextBox: { flex: 1, gap: 1 },
-  readingTitle: { color: Color.SPIRITUAL_DARK },
-  readingSub: { color: Color.SPIRITUAL_DARK },
+  readingTitle: { color: Color.TEXT_TITLE },
   bibleModalTitle: { color: Color.TEXT_TITLE, marginBottom: 2 },
   bibleModalSub: { color: Color.TEXT_LABEL, marginBottom: 12 },
   bibleInput: { marginBottom: 14 },

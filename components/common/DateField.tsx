@@ -80,6 +80,11 @@ export function DateField({
           value={value}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          // iOS: batasi lebar & tengahkan. Di layar lebar (iPad landscape)
+          // spinner memakai lebar penuh tapi rodanya menempel ke KIRI — dengan
+          // maxWidth + alignSelf center, rodanya jadi di tengah. Di HP lebar
+          // layar < 320 jadi tampilannya tetap sama seperti sebelumnya.
+          style={Platform.OS === 'ios' ? styles.picker : undefined}
           // App ini selalu terang — paksa picker iOS ikut terang juga,
           // kalau tidak teksnya putih (mode gelap iPhone) dan tak terbaca.
           themeVariant="light"
@@ -104,4 +109,6 @@ const styles = StyleSheet.create({
     borderColor: Color.BORDER,
   },
   text: { color: Color.TEXT_TITLE },
+  // Spinner tanggal iOS — lebar dibatasi & ditengahkan (lihat catatan di atas).
+  picker: { alignSelf: 'center', width: '100%', maxWidth: 320 },
 });

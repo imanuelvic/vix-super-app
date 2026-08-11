@@ -39,6 +39,7 @@ import {
   partnersOf,
   pickCompressedPhoto,
   saveFamilyMember,
+  selfMember,
   subscribeFamily,
   type FamilyCircle,
   type FamilyMember,
@@ -288,10 +289,12 @@ export default function FamilyScreen() {
 
   const today = new Date();
   const all = members ?? [];
-  // Pusat pohon: pilihan user → "saya" (isSelf) → leluhur tertua → apa saja.
+  // Pusat pohon: pilihan user → "saya" (isSelf / cocok nama pemilik) → leluhur
+  // tertua → apa saja. Jadi tiap kali layar Family dibuka, yang tampil pertama
+  // adalah diri sendiri.
   const selected =
     all.find((m) => m.id === selectedId) ??
-    all.find((m) => m.isSelf) ??
+    selfMember(all) ??
     all.find((m) => m.parentIds.length === 0) ??
     all[0] ??
     null;

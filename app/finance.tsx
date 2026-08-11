@@ -9,6 +9,7 @@ import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PinLock } from '@/components/common/PinLock';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { BudgetingTab } from '@/components/finance/BudgetingTab';
@@ -130,18 +131,22 @@ export default function FinanceScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      {/* Tombol kembali ke Home (Finance kini halaman yang di-push dari grid) */}
-      <PressableScale
-        style={styles.backRow}
-        onPress={() => router.back()}
-        hitSlop={8}>
-        <IconSymbol name="chevron.left" size={22} color={Color.MAIN} />
-        <VixText heading="bold" additionalStyle={styles.backText}>
-          Home
-        </VixText>
-      </PressableScale>
+      {/* Judul layar (seragam dengan fitur lain) + akses cepat Pinjaman/Saku */}
+      <ScreenHeader
+        backLabel="Home"
+        title="Finance 💰"
+        subtitle="Catat pemasukan, pengeluaran & budget"
+        right={
+          <View style={styles.headerButtons}>
+            {/* Pinjaman 🤝 (pinjam-meminjam) */}
+            <EmojiButton emoji="🤝" onPress={() => router.push('/debts')} />
+            {/* Saku 👛 (dana per tujuan) */}
+            <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
+          </View>
+        }
+      />
 
-      {/* Header ringkas: navigasi bulan + akses cepat Pinjaman/Saku. */}
+      {/* Navigasi bulan */}
       <View style={styles.topBar}>
         <View style={styles.monthRow}>
           <PressableScale onPress={() => shiftMonth(-1)} hitSlop={10}>
@@ -156,12 +161,6 @@ export default function FinanceScreen() {
           <PressableScale onPress={() => shiftMonth(1)} hitSlop={10}>
             <IconSymbol name="chevron.right" size={22} color={Color.MAIN} />
           </PressableScale>
-        </View>
-        <View style={styles.headerButtons}>
-          {/* Pinjaman 🤝 (pinjam-meminjam) */}
-          <EmojiButton emoji="🤝" onPress={() => router.push('/debts')} />
-          {/* Saku 👛 (dana per tujuan) */}
-          <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
         </View>
       </View>
 
@@ -198,19 +197,11 @@ export default function FinanceScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 6,
-  },
-  backText: { color: Color.MAIN },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingTop: 8,
     paddingBottom: 4,
     gap: 10,
   },

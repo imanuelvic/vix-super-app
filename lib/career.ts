@@ -65,6 +65,28 @@ export function roadmapReminderWindow(item: RoadmapItem, today: Date): boolean {
   );
 }
 
+/**
+ * Sudah masuk H-7? (deadline ≤ 7 hari lagi termasuk lewat, belum selesai, dan
+ * bukan backlog). Selama benar: prioritas dipaksa P1 & status "Dikerjakan",
+ * keduanya tidak bisa diubah — memang sudah mendesak.
+ */
+export function roadmapUrgent(item: RoadmapItem, today: Date): boolean {
+  return roadmapReminderWindow(item, today);
+}
+
+/**
+ * Item dengan prioritas & status EFEKTIF — dipakai untuk tampilan & pengurutan
+ * supaya aturan H-7 langsung berlaku tanpa perlu membuka & menyimpan ulang.
+ */
+export function effectiveRoadmap(item: RoadmapItem, today: Date): RoadmapItem {
+  if (!roadmapUrgent(item, today)) return item;
+  return {
+    ...item,
+    priority: 1,
+    status: item.status === 'todo' ? 'progress' : item.status,
+  };
+}
+
 export function subscribeRoadmap(
   uid: string,
   onChange: (items: RoadmapItem[]) => void,

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -100,6 +100,8 @@ export function TransactionsTab({
   const [saving, setSaving] = useState(false);
 
   // Mode cari (dibuka via FAB 🔍): cari kata + urutkan terbesar/terkecil.
+  // listRef → lompat ke paling atas saat mode cari dibuka/ditutup.
+  const listRef = useRef<FlatList<Transaction>>(null);
   const [searchMode, setSearchMode] = useState(false);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<'recent' | 'high' | 'low'>('recent');
@@ -238,6 +240,8 @@ export function TransactionsTab({
       }
       return next;
     });
+    // Langsung ke paling atas — sama seperti menekan ulang sub-tab Transaksi.
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
   }
 
   function openEdit(item: Transaction) {
@@ -508,6 +512,7 @@ export function TransactionsTab({
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <FlatList
+        ref={listRef}
         data={filtered}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}

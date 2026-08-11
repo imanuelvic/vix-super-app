@@ -47,6 +47,17 @@ export function displayName(m: { name: string; nickname?: string }): string {
   return (m.nickname ?? '').trim() || m.name;
 }
 
+/** Nama pemilik app — dipakai untuk sapaan Home & mengenali "saya" di Family. */
+export const OWNER_NAME = 'Imanuel Victory Rumayar';
+
+export function selfMember(members: FamilyMember[]): FamilyMember | undefined {
+  const norm = (s: string) => s.trim().toLowerCase();
+  return (
+    members.find((m) => m.isSelf) ??
+    members.find((m) => norm(m.name) === norm(OWNER_NAME))
+  );
+}
+
 function membersCollection(uid: string) {
   return collection(db, 'users', uid, 'familyMembers');
 }

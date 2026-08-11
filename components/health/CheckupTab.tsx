@@ -144,15 +144,9 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
   return (
     <View style={styles.flex}>
       <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-        {/* Tombol menuju riwayat sakit, donor darah & info kesehatan */}
+        {/* Tombol menuju riwayat sakit & donor darah. (Info kesehatan kini ada
+            di tombol kanan atas layar Health.) */}
         <View style={styles.navRow}>
-          <PressableScale
-            style={[styles.navButton, styles.navButtonInfo]}
-            onPress={() => router.push('/health-info')}>
-            <VixText heading="bold" additionalStyle={styles.navTextInfo}>
-              💪🏻 Info
-            </VixText>
-          </PressableScale>
           <PressableScale
             style={[styles.navButton, styles.navButtonDonor]}
             onPress={() => router.push('/donor')}>
@@ -428,12 +422,6 @@ const styles = StyleSheet.create({
     borderColor: Color.FINANCE_EXPENSE_DARK,
   },
   navTextDonor: { color: Color.DANGER },
-  // Info → biru (warna informasi).
-  navButtonInfo: {
-    backgroundColor: Color.FINANCE_INVESTMENT,
-    borderColor: Color.FINANCE_INVESTMENT_DARK,
-  },
-  navTextInfo: { color: Color.FINANCE_INVESTMENT_DARK },
   statusCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

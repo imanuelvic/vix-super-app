@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -46,8 +46,20 @@ export default function CoreScreen() {
   const { user } = useAuth();
 
   // Default masuk ke Follow Up: itu tugas harianmu. Bisa dioverride lewat
-  // param ?tab=… (mis. kartu reminder visitasi di Home).
-  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
+  // param ?tab=… (mis. kartu reminder visitasi di Dashboard), plus ?edit=<id>
+  // untuk otomatis membuka modal pertemuan yang ditekan.
+  const { tab: tabParam, edit: editParam } = useLocalSearchParams<{
+    tab?: string;
+    edit?: string;
+  }>();
+
+  // Setelah ?edit=… dipakai (modal terbuka), bersihkan param dari URL. Tanpa
+  // ini modal auto-terbuka lagi tiap balik ke subtab Pertemuan (konten
+  // di-mount ulang oleh key={scrollKey}). Dipanggil tab lewat onEditConsumed
+  // SETELAH modal dibuka — jadi param tak keburu hilang sebelum data termuat.
+  const clearEditParam = useCallback(() => {
+    if (editParam) router.setParams({ edit: '' });
+  }, [editParam, router]);
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, setTab, scrollKey, onTabPress } = useTabScroll<CoreTab>(
     tabParam === 'visitation' || tabParam === 'leaders' ? tabParam : 'followup',
@@ -126,7 +138,12 @@ export default function CoreScreen() {
         {leaders === null || mainTeam === null || visitations === null ? (
           <LoadingCenter />
         ) : tab === 'visitation' ? (
-          <VisitationTab visitations={visitations} leaders={leaders} />
+          <VisitationTab
+            visitations={visitations}
+            leaders={leaders}
+            editId={editParam}
+            onEditConsumed={clearEditParam}
+          />
         ) : tab === 'followup' ? (
           <FollowupTab
             leaders={leaders}

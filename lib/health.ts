@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { daysBetween } from './format';
 
 // ============================== Profil tubuh ==============================
 // users/{uid}/health/profile — SATU dokumen kecil (murah: 1 read per buka).
@@ -374,11 +375,7 @@ export function checkupNextDate(latest: Checkup): Date {
 
 /** Sisa hari menuju jadwal cek berikutnya (negatif = sudah lewat). */
 export function checkupDaysUntil(latest: Checkup, today: Date): number {
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  return Math.round(
-    (startOfDay(checkupNextDate(latest)) - startOfDay(today)) / 86_400_000,
-  );
+  return daysBetween(today, checkupNextDate(latest));
 }
 
 /**

@@ -29,7 +29,7 @@ import {
   type MeetingKind,
   type Visitation,
 } from '@/lib/core';
-import { formatFullDate } from '@/lib/format';
+import { daysBetween, formatFullDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Riwayat Pertemuan 🕘 — seluruh jadwal dari dulu sampai mendatang.
@@ -72,9 +72,7 @@ export default function VisitationsScreen() {
 
   // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
   // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const futureDate = startOfDay(fDate) > startOfDay(today);
+  const futureDate = daysBetween(today, fDate) > 0;
   const sorted = [...history].sort(
     (a, b) => b.date.toMillis() - a.date.toMillis(),
   );

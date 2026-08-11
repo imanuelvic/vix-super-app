@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -26,7 +26,7 @@ import {
   type MeetingKind,
   type Visitation,
 } from '@/lib/core';
-import { formatFullDate } from '@/lib/format';
+import { daysBetween, formatFullDate } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Tab Pertemuan 📅: jadwal MCL bertemu CORE para CL (Visitasi / Fellowship) —
@@ -34,9 +34,15 @@ import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 export function VisitationTab({
   visitations,
   leaders,
+  editId,
+  onEditConsumed,
 }: {
   visitations: Visitation[];
   leaders: CoreLeader[];
+  // Kalau di-set (dari reminder Dashboard), langsung buka modal pertemuan ini.
+  editId?: string;
+  // Dipanggil setelah editId dipakai — induk membersihkan param dari URL.
+  onEditConsumed?: () => void;
 }) {
   const { user } = useAuth();
 
@@ -62,9 +68,7 @@ export function VisitationTab({
 
   // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
   // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const futureDate = startOfDay(fDate) > startOfDay(today);
+  const futureDate = daysBetween(today, fDate) > 0;
 
   function leaderOf(v: Visitation): CoreLeader | undefined {
     return leaders.find((l) => l.id === v.leaderId);
@@ -95,7 +99,7 @@ export function VisitationTab({
     setFormError(null);
   }
 
-  function openEdit(v: Visitation) {
+  const openEdit = useCallback((v: Visitation) => {
     setEditing(v);
     setFKind(v.kind);
     setFLeaderId(v.leaderId);
@@ -104,7 +108,22 @@ export function VisitationTab({
     setFNote(v.note);
     setFDone(v.done);
     setFormError(null);
-  }
+  }, []);
+
+  // Auto-buka modal saat dibuka dari reminder Dashboard (?edit=<id>). Setelah
+  // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
+  // auto-terbuka lagi saat balik ke subtab ini (yang me-mount ulang tab).
+  // consumedRef = guard tambahan agar tak dobel dalam satu mount.
+  const consumedRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!editId || consumedRef.current === editId) return;
+    const visit = visitations.find((v) => v.id === editId);
+    if (visit) {
+      consumedRef.current = editId;
+      openEdit(visit);
+      onEditConsumed?.();
+    }
+  }, [editId, visitations, openEdit, onEditConsumed]);
 
   async function handleSave() {
     if (!user || !editing || busy) return;

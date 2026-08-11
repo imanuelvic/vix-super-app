@@ -261,13 +261,39 @@ export function choreCondition(
   return { tone, dueDate: due };
 }
 
+export type ChoreAttention = {
+  key: string;
+  label: string;
+  tone: ChoreTone;
+  dueDate: Date;
+};
+
 /**
- * Jumlah chore yang PERLU PERHATIAN (segera ≤2 hari / lewat jadwal) — untuk
- * badge merah di tile Residence. Chore yang belum pernah dicatat tidak dihitung.
+ * Daftar chore yang PERLU PERHATIAN (segera ≤2 hari / lewat jadwal), urut dari
+ * yang paling mendesak. Dipakai untuk kartu reminder Residence di Dashboard.
+ * Chore yang belum pernah dicatat tidak diikutkan.
+ */
+export function residenceAttentionList(
+  status: ChoreStatusMap,
+  now: Date,
+): ChoreAttention[] {
+  const out: ChoreAttention[] = [];
+  for (const p of CHORE_GROUPS.flatMap((g) => g.parts)) {
+    const { tone, dueDate } = choreCondition(
+      status[p.key]?.last,
+      p.intervalDays,
+      now,
+    );
+    if ((tone === 'warn' || tone === 'over') && dueDate) {
+      out.push({ key: p.key, label: p.label, tone, dueDate });
+    }
+  }
+  return out.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+}
+
+/**
+ * Jumlah chore yang perlu perhatian — untuk badge merah di tile Residence.
  */
 export function countResidenceAttention(status: ChoreStatusMap, now: Date): number {
-  return CHORE_GROUPS.flatMap((g) => g.parts).filter((p) => {
-    const { tone } = choreCondition(status[p.key]?.last, p.intervalDays, now);
-    return tone === 'warn' || tone === 'over';
-  }).length;
+  return residenceAttentionList(status, now).length;
 }

@@ -12,17 +12,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { formatShortDayDate, groupDigits, parseAmount } from '@/lib/format';
 import {
@@ -89,8 +88,7 @@ export default function FunScreen() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Konfirmasi hapus.
-  const [confirmDelete, setConfirmDelete] = useState<FunEntry | null>(null);
+  // Proses hapus (dari dalam modal edit).
   const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
@@ -230,16 +228,17 @@ export default function FunScreen() {
     }
   }
 
-  async function handleConfirmDelete() {
-    if (!user || !confirmDelete || deleteBusy) return;
+  // Hapus entri yang sedang dibuka di modal (permanen — tulis ulang daftar).
+  async function handleDelete() {
+    if (!user || !editingId || deleteBusy) return;
     setDeleteBusy(true);
     try {
-      const nextEntries = data.entries.filter((e) => e.id !== confirmDelete.id);
+      const nextEntries = data.entries.filter((e) => e.id !== editingId);
       await saveFun(user.uid, { entries: nextEntries });
+      setFormOpen(false);
     } catch {
       setError(DELETE_ERROR);
     } finally {
-      setConfirmDelete(null);
       setDeleteBusy(false);
     }
   }
@@ -312,15 +311,6 @@ export default function FunScreen() {
                         .join(' · ') || '—'}
                     </VixText>
                   </View>
-                  <PressableScale
-                    onPress={() => setConfirmDelete(item)}
-                    hitSlop={10}>
-                    <IconSymbol
-                      name="xmark"
-                      size={16}
-                      color={Color.TEXT_PLACEHOLDER}
-                    />
-                  </PressableScale>
                 </View>
                 {item.detail ? (
                   <VixText
@@ -552,6 +542,16 @@ export default function FunScreen() {
             {formError}
           </VixText>
         )}
+        {/* Hapus dari DALAM modal (hanya saat mengedit) — konfirmasi inline,
+            sama seperti "Hapus kebiasaan ini" / "Hapus jadwal ini". */}
+        {editingId && (
+          <InlineDelete
+            key={editingId}
+            label={`Hapus ${meta.label.toLowerCase()} ini`}
+            busy={deleteBusy}
+            onDelete={handleDelete}
+          />
+        )}
         <DualButtons
           confirmLabel="Simpan"
           busy={saving}
@@ -559,16 +559,6 @@ export default function FunScreen() {
           onConfirm={handleSave}
         />
       </SheetModal>
-
-      {/* Konfirmasi hapus */}
-      <ConfirmDialog
-        visible={!!confirmDelete}
-        title={`Hapus ${meta.label} ini?`}
-        detail={confirmDelete ? confirmDelete.title : undefined}
-        busy={deleteBusy}
-        onCancel={() => setConfirmDelete(null)}
-        onConfirm={handleConfirmDelete}
-      />
     </SafeAreaView>
   );
 }

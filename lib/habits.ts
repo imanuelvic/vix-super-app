@@ -21,10 +21,15 @@ export function slotMeta(slot: HabitSlot) {
 
 export type ScheduledHabit = { id: string; label: string; slot: HabitSlot };
 
-/** Sesi waktu sekarang (untuk reminder Home). Pagi <11, Siang 11–18, Malam ≥18. */
+/**
+ * Sesi waktu sekarang (untuk reminder Dashboard & tab default Habits).
+ * Pagi 06:00–11:59 · Siang 12:00–17:59 · Malam ≥18:00.
+ * Dini hari (<06:00) masih dihitung Malam — lanjutan malam sebelumnya.
+ */
 export function slotNow(now: Date): HabitSlot {
   const h = now.getHours();
-  if (h < 11) return 'morning';
+  if (h < 6) return 'night';
+  if (h < 12) return 'morning';
   if (h < 18) return 'daytime';
   return 'night';
 }
@@ -76,6 +81,13 @@ const nightLabels = [
   '😴 Sleep 23:00 PM',
 ];
 
+/**
+ * Daftar bawaan — HANYA dipakai sekali sebagai bootstrap untuk akun yang belum
+ * punya data kebiasaan sendiri. Begitu dipakai, daftarnya langsung DITULIS ke
+ * Firestore (lihat `subscribeHabitSchedule`) sehingga menjadi milik pengguna
+ * dan bisa diubah/dihapus manual. Setelah tersimpan, konstanta ini tidak pernah
+ * dipakai lagi dan aman dihapus dari kode.
+ */
 export const HABIT_SEED: ScheduledHabit[] = [
   ...mk('morning', morningLabels),
   ...mk('daytime', daytimeLabels),
@@ -87,6 +99,10 @@ function scheduleRef(uid: string) {
   return doc(db, 'users', uid, 'health', 'habitSchedule');
 }
 
+// Penanda agar bootstrap daftar bawaan hanya ditulis SEKALI per sesi aplikasi
+// (beberapa layar berlangganan daftar yang sama).
+const bootstrapped = new Set<string>();
+
 export function subscribeHabitSchedule(
   uid: string,
   onChange: (habits: ScheduledHabit[]) => void,
@@ -96,7 +112,17 @@ export function subscribeHabitSchedule(
     scheduleRef(uid),
     (snapshot) => {
       const saved = snapshot.data()?.habits as ScheduledHabit[] | undefined;
-      onChange(saved && saved.length > 0 ? saved : HABIT_SEED);
+      if (saved && saved.length > 0) {
+        onChange(saved);
+        return;
+      }
+      // Belum punya data sendiri → pakai daftar bawaan SEKALI, lalu simpan ke
+      // Firestore supaya jadi milik pengguna (bisa diubah/dihapus manual).
+      onChange(HABIT_SEED);
+      if (!bootstrapped.has(uid)) {
+        bootstrapped.add(uid);
+        saveHabits(uid, HABIT_SEED).catch(() => bootstrapped.delete(uid));
+      }
     },
     onError,
   );

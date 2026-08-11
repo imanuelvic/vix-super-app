@@ -39,6 +39,7 @@ import {
   weeklyLeaders,
   type CoreLeader,
 } from '@/lib/core';
+import { OWNER_NAME } from '@/lib/family';
 import { formatShortDayDate } from '@/lib/format';
 import { subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
 import {
@@ -57,8 +58,8 @@ import { subscribeReviveStreak } from '@/lib/spiritual';
 import { subscribeTasks, type Task } from '@/lib/tasks';
 import { logFeatureUse } from '@/lib/usage';
 
-// Nama sapaan di Home — ganti di sini kalau mau ubah.
-const OWNER_NAME = 'Imanuel Victory Rumayar';
+// Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
+// untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
 
 // Daftar fitur di Home. Tambah fitur baru = tambah 1 baris di sini.
 // Tiap fitur punya warna sendiri (bg + fg) biar gampang dikenali sekilas.

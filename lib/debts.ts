@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { daysBetween } from './format';
 
 // Fitur Pinjaman 🤝 — dua arah:
 //   'mine'   = Pinjaman Saya (saya meminjam, HARUS bayar ke orang lain)
@@ -102,10 +103,7 @@ export function debtRemaining(debt: Debt): number {
 
 /** Selisih hari ke jatuh tempo berikutnya (negatif = sudah lewat). */
 export function debtDaysUntil(debt: Debt, today: Date): number {
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const diff = startOfDay(debt.dueDate.toDate()) - startOfDay(today);
-  return Math.round(diff / 86_400_000);
+  return daysBetween(today, debt.dueDate.toDate());
 }
 
 /** Reminder Home: belum lunas & jatuh tempo ≤ 3 hari lagi (termasuk lewat). */
