@@ -509,7 +509,7 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <VixText heading="header" additionalStyle={styles.headerTitle}>
-          🔔 Dashboard
+          Dashboard 🔔
         </VixText>
         <VixText heading="label" additionalStyle={styles.headerDate}>
           📆 {formatShortDayDate(new Date())}

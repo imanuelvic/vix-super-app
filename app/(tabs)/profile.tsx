@@ -175,7 +175,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <VixText heading="header" additionalStyle={styles.title}>
-            Profile
+            Profile 👤
           </VixText>
           <PressableScale onPress={openEdit} hitSlop={10}>
             <VixText heading="bold" additionalStyle={styles.editText}>

@@ -16,29 +16,29 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
-    isCurrentMonthPrayers,
-    isPrayerFollowupDay,
-    monthDocId,
-    monthlyPointsFor,
-    monthlyPrayersFilled,
-    newCoreIdeaId,
-    nextBirthday,
-    personalityTips,
-    prayerFollowupLeaders,
-    saveCoreIdeas,
-    saveCoreLeaders,
-    saveMonthlyPrayers,
-    waLink,
-    weekIndex,
-    WEEKLY_FOCUS_COUNT,
-    weeklyFollowupTopic,
-    weeklyLeaders,
-    type CoreIdea,
-    type CoreIdeasData,
-    type CoreLeader,
-    type IdeaCadence,
-    type MainTeamMember,
-    type MonthlyPrayers,
+  isCurrentMonthPrayers,
+  isPrayerFollowupDay,
+  monthDocId,
+  monthlyPointsFor,
+  monthlyPrayersFilled,
+  newCoreIdeaId,
+  nextBirthday,
+  personalityTips,
+  prayerFollowupLeaders,
+  saveCoreIdeas,
+  saveCoreLeaders,
+  saveMonthlyPrayers,
+  waLink,
+  weekIndex,
+  WEEKLY_FOCUS_COUNT,
+  weeklyFollowupTopic,
+  weeklyLeaders,
+  type CoreIdea,
+  type CoreIdeasData,
+  type CoreLeader,
+  type IdeaCadence,
+  type MainTeamMember,
+  type MonthlyPrayers,
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -448,10 +448,6 @@ export function FollowupTab({
                 🔗  Doa Rantai
               </VixText>
             </View>
-            <VixText heading="label" additionalStyle={styles.doaRantaiSub}>
-              Bergilir — hari ini {prayerLeadersToday.length} CORE Leader.
-              Doakan & tanya perkembangan pergumulan mereka 🙏
-            </VixText>
           </View>
           {prayerLeadersToday.map((l) => renderPrayerCard(l))}
         </>
@@ -801,11 +797,10 @@ const styles = StyleSheet.create({
   },
   doaRantaiTop: {
     justifyContent: 'flex-start',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
   },
   doaRantaiTitle: { color: Color.TEXT_REVERSE },
-  doaRantaiSub: { color: Color.TEXT_ON_DARK_MUTED },
   leaderName: { color: Color.TEXT_TITLE },
   questionBox: {
     backgroundColor: Color.BACKGROUND,

@@ -275,7 +275,7 @@ export default function HomeScreen() {
             </View>
             {/* Sudah memenuhi target 8 gelas hari ini 🎉 */}
             {water >= WATER_GOAL && (
-              <VixText heading="bold" additionalStyle={styles.waterDone}>
+              <VixText heading="label" additionalStyle={styles.waterDone}>
                 ✅ Anda sudah mencukupi air seharian 🎉
               </VixText>
             )}
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   waterButtonPlus: { backgroundColor: Color.ACCENT },
   waterButtonText: { color: Color.MAIN_DARK, fontSize: 18, lineHeight: 22 },
   // Pesan "sudah cukup air seharian" saat mencapai target (latar kartu gelap).
-  waterDone: { color: Color.MAIN_LIGHT, marginTop: 8 },
+  waterDone: { color: Color.MAIN_LIGHT, marginTop: 4 },
   streakPill: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,

@@ -108,7 +108,7 @@ export default function VersionScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <VixText heading="header" additionalStyle={styles.title}>
-          System
+          System ⚙️
         </VixText>
 
         {/* ===== Laporan pemakaian fitur (mingguan) ===== */}
