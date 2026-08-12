@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
+import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -12,17 +13,28 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { daysBetween, formatDate } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
   addOtherTask,
   deleteOtherTask,
+  effectiveOtherTask,
+  otherTaskDaysUntil,
+  OTHER_REMINDER_DAYS,
   setOtherTaskDone,
   updateOtherTask,
   type OtherTask,
 } from '@/lib/tasks';
 
-// Tab Other Task 📌 — catatan prioritas/reminder penting yang bisa dikerjakan
-// kapan saja (bukan task harian). Urut: belum selesai dulu, lalu prioritas.
+/** Tenggat bawaan reminder baru: 14 hari — di luar jendela mendesak H-7. */
+function defaultDeadline(): Date {
+  return new Date(Date.now() + 14 * 86_400_000);
+}
+
+// Tab Prioritas 📌 — Reminder prioritas yang bisa dikerjakan kapan saja
+// (bukan task harian), tapi tetap punya tenggat. Sama seperti Career →
+// Fulltime: begitu masuk H-7, prioritas dipaksa P1 & tidak bisa diubah.
+// Urut: belum selesai dulu → prioritas efektif → deadline terdekat.
 export function PriorityTab({ items }: { items: OtherTask[] }) {
   const { user } = useAuth();
 
@@ -33,12 +45,26 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   const [fTitle, setFTitle] = useState('');
   const [fNote, setFNote] = useState('');
   const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
+  const [fDeadline, setFDeadline] = useState(defaultDeadline());
   const [formError, setFormError] = useState<string | null>(null);
 
-  const sorted = [...items].sort((a, b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    return a.priority - b.priority;
-  });
+  // Tenggat tinggal ≤ 7 hari (termasuk lewat) → otomatis P1 & terkunci.
+  const urgent = daysBetween(new Date(), fDeadline) <= OTHER_REMINDER_DAYS;
+  useEffect(() => {
+    if (!urgent) return;
+    setFPriority((p) => (p === 1 ? p : 1));
+  }, [urgent]);
+
+  const today = new Date();
+  const sorted = items
+    .map((i) => effectiveOtherTask(i, today))
+    .sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      const da = a.deadline?.toMillis() ?? Infinity;
+      const db = b.deadline?.toMillis() ?? Infinity;
+      return da - db;
+    });
   const activeCount = items.filter((i) => !i.done).length;
 
   function openAdd() {
@@ -46,6 +72,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     setFTitle('');
     setFNote('');
     setFPriority(2);
+    setFDeadline(defaultDeadline());
     setFormError(null);
   }
 
@@ -54,6 +81,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     setFTitle(item.title);
     setFNote(item.note);
     setFPriority(item.priority);
+    setFDeadline(item.deadline ? item.deadline.toDate() : defaultDeadline());
     setFormError(null);
   }
 
@@ -70,24 +98,23 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   async function handleSave() {
     if (!user || !editing || busy) return;
     if (!fTitle.trim()) {
-      setFormError('Isi catatannya dulu.');
+      setFormError('Isi reminder dulu.');
       return;
     }
     setBusy(true);
     setFormError(null);
     try {
+      // Aturan H-7 ditegakkan di sini juga, tidak bergantung timing effect.
+      const data = {
+        title: fTitle.trim(),
+        note: fNote.trim(),
+        priority: (urgent ? 1 : fPriority) as 1 | 2 | 3,
+        deadline: fDeadline,
+      };
       if (editing === 'new') {
-        await addOtherTask(user.uid, {
-          title: fTitle.trim(),
-          note: fNote.trim(),
-          priority: fPriority,
-        });
+        await addOtherTask(user.uid, data);
       } else {
-        await updateOtherTask(user.uid, editing.id, {
-          title: fTitle.trim(),
-          note: fNote.trim(),
-          priority: fPriority,
-        });
+        await updateOtherTask(user.uid, editing.id, data);
       }
       setEditing(null);
     } catch {
@@ -117,7 +144,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.heroCard}>
           <VixText heading="label" additionalStyle={styles.heroLabel}>
-            📌 Catatan & Prioritas
+            📌 Reminder Prioritas
           </VixText>
           <VixText heading="subheader" additionalStyle={styles.heroValue}>
             {activeCount}{' '}
@@ -128,7 +155,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
         </View>
 
         <PrimaryButton
-          label="Tambah Catatan Prioritas"
+          label="Tambah Reminder Prioritas"
           icon="plus"
           onPress={openAdd}
           additionalStyle={styles.addButton}
@@ -142,65 +169,104 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
 
         {sorted.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada catatan. Simpan ide/prioritas penting di sini 📝
+            Belum ada reminder. Simpan ide/prioritas penting di sini 📝
           </VixText>
         )}
 
-        {sorted.map((item) => (
-          <View
-            key={item.id}
-            style={[styles.card, item.done && styles.cardDone]}>
-            {/* Lingkaran = tandai selesai */}
-            <PressableScale onPress={() => handleToggle(item)} hitSlop={8}>
-              <CheckCircle checked={item.done} size={24} />
-            </PressableScale>
-            {/* Tekan isi → edit */}
-            <PressableScale style={styles.cardMain} onPress={() => openEdit(item)}>
-              <View style={styles.cardTitleRow}>
-                <View style={[styles.priorityBadge, priorityStyle(item.priority)]}>
-                  <VixText heading="label" additionalStyle={styles.priorityText}>
-                    P{item.priority}
+        {sorted.map((item) => {
+          const days = otherTaskDaysUntil(item, today);
+          const late = days !== null && days < 0;
+          const soon = days !== null && days <= OTHER_REMINDER_DAYS;
+          return (
+            <View
+              key={item.id}
+              style={[styles.card, item.done && styles.cardDone]}>
+              {/* Lingkaran = tandai selesai */}
+              <PressableScale onPress={() => handleToggle(item)} hitSlop={8}>
+                <CheckCircle checked={item.done} size={24} />
+              </PressableScale>
+              {/* Tekan isi → edit */}
+              <PressableScale
+                style={styles.cardMain}
+                onPress={() => openEdit(item)}>
+                <View style={styles.cardTitleRow}>
+                  <View
+                    style={[styles.priorityBadge, priorityStyle(item.priority)]}>
+                    <VixText heading="label" additionalStyle={styles.priorityText}>
+                      P{item.priority}
+                    </VixText>
+                  </View>
+                  <VixText
+                    heading="bold"
+                    additionalStyle={[
+                      styles.cardTitle,
+                      item.done && styles.cardTitleDone,
+                    ]}>
+                    {item.title}
                   </VixText>
                 </View>
-                <VixText
-                  heading="bold"
-                  additionalStyle={[
-                    styles.cardTitle,
-                    item.done && styles.cardTitleDone,
-                  ]}>
-                  {item.title}
-                </VixText>
-              </View>
-              {item.note ? (
-                <VixText heading="label" additionalStyle={styles.cardNote}>
-                  {item.note}
-                </VixText>
-              ) : null}
-            </PressableScale>
-          </View>
-        ))}
+                {item.note ? (
+                  <VixText heading="label" additionalStyle={styles.cardNote}>
+                    {item.note}
+                  </VixText>
+                ) : null}
+                {item.deadline && !item.done ? (
+                  <VixText
+                    heading="label"
+                    additionalStyle={
+                      late
+                        ? styles.dueLate
+                        : soon
+                          ? styles.dueSoon
+                          : styles.dueNormal
+                    }>
+                    🗓️ {formatDate(item.deadline.toDate())}
+                    {days === 0
+                      ? ' — HARI INI!'
+                      : late
+                        ? ` — lewat ${-days!} hari`
+                        : ` — ${days} hari lagi`}
+                  </VixText>
+                ) : null}
+              </PressableScale>
+            </View>
+          );
+        })}
       </ScrollView>
 
       {/* Sheet tambah/edit */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Catatan Prioritas' : 'Edit Catatan'}
+        title={editing === 'new' ? 'Reminder Prioritas' : 'Edit Reminder'}
         onClose={() => setEditing(null)}>
+        {/* Catatan singkat = kotak kecil; detailnya yang panjang di bawah. */}
         <FormInput
-          style={styles.taskInput}
-          placeholder="Catatan / prioritas…"
+          style={styles.formGap}
+          placeholder="Reminder Prioritas"
           value={fTitle}
           onChangeText={setFTitle}
-          multiline
           editable={!busy}
         />
         <FormInput
-          style={styles.formGap}
+          style={styles.detailInput}
           placeholder="Detail (opsional)"
           value={fNote}
           onChangeText={setFNote}
+          multiline
           editable={!busy}
         />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🗓️ Deadline
+        </VixText>
+        <View style={styles.formGap}>
+          <DateField
+            key={editing === 'new' ? 'new' : (editing?.id ?? 'none')}
+            value={fDeadline}
+            onChange={setFDeadline}
+          />
+        </View>
+
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Prioritas (P1 = paling penting)
         </VixText>
@@ -210,11 +276,20 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
               key={p}
               label={`P${p}`}
               active={fPriority === p}
-              onPress={() => setFPriority(p)}
-              additionalStyle={styles.chipFlex}
+              onPress={urgent ? () => {} : () => setFPriority(p)}
+              additionalStyle={[
+                styles.chipFlex,
+                urgent && fPriority !== p && styles.chipLocked,
+              ]}
             />
           ))}
         </View>
+        {urgent && (
+          <VixText heading="label" additionalStyle={styles.urgentHint}>
+            🔥 Deadline tinggal ≤ {OTHER_REMINDER_DAYS} hari — otomatis P1 dan
+            tidak bisa diubah. Tandai selesai kalau sudah beres.
+          </VixText>
+        )}
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {formError}
@@ -223,7 +298,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
         {editing !== 'new' && editing !== null && (
           <InlineDelete
             key={editing.id}
-            label="Hapus catatan ini"
+            label="Hapus reminder ini"
             busy={busy}
             onDelete={handleDelete}
           />
@@ -279,8 +354,13 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   cardNote: { color: Color.TEXT_LABEL },
-  taskInput: {
+  dueNormal: { color: Color.TEXT_LABEL },
+  dueSoon: { color: Color.WARNING },
+  dueLate: { color: Color.DANGER },
+  // Judul reminder = kotak kecil, detail = kotak besar.
+  detailInput: {
     minHeight: 100,
+    paddingTop: 12,
     textAlignVertical: 'top',
     marginBottom: 10,
   },
@@ -288,4 +368,6 @@ const styles = StyleSheet.create({
   fieldLabel: { marginBottom: 6 },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   chipFlex: { flex: 1 },
+  chipLocked: { opacity: 0.4 },
+  urgentHint: { color: Color.DANGER, marginBottom: 10 },
 });

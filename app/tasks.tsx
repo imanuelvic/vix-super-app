@@ -78,8 +78,12 @@ const MAIN_TABS: BottomTab<MainTab>[] = [
 export default function TasksScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  // ?category=... dari kartu Task Hari Ini di Home → buka kategori itu.
-  const { category: categoryParam } = useLocalSearchParams<{ category?: string }>();
+  // ?category=... dari kartu Reminder Hari Ini di Dashboard → buka kategori itu.
+  // ?tab=priority dari section Prioritas di Dashboard → buka tab Prioritas.
+  const { category: categoryParam, tab: tabParam } = useLocalSearchParams<{
+    category?: string;
+    tab?: string;
+  }>();
   const validCategory = TASK_CATEGORIES.some((c) => c.key === categoryParam)
     ? (categoryParam as TaskCategory)
     : null;
@@ -99,15 +103,22 @@ export default function TasksScreen() {
     setTab: setMainTab,
     scrollKey,
     onTabPress,
-  } = useTabScroll<'daily' | 'priority'>('daily');
+  } = useTabScroll<'daily' | 'priority'>(
+    tabParam === 'priority' ? 'priority' : 'daily',
+  );
 
-  // Param kategori berubah (mis. tap task lain di Home) → pindah kategori.
+  // Param kategori berubah (mis. tap task lain di Dashboard) → pindah kategori.
   useEffect(() => {
     if (validCategory) {
       setCategory(validCategory);
       setMainTab('daily');
     }
   }, [validCategory, setMainTab]);
+
+  // Dari section Prioritas di Dashboard → langsung buka tab Prioritas.
+  useEffect(() => {
+    if (tabParam === 'priority') setMainTab('priority');
+  }, [tabParam, setMainTab]);
 
   // Drag & drop: task yang sedang diseret + posisi jari (window coords).
   const [dragTask, setDragTask] = useState<Task | null>(null);

@@ -7,13 +7,14 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  Timestamp,
   updateDoc,
   writeBatch,
   type FirestoreError,
-  type Timestamp,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { daysBetween } from './format';
 import { dayDocId } from './health';
 
 // Kategori task yang sudah pasti — ganti kategori = ganti to-do list.
@@ -230,8 +231,37 @@ export type OtherTask = {
   note: string;
   priority: 1 | 2 | 3; // 1 = paling penting
   done: boolean;
+  deadline?: Timestamp | null; // tenggat (opsional — data lama belum punya)
   createdAt: Timestamp | null;
 };
+
+// Sama seperti Career: reminder deadline mulai muncul saat H-7 (termasuk lewat).
+export const OTHER_REMINDER_DAYS = 7;
+
+/** Selisih hari ke deadline (0 = hari ini, negatif = lewat). null = tanpa deadline. */
+export function otherTaskDaysUntil(
+  item: OtherTask,
+  today: Date,
+): number | null {
+  return item.deadline ? daysBetween(today, item.deadline.toDate()) : null;
+}
+
+/**
+ * Sudah masuk H-7? (deadline ≤ 7 hari lagi termasuk lewat & belum selesai).
+ * Selama benar: prioritas dipaksa P1 dan tidak bisa diubah — sudah mendesak.
+ */
+export function otherTaskUrgent(item: OtherTask, today: Date): boolean {
+  const days = otherTaskDaysUntil(item, today);
+  return !item.done && days !== null && days <= OTHER_REMINDER_DAYS;
+}
+
+/**
+ * Item dengan prioritas EFEKTIF — dipakai untuk tampilan & pengurutan supaya
+ * aturan H-7 langsung berlaku tanpa perlu membuka & menyimpan ulang.
+ */
+export function effectiveOtherTask(item: OtherTask, today: Date): OtherTask {
+  return otherTaskUrgent(item, today) ? { ...item, priority: 1 } : item;
+}
 
 function otherTasksCollection(uid: string) {
   return collection(db, 'users', uid, 'otherTasks');
@@ -264,12 +294,13 @@ export function subscribeOtherTasks(
 
 export function addOtherTask(
   uid: string,
-  data: { title: string; note: string; priority: 1 | 2 | 3 },
+  data: { title: string; note: string; priority: 1 | 2 | 3; deadline: Date },
 ) {
   return addDoc(otherTasksCollection(uid), {
     title: data.title.trim(),
     note: data.note.trim(),
     priority: data.priority,
+    deadline: Timestamp.fromDate(data.deadline),
     done: false,
     createdAt: serverTimestamp(),
   });
@@ -278,9 +309,18 @@ export function addOtherTask(
 export function updateOtherTask(
   uid: string,
   id: string,
-  data: { title?: string; note?: string; priority?: 1 | 2 | 3 },
+  data: {
+    title?: string;
+    note?: string;
+    priority?: 1 | 2 | 3;
+    deadline?: Date;
+  },
 ) {
-  return updateDoc(doc(db, 'users', uid, 'otherTasks', id), data);
+  const { deadline, ...rest } = data;
+  return updateDoc(doc(db, 'users', uid, 'otherTasks', id), {
+    ...rest,
+    ...(deadline ? { deadline: Timestamp.fromDate(deadline) } : {}),
+  });
 }
 
 export function setOtherTaskDone(uid: string, id: string, done: boolean) {

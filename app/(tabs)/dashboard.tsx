@@ -146,9 +146,13 @@ import {
   type BibleStreaks,
 } from '@/lib/spiritual';
 import {
+  otherTaskDaysUntil,
+  otherTaskUrgent,
   setTaskDone,
+  subscribeOtherTasks,
   subscribeTasks,
   TASK_CATEGORIES,
+  type OtherTask,
   type Task,
 } from '@/lib/tasks';
 import { formatRupiah } from '@/lib/transactions';
@@ -169,6 +173,7 @@ export default function DashboardScreen() {
 
   const [login, setLogin] = useState<LoginStreak | null | undefined>(undefined);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
   const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
@@ -225,6 +230,7 @@ export default function DashboardScreen() {
       subscribeBibleStreaks(user.uid, setBibleStreaks),
       subscribeFitDay(user.uid, todayId, setFitDone),
       subscribeTasks(user.uid, setTasks),
+      subscribeOtherTasks(user.uid, setOtherTasks),
       subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeLoginStreak(user.uid, setLogin),
@@ -259,6 +265,14 @@ export default function DashboardScreen() {
   // Kartu menampilkan maksimal 3 task; sisanya lewat tombol "+N task lagi".
   const HOME_TASK_SHOWN = 3;
   const moreUndone = Math.max(0, todayUndone - HOME_TASK_SHOWN);
+
+  // Reminder Prioritas yang sudah masuk H-7 (otomatis P1) — tampil di kartu
+  // yang sama, tapi dipisah garis section supaya jelas ini bukan task harian.
+  const urgentPriority = otherTasks
+    .filter((t) => otherTaskUrgent(t, now))
+    .sort(
+      (a, b) => (a.deadline?.toMillis() ?? 0) - (b.deadline?.toMillis() ?? 0),
+    );
 
   async function toggleTask(t: Task) {
     if (!user) return;
@@ -652,7 +666,7 @@ export default function DashboardScreen() {
           )}
 
           {/* Task hari ini — centang langsung tanpa buka fitur Task */}
-          {todayUndone > 0 && (
+          {(todayUndone > 0 || urgentPriority.length > 0) && (
             <View style={styles.taskCard}>
               <PressableScale
                 style={styles.taskHeader}
@@ -705,6 +719,55 @@ export default function DashboardScreen() {
                     +{moreUndone} reminder lagi →
                   </VixText>
                 </PressableScale>
+              )}
+
+              {/* Section Prioritas — dipisah garis, isinya reminder P1 yang
+                  deadline-nya sudah H-7 (bukan task harian). */}
+              {urgentPriority.length > 0 && (
+                <View style={styles.prioritySection}>
+                  <VixText heading="bold" additionalStyle={styles.priorityHead}>
+                    📌 Prioritas
+                  </VixText>
+                  {urgentPriority.map((t) => {
+                    const days = otherTaskDaysUntil(t, now)!;
+                    return (
+                      <PressableScale
+                        key={t.id}
+                        style={styles.priorityRow}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/tasks',
+                            params: { tab: 'priority' },
+                          })
+                        }>
+                        <View style={styles.priorityBadge}>
+                          <VixText
+                            heading="label"
+                            additionalStyle={styles.priorityBadgeText}>
+                            P1
+                          </VixText>
+                        </View>
+                        <VixText
+                          heading="label"
+                          numberOfLines={1}
+                          additionalStyle={styles.priorityText}>
+                          {t.title}
+                        </VixText>
+                        <VixText
+                          heading="label"
+                          additionalStyle={
+                            days < 0 ? styles.priorityLate : styles.priorityDue
+                          }>
+                          {days === 0
+                            ? 'HARI INI'
+                            : days < 0
+                              ? `lewat ${-days}h`
+                              : `${days}h lagi`}
+                        </VixText>
+                      </PressableScale>
+                    );
+                  })}
+                </View>
               )}
             </View>
           )}
@@ -1220,4 +1283,24 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   taskMore: { color: Color.MAIN_DARK, marginTop: 2 },
+  // Section Prioritas di dalam kartu Reminder — dipisah garis di atasnya.
+  prioritySection: {
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    marginTop: 8,
+    paddingTop: 8,
+    gap: 6,
+  },
+  priorityHead: { color: Color.TEXT_TITLE },
+  priorityRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  priorityBadge: {
+    backgroundColor: Color.DANGER,
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+  },
+  priorityBadgeText: { color: Color.TEXT_REVERSE },
+  priorityText: { flex: 1, color: Color.TEXT_TITLE },
+  priorityDue: { color: Color.WARNING },
+  priorityLate: { color: Color.DANGER },
 });
