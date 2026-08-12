@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { TypeChips } from '@/components/finance/TypeChips';
+import type { BudgetMap } from '@/lib/budgets';
 import {
   categoryOf,
   FINANCE_TYPE_LABEL,
@@ -61,17 +62,23 @@ const QUOTES: { text: string; source: string }[] = [
   },
 ];
 
-/** Target rasio nabung+investasi yang sehat (aturan 50/30/20). */
-const SAVING_TARGET_PCT = 20;
+// Tiga jenis yang dibandingkan realisasi vs budget (income tidak dianggarkan).
+const PLAN_TYPES: { key: FinanceType; icon: string; color: string }[] = [
+  { key: 'expense', icon: '💸', color: Color.FINANCE_EXPENSE_DARK },
+  { key: 'saving', icon: '🏦', color: Color.FINANCE_SAVING_DARK },
+  { key: 'investment', icon: '📈', color: Color.FINANCE_INVESTMENT_DARK },
+];
 
 // Tab Dashboard: kondisi keuangan bulan ini sekali lihat (menang/boros),
-// rasio nabung, laju pengeluaran harian, grafik, dan quote pengingat.
+// perbandingan budget vs realisasi, laju pengeluaran harian, dan quote.
 export function DashboardTab({
   items,
+  budget,
   year,
   month,
 }: {
   items: Transaction[];
+  budget: BudgetMap;
   year: number;
   month: number; // 0–11
 }) {
@@ -83,6 +90,8 @@ export function DashboardTab({
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   // ===== Ringkasan bulan: pemasukan / pengeluaran / nabung =====
+  // Catatan: `perDay` (grafik Pengeluaran Harian) SENGAJA hanya menghitung
+  // transaksi berjenis Expense — saving & investment tidak ikut.
   const summary = useMemo(() => {
     let income = 0;
     let expense = 0;
@@ -117,6 +126,26 @@ export function DashboardTab({
   const hasData = summary.income > 0 || summary.expense > 0;
   const win = summary.expense <= summary.income;
 
+  // ===== Budget vs realisasi per jenis (expense / saving / investment) =====
+  // Budget diambil dari alokasi yang dibuat di sub-tab Budgeting; key-nya
+  // berformat "jenis:kategori", jadi cukup dijumlah per awalan jenis.
+  const plan = useMemo(() => {
+    const rows = PLAN_TYPES.map((p) => {
+      let actual = 0;
+      for (const t of items) if (t.type === p.key) actual += t.amount;
+      let planned = 0;
+      for (const [key, value] of Object.entries(budget)) {
+        if (key.startsWith(`${p.key}:`)) planned += value;
+      }
+      return { ...p, actual, planned };
+    });
+    return {
+      rows,
+      actualTotal: rows.reduce((s, r) => s + r.actual, 0),
+      plannedTotal: rows.reduce((s, r) => s + r.planned, 0),
+    };
+  }, [items, budget]);
+
   // ===== Donat per kategori (jenis terpilih) =====
   const { data, total } = useMemo(() => {
     const map = new Map<string, number>();
@@ -139,13 +168,6 @@ export function DashboardTab({
 
   // Quote hari ini (ganti otomatis tiap hari).
   const quote = QUOTES[hashString(dayDocId(now)) % QUOTES.length];
-
-  const savingTone =
-    summary.savingPct >= SAVING_TARGET_PCT
-      ? styles.toneOk
-      : summary.savingPct >= 10
-        ? styles.toneWarn
-        : styles.toneDanger;
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -186,26 +208,77 @@ export function DashboardTab({
         <StatTile label="🏦 Nabung" value={formatShortRupiah(summary.saved)} />
       </View>
 
-      {/* ===== Rasio nabung + investasi (aturan 50/30/20) ===== */}
+      {/* ===== Budget vs realisasi: pembagian expense / saving / investment ===== */}
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <VixText heading="title">🏦 Rasio Nabung + Investasi</VixText>
-          <VixText heading="bold" additionalStyle={savingTone}>
-            {summary.savingPct.toFixed(0)}%
-          </VixText>
-        </View>
-        <View style={styles.barTrack}>
-          <View
-            style={[
-              styles.barFill,
-              { width: `${Math.min(summary.savingPct, 100)}%` },
-            ]}
-          />
-        </View>
-        <VixText heading="label">
-          Target sehat ≥{SAVING_TARGET_PCT}% dari pemasukan (aturan 50/30/20:
-          kebutuhan/keinginan/nabung).
+        <VixText heading="title" additionalStyle={styles.cardTitle}>
+          📊 Budget vs Realisasi
         </VixText>
+
+        {plan.plannedTotal === 0 && plan.actualTotal === 0 ? (
+          <VixText heading="label">
+            Belum ada budget & transaksi bulan ini. Atur alokasinya di sub-tab
+            Budgeting 📝
+          </VixText>
+        ) : (
+          <>
+            {/* Dua batang bertumpuk: komposisi rencana vs kenyataan */}
+            <CompositionBar
+              label="Budget"
+              total={plan.plannedTotal}
+              parts={plan.rows.map((r) => ({
+                key: r.key,
+                value: r.planned,
+                color: r.color,
+              }))}
+            />
+            <CompositionBar
+              label="Realisasi"
+              total={plan.actualTotal}
+              parts={plan.rows.map((r) => ({
+                key: r.key,
+                value: r.actual,
+                color: r.color,
+              }))}
+            />
+
+            {/* Rincian per jenis: nominal, persentase komposisi & serapan budget */}
+            {plan.rows.map((r) => {
+              const usedPct = r.planned > 0 ? (r.actual / r.planned) * 100 : null;
+              const over = usedPct !== null && usedPct > 100;
+              return (
+                <View key={r.key} style={styles.planRow}>
+                  <View style={[styles.planDot, { backgroundColor: r.color }]} />
+                  <View style={styles.planMain}>
+                    <VixText heading="bold" additionalStyle={styles.planLabel}>
+                      {r.icon} {FINANCE_TYPE_LABEL[r.key]}
+                    </VixText>
+                    <VixText heading="label">
+                      {formatShortRupiah(r.actual)} dari{' '}
+                      {r.planned > 0
+                        ? formatShortRupiah(r.planned)
+                        : 'belum dianggarkan'}
+                    </VixText>
+                  </View>
+                  <VixText
+                    heading="bold"
+                    additionalStyle={
+                      usedPct === null
+                        ? styles.toneWarn
+                        : over
+                          ? styles.toneDanger
+                          : styles.toneOk
+                    }>
+                    {usedPct === null ? '—' : `${usedPct.toFixed(0)}%`}
+                  </VixText>
+                </View>
+              );
+            })}
+            <VixText heading="label">
+              Persentase = realisasi dibanding budget yang kamu buat di sub-tab
+              Budgeting. Batang atas = rencana, batang bawah = kenyataan.
+            </VixText>
+          </>
+        )}
       </View>
 
       {/* ===== Laju pengeluaran harian + grafik batang ===== */}
@@ -294,6 +367,50 @@ export function DashboardTab({
   );
 }
 
+// Batang bertumpuk: satu baris menunjukkan pembagian persentase antar jenis.
+// Total 0 → batang kosong (abu) supaya tetap terbaca "belum ada isinya".
+function CompositionBar({
+  label,
+  total,
+  parts,
+}: {
+  label: string;
+  total: number;
+  parts: { key: string; value: number; color: string }[];
+}) {
+  return (
+    <View style={styles.compBlock}>
+      <View style={styles.compTop}>
+        <VixText heading="label">{label}</VixText>
+        <VixText heading="label">{formatShortRupiah(total)}</VixText>
+      </View>
+      <View style={styles.barTrack}>
+        {total > 0 &&
+          parts.map((p) =>
+            p.value > 0 ? (
+              <View
+                key={p.key}
+                style={{
+                  width: `${(p.value / total) * 100}%`,
+                  backgroundColor: p.color,
+                }}
+              />
+            ) : null,
+          )}
+      </View>
+      {total > 0 && (
+        <View style={styles.compTop}>
+          {parts.map((p) => (
+            <VixText key={p.key} heading="label" additionalStyle={{ color: p.color }}>
+              {((p.value / total) * 100).toFixed(0)}%
+            </VixText>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
 // Kotak kecil satu angka utama.
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
@@ -352,16 +469,25 @@ const styles = StyleSheet.create({
   toneWarn: { color: Color.WARNING },
   toneDanger: { color: Color.DANGER },
   barTrack: {
-    height: 8,
-    borderRadius: 4,
+    flexDirection: 'row',
+    height: 10,
+    borderRadius: 5,
     backgroundColor: Color.CONTRAST_CONTAINER,
     overflow: 'hidden',
   },
-  barFill: {
-    height: '100%',
-    borderRadius: 4,
-    backgroundColor: Color.MAIN,
+  // Blok satu batang komposisi (label + batang + persentase).
+  compBlock: { gap: 4 },
+  compTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
   },
+  // Rincian per jenis di bawah batang.
+  planRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  planDot: { width: 10, height: 10, borderRadius: 5 },
+  planMain: { flex: 1, gap: 1 },
+  planLabel: { color: Color.TEXT_TITLE },
   barsRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',

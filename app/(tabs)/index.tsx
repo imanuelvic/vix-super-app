@@ -33,6 +33,14 @@ import {
   type PartStatusMap,
 } from '@/lib/car';
 import {
+  effectiveRoadmap,
+  freelanceReminderWindow,
+  subscribeFreelance,
+  subscribeRoadmap,
+  type FreelanceProject,
+  type RoadmapItem,
+} from '@/lib/career';
+import {
   subscribeCoreLeaders,
   weekIndex,
   WEEKLY_FOCUS_COUNT,
@@ -59,7 +67,13 @@ import {
   type ChoreStatusMap,
 } from '@/lib/residence';
 import { subscribeReviveStreak } from '@/lib/spiritual';
-import { subscribeTasks, type Task } from '@/lib/tasks';
+import {
+  effectiveOtherTask,
+  subscribeOtherTasks,
+  subscribeTasks,
+  type OtherTask,
+  type Task,
+} from '@/lib/tasks';
 import { logFeatureUse } from '@/lib/usage';
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
@@ -84,7 +98,8 @@ const FEATURES: {
     | 'briefcase.fill'
     | 'person.3.fill'
     | 'mountain.2.fill'
-    | 'dumbbell.fill';
+    | 'dumbbell.fill'
+    | 'globe';
   route: Href;
   bg: string;
   fg: string;
@@ -106,6 +121,7 @@ const FEATURES: {
 
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
   { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
+  { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
 ];
 
 export default function HomeScreen() {
@@ -123,6 +139,10 @@ export default function HomeScreen() {
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
   const [carParts, setCarParts] = useState<PartStatusMap>({});
   const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
+  // Prioritas P1 — untuk badge Career (Fulltime + Freelance) & Reminder.
+  const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
+  const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
+  const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & badge yang
   // bergantung waktu (mobil/rumah).
@@ -145,6 +165,9 @@ export default function HomeScreen() {
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeReviveStreak(user.uid, setRevive),
       subscribePartStatus(user.uid, setCarParts),
+      subscribeRoadmap(user.uid, setRoadmap),
+      subscribeFreelance(user.uid, setFreelance),
+      subscribeOtherTasks(user.uid, setOtherTasks),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -170,8 +193,20 @@ export default function HomeScreen() {
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
   const badges: Record<string, number> = {
-    // Hanya task HARI INI — task tanggal depan tidak dihitung.
-    tasks: tasks.filter((t) => !t.done && t.dayId === todayId).length,
+    // Task HARI INI yang belum selesai + Reminder Prioritas yang sudah P1
+    // (termasuk yang otomatis naik P1 karena deadline sudah H-7).
+    tasks:
+      tasks.filter((t) => !t.done && t.dayId === todayId).length +
+      otherTasks.filter(
+        (t) => !t.done && effectiveOtherTask(t, now).priority === 1,
+      ).length,
+    // Career: prioritas P1 Fulltime yang belum selesai + proyek Freelance
+    // yang deadline-nya sudah H-7 (Freelance tidak punya kolom prioritas).
+    career:
+      roadmap.filter(
+        (r) => r.status !== 'done' && effectiveRoadmap(r, now).priority === 1,
+      ).length +
+      freelance.filter((p) => freelanceReminderWindow(p, now)).length,
     // Hanya sesi yang waktunya sudah tiba (Pagi ≥06:00 · Siang ≥12:00 ·
     // Malam ≥18:00) — sesi yang belum waktunya tidak ikut dihitung.
     health: day ? pendingHabits(daySchedule, day.done, now).length : 0,

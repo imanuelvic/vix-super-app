@@ -175,7 +175,12 @@ export default function FinanceScreen() {
         {loading ? (
           <LoadingCenter />
         ) : tab === 'dashboard' ? (
-          <DashboardTab items={items} year={year} month={month} />
+          <DashboardTab
+            items={items}
+            budget={budget}
+            year={year}
+            month={month}
+          />
         ) : tab === 'transactions' ? (
           <TransactionsTab items={items} budget={budget} />
         ) : (

@@ -73,6 +73,9 @@ export const Color = {
   HOUSE: '#D3DEE9', // biru-abu slate (fitur Home/rumah)
   HOUSE_DARK: '#3F5A73',
 
+  WORLD: '#BFE3E0', // teal pastel (fitur World — populasi & berita dunia)
+  WORLD_DARK: '#1F6F6A',
+
   // Merek luar (tombol chat WhatsApp di fitur CORE)
   WHATSAPP: '#25D366',
 
