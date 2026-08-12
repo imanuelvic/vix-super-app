@@ -12,7 +12,7 @@ import { formatRupiah, type Transaction } from '@/lib/transactions';
 // otomatis dibaca dari transaksi Finance berkategori Electricity & Water.
 // Baris list murni tampilan (tidak bisa dipencet). Untuk menambah/mengubah,
 // lakukan di fitur Finance.
-export function ResidenceUtilityTab({
+export function UtilityTab({
   transactions,
 }: {
   transactions: Transaction[];

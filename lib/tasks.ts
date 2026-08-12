@@ -17,7 +17,12 @@ import { db } from './firebase';
 import { dayDocId } from './health';
 
 // Kategori task yang sudah pasti — ganti kategori = ganti to-do list.
-export type TaskCategory = 'personal' | 'work' | 'ministry' | 'learning';
+export type TaskCategory =
+  | 'personal'
+  | 'work'
+  | 'ministry'
+  | 'learning'
+  | 'fun';
 
 export const TASK_CATEGORIES: {
   key: TaskCategory;
@@ -28,6 +33,8 @@ export const TASK_CATEGORIES: {
   { key: 'work', label: 'WORK', icon: '💼' },
   { key: 'ministry', label: 'MINISTRY', icon: '🙏' },
   { key: 'learning', label: 'LEARNING', icon: '📚' },
+  // Emoji sama dengan fitur Fun & Recreation 🎉 biar gampang dikenali.
+  { key: 'fun', label: 'FUN', icon: '🎉' },
 ];
 
 // Set key kategori yang masih berlaku — untuk membersihkan task "yatim".
@@ -195,7 +202,7 @@ export function deleteTask(uid: string, id: string) {
 
 /**
  * Hapus PERMANEN task yang kategorinya sudah tidak ada lagi (mis. kategori
- * yang dihapus dari TASK_CATEGORIES seperti 'fun' & 'relax') — supaya
+ * lama yang pernah dihapus dari TASK_CATEGORIES seperti 'relax') — supaya
  * Firestore tetap bersih & hemat. Return jumlah yang terhapus.
  */
 export async function pruneOrphanTasks(

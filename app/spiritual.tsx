@@ -162,7 +162,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   body: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  // Jarak atas SAMA dengan tab Sermon & Bible Read (dan layar lain).
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   writeButton: { marginTop: 4 },
   todayCard: {
     backgroundColor: Color.SPIRITUAL,

@@ -8,9 +8,9 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
-import { ResidenceChoreTab } from '@/components/residence/ResidenceChoreTab';
-import { ResidenceLogTab } from '@/components/residence/ResidenceLogTab';
-import { ResidenceUtilityTab } from '@/components/residence/ResidenceUtilityTab';
+import { ChoreTab } from '@/components/residence/ChoreTab';
+import { LogTab } from '@/components/residence/LogTab';
+import { UtilityTab } from '@/components/residence/UtilityTab';
 import { InfoTab } from '@/components/residence/InfoTab';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -99,19 +99,19 @@ export default function ResidenceScreen() {
           utilityTx === null ? (
             <LoadingCenter />
           ) : (
-            <ResidenceUtilityTab transactions={utilityTx} />
+            <UtilityTab transactions={utilityTx} />
           )
         ) : tab === 'log' ? (
           logs === null ? (
             <LoadingCenter />
           ) : (
-            <ResidenceLogTab items={logs} />
+            <LogTab items={logs} />
           )
         ) : tab === 'chores' ? (
           chores === null ? (
             <LoadingCenter />
           ) : (
-            <ResidenceChoreTab status={chores} />
+            <ChoreTab status={chores} />
           )
         ) : (
           <InfoTab />

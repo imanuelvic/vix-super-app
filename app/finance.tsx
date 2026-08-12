@@ -200,13 +200,15 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
     paddingBottom: 4,
     gap: 10,
   },
   monthRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  monthText: { minWidth: 140, textAlign: 'center', color: Color.TEXT_TITLE },
+  // minWidth dipertahankan supaya panah kanan tidak bergeser saat nama bulan
+  // berganti panjang (Mei ↔ September).
+  monthText: { minWidth: 140, textAlign: 'left', color: Color.TEXT_TITLE },
   headerButtons: { flexDirection: 'row', gap: 8 },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },

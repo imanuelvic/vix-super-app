@@ -23,7 +23,7 @@ import {
 
 // Tab Other Task 📌 — catatan prioritas/reminder penting yang bisa dikerjakan
 // kapan saja (bukan task harian). Urut: belum selesai dulu, lalu prioritas.
-export function OtherTaskTab({ items }: { items: OtherTask[] }) {
+export function PriorityTab({ items }: { items: OtherTask[] }) {
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);

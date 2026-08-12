@@ -9,7 +9,15 @@ import {
 import { type LoginStreak as DayStreak } from './achievements';
 import { hashString, weekIndex } from './core';
 import { db } from './firebase';
-import { dayDocId } from './health';
+import { formatDecimal } from './format';
+import {
+  bmiCategory,
+  bmiValue,
+  dayDocId,
+  idealWeightRange,
+  type HealthProfile,
+  type WeightTarget,
+} from './health';
 import { alreadyCounted, nextStreak } from './streak';
 
 // Fitness 💪 — program STRENGTH 5 hari/minggu untuk menaikkan massa otot,
@@ -261,15 +269,65 @@ export function fitQuote(dayId: string): string {
 
 // ===================== Target & persiapan 🎯 =====================
 
-export const FIT_TARGETS: { icon: string; label: string; desc: string }[] = [
-  { icon: '🏋️', label: '5 sesi per minggu', desc: 'Senin, Selasa, Kamis, Jumat, Sabtu — minimal 30 menit, ideal ±40 menit.' },
-  { icon: '📈', label: 'Naik beban tiap 2 minggu', desc: 'Kalau set terakhir masih terasa ringan, tambah 1–2 kg saat blok berganti.' },
-  { icon: '⚖️', label: 'Berat 71 → 66 kg', desc: 'Turun ±0,4 kg/minggu. Lebih cepat dari itu, otot ikut hilang.' },
-  { icon: '🔥', label: 'Sixpack: lemak tubuh ±12%', desc: 'Perut sudah dilatih tiap sesi — yang bikin kelihatan adalah defisit kalori.' },
-  { icon: '🥩', label: 'Protein 115–140 g/hari', desc: '1,6–2 g per kg berat badan. Telur, ayam, ikan, tempe, whey.' },
-  { icon: '😴', label: 'Tidur 7–8 jam', desc: 'Otot tumbuh saat tidur, bukan saat latihan. Ini bagian dari program.' },
-  { icon: '🚶', label: '8.000+ langkah/hari', desc: 'Aktivitas di luar gym yang paling besar efeknya untuk membakar lemak.' },
-];
+/**
+ * Target latihan — angkanya DIHITUNG dari Data Tubuh & Target Berat di fitur
+ * Health, bukan ditulis ulang di sini. Ubah berat/lingkar perut/target di
+ * Health → Summary & Habits, angka di sini ikut berubah sendiri.
+ */
+export function fitTargets(
+  profile: HealthProfile,
+  target: WeightTarget | null,
+): { icon: string; label: string; desc: string }[] {
+  const w = profile.weightKg;
+  // Protein untuk membangun otot: 1,6–2 g per kg berat badan.
+  const proteinMin = Math.round(w * 1.6);
+  const proteinMax = Math.round(w * 2);
+  // Lingkar perut sehat = di bawah setengah tinggi badan (rasio < 0,5).
+  const waistGoal = profile.heightCm / 2;
+  const waist = profile.waistCm;
+  const bmi = bmiValue(w, profile.heightCm);
+
+  // Berat: pakai target dari Health kalau sudah dipasang.
+  const gap = target ? w - target.targetWeightKg : 0;
+  const weeks = Math.max(1, Math.ceil(Math.abs(gap) / 0.4));
+  const weightLabel = target
+    ? `Berat ${formatDecimal(w)} → ${formatDecimal(target.targetWeightKg)} kg`
+    : `Berat sekarang ${formatDecimal(w)} kg`;
+  const weightDesc = !target
+    ? 'Belum ada target berat. Pasang dulu di Health → Habits → 🎯 Target.'
+    : Math.abs(gap) < 0.1
+      ? 'Target berat sudah tercapai 🎉 Sekarang fokus jaga & tambah otot.'
+      : `Sisa ${formatDecimal(Math.abs(gap))} kg · aman ±0,4 kg/minggu ≈ ${weeks} minggu. Lebih cepat dari itu, otot ikut hilang.`;
+
+  return [
+    { icon: '🏋️', label: '5 sesi per minggu', desc: 'Senin, Selasa, Kamis, Jumat, Sabtu — minimal 30 menit, ideal ±40 menit.' },
+    { icon: '📈', label: 'Naik beban tiap 2 minggu', desc: 'Kalau set terakhir masih terasa ringan, tambah 1–2 kg saat blok berganti.' },
+    { icon: '⚖️', label: weightLabel, desc: weightDesc },
+    {
+      icon: '📊',
+      label: `BMI ${formatDecimal(bmi)} → di bawah 23`,
+      desc: `${bmiCategory(bmi).label} (ambang Asia-Pasifik). Sehat untuk tinggi ${profile.heightCm} cm: ${formatDecimal(idealWeightRange(profile.heightCm).min)}–${formatDecimal(idealWeightRange(profile.heightCm).max)} kg.`,
+    },
+    {
+      icon: '🔥',
+      label: waist
+        ? `Sixpack: perut ${formatDecimal(waist)} → di bawah ${formatDecimal(waistGoal)} cm`
+        : `Sixpack: perut di bawah ${formatDecimal(waistGoal)} cm`,
+      desc: waist
+        ? waist < waistGoal
+          ? 'Sudah di bawah ambang — perut mulai kelihatan. Pertahankan 💪'
+          : `Sisa ${formatDecimal(waist - waistGoal)} cm. Perut sudah dilatih tiap sesi; yang bikin kelihatan adalah defisit kalori.`
+        : 'Isi lingkar perut di Health → Summary → Data Tubuh biar bisa dilacak.',
+    },
+    {
+      icon: '🥩',
+      label: `Protein ${proteinMin}–${proteinMax} g/hari`,
+      desc: `1,6–2 g per kg berat badanmu (${formatDecimal(w)} kg). Telur, ayam, ikan, tempe, whey.`,
+    },
+    { icon: '😴', label: 'Tidur 7–8 jam', desc: 'Otot tumbuh saat tidur, bukan saat latihan. Ini bagian dari program.' },
+    { icon: '🚶', label: '8.000+ langkah/hari', desc: 'Aktivitas di luar gym yang paling besar efeknya untuk membakar lemak.' },
+  ];
+}
 
 export const FIT_PREP: string[] = [
   '👕 Baju ganti & sepatu olahraga sudah di tas sejak pagi',

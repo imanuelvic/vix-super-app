@@ -32,8 +32,8 @@ const TYPE_META = Object.fromEntries(
 
 // Tab Log 🧾 — pengeluaran rumah selain listrik/air (iuran lingkungan, water
 // heater, wifi, cleaning, dll). Air & listrik direkap terpisah & read-only di
-// tab Air-Listrik (ResidenceUtilityTab), dibaca dari transaksi Finance.
-export function ResidenceLogTab({ items }: { items: ResidenceLog[] }) {
+// tab Air-Listrik (UtilityTab), dibaca dari transaksi Finance.
+export function LogTab({ items }: { items: ResidenceLog[] }) {
   const { user } = useAuth();
 
   const types = RESIDENCE_LOG_TYPES.filter((t) => t.group === 'log');

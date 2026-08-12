@@ -29,7 +29,10 @@ export default function TabLayout() {
         name="dashboard"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="bell.fill" color={color} />,
+          // Ikon kisi (bukan lonceng) — lonceng dipakai fitur Reminder.
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="square.grid.2x2.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen

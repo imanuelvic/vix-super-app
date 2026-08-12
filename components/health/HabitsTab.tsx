@@ -43,7 +43,7 @@ import { SAVE_ERROR } from '@/lib/messages';
 // Tab Habits: kebiasaan harian (sama tiap hari) dibagi 3 sesi
 // Pagi/Siang/Malam — bisa ditambah, di-rename, diurutkan, & dihapus. Plus
 // ring progress + streak 🔥, air minum 💧, dan target berat 🎯.
-export function TodoTab({
+export function HabitsTab({
   habits,
   day,
   dayId,

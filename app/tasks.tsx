@@ -28,7 +28,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { OtherTaskTab } from '@/components/tasks/OtherTaskTab';
+import { PriorityTab } from '@/components/tasks/PriorityTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
@@ -52,7 +52,7 @@ import {
   type TaskCategory,
 } from '@/lib/tasks';
 
-type MainTab = 'harian' | 'other';
+type MainTab = 'daily' | 'priority';
 
 // Persegi target drop (koordinat window). key = "cat:<kategori>" atau
 // "day:<dayId>" supaya satu daftar bisa memuat chip kategori & blok hari.
@@ -68,8 +68,8 @@ const DROP_DY = GHOST_HEIGHT / 2; // jarak dari jari ke tengah kotak (titik jatu
 
 // Tab bar bawah layar Task — Harian (planner) & Prioritas (catatan penting).
 const MAIN_TABS: BottomTab<MainTab>[] = [
-  { key: 'harian', label: 'Harian', icon: 'calendar' },
-  { key: 'other', label: 'Prioritas', icon: 'flag.fill' },
+  { key: 'daily', label: 'Harian', icon: 'calendar' },
+  { key: 'priority', label: 'Prioritas', icon: 'flag.fill' },
 ];
 
 // Task ✅ — planner harian: semua tanggal sebulan tampil berurutan,
@@ -99,13 +99,13 @@ export default function TasksScreen() {
     setTab: setMainTab,
     scrollKey,
     onTabPress,
-  } = useTabScroll<'harian' | 'other'>('harian');
+  } = useTabScroll<'daily' | 'priority'>('daily');
 
   // Param kategori berubah (mis. tap task lain di Home) → pindah kategori.
   useEffect(() => {
     if (validCategory) {
       setCategory(validCategory);
-      setMainTab('harian');
+      setMainTab('daily');
     }
   }, [validCategory, setMainTab]);
 
@@ -485,7 +485,7 @@ export default function TasksScreen() {
           Reminder 🔔
         </VixText>
         {/* Navigasi bulan — khusus tab Harian, mentok di bulan berjalan */}
-        {mainTab === 'harian' && (
+        {mainTab === 'daily' && (
           <View style={styles.monthRow}>
             <PressableScale
               onPress={() => shiftMonth(-1)}
@@ -514,8 +514,8 @@ export default function TasksScreen() {
       </View>
 
       <View style={styles.body} key={scrollKey}>
-      {mainTab === 'other' ? (
-        <OtherTaskTab items={otherTasks} />
+      {mainTab === 'priority' ? (
+        <PriorityTab items={otherTasks} />
       ) : (
         <>
           {/* Ganti kategori = ganti to-do list. Ref tiap chip untuk drop drag. */}
@@ -675,7 +675,7 @@ export default function TasksScreen() {
 
       {/* Backdrop transparan: tap di luar menutup speed-dial.
           Sengaja Pressable biasa — area penutup tidak perlu animasi tekan. */}
-      {mainTab === 'harian' && fabOpen && (
+      {mainTab === 'daily' && fabOpen && (
         <Pressable
           style={styles.fabBackdrop}
           onPress={() => setFabOpen(false)}
@@ -684,8 +684,8 @@ export default function TasksScreen() {
 
       {/* FAB speed-dial ⋯ — hanya di tab Harian, di atas tab bar bawah. */}
       <View
-        style={[styles.fabArea, mainTab !== 'harian' && styles.hidden]}
-        pointerEvents={mainTab === 'harian' ? 'box-none' : 'none'}>
+        style={[styles.fabArea, mainTab !== 'daily' && styles.hidden]}
+        pointerEvents={mainTab === 'daily' ? 'box-none' : 'none'}>
         {/* `order` = jarak dari FAB (0 = paling dekat) — dipakai untuk
             stagger: keluar dari bawah ke atas, masuk dari atas ke bawah. */}
         {fabOpen && (

@@ -13,7 +13,7 @@ import { StreakPill } from '@/components/common/StreakPill';
 import { VixText } from '@/components/common/VixText';
 import { CheckupTab } from '@/components/health/CheckupTab';
 import { SummaryTab } from '@/components/health/SummaryTab';
-import { TodoTab } from '@/components/health/TodoTab';
+import { HabitsTab } from '@/components/health/HabitsTab';
 import { useAuth } from '@/contexts/auth';
 import { subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
 import {
@@ -32,12 +32,12 @@ import {
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type HealthTab = 'summary' | 'todo' | 'checkup';
+type HealthTab = 'summary' | 'habits' | 'checkup';
 
 // Tab bar bawah di dalam layar Health.
 const TABS: BottomTab<HealthTab>[] = [
   { key: 'summary', label: 'Summary', icon: 'heart.fill' },
-  { key: 'todo', label: 'Habits', icon: 'checklist' },
+  { key: 'habits', label: 'Habits', icon: 'checklist' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
 
@@ -46,10 +46,10 @@ export default function HealthScreen() {
   const router = useRouter();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
-  // Default masuk ke tab To-do; reminder Home bisa mengarahkan ke tab lain.
+  // Default masuk ke tab Habits; reminder Home bisa mengarahkan ke tab lain.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, scrollKey, onTabPress } = useTabScroll<HealthTab>(
-    tabParam === 'summary' || tabParam === 'checkup' ? tabParam : 'todo',
+    tabParam === 'summary' || tabParam === 'checkup' ? tabParam : 'habits',
   );
 
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
@@ -109,7 +109,7 @@ export default function HealthScreen() {
         title="Health 🍎"
         subtitle="Jaga tubuh, kelola energi"
         right={
-          tab === 'todo' ? (
+          tab === 'habits' ? (
             <StreakPill streak={streakDays} />
           ) : tab === 'summary' ? (
             <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
@@ -132,9 +132,9 @@ export default function HealthScreen() {
         {loading ? (
           <LoadingCenter />
         ) : tab === 'summary' ? (
-          <SummaryTab profile={profile} streak={streak ?? null} dayId={dayId} />
-        ) : tab === 'todo' ? (
-          <TodoTab
+          <SummaryTab profile={profile} />
+        ) : tab === 'habits' ? (
+          <HabitsTab
             habits={dayHabits}
             day={day}
             dayId={dayId}

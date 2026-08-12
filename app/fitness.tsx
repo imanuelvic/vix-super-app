@@ -7,9 +7,9 @@ import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
+import { ExerciseTab } from '@/components/fitness/ExerciseTab';
 import { ProgramTab } from '@/components/fitness/ProgramTab';
 import { ProgressTab } from '@/components/fitness/ProgressTab';
-import { SessionTab } from '@/components/fitness/SessionTab';
 import { useAuth } from '@/contexts/auth';
 import { type LoginStreak } from '@/lib/achievements';
 import {
@@ -19,27 +19,38 @@ import {
   type FitDayDone,
   type FitWeights,
 } from '@/lib/fitness';
-import { dayDocId } from '@/lib/health';
+import {
+  dayDocId,
+  subscribeHealthProfile,
+  subscribeWeightTarget,
+  type HealthProfile,
+  type WeightTarget,
+} from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type Tab = 'session' | 'program' | 'progress';
+type Tab = 'program' | 'exercise' | 'progress';
 
 const TABS: BottomTab<Tab>[] = [
-  { key: 'session', label: 'Latihan', icon: 'dumbbell.fill' },
   { key: 'program', label: 'Program', icon: 'calendar' },
-  { key: 'progress', label: 'Progres', icon: 'chart.line.uptrend.xyaxis' },
+  { key: 'exercise', label: 'Exercise', icon: 'dumbbell.fill' },
+  { key: 'progress', label: 'Progress', icon: 'chart.line.uptrend.xyaxis' },
 ];
 
 // Fitness 💪 — program strength 5 hari/minggu (Sen, Sel, Kam, Jum, Sab).
 // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab tidak
-// memutus-sambung listener Firestore terus-menerus. Total 3 dokumen kecil.
+// memutus-sambung listener Firestore terus-menerus. Semuanya dokumen kecil.
+//
+// Data tubuh & target berat TIDAK disimpan ulang di sini — dibaca dari fitur
+// Health (profile + target) supaya cuma ada satu sumber kebenaran.
 export default function FitnessScreen() {
   const { user } = useAuth();
-  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('session');
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('exercise');
 
   const [weights, setWeights] = useState<FitWeights>({});
   const [done, setDone] = useState<FitDayDone>({});
   const [streak, setStreak] = useState<LoginStreak | null>(null);
+  const [profile, setProfile] = useState<HealthProfile | null>(null);
+  const [target, setTarget] = useState<WeightTarget | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const dayId = dayDocId(new Date());
@@ -51,6 +62,8 @@ export default function FitnessScreen() {
       subscribeFitWeights(user.uid, setWeights, fail),
       subscribeFitDay(user.uid, dayId, setDone, fail),
       subscribeFitStreak(user.uid, setStreak, fail),
+      subscribeHealthProfile(user.uid, setProfile, fail),
+      subscribeWeightTarget(user.uid, setTarget, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, dayId]);
@@ -70,17 +83,17 @@ export default function FitnessScreen() {
       )}
 
       <View style={styles.body} key={scrollKey}>
-        {tab === 'session' ? (
-          <SessionTab
+        {tab === 'program' ? (
+          <ProgramTab weights={weights} />
+        ) : tab === 'exercise' ? (
+          <ExerciseTab
             weights={weights}
             done={done}
             dayId={dayId}
             streak={streak}
           />
-        ) : tab === 'program' ? (
-          <ProgramTab weights={weights} />
         ) : (
-          <ProgressTab streak={streak} />
+          <ProgressTab streak={streak} profile={profile} target={target} />
         )}
       </View>
 

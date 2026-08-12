@@ -8,7 +8,6 @@ import { formatDecimal } from '@/lib/format';
 import {
   fitBlockOf,
   FIT_DAY_SHORT,
-  FIT_HOUR_LABEL,
   FIT_PROGRAM,
   weightOf,
   type FitBlock,
@@ -24,21 +23,6 @@ export function ProgramTab({ weights }: { weights: FitWeights }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.infoCard}>
-        <VixText heading="bold" additionalStyle={styles.infoTitle}>
-          🔁 Rotasi 2 mingguan
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.infoText}>
-          Minggu 1–2 Blok A, minggu 3–4 Blok B, lalu balik ke A dengan beban
-          lebih berat. Otot yang dilatih sama, gerakannya beda — cukup variasi
-          tanpa kehilangan progres. Sekarang jalan{' '}
-          <VixText heading="bold" additionalStyle={styles.infoText}>
-            Blok {activeBlock}
-          </VixText>
-          . Latihan {FIT_HOUR_LABEL} · Rabu & Minggu istirahat.
-        </VixText>
-      </View>
-
       <SegmentTabs
         tabs={(['A', 'B'] as FitBlock[]).map((b) => ({
           key: b,
@@ -92,18 +76,7 @@ export function ProgramTab({ weights }: { weights: FitWeights }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
-  infoCard: {
-    backgroundColor: Color.FITNESS,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.FITNESS_DARK,
-    padding: 14,
-    gap: 3,
-    marginBottom: 14,
-  },
-  infoTitle: { color: Color.TEXT_TITLE },
-  infoText: { color: Color.FITNESS_DARK },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   dayBlock: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

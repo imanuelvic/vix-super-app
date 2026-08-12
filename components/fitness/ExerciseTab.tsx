@@ -29,10 +29,10 @@ import {
 } from '@/lib/fitness';
 import { type LoginStreak } from '@/lib/achievements';
 
-// Tab Latihan 💪 — deretan hari (ala BetterMe) + sesi hari yang dipilih.
+// Tab Exercise 💪 — deretan hari (ala BetterMe) + sesi hari yang dipilih.
 // Hanya sesi HARI INI yang bisa dicentang; hari lain tampil sebagai pratinjau
 // biar kamu tahu besok latihan apa dan bisa siap-siap.
-export function SessionTab({
+export function ExerciseTab({
   weights,
   done,
   dayId,

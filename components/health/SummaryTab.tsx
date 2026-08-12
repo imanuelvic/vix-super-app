@@ -19,7 +19,6 @@ import {
   parseDecimal,
 } from '@/lib/format';
 import {
-  activeStreak,
   ageFromBirthYear,
   BLOOD_TYPES,
   bmiCategory,
@@ -27,7 +26,6 @@ import {
   bmrMale,
   saveHealthProfile,
   type HealthProfile,
-  type Streak,
 } from '@/lib/health';
 import {
   healthKitStatus,
@@ -38,19 +36,8 @@ import {
 import { SAVE_ERROR } from '@/lib/messages';
 
 // Tab Summary: ringkasan harian dari Apple Health + data tubuh manual (BMI).
-export function SummaryTab({
-  profile,
-  streak,
-  dayId,
-}: {
-  profile: HealthProfile;
-  streak: Streak | null;
-  dayId: string;
-}) {
+export function SummaryTab({ profile }: { profile: HealthProfile }) {
   const { user } = useAuth();
-  // Sama seperti tab To-do: tampilkan pil streak 🔥 di sapaan biar header
-  // kedua tab identik (jarak/marginnya persis sama).
-  const streakDays = activeStreak(streak, dayId);
 
   // ---- Apple Health ----
   // Status tidak berubah selama app hidup, cukup dihitung sekali.
@@ -164,7 +151,8 @@ export function SummaryTab({
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {/* Sapaan + tanggal + streak (komponen bersama, sama di semua layar) */}
-      <GreetingHeader streak={streakDays} />
+      {/* Streak 🔥 tidak ditampilkan di sini — hanya di sub-tab Habits. */}
+      <GreetingHeader />
 
       {/* ===== Apple Health ===== */}
       <View style={styles.card}>

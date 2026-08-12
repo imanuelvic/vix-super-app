@@ -32,7 +32,7 @@ const TONE_LABEL: Record<ChoreTone, string> = {
 // Tab Perawatan: checklist bersih-bersih rumah berkala per kategori frekuensi
 // (mingguan → kuartalan). Tandai kapan terakhir dikerjakan, app hitung kapan
 // waktunya lagi. Mirip Sparepart di Car.
-export function ResidenceChoreTab({ status }: { status: ChoreStatusMap }) {
+export function ChoreTab({ status }: { status: ChoreStatusMap }) {
   const { user } = useAuth();
 
   const [editing, setEditing] = useState<ResidenceChore | null>(null);

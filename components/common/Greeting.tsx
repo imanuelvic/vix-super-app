@@ -35,7 +35,7 @@ export function Greeting({
 }
 
 // Baris standar SAPAAN + TANGGAL — SATU tampilan untuk semua layar berdate
-// (Health Summary & To-do, CORE Follow Up, Spiritual). Kalau layar punya
+// (Health Summary & Habits, CORE Follow Up, Spiritual). Kalau layar punya
 // streak, oper `streak` supaya muncul pil 🔥 di samping tanggal. Ubah di sini
 // = semua ikut berubah, biar konsisten & rapi.
 export function GreetingHeader({ streak }: { streak?: string | number }) {

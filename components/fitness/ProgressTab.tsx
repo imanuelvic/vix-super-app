@@ -1,18 +1,37 @@
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { type LoginStreak } from '@/lib/achievements';
-import { FIT_PREP, FIT_TARGETS } from '@/lib/fitness';
+import { fitTargets, FIT_PREP } from '@/lib/fitness';
+import { formatDecimal } from '@/lib/format';
+import {
+  bmiCategory,
+  bmiValue,
+  type HealthProfile,
+  type WeightTarget,
+} from '@/lib/health';
 
-// Tab Progres 📈 — rentetan sesi, target yang dikejar, dan daftar persiapan
-// sebelum berangkat gym. Semua angka datang dari dokumen streak (1 read).
-export function ProgressTab({ streak }: { streak: LoginStreak | null }) {
+// Tab Progress 📈 — rentetan sesi, Data Tubuh (dibaca dari fitur Health),
+// target yang dikejar, dan daftar persiapan sebelum berangkat gym.
+export function ProgressTab({
+  streak,
+  profile,
+  target,
+}: {
+  streak: LoginStreak | null;
+  profile: HealthProfile | null;
+  target: WeightTarget | null;
+}) {
+  const router = useRouter();
   const count = streak?.count ?? 0;
   const best = streak?.best ?? 0;
   const total = streak?.total ?? 0;
   // 5 sesi = 1 minggu penuh; dipakai untuk menerjemahkan streak jadi "minggu".
   const weeks = Math.floor(count / 5);
+  const bmi = profile ? bmiValue(profile.weightKg, profile.heightCm) : 0;
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -46,10 +65,55 @@ export function ProgressTab({ streak }: { streak: LoginStreak | null }) {
         </View>
       </View>
 
+      {/* Data Tubuh — dibaca langsung dari fitur Health, tidak diisi dua kali.
+          Ketuk untuk mengubahnya di sana. */}
+      {profile && (
+        <PressableScale
+          style={styles.bodyCard}
+          onPress={() =>
+            router.push({ pathname: '/health', params: { tab: 'summary' } })
+          }>
+          <View style={styles.bodyTop}>
+            <VixText heading="bold" additionalStyle={styles.bodyTitle}>
+              🧍 Data Tubuh
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.bodyLink}>
+              Ubah di Health ›
+            </VixText>
+          </View>
+          <View style={styles.bodyRow}>
+            <View style={styles.bodyItem}>
+              <VixText heading="bold" additionalStyle={styles.bodyValue}>
+                {formatDecimal(profile.weightKg)} kg
+              </VixText>
+              <VixText heading="label">
+                {target
+                  ? `→ ${formatDecimal(target.targetWeightKg)} kg`
+                  : 'Berat'}
+              </VixText>
+            </View>
+            <View style={styles.bodyItem}>
+              <VixText heading="bold" additionalStyle={styles.bodyValue}>
+                {formatDecimal(bmi)}
+              </VixText>
+              <VixText heading="label" numberOfLines={1}>
+                BMI · {bmiCategory(bmi).label}
+              </VixText>
+            </View>
+            <View style={styles.bodyItem}>
+              <VixText heading="bold" additionalStyle={styles.bodyValue}>
+                {profile.waistCm ? `${formatDecimal(profile.waistCm)} cm` : '—'}
+              </VixText>
+              <VixText heading="label">Lingkar perut</VixText>
+            </View>
+          </View>
+        </PressableScale>
+      )}
+
       <VixText heading="title" additionalStyle={styles.sectionTitle}>
         🎯 Target yang dikejar
       </VixText>
-      {FIT_TARGETS.map((t) => (
+      {(profile ? fitTargets(profile, target) : []).map((t) => (
         <View key={t.label} style={styles.card}>
           <VixText additionalStyle={styles.cardIcon}>{t.icon}</VixText>
           <View style={styles.cardMain}>
@@ -82,7 +146,7 @@ export function ProgressTab({ streak }: { streak: LoginStreak | null }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.FITNESS_DARK,
     borderRadius: 20,
@@ -106,6 +170,27 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   statValue: { color: Color.FITNESS_DARK },
+  // Data Tubuh — cerminan data Health, bukan sumber terpisah.
+  bodyCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 14,
+    marginTop: 10,
+    gap: 10,
+  },
+  bodyTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bodyTitle: { color: Color.TEXT_TITLE },
+  bodyLink: { color: Color.FITNESS_DARK },
+  bodyRow: { flexDirection: 'row', gap: 10 },
+  bodyItem: { flex: 1, gap: 1 },
+  bodyValue: { color: Color.TEXT_TITLE },
   sectionTitle: { marginTop: 16, marginBottom: 10 },
   card: {
     flexDirection: 'row',
