@@ -284,12 +284,6 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
             />
           ))}
         </View>
-        {urgent && (
-          <VixText heading="label" additionalStyle={styles.urgentHint}>
-            🔥 Deadline tinggal ≤ {OTHER_REMINDER_DAYS} hari — otomatis P1 dan
-            tidak bisa diubah. Tandai selesai kalau sudah beres.
-          </VixText>
-        )}
         {formError && (
           <VixText heading="label" additionalStyle={styles.error}>
             {formError}
@@ -369,5 +363,4 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   chipFlex: { flex: 1 },
   chipLocked: { opacity: 0.4 },
-  urgentHint: { color: Color.DANGER, marginBottom: 10 },
 });
