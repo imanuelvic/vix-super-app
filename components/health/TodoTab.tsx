@@ -4,12 +4,13 @@ import { StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { GreetingHeader } from '@/components/common/Greeting';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
+import { GreetingHeader } from '@/components/common/Greeting';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
@@ -27,7 +28,6 @@ import {
   type ScheduledHabit,
 } from '@/lib/habits';
 import {
-  activeStreak,
   bumpStreak,
   clearWeightTarget,
   idealWeightRange,
@@ -79,7 +79,6 @@ export function TodoTab({
   const [savingTarget, setSavingTarget] = useState(false);
 
   const doneCount = habits.filter((h) => day.done[h.id]).length;
-  const streakDays = activeStreak(streak, dayId);
   const range = idealWeightRange(profile.heightCm);
   const grouped = habitsBySlot(habits);
   const activeList = grouped[activeSlot];
@@ -239,9 +238,12 @@ export function TodoTab({
 
   return (
     <View style={styles.flex}>
-      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-        {/* Sapaan + tanggal + streak (komponen bersama) */}
-        <GreetingHeader streak={streakDays} />
+      {/* ===== Header TETAP — sapaan, ringkasan, & tab sesi tidak ikut
+          ter-scroll; hanya daftar kebiasaan di bawahnya yang bergeser. ===== */}
+      <View style={styles.fixedHeader}>
+        {/* Sapaan + tanggal (komponen bersama). Streak 🔥 tampil sebagai
+            tombol di pojok kanan atas header Health, bukan di sini. */}
+        <GreetingHeader />
 
         {/* ===== Baris atas: Kebiasaan (ring) + Target berat ===== */}
         <View style={styles.statsRow}>
@@ -307,40 +309,24 @@ export function TodoTab({
 
         {/* ===== Kebiasaan: tab sesi Pagi/Siang/Malam (satu sesi tampil biar
             tak perlu scroll panjang; default ke sesi jam sekarang) ===== */}
-        <View style={styles.slotTabs}>
-          {HABIT_SLOTS.map((s) => {
+        <SegmentTabs
+          tabs={HABIT_SLOTS.map((s) => {
             const list = grouped[s.key];
             const slotDone = list.filter((h) => day.done[h.id]).length;
-            const active = s.key === activeSlot;
             const complete = list.length > 0 && slotDone === list.length;
-            return (
-              <PressableScale
-                key={s.key}
-                style={[styles.slotTab, active && styles.slotTabActive]}
-                onPress={() => setActiveSlot(s.key)}>
-                <VixText
-                  heading="bold"
-                  numberOfLines={1}
-                  additionalStyle={[
-                    styles.slotTabLabel,
-                    active && styles.slotTabLabelActive,
-                  ]}>
-                  {s.emoji} {s.label}
-                </VixText>
-                <VixText
-                  heading="label"
-                  additionalStyle={[
-                    styles.slotTabCount,
-                    active && styles.slotTabCountActive,
-                  ]}>
-                  {complete ? '✅ beres' : `${slotDone}/${list.length}`}
-                </VixText>
-              </PressableScale>
-            );
+            return {
+              key: s.key,
+              label: `${s.emoji} ${s.label}`,
+              sub: complete ? '✅ beres' : `${slotDone}/${list.length}`,
+            };
           })}
-        </View>
+          value={activeSlot}
+          onChange={setActiveSlot}
+        />
+      </View>
 
-        {/* Kebiasaan sesi yang aktif */}
+      {/* Kebiasaan sesi yang aktif — bagian yang bisa di-scroll */}
+      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <View style={styles.slotBlock}>
           {activeList.map((habit) => {
             const checked = !!day.done[habit.id];
@@ -501,7 +487,13 @@ export function TodoTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  // Bagian atas yang menempel (sapaan + ringkasan + tab sesi).
+  fixedHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    backgroundColor: Color.BACKGROUND,
+  },
+  content: { paddingHorizontal: 20, paddingBottom: 24 },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   heroCard: {
     flex: 1,
@@ -548,27 +540,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   targetBarFill: { height: '100%', borderRadius: 4, backgroundColor: Color.MAIN },
-  // Tab sesi (Pagi/Siang/Malam) — segmen yang bisa dipencet.
-  slotTabs: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-  slotTab: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
-  },
-  slotTabActive: {
-    borderColor: Color.MAIN,
-    backgroundColor: Color.MAIN_TRANSPARENT,
-  },
-  slotTabLabel: { color: Color.TEXT_LABEL },
-  slotTabLabelActive: { color: Color.MAIN_DARK },
-  slotTabCount: { color: Color.TEXT_PLACEHOLDER },
-  slotTabCountActive: { color: Color.MAIN },
   // Blok sesi aktif
   slotBlock: { marginBottom: 16 },
   row: {

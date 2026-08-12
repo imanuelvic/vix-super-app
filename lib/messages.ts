@@ -9,3 +9,6 @@ export const SAVE_ERROR = 'Gagal menyimpan. Cek koneksi internet.';
 
 /** Gagal menghapus data dari Firestore. */
 export const DELETE_ERROR = 'Gagal menghapus. Coba lagi.';
+
+/** Gagal mengambil/memilih foto (kamera atau galeri). */
+export const PHOTO_ERROR = 'Gagal mengambil foto. Coba lagi.';

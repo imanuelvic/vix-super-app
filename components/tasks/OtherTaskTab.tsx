@@ -63,7 +63,7 @@ export function OtherTaskTab({ items }: { items: OtherTask[] }) {
     try {
       await setOtherTaskDone(user.uid, item.id, !item.done);
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     }
   }
 

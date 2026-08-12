@@ -22,9 +22,9 @@ import {
 } from '@/lib/sermon';
 import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
-// Tab Khotbah ⛪ — catatan khotbah ibadah Minggu NDC.
+// Tab Sermon ⛪ — catatan khotbah ibadah Minggu NDC.
 // Hanya bisa DITAMBAH pada hari Minggu, satu catatan per Minggu.
-export function KhotbahTab({ sermons }: { sermons: SermonNote[] }) {
+export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
   const { user } = useAuth();
 
   const [editing, setEditing] = useState<SermonNote | 'new' | null>(null);

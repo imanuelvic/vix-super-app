@@ -21,6 +21,7 @@ import {
   type AchievementStats,
   type LoginStreak,
 } from '@/lib/achievements';
+import { subscribeFitStreak } from '@/lib/fitness';
 import { formatShortRupiah } from '@/lib/format';
 import {
   activeStreak,
@@ -33,7 +34,12 @@ import {
   type Streak,
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
-import { subscribeReviveStreak } from '@/lib/spiritual';
+import {
+  EMPTY_BIBLE_STREAKS,
+  subscribeBibleStreaks,
+  subscribeReviveStreak,
+  type BibleStreaks,
+} from '@/lib/spiritual';
 import { formatRupiah } from '@/lib/transactions';
 
 // Achievement 🏆 — pencapaian dikelompokkan per kategori (ala Duolingo).
@@ -46,6 +52,8 @@ export default function AchievementsScreen() {
   const [login, setLogin] = useState<LoginStreak | null>(null);
   const [habit, setHabit] = useState<Streak | null>(null);
   const [revive, setRevive] = useState<LoginStreak | null>(null);
+  const [bible, setBible] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
+  const [fit, setFit] = useState<LoginStreak | null>(null);
   const [stepDays, setStepDays] = useState<StepDaysMap>({});
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +68,8 @@ export default function AchievementsScreen() {
       subscribeLoginStreak(user.uid, setLogin, fail),
       subscribeStreak(user.uid, setHabit, fail),
       subscribeReviveStreak(user.uid, setRevive, fail),
+      subscribeBibleStreaks(user.uid, setBible, fail),
+      subscribeFitStreak(user.uid, setFit, fail),
       subscribeStepDays(user.uid, setStepDays, fail),
       subscribeSelfRewardBalance(user.uid, setBalance, fail),
     ];
@@ -74,6 +84,13 @@ export default function AchievementsScreen() {
     habitStreak: activeStreak(habit, dayDocId(new Date())),
     reviveBest: revive?.best ?? 0,
     reviveTotal: revive?.total ?? 0,
+    bibleTotal: bible.morning.total + bible.night.total,
+    bibleMorningBest: bible.morning.best,
+    bibleNightBest: bible.night.best,
+    bibleBothBest: bible.both.best,
+    bibleBothTotal: bible.both.total,
+    fitTotal: fit?.total ?? 0,
+    fitBest: fit?.best ?? 0,
     bestSteps: stepAch.best?.steps ?? 0,
     stepTierLastDate: stepTierLastDates(stepDays),
   };

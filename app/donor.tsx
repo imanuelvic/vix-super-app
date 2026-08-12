@@ -32,7 +32,7 @@ import {
   type DonorSchedule,
 } from '@/lib/donor';
 import { formatFullDate, formatMonthsDays } from '@/lib/format';
-import { LOAD_ERROR } from '@/lib/messages';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
 
 // Donor Darah 🩸 — jadwal & tempat donor, hitung mundur boleh donor lagi,
@@ -102,7 +102,7 @@ export default function DonorScreen() {
     try {
       await saveDonor(user.uid, next);
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     }
   }
 

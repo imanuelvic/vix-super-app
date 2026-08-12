@@ -31,6 +31,14 @@ export function formatShortDayDate(d: Date): string {
   return `${DAY_NAMES[d.getDay()].slice(0, 3)}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
 }
 
+/** Rabu, 12 Agu 26 — "dddd, dd mmm yy" untuk baris sapaan (<GreetingHeader/>). */
+export function formatGreetingDate(d: Date): string {
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = MONTH_NAMES[d.getMonth()].slice(0, 3);
+  const year = String(d.getFullYear()).slice(-2);
+  return `${DAY_NAMES[d.getDay()]}, ${day} ${month} ${year}`;
+}
+
 /** "Sel" — nama hari 3 huruf. */
 export function dayShort(d: Date): string {
   return DAY_NAMES[d.getDay()].slice(0, 3);

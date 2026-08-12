@@ -248,7 +248,8 @@ export function subscribeStreak(
   );
 }
 
-function yesterdayId(): string {
+/** dayId kemarin — dipakai semua streak harian untuk cek "bersambung". */
+export function yesterdayId(): string {
   const y = new Date();
   y.setDate(y.getDate() - 1);
   return dayDocId(y);

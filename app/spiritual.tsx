@@ -13,19 +13,30 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
-import { KhotbahTab } from '@/components/spiritual/KhotbahTab';
+import { BibleReadTab } from '@/components/spiritual/BibleReadTab';
+import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
-import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
+import {
+  subscribeBibleReadDays,
+  subscribeReviveEntries,
+  type BibleReadDay,
+  type ReviveEntry,
+} from '@/lib/spiritual';
 
-type Tab = 'revive' | 'khotbah';
+type Tab = 'revive' | 'sermon' | 'bible';
 
 const TABS: BottomTab<Tab>[] = [
   { key: 'revive', label: 'Revive', icon: 'book.closed.fill' },
-  { key: 'khotbah', label: 'Khotbah', icon: 'mic.fill' },
+  { key: 'sermon', label: 'Sermon', icon: 'mic.fill' },
+  { key: 'bible', label: 'Bible Read', icon: 'books.vertical.fill' },
 ];
+
+function isTab(value?: string): value is Tab {
+  return TABS.some((t) => t.key === value);
+}
 
 export default function SpiritualScreen() {
   const router = useRouter();
@@ -34,15 +45,16 @@ export default function SpiritualScreen() {
 
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, setTab, scrollKey, onTabPress } = useTabScroll<Tab>(
-    tabParam === 'khotbah' ? 'khotbah' : 'revive',
+    isTab(tabParam) ? tabParam : 'revive',
   );
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
+  const [bibleDays, setBibleDays] = useState<BibleReadDay[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Reminder Home bisa mengarahkan ke tab khotbah lewat param.
+  // Reminder Dashboard bisa mengarahkan ke tab tertentu lewat param.
   useEffect(() => {
-    if (tabParam === 'khotbah' || tabParam === 'revive') setTab(tabParam);
+    if (isTab(tabParam)) setTab(tabParam);
   }, [tabParam, setTab]);
 
   useEffect(() => {
@@ -58,6 +70,7 @@ export default function SpiritualScreen() {
         fail,
       ),
       subscribeSermons(user.uid, setSermons, fail),
+      subscribeBibleReadDays(user.uid, setBibleDays, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -132,8 +145,10 @@ export default function SpiritualScreen() {
               />
             )}
           </ScrollView>
+        ) : tab === 'sermon' ? (
+          <SermonTab sermons={sermons} />
         ) : (
-          <KhotbahTab sermons={sermons} />
+          <BibleReadTab days={bibleDays} />
         )}
       </View>
 

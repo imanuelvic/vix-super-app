@@ -28,7 +28,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { currentAge, nextBirthday } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   childrenOf,
   countGenerations,
@@ -366,7 +366,7 @@ export default function FamilyScreen() {
       const photo = await pickCompressedPhoto();
       if (photo) setFPhoto(photo);
     } catch {
-      setFormError('Gagal mengambil foto. Coba lagi.');
+      setFormError(PHOTO_ERROR);
     } finally {
       setPhotoBusy(false);
     }

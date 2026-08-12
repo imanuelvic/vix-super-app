@@ -13,8 +13,10 @@ import {
 
 import { type LoginStreak as DayStreak } from './achievements';
 import { db } from './firebase';
-import { dayDocId } from './health';
+import { dayIdToDate } from './format';
+import { yesterdayId } from './health';
 import { hashString } from './core';
+import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Spiritual ✝️ — Revive harian (mengikuti struktur renungan NDC:
 // judul, bacaan Alkitab, ayat hafalan, rhema, refleksi) + reminder acak
@@ -97,57 +99,188 @@ export function subscribeReviveStreak(
   );
 }
 
-function yesterdayId(): string {
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  return dayDocId(y);
-}
-
 /** Panggil saat Revive HARI INI pertama kali disimpan — naik maks 1×/hari. */
 export function bumpReviveStreak(
   uid: string,
   current: DayStreak | null,
   todayId: string,
 ) {
-  if (current?.lastDayId === todayId) return Promise.resolve();
-  const continued = current !== null && current.lastDayId === yesterdayId();
-  const count = continued ? current.count + 1 : 1;
-  return setDoc(doc(db, 'users', uid, 'app', 'revive'), {
-    count,
-    lastDayId: todayId,
-    best: Math.max(count, current?.best ?? 0),
-    total: (current?.total ?? 0) + 1,
-  });
+  if (alreadyCounted(current, todayId)) return Promise.resolve();
+  return setDoc(
+    doc(db, 'users', uid, 'app', 'revive'),
+    nextStreak(current, todayId, yesterdayId()),
+  );
 }
 
-// ===================== Bacaan Alkitab harian 📖 =====================
-// Checklist ringan "sudah baca minimal 1 pasal hari ini". Satu dokumen kecil:
-// users/{uid}/app/bibleReading → { lastDayId }. Sudah baca hari ini kalau
-// lastDayId === hari ini. Catatan: kalau sudah Revive hari ini juga dianggap
-// sudah baca (Revive termasuk baca firman) — penggabungan itu dicek di layar.
+// ===================== Bacaan Alkitab 📖 (Pagi & Malam) =====================
+// DUA sesi baca per hari, masing-masing punya jendela jam sendiri:
+//   🌅 Pagi  05.00–09.59   ·   🌙 Malam 21.00–23.59
+// Kartu reminder di Dashboard hanya muncul di dalam jendela itu & selama sesi
+// hari itu belum diisi. Isinya string bebas: kitab/pasal yang dibaca.
+//
+// Satu dokumen kecil per hari: users/{uid}/bibleRead/{YYYY-MM-DD}
+//   { morning: string, night: string, date: Timestamp }
+// Sesi bernilai "" = belum diisi hari itu.
 
-export function subscribeBibleReading(
+export type BibleSession = 'morning' | 'night';
+
+export const BIBLE_SESSIONS: {
+  key: BibleSession;
+  label: string; // "Pagi" / "Malam" — untuk tab riwayat
+  title: string; // judul kartu & modal di Dashboard
+  emoji: string;
+  fromHour: number; // jendela mulai (inklusif)
+  toHour: number; // jendela selesai (eksklusif)
+}[] = [
+  { key: 'morning', label: 'Pagi', title: 'Morning Bible Reading', emoji: '🌅', fromHour: 5, toHour: 10 },
+  { key: 'night', label: 'Malam', title: 'Night Bible Reading', emoji: '🌙', fromHour: 21, toHour: 24 },
+];
+
+export function bibleSessionMeta(session: BibleSession) {
+  return BIBLE_SESSIONS.find((s) => s.key === session)!;
+}
+
+/** Isi kedua sesi dalam satu hari ("" = belum diisi). */
+export type BibleReadSessions = { morning: string; night: string };
+
+export type BibleReadDay = BibleReadSessions & {
+  id: string; // "YYYY-MM-DD"
+  date: Timestamp;
+};
+
+/** Sesi yang jendelanya sedang terbuka sekarang (null = di luar jam baca). */
+export function bibleSessionNow(now: Date): BibleSession | null {
+  const h = now.getHours();
+  return (
+    BIBLE_SESSIONS.find((s) => h >= s.fromHour && h < s.toHour)?.key ?? null
+  );
+}
+
+function readSessions(data?: Record<string, unknown>): BibleReadSessions {
+  return {
+    morning: (data?.morning as string) ?? '',
+    night: (data?.night as string) ?? '',
+  };
+}
+
+/** Riwayat 90 hari terakhir — untuk tab Bible Read di Spiritual. */
+export function subscribeBibleReadDays(
   uid: string,
-  onChange: (lastDayId: string | null) => void,
+  onChange: (days: BibleReadDay[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const ref = doc(db, 'users', uid, 'app', 'bibleReading');
+  // orderBy satu field saja → tidak butuh composite index.
+  const q = query(
+    collection(db, 'users', uid, 'bibleRead'),
+    orderBy('date', 'desc'),
+    limit(90),
+  );
   return onSnapshot(
-    ref,
-    (snapshot) => onChange((snapshot.data()?.lastDayId as string) ?? null),
+    q,
+    (snapshot) => {
+      onChange(
+        snapshot.docs.map((d) => ({
+          id: d.id,
+          ...readSessions(d.data()),
+          date: d.data().date as Timestamp,
+        })),
+      );
+    },
     onError,
   );
 }
 
-/** Tandai (atau batalkan) sudah baca ≥1 pasal hari ini. */
-export function setBibleReadingDone(
+/** HANYA hari ini — dipakai Dashboard (1 dokumen saja, hemat read). */
+export function subscribeBibleReadToday(
   uid: string,
-  todayId: string,
-  done: boolean,
+  dayId: string,
+  onChange: (sessions: BibleReadSessions) => void,
+  onError?: (error: FirestoreError) => void,
 ) {
-  return setDoc(doc(db, 'users', uid, 'app', 'bibleReading'), {
-    lastDayId: done ? todayId : '',
-  });
+  return onSnapshot(
+    doc(db, 'users', uid, 'bibleRead', dayId),
+    (snapshot) => onChange(readSessions(snapshot.data())),
+    onError,
+  );
+}
+
+/** Simpan bacaan SATU sesi — merge, jadi sesi lain di hari itu tidak tersentuh. */
+export function saveBibleRead(
+  uid: string,
+  dayId: string,
+  session: BibleSession,
+  passage: string,
+) {
+  return setDoc(
+    doc(db, 'users', uid, 'bibleRead', dayId),
+    { [session]: passage, date: Timestamp.fromDate(dayIdToDate(dayId)) },
+    { merge: true },
+  );
+}
+
+// ===== Streak baca Alkitab 🔥 — SATU dokumen: users/{uid}/app/bibleStreak =====
+// Tiga rentetan sekaligus supaya cukup 1 read: pagi, malam, dan "lengkap"
+// (hari yang pagi & malamnya sama-sama terisi). Bentuk tiap rentetan sama
+// dengan streak doa/Revive: { count, lastDayId, best, total }.
+
+export type BibleStreaks = {
+  morning: DayStreak;
+  night: DayStreak;
+  both: DayStreak;
+};
+
+export const EMPTY_BIBLE_STREAKS: BibleStreaks = {
+  morning: EMPTY_DAY_STREAK,
+  night: EMPTY_DAY_STREAK,
+  both: EMPTY_DAY_STREAK,
+};
+
+export function subscribeBibleStreaks(
+  uid: string,
+  onChange: (streaks: BibleStreaks) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return onSnapshot(
+    doc(db, 'users', uid, 'app', 'bibleStreak'),
+    (snapshot) => {
+      const d = snapshot.data();
+      onChange({
+        morning: (d?.morning as DayStreak) ?? EMPTY_DAY_STREAK,
+        night: (d?.night as DayStreak) ?? EMPTY_DAY_STREAK,
+        both: (d?.both as DayStreak) ?? EMPTY_DAY_STREAK,
+      });
+    },
+    onError,
+  );
+}
+
+/** Naikkan satu rentetan — maks 1×/hari, putus kalau kemarin bolong. */
+function bumpDayStreak(current: DayStreak, todayId: string): DayStreak {
+  if (alreadyCounted(current, todayId)) return current;
+  return nextStreak(current, todayId, yesterdayId());
+}
+
+/**
+ * Catat streak SESUDAH bacaan tersimpan. `bothFilled` = pagi & malam hari ini
+ * dua-duanya sudah terisi → rentetan "lengkap" ikut naik.
+ */
+export function bumpBibleStreaks(
+  uid: string,
+  current: BibleStreaks,
+  todayId: string,
+  session: BibleSession,
+  bothFilled: boolean,
+) {
+  const next: BibleStreaks = {
+    morning:
+      session === 'morning'
+        ? bumpDayStreak(current.morning, todayId)
+        : current.morning,
+    night:
+      session === 'night' ? bumpDayStreak(current.night, todayId) : current.night,
+    both: bothFilled ? bumpDayStreak(current.both, todayId) : current.both,
+  };
+  return setDoc(doc(db, 'users', uid, 'app', 'bibleStreak'), next);
 }
 
 // ===================== Reminder harian 🕊️ =====================

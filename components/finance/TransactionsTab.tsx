@@ -40,7 +40,7 @@ import {
   MONTH_NAMES,
   parseAmount,
 } from '@/lib/format';
-import { DELETE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { openPayApp, payAppForCategory } from '@/lib/payapps';
 import {
   addTransaction,
@@ -224,7 +224,7 @@ export function TransactionsTab({
       setAmount('');
       setNote('');
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     } finally {
       setSaving(false);
     }
@@ -270,7 +270,7 @@ export function TransactionsTab({
       });
       setEditing(null);
     } catch {
-      setEditError('Gagal menyimpan. Coba lagi.');
+      setEditError(SAVE_ERROR);
     } finally {
       setEditSaving(false);
     }

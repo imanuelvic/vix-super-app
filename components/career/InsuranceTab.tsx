@@ -19,6 +19,7 @@ import {
   type InsuranceMonths,
 } from '@/lib/career';
 import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
+import { SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Tab Insurance 🛡️: target bulanan agent Allianz — pitching, closing,
@@ -54,7 +55,7 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
     try {
       await saveInsuranceMonth(user.uid, key, { ...data, ...partial });
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     }
   }
 

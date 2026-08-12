@@ -105,7 +105,7 @@ export default function TimelineScreen() {
     try {
       await saveTimelineYear(user.uid, year, next);
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     }
   }
 

@@ -101,7 +101,7 @@ export function FollowupTab({
     try {
       await saveCoreIdeas(user.uid, { ...ideas, cadence });
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     }
   }
 
@@ -225,7 +225,7 @@ export function FollowupTab({
     try {
       await saveCoreLeaders(user.uid, next);
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     }
   }
 
@@ -260,7 +260,7 @@ export function FollowupTab({
         updatedAt: base.updatedAt,
       });
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     }
   }
 

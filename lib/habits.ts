@@ -39,7 +39,7 @@ export function slotNow(now: Date): HabitSlot {
  * Malam ≥18:00 (kumulatif: siang tetap membawa sisa pagi). Dini hari (<06:00)
  * hanya Malam, mengikuti aturan `slotNow` di atas.
  */
-export function openSlots(now: Date): HabitSlot[] {
+function openSlots(now: Date): HabitSlot[] {
   const h = now.getHours();
   if (h < 6) return ['night'];
   if (h < 12) return ['morning'];

@@ -33,7 +33,7 @@ import {
   type FundDirection,
   type FundEntry,
 } from '@/lib/funds';
-import { DELETE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Halaman mutasi satu Saku — seperti sheet Pocket di spreadsheet:
@@ -132,7 +132,7 @@ export default function FundScreen() {
       setCause('');
       setAmount('');
     } catch {
-      setError('Gagal menyimpan. Coba lagi.');
+      setError(SAVE_ERROR);
     } finally {
       setSaving(false);
     }
@@ -166,7 +166,7 @@ export default function FundScreen() {
       });
       setEditing(null);
     } catch {
-      setEditError('Gagal menyimpan. Coba lagi.');
+      setEditError(SAVE_ERROR);
     } finally {
       setEditSaving(false);
     }

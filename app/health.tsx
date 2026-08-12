@@ -9,6 +9,7 @@ import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { StreakPill } from '@/components/common/StreakPill';
 import { VixText } from '@/components/common/VixText';
 import { CheckupTab } from '@/components/health/CheckupTab';
 import { SummaryTab } from '@/components/health/SummaryTab';
@@ -16,6 +17,7 @@ import { TodoTab } from '@/components/health/TodoTab';
 import { useAuth } from '@/contexts/auth';
 import { subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
 import {
+  activeStreak,
   dayDocId,
   subscribeCheckups,
   subscribeHabitDay,
@@ -95,23 +97,28 @@ export default function HealthScreen() {
   // Kebiasaan (sama tiap hari) — semua sesi Pagi/Siang/Malam.
   const dayHabits = schedule ?? [];
 
+  // Streak 🔥 untuk tombol kanan atas sub-tab Habits.
+  const streakDays = activeStreak(streak ?? null, dayId);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Tombol kanan atas menyesuaikan sub-tab yang sedang dibuka:
-          Habits → rekor langkah · Check-up → info kesehatan · Summary → kosong. */}
+          Habits → streak 🔥 · Summary → rekor langkah · Check-up → info kesehatan. */}
       <ScreenHeader
         backLabel="Home"
         title="Health 🍎"
         subtitle="Jaga tubuh, kelola energi"
         right={
           tab === 'todo' ? (
+            <StreakPill streak={streakDays} />
+          ) : tab === 'summary' ? (
             <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
-          ) : tab === 'checkup' ? (
+          ) : (
             <EmojiButton
               emoji="💪🏻"
               onPress={() => router.push('/health-info')}
             />
-          ) : undefined
+          )
         }
       />
 

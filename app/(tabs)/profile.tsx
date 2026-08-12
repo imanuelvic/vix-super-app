@@ -20,7 +20,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { pickCompressedPhoto } from '@/lib/family';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   EMPTY_PROFILE,
   saveProfile,
@@ -131,7 +131,7 @@ export default function ProfileScreen() {
       const photo = await pickCompressedPhoto();
       if (photo) setForm((prev) => ({ ...prev, photo }));
     } catch {
-      setFormError('Gagal mengambil foto. Coba lagi.');
+      setFormError(PHOTO_ERROR);
     } finally {
       setPhotoBusy(false);
     }

@@ -1,10 +1,8 @@
-import { useRouter } from 'expo-router';
 import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
-import { Color } from '@/assets/style/color';
-import { PressableScale } from '@/components/common/PressableScale';
+import { StreakPill } from '@/components/common/StreakPill';
 import { VixText, type VixHeading } from '@/components/common/VixText';
-import { formatFullDate } from '@/lib/format';
+import { formatGreetingDate } from '@/lib/format';
 
 /** Teks sapaan sesuai jam perangkat (pagi/siang/sore/malam). */
 export function greetingText(): string {
@@ -41,40 +39,26 @@ export function Greeting({
 // streak, oper `streak` supaya muncul pil 🔥 di samping tanggal. Ubah di sini
 // = semua ikut berubah, biar konsisten & rapi.
 export function GreetingHeader({ streak }: { streak?: string | number }) {
-  const router = useRouter();
   return (
-    <View style={styles.block}>
-      <Greeting heading="title" />
-      <View style={styles.row}>
-        <VixText heading="label">📆 {formatFullDate(new Date())}</VixText>
-        {streak != null && (
-          // Pil streak 🔥 → buka halaman Achievements (streak & pencapaian).
-          <PressableScale
-            style={styles.streakPill}
-            onPress={() => router.push('/achievements')}
-            hitSlop={8}>
-            <VixText heading="bold" additionalStyle={styles.streakText}>
-              🔥 {streak}
-            </VixText>
-          </PressableScale>
-        )}
+    // Satu baris: sapaan di kiri, tanggal (+ streak bila ada) di kanan.
+    <View style={styles.row}>
+      <Greeting heading="title" style={styles.greeting} />
+      <View style={styles.right}>
+        {streak != null && <StreakPill streak={streak} />}
+        <VixText heading="label">📆 {formatGreetingDate(new Date())}</VixText>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  block: { gap: 4, marginBottom: 12 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
   },
-  streakPill: {
-    backgroundColor: Color.ACCENT,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  streakText: { color: Color.ACCENT_DARK },
+  greeting: { flexShrink: 1 },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

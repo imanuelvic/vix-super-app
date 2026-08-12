@@ -82,6 +82,15 @@ import {
 } from '@/lib/car';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import {
+  fitQuote,
+  fitReminderWindow,
+  fitSessionFor,
+  FIT_HOUR_LABEL,
+  FIT_RECOVERY,
+  subscribeFitDay,
+  type FitDayDone,
+} from '@/lib/fitness';
+import {
   daysBetween,
   formatDate,
   formatMonthsDays,
@@ -125,9 +134,16 @@ import {
   type SermonNote,
 } from '@/lib/sermon';
 import {
-  setBibleReadingDone,
-  subscribeBibleReading,
+  bibleSessionMeta,
+  bibleSessionNow,
+  bumpBibleStreaks,
+  EMPTY_BIBLE_STREAKS,
+  saveBibleRead,
+  subscribeBibleReadToday,
+  subscribeBibleStreaks,
   subscribeReviveStreak,
+  type BibleReadSessions,
+  type BibleStreaks,
 } from '@/lib/spiritual';
 import {
   setTaskDone,
@@ -173,15 +189,21 @@ export default function DashboardScreen() {
   // sebagai kartu reminder di sini.
   const [carParts, setCarParts] = useState<PartStatusMap>({});
   const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
+  // Centang gerakan gym hari ini — untuk kartu "Gym Day" (1 dokumen).
+  const [fitDone, setFitDone] = useState<FitDayDone>({});
   const [wheel, setWheel] = useState<WheelData | null>(null);
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
   );
-  // Checklist "sudah baca ≥1 pasal hari ini" — lastDayId dokumen bibleReading.
-  const [bibleReadDayId, setBibleReadDayId] = useState<string | null>(null);
-  // Modal Baca Alkitab: input kitab (ephemeral, TIDAK disimpan ke Firestore).
+  // Bacaan Alkitab hari ini (🌅 pagi & 🌙 malam) + rentetan streak-nya.
+  // null = belum termuat → kartu belum ditampilkan (biar tidak berkedip).
+  const [bibleRead, setBibleRead] = useState<BibleReadSessions | null>(null);
+  const [bibleStreaks, setBibleStreaks] =
+    useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
+  // Modal Baca Alkitab: input kitab/pasal → tersimpan ke Spiritual.
   const [bibleModalOpen, setBibleModalOpen] = useState(false);
-  const [bibleBook, setBibleBook] = useState('');
+  const [biblePassage, setBiblePassage] = useState('');
+  const [bibleBusy, setBibleBusy] = useState(false);
 
   // Jam berjalan (di-refresh tiap menit) — untuk reminder yang bergantung waktu.
   const [now, setNow] = useState(() => new Date());
@@ -199,7 +221,9 @@ export default function DashboardScreen() {
     const unsubs = [
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
-      subscribeBibleReading(user.uid, setBibleReadDayId),
+      subscribeBibleReadToday(user.uid, todayId, setBibleRead),
+      subscribeBibleStreaks(user.uid, setBibleStreaks),
+      subscribeFitDay(user.uid, todayId, setFitDone),
       subscribeTasks(user.uid, setTasks),
       subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
@@ -398,7 +422,7 @@ export default function DashboardScreen() {
   }
 
   // Reminder renungan khotbah: Rabu/Jumat 12:30–17:30, kalau catatan khotbah
-  // Minggu ini SUDAH ada. Ditekan → tab Khotbah (ringkasan singkatnya).
+  // Minggu ini SUDAH ada. Ditekan → tab Sermon (ringkasan singkatnya).
   const sundaySermon =
     sermonReminderActive(now) &&
     sermons.find((s) => s.id === currentSundayId(now));
@@ -424,31 +448,53 @@ export default function DashboardScreen() {
     : 0;
   const prayerFollowupDue = prayerUndone > 0;
 
-  // ===== Reminder Baca Alkitab harian 📖 (tema spiritual) =====
-  const bibleReadDone =
-    bibleReadDayId === todayId ||
-    (revive != null && revive.lastDayId === todayId);
-  const bibleReadDue = revive !== undefined && !bibleReadDone;
-
-  async function markBibleRead() {
-    if (!user) return;
-    try {
-      await setBibleReadingDone(user.uid, todayId, true);
-    } catch {
-      // Diamkan — snapshot akan mengoreksi tampilan otomatis.
-    }
-  }
+  // ===== Reminder Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00 =====
+  // Kartu hanya muncul di dalam jendela jamnya & selama sesi itu belum diisi
+  // hari ini. Isinya (kitab/pasal) tersimpan ke Spiritual → Bible Read.
+  const bibleSession = bibleSessionNow(now);
+  const bibleMeta = bibleSession ? bibleSessionMeta(bibleSession) : null;
+  const bibleReadDue =
+    bibleSession !== null && bibleRead !== null && !bibleRead[bibleSession];
 
   function closeBibleModal() {
     setBibleModalOpen(false);
-    setBibleBook('');
+    setBiblePassage('');
   }
 
-  // Tombol "Sudah baca": hanya status yang disimpan; teks kitab tidak (ephemeral).
-  function confirmBibleRead() {
-    markBibleRead();
-    closeBibleModal();
+  // Simpan bacaan sesi ini, lalu naikkan streak (pagi/malam + "lengkap").
+  async function confirmBibleRead() {
+    const passage = biblePassage.trim();
+    if (!user || !bibleSession || !bibleRead || !passage || bibleBusy) return;
+    setBibleBusy(true);
+    try {
+      await saveBibleRead(user.uid, todayId, bibleSession, passage);
+      // "Lengkap" = pagi & malam hari ini dua-duanya terisi setelah simpan ini.
+      const other = bibleSession === 'morning' ? 'night' : 'morning';
+      await bumpBibleStreaks(
+        user.uid,
+        bibleStreaks,
+        todayId,
+        bibleSession,
+        !!bibleRead[other],
+      );
+      closeBibleModal();
+    } catch {
+      // Diamkan — snapshot akan mengoreksi tampilan otomatis.
+    } finally {
+      setBibleBusy(false);
+    }
   }
+
+  // ===== Reminder Fitness 💪 — jam 16.00–20.59 saja =====
+  // Hari latihan (Sen/Sel/Kam/Jum/Sab) → kartu "Gym Day" sampai semua gerakan
+  // dicentang. Rabu & Minggu → kartu "Rest Day" berisi pengingat pemulihan.
+  const fitSession = fitSessionFor(now);
+  const fitWindow = fitReminderWindow(now);
+  const fitLeft = fitSession
+    ? fitSession.exercises.filter((e) => !fitDone[e.id]).length
+    : 0;
+  const gymDayDue = fitWindow && fitSession !== null && fitLeft > 0;
+  const restDayDue = fitWindow && fitSession === null;
 
   // ===== Reminder Residence 🏠 & Car 🚗 =====
   // Sumbernya SAMA dengan badge merah di tile Home: perawatan yang sudah dekat
@@ -481,6 +527,7 @@ export default function DashboardScreen() {
     careerReminders.length > 0 ||
     residenceReminders.length > 0 ||
     carReminders.length > 0 ||
+    gymDayDue ||
     slotUndone.length > 0 ||
     todayUndone > 0;
 
@@ -780,15 +827,40 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Reminder Baca Alkitab harian — checklist minimal 1 pasal (ungu) */}
-          {bibleReadDue && (
+          {/* Gym Day 💪 — hari latihan, jam 16.00–20.59 (oranye Fitness) */}
+          {gymDayDue && fitSession && (
+            <ReminderCard
+              bg={Color.FITNESS}
+              fg={Color.FITNESS_DARK}
+              title={`🏋️ Gym Day — ${fitSession.emoji} ${fitSession.title}`}
+              texts={[
+                `⏰ Mulai ${FIT_HOUR_LABEL} · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
+                fitQuote(todayId),
+              ]}
+              onPress={() => router.push('/fitness')}
+            />
+          )}
+
+          {/* Rest Day 😴 — Rabu & Minggu, pengingat pemulihan */}
+          {restDayDue && (
+            <ReminderCard
+              bg={Color.FITNESS}
+              fg={Color.FITNESS_DARK}
+              title="😴 Rest Day — jatah pemulihan"
+              texts={FIT_RECOVERY}
+              onPress={() => router.push('/fitness')}
+            />
+          )}
+
+          {/* Reminder Baca Alkitab sesi ini — 🌅 pagi / 🌙 malam (ungu) */}
+          {bibleReadDue && bibleMeta && (
             <PressableScale
               style={styles.readingCard}
               onPress={() => setBibleModalOpen(true)}>
               <CheckCircle checked={false} size={24} />
               <View style={styles.readingTextBox}>
                 <VixText heading="bold" additionalStyle={styles.readingTitle}>
-                  📖 Baca Alkitab hari ini
+                  {bibleMeta.emoji} {bibleMeta.title}
                 </VixText>
               </View>
             </PressableScale>
@@ -801,7 +873,7 @@ export default function DashboardScreen() {
               fg={Color.SPIRITUAL_DARK}
               title="🙏 Renungkan Khotbah Minggu"
               onPress={() =>
-                router.push({ pathname: '/spiritual', params: { tab: 'khotbah' } })
+                router.push({ pathname: '/spiritual', params: { tab: 'sermon' } })
               }>
               <VixText heading="label" additionalStyle={styles.onSpiritual}>
                 ⛪ {sundaySermon.title}
@@ -946,21 +1018,28 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
-      {/* Modal Baca Alkitab: catat kitab (TIDAK disimpan) lalu tandai sudah baca */}
+      {/* Modal Baca Alkitab: catat kitab/pasal → tersimpan ke Spiritual */}
       <CenterDialog visible={bibleModalOpen} onClose={closeBibleModal}>
         <VixText heading="title" additionalStyle={styles.bibleModalTitle}>
-          📖 Baca Alkitab hari ini
+          {bibleMeta ? `${bibleMeta.emoji} ${bibleMeta.title}` : '📖 Baca Alkitab'}
         </VixText>
         <VixText heading="label" additionalStyle={styles.bibleModalSub}>
-          Kitab apa yang kamu baca hari ini?
+          Kitab/pasal apa yang kamu baca? Tersimpan di Spiritual → Bible Read.
         </VixText>
         <FormInput
           style={styles.bibleInput}
           placeholder="mis. Mazmur 23, Yohanes 3"
-          value={bibleBook}
-          onChangeText={setBibleBook}
+          value={biblePassage}
+          onChangeText={setBiblePassage}
+          editable={!bibleBusy}
         />
-        <PressableScale style={styles.bibleDoneButton} onPress={confirmBibleRead}>
+        <PressableScale
+          style={[
+            styles.bibleDoneButton,
+            !biblePassage.trim() && styles.bibleDoneDisabled,
+          ]}
+          onPress={confirmBibleRead}
+          disabled={!biblePassage.trim() || bibleBusy}>
           <VixText heading="bold" additionalStyle={styles.bibleDoneText}>
             ✅ Sudah baca
           </VixText>
@@ -1094,6 +1173,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: Color.SPIRITUAL_DARK,
   },
+  bibleDoneDisabled: { opacity: 0.45 },
   bibleDoneText: { color: Color.TEXT_REVERSE },
   bibleClose: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
   bibleCloseText: { color: Color.TEXT_LABEL },

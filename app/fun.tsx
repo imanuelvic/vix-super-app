@@ -36,7 +36,12 @@ import {
   type FunData,
   type FunEntry,
 } from '@/lib/fun';
-import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import {
+  DELETE_ERROR,
+  LOAD_ERROR,
+  PHOTO_ERROR,
+  SAVE_ERROR,
+} from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Tab bawah = kategori arsip. Ikon SF dipetakan di icon-symbol.tsx.
@@ -175,7 +180,7 @@ export default function FunScreen() {
       const photo = await pickCompressedMedal();
       if (photo) setMedalPhoto(photo);
     } catch {
-      setFormError('Gagal mengambil foto. Coba lagi.');
+      setFormError(PHOTO_ERROR);
     } finally {
       setPhotoBusy(false);
     }
@@ -222,7 +227,7 @@ export default function FunScreen() {
       await saveFun(user.uid, { entries: nextEntries });
       setFormOpen(false);
     } catch {
-      setFormError('Gagal menyimpan. Coba lagi.');
+      setFormError(SAVE_ERROR);
     } finally {
       setSaving(false);
     }

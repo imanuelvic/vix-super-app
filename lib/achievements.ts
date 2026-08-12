@@ -8,6 +8,7 @@ import {
 import { db } from './firebase';
 import { dayIdToDate, formatShortDayDate } from './format';
 import { dayDocId } from './health';
+import { alreadyCounted, nextStreak } from './streak';
 
 // Streak DOA HARIAN 🔥 (ala Duolingo) + achievements 🏆.
 // Dulu "login streak"; sekarang tercatat saat konfirmasi doa pagi (Bapa Kami
@@ -84,16 +85,13 @@ export function recordDailyPrayer(
   now: Date,
 ) {
   const today = prayerDayId(now);
-  if (current?.lastDayId === today) return Promise.resolve();
+  if (alreadyCounted(current, today)) return Promise.resolve();
+  // "Kemarin" versi doa — ikut batas jam 04.00, bukan tengah malam.
   const yesterday = prayerDayId(new Date(now.getTime() - 86_400_000));
-  const continued = current !== null && current.lastDayId === yesterday;
-  const count = continued ? current.count + 1 : 1;
-  return setDoc(doc(db, 'users', uid, 'app', 'login'), {
-    count,
-    lastDayId: today,
-    best: Math.max(count, current?.best ?? 0),
-    total: (current?.total ?? 0) + 1,
-  });
+  return setDoc(
+    doc(db, 'users', uid, 'app', 'login'),
+    nextStreak(current, today, yesterday),
+  );
 }
 
 /**
@@ -123,13 +121,26 @@ export type AchievementStats = {
   habitStreak: number; // streak kebiasaan Health 🔥
   reviveBest: number; // streak terbaik Revive ✝️
   reviveTotal: number; // total Revive
+  bibleTotal: number; // total sesi baca Alkitab tercatat (pagi + malam)
+  bibleMorningBest: number; // streak terbaik baca pagi 🌅
+  bibleNightBest: number; // streak terbaik baca malam 🌙
+  bibleBothBest: number; // streak terbaik hari LENGKAP (pagi + malam)
+  bibleBothTotal: number; // total hari lengkap pagi + malam
+  fitTotal: number; // total sesi gym selesai
+  fitBest: number; // rekor sesi gym beruntun (5 sesi = 1 minggu penuh)
   bestSteps: number; // rekor langkah terbanyak dalam sehari
   stepTierLastDate: Record<number, string | null>; // tier → dayId terakhir tercapai
 };
 
 // Kategori pencapaian (ala Duolingo) — tiap kategori punya daftar
 // pencapaian bertingkat yang tampil di modal saat ditekan.
-export type AchievementCategoryKey = 'login' | 'health' | 'revive' | 'steps';
+export type AchievementCategoryKey =
+  | 'login'
+  | 'health'
+  | 'revive'
+  | 'bible'
+  | 'fitness'
+  | 'steps';
 
 export const ACHIEVEMENT_CATEGORIES: {
   key: AchievementCategoryKey;
@@ -140,6 +151,8 @@ export const ACHIEVEMENT_CATEGORIES: {
   { key: 'login', icon: '🙏', label: 'Doa Harian', desc: 'Konsisten doa pagi & Revive tiap hari' },
   { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit di fitur Health' },
   { key: 'revive', icon: '📖', label: 'Revive Rohani', desc: 'Konsisten menulis Revive' },
+  { key: 'bible', icon: '📚', label: 'Baca Alkitab', desc: 'Rutin baca Alkitab pagi 🌅 & malam 🌙' },
+  { key: 'fitness', icon: '🏋️', label: 'Gym Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
   { key: 'steps', icon: '👣', label: 'Langkah Harian', desc: 'Rekor jumlah langkah dalam sehari' },
 ];
 
@@ -172,6 +185,20 @@ export const ACHIEVEMENTS: {
   { id: 'revive1', category: 'revive', icon: '📖', title: 'Revive Pertama', desc: 'Tulis Revive pertamamu', target: 1, of: (s) => s.reviveTotal },
   { id: 'revive7', category: 'revive', icon: '🕊️', title: 'Seminggu Bersama Firman', desc: 'Revive 7 hari beruntun', target: 7, of: (s) => s.reviveBest },
   { id: 'revive30', category: 'revive', icon: '⛪', title: 'Sebulan Dalam Hadirat', desc: 'Revive 30 hari beruntun', target: 30, of: (s) => s.reviveBest },
+  { id: 'bible1', category: 'bible', icon: '📖', title: 'Bacaan Pertama', desc: 'Catat bacaan Alkitab pertamamu', target: 1, of: (s) => s.bibleTotal },
+  { id: 'bibleMorning7', category: 'bible', icon: '🌅', title: 'Pagi Bersama Firman', desc: 'Baca Alkitab pagi 7 hari beruntun', target: 7, of: (s) => s.bibleMorningBest },
+  { id: 'bibleNight7', category: 'bible', icon: '🌙', title: 'Malam Bersama Firman', desc: 'Baca Alkitab malam 7 hari beruntun', target: 7, of: (s) => s.bibleNightBest },
+  { id: 'bibleBoth3', category: 'bible', icon: '✨', title: 'Pagi & Malam 3 Hari', desc: 'Lengkap pagi + malam 3 hari beruntun', target: 3, of: (s) => s.bibleBothBest },
+  { id: 'bibleBoth7', category: 'bible', icon: '🔥', title: 'Seminggu Lengkap', desc: 'Lengkap pagi + malam 7 hari beruntun', target: 7, of: (s) => s.bibleBothBest },
+  { id: 'bibleBoth30', category: 'bible', icon: '👑', title: 'Sebulan Lengkap', desc: 'Lengkap pagi + malam 30 hari beruntun', target: 30, of: (s) => s.bibleBothBest },
+  { id: 'bibleBothTotal50', category: 'bible', icon: '💎', title: '50 Hari Lengkap', desc: 'Total 50 hari baca pagi & malam', target: 50, of: (s) => s.bibleBothTotal },
+  { id: 'fit1', category: 'fitness', icon: '🐣', title: 'Sesi Pertama', desc: 'Selesaikan satu sesi gym penuh', target: 1, of: (s) => s.fitTotal },
+  { id: 'fitWeek1', category: 'fitness', icon: '✨', title: 'Seminggu Penuh', desc: '5 sesi beruntun tanpa bolos', target: 5, of: (s) => s.fitBest },
+  { id: 'fit10', category: 'fitness', icon: '💪', title: '10 Sesi', desc: 'Total 10 sesi gym selesai', target: 10, of: (s) => s.fitTotal },
+  { id: 'fitWeek2', category: 'fitness', icon: '🔥', title: 'Dua Minggu Membara', desc: '10 sesi beruntun tanpa bolos', target: 10, of: (s) => s.fitBest },
+  { id: 'fitMonth', category: 'fitness', icon: '👑', title: 'Sebulan Tanpa Bolos', desc: '20 sesi beruntun tanpa bolos', target: 20, of: (s) => s.fitBest },
+  { id: 'fit50', category: 'fitness', icon: '🏅', title: '50 Sesi', desc: 'Total 50 sesi gym selesai', target: 50, of: (s) => s.fitTotal },
+  { id: 'fit100', category: 'fitness', icon: '💎', title: '100 Sesi', desc: 'Total 100 sesi gym selesai', target: 100, of: (s) => s.fitTotal },
   { id: 'steps20k', category: 'steps', icon: '👟', title: '20 Ribu Langkah', desc: 'Pernah jalan ≥ 20.000 langkah dalam sehari', target: 20000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 20000) },
   { id: 'steps30k', category: 'steps', icon: '🎖️', title: '30 Ribu Langkah', desc: 'Pernah jalan ≥ 30.000 langkah dalam sehari', target: 30000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 30000) },
   { id: 'steps40k', category: 'steps', icon: '🏅', title: '40 Ribu Langkah', desc: 'Pernah jalan ≥ 40.000 langkah dalam sehari', target: 40000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 40000) },
