@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { BibleRefField } from '@/components/common/BibleRefField';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -227,13 +228,16 @@ export default function ReviveEditorScreen() {
               autoCapitalize="characters"
               editable={!busy}
             />
-            <FormInput
-              style={styles.formGap}
-              placeholder="Bacaan Alkitab"
-              value={fPassage}
-              onChangeText={setFPassage}
-              editable={!busy}
-            />
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              📖 Bacaan Alkitab
+            </VixText>
+            <View style={styles.formGap}>
+              <BibleRefField
+                value={fPassage}
+                onChange={setFPassage}
+                editable={!busy}
+              />
+            </View>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
               ✨ Rhema
             </VixText>

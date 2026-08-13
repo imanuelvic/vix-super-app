@@ -163,7 +163,7 @@ function readSessions(data?: Record<string, unknown>): BibleReadSessions {
   };
 }
 
-/** Riwayat 90 hari terakhir — untuk tab Bible Read di Spiritual. */
+/** Riwayat 90 hari terakhir — untuk tab Bible Reading di Spiritual. */
 export function subscribeBibleReadDays(
   uid: string,
   onChange: (days: BibleReadDay[]) => void,

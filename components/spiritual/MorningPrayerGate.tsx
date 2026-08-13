@@ -22,28 +22,39 @@ dan janganlah membawa kami ke dalam pencobaan, tetapi lepaskanlah kami dari pada
 
 Karena Engkaulah yang empunya Kerajaan dan kuasa dan kemuliaan sampai selama-lamanya. Amin.`;
 
-// Lock screen doa pagi — muncul sekali/hari (batas jam 4 pagi) di Home.
-// Tidak bisa dilewati; harus doa Bapa Kami + Revive lalu konfirmasi.
+// Lock screen doa pagi — muncul sekali/hari (batas jam 4 pagi) DI MANA PUN
+// posisi kamu di app. Tidak bisa dilewati; harus Revive + doa Bapa Kami, dan
+// kalau hari ini jadwal Doa Rantai, follow up-nya jadi langkah ke-3.
 export function MorningPrayerGate({
   streakCount,
   reviveDone,
+  chainDue,
+  chainLeft,
   onConfirm,
   onOpenRevive,
+  onOpenChain,
   onSkip,
 }: {
   streakCount: number;
   // True kalau Revive hari ini sudah diisi → langkah Revive auto-centang.
   reviveDone: boolean;
+  // True kalau HARI INI jadwal Doa Rantai (Sel/Kam/Sab) & ada CL-nya.
+  chainDue: boolean;
+  // Berapa CORE Leader yang belum di-follow up hari ini (0 = beres).
+  chainLeft: number;
   onConfirm: () => Promise<void>;
   onOpenRevive: () => void;
+  onOpenChain: () => void;
   // Lewati doa pagi (keadaan mendesak): relakan streak hangus, langsung ke Home.
   onSkip: () => void;
 }) {
   const [prayed, setPrayed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [skipConfirm, setSkipConfirm] = useState(false);
-  // Langkah Revive HANYA tercentang otomatis saat Revive hari ini terisi.
-  const ready = prayed && reviveDone;
+  // Langkah Revive & Doa Rantai HANYA tercentang otomatis dari datanya.
+  const chainDone = !chainDue || chainLeft === 0;
+  const ready = prayed && reviveDone && chainDone;
+  const stepCount = chainDue ? 3 : 2;
 
   async function handleConfirm() {
     if (!ready || busy) return;
@@ -121,7 +132,36 @@ export function MorningPrayerGate({
           </PressableScale>
         </Animated.View>
 
-        {/* Konfirmasi — aktif setelah kedua langkah selesai */}
+        {/* Langkah 3: Doa Rantai — hanya di hari jadwalnya (Sel/Kam/Sab) */}
+        {chainDue && (
+          <Animated.View
+            entering={FadeInDown.delay(270).duration(350)}
+            style={styles.stepCard}>
+            <VixText heading="title" additionalStyle={styles.stepTitle}>
+              3. Doa Rantai
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.stepHint}>
+              Hari ini jadwalnya: doakan & tanyakan perkembangan pergumulan
+              CORE Leader giliran hari ini.
+            </VixText>
+            <PressableScale style={styles.openRevive} onPress={onOpenChain}>
+              <VixText heading="bold" additionalStyle={styles.openReviveText}>
+                🔗 Buka Doa Rantai →
+              </VixText>
+            </PressableScale>
+            {/* Centang otomatis begitu semua CL giliran hari ini ditandai selesai. */}
+            <View style={styles.checkRow}>
+              <CheckCircle checked={chainLeft === 0} />
+              <VixText heading="bold" additionalStyle={styles.checkText}>
+                {chainLeft === 0
+                  ? 'Semua CORE Leader hari ini sudah di-follow up'
+                  : `Sisa ${chainLeft} CORE Leader untuk di-follow up`}
+              </VixText>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Konfirmasi — aktif setelah semua langkah selesai */}
         <Animated.View entering={FadeInDown.delay(320).duration(350)}>
           {ready ? (
             <PrimaryButton
@@ -135,7 +175,7 @@ export function MorningPrayerGate({
               <VixText
                 heading="bold"
                 additionalStyle={styles.confirmDisabledText}>
-                Selesaikan kedua langkah di atas 🙏
+                Selesaikan {stepCount} langkah di atas 🙏
               </VixText>
             </View>
           )}

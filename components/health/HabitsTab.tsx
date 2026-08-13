@@ -18,12 +18,12 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
+  defaultSlot,
   HABIT_SLOTS,
   habitsBySlot,
   newHabitId,
   saveHabits,
   slotMeta,
-  slotNow,
   type HabitSlot,
   type ScheduledHabit,
 } from '@/lib/habits';
@@ -63,7 +63,7 @@ export function HabitsTab({
   const [error, setError] = useState<string | null>(null);
   // Tab sesi aktif — default ke sesi sesuai jam sekarang (Pagi/Siang/Malam).
   const [activeSlot, setActiveSlot] = useState<HabitSlot>(() =>
-    slotNow(new Date()),
+    defaultSlot(habits, day.done, new Date()),
   );
 
   // Modal tambah/edit kebiasaan.

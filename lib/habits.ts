@@ -60,74 +60,36 @@ export function pendingHabits(
   return habits.filter((h) => open.includes(h.slot) && !done[h.id]);
 }
 
+/** Semua kebiasaan (semua sesi) sudah dicentang hari ini? */
+export function allHabitsDone(
+  habits: ScheduledHabit[],
+  done: Record<string, boolean>,
+): boolean {
+  return habits.length > 0 && habits.every((h) => done[h.id]);
+}
+
+/**
+ * Sesi yang dibuka pertama kali di tab Habits: mengikuti jam sekarang —
+ * KECUALI kalau semua kebiasaan hari ini sudah beres. Kalau sudah beres tidak
+ * ada lagi yang perlu dikerjakan, jadi mulai dari Pagi biar enak dibaca dari
+ * awal hari.
+ */
+export function defaultSlot(
+  habits: ScheduledHabit[],
+  done: Record<string, boolean>,
+  now: Date,
+): HabitSlot {
+  return allHabitsDone(habits, done) ? 'morning' : slotNow(now);
+}
+
 /** ID unik untuk kebiasaan baru yang dibuat pengguna. */
 export function newHabitId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ============================================================================
-// Seed rutinitas (dari to-do list HTML Imanuel) — dipakai sebagai isi awal.
-// SATU daftar untuk semua hari; pengguna bisa menambah/ubah/urutkan/hapus.
-// ============================================================================
-
-let _seedCount = 0;
-function mk(slot: HabitSlot, labels: string[]): ScheduledHabit[] {
-  return labels.map((label) => ({ id: `seed${_seedCount++}`, label, slot }));
-}
-
-const morningLabels = [
-  '⏰ Wake Up 6:00 AM',
-  '🫖 Drink Warm Water',
-  '🍞 Holy Communion',
-  '✝️ Revive + IG Story',
-  '🛏️ Make Your Bed',
-  '🏃 Jogging + News',
-  '🥚 Eat Eggs + Whey',
-  '💊 Take Vitamin C',
-];
-
-const daytimeLabels = [
-  '📲 Check-In Platform',
-  '🦉 Play Duolingo',
-  '🍽️ Eat Mindfully',
-  '🐟 Take Fish Oil',
-  '⚡ Drink Creatine',
-  '☕ Caffè Americano',
-  '🤗 Encourage Someone',
-  '💪🏻 Dumbbell',
-];
-
-const nightLabels = [
-  '🧴 Scrub + Lotion',
-  '🫖 Fill Warm Water',
-  '📝 Prepare Tomorrow',
-  '📖 Bible Reading',
-  '📖 Memorize Verse',
-  '🙏 Ask Forgiveness',
-  '😴 Sleep 23:00 PM',
-];
-
-/**
- * Daftar bawaan — HANYA dipakai sekali sebagai bootstrap untuk akun yang belum
- * punya data kebiasaan sendiri. Begitu dipakai, daftarnya langsung DITULIS ke
- * Firestore (lihat `subscribeHabitSchedule`) sehingga menjadi milik pengguna
- * dan bisa diubah/dihapus manual. Setelah tersimpan, konstanta ini tidak pernah
- * dipakai lagi dan aman dihapus dari kode.
- */
-export const HABIT_SEED: ScheduledHabit[] = [
-  ...mk('morning', morningLabels),
-  ...mk('daytime', daytimeLabels),
-  ...mk('night', nightLabels),
-];
-
-// ===== Firestore: satu dokumen daftar kebiasaan per user =====
 function scheduleRef(uid: string) {
   return doc(db, 'users', uid, 'health', 'habitSchedule');
 }
-
-// Penanda agar bootstrap daftar bawaan hanya ditulis SEKALI per sesi aplikasi
-// (beberapa layar berlangganan daftar yang sama).
-const bootstrapped = new Set<string>();
 
 export function subscribeHabitSchedule(
   uid: string,
@@ -136,20 +98,8 @@ export function subscribeHabitSchedule(
 ) {
   return onSnapshot(
     scheduleRef(uid),
-    (snapshot) => {
-      const saved = snapshot.data()?.habits as ScheduledHabit[] | undefined;
-      if (saved && saved.length > 0) {
-        onChange(saved);
-        return;
-      }
-      // Belum punya data sendiri → pakai daftar bawaan SEKALI, lalu simpan ke
-      // Firestore supaya jadi milik pengguna (bisa diubah/dihapus manual).
-      onChange(HABIT_SEED);
-      if (!bootstrapped.has(uid)) {
-        bootstrapped.add(uid);
-        saveHabits(uid, HABIT_SEED).catch(() => bootstrapped.delete(uid));
-      }
-    },
+    (snapshot) =>
+      onChange((snapshot.data()?.habits as ScheduledHabit[]) ?? []),
     onError,
   );
 }

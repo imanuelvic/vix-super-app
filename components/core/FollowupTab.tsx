@@ -298,7 +298,8 @@ export function FollowupTab({
     done: boolean;
     onDone: () => void;
   }) {
-    const topic = weeklyFollowupTopic(person, id, dayId, topicOverride[id]);
+    // Pertanyaannya tidak ditampilkan di kartu — muncul di dalam modal saat
+    // kartu ditekan (lihat `modalTopic` di bawah).
     // Tombol "Selesai" (PressableScale bersarang) menangkap sentuhannya sendiri
     // → menandai selesai TANPA ikut membuka modal.
     return (
@@ -311,9 +312,6 @@ export function FollowupTab({
             {title}
           </VixText>
           {sub && <VixText heading="label">{sub}</VixText>}
-          <VixText heading="label" additionalStyle={styles.followHint}>
-            {topic.icon} {topic.label} · ketuk untuk lihat ›
-          </VixText>
         </View>
         {done ? (
           <VixText heading="label" additionalStyle={styles.doneText}>
@@ -855,10 +853,7 @@ const styles = StyleSheet.create({
   },
   prayerRowName: { flex: 1, color: Color.TEXT_TITLE },
   prayerRowMeta: { color: Color.TEXT_LABEL },
-  // Kartu follow up mingguan memakai gaya prayerRow (ringkas, ketuk → modal).
   followMain: { flex: 1, gap: 1 },
-  followHint: { color: Color.TEXT_LABEL },
-  // Tombol "Selesai" kecil di kartu (di luar modal).
   smallDoneButton: {
     backgroundColor: Color.MAIN,
     borderRadius: 999,

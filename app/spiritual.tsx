@@ -31,7 +31,7 @@ type Tab = 'revive' | 'sermon' | 'bible';
 const TABS: BottomTab<Tab>[] = [
   { key: 'revive', label: 'Revive', icon: 'book.closed.fill' },
   { key: 'sermon', label: 'Sermon', icon: 'mic.fill' },
-  { key: 'bible', label: 'Bible Read', icon: 'books.vertical.fill' },
+  { key: 'bible', label: 'Bible Reading', icon: 'books.vertical.fill' },
 ];
 
 function isTab(value?: string): value is Tab {
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   body: { flex: 1 },
-  // Jarak atas SAMA dengan tab Sermon & Bible Read (dan layar lain).
+  // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   writeButton: { marginTop: 4 },
   todayCard: {

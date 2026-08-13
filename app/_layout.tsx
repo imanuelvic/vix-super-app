@@ -15,6 +15,7 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { MorningPrayerWatcher } from '@/components/spiritual/MorningPrayerWatcher';
 import { AuthProvider, useAuth } from '@/contexts/auth';
 
 function LoadingView() {
@@ -57,9 +58,10 @@ function RootNavigator() {
   }
 
   return (
-    // headerShown: false untuk SEMUA layar — tiap layar sudah punya header
-    // sendiri (ScreenHeader). Diset sekali di sini, jadi layar baru pun otomatis
-    // tanpa header bawaan (tak perlu didaftarkan satu-satu lagi).
+    <>
+    {/* headerShown: false untuk SEMUA layar — tiap layar sudah punya header
+        sendiri (ScreenHeader). Diset sekali di sini, jadi layar baru pun
+        otomatis tanpa header bawaan (tak perlu didaftarkan satu-satu lagi). */}
     <Stack screenOptions={{ headerShown: false }}>
       {/* Hanya bisa diakses kalau sudah login (login cukup SEKALI per perangkat) */}
       <Stack.Protected guard={!!user}>
@@ -76,6 +78,7 @@ function RootNavigator() {
         <Stack.Screen name="spiritual" />
         <Stack.Screen name="revive" />
         <Stack.Screen name="revive-history" />
+        <Stack.Screen name="bible-read" />
 
         <Stack.Screen name="health" />
         <Stack.Screen name="steps" />
@@ -103,6 +106,7 @@ function RootNavigator() {
         <Stack.Screen name="fitness" />
         <Stack.Screen name="book" />
         <Stack.Screen name="book/[key]" />
+        <Stack.Screen name="world" />
 
         {/* Diakses dari kartu welcome & tombol streak di Home */}
         <Stack.Screen name="timeline" />
@@ -114,6 +118,11 @@ function RootNavigator() {
         <Stack.Screen name="login" />
       </Stack.Protected>
     </Stack>
+
+    {/* Pengawal doa pagi — tidak menggambar apa pun, hanya mengalihkan ke
+        lock screen begitu jam doa tiba, dari layar mana pun. */}
+    {!!user && <MorningPrayerWatcher />}
+    </>
   );
 }
 

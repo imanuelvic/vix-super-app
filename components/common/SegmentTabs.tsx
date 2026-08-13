@@ -5,7 +5,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
 // Deretan tab segmen sebaris — label di atas, keterangan kecil di bawah.
-// Dipakai Health → Habits (Pagi/Siang/Malam) dan Spiritual → Bible Read
+// Dipakai Health → Habits (Pagi/Siang/Malam) dan Spiritual → Bible Reading
 // (Pagi/Malam). Satu tampilan, satu tempat ubah.
 export type SegmentTab<T extends string> = {
   key: T;

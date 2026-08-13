@@ -15,6 +15,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CheckCircle } from '@/components/common/CheckCircle';
 import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -66,7 +67,13 @@ import {
   subscribeChoreStatus,
   type ChoreStatusMap,
 } from '@/lib/residence';
-import { subscribeReviveStreak } from '@/lib/spiritual';
+import {
+  bibleSessionMeta,
+  bibleSessionNow,
+  subscribeBibleReadToday,
+  subscribeReviveStreak,
+  type BibleReadSessions,
+} from '@/lib/spiritual';
 import {
   effectiveOtherTask,
   subscribeOtherTasks,
@@ -143,6 +150,8 @@ export default function HomeScreen() {
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
   const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
+  // Bacaan Alkitab hari ini — null = belum termuat.
+  const [bibleRead, setBibleRead] = useState<BibleReadSessions | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & badge yang
   // bergantung waktu (mobil/rumah).
@@ -168,6 +177,7 @@ export default function HomeScreen() {
       subscribeRoadmap(user.uid, setRoadmap),
       subscribeFreelance(user.uid, setFreelance),
       subscribeOtherTasks(user.uid, setOtherTasks),
+      subscribeBibleReadToday(user.uid, todayId, setBibleRead),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -189,6 +199,13 @@ export default function HomeScreen() {
   // Air putih 💧 — gelas terminum hari ini (0..). Tersimpan per hari (HabitDay
   // per dayId) → otomatis kembali 0 tiap ganti hari.
   const water = day?.water ?? 0;
+
+  // Baca Alkitab 📖: kartu hanya muncul di dalam jendela jamnya & selama sesi
+  // itu belum diisi. null = belum termuat (biar kartunya tidak berkedip).
+  const bibleSession = bibleSessionNow(now);
+  const bibleMeta = bibleSession ? bibleSessionMeta(bibleSession) : null;
+  const bibleReadDue =
+    bibleSession !== null && bibleRead !== null && !bibleRead[bibleSession];
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -248,6 +265,9 @@ export default function HomeScreen() {
   // Doa pagi belum dikonfirmasi & MASIH di jendela pagi (sebelum jam 11) →
   // lock screen penuh (di luar tab supaya menutupi tab bar). Lewat jam 11
   // tanpa doa → tidak dipaksa lagi; langsung Home (streak sudah dihanguskan).
+  //
+  // Layar lain diurus <MorningPrayerWatcher/> di app/_layout.tsx. Cek di sini
+  // tetap ada supaya Home tidak sempat tergambar sekejap sebelum dialihkan.
   if (!prayerDoneToday(login, now) && !prayerDeadlinePassed(now)) {
     return <Redirect href="/morning-prayer" />;
   }
@@ -321,6 +341,27 @@ export default function HomeScreen() {
               </VixText>
             )}
           </Animated.View>
+
+          {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00.
+              Hanya muncul di dalam jendela jamnya & selama sesi itu belum
+              diisi. Ketuk → layar catat bacaan (pilih kitab + pasal & ayat). */}
+          {bibleReadDue && bibleMeta && bibleSession && (
+            <Animated.View entering={FadeInDown.delay(60).duration(350)}>
+              <PressableScale
+                style={styles.readingCard}
+                onPress={() =>
+                  router.push({
+                    pathname: '/bible-read',
+                    params: { session: bibleSession },
+                  })
+                }>
+                <CheckCircle checked={false} size={24} />
+                <VixText heading="bold" additionalStyle={styles.readingTitle}>
+                  {bibleMeta.emoji} {bibleMeta.title}
+                </VixText>
+              </PressableScale>
+            </Animated.View>
+          )}
 
           <View style={styles.grid}>
             {FEATURES.map((feature, index) => {
@@ -426,6 +467,20 @@ const styles = StyleSheet.create({
     borderColor: Color.ACCENT_DARK,
   },
   streakPillText: { color: Color.ACCENT_DARK },
+  // Kartu Baca Alkitab di bawah kartu sapaan (tema spiritual/ungu).
+  readingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.SPIRITUAL_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+  },
+  readingTitle: { color: Color.TEXT_TITLE, flexShrink: 1 },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

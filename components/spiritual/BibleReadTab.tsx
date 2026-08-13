@@ -13,7 +13,7 @@ import {
   type BibleSession,
 } from '@/lib/spiritual';
 
-// Tab Bible Read 📖 — riwayat bacaan Alkitab harian yang dicatat dari
+// Tab Bible Reading 📖 — riwayat bacaan Alkitab harian yang dicatat dari
 // Dashboard. Dua sesi (🌅 Pagi & 🌙 Malam) dipisah supaya kelihatan mana yang
 // rutin dan mana yang bolong, plus pasal apa saja yang sering dibaca.
 export function BibleReadTab({ days }: { days: BibleReadDay[] }) {

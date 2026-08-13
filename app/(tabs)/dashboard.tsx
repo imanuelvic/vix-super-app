@@ -13,15 +13,18 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { subscribeLoginStreak, type LoginStreak } from '@/lib/achievements';
+import {
+  carAttentionList,
+  subscribePartStatus,
+  type PartStatusMap,
+} from '@/lib/car';
 import {
   deadlineDaysUntil,
   freelanceReminderWindow,
@@ -49,12 +52,14 @@ import {
   prayerFollowupLeaders,
   subscribeCoreIdeas,
   subscribeCoreLeaders,
+  subscribeMainTeam,
   subscribeMonthlyPrayers,
   subscribeVisitations,
   visitDaysUntil,
   visitReminderWindow,
   type CoreIdeasData,
   type CoreLeader,
+  type MainTeamMember,
   type MonthlyPrayers,
   type Visitation,
 } from '@/lib/core';
@@ -75,18 +80,13 @@ import {
   subscribeDonor,
   type DonorData,
 } from '@/lib/donor';
-import {
-  carAttentionList,
-  subscribePartStatus,
-  type PartStatusMap,
-} from '@/lib/car';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import {
+  FIT_HOUR_LABEL,
+  FIT_RECOVERY,
   fitQuote,
   fitReminderWindow,
   fitSessionFor,
-  FIT_HOUR_LABEL,
-  FIT_RECOVERY,
   subscribeFitDay,
   type FitDayDone,
 } from '@/lib/fitness';
@@ -133,18 +133,7 @@ import {
   subscribeSermons,
   type SermonNote,
 } from '@/lib/sermon';
-import {
-  bibleSessionMeta,
-  bibleSessionNow,
-  bumpBibleStreaks,
-  EMPTY_BIBLE_STREAKS,
-  saveBibleRead,
-  subscribeBibleReadToday,
-  subscribeBibleStreaks,
-  subscribeReviveStreak,
-  type BibleReadSessions,
-  type BibleStreaks,
-} from '@/lib/spiritual';
+import { subscribeReviveStreak } from '@/lib/spiritual';
 import {
   otherTaskDaysUntil,
   otherTaskUrgent,
@@ -177,6 +166,7 @@ export default function DashboardScreen() {
   const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
+  const [mainTeam, setMainTeam] = useState<MainTeamMember[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -200,15 +190,6 @@ export default function DashboardScreen() {
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
   );
-  // Bacaan Alkitab hari ini (🌅 pagi & 🌙 malam) + rentetan streak-nya.
-  // null = belum termuat → kartu belum ditampilkan (biar tidak berkedip).
-  const [bibleRead, setBibleRead] = useState<BibleReadSessions | null>(null);
-  const [bibleStreaks, setBibleStreaks] =
-    useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
-  // Modal Baca Alkitab: input kitab/pasal → tersimpan ke Spiritual.
-  const [bibleModalOpen, setBibleModalOpen] = useState(false);
-  const [biblePassage, setBiblePassage] = useState('');
-  const [bibleBusy, setBibleBusy] = useState(false);
 
   // Jam berjalan (di-refresh tiap menit) — untuk reminder yang bergantung waktu.
   const [now, setNow] = useState(() => new Date());
@@ -226,8 +207,6 @@ export default function DashboardScreen() {
     const unsubs = [
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
-      subscribeBibleReadToday(user.uid, todayId, setBibleRead),
-      subscribeBibleStreaks(user.uid, setBibleStreaks),
       subscribeFitDay(user.uid, todayId, setFitDone),
       subscribeTasks(user.uid, setTasks),
       subscribeOtherTasks(user.uid, setOtherTasks),
@@ -235,6 +214,7 @@ export default function DashboardScreen() {
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeLoginStreak(user.uid, setLogin),
       subscribeCoreLeaders(user.uid, setLeaders),
+      subscribeMainTeam(user.uid, setMainTeam),
       subscribeVisitations(user.uid, setVisitations),
       subscribeFamily(user.uid, setFamily),
       subscribeDebts(user.uid, setDebts),
@@ -320,6 +300,36 @@ export default function DashboardScreen() {
         )})`,
       };
     });
+
+  // Ulang tahun CORE Leader & Main Team: hari ini + 7 hari ke depan.
+  // Sumber & jendelanya sama dengan daftar di CORE → tab Follow Up.
+  const coreBirthdays = [
+    ...leaders.map((l) => ({
+      id: l.id,
+      label: `${l.heart} ${l.name}`,
+      sub: null as string | null,
+      ...nextBirthday(l, now),
+    })),
+    ...mainTeam.map((m) => {
+      const cl = leaders.find((l) => l.id === m.leaderId);
+      return {
+        id: m.id,
+        label: `👤 ${m.name}`,
+        sub: cl ? `Main Team ${cl.heart} ${cl.name}` : 'Main Team',
+        ...nextBirthday(m, now),
+      };
+    }),
+  ]
+    .filter((b) => b.daysUntil <= 7)
+    .sort((a, b) => a.daysUntil - b.daysUntil)
+    .map((b) => ({
+      id: b.id,
+      text: `${b.label}${b.sub ? ` · ${b.sub}` : ''} — ${
+        b.daysUntil === 0
+          ? `HARI INI 🎉 (ke-${b.turningAge})`
+          : `${b.daysUntil} hari lagi (ke-${b.turningAge})`
+      }`,
+    }));
 
   // Reminder Idea For CORE: waktunya kasih masukan ide baru (mingguan/bulanan).
   const coreIdeaDue = ideaReminderDue(coreIdeas, now);
@@ -462,43 +472,6 @@ export default function DashboardScreen() {
     : 0;
   const prayerFollowupDue = prayerUndone > 0;
 
-  // ===== Reminder Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00 =====
-  // Kartu hanya muncul di dalam jendela jamnya & selama sesi itu belum diisi
-  // hari ini. Isinya (kitab/pasal) tersimpan ke Spiritual → Bible Read.
-  const bibleSession = bibleSessionNow(now);
-  const bibleMeta = bibleSession ? bibleSessionMeta(bibleSession) : null;
-  const bibleReadDue =
-    bibleSession !== null && bibleRead !== null && !bibleRead[bibleSession];
-
-  function closeBibleModal() {
-    setBibleModalOpen(false);
-    setBiblePassage('');
-  }
-
-  // Simpan bacaan sesi ini, lalu naikkan streak (pagi/malam + "lengkap").
-  async function confirmBibleRead() {
-    const passage = biblePassage.trim();
-    if (!user || !bibleSession || !bibleRead || !passage || bibleBusy) return;
-    setBibleBusy(true);
-    try {
-      await saveBibleRead(user.uid, todayId, bibleSession, passage);
-      // "Lengkap" = pagi & malam hari ini dua-duanya terisi setelah simpan ini.
-      const other = bibleSession === 'morning' ? 'night' : 'morning';
-      await bumpBibleStreaks(
-        user.uid,
-        bibleStreaks,
-        todayId,
-        bibleSession,
-        !!bibleRead[other],
-      );
-      closeBibleModal();
-    } catch {
-      // Diamkan — snapshot akan mengoreksi tampilan otomatis.
-    } finally {
-      setBibleBusy(false);
-    }
-  }
-
   // ===== Reminder Fitness 💪 — jam 16.00–20.59 saja =====
   // Hari latihan (Sen/Sel/Kam/Jum/Sab) → kartu "Gym Day" sampai semua gerakan
   // dicentang. Rabu & Minggu → kartu "Rest Day" berisi pengingat pemulihan.
@@ -529,11 +502,11 @@ export default function DashboardScreen() {
   const hasActionReminder =
     famBirthdays.length > 0 ||
     visitReminders.length > 0 ||
+    coreBirthdays.length > 0 ||
     coreIdeaDue ||
     debtReminders.length > 0 ||
     healthRows.length > 0 ||
     !!sundaySermon ||
-    bibleReadDue ||
     wheelFocusDue ||
     wheelNeedsFill ||
     prayerNeedsFill ||
@@ -786,8 +759,11 @@ export default function DashboardScreen() {
             />
           )}
 
-          {/* Reminder CORE: visitasi (H-3 s/d hari-H) + Idea For CORE mingguan */}
-          {(visitReminders.length > 0 || coreIdeaDue) && (
+          {/* Reminder CORE: visitasi (H-3 s/d hari-H) + ulang tahun CL & Main
+              Team (≤7 hari) + Idea For CORE mingguan */}
+          {(visitReminders.length > 0 ||
+            coreBirthdays.length > 0 ||
+            coreIdeaDue) && (
             <View style={styles.visitCard}>
               {visitReminders.length > 0 && (
                 <View>
@@ -814,9 +790,33 @@ export default function DashboardScreen() {
                   ))}
                 </View>
               )}
-              {coreIdeaDue && (
+              {/* Ulang tahun CL & Main Team → CORE tab Follow Up */}
+              {coreBirthdays.length > 0 && (
                 <PressableScale
                   style={visitReminders.length > 0 ? styles.ideaReminder : undefined}
+                  onPress={() =>
+                    router.push({ pathname: '/core', params: { tab: 'followup' } })
+                  }>
+                  <VixText heading="bold" additionalStyle={styles.visitTitle}>
+                    🎂 Ulang Tahun CL & Main Team
+                  </VixText>
+                  {coreBirthdays.map((b) => (
+                    <VixText
+                      key={b.id}
+                      heading="label"
+                      additionalStyle={styles.visitText}>
+                      {b.text}
+                    </VixText>
+                  ))}
+                </PressableScale>
+              )}
+              {coreIdeaDue && (
+                <PressableScale
+                  style={
+                    visitReminders.length > 0 || coreBirthdays.length > 0
+                      ? styles.ideaReminder
+                      : undefined
+                  }
                   onPress={() =>
                     router.push({ pathname: '/core', params: { tab: 'followup' } })
                   }>
@@ -847,16 +847,17 @@ export default function DashboardScreen() {
             </ReminderCard>
           )}
 
-          {/* Reminder follow up pokok doa (Sel/Kam/Sab, bergilir) */}
+          {/* Doa Rantai — follow up pokok doa bergilir (Sel/Kam/Sab).
+              Warnanya ikut grid CORE (biru), sama seperti kartu Pertemuan CORE. */}
           {prayerFollowupDue && (
             <ReminderCard
-              bg={Color.SPIRITUAL}
-              fg={Color.SPIRITUAL_DARK}
-              title="📅 Follow Up Pokok Doa"
+              bg={Color.FINANCE_INVESTMENT}
+              fg={Color.FINANCE_INVESTMENT_DARK}
+              title="🔗 Doa Rantai"
               onPress={() =>
                 router.push({ pathname: '/core', params: { tab: 'followup' } })
               }>
-              <VixText heading="label" additionalStyle={styles.prayerText}>
+              <VixText heading="label" additionalStyle={styles.coreText}>
                 Hari ini {prayerUndone} CORE Leader untuk didoakan & ditanya
                 perkembangan pergumulannya 🙏
               </VixText>
@@ -913,20 +914,6 @@ export default function DashboardScreen() {
               texts={FIT_RECOVERY}
               onPress={() => router.push('/fitness')}
             />
-          )}
-
-          {/* Reminder Baca Alkitab sesi ini — 🌅 pagi / 🌙 malam (ungu) */}
-          {bibleReadDue && bibleMeta && (
-            <PressableScale
-              style={styles.readingCard}
-              onPress={() => setBibleModalOpen(true)}>
-              <CheckCircle checked={false} size={24} />
-              <View style={styles.readingTextBox}>
-                <VixText heading="bold" additionalStyle={styles.readingTitle}>
-                  {bibleMeta.emoji} {bibleMeta.title}
-                </VixText>
-              </View>
-            </PressableScale>
           )}
 
           {/* Reminder renungkan khotbah Minggu (Rabu/Jumat siang) — ungu */}
@@ -1081,38 +1068,6 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
-      {/* Modal Baca Alkitab: catat kitab/pasal → tersimpan ke Spiritual */}
-      <CenterDialog visible={bibleModalOpen} onClose={closeBibleModal}>
-        <VixText heading="title" additionalStyle={styles.bibleModalTitle}>
-          {bibleMeta ? `${bibleMeta.emoji} ${bibleMeta.title}` : '📖 Baca Alkitab'}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.bibleModalSub}>
-          Kitab/pasal apa yang kamu baca? Tersimpan di Spiritual → Bible Read.
-        </VixText>
-        <FormInput
-          style={styles.bibleInput}
-          placeholder="mis. Mazmur 23, Yohanes 3"
-          value={biblePassage}
-          onChangeText={setBiblePassage}
-          editable={!bibleBusy}
-        />
-        <PressableScale
-          style={[
-            styles.bibleDoneButton,
-            !biblePassage.trim() && styles.bibleDoneDisabled,
-          ]}
-          onPress={confirmBibleRead}
-          disabled={!biblePassage.trim() || bibleBusy}>
-          <VixText heading="bold" additionalStyle={styles.bibleDoneText}>
-            ✅ Sudah baca
-          </VixText>
-        </PressableScale>
-        <PressableScale style={styles.bibleClose} onPress={closeBibleModal}>
-          <VixText heading="label" additionalStyle={styles.bibleCloseText}>
-            Tutup
-          </VixText>
-        </PressableScale>
-      </CenterDialog>
     </SafeAreaView>
   );
 }
@@ -1214,6 +1169,8 @@ const styles = StyleSheet.create({
   wheelTip: { color: Color.WHEEL_DARK },
   wheelText: { color: Color.WHEEL_DARK },
   prayerText: { color: Color.SPIRITUAL_DARK },
+  // Teks isi kartu bertema CORE (biru) — mis. Doa Rantai.
+  coreText: { color: Color.FINANCE_INVESTMENT_DARK },
   readingCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1227,19 +1184,6 @@ const styles = StyleSheet.create({
   },
   readingTextBox: { flex: 1, gap: 1 },
   readingTitle: { color: Color.TEXT_TITLE },
-  bibleModalTitle: { color: Color.TEXT_TITLE, marginBottom: 2 },
-  bibleModalSub: { color: Color.TEXT_LABEL, marginBottom: 12 },
-  bibleInput: { marginBottom: 14 },
-  bibleDoneButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: Color.SPIRITUAL_DARK,
-  },
-  bibleDoneDisabled: { opacity: 0.45 },
-  bibleDoneText: { color: Color.TEXT_REVERSE },
-  bibleClose: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
-  bibleCloseText: { color: Color.TEXT_LABEL },
   productivityCard: {
     backgroundColor: Color.FINANCE_INCOME,
     borderRadius: 16,
