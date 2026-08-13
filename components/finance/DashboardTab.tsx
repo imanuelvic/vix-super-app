@@ -203,9 +203,9 @@ export function DashboardTab({
 
       {/* ===== 3 angka utama ===== */}
       <View style={styles.statRow}>
-        <StatTile label="💰 Masuk" value={formatShortRupiah(summary.income)} />
-        <StatTile label="💸 Keluar" value={formatShortRupiah(summary.expense)} />
-        <StatTile label="🏦 Nabung" value={formatShortRupiah(summary.saved)} />
+        <StatTile label="💰 Income" value={formatShortRupiah(summary.income)} />
+        <StatTile label="💸 Expense" value={formatShortRupiah(summary.expense)} />
+        <StatTile label="🏦 Saving" value={formatShortRupiah(summary.saved)} />
       </View>
 
       {/* ===== Budget vs realisasi: pembagian expense / saving / investment ===== */}
@@ -273,10 +273,6 @@ export function DashboardTab({
                 </View>
               );
             })}
-            <VixText heading="label">
-              Persentase = realisasi dibanding budget yang kamu buat di sub-tab
-              Budgeting. Batang atas = rencana, batang bawah = kenyataan.
-            </VixText>
           </>
         )}
       </View>
