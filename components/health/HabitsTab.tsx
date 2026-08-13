@@ -249,7 +249,7 @@ export function HabitsTab({
         <View style={styles.statsRow}>
           <View style={styles.heroCard}>
             <DonutChart
-              size={84}
+              size={88}
               thickness={11}
               slices={[
                 { value: doneCount, color: Color.MAIN_LIGHT },
@@ -259,14 +259,6 @@ export function HabitsTab({
                 {doneCount}/{habits.length}
               </VixText>
             </DonutChart>
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
-              Kebiasaan Hari Ini
-            </VixText>
-            <VixText heading="bold" additionalStyle={styles.heroValue}>
-              {doneCount === habits.length && habits.length > 0
-                ? 'Beres semua! 🎉'
-                : `${habits.length - doneCount} lagi 💪`}
-            </VixText>
           </View>
 
           <View style={styles.targetCard}>
@@ -505,8 +497,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   heroRingText: { color: Color.TEXT_REVERSE },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
-  heroValue: { color: Color.TEXT_REVERSE, textAlign: 'center' },
   targetCard: {
     flex: 1,
     backgroundColor: Color.CONTAINER,
