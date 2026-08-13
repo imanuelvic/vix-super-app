@@ -381,7 +381,7 @@ export function HabitsTab({
         }
         onClose={() => setEditing(null)}>
         <FormInput
-          placeholder="Nama kebiasaan (boleh pakai emoji)"
+          placeholder="Nama kebiasaan"
           value={fLabel}
           onChangeText={setFLabel}
           autoFocus

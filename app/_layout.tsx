@@ -78,7 +78,7 @@ function RootNavigator() {
         <Stack.Screen name="spiritual" />
         <Stack.Screen name="revive" />
         <Stack.Screen name="revive-history" />
-        <Stack.Screen name="bible-read" />
+        <Stack.Screen name="bible-reading" />
 
         <Stack.Screen name="health" />
         <Stack.Screen name="steps" />

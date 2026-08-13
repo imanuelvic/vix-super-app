@@ -13,16 +13,16 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
-import { BibleReadTab } from '@/components/spiritual/BibleReadTab';
+import { BibleReadingTab } from '@/components/spiritual/BibleReadingTab';
 import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
-  subscribeBibleReadDays,
+  subscribeBibleReadingDays,
   subscribeReviveEntries,
-  type BibleReadDay,
+  type BibleReadingDay,
   type ReviveEntry,
 } from '@/lib/spiritual';
 
@@ -49,7 +49,7 @@ export default function SpiritualScreen() {
   );
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
-  const [bibleDays, setBibleDays] = useState<BibleReadDay[]>([]);
+  const [bibleDays, setBibleDays] = useState<BibleReadingDay[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Reminder Dashboard bisa mengarahkan ke tab tertentu lewat param.
@@ -70,7 +70,7 @@ export default function SpiritualScreen() {
         fail,
       ),
       subscribeSermons(user.uid, setSermons, fail),
-      subscribeBibleReadDays(user.uid, setBibleDays, fail),
+      subscribeBibleReadingDays(user.uid, setBibleDays, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -148,7 +148,7 @@ export default function SpiritualScreen() {
         ) : tab === 'sermon' ? (
           <SermonTab sermons={sermons} />
         ) : (
-          <BibleReadTab days={bibleDays} />
+          <BibleReadingTab days={bibleDays} />
         )}
       </View>
 

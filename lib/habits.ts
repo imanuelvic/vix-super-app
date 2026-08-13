@@ -28,8 +28,8 @@ export type ScheduledHabit = { id: string; label: string; slot: HabitSlot };
  */
 export function slotNow(now: Date): HabitSlot {
   const h = now.getHours();
-  if (h < 6) return 'night';
-  if (h < 12) return 'morning';
+  if (h < 1) return 'night';
+  if (h < 10) return 'morning';
   if (h < 18) return 'daytime';
   return 'night';
 }

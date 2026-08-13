@@ -16,10 +16,10 @@ import {
   bibleSessionMeta,
   bumpBibleStreaks,
   EMPTY_BIBLE_STREAKS,
-  saveBibleRead,
-  subscribeBibleReadToday,
+  saveBibleReading,
+  subscribeBibleReadingToday,
   subscribeBibleStreaks,
-  type BibleReadSessions,
+  type BibleReadingSessions,
   type BibleSession,
   type BibleStreaks,
 } from '@/lib/spiritual';
@@ -28,7 +28,7 @@ import {
 // Reading di HOME (di bawah kartu sapaan). Dibuat halaman penuh (bukan modal)
 // karena pemilih kitab sendiri sudah memakai modal; modal di atas modal tidak
 // andal di iOS.
-export default function BibleReadScreen() {
+export default function BibleReadingScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { session: sessionParam } = useLocalSearchParams<{ session?: string }>();
@@ -37,7 +37,7 @@ export default function BibleReadScreen() {
 
   // Beberapa acuan sekaligus — kalau hari itu baca lebih dari satu kitab.
   const [refs, setRefs] = useState<string[]>(['']);
-  const [today, setToday] = useState<BibleReadSessions | null>(null);
+  const [today, setToday] = useState<BibleReadingSessions | null>(null);
   const [streaks, setStreaks] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export default function BibleReadScreen() {
   useEffect(() => {
     if (!user) return;
     const unsubs = [
-      subscribeBibleReadToday(user.uid, dayId, setToday),
+      subscribeBibleReadingToday(user.uid, dayId, setToday),
       subscribeBibleStreaks(user.uid, setStreaks),
     ];
     return () => unsubs.forEach((unsub) => unsub());
@@ -74,7 +74,7 @@ export default function BibleReadScreen() {
     setBusy(true);
     setError(null);
     try {
-      await saveBibleRead(user.uid, dayId, session, filled.join(', '));
+      await saveBibleReading(user.uid, dayId, session, filled.join(', '));
       // "Lengkap" = pagi & malam hari ini dua-duanya terisi setelah simpan ini.
       const other = session === 'morning' ? 'night' : 'morning';
       await bumpBibleStreaks(user.uid, streaks, dayId, session, !!today[other]);

@@ -115,19 +115,21 @@ export function bumpReviveStreak(
 // ===================== Bacaan Alkitab 📖 (Pagi & Malam) =====================
 // DUA sesi baca per hari, masing-masing punya jendela jam sendiri:
 //   🌅 Pagi  05.00–09.59   ·   🌙 Malam 21.00–23.59
-// Kartu reminder di Dashboard hanya muncul di dalam jendela itu & selama sesi
-// hari itu belum diisi. Isinya string bebas: kitab/pasal yang dibaca.
+// Kartu reminder di Home hanya muncul di dalam jendela itu & selama sesi hari
+// itu belum diisi. Isinya string bebas: kitab/pasal yang dibaca.
 //
 // Satu dokumen kecil per hari: users/{uid}/bibleRead/{YYYY-MM-DD}
 //   { morning: string, night: string, date: Timestamp }
 // Sesi bernilai "" = belum diisi hari itu.
+// CATATAN: nama koleksi tetap `bibleRead` (bukan `bibleReading`) — mengubahnya
+// akan memutus semua catatan bacaan yang sudah tersimpan di Firestore.
 
 export type BibleSession = 'morning' | 'night';
 
 export const BIBLE_SESSIONS: {
   key: BibleSession;
   label: string; // "Pagi" / "Malam" — untuk tab riwayat
-  title: string; // judul kartu & modal di Dashboard
+  title: string; // judul kartu di Home & layar catat bacaan
   emoji: string;
   fromHour: number; // jendela mulai (inklusif)
   toHour: number; // jendela selesai (eksklusif)
@@ -141,9 +143,9 @@ export function bibleSessionMeta(session: BibleSession) {
 }
 
 /** Isi kedua sesi dalam satu hari ("" = belum diisi). */
-export type BibleReadSessions = { morning: string; night: string };
+export type BibleReadingSessions = { morning: string; night: string };
 
-export type BibleReadDay = BibleReadSessions & {
+export type BibleReadingDay = BibleReadingSessions & {
   id: string; // "YYYY-MM-DD"
   date: Timestamp;
 };
@@ -156,7 +158,7 @@ export function bibleSessionNow(now: Date): BibleSession | null {
   );
 }
 
-function readSessions(data?: Record<string, unknown>): BibleReadSessions {
+function readSessions(data?: Record<string, unknown>): BibleReadingSessions {
   return {
     morning: (data?.morning as string) ?? '',
     night: (data?.night as string) ?? '',
@@ -164,9 +166,9 @@ function readSessions(data?: Record<string, unknown>): BibleReadSessions {
 }
 
 /** Riwayat 90 hari terakhir — untuk tab Bible Reading di Spiritual. */
-export function subscribeBibleReadDays(
+export function subscribeBibleReadingDays(
   uid: string,
-  onChange: (days: BibleReadDay[]) => void,
+  onChange: (days: BibleReadingDay[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   // orderBy satu field saja → tidak butuh composite index.
@@ -191,10 +193,10 @@ export function subscribeBibleReadDays(
 }
 
 /** HANYA hari ini — dipakai Dashboard (1 dokumen saja, hemat read). */
-export function subscribeBibleReadToday(
+export function subscribeBibleReadingToday(
   uid: string,
   dayId: string,
-  onChange: (sessions: BibleReadSessions) => void,
+  onChange: (sessions: BibleReadingSessions) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   return onSnapshot(
@@ -205,7 +207,7 @@ export function subscribeBibleReadToday(
 }
 
 /** Simpan bacaan SATU sesi — merge, jadi sesi lain di hari itu tidak tersentuh. */
-export function saveBibleRead(
+export function saveBibleReading(
   uid: string,
   dayId: string,
   session: BibleSession,

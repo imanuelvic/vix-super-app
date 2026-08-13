@@ -279,8 +279,10 @@ export function SummaryTab({ profile }: { profile: HealthProfile }) {
           </View>
         )}
         <VixText heading="label" additionalStyle={styles.hint}>
-          BMI ambang Asia-Pasifik (normal 18,5–22,9) · rasio pinggang/tinggi
-          sehat {'<'} 0,50
+          BMI ambang Asia-Pasifik (normal 18,5–22,9)
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.hint}>
+          Rasio pinggang/tinggi sehat {'<'} 0,50
         </VixText>
       </View>
 

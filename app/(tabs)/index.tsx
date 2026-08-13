@@ -70,9 +70,9 @@ import {
 import {
   bibleSessionMeta,
   bibleSessionNow,
-  subscribeBibleReadToday,
+  subscribeBibleReadingToday,
   subscribeReviveStreak,
-  type BibleReadSessions,
+  type BibleReadingSessions,
 } from '@/lib/spiritual';
 import {
   effectiveOtherTask,
@@ -151,7 +151,8 @@ export default function HomeScreen() {
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
   const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
   // Bacaan Alkitab hari ini — null = belum termuat.
-  const [bibleRead, setBibleRead] = useState<BibleReadSessions | null>(null);
+  const [bibleReading, setBibleReading] =
+    useState<BibleReadingSessions | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & badge yang
   // bergantung waktu (mobil/rumah).
@@ -177,7 +178,7 @@ export default function HomeScreen() {
       subscribeRoadmap(user.uid, setRoadmap),
       subscribeFreelance(user.uid, setFreelance),
       subscribeOtherTasks(user.uid, setOtherTasks),
-      subscribeBibleReadToday(user.uid, todayId, setBibleRead),
+      subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -204,8 +205,10 @@ export default function HomeScreen() {
   // itu belum diisi. null = belum termuat (biar kartunya tidak berkedip).
   const bibleSession = bibleSessionNow(now);
   const bibleMeta = bibleSession ? bibleSessionMeta(bibleSession) : null;
-  const bibleReadDue =
-    bibleSession !== null && bibleRead !== null && !bibleRead[bibleSession];
+  const bibleReadingDue =
+    bibleSession !== null &&
+    bibleReading !== null &&
+    !bibleReading[bibleSession];
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -345,13 +348,13 @@ export default function HomeScreen() {
           {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00.
               Hanya muncul di dalam jendela jamnya & selama sesi itu belum
               diisi. Ketuk → layar catat bacaan (pilih kitab + pasal & ayat). */}
-          {bibleReadDue && bibleMeta && bibleSession && (
+          {bibleReadingDue && bibleMeta && bibleSession && (
             <Animated.View entering={FadeInDown.delay(60).duration(350)}>
               <PressableScale
                 style={styles.readingCard}
                 onPress={() =>
                   router.push({
-                    pathname: '/bible-read',
+                    pathname: '/bible-reading',
                     params: { session: bibleSession },
                   })
                 }>

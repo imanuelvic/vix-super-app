@@ -9,14 +9,14 @@ import {
   BIBLE_SESSIONS,
   bibleSessionMeta,
   bibleSessionNow,
-  type BibleReadDay,
+  type BibleReadingDay,
   type BibleSession,
 } from '@/lib/spiritual';
 
-// Tab Bible Reading 📖 — riwayat bacaan Alkitab harian yang dicatat dari
-// Dashboard. Dua sesi (🌅 Pagi & 🌙 Malam) dipisah supaya kelihatan mana yang
-// rutin dan mana yang bolong, plus pasal apa saja yang sering dibaca.
-export function BibleReadTab({ days }: { days: BibleReadDay[] }) {
+// Tab Bible Reading 📖 — riwayat bacaan Alkitab harian yang dicatat dari Home.
+// Dua sesi (🌅 Pagi & 🌙 Malam) dipisah supaya kelihatan mana yang rutin dan
+// mana yang bolong, plus pasal apa saja yang sering dibaca.
+export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
   // Default ke sesi yang jendelanya sedang terbuka; di luar jam baca → Pagi.
   const [session, setSession] = useState<BibleSession>(
     () => bibleSessionNow(new Date()) ?? 'morning',
@@ -55,7 +55,7 @@ export function BibleReadTab({ days }: { days: BibleReadDay[] }) {
         {list.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
             Belum ada catatan bacaan {meta.label.toLowerCase()}. Isi lewat kartu
-            “{meta.title}” di Dashboard pada jam {meta.fromHour}.00–
+            “{meta.title}” di Home pada jam {meta.fromHour}.00–
             {meta.toHour}.00 📖
           </VixText>
         )}
