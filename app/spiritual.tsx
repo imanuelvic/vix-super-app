@@ -14,8 +14,10 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { BibleReadingTab } from '@/components/spiritual/BibleReadingTab';
+import { FastingTab } from '@/components/spiritual/FastingTab';
 import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
+import { subscribeFastingPlans, type FastingPlan } from '@/lib/fasting';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
@@ -26,12 +28,13 @@ import {
   type ReviveEntry,
 } from '@/lib/spiritual';
 
-type Tab = 'revive' | 'sermon' | 'bible';
+type Tab = 'revive' | 'sermon' | 'bible' | 'fasting';
 
 const TABS: BottomTab<Tab>[] = [
   { key: 'revive', label: 'Revive', icon: 'book.closed.fill' },
   { key: 'sermon', label: 'Sermon', icon: 'mic.fill' },
   { key: 'bible', label: 'Bible Reading', icon: 'books.vertical.fill' },
+  { key: 'fasting', label: 'Fasting', icon: 'figure.mind.and.body' },
 ];
 
 function isTab(value?: string): value is Tab {
@@ -50,6 +53,7 @@ export default function SpiritualScreen() {
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [bibleDays, setBibleDays] = useState<BibleReadingDay[]>([]);
+  const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Reminder Dashboard bisa mengarahkan ke tab tertentu lewat param.
@@ -71,6 +75,7 @@ export default function SpiritualScreen() {
       ),
       subscribeSermons(user.uid, setSermons, fail),
       subscribeBibleReadingDays(user.uid, setBibleDays, fail),
+      subscribeFastingPlans(user.uid, setFastingPlans, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -147,8 +152,10 @@ export default function SpiritualScreen() {
           </ScrollView>
         ) : tab === 'sermon' ? (
           <SermonTab sermons={sermons} />
-        ) : (
+        ) : tab === 'bible' ? (
           <BibleReadingTab days={bibleDays} />
+        ) : (
+          <FastingTab plans={fastingPlans} />
         )}
       </View>
 

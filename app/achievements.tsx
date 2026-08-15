@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -15,6 +16,7 @@ import {
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORIES,
   REWARDS,
+  resetAchievements,
   subscribeLoginStreak,
   subscribeSelfRewardBalance,
   type AchievementCategoryKey,
@@ -33,7 +35,7 @@ import {
   type StepDaysMap,
   type Streak,
 } from '@/lib/health';
-import { LOAD_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
 import {
   EMPTY_BIBLE_STREAKS,
   subscribeBibleStreaks,
@@ -60,6 +62,24 @@ export default function AchievementsScreen() {
 
   // Kategori yang sedang dibuka di modal (null = tertutup).
   const [openCat, setOpenCat] = useState<AchievementCategoryKey | null>(null);
+
+  // Konfirmasi reset semua pencapaian (permanen).
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  async function handleReset() {
+    if (!user || resetting) return;
+    setResetting(true);
+    setError(null);
+    try {
+      await resetAchievements(user.uid);
+      setConfirmReset(false);
+    } catch {
+      setError(DELETE_ERROR);
+    } finally {
+      setResetting(false);
+    }
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -227,6 +247,14 @@ export default function AchievementsScreen() {
           }
           additionalStyle={styles.manageButton}
         />
+
+        {/* Mulai dari nol lagi — semua streak & rekor dihapus permanen.
+            Saldo Self-Reward TIDAK ikut terhapus (itu uang di Finance). */}
+        <PressableScale onPress={() => setConfirmReset(true)}>
+          <VixText heading="bold" additionalStyle={styles.resetLink}>
+            ♻️ Reset semua achievement ke 0
+          </VixText>
+        </PressableScale>
       </ScrollView>
 
       {/* Modal pencapaian satu kategori — daftar bertingkat + progress bar */}
@@ -277,6 +305,16 @@ export default function AchievementsScreen() {
           })}
         </ScrollView>
       </SheetModal>
+
+      <ConfirmDialog
+        visible={confirmReset}
+        title="Reset semua achievement?"
+        detail="Semua streak & rekor (doa, Revive, baca Alkitab, kebiasaan, gym, langkah) kembali ke 0. Permanen, tidak bisa dibatalkan. Saldo Self-Reward tidak ikut terhapus."
+        confirmLabel="Ya, Reset"
+        busy={resetting}
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={handleReset}
+      />
     </SafeAreaView>
   );
 }
@@ -361,6 +399,7 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { color: Color.ACCENT_DARK },
   balanceValue: { color: Color.ACCENT_DARK },
-  manageButton: { marginTop: 6, marginBottom: 15 },
+  manageButton: { marginTop: 6, marginBottom: 4 },
+  resetLink: { color: Color.DANGER, textAlign: 'center', paddingVertical: 12 },
   modalList: { maxHeight: 460 },
 });

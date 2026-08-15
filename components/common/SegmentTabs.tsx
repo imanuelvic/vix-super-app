@@ -10,7 +10,7 @@ import { VixText } from '@/components/common/VixText';
 export type SegmentTab<T extends string> = {
   key: T;
   label: string; // mis. "🌅 Pagi"
-  sub: string; // mis. "5/8" atau "✅ beres"
+  sub?: string; // mis. "5/8" atau "✅ beres" — kosongkan kalau tak perlu angka
 };
 
 export function SegmentTabs<T extends string>({
@@ -37,11 +37,13 @@ export function SegmentTabs<T extends string>({
               additionalStyle={[styles.label, active && styles.labelActive]}>
               {t.label}
             </VixText>
-            <VixText
-              heading="label"
-              additionalStyle={[styles.sub, active && styles.subActive]}>
-              {t.sub}
-            </VixText>
+            {t.sub ? (
+              <VixText
+                heading="label"
+                additionalStyle={[styles.sub, active && styles.subActive]}>
+                {t.sub}
+              </VixText>
+            ) : null}
           </PressableScale>
         );
       })}

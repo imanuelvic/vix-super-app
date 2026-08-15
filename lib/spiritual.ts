@@ -220,6 +220,21 @@ export function saveBibleReading(
   );
 }
 
+/**
+ * Hapus catatan bacaan SATU sesi — PERMANEN. Kalau sesi satunya di hari itu
+ * juga kosong, dokumen harinya ikut dihapus supaya tidak menyisakan data
+ * kosong di Firestore.
+ */
+export function deleteBibleReading(
+  uid: string,
+  dayId: string,
+  session: BibleSession,
+  otherFilled: boolean,
+) {
+  const ref = doc(db, 'users', uid, 'bibleRead', dayId);
+  return otherFilled ? setDoc(ref, { [session]: '' }, { merge: true }) : deleteDoc(ref);
+}
+
 // ===== Streak baca Alkitab 🔥 — SATU dokumen: users/{uid}/app/bibleStreak =====
 // Tiga rentetan sekaligus supaya cukup 1 read: pagi, malam, dan "lengkap"
 // (hari yang pagi & malamnya sama-sama terisi). Bentuk tiap rentetan sama

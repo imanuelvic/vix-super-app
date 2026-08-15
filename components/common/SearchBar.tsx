@@ -7,14 +7,18 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 
 // Kotak pencarian standar: ikon 🔍 + input + tombol hapus (✕) saat ada teks.
 // Reusable untuk daftar mana pun yang butuh cari cepat.
+// `autoFocus` → langsung terfokus & keyboard muncul begitu kotaknya dipasang
+// (dipakai saat mode cari dibuka lewat tombol, biar tak perlu ketuk dua kali).
 export function SearchBar({
   value,
   onChangeText,
   placeholder = 'Cari…',
+  autoFocus = false,
 }: {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
 }) {
   return (
     <View style={styles.wrap}>
@@ -26,6 +30,7 @@ export function SearchBar({
         placeholder={placeholder}
         placeholderTextColor={Color.TEXT_PLACEHOLDER}
         returnKeyType="search"
+        autoFocus={autoFocus}
         autoCorrect={false}
         clearButtonMode="never"
         onFocus={closePickers}

@@ -110,35 +110,13 @@ export function MorningPrayerGate({
           </View>
         </Animated.View>
 
-        {/* Langkah 2: Bapa Kami */}
-        <Animated.View
-          entering={FadeInDown.delay(120).duration(350)}
-          style={styles.stepCard}>
-          <VixText heading="title" additionalStyle={styles.stepTitle}>
-            2. Doa Bapa Kami
-          </VixText>
-          <View style={styles.prayerBox}>
-            <VixText heading="paragraph" additionalStyle={styles.prayerText}>
-              {BAPA_KAMI}
-            </VixText>
-          </View>
-          <PressableScale
-            style={styles.checkRow}
-            onPress={() => setPrayed((v) => !v)}>
-            <CheckCircle checked={prayed} />
-            <VixText heading="bold" additionalStyle={styles.checkText}>
-              Sudah berdoa Bapa Kami
-            </VixText>
-          </PressableScale>
-        </Animated.View>
-
-        {/* Langkah 3: Doa Rantai — hanya di hari jadwalnya (Sel/Kam/Sab) */}
+        {/* Langkah 2: Doa Rantai — hanya di hari jadwalnya (Sel/Kam/Sab) */}
         {chainDue && (
           <Animated.View
             entering={FadeInDown.delay(270).duration(350)}
             style={styles.stepCard}>
             <VixText heading="title" additionalStyle={styles.stepTitle}>
-              3. Doa Rantai
+              2. Doa Rantai
             </VixText>
             <VixText heading="label" additionalStyle={styles.stepHint}>
               Hari ini jadwalnya: doakan & tanyakan perkembangan pergumulan
@@ -160,6 +138,28 @@ export function MorningPrayerGate({
             </View>
           </Animated.View>
         )}
+
+        {/* Langkah 3: Bapa Kami */}
+        <Animated.View
+          entering={FadeInDown.delay(120).duration(350)}
+          style={styles.stepCard}>
+          <VixText heading="title" additionalStyle={styles.stepTitle}>
+            3. Doa Bapa Kami
+          </VixText>
+          <View style={styles.prayerBox}>
+            <VixText heading="paragraph" additionalStyle={styles.prayerText}>
+              {BAPA_KAMI}
+            </VixText>
+          </View>
+          <PressableScale
+            style={styles.checkRow}
+            onPress={() => setPrayed((v) => !v)}>
+            <CheckCircle checked={prayed} />
+            <VixText heading="bold" additionalStyle={styles.checkText}>
+              Sudah berdoa Bapa Kami
+            </VixText>
+          </PressableScale>
+        </Animated.View>
 
         {/* Konfirmasi — aktif setelah semua langkah selesai */}
         <Animated.View entering={FadeInDown.delay(320).duration(350)}>

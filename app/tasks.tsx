@@ -865,7 +865,7 @@ export default function TasksScreen() {
           Tanggal
         </VixText>
         <View style={styles.formGap}>
-          {/* key = id supaya state picker internal reset tiap ganti task */}
+          {/* key = id supaya state picker internal reset tiap ubah task */}
           <DateField
             key={editing === 'new' ? 'new' : editing?.id}
             value={fDate}
@@ -887,7 +887,7 @@ export default function TasksScreen() {
           />
         )}
         <DualButtons
-          confirmLabel={editing === 'new' ? 'Tambah' : 'Ganti'}
+          confirmLabel={editing === 'new' ? 'Tambah' : 'Ubah'}
           busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSaveSheet}

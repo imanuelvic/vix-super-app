@@ -2,6 +2,7 @@ import {
   doc,
   onSnapshot,
   setDoc,
+  writeBatch,
   type FirestoreError,
 } from 'firebase/firestore';
 
@@ -231,4 +232,36 @@ export function subscribeSelfRewardBalance(
     },
     onError,
   );
+}
+
+// ===================== Reset semua progres achievement =====================
+// Semua achievement dihitung dari dokumen streak/rekor di bawah ini. Menghapus
+// dokumennya = semua pencapaian kembali 0 (hard delete, tak ada arsip).
+//
+// SENGAJA TIDAK ikut dihapus:
+// - funds/self-reward → itu saldo uang beneran di Finance, bukan pencapaian.
+// - Catatan harian (Revive, bacaan Alkitab, habit, sesi gym) → yang direset
+//   hitungan streak-nya saja, isinya tetap aman.
+const ACHIEVEMENT_DOCS: [collection: string, id: string][] = [
+  ['app', 'login'], // streak doa pagi 🙏
+  ['app', 'revive'], // streak Revive 📖
+  ['app', 'bibleStreak'], // streak baca Alkitab 📚
+  ['app', 'fitnessStreak'], // streak gym 🏋️
+  ['health', 'streak'], // streak kebiasaan harian ✅
+  ['health', 'steps'], // rekor langkah 👣 (lihat catatan di bawah)
+];
+
+/**
+ * Kembalikan SEMUA achievement ke 0 — permanen, tidak bisa dibatalkan.
+ *
+ * Catatan langkah 👣: dokumen `health/steps` diisi ulang otomatis dari riwayat
+ * Apple Health tiap layar Steps dibuka, jadi rekor langkah bisa muncul lagi
+ * setelah reset. Itu memang datanya ada di iPhone, bukan dibuat app ini.
+ */
+export function resetAchievements(uid: string) {
+  const batch = writeBatch(db);
+  for (const [col, id] of ACHIEVEMENT_DOCS) {
+    batch.delete(doc(db, 'users', uid, col, id));
+  }
+  return batch.commit();
 }

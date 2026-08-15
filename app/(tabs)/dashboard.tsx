@@ -135,6 +135,14 @@ import {
 } from '@/lib/sermon';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import {
+  activeFasting,
+  fastingDay,
+  fastingDayNumber,
+  fastingProgress,
+  subscribeFastingPlans,
+  type FastingPlan,
+} from '@/lib/fasting';
+import {
   otherTaskDaysUntil,
   otherTaskUrgent,
   setTaskDone,
@@ -190,6 +198,8 @@ export default function DashboardScreen() {
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
   );
+  // Periode puasa 🍽️ — untuk kartu "sedang berpuasa" + pokok doa hari ini.
+  const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
 
   // Jam berjalan (di-refresh tiap menit) — untuk reminder yang bergantung waktu.
   const [now, setNow] = useState(() => new Date());
@@ -222,6 +232,7 @@ export default function DashboardScreen() {
       subscribeHealthProfile(user.uid, setProfile),
       subscribeSermons(user.uid, setSermons),
       subscribeReviveStreak(user.uid, setRevive),
+      subscribeFastingPlans(user.uid, setFastingPlans),
       subscribeRoadmap(user.uid, setRoadmap),
       subscribeCoreIdeas(user.uid, setCoreIdeas),
       subscribeDonor(user.uid, setDonor),
@@ -458,6 +469,15 @@ export default function DashboardScreen() {
     wheel != null && wheel.focus.length > 0 && wheelFocusReminderActive(now);
   const wheelFocusRows = wheelFocusDue ? wheelFocusReminders(wheel, now) : [];
   const wheelNeedsFill = wheel != null && !wheelHasScores(wheel);
+
+  // ===== Reminder Puasa 🍽️ =====
+  // Kartu muncul selama hari ini masih di dalam rentang puasa yang tersimpan.
+  const fastingNow = activeFasting(fastingPlans, now);
+  const fastingToday = fastingNow ? fastingDay(fastingNow, todayId) : null;
+  // Pokok doa khusus hari ini; kalau belum diisi, pakai pokok doa utamanya.
+  const fastingPrayer = fastingNow
+    ? fastingToday?.prayer || fastingNow.prayer
+    : '';
 
   // ===== Reminder Pokok Doa Bulanan (CORE) 📅 =====
   const prayerMonthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
@@ -831,6 +851,38 @@ export default function DashboardScreen() {
                 </PressableScale>
               )}
             </View>
+          )}
+
+          {/* Sedang berpuasa 🍽️ — hari ke berapa + pokok doa hari ini.
+              Ditekan → layar puasa itu (checklist harian). */}
+          {fastingNow && (
+            <ReminderCard
+              bg={Color.SPIRITUAL}
+              fg={Color.SPIRITUAL_DARK}
+              title={`🍽️ Sedang Puasa — hari ke-${fastingDayNumber(
+                fastingNow,
+                todayId,
+              )} dari ${fastingProgress(fastingNow).total}`}
+              onPress={() =>
+                router.push({
+                  pathname: '/fasting',
+                  params: { id: fastingNow.id },
+                })
+              }>
+              <VixText heading="label" additionalStyle={styles.prayerText}>
+                {fastingNow.title}
+              </VixText>
+              {fastingPrayer ? (
+                <VixText heading="label" additionalStyle={styles.prayerText}>
+                  🙏 {fastingPrayer}
+                </VixText>
+              ) : null}
+              {fastingNow.rules ? (
+                <VixText heading="label" additionalStyle={styles.prayerText}>
+                  📜 {fastingNow.rules}
+                </VixText>
+              ) : null}
+            </ReminderCard>
           )}
 
           {/* Reminder Pokok Doa Bulanan — awal bulan belum diisi (tema spiritual) */}

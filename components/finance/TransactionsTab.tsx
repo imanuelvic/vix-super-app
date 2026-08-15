@@ -293,7 +293,10 @@ export function TransactionsTab({
     // App tujuan (deeplink) sesuai kategori terpilih — muncul di bawah nominal.
     const payApp = category ? payAppForCategory(category) : null;
     return (
-      <View>
+      // key beda dengan header mode cari → React benar-benar melepas/memasang
+      // ulang isinya saat mode berganti (bukan sekadar menambal), jadi
+      // `autoFocus` di kotak cari pasti jalan tiap kali mode cari dibuka.
+      <View key="add-header">
         {/* Hari & tanggal hari ini */}
         <VixText heading="label" additionalStyle={styles.todayText}>
           📆 {formatFullDate(new Date())}
@@ -456,7 +459,7 @@ export function TransactionsTab({
   function renderSearchHeader() {
     const q = query.trim();
     return (
-      <View>
+      <View key="search-header">
         <VixText heading="label" additionalStyle={styles.todayText}>
           🔍 Cari transaksi bulan ini
         </VixText>
@@ -468,10 +471,12 @@ export function TransactionsTab({
           }}
         />
         <View style={styles.searchWrap}>
+          {/* Langsung terfokus + keyboard native terbuka begitu FAB 🔍 ditekan */}
           <SearchBar
             value={query}
             onChangeText={setQuery}
             placeholder="Cari catatan / kategori…"
+            autoFocus
           />
         </View>
         <View style={styles.sortRow}>
