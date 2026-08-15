@@ -31,7 +31,7 @@ import {
 } from '@/lib/sleep';
 
 // Jam awal saat pertama kali mencatat: tidur 23.00, bangun 06.00 (7 jam).
-const DEFAULT_BED = 23 * 60;
+const DEFAULT_BED = 22 * 60 + 30;
 const DEFAULT_WAKE = 6 * 60;
 
 // Sub-tab Sleep 😴 — target 6–8 jam. Catat jam tidur & jam bangun, lamanya

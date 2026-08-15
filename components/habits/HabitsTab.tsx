@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
@@ -18,13 +19,27 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
+  areaMeta,
+  areaProgress,
+  classifyAll,
+  coreDone,
+  dailyScore,
   defaultSlot,
+  HABIT_AREAS,
   HABIT_SLOTS,
+  HABIT_TIERS,
+  habitArea,
   habitsBySlot,
+  habitTier,
+  missingFromPack,
+  needsClassify,
   newHabitId,
   saveHabits,
   slotMeta,
+  tierMeta,
+  type HabitArea,
   type HabitSlot,
+  type HabitTier,
   type ScheduledHabit,
 } from '@/lib/habits';
 import {
@@ -33,6 +48,7 @@ import {
   idealWeightRange,
   saveWeightTarget,
   setHabitDone,
+  setHabitNote,
   type HabitDay,
   type HealthProfile,
   type Streak,
@@ -80,6 +96,8 @@ export function HabitsTab({
   const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);
   const [editSlot, setEditSlot] = useState<HabitSlot>('morning');
   const [fLabel, setFLabel] = useState('');
+  const [fArea, setFArea] = useState<HabitArea>('body');
+  const [fTier, setFTier] = useState<HabitTier>('support');
   const [busy, setBusy] = useState(false);
 
   // Modal pasang/ubah target berat.
@@ -88,10 +106,18 @@ export function HabitsTab({
   const [targetError, setTargetError] = useState<string | null>(null);
   const [savingTarget, setSavingTarget] = useState(false);
 
-  const doneCount = habits.filter((h) => day.done[h.id]).length;
   const range = idealWeightRange(profile.heightCm);
   const grouped = habitsBySlot(habits);
   const activeList = grouped[activeSlot];
+
+  // Ukuran keberhasilan hari ini: skor 0–10 + 5 area hidup yang terjaga —
+  // bukan lagi "berapa dari 39 tercentang".
+  const score = dailyScore(habits, day.done);
+  const areas = areaProgress(habits, day.done);
+  const keptCount = areas.filter((a) => a.kept).length;
+  // Penataan sekali jalan: kebiasaan lama belum bertanda, paket malam belum ada.
+  const unclassified = needsClassify(habits);
+  const packMissing = missingFromPack(habits);
 
   // Progress target berat (rumus sama untuk turun / naik).
   let targetPercent = 0;
@@ -132,15 +158,46 @@ export function HabitsTab({
     const nextChecked = !day.done[habit.id];
     try {
       await setHabitDone(user.uid, dayId, habit.id, nextChecked);
-      // Kalau centang ini melengkapi SEMUA kebiasaan hari ini → streak naik 🔥
+      // Streak naik saat seluruh kebiasaan 🟢 INTI hari ini beres — bukan
+      // menunggu ke-39 semuanya tercentang (itu praktis mustahil).
       if (nextChecked) {
         const nextDone = { ...day.done, [habit.id]: true };
-        const allDone =
-          habits.length > 0 && habits.every((h) => nextDone[h.id]);
-        if (allDone) await bumpStreak(user.uid, streak, dayId);
+        if (coreDone(habits, nextDone)) {
+          await bumpStreak(user.uid, streak, dayId);
+        }
       }
     } catch {
       setError('Gagal menyimpan centang. Coba lagi.');
+    }
+  }
+
+  /** Tandai area & tingkat semua kebiasaan yang belum bertanda (sekali jalan). */
+  async function handleClassify() {
+    if (busy) return;
+    setBusy(true);
+    await saveList(classifyAll(habits));
+    setBusy(false);
+  }
+
+  /** Tambahkan kebiasaan pemulihan yang belum ada (Phone Away, refleksi, dll). */
+  async function handleAddPack() {
+    if (busy || packMissing.length === 0) return;
+    setBusy(true);
+    const g = habitsBySlot(habits);
+    for (const p of packMissing) {
+      g[p.slot] = [...g[p.slot], { id: newHabitId(), ...p }];
+    }
+    await saveList(reassemble(g));
+    setBusy(false);
+  }
+
+  /** Simpan catatan singkat (refleksi / syukur / rhema) kebiasaan hari ini. */
+  async function handleNote(habit: ScheduledHabit, text: string) {
+    if (!user) return;
+    try {
+      await setHabitNote(user.uid, dayId, habit.id, text);
+    } catch {
+      setError('Gagal menyimpan catatan. Coba lagi.');
     }
   }
 
@@ -148,12 +205,16 @@ export function HabitsTab({
     setEditing('new');
     setEditSlot(slot);
     setFLabel('');
+    setFArea('body');
+    setFTier('support');
   }
 
   function openEdit(habit: ScheduledHabit) {
     setEditing(habit);
     setEditSlot(habit.slot);
     setFLabel(habit.label);
+    setFArea(habitArea(habit));
+    setFTier(habitTier(habit));
   }
 
   async function handleSaveHabit() {
@@ -163,10 +224,13 @@ export function HabitsTab({
     setBusy(true);
     const g = habitsBySlot(habits);
     if (editing === 'new') {
-      g[editSlot] = [...g[editSlot], { id: newHabitId(), label, slot: editSlot }];
+      g[editSlot] = [
+        ...g[editSlot],
+        { id: newHabitId(), label, slot: editSlot, area: fArea, tier: fTier },
+      ];
     } else if (editing) {
       g[editing.slot] = g[editing.slot].map((h) =>
-        h.id === editing.id ? { ...h, label } : h,
+        h.id === editing.id ? { ...h, label, area: fArea, tier: fTier } : h,
       );
     }
     await saveList(reassemble(g));
@@ -257,18 +321,26 @@ export function HabitsTab({
 
         {/* ===== Baris atas: Kebiasaan (ring) + Target berat ===== */}
         <View style={styles.statsRow}>
+          {/* Skor 0–10 dari kebiasaan Inti (70%) + Pendukung (30%).
+              Opsional tidak ikut dihitung — biar tidak jadi beban. */}
           <View style={styles.heroCard}>
             <DonutChart
               size={88}
               thickness={11}
               slices={[
-                { value: doneCount, color: Color.MAIN_LIGHT },
-                { value: habits.length - doneCount, color: Color.MAIN },
+                { value: score, color: Color.MAIN_LIGHT },
+                { value: 10 - score, color: Color.MAIN },
               ]}>
               <VixText heading="title" additionalStyle={styles.heroRingText}>
-                {doneCount}/{habits.length}
+                {score}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.heroRingSub}>
+                /10
               </VixText>
             </DonutChart>
+            <VixText heading="label" additionalStyle={styles.heroRingSub}>
+              {keptCount}/5 area terjaga
+            </VixText>
           </View>
 
           <View style={styles.targetCard}>
@@ -309,6 +381,63 @@ export function HabitsTab({
           </View>
         </View>
 
+        {/* Lima area hidup hari ini — kelihatan mana yang masih bolong. */}
+        <View style={styles.areaRow}>
+          {areas.map((a) => {
+            const meta = areaMeta(a.area);
+            return (
+              <View
+                key={a.area}
+                style={[styles.areaChip, a.kept && styles.areaChipKept]}>
+                <VixText additionalStyle={styles.areaEmoji}>
+                  {meta.emoji}
+                </VixText>
+                <VixText
+                  heading="label"
+                  additionalStyle={a.kept ? styles.areaTextKept : styles.areaText}>
+                  {a.total === 0 ? '—' : `${a.done}/${a.total}`}
+                </VixText>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Penataan sekali jalan — kartunya hilang sendiri setelah beres. */}
+        {(unclassified > 0 || packMissing.length > 0) && (
+          <View style={styles.setupCard}>
+            <VixText heading="bold" additionalStyle={styles.setupTitle}>
+              ⚡ Tata Ulang Kebiasaan
+            </VixText>
+            {unclassified > 0 && (
+              <PressableScale
+                style={styles.setupButton}
+                disabled={busy}
+                onPress={handleClassify}>
+                <VixText heading="bold" additionalStyle={styles.setupButtonText}>
+                  🏷️ Tandai {unclassified} kebiasaan otomatis
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.setupHint}>
+                  Ditebak dari namanya (area + inti/pendukung/opsional). Bisa
+                  dibetulkan satu-satu lewat tombol ✏️.
+                </VixText>
+              </PressableScale>
+            )}
+            {packMissing.length > 0 && (
+              <PressableScale
+                style={styles.setupButton}
+                disabled={busy}
+                onPress={handleAddPack}>
+                <VixText heading="bold" additionalStyle={styles.setupButtonText}>
+                  🌙 Tambah {packMissing.length} kebiasaan pemulihan
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.setupHint}>
+                  {packMissing.map((p) => p.label).join(' · ')}
+                </VixText>
+              </PressableScale>
+            )}
+          </View>
+        )}
+
         {/* ===== Kebiasaan: tab sesi Pagi/Siang/Malam (satu sesi tampil biar
             tak perlu scroll panjang; default ke sesi jam sekarang) ===== */}
         <SegmentTabs
@@ -332,31 +461,47 @@ export function HabitsTab({
         <View style={styles.slotBlock}>
           {activeList.map((habit) => {
             const checked = !!day.done[habit.id];
+            const tier = habitTier(habit);
             return (
-              <View
-                key={habit.id}
-                style={[styles.row, checked && styles.rowDone]}>
-                <PressableScale onPress={() => handleToggle(habit)} hitSlop={8}>
-                  <CheckCircle checked={checked} />
-                </PressableScale>
-                {/* Teks tidak bisa ditekan — ubah/urutkan/hapus lewat tombol edit */}
-                <View style={styles.rowMain}>
-                  <VixText
-                    heading="paragraph"
-                    additionalStyle={[
-                      styles.habitText,
-                      checked && styles.habitTextDone,
-                    ]}>
-                    {habit.label}
-                  </VixText>
+              <View key={habit.id}>
+                <View
+                  style={[
+                    styles.row,
+                    checked && styles.rowDone,
+                    // Opsional diredupkan sedikit: bonus, bukan tuntutan.
+                    tier === 'optional' && styles.rowOptional,
+                  ]}>
+                  <PressableScale onPress={() => handleToggle(habit)} hitSlop={8}>
+                    <CheckCircle checked={checked} />
+                  </PressableScale>
+                  {/* Teks tidak bisa ditekan — ubah/urutkan/hapus lewat tombol edit */}
+                  <View style={styles.rowMain}>
+                    <VixText
+                      heading="paragraph"
+                      additionalStyle={[
+                        styles.habitText,
+                        checked && styles.habitTextDone,
+                      ]}>
+                      {tierMeta(tier).emoji} {habit.label}
+                    </VixText>
+                  </View>
+                  {/* Tombol edit → buka modal ubah / urutkan / hapus */}
+                  <PressableScale
+                    style={styles.editButton}
+                    onPress={() => openEdit(habit)}
+                    hitSlop={8}>
+                    <IconSymbol name="pencil" size={18} color={Color.TEXT_LABEL} />
+                  </PressableScale>
                 </View>
-                {/* Tombol edit → buka modal ubah / urutkan / hapus */}
-                <PressableScale
-                  style={styles.editButton}
-                  onPress={() => openEdit(habit)}
-                  hitSlop={8}>
-                  <IconSymbol name="pencil" size={18} color={Color.TEXT_LABEL} />
-                </PressableScale>
+                {/* Kebiasaan yang minta catatan (refleksi, syukur, rhema) */}
+                {habit.note && (
+                  <HabitNote
+                    key={`${habit.id}-${dayId}`}
+                    placeholder={habit.notePrompt ?? 'Tulis singkat saja…'}
+                    value={day.notes[habit.id] ?? ''}
+                    onSave={(t) => handleNote(habit, t)}
+                  />
+                )}
               </View>
             );
           })}
@@ -397,6 +542,36 @@ export function HabitsTab({
           autoFocus
           editable={!busy}
         />
+
+        {/* Tingkat menentukan streak & skor — inilah pengganti "39/39" */}
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Tingkat (yang 🟢 Inti menentukan streak 🔥)
+        </VixText>
+        <View style={styles.pickRow}>
+          {HABIT_TIERS.map((t) => (
+            <Chip
+              key={t.key}
+              label={`${t.emoji} ${t.label}`}
+              active={fTier === t.key}
+              onPress={() => setFTier(t.key)}
+              additionalStyle={styles.pickChip}
+            />
+          ))}
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          Area hidup
+        </VixText>
+        <View style={styles.pickRow}>
+          {HABIT_AREAS.map((a) => (
+            <Chip
+              key={a.key}
+              label={`${a.emoji} ${a.label}`}
+              active={fArea === a.key}
+              onPress={() => setFArea(a.key)}
+            />
+          ))}
+        </View>
 
         {/* Urutkan dalam sesi (Naik/Turun) — hanya saat mengedit */}
         {editing && editing !== 'new' && (
@@ -487,6 +662,32 @@ export function HabitsTab({
   );
 }
 
+// Kolom catatan singkat di bawah kebiasaan yang memintanya. Disimpan saat
+// selesai mengetik (onBlur) — bukan tiap huruf, biar hemat tulis Firestore.
+function HabitNote({
+  placeholder,
+  value,
+  onSave,
+}: {
+  placeholder: string;
+  value: string;
+  onSave: (text: string) => void;
+}) {
+  const [text, setText] = useState(value);
+  return (
+    <FormInput
+      style={styles.noteInput}
+      placeholder={placeholder}
+      value={text}
+      onChangeText={setText}
+      onBlur={() => {
+        if (text.trim() !== value) onSave(text.trim());
+      }}
+      multiline
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   // Bagian atas yang menempel (sapaan + ringkasan + tab sesi).
@@ -507,6 +708,46 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   heroRingText: { color: Color.TEXT_REVERSE },
+  heroRingSub: { color: Color.TEXT_ON_DARK_MUTED },
+  // Lima area hidup — hijau muda kalau kebiasaan intinya sudah beres.
+  areaRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
+  areaChip: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 1,
+    paddingVertical: 7,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.CONTAINER,
+  },
+  areaChipKept: {
+    borderColor: Color.MAIN,
+    backgroundColor: Color.MAIN_TRANSPARENT,
+  },
+  areaEmoji: { fontSize: 16, lineHeight: 20 },
+  areaText: { color: Color.TEXT_PLACEHOLDER },
+  areaTextKept: { color: Color.MAIN_DARK },
+  // Kartu penataan sekali jalan (hilang sendiri setelah semua beres).
+  setupCard: {
+    backgroundColor: Color.ACCENT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.ACCENT_DARK,
+    padding: 14,
+    gap: 10,
+    marginBottom: 12,
+  },
+  setupTitle: { color: Color.ACCENT_DARK },
+  setupButton: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 2,
+  },
+  setupButtonText: { color: Color.TEXT_TITLE },
+  setupHint: { color: Color.TEXT_LABEL },
   targetCard: {
     flex: 1,
     backgroundColor: Color.CONTAINER,
@@ -558,6 +799,19 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
   },
+  // ⚪ Opsional — bonus, jadi tampilannya sengaja lebih kalem.
+  rowOptional: { opacity: 0.7 },
+  // Catatan singkat di bawah kebiasaan refleksi/syukur/rhema.
+  noteInput: {
+    minHeight: 64,
+    textAlignVertical: 'top',
+    marginTop: -2,
+    marginBottom: 8,
+  },
+  // Pilihan tingkat & area di modal ubah kebiasaan.
+  fieldLabel: { marginTop: 14, marginBottom: 6 },
+  pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pickChip: { flex: 1 },
   rowMain: { flex: 1 },
   editButton: {
     width: 32,

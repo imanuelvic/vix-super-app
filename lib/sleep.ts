@@ -22,8 +22,10 @@ import { dayIdToDate } from './format';
 // dihitung & tidak tergantung zona waktu. Tidur yang melewati tengah malam
 // (tidur 23.30, bangun 06.30) otomatis dihitung benar.
 
-export const SLEEP_MIN_HOURS = 6;
-export const SLEEP_MAX_HOURS = 8;
+// CDC: orang dewasa butuh MINIMAL 7 jam per malam, dan konsistensi jam
+// tidur/bangun sama pentingnya dengan lamanya.
+export const SLEEP_MIN_HOURS = 7;
+export const SLEEP_MAX_HOURS = 9;
 
 export type SleepNight = {
   id: string; // dayId tanggal BANGUN

@@ -302,6 +302,11 @@ export type HabitDayMap = Record<string, boolean>;
 export type HabitDay = {
   done: HabitDayMap;
   water: number;
+  /**
+   * Catatan singkat untuk kebiasaan yang memintanya (refleksi harian,
+   * syukur, 1 kalimat rhema) — id kebiasaan → isi tulisannya.
+   */
+  notes: Record<string, string>;
 };
 
 export const WATER_GOAL = 8;
@@ -320,6 +325,7 @@ export function subscribeHabitDay(
       onChange({
         done: (data?.done as HabitDayMap) ?? {},
         water: (data?.water as number) ?? 0,
+        notes: (data?.notes as Record<string, string>) ?? {},
       });
     },
     onError,
@@ -335,6 +341,17 @@ export function setHabitDone(
   const ref = doc(db, 'users', uid, 'habitDays', dayId);
   // merge: hanya key kebiasaan ini yang berubah, centang lain tetap.
   return setDoc(ref, { done: { [habitId]: done } }, { merge: true });
+}
+
+/** Simpan catatan singkat satu kebiasaan hari itu (refleksi, syukur, rhema). */
+export function setHabitNote(
+  uid: string,
+  dayId: string,
+  habitId: string,
+  text: string,
+) {
+  const ref = doc(db, 'users', uid, 'habitDays', dayId);
+  return setDoc(ref, { notes: { [habitId]: text } }, { merge: true });
 }
 
 export function setWater(uid: string, dayId: string, count: number) {

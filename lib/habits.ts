@@ -19,7 +19,70 @@ export function slotMeta(slot: HabitSlot) {
   return HABIT_SLOTS.find((s) => s.key === slot)!;
 }
 
-export type ScheduledHabit = { id: string; label: string; slot: HabitSlot };
+// ===================== Area & tingkat kepentingan =====================
+// Kesehatan bukan cuma badan. Tiap kebiasaan ditandai AREA hidup yang ia jaga
+// dan TINGKAT dampaknya, supaya ukuran keberhasilan harian bukan lagi
+// "berapa dari 39 yang tercentang", melainkan "apakah 5 area ini terjaga".
+
+export type HabitArea = 'body' | 'mind' | 'spirit' | 'social' | 'recovery';
+
+export const HABIT_AREAS: {
+  key: HabitArea;
+  label: string;
+  emoji: string;
+}[] = [
+  { key: 'body', label: 'Body', emoji: '🏃' },
+  { key: 'mind', label: 'Mind', emoji: '🧠' },
+  { key: 'spirit', label: 'Spirit', emoji: '🙏' },
+  { key: 'social', label: 'Relationship', emoji: '❤️' },
+  { key: 'recovery', label: 'Recovery', emoji: '😴' },
+];
+
+export function areaMeta(area: HabitArea) {
+  return HABIT_AREAS.find((a) => a.key === area)!;
+}
+
+/**
+ * 🟢 core     — penentu streak & skor. Kalau cuma sempat sedikit, ini dulu.
+ * 🟡 support  — menambah skor, tapi tidak menghanguskan streak.
+ * ⚪ optional — bonus murni: tidak masuk hitungan skor sama sekali.
+ */
+export type HabitTier = 'core' | 'support' | 'optional';
+
+export const HABIT_TIERS: {
+  key: HabitTier;
+  label: string;
+  emoji: string;
+}[] = [
+  { key: 'core', label: 'Inti', emoji: '🟢' },
+  { key: 'support', label: 'Pendukung', emoji: '🟡' },
+  { key: 'optional', label: 'Opsional', emoji: '⚪' },
+];
+
+export function tierMeta(tier: HabitTier) {
+  return HABIT_TIERS.find((t) => t.key === tier)!;
+}
+
+export type ScheduledHabit = {
+  id: string;
+  label: string;
+  slot: HabitSlot;
+  /** Kebiasaan lama belum punya ini — dianggap Body/Pendukung. */
+  area?: HabitArea;
+  tier?: HabitTier;
+  /** true = selain dicentang, kebiasaan ini minta catatan singkat. */
+  note?: boolean;
+  /** Petunjuk isian saat `note` aktif, mis. "Win / Learn / Tomorrow". */
+  notePrompt?: string;
+};
+
+export function habitArea(h: ScheduledHabit): HabitArea {
+  return h.area ?? 'body';
+}
+
+export function habitTier(h: ScheduledHabit): HabitTier {
+  return h.tier ?? 'support';
+}
 
 /**
  * Sesi waktu sekarang (untuk reminder Dashboard & tab default Habits).
@@ -81,6 +144,83 @@ function allHabitsDone(
   return habits.length > 0 && habits.every((h) => done[h.id]);
 }
 
+// ===================== Skor & streak =====================
+// Streak TIDAK lagi menuntut seluruh kebiasaan tercentang (dengan 39 kebiasaan
+// itu praktis mustahil, dan rentetannya jadi selalu 0). Yang menentukan cuma
+// kebiasaan 🟢 Inti; pendukung & opsional murni bonus.
+
+export function coreHabits(habits: ScheduledHabit[]): ScheduledHabit[] {
+  return habits.filter((h) => habitTier(h) === 'core');
+}
+
+/** Semua kebiasaan Inti hari ini sudah beres? → penentu naiknya streak 🔥 */
+export function coreDone(
+  habits: ScheduledHabit[],
+  done: Record<string, boolean>,
+): boolean {
+  const core = coreHabits(habits);
+  return core.length > 0 && core.every((h) => done[h.id]);
+}
+
+/**
+ * Skor harian 0–10: 70% dari kebiasaan Inti, 30% dari Pendukung.
+ * Opsional sengaja tidak ikut dihitung — biar mengejarnya tidak jadi beban.
+ */
+export function dailyScore(
+  habits: ScheduledHabit[],
+  done: Record<string, boolean>,
+): number {
+  const part = (tier: HabitTier) => {
+    const list = habits.filter((h) => habitTier(h) === tier);
+    if (list.length === 0) return null;
+    return list.filter((h) => done[h.id]).length / list.length;
+  };
+  const core = part('core');
+  const support = part('support');
+  if (core === null && support === null) return 0;
+  if (core === null) return Math.round(support! * 10);
+  if (support === null) return Math.round(core * 10);
+  return Math.round((core * 0.7 + support * 0.3) * 10);
+}
+
+export type AreaProgress = {
+  area: HabitArea;
+  coreDone: number;
+  coreTotal: number;
+  done: number; // termasuk pendukung (opsional tidak dihitung)
+  total: number;
+  kept: boolean; // semua kebiasaan Inti area ini beres
+};
+
+/**
+ * Rekap per area untuk hari ini. Area tanpa kebiasaan Inti dianggap terjaga
+ * begitu minimal satu kebiasaannya dilakukan.
+ */
+export function areaProgress(
+  habits: ScheduledHabit[],
+  done: Record<string, boolean>,
+): AreaProgress[] {
+  return HABIT_AREAS.map(({ key }) => {
+    const inArea = habits.filter(
+      (h) => habitArea(h) === key && habitTier(h) !== 'optional',
+    );
+    const core = inArea.filter((h) => habitTier(h) === 'core');
+    const coreDoneCount = core.filter((h) => done[h.id]).length;
+    const doneCount = inArea.filter((h) => done[h.id]).length;
+    return {
+      area: key,
+      coreDone: coreDoneCount,
+      coreTotal: core.length,
+      done: doneCount,
+      total: inArea.length,
+      kept:
+        core.length > 0
+          ? coreDoneCount === core.length
+          : inArea.length > 0 && doneCount > 0,
+    };
+  });
+}
+
 /**
  * Sesi yang dibuka pertama kali di tab Habits: mengikuti jam sekarang —
  * KECUALI kalau semua kebiasaan hari ini sudah beres. Kalau sudah beres tidak
@@ -104,6 +244,128 @@ export function defaultSlot(
 /** ID unik untuk kebiasaan baru yang dibuat pengguna. */
 export function newHabitId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// ===================== Penata otomatis =====================
+// Menebak area & tingkat dari NAMA kebiasaan, supaya 39 kebiasaan yang sudah
+// ada tidak perlu ditandai satu-satu. Urutan aturan penting: yang paling
+// spesifik (dan yang Opsional) diperiksa duluan.
+//
+// Hasil tebakan boleh salah — tinggal dibetulkan lewat modal ubah kebiasaan.
+
+const CLASSIFY_RULES: {
+  match: RegExp;
+  area: HabitArea;
+  tier: HabitTier;
+}[] = [
+  // ⚪ Opsional — enak dilakukan, tapi bukan penentu kesehatan.
+  { match: /cotton|korek kuping/i, area: 'body', tier: 'optional' },
+  { match: /castor/i, area: 'body', tier: 'optional' },
+  { match: /cider|cuka apel|\bacv\b/i, area: 'body', tier: 'optional' },
+  { match: /honey|madu/i, area: 'body', tier: 'optional' },
+  { match: /(cold|dingin).*(face|wajah|muka)|soak face/i, area: 'body', tier: 'optional' },
+  { match: /warm water|air hangat/i, area: 'body', tier: 'optional' },
+  // 😴 Recovery
+  { match: /wake ?up|bangun/i, area: 'recovery', tier: 'core' },
+  { match: /sleep|tidur|phone away|wind ?down|jauhkan hp|matikan hp/i, area: 'recovery', tier: 'core' },
+  { match: /prepare|persiap|siapkan|besok|tomorrow/i, area: 'recovery', tier: 'support' },
+  // 🙏 Spirit
+  { match: /communion|perjamuan/i, area: 'spirit', tier: 'core' },
+  { match: /bible|alkitab|revive|renungan|khotbah|sermon|\bdoa\b|pray|firman|rhema|syukur|gratitude/i, area: 'spirit', tier: 'core' },
+  { match: /share|ig story|instagram|whatsapp|\bwa\b/i, area: 'spirit', tier: 'support' },
+  // ❤️ Relationship
+  { match: /encourage|semangati|bless|memberkati|follow ?up|kabari|hubungi/i, area: 'social', tier: 'core' },
+  // 🧠 Mind
+  { match: /plan|prioritas|priorit/i, area: 'mind', tier: 'core' },
+  { match: /reflect|refleksi|journal|jurnal/i, area: 'mind', tier: 'core' },
+  { match: /news|berita|duolingo|belajar|learn|reading the|baca buku/i, area: 'mind', tier: 'support' },
+  { match: /\bbed\b|rapikan/i, area: 'mind', tier: 'support' },
+  // 🏃 Body — inti
+  { match: /run|lari|walk|jalan|fitness|gym|strength|workout|olahraga|latihan|angkat beban/i, area: 'body', tier: 'core' },
+  { match: /sunscreen|\bspf\b|tabir surya/i, area: 'body', tier: 'core' },
+  { match: /protein|telur|\begg|whey|sayur|buah|makan|breakfast|sarapan|lunch|dinner|minum air|air putih/i, area: 'body', tier: 'core' },
+  // 🏃 Body — pendukung
+  { match: /stretch|mobility|peregangan/i, area: 'body', tier: 'support' },
+  { match: /vitamin|fish oil|creatine|suplemen|supplement|omega/i, area: 'body', tier: 'support' },
+  { match: /shower|mandi|scrub|lotion|skincare|serum|gigi|cukur/i, area: 'body', tier: 'support' },
+  { match: /kopi|coffee|americano|caffeine|kafein/i, area: 'body', tier: 'support' },
+];
+
+/** Tebak area & tingkat satu kebiasaan dari namanya. */
+export function classifyHabit(label: string): {
+  area: HabitArea;
+  tier: HabitTier;
+} {
+  for (const rule of CLASSIFY_RULES) {
+    if (rule.match.test(label)) return { area: rule.area, tier: rule.tier };
+  }
+  return { area: 'body', tier: 'support' };
+}
+
+/** Isi area & tingkat untuk kebiasaan yang BELUM ditandai (yang sudah, dibiarkan). */
+export function classifyAll(habits: ScheduledHabit[]): ScheduledHabit[] {
+  return habits.map((h) =>
+    h.area && h.tier ? h : { ...h, ...classifyHabit(h.label) },
+  );
+}
+
+/** Ada kebiasaan yang belum punya area/tingkat? → tawarkan penataan otomatis. */
+export function needsClassify(habits: ScheduledHabit[]): number {
+  return habits.filter((h) => !h.area || !h.tier).length;
+}
+
+// ===================== Paket kebiasaan malam =====================
+// Bagian paling lemah dari rutinitas: tidur & pemulihan. Empat kebiasaan ini
+// (plus satu di pagi) ditambahkan sekali ketuk — bukan dipaksa masuk, supaya
+// daftar tetap milikmu.
+
+export const RECOVERY_PACK: Omit<ScheduledHabit, 'id'>[] = [
+  {
+    label: '📱 Phone Away — 21.30',
+    slot: 'night',
+    area: 'recovery',
+    tier: 'core',
+  },
+  {
+    label: '🧠 Refleksi Hari Ini',
+    slot: 'night',
+    area: 'mind',
+    tier: 'core',
+    note: true,
+    notePrompt: 'Win hari ini… / Pelajaran… / Besok…',
+  },
+  {
+    label: '🙏 Bersyukur 3 Hal',
+    slot: 'night',
+    area: 'spirit',
+    tier: 'core',
+    note: true,
+    notePrompt: 'Terima kasih Tuhan untuk… (3 hal)',
+  },
+  {
+    label: '😴 Tidur 22.00–22.30',
+    slot: 'night',
+    area: 'recovery',
+    tier: 'core',
+  },
+  {
+    label: '✍️ 1 Kalimat Rhema',
+    slot: 'morning',
+    area: 'spirit',
+    tier: 'support',
+    note: true,
+    notePrompt: 'Hari ini Tuhan mengingatkanku bahwa…',
+  },
+];
+
+/** Kebiasaan dari paket yang BELUM ada di daftar (dicocokkan dari namanya). */
+export function missingFromPack(habits: ScheduledHabit[]): Omit<ScheduledHabit, 'id'>[] {
+  const owned = habits.map((h) => h.label.toLowerCase());
+  return RECOVERY_PACK.filter((p) => {
+    // Bandingkan tanpa emoji & jam, cukup kata kuncinya.
+    const key = p.label.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8);
+    return !owned.some((o) => o.replace(/[^a-z]/g, '').includes(key));
+  });
 }
 
 function scheduleRef(uid: string) {

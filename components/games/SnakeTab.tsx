@@ -106,7 +106,9 @@ export function SnakeTab() {
   // Arah yang ditekan pemain — dibaca saat tick berikutnya supaya menekan dua
   // tombol dalam satu tick tidak membuat ular menembus badannya sendiri.
   const wantedDir = useRef<Dir>('right');
-  // Lebar papan diukur saat tata letak selesai → ukuran satu kotak.
+  // Papan mengambil SISA ruang di antara skor & tombol arah, lalu dibuat
+  // persegi dari sisi terpendeknya — supaya tombol arah tidak pernah tertutup
+  // tab bar di bawah, di layar tinggi maupun pendek.
   const [boardSize, setBoardSize] = useState(0);
   const cell = boardSize / GRID;
 
@@ -160,10 +162,14 @@ export function SnakeTab() {
         </View>
       </View>
 
-      {/* Papan */}
+      {/* Papan — ukurannya menyesuaikan sisa ruang yang tersedia */}
       <View
-        style={styles.board}
-        onLayout={(e) => setBoardSize(e.nativeEvent.layout.width)}>
+        style={styles.boardWrap}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          setBoardSize(Math.floor(Math.min(width, height)));
+        }}>
+        <View style={[styles.board, { width: boardSize, height: boardSize }]}>
         {boardSize > 0 && (
           <>
             {/* Makanan */}
@@ -218,6 +224,7 @@ export function SnakeTab() {
             />
           </View>
         )}
+        </View>
       </View>
 
       {/* Tombol arah: atas · kiri/kanan · bawah */}
@@ -255,8 +262,8 @@ function DirButton({
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, paddingHorizontal: 20, paddingTop: 4 },
-  scoreRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  flex: { flex: 1, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
+  scoreRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   scoreBox: {
     flex: 1,
     alignItems: 'center',
@@ -264,14 +271,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Color.TOURNAMENT_DARK,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   scoreValue: { color: Color.TOURNAMENT_DARK },
   scoreLabel: { color: Color.TOURNAMENT_DARK },
-  // Papan persegi — lebarnya mengikuti layar, tingginya menyesuaikan sendiri.
+  // Pembungkus papan: mengambil SISA tinggi layar, papannya ditengahkan.
+  boardWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // Papan persegi — ukurannya diisi dari hasil pengukuran boardWrap.
   board: {
-    width: '100%',
-    aspectRatio: 1,
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 18,
     borderWidth: 2,
@@ -306,13 +313,13 @@ const styles = StyleSheet.create({
   overlayTitle: { color: Color.TEXT_REVERSE },
   overlayText: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   startButton: { marginTop: 12, alignSelf: 'stretch' },
-  // Tombol arah
-  pad: { alignItems: 'center', gap: 10, marginTop: 14 },
-  padMiddle: { flexDirection: 'row', gap: 64 },
+  // Tombol arah — tinggi tetap, jadi papan di atasnya yang mengalah.
+  pad: { alignItems: 'center', gap: 8, marginTop: 10 },
+  padMiddle: { flexDirection: 'row', gap: 56 },
   padButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Color.TOURNAMENT,
