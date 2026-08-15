@@ -316,6 +316,11 @@ const REMINDERS: string[] = [
   '🛑 Merasa bersalah saat istirahat? Sabat itu perintah, bukan kemalasan.',
   '🌿 Yesus pun mengundurkan diri ke tempat sunyi untuk berdoa (Luk 5:16). Ikuti ritme-Nya.',
   '❤️‍🩹 Pelayanan tanpa doa itu kekeringan yang tertunda. Isi dulu, baru tuang.',
+  '⏳ Sabar itu kunci — proses jauh lebih berharga daripada bukti instan.',
+  '🧠 Kurang hikmat? Minta ke Tuhan. Dia memberi dengan murah hati, asal minta tanpa bimbang.',
+  '📵 Stop scrolling, start building. Pray hard, work hard.',
+  '🌱 Yang tumbuh cepat gampang tumbang. Biarkan Tuhan membangun akarmu dulu.',
+  '🔨 Tuhan lebih peduli siapa kamu jadinya daripada seberapa cepat kamu sampai.',
 ];
 
 /** Reminder hari ini — sama sepanjang hari, ganti otomatis tiap hari. */

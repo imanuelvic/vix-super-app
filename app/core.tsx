@@ -4,7 +4,11 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -22,6 +26,9 @@ import {
     subscribeMainTeam,
     subscribeMonthlyPrayers,
     subscribeVisitations,
+    weekIndex,
+    WEEKLY_FOCUS_COUNT,
+    weeklyLeaders,
     type CoreIdeasData,
     type CoreLeader,
     type MainTeamMember,
@@ -157,8 +164,19 @@ export default function CoreScreen() {
         )}
       </View>
 
-      {/* Tab bar bawah khusus layar CORE */}
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Badge Follow Up = 2 CL fokus minggu ini yang belum di-follow up hari
+          ini — angka yang sama dengan badge tile CORE di Home. */}
+      <BottomTabs
+        tabs={withBadge(TABS, {
+          followup: weeklyLeaders(
+            leaders ?? [],
+            weekIndex(new Date()),
+            WEEKLY_FOCUS_COUNT,
+          ).filter((l) => l.lastFollowupDayId !== dayId).length,
+        })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }

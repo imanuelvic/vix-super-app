@@ -4,7 +4,11 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
@@ -159,8 +163,13 @@ export default function SpiritualScreen() {
         )}
       </View>
 
-      {/* Tab bar bawah */}
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Badge Revive = 1 kalau Revive hari ini belum ditulis — angka yang
+          sama dengan badge tile Spiritual di Home. */}
+      <BottomTabs
+        tabs={withBadge(TABS, { revive: todayEntry ? 0 : 1 })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }

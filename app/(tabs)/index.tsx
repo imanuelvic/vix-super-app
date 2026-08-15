@@ -56,9 +56,11 @@ import {
   type ScheduledHabit,
 } from '@/lib/habits';
 import {
+  bumpWaterStreak,
   dayDocId,
   setWater,
   subscribeHabitDay,
+  subscribeWaterStreak,
   WATER_GOAL,
   type HabitDay,
 } from '@/lib/health';
@@ -106,13 +108,16 @@ const FEATURES: {
     | 'person.3.fill'
     | 'mountain.2.fill'
     | 'dumbbell.fill'
-    | 'globe';
+    | 'globe'
+    | 'graduationcap.fill';
+  /** Kalau diisi, tile memakai emoji ini alih-alih ikon (mis. 🕊️ Spiritual). */
+  emoji?: string;
   route: Href;
   bg: string;
   fg: string;
 }[] = [
   { key: 'tasks', label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK },
-  { key: 'spiritual', label: 'Spiritual', icon: 'book.closed.fill', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
+  { key: 'spiritual', label: 'Spiritual', icon: 'book.closed.fill', emoji: '🕊️', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
   { key: 'health', label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.FINANCE_EXPENSE, fg: Color.DANGER },
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
 
@@ -129,6 +134,7 @@ const FEATURES: {
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
   { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
   { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
+  { key: 'learning', label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
 ];
 
 export default function HomeScreen() {
@@ -153,6 +159,8 @@ export default function HomeScreen() {
   // Bacaan Alkitab hari ini — null = belum termuat.
   const [bibleReading, setBibleReading] =
     useState<BibleReadingSessions | null>(null);
+  // Rentetan hari "cukup 8 gelas" — dicatat saat gelas ke-8 hari ini tercapai.
+  const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & badge yang
   // bergantung waktu (mobil/rumah).
@@ -162,7 +170,11 @@ export default function HomeScreen() {
     return () => clearInterval(t);
   }, []);
 
-  const todayId = dayDocId(new Date());
+  // Diturunkan dari `now` (bukan `new Date()` lepas) supaya pergantian hari
+  // benar-benar terdeteksi: lewat tengah malam id-nya berubah → listener di
+  // bawah berlangganan ulang ke dokumen hari BARU, jadi air putih & ceklis
+  // kembali 0 sendiri walau app dibiarkan terbuka semalaman.
+  const todayId = dayDocId(now);
 
   useEffect(() => {
     if (!user) return;
@@ -179,6 +191,7 @@ export default function HomeScreen() {
       subscribeFreelance(user.uid, setFreelance),
       subscribeOtherTasks(user.uid, setOtherTasks),
       subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
+      subscribeWaterStreak(user.uid, setWaterStreak),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
@@ -246,8 +259,14 @@ export default function HomeScreen() {
   // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).
   async function changeWater(delta: number) {
     if (!user || !day) return;
+    const next = day.water + delta;
     try {
-      await setWater(user.uid, todayId, day.water + delta);
+      await setWater(user.uid, todayId, next);
+      // Rentetan naik SEKALI per hari, tepat saat target tercapai. Turun lagi
+      // ke bawah target tidak membatalkan — harinya memang sudah tercapai.
+      if (next >= WATER_GOAL) {
+        await bumpWaterStreak(user.uid, waterStreak, todayId);
+      }
     } catch {
       // Diamkan — snapshot akan mengoreksi tampilan otomatis.
     }
@@ -382,7 +401,13 @@ export default function HomeScreen() {
                       if (user) logFeatureUse(user.uid, feature.key, feature.label);
                       router.push(feature.route);
                     }}>
-                    <IconSymbol name={feature.icon} size={30} color={feature.fg} />
+                    {feature.emoji ? (
+                      <VixText additionalStyle={styles.tileEmoji}>
+                        {feature.emoji}
+                      </VixText>
+                    ) : (
+                      <IconSymbol name={feature.icon} size={30} color={feature.fg} />
+                    )}
                   </PressableScale>
                   {/* Badge merah: tugas harian fitur ini yang belum selesai */}
                   {badge > 0 && (
@@ -413,7 +438,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 8,
     // Sejajar dengan kolom konten yang ditengahkan (iPad/layar lebar).
     width: '100%',
     maxWidth: 680,
@@ -421,14 +446,14 @@ const styles = StyleSheet.create({
   },
   brand: { color: Color.MAIN },
   brandRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  content: { paddingBottom: 40, alignItems: 'center' },
+  content: { paddingBottom: 24, alignItems: 'center' },
   // Lebar konten dibatasi & otomatis di tengah (HP: penuh; iPad: ~680 di tengah).
   contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20 },
   welcomeCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
-    padding: 22,
-    marginBottom: 24,
+    padding: 18,
+    marginBottom: 14,
   },
   welcomeTop: {
     flexDirection: 'row',
@@ -488,7 +513,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 16,
+    // Jarak antar-kolom tetap; jarak antar-BARIS dirapatkan supaya keempat
+    // baris tile muat sekali layar di iPhone 15 (tak perlu scroll).
+    columnGap: 16,
+    rowGap: 10,
   },
   gridItem: { width: '21.5%', alignItems: 'center' },
   tile: {
@@ -498,7 +526,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tileLabel: { textAlign: 'center', marginTop: 8 },
+  // Judul ditarik naik setengah baris → separuh atasnya menumpang di bagian
+  // bawah tile (lineHeight label 19.5 ÷ 2 ≈ 10). Judul digambar SETELAH tile,
+  // jadi otomatis berada di atasnya.
+  // Emoji tile (mis. 🕊️) — disamakan tingginya dengan ikon 30px.
+  tileEmoji: { fontSize: 30, lineHeight: 38 },
+  tileLabel: { textAlign: 'center', marginTop: -10 },
   badge: {
     position: 'absolute',
     top: -6,

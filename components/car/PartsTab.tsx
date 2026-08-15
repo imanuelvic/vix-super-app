@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -23,8 +24,8 @@ import { SAVE_ERROR } from '@/lib/messages';
 
 const TONE_LABEL: Record<PartTone, string> = {
   ok: '✅ Aman',
-  warn: '⚠️ Segera',
-  over: '🔴 Lewat jadwal',
+  warn: '⚠️ Besok', // tinggal sehari lagi
+  over: '🔴 Sekarang', // hari-H atau sudah lewat
   unknown: '❓ Belum dicatat',
 };
 
@@ -36,6 +37,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
 
   const [editing, setEditing] = useState<CarPart | null>(null);
   const [fDate, setFDate] = useState(new Date());
+  const [fNote, setFNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -50,6 +52,8 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
   function openEdit(part: CarPart) {
     setEditing(part);
     setFDate(new Date());
+    // Catatan terakhir untuk part ini muncul lagi — biar tak lupa.
+    setFNote(status[part.key]?.note ?? '');
     setError(null);
   }
 
@@ -58,7 +62,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
     setBusy(true);
     setError(null);
     try {
-      await setPartDate(user.uid, editing.key, fDate);
+      await setPartDate(user.uid, editing.key, fDate, fNote.trim());
       setEditing(null);
     } catch {
       setError(SAVE_ERROR);
@@ -152,6 +156,15 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
         </VixText>
         {/* key = part supaya state picker internal reset tiap ganti part */}
         <DateField key={editing?.key} value={fDate} onChange={setFDate} />
+        {/* Catatan pribadi — hanya terlihat di modal ini, tidak di daftar. */}
+        <FormInput
+          placeholder="Catatan (bengkel, merek, harga…)"
+          value={fNote}
+          onChangeText={setFNote}
+          editable={!busy}
+          multiline
+          style={styles.noteInput}
+        />
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
             {error}
@@ -200,5 +213,6 @@ const styles = StyleSheet.create({
   dateLine: { color: Color.TEXT_PLACEHOLDER },
   modalTitle: { marginBottom: 2 },
   modalHint: { marginBottom: 10 },
+  noteInput: { marginTop: 10, minHeight: 76, textAlignVertical: 'top' },
   error: { color: Color.DANGER, marginTop: 8 },
 });

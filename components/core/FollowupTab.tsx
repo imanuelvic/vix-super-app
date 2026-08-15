@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -18,6 +18,8 @@ import { useAuth } from '@/contexts/auth';
 import {
   isCurrentMonthPrayers,
   isPrayerFollowupDay,
+  markBirthdayGreeted,
+  subscribeBirthdayGreets,
   monthDocId,
   monthlyPointsFor,
   monthlyPrayersFilled,
@@ -38,6 +40,7 @@ import {
   type CoreLeader,
   type IdeaCadence,
   type MainTeamMember,
+  type BirthdayGreets,
   type MonthlyPrayers,
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
@@ -63,6 +66,12 @@ export function FollowupTab({
   const router = useRouter();
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  // Siapa yang sudah dikirimi ucapan ulang tahun hari ini → kartunya hilang.
+  const [greets, setGreets] = useState<BirthdayGreets>({});
+  useEffect(() => {
+    if (!user) return;
+    return subscribeBirthdayGreets(user.uid, setGreets);
+  }, [user]);
   // "Ganti pertanyaan" → seed acak per orang untuk memilih pertanyaan lain.
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
   // Modal tengah: pokok doa 1 CL (follow up), dan ide pendekatan 1 CL.
@@ -380,32 +389,38 @@ export function FollowupTab({
         </VixText>
       )}
 
-      {/* ===== Ulang tahun hari ini (CL + Main Team) ===== */}
-      {birthdays.today.map((b) => (
-        <View key={b.key} style={styles.birthdayCard}>
-          <VixText heading="title" additionalStyle={styles.birthdayTitle}>
-            🎂 {b.label} ulang tahun HARI INI!
-          </VixText>
-          <VixText heading="paragraph" additionalStyle={styles.birthdayText}>
-            {b.sub ? `${b.sub} — ` : ''}Genap {b.turningAge} tahun. Jangan lupa
-            kirim ucapan & doa 🥳
-          </VixText>
-          {b.phone && (
-            <PressableScale
-              style={styles.waButton}
-              onPress={() =>
-                openWhatsApp(
-                  b.phone!,
-                  `Selamat ulang tahun ke-${b.turningAge}, ${b.name}! 🎉 Tuhan Yesus memberkati tahun barumu 🙏`,
-                )
-              }>
-              <VixText heading="bold" additionalStyle={styles.waText}>
-                💬 Kirim Ucapan via WA
-              </VixText>
-            </PressableScale>
-          )}
-        </View>
-      ))}
+      {/* ===== Ulang tahun hari ini (CL + Main Team) =====
+          Yang sudah dikirimi ucapan hari ini tidak ditampilkan lagi. */}
+      {birthdays.today
+        .filter((b) => greets[b.key] !== dayId)
+        .map((b) => (
+          <View key={b.key} style={styles.birthdayCard}>
+            <VixText heading="title" additionalStyle={styles.birthdayTitle}>
+              🎂 {b.label} ulang tahun HARI INI!
+            </VixText>
+            <VixText heading="paragraph" additionalStyle={styles.birthdayText}>
+              {b.sub ? `${b.sub} — ` : ''}Genap {b.turningAge} tahun. Jangan
+              lupa kirim ucapan & doa 🥳
+            </VixText>
+            {b.phone && (
+              <PressableScale
+                style={styles.waButton}
+                onPress={() => {
+                  openWhatsApp(
+                    b.phone!,
+                    `Selamat ulang tahun ke-${b.turningAge}, ${b.name}! 🎉 Tuhan Yesus memberkati tahun barumu 🙏`,
+                  );
+                  if (user) {
+                    markBirthdayGreeted(user.uid, b.key, dayId).catch(() => {});
+                  }
+                }}>
+                <VixText heading="bold" additionalStyle={styles.waText}>
+                  💬 Chat
+                </VixText>
+              </PressableScale>
+            )}
+          </View>
+        ))}
 
       {/* Ulang tahun mendekat (≤ 7 hari) */}
       {birthdays.upcoming.length > 0 && (

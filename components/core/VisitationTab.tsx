@@ -12,6 +12,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -218,8 +219,15 @@ export function VisitationTab({
         {v.note ? (
           <VixText heading="label">🏷️ Judul: {v.note}</VixText>
         ) : null}
+        {/* Agenda bisa panjang & berbaris-baris → labelnya di baris sendiri,
+            isinya turun ke bawah supaya tetap terbaca rapi. */}
         {v.agenda ? (
-          <VixText heading="label">🗒️ Agenda: {v.agenda}</VixText>
+          <View>
+            <VixText heading="label">🗒️ Agenda:</VixText>
+            <VixText heading="label" additionalStyle={styles.blockText}>
+              {v.agenda}
+            </VixText>
+          </View>
         ) : null}
       </PressableScale>
     );
@@ -294,32 +302,36 @@ export function VisitationTab({
         visible={!!editing}
         title={editing === 'new' ? 'Jadwalkan Pertemuan' : 'Edit Pertemuan'}
         onClose={() => setEditing(null)}>
+        {/* Picker: daftar pilihan baru muncul saat baris ini ditekan, jadi
+            modal tidak langsung penuh oleh semua jenis & nama CORE. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Jenis pertemuan
         </VixText>
-        <View style={styles.leaderWrap}>
-          {MEETING_KINDS.map((k) => (
-            <Chip
-              key={k.key}
-              label={`${k.icon} ${k.label}`}
-              active={fKind === k.key}
-              onPress={() => setFKind(k.key)}
-            />
-          ))}
+        <View style={styles.formGap}>
+          <SelectField
+            value={fKind}
+            options={MEETING_KINDS.map((k) => ({
+              key: k.key,
+              label: `${k.icon} ${k.label}`,
+            }))}
+            onChange={(k) => k && setFKind(k)}
+            placeholder="Pilih jenis pertemuan…"
+          />
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           CORE-nya siapa?
         </VixText>
-        <View style={styles.leaderWrap}>
-          {leaders.map((l) => (
-            <Chip
-              key={l.id}
-              label={`${l.heart} ${l.name}`}
-              active={fLeaderId === l.id}
-              onPress={() => setFLeaderId(l.id)}
-            />
-          ))}
+        <View style={styles.formGap}>
+          <SelectField
+            value={fLeaderId}
+            options={leaders.map((l) => ({
+              key: l.id,
+              label: `${l.heart} ${l.name}`,
+            }))}
+            onChange={(id) => id && setFLeaderId(id)}
+            placeholder="Pilih CORE Leader…"
+          />
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -508,6 +520,8 @@ const styles = StyleSheet.create({
   },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   kindLine: { color: Color.MAIN },
+  // Isi kolom panjang (agenda/catatan) — sedikit menjorok dari labelnya.
+  blockText: { color: Color.TEXT_PARAGRAPH, paddingLeft: 2 },
   statusSoon: { color: Color.ACCENT_DARK },
   statusToday: { color: Color.DANGER },
   statusDone: { color: Color.SUCCESS },

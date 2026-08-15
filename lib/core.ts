@@ -756,6 +756,39 @@ export function saveMonthlyPrayers(uid: string, data: MonthlyPrayers) {
   return setDoc(doc(db, 'users', uid, 'core', 'monthlyPrayers'), data);
 }
 
+// ==================== Ucapan ulang tahun 🎂 ====================
+// users/{uid}/core/birthdayGreets — { greeted: { [personId]: dayId } }.
+// Begitu ucapan dikirim, kartu ulang tahun hari itu hilang biar tidak
+// mengganggu lagi. Tahun depan otomatis muncul lagi (dayId-nya beda).
+
+export type BirthdayGreets = Record<string, string>;
+
+export function subscribeBirthdayGreets(
+  uid: string,
+  onChange: (greets: BirthdayGreets) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return onSnapshot(
+    doc(db, 'users', uid, 'core', 'birthdayGreets'),
+    (snapshot) =>
+      onChange((snapshot.data()?.greeted as BirthdayGreets) ?? {}),
+    onError,
+  );
+}
+
+/** Tandai satu orang sudah diberi ucapan hari ini (merge — yang lain tetap). */
+export function markBirthdayGreeted(
+  uid: string,
+  personId: string,
+  dayId: string,
+) {
+  return setDoc(
+    doc(db, 'users', uid, 'core', 'birthdayGreets'),
+    { greeted: { [personId]: dayId } },
+    { merge: true },
+  );
+}
+
 /** Data ini milik bulan berjalan? Kalau beda bulan → perlu diperbarui. */
 export function isCurrentMonthPrayers(data: MonthlyPrayers, now: Date): boolean {
   return data.monthId === monthDocId(now);

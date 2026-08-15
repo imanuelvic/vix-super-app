@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { daysBetween } from './format';
 
 // Fitur Residence 🏠 — rumah kontrakan Casa Jardin. Mirip fitur Car:
 // 1) Air-Listrik: catatan harian isi token listrik & bayar air PAM.
@@ -213,7 +214,12 @@ export const CHORE_GROUPS: ChoreGroup[] = [
 export type ChoreTone = 'ok' | 'warn' | 'over' | 'unknown';
 
 /** Tanggal terakhir tiap chore dikerjakan: users/{uid}/house/chores. */
-export type ChoreStatusMap = Record<string, { last: Timestamp }>;
+// `note` = catatan pribadi (mis. pakai cairan apa, tukang siapa). Sengaja
+// TIDAK ditampilkan di daftar — hanya muncul lagi saat modalnya dibuka.
+export type ChoreStatusMap = Record<
+  string,
+  { last: Timestamp; note?: string }
+>;
 
 export function subscribeChoreStatus(
   uid: string,
@@ -230,12 +236,17 @@ export function subscribeChoreStatus(
   );
 }
 
-export function setChoreDate(uid: string, key: string, date: Date) {
+export function setChoreDate(
+  uid: string,
+  key: string,
+  date: Date,
+  note = '',
+) {
   const ref = doc(db, 'users', uid, 'house', 'chores');
   // merge: hanya chore ini yang berubah, status lain tetap.
   return setDoc(
     ref,
-    { status: { [key]: { last: Timestamp.fromDate(date) } } },
+    { status: { [key]: { last: Timestamp.fromDate(date), note } } },
     { merge: true },
   );
 }
@@ -255,9 +266,9 @@ export function choreCondition(
 ): { tone: ChoreTone; dueDate: Date | null } {
   if (!last) return { tone: 'unknown', dueDate: null };
   const due = new Date(last.toDate().getTime() + intervalDays * 86_400_000);
-  const msLeft = due.getTime() - now.getTime();
-  const tone: ChoreTone =
-    msLeft < 0 ? 'over' : msLeft <= 2 * 86_400_000 ? 'warn' : 'ok';
+  // Rumah TIDAK punya peringatan H-1 — langsung "Sekarang" di hari-H saja.
+  // (Beda dengan Car yang masih punya aba-aba "Besok".)
+  const tone: ChoreTone = daysBetween(now, due) <= 0 ? 'over' : 'ok';
   return { tone, dueDate: due };
 }
 

@@ -9,6 +9,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -714,12 +715,6 @@ function PersonalityFields({
   love: string | null;
   setLove: (v: string | null) => void;
 }) {
-  const pick = (
-    cur: string | null,
-    val: string,
-    set: (v: string | null) => void,
-  ) => set(cur === val ? null : val);
-
   // DISC urut prioritas (maks 2). Tekan = tambah ke urutan; tekan lagi =
   // buang. Huruf pertama = prioritas #1, kedua = #2. Disimpan gabungan "CS".
   const discOrder = disc ? disc.split('') : [];
@@ -758,31 +753,31 @@ function PersonalityFields({
           );
         })}
       </View>
+      {/* Picker — daftar 5 love language & 16 MBTI baru muncul saat ditekan,
+          jadi modal tidak langsung penuh oleh semua pilihan. */}
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
         💞 Love Language
       </VixText>
       <View style={styles.pWrap}>
-        {LOVE_LANG_OPTIONS.map((l) => (
-          <Chip
-            key={l.key}
-            label={l.label}
-            active={love === l.key}
-            onPress={() => pick(love, l.key, setLove)}
-          />
-        ))}
+        <SelectField
+          value={love}
+          options={LOVE_LANG_OPTIONS.map((l) => ({ key: l.key, label: l.label }))}
+          onChange={setLove}
+          placeholder="Pilih love language…"
+          clearable
+        />
       </View>
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
         🧩 MBTI
       </VixText>
       <View style={styles.pWrap}>
-        {MBTI_TYPES.map((m) => (
-          <Chip
-            key={m}
-            label={m}
-            active={mbti === m}
-            onPress={() => pick(mbti, m, setMbti)}
-          />
-        ))}
+        <SelectField
+          value={mbti}
+          options={MBTI_TYPES.map((m) => ({ key: m, label: m }))}
+          onChange={setMbti}
+          placeholder="Pilih tipe MBTI…"
+          clearable
+        />
       </View>
     </>
   );

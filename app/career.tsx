@@ -8,13 +8,19 @@ import { BusinessTab } from '@/components/career/BusinessTab';
 import { FreelanceTab } from '@/components/career/FreelanceTab';
 import { FulltimeTab } from '@/components/career/FulltimeTab';
 import { InsuranceTab } from '@/components/career/InsuranceTab';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
+  effectiveRoadmap,
+  freelanceReminderWindow,
   subscribeFreelance,
   subscribeInsurance,
   subscribeRoadmap,
@@ -127,8 +133,22 @@ export default function CareerScreen() {
         )}
       </View>
 
-      {/* Tab bar bawah khusus layar Career */}
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Badge = pecahan dari badge tile Career di Home: P1 Fulltime yang
+          belum selesai, dan Freelance yang deadline-nya sudah H-7. */}
+      <BottomTabs
+        tabs={withBadge(TABS, {
+          fulltime: (roadmap ?? []).filter(
+            (r) =>
+              r.status !== 'done' &&
+              effectiveRoadmap(r, new Date()).priority === 1,
+          ).length,
+          freelance: (freelance ?? []).filter((p) =>
+            freelanceReminderWindow(p, new Date()),
+          ).length,
+        })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }

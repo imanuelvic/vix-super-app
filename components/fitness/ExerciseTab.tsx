@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Linking,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -11,6 +17,7 @@ import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, parseDecimal } from '@/lib/format';
+import { bumpWeekGym } from '@/lib/health';
 import {
   bumpFitStreak,
   fitBlockOf,
@@ -37,13 +44,17 @@ export function ExerciseTab({
   done,
   dayId,
   streak,
+  bodyWeightKg,
 }: {
   weights: FitWeights;
   done: FitDayDone;
   dayId: string;
   streak: LoginStreak | null;
+  /** Berat badan dari fitur Health — satu-satunya sumber, tak bisa diubah di sini. */
+  bodyWeightKg: number | null;
 }) {
   const { user } = useAuth();
+  const { width } = useWindowDimensions();
   const today = new Date();
   const todayWeekday = today.getDay();
   const block = fitBlockOf(today);
@@ -69,11 +80,14 @@ export function ExerciseTab({
     const next = !done[ex.id];
     try {
       await setFitExerciseDone(user.uid, dayId, ex.id, next);
-      // Centang terakhir yang melengkapi sesi → streak naik 🔥
+      // Centang terakhir yang melengkapi sesi → streak naik 🔥 dan hari ini
+      // dihitung sebagai 1 hari strength training di rekap mingguan Health
+      // (target anjuran: minimal 2 hari/minggu).
       if (next) {
         const after = { ...done, [ex.id]: true };
         if (session.exercises.every((e) => after[e.id])) {
           await bumpFitStreak(user.uid, streak, today);
+          await bumpWeekGym(user.uid, today);
         }
       }
     } catch {
@@ -101,42 +115,49 @@ export function ExerciseTab({
     }
   }
 
+  // Layar cukup lebar (iPad) → 7 hari dibagi rata memenuhi satu baris penuh.
+  // Layar sempit (iPhone) → tetap pil selebar tetap yang bisa digeser samping.
+  const oneRow = width - 40 >= DAY_PILL_WIDTH * 7 + DAY_GAP * 6;
+
+  const dayPills = [1, 2, 3, 4, 5, 6, 0].map((wd) => {
+    const s = fitSessionOfWeekday(wd, block);
+    const active = wd === weekday;
+    return (
+      <PressableScale
+        key={wd}
+        style={[
+          styles.dayPill,
+          oneRow && styles.dayPillFill,
+          active && styles.dayPillActive,
+        ]}
+        onPress={() => setWeekday(wd)}>
+        <VixText additionalStyle={[styles.dayEmoji, !s && styles.dayEmojiRest]}>
+          {s ? s.emoji : '😴'}
+        </VixText>
+        <VixText
+          heading="bold"
+          additionalStyle={[styles.dayLabel, active && styles.dayLabelActive]}>
+          {FIT_DAY_SHORT[wd]}
+        </VixText>
+        {wd === todayWeekday && <View style={styles.todayDot} />}
+      </PressableScale>
+    );
+  });
+
   return (
     <View style={styles.flex}>
       {/* Deretan hari — Senin di kiri, hari istirahat ditandai 😴 */}
       <View style={styles.dayStripWrap}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.dayStrip}>
-          {[1, 2, 3, 4, 5, 6, 0].map((wd) => {
-            const s = fitSessionOfWeekday(wd, block);
-            const active = wd === weekday;
-            return (
-              <PressableScale
-                key={wd}
-                style={[styles.dayPill, active && styles.dayPillActive]}
-                onPress={() => setWeekday(wd)}>
-                <VixText
-                  additionalStyle={[
-                    styles.dayEmoji,
-                    !s && styles.dayEmojiRest,
-                  ]}>
-                  {s ? s.emoji : '😴'}
-                </VixText>
-                <VixText
-                  heading="bold"
-                  additionalStyle={[
-                    styles.dayLabel,
-                    active && styles.dayLabelActive,
-                  ]}>
-                  {FIT_DAY_SHORT[wd]}
-                </VixText>
-                {wd === todayWeekday && <View style={styles.todayDot} />}
-              </PressableScale>
-            );
-          })}
-        </ScrollView>
+        {oneRow ? (
+          <View style={styles.dayStrip}>{dayPills}</View>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dayStrip}>
+            {dayPills}
+          </ScrollView>
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -216,17 +237,27 @@ export function ExerciseTab({
                     </VixText>
 
                     <View style={styles.exActions}>
-                      {/* Chip beban — ketuk untuk ubah, tersimpan buat sesi berikutnya */}
-                      <PressableScale
-                        style={styles.weightChip}
-                        onPress={() => openWeight(ex)}
-                        hitSlop={6}>
-                        <VixText heading="label" additionalStyle={styles.weightText}>
-                          {kg == null || kg === 0
-                            ? '🏋️ Berat badan'
-                            : `🏋️ ${formatDecimal(kg)} kg`}
-                        </VixText>
-                      </PressableScale>
+                      {/* Gerakan berat badan → angkanya IKUT fitur Health dan
+                          tidak bisa diubah di sini (berat badan cuma berubah
+                          lewat pengingat timbang tiap Minggu di Health).
+                          Gerakan berbeban → ketuk untuk ubah bebannya. */}
+                      {ex.weight === null ? (
+                        <View style={styles.weightChip}>
+                          <VixText heading="label" additionalStyle={styles.weightText}>
+                            🏋️ Berat badan
+                            {bodyWeightKg ? ` ${formatDecimal(bodyWeightKg)} kg` : ''}
+                          </VixText>
+                        </View>
+                      ) : (
+                        <PressableScale
+                          style={styles.weightChip}
+                          onPress={() => openWeight(ex)}
+                          hitSlop={6}>
+                          <VixText heading="label" additionalStyle={styles.weightText}>
+                            {kg ? `🏋️ ${formatDecimal(kg)} kg` : '🏋️ Tanpa beban'}
+                          </VixText>
+                        </PressableScale>
+                      )}
                       {ex.video ? (
                         <PressableScale
                           style={styles.videoChip}
@@ -277,7 +308,7 @@ export function ExerciseTab({
         </VixText>
         <VixText heading="label" additionalStyle={styles.modalHint}>
           Isi beban yang benar-benar kamu pakai. Tersimpan sebagai patokan sesi
-          berikutnya. Isi 0 kalau pakai berat badan.
+          berikutnya. Isi 0 kalau gerakannya tanpa beban tambahan.
         </VixText>
         <FormInput
           placeholder="Beban (kg)"
@@ -296,20 +327,26 @@ export function ExerciseTab({
   );
 }
 
+// Ukuran pil hari — dipakai juga untuk menghitung apakah 7 hari muat satu baris.
+const DAY_PILL_WIDTH = 58;
+const DAY_GAP = 8;
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   dayStripWrap: { paddingBottom: 6 },
-  dayStrip: { paddingHorizontal: 20, gap: 8 },
+  dayStrip: { flexDirection: 'row', paddingHorizontal: 20, gap: DAY_GAP },
   dayPill: {
     alignItems: 'center',
     gap: 2,
-    width: 58,
+    width: DAY_PILL_WIDTH,
     paddingVertical: 10,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Color.BORDER,
     backgroundColor: Color.CONTAINER,
   },
+  // Mode satu baris penuh (iPad): lebar tetap dilepas, tiap hari bagi rata.
+  dayPillFill: { flex: 1, width: 'auto' },
   dayPillActive: {
     borderColor: Color.FITNESS_DARK,
     backgroundColor: Color.FITNESS,

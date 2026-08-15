@@ -10,10 +10,13 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { daysBetween, formatDate } from '@/lib/format';
+import { FilterChips } from '@/components/common/FilterChips';
+import { SelectField } from '@/components/common/SelectField';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
   addOtherTask,
@@ -22,9 +25,16 @@ import {
   otherTaskDaysUntil,
   OTHER_REMINDER_DAYS,
   setOtherTaskDone,
+  TASK_CATEGORIES,
   updateOtherTask,
   type OtherTask,
+  type TaskCategory,
 } from '@/lib/tasks';
+
+/** Meta kategori (emoji + label) — dipakai kartu & filter. */
+function catMeta(key: TaskCategory | undefined) {
+  return TASK_CATEGORIES.find((c) => c.key === key) ?? TASK_CATEGORIES[0];
+}
 
 /** Tenggat bawaan reminder baru: 14 hari — di luar jendela mendesak H-7. */
 function defaultDeadline(): Date {
@@ -45,8 +55,13 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   const [fTitle, setFTitle] = useState('');
   const [fNote, setFNote] = useState('');
   const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
+  const [fCategory, setFCategory] = useState<TaskCategory>('personal');
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Filter kategori di atas daftar (null = semua). Urutan & emoji mengikuti
+  // sub-tab Reminder Harian — satu sumber, tidak ditulis ulang.
+  const [filterCat, setFilterCat] = useState<TaskCategory | null>(null);
 
   // Tenggat tinggal ≤ 7 hari (termasuk lewat) → otomatis P1 & terkunci.
   const urgent = daysBetween(new Date(), fDeadline) <= OTHER_REMINDER_DAYS;
@@ -58,6 +73,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   const today = new Date();
   const sorted = items
     .map((i) => effectiveOtherTask(i, today))
+    .filter((i) => filterCat === null || (i.category ?? 'personal') === filterCat)
     .sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1;
       if (a.priority !== b.priority) return a.priority - b.priority;
@@ -72,6 +88,8 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     setFTitle('');
     setFNote('');
     setFPriority(2);
+    // Sedang memfilter satu kategori → reminder baru langsung ikut kategori itu.
+    setFCategory(filterCat ?? 'personal');
     setFDeadline(defaultDeadline());
     setFormError(null);
   }
@@ -81,6 +99,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     setFTitle(item.title);
     setFNote(item.note);
     setFPriority(item.priority);
+    setFCategory(item.category ?? 'personal');
     setFDeadline(item.deadline ? item.deadline.toDate() : defaultDeadline());
     setFormError(null);
   }
@@ -109,6 +128,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
         title: fTitle.trim(),
         note: fNote.trim(),
         priority: (urgent ? 1 : fPriority) as 1 | 2 | 3,
+        category: fCategory,
         deadline: fDeadline,
       };
       if (editing === 'new') {
@@ -135,10 +155,6 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     }
   }
 
-  function priorityStyle(p: 1 | 2 | 3) {
-    return p === 1 ? styles.p1 : p === 2 ? styles.p2 : styles.p3;
-  }
-
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -159,6 +175,19 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
           icon="plus"
           onPress={openAdd}
           additionalStyle={styles.addButton}
+        />
+
+        {/* Filter kategori — emoji & urutan sama dengan sub-tab Reminder */}
+        <FilterChips
+          options={TASK_CATEGORIES.map((c) => ({
+            key: c.key,
+            label: `${c.icon} ${c.label}`,
+            count: items.filter(
+              (i) => !i.done && (i.category ?? 'personal') === c.key,
+            ).length,
+          }))}
+          value={filterCat}
+          onChange={setFilterCat}
         />
 
         {error && (
@@ -190,12 +219,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
                 style={styles.cardMain}
                 onPress={() => openEdit(item)}>
                 <View style={styles.cardTitleRow}>
-                  <View
-                    style={[styles.priorityBadge, priorityStyle(item.priority)]}>
-                    <VixText heading="label" additionalStyle={styles.priorityText}>
-                      P{item.priority}
-                    </VixText>
-                  </View>
+                  <PriorityBadge priority={item.priority} />
                   <VixText
                     heading="bold"
                     additionalStyle={[
@@ -205,6 +229,9 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
                     {item.title}
                   </VixText>
                 </View>
+                <VixText heading="label" additionalStyle={styles.cardCategory}>
+                  {catMeta(item.category).icon} {catMeta(item.category).label}
+                </VixText>
                 {item.note ? (
                   <VixText heading="label" additionalStyle={styles.cardNote}>
                     {item.note}
@@ -255,6 +282,21 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
           multiline
           editable={!busy}
         />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🏷️ Kategori
+        </VixText>
+        <View style={styles.formGap}>
+          <SelectField
+            value={fCategory}
+            options={TASK_CATEGORIES.map((c) => ({
+              key: c.key,
+              label: `${c.icon} ${c.label}`,
+            }))}
+            onChange={(v) => v && setFCategory(v)}
+            disabled={busy}
+          />
+        </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🗓️ Deadline
@@ -337,17 +379,13 @@ const styles = StyleSheet.create({
   cardDone: { opacity: 0.6 },
   cardMain: { flex: 1, gap: 4 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  priorityBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-  p1: { backgroundColor: Color.DANGER },
-  p2: { backgroundColor: Color.WARNING },
-  p3: { backgroundColor: Color.TEXT_PLACEHOLDER },
-  priorityText: { color: Color.TEXT_REVERSE },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   cardTitleDone: {
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
   cardNote: { color: Color.TEXT_LABEL },
+  cardCategory: { color: Color.MAIN_DARK },
   dueNormal: { color: Color.TEXT_LABEL },
   dueSoon: { color: Color.WARNING },
   dueLate: { color: Color.DANGER },

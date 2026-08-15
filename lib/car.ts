@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { daysBetween } from './format';
 
 // Fitur Car 🚗 — Mazda 2 R Skyactiv 2015 (merah):
 // 1) Log pengeluaran & perawatan (bensin, servis, parkir, surat) seperti
@@ -191,7 +192,12 @@ export const PART_GROUPS: PartGroup[] = [
 ];
 
 /** Tanggal terakhir tiap part dicek/diganti: users/{uid}/car/parts. */
-export type PartStatusMap = Record<string, { last: Timestamp }>;
+// `note` = catatan pribadi (mis. bengkel mana, merek oli, harga). Sengaja
+// TIDAK ditampilkan di daftar — hanya muncul lagi saat modal part ini dibuka.
+export type PartStatusMap = Record<
+  string,
+  { last: Timestamp; note?: string }
+>;
 
 export function subscribePartStatus(
   uid: string,
@@ -208,12 +214,17 @@ export function subscribePartStatus(
   );
 }
 
-export function setPartDate(uid: string, partKey: string, date: Date) {
+export function setPartDate(
+  uid: string,
+  partKey: string,
+  date: Date,
+  note = '',
+) {
   const ref = doc(db, 'users', uid, 'car', 'parts');
   // merge: hanya part ini yang berubah, status part lain tetap.
   return setDoc(
     ref,
-    { status: { [partKey]: { last: Timestamp.fromDate(date) } } },
+    { status: { [partKey]: { last: Timestamp.fromDate(date), note } } },
     { merge: true },
   );
 }
@@ -229,9 +240,11 @@ export function partCondition(
   if (!last) return { tone: 'unknown', dueDate: null };
   const due = last.toDate();
   due.setMonth(due.getMonth() + intervalMonths);
-  const msLeft = due.getTime() - now.getTime();
-  const tone: PartTone =
-    msLeft < 0 ? 'over' : msLeft <= 30 * 86_400_000 ? 'warn' : 'ok';
+  // 'warn' = tinggal H-1 ("Besok"), 'over' = hari-H atau lewat ("Sekarang").
+  // Dulu peringatan mulai 30 hari sebelumnya; sekarang sengaja mepet supaya
+  // labelnya jujur & Dashboard tidak penuh reminder yang masih jauh.
+  const daysLeft = daysBetween(now, due);
+  const tone: PartTone = daysLeft <= 0 ? 'over' : daysLeft <= 1 ? 'warn' : 'ok';
   return { tone, dueDate: due };
 }
 

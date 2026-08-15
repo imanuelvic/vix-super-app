@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  increment,
   limit,
   onSnapshot,
   orderBy,
@@ -14,8 +15,10 @@ import {
   type FirestoreError,
 } from 'firebase/firestore';
 
+import { type LoginStreak as DayStreak } from './achievements';
 import { db } from './firebase';
 import { daysBetween } from './format';
+import { alreadyCounted, nextStreak } from './streak';
 
 // ============================== Profil tubuh ==============================
 // users/{uid}/health/profile — SATU dokumen kecil (murah: 1 read per buka).
@@ -25,12 +28,23 @@ export type HealthProfile = {
   birthYear: number;
   heightCm: number;
   weightKg: number;
-  waistCm: number | null; // null = belum pernah diisi
+  waistCm: number | null; // lingkar perut — null = belum pernah diisi
   bloodType: string | null; // golongan darah — info penting saat darurat
   eyeLeft: number | null; // minus mata kiri
   eyeRight: number | null; // minus mata kanan
   eyeCylLeft?: number | null; // silinder mata kiri
   eyeCylRight?: number | null; // silinder mata kanan
+  // Ukuran badan lain — semua opsional. Leher + pinggang dipakai menghitung
+  // persen lemak tubuh (metode US Navy); sisanya untuk membayangkan postur
+  // & melihat perubahan bentuk badan walau berat tidak banyak berubah.
+  neckCm?: number | null; // lingkar leher
+  hipCm?: number | null; // lingkar pinggang/pinggul
+  chestCm?: number | null; // lingkar dada
+  armCm?: number | null; // lingkar lengan atas
+  thighCm?: number | null; // lingkar paha
+  shirtSize?: string | null; // ukuran baju (S/M/L/XL)
+  pantsSize?: string | null; // ukuran celana
+  shoeSize?: number | null; // ukuran sepatu (EU)
   updatedAt: Timestamp | null; // kapan terakhir data ini diperbarui
 };
 
@@ -48,6 +62,14 @@ export const DEFAULT_PROFILE: HealthProfile = {
   eyeRight: null,
   eyeCylLeft: null,
   eyeCylRight: null,
+  neckCm: null,
+  hipCm: null,
+  chestCm: null,
+  armCm: null,
+  thighCm: null,
+  shirtSize: null,
+  pantsSize: null,
+  shoeSize: null,
   updatedAt: null,
 };
 
@@ -123,6 +145,104 @@ export function bmrMale(
   age: number,
 ): number {
   return 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+}
+
+// ==================== Ukuran badan & rekomendasi ====================
+// Semua dihitung dari Data Tubuh — tidak ada data tambahan yang disimpan.
+
+/**
+ * Persen lemak tubuh PRIA — metode US Navy (butuh lingkar pinggang & leher +
+ * tinggi). Perkiraan, bukan pengganti alat ukur; tapi jauh lebih menggambarkan
+ * bentuk badan daripada BMI saja. null = ukurannya belum lengkap.
+ */
+export function bodyFatMale(
+  waistCm: number | null | undefined,
+  neckCm: number | null | undefined,
+  heightCm: number,
+): number | null {
+  if (!waistCm || !neckCm || heightCm <= 0 || waistCm <= neckCm) return null;
+  const pct =
+    495 /
+      (1.0324 -
+        0.19077 * Math.log10(waistCm - neckCm) +
+        0.15456 * Math.log10(heightCm)) -
+    450;
+  return pct > 0 && pct < 70 ? pct : null;
+}
+
+/** Kategori persen lemak tubuh pria (ACE). */
+export function bodyFatCategory(pct: number): { label: string; tone: BmiTone } {
+  if (pct < 6) return { label: 'Sangat rendah', tone: 'warn' };
+  if (pct < 14) return { label: 'Atletis', tone: 'ok' };
+  if (pct < 18) return { label: 'Bugar', tone: 'ok' };
+  if (pct < 25) return { label: 'Rata-rata', tone: 'warn' };
+  return { label: 'Berlebih', tone: 'danger' };
+}
+
+/** Rasio pinggang/pinggul pria — sehat < 0,90. null bila belum lengkap. */
+export function waistHipRatio(
+  waistCm: number | null | undefined,
+  hipCm: number | null | undefined,
+): number | null {
+  if (!waistCm || !hipCm) return null;
+  return waistCm / hipCm;
+}
+
+/**
+ * Saran praktis dari Data Tubuh — apa yang perlu dikejar supaya badan makin
+ * sehat & mendekati bentuk ideal. Urut dari yang paling berdampak.
+ */
+export function bodyAdvice(profile: HealthProfile, age: number): string[] {
+  const out: string[] = [];
+  const bmi = bmiValue(profile.weightKg, profile.heightCm);
+  const ideal = idealWeightRange(profile.heightCm);
+  const fat = bodyFatMale(profile.waistCm, profile.neckCm, profile.heightCm);
+  const whtr = profile.waistCm ? profile.waistCm / profile.heightCm : null;
+
+  if (bmi >= 23) {
+    const turun = profile.weightKg - ideal.max;
+    out.push(
+      `⚖️ Turun ±${formatKg(turun)} kg lagi supaya BMI masuk rentang sehat (${formatKg(ideal.min)}–${formatKg(ideal.max)} kg).`,
+    );
+  } else if (bmi < 18.5) {
+    out.push(
+      `⚖️ Naik ±${formatKg(ideal.min - profile.weightKg)} kg supaya berat masuk rentang sehat.`,
+    );
+  } else {
+    out.push(`✅ Berat sudah di rentang sehat (${formatKg(ideal.min)}–${formatKg(ideal.max)} kg). Pertahankan.`);
+  }
+
+  if (whtr != null && whtr >= 0.5) {
+    const target = profile.heightCm * 0.49;
+    out.push(
+      `📏 Lingkar perut ideal di bawah ${Math.round(target)} cm — lemak perut paling berisiko untuk jantung.`,
+    );
+  }
+
+  if (fat != null) {
+    if (fat >= 18) {
+      out.push(
+        `🔥 Lemak tubuh ±${formatKg(fat)}%. Untuk sixpack biasanya perlu di bawah 15% — defisit kalori pelan + latihan beban.`,
+      );
+    } else {
+      out.push(`💪 Lemak tubuh ±${formatKg(fat)}% — sudah bagus, jaga massa otot dengan latihan beban.`);
+    }
+  } else {
+    out.push('📐 Isi lingkar leher & pinggang untuk melihat perkiraan persen lemak tubuh.');
+  }
+
+  const bmr = bmrMale(profile.weightKg, profile.heightCm, age);
+  out.push(
+    `🍽️ Kebutuhan harian ±${Math.round(bmr * 1.4)} kkal (aktivitas ringan). Defisit sehat = kurangi ±400 kkal.`,
+  );
+  out.push('💧 Minum 8 gelas air & tidur 7–8 jam — dua hal yang paling sering bikin progres mandek.');
+  return out;
+}
+
+/** 1 desimal, koma ala Indonesia — dipakai di teks saran. */
+function formatKg(n: number): string {
+  const s = Math.abs(n).toFixed(1);
+  return (s.endsWith('.0') ? s.slice(0, -2) : s).replace('.', ',');
 }
 
 // ============================== Target berat ==============================
@@ -223,6 +343,36 @@ export function setWater(uid: string, dayId: string, count: number) {
     ref,
     { water: Math.max(0, Math.min(count, 20)) },
     { merge: true },
+  );
+}
+
+// ===== Streak air putih 💧 — SATU dokumen: users/{uid}/app/waterStreak =====
+// Jumlah gelas HARI INI tersimpan di habitDays/{dayId} (otomatis 0 tiap ganti
+// hari). Yang disimpan di sini cuma rentetannya: naik SEKALI per hari, tepat
+// saat gelas ke-8 (WATER_GOAL) tercapai.
+
+export function subscribeWaterStreak(
+  uid: string,
+  onChange: (streak: DayStreak | null) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return onSnapshot(
+    doc(db, 'users', uid, 'app', 'waterStreak'),
+    (snapshot) => onChange(snapshot.exists() ? (snapshot.data() as DayStreak) : null),
+    onError,
+  );
+}
+
+/** Panggil saat air hari ini mencapai target — naik maksimal 1×/hari. */
+export function bumpWaterStreak(
+  uid: string,
+  current: DayStreak | null,
+  todayId: string,
+) {
+  if (alreadyCounted(current, todayId)) return Promise.resolve();
+  return setDoc(
+    doc(db, 'users', uid, 'app', 'waterStreak'),
+    nextStreak(current, todayId, yesterdayId()),
   );
 }
 
@@ -623,4 +773,215 @@ export function stepTierLastDates(
     result[tier] = last;
   }
   return result;
+}
+
+// ============ Jarak tempuh 🏃 — mingguan, bulanan & istilah pelari ============
+// Langkah dari Apple Health diubah jadi KILOMETER supaya bisa dibandingkan
+// dengan patokan yang dikenal pelari (5K, 10K, Half Marathon, dst).
+// Panjang langkah ≈ 0,415 × tinggi badan (rumus umum jalan kaki pria).
+
+/** Panjang satu langkah dalam meter, dari tinggi badan. */
+export function strideMeters(heightCm: number): number {
+  return (heightCm > 0 ? heightCm : 170) * 0.415 / 100;
+}
+
+/** Langkah → kilometer (butuh tinggi badan untuk panjang langkah). */
+export function stepsToKm(steps: number, heightCm: number): number {
+  return (steps * strideMeters(heightCm)) / 1000;
+}
+
+/**
+ * Patokan jarak SEHARI memakai istilah yang dipakai pelari. Easy Run =
+ * lari santai; Long Run = latihan jarak jauh mingguan; sisanya nama lomba.
+ */
+export const RUN_DAY_MILESTONES: { km: number; emoji: string; label: string }[] =
+  [
+    { km: 3, emoji: '🚶', label: 'Shakeout' },
+    { km: 5, emoji: '🏃', label: 'Easy Run · 5K' },
+    { km: 10, emoji: '⚡', label: 'Tempo Run · 10K' },
+    { km: 15, emoji: '🔥', label: 'Long Run · 15K' },
+    { km: 21.1, emoji: '🏅', label: 'Half Marathon' },
+    { km: 42.2, emoji: '👑', label: 'Full Marathon' },
+  ];
+
+/** Patokan AKUMULASI Senin–Minggu (mileage mingguan ala buku latihan lari). */
+export const RUN_WEEK_MILESTONES: { km: number; emoji: string; label: string }[] =
+  [
+    { km: 21.1, emoji: '✨', label: 'Base Week' },
+    { km: 42.2, emoji: '🔥', label: 'Marathon Week' },
+    { km: 70, emoji: '🏅', label: 'Peak Week' },
+    { km: 100, emoji: '👑', label: 'Century Week' },
+  ];
+
+/** Tantangan BULANAN ala Strava. */
+export const RUN_MONTH_MILESTONES: { km: number; emoji: string; label: string }[] =
+  [
+    { km: 100, emoji: '🎽', label: '100K Bulanan' },
+    { km: 200, emoji: '🏆', label: '200K Bulanan' },
+    { km: 300, emoji: '💎', label: '300K Bulanan' },
+  ];
+
+/** Patokan tertinggi yang sudah dilewati `km` (null kalau belum ada). */
+export function runMilestoneOf(
+  km: number,
+  list: { km: number; emoji: string; label: string }[],
+): { km: number; emoji: string; label: string } | null {
+  let hit: { km: number; emoji: string; label: string } | null = null;
+  for (const m of list) if (km >= m.km) hit = m;
+  return hit;
+}
+
+/** dayId Senin pada minggu yang memuat `d` (minggu = Senin–Minggu). */
+export function weekStartId(d: Date): string {
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  // getDay(): 0 = Minggu → mundur 6 hari; selainnya mundur (hari − 1).
+  start.setDate(start.getDate() - (start.getDay() === 0 ? 6 : start.getDay() - 1));
+  return dayDocId(start);
+}
+
+/** Tujuh dayId Senin→Minggu untuk minggu yang memuat `d`. */
+export function weekDayIds(d: Date): string[] {
+  const start = dayIdToDateLocal(weekStartId(d));
+  const ids: string[] = [];
+  for (let i = 0; i < 7; i += 1) {
+    const day = new Date(start);
+    day.setDate(day.getDate() + i);
+    ids.push(dayDocId(day));
+  }
+  return ids;
+}
+
+/** Semua dayId dalam bulan yang memuat `d`. */
+export function monthDayIds(d: Date): string[] {
+  const total = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const ids: string[] = [];
+  for (let i = 1; i <= total; i += 1) {
+    ids.push(dayDocId(new Date(d.getFullYear(), d.getMonth(), i)));
+  }
+  return ids;
+}
+
+/** Total langkah pada sekumpulan hari (hari tanpa data dihitung 0). */
+export function stepsInDays(days: StepDaysMap, ids: string[]): number {
+  return ids.reduce((sum, id) => sum + (days[id] ?? 0), 0);
+}
+
+/**
+ * Rekor jarak: hari / minggu / bulan terbaik sepanjang data tersimpan (km).
+ * Dipakai fitur Achievement supaya patokan lari ikut terhitung di sana.
+ */
+export function runRecords(
+  days: StepDaysMap,
+  heightCm: number,
+): { bestDayKm: number; bestWeekKm: number; bestMonthKm: number } {
+  const weeks = new Map<string, number>();
+  const months = new Map<string, number>();
+  let bestDay = 0;
+  for (const [dayId, steps] of Object.entries(days)) {
+    const km = stepsToKm(steps, heightCm);
+    if (km > bestDay) bestDay = km;
+    const wk = weekStartId(dayIdToDateLocal(dayId));
+    weeks.set(wk, (weeks.get(wk) ?? 0) + km);
+    const mo = dayId.slice(0, 7); // "YYYY-MM"
+    months.set(mo, (months.get(mo) ?? 0) + km);
+  }
+  return {
+    bestDayKm: bestDay,
+    bestWeekKm: Math.max(0, ...weeks.values()),
+    bestMonthKm: Math.max(0, ...months.values()),
+  };
+}
+
+/** "2026-08-13" → Date lokal (salinan lokal biar lib ini tidak saling impor). */
+function dayIdToDateLocal(dayId: string): Date {
+  const [y, m, d] = dayId.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// ================== Rekap MINGGUAN 📅 (langkah + gym) ==================
+// users/{uid}/health/weeks — { weeks: { [dayId Senin]: { steps, gym } } }.
+//
+// Kenapa disimpan terpisah padahal bisa dihitung dari `health/steps`?
+// Riwayat Apple Health yang ditarik hanya 60 hari terakhir; rekap mingguan ini
+// membuat pencapaian minggu-minggu lama tetap tersimpan selamanya. Satu
+// dokumen kecil (52 baris per tahun) → tetap 1 read.
+//
+// Patokan mengikuti anjuran umum kesehatan dewasa: ±150 menit aktivitas
+// aerobik sedang per minggu (≈ 70.000 langkah) DAN strength training minimal
+// 2 hari per minggu.
+export const WEEK_STEP_GOAL = 70_000;
+export const WEEK_GYM_GOAL = 2;
+
+export type WeekStat = { steps: number; gym: number };
+export type WeekStatsMap = Record<string, WeekStat>;
+
+export function subscribeWeekStats(
+  uid: string,
+  onChange: (weeks: WeekStatsMap) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return onSnapshot(
+    doc(db, 'users', uid, 'health', 'weeks'),
+    (snapshot) => onChange((snapshot.data()?.weeks as WeekStatsMap) ?? {}),
+    onError,
+  );
+}
+
+/**
+ * Simpan total langkah tiap minggu dari riwayat harian — dipanggil saat tab
+ * Steps dibuka. Hanya menulis kalau ada angka yang berubah (hemat tulis).
+ */
+export function recordStepWeeks(
+  uid: string,
+  days: StepDaysMap,
+  saved: WeekStatsMap,
+) {
+  const totals = new Map<string, number>();
+  for (const [dayId, steps] of Object.entries(days)) {
+    const wk = weekStartId(dayIdToDateLocal(dayId));
+    totals.set(wk, (totals.get(wk) ?? 0) + steps);
+  }
+  const patch: Record<string, { steps: number }> = {};
+  for (const [wk, steps] of totals) {
+    if ((saved[wk]?.steps ?? 0) !== steps) patch[wk] = { steps };
+  }
+  if (Object.keys(patch).length === 0) return Promise.resolve();
+  return setDoc(
+    doc(db, 'users', uid, 'health', 'weeks'),
+    { weeks: patch },
+    { merge: true },
+  );
+}
+
+/** Tambah 1 hari strength training pada minggu yang memuat `d`. */
+export function bumpWeekGym(uid: string, d: Date) {
+  return setDoc(
+    doc(db, 'users', uid, 'health', 'weeks'),
+    { weeks: { [weekStartId(d)]: { gym: increment(1) } } },
+    { merge: true },
+  );
+}
+
+/**
+ * Rekap pencapaian mingguan untuk fitur Achievement:
+ * - stepHits  : berapa minggu langkahnya ≥ WEEK_STEP_GOAL
+ * - gymHits   : berapa minggu strength training ≥ WEEK_GYM_GOAL
+ * - bothHits  : berapa minggu KEDUANYA tercapai (minggu sempurna)
+ */
+export function weekGoalStats(weeks: WeekStatsMap): {
+  stepHits: number;
+  gymHits: number;
+  bothHits: number;
+} {
+  let stepHits = 0;
+  let gymHits = 0;
+  let bothHits = 0;
+  for (const w of Object.values(weeks)) {
+    const step = (w.steps ?? 0) >= WEEK_STEP_GOAL;
+    const gym = (w.gym ?? 0) >= WEEK_GYM_GOAL;
+    if (step) stepHits += 1;
+    if (gym) gymHits += 1;
+    if (step && gym) bothHits += 1;
+  }
+  return { stepHits, gymHits, bothHits };
 }

@@ -73,6 +73,8 @@ const MAPPING = {
   'figure.mind.and.body': 'self-improvement',
   'beach.umbrella.fill': 'beach-access',
   'dumbbell.fill': 'fitness-center',
+  'graduationcap.fill': 'school',
+  'figure.walk': 'directions-walk',
 } as IconMapping;
 
 /**

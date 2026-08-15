@@ -15,11 +15,22 @@ import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
+import { BodyCard } from '@/components/health/BodyCard';
+import { PersonalityTab } from '@/components/profile/PersonalityTab';
+import { QuadrantTab, type Quadrant } from '@/components/profile/QuadrantTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { pickCompressedPhoto } from '@/lib/family';
+import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
+import {
+  EMPTY_SELF_KNOWLEDGE,
+  subscribeSelfKnowledge,
+  type SelfKnowledge,
+} from '@/lib/selfKnowledge';
 import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   EMPTY_PROFILE,
@@ -89,6 +100,31 @@ const SECTIONS: {
 // Field yang tampil di hero (nama/kewarganegaraan) → tidak diulang di daftar.
 const HERO_KEYS = new Set<FieldKey>(['fullName', 'nickname', 'nationality']);
 
+type Tab = 'profile' | 'personality' | 'ikigai' | 'swot';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'profile', label: '🪪 Profile' },
+  { key: 'personality', label: '🧠 Personality' },
+  { key: 'ikigai', label: '🎌 Ikigai' },
+  { key: 'swot', label: '📊 SWOT' },
+];
+
+// Empat lingkaran Ikigai — warna pastel berbeda biar gampang dibedakan.
+const IKIGAI: Quadrant<'love' | 'goodAt' | 'worldNeeds' | 'paidFor'>[] = [
+  { key: 'love', emoji: '❤️', title: 'Yang Kamu CINTAI', hint: 'Apa yang bikin kamu lupa waktu saat mengerjakannya?', bg: Color.FINANCE_EXPENSE, fg: Color.FINANCE_EXPENSE_DARK },
+  { key: 'goodAt', emoji: '💪', title: 'Yang Kamu KUASAI', hint: 'Apa yang orang sering minta tolong ke kamu?', bg: Color.FUN, fg: Color.FUN_DARK },
+  { key: 'worldNeeds', emoji: '🌍', title: 'Yang DIBUTUHKAN Dunia', hint: 'Masalah apa di sekitarmu yang bikin kamu gelisah?', bg: Color.FINANCE_INVESTMENT, fg: Color.FINANCE_INVESTMENT_DARK },
+  { key: 'paidFor', emoji: '💰', title: 'Yang Bisa DIBAYAR', hint: 'Keahlian apa yang orang mau bayar untuk itu?', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
+];
+
+// Empat kotak SWOT — dua ke dalam (S/W), dua ke luar (O/T).
+const SWOT: Quadrant<'strengths' | 'weaknesses' | 'opportunities' | 'threats'>[] = [
+  { key: 'strengths', emoji: '💚', title: 'Strengths — Kekuatan', hint: 'Apa keunggulanmu dibanding orang lain?', bg: Color.FUN, fg: Color.FUN_DARK },
+  { key: 'weaknesses', emoji: '🧡', title: 'Weaknesses — Kelemahan', hint: 'Apa yang masih jadi PR-mu, jujur saja.', bg: Color.CAREER, fg: Color.ACCENT_DARK },
+  { key: 'opportunities', emoji: '💙', title: 'Opportunities — Peluang', hint: 'Peluang apa yang terbuka buatmu tahun ini?', bg: Color.FINANCE_INVESTMENT, fg: Color.FINANCE_INVESTMENT_DARK },
+  { key: 'threats', emoji: '❤️', title: 'Threats — Ancaman', hint: 'Apa yang bisa menggagalkan rencanamu?', bg: Color.FINANCE_EXPENSE, fg: Color.FINANCE_EXPENSE_DARK },
+];
+
 // Tab Profile 🪪 — data penting diri sendiri (view-only), diedit lewat modal.
 // Plus tombol My Timeline (pindah dari Home). Data tersimpan di akun pribadi.
 export default function ProfileScreen() {
@@ -96,6 +132,11 @@ export default function ProfileScreen() {
   const { user } = useAuth();
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  // Data tubuh 🧍 — dipindah ke sini dari Health (data diri, bukan aktivitas).
+  const [body, setBody] = useState<HealthProfile | null>(null);
+  // Mengenal diri: Personality / Ikigai / SWOT — satu dokumen kecil.
+  const [self, setSelf] = useState<SelfKnowledge>(EMPTY_SELF_KNOWLEDGE);
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('profile');
   const [error, setError] = useState<string | null>(null);
 
   // Form edit (salinan profil saat modal dibuka).
@@ -107,14 +148,19 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (!user) return;
-    return subscribeProfile(
-      user.uid,
-      (p) => {
-        setProfile(p);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
+    const unsubs = [
+      subscribeProfile(
+        user.uid,
+        (p) => {
+          setProfile(p);
+          setError(null);
+        },
+        () => setError(LOAD_ERROR),
+      ),
+      subscribeHealthProfile(user.uid, setBody, () => setError(LOAD_ERROR)),
+      subscribeSelfKnowledge(user.uid, setSelf, () => setError(LOAD_ERROR)),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
   function openEdit() {
@@ -172,18 +218,56 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* Judul + subtab: Profile · Personality · Ikigai · SWOT */}
+      <View style={styles.headerWrap}>
         <View style={styles.headerRow}>
           <VixText heading="header" additionalStyle={styles.title}>
             Profile 👤
           </VixText>
-          <PressableScale onPress={openEdit} hitSlop={10}>
-            <VixText heading="bold" additionalStyle={styles.editText}>
-              ✏️ Ubah
-            </VixText>
-          </PressableScale>
+          {tab === 'profile' && (
+            <PressableScale onPress={openEdit} hitSlop={10}>
+              <VixText heading="bold" additionalStyle={styles.editText}>
+                ✏️ Ubah
+              </VixText>
+            </PressableScale>
+          )}
         </View>
+        <SegmentTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      </View>
 
+      {/* key={scrollKey} → tab ditekan ulang = balik ke atas (pola app ini) */}
+      <View style={styles.body} key={scrollKey}>
+        {tab === 'personality' ? (
+          <PersonalityTab data={self.personality} />
+        ) : tab === 'ikigai' ? (
+          <QuadrantTab
+            part="ikigai"
+            values={self.ikigai}
+            quadrants={IKIGAI}
+            intro="Ikigai = titik temu empat hal ini — alasanmu bangun pagi. Isi pelan-pelan, tidak harus sekali jadi 🎌"
+            footerKey="statement"
+            footerTitle="🎯 Kalimat Ikigai-ku"
+            footerHint="Rangkum jadi satu kalimat: aku ada untuk…"
+          />
+        ) : tab === 'swot' ? (
+          <QuadrantTab
+            part="swot"
+            values={self.swot}
+            quadrants={SWOT}
+            intro="SWOT dirimu sendiri: dua dari dalam (kekuatan & kelemahan), dua dari luar (peluang & ancaman). Tinjau ulang tiap kuartal 📊"
+          />
+        ) : (
+          <ProfileContent />
+        )}
+      </View>
+    </SafeAreaView>
+  );
+
+  // Isi subtab Profile — dipisah jadi fungsi biar bagian atas tetap terbaca.
+  function ProfileContent() {
+    if (!profile) return null; // sudah dijaga di atas; ini untuk TypeScript
+    return (
+      <ScrollView contentContainerStyle={styles.content}>
         {/* Hero: foto + nama + kewarganegaraan */}
         <View style={styles.hero}>
           <View style={styles.avatar}>
@@ -221,6 +305,9 @@ export default function ProfileScreen() {
           <IconSymbol name="chevron.right" size={18} color={Color.ACCENT_DARK} />
         </PressableScale>
 
+        {/* Data tubuh + saran menuju badan ideal */}
+        {body && <BodyCard profile={body} />}
+
         {/* Kartu per bagian data */}
         {SECTIONS.map((section) => {
           const rows = section.fields.filter((f) => !HERO_KEYS.has(f.key));
@@ -252,7 +339,6 @@ export default function ProfileScreen() {
         <VixText heading="label" additionalStyle={styles.privacyNote}>
           🔒 Data ini cuma tersimpan di akun pribadimu. Isi lewat “Ubah”.
         </VixText>
-      </ScrollView>
 
       {/* Modal edit profil (semua field + foto) */}
       <SheetModal
@@ -314,13 +400,16 @@ export default function ProfileScreen() {
           onConfirm={handleSave}
         />
       </SheetModal>
-    </SafeAreaView>
-  );
+      </ScrollView>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
+  body: { flex: 1 },
+  headerWrap: { paddingHorizontal: 20, paddingTop: 12 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginTop: 12 },
   headerRow: {
     flexDirection: 'row',

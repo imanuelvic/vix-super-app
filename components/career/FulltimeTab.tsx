@@ -10,6 +10,8 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { PriorityBadge } from '@/components/common/PriorityBadge';
+import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -24,7 +26,7 @@ import {
   type RoadmapItem,
   type RoadmapStatus,
 } from '@/lib/career';
-import { daysBetween, formatDate } from '@/lib/format';
+import { daysBetween, formatDate, whenLabel } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Deadline default untuk prioritas baru: seminggu dari sekarang.
@@ -92,6 +94,9 @@ export function FulltimeTab({
   // Sudah Selesai → pilihan deadline/backlog disembunyikan (tidak relevan lagi).
   const isDone = fStatus === 'done';
 
+  // Papan ala Trello: satu kolom per status, dipilih lewat segment atas.
+  const [board, setBoard] = useState<RoadmapStatus>('progress');
+
   // Tampilan & urutan memakai prioritas/status EFEKTIF: item yang sudah H-7
   // otomatis tampil P1 & "Dikerjakan" tanpa perlu dibuka & disimpan ulang.
   const today = new Date();
@@ -104,6 +109,36 @@ export function FulltimeTab({
       return a.priority - b.priority;
     });
   const doneCount = items.filter((i) => i.status === 'done').length;
+
+  // Isi tiap kolom papan + berapa kartu yang sudah mendesak (H-7 / lewat).
+  const columnOf = (status: RoadmapStatus) =>
+    sorted.filter((i) => i.status === status);
+  const urgentIn = (status: RoadmapStatus) =>
+    columnOf(status).filter(
+      (i) =>
+        status !== 'done' &&
+        i.deadline != null &&
+        roadmapDaysUntil(i.deadline, today) <= CAREER_REMINDER_DAYS,
+    ).length;
+  const column = columnOf(board);
+
+  /** Pindahkan satu kartu ke kolom lain — sekali ketuk, tanpa buka modal. */
+  async function moveTo(item: RoadmapItem, status: RoadmapStatus) {
+    if (!user || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await saveRoadmap(
+        user.uid,
+        items.map((i) => (i.id === item.id ? { ...i, status } : i)),
+      );
+      setBoard(status);
+    } catch {
+      setError(SAVE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function openAdd() {
     setEditing('new');
@@ -189,14 +224,6 @@ export function FulltimeTab({
     }
   }
 
-  function priorityStyle(p: 1 | 2 | 3) {
-    return p === 1
-      ? styles.p1
-      : p === 2
-        ? styles.p2
-        : styles.p3;
-  }
-
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -226,68 +253,116 @@ export function FulltimeTab({
           </VixText>
         )}
 
-        {sorted.length === 0 && (
+        {/* Papan ala Trello: Rencana · Dikerjakan · Selesai. Angka kecil =
+            jumlah kartu, ⚠️ = ada yang deadline-nya sudah H-7. */}
+        <SegmentTabs
+          tabs={ROADMAP_STATUS.map((s) => {
+            const n = columnOf(s.key).length;
+            const u = urgentIn(s.key);
+            return {
+              key: s.key,
+              label: `${s.icon} ${s.label}`,
+              sub: u > 0 ? `${n} · ⚠️ ${u}` : `${n} kartu`,
+            };
+          })}
+          value={board}
+          onChange={setBoard}
+        />
+
+        {/* Peringatan: masih di kolom Rencana padahal deadline sudah dekat */}
+        {board === 'todo' && urgentIn('todo') > 0 && (
+          <View style={styles.warnCard}>
+            <VixText heading="bold" additionalStyle={styles.warnText}>
+              ⚠️ {urgentIn('todo')} kartu di Rencana sudah H-7 — pindahkan ke
+              Dikerjakan sekarang.
+            </VixText>
+          </View>
+        )}
+
+        {column.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada roadmap — tulis prioritas kerjamu minggu ini 💪
+            {items.length === 0
+              ? 'Belum ada roadmap — tulis prioritas kerjamu minggu ini 💪'
+              : `Kolom ${STATUS_META[board].label} masih kosong.`}
           </VixText>
         )}
 
-        {sorted.map((item) => {
+        {column.map((item) => {
           const meta = STATUS_META[item.status];
           // Info deadline: berapa hari lagi & apakah mendesak (belum selesai
           // dan tinggal ≤ 3 hari / sudah lewat).
           const dl = item.deadline
             ? roadmapDaysUntil(item.deadline, new Date())
             : null;
-          const dlWhen =
-            dl === null
-              ? ''
-              : dl === 0
-                ? 'HARI INI'
-                : dl > 0
-                  ? `${dl} hari lagi`
-                  : `lewat ${-dl} hari`;
+          const dlWhen = dl === null ? '' : whenLabel(dl);
           const dlUrgent = item.status !== 'done' && dl !== null && dl <= 3;
+          // Kartu ini masih di Rencana padahal deadline sudah H-7 → tandai.
+          const mustMove =
+            item.status === 'todo' &&
+            dl !== null &&
+            dl <= CAREER_REMINDER_DAYS;
           return (
             // Tekan untuk edit status/prioritas.
-            <PressableScale
+            <View
               key={item.id}
-              style={[styles.card, item.status === 'done' && styles.cardDone]}
-              onPress={() => openEdit(item)}>
-              <View style={styles.cardTop}>
-                <View style={[styles.priorityBadge, priorityStyle(item.priority)]}>
-                  <VixText heading="label" additionalStyle={styles.priorityText}>
-                    P{item.priority}
+              style={[
+                styles.card,
+                item.status === 'done' && styles.cardDone,
+                mustMove && styles.cardMustMove,
+              ]}>
+              <PressableScale onPress={() => openEdit(item)}>
+                <View style={styles.cardTop}>
+                  <PriorityBadge priority={item.priority} />
+                  <VixText
+                    heading="bold"
+                    numberOfLines={2}
+                    additionalStyle={styles.cardTitle}>
+                    {item.title}
+                  </VixText>
+                  <VixText heading="label">
+                    {meta.icon} {meta.label}
                   </VixText>
                 </View>
-                <VixText
-                  heading="bold"
-                  numberOfLines={2}
-                  additionalStyle={styles.cardTitle}>
-                  {item.title}
-                </VixText>
-                <VixText heading="label">
-                  {meta.icon} {meta.label}
-                </VixText>
-              </View>
-              {/* PIC dengan avatar emoji (seperti tab Freelance) */}
-              {item.pic ? (
-                <VixText heading="label">👤 {item.pic}</VixText>
-              ) : null}
-              {/* Catatan/deskripsi sengaja TIDAK ditampilkan di daftar biar
-                  ringkas — baru terbaca saat kartunya dibuka (diedit). */}
-              {item.deadline ? (
-                <VixText
-                  heading="label"
-                  additionalStyle={dlUrgent ? styles.deadlineUrgent : styles.deadline}>
-                  🗓️ {formatDate(item.deadline.toDate())} · {dlWhen}
-                </VixText>
-              ) : (
-                <VixText heading="label" additionalStyle={styles.backlog}>
-                  📥 Backlog · PR (tanpa deadline)
+                {/* PIC dengan avatar emoji (seperti tab Freelance) */}
+                {item.pic ? (
+                  <VixText heading="label">👤 {item.pic}</VixText>
+                ) : null}
+                {/* Catatan/deskripsi sengaja TIDAK ditampilkan di daftar biar
+                    ringkas — baru terbaca saat kartunya dibuka (diedit). */}
+                {item.deadline ? (
+                  <VixText
+                    heading="label"
+                    additionalStyle={dlUrgent ? styles.deadlineUrgent : styles.deadline}>
+                    🗓️ {formatDate(item.deadline.toDate())} · {dlWhen}
+                  </VixText>
+                ) : (
+                  <VixText heading="label" additionalStyle={styles.backlog}>
+                    📥 Backlog · PR (tanpa deadline)
+                  </VixText>
+                )}
+              </PressableScale>
+
+              {mustMove && (
+                <VixText heading="label" additionalStyle={styles.mustMoveText}>
+                  ⚠️ Sudah H-7 tapi masih Rencana — harus mulai dikerjakan.
                 </VixText>
               )}
-            </PressableScale>
+
+              {/* Pindah kolom sekali ketuk (ala Trello) */}
+              <View style={styles.moveRow}>
+                {ROADMAP_STATUS.filter((s) => s.key !== item.status).map((s) => (
+                  <PressableScale
+                    key={s.key}
+                    style={styles.moveButton}
+                    disabled={busy}
+                    onPress={() => moveTo(item, s.key)}>
+                    <VixText heading="label" additionalStyle={styles.moveText}>
+                      {s.icon} {s.label} ›
+                    </VixText>
+                  </PressableScale>
+                ))}
+              </View>
+            </View>
           );
         })}
       </ScrollView>
@@ -438,20 +513,41 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardDone: { opacity: 0.55 },
+  // Masih di kolom Rencana padahal deadline sudah H-7 → border merah.
+  cardMustMove: { borderColor: Color.DANGER, borderWidth: 1.5 },
+  mustMoveText: { color: Color.DANGER },
+  warnCard: {
+    backgroundColor: Color.FINANCE_EXPENSE,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Color.DANGER,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  warnText: { color: Color.DANGER },
+  // Baris tombol pindah kolom (ala Trello).
+  moveRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    paddingTop: 10,
+  },
+  moveButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: Color.CONTRAST_CONTAINER,
+  },
+  moveText: { color: Color.TEXT_LABEL },
   deadline: { color: Color.TEXT_LABEL },
   deadlineUrgent: { color: Color.DANGER },
   backlog: { color: Color.CAREER_DARK },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
-  priorityBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  p1: { backgroundColor: Color.DANGER },
-  p2: { backgroundColor: Color.WARNING },
-  p3: { backgroundColor: Color.TEXT_PLACEHOLDER },
-  priorityText: { color: Color.TEXT_REVERSE },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   // Textarea besar untuk deskripsi/catatan — boleh banyak baris.

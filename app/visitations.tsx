@@ -5,15 +5,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FilterChips } from '@/components/common/FilterChips';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -70,10 +71,16 @@ export default function VisitationsScreen() {
   // Jadwal mendatang tidak ikut — tempatnya di CORE → tab Visitasi.
   const history = all.filter((v) => v.done || visitDaysUntil(v, today) < 0);
 
+  // Filter jenis pertemuan — sama seperti di tab Pertemuan (null = semua).
+  const [filterKind, setFilterKind] = useState<MeetingKind | null>(null);
+  const shown = filterKind
+    ? history.filter((v) => v.kind === filterKind)
+    : history;
+
   // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
   // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
   const futureDate = daysBetween(today, fDate) > 0;
-  const sorted = [...history].sort(
+  const sorted = [...shown].sort(
     (a, b) => b.date.toMillis() - a.date.toMillis(),
   );
   const { setPage, currentPage, pageCount, pageItems } = usePagination(sorted);
@@ -153,6 +160,17 @@ export default function VisitationsScreen() {
         <LoadingCenter />
       ) : (
         <ScrollView key={currentPage} contentContainerStyle={styles.content}>
+          {/* Filter jenis pertemuan — ketuk lagi untuk melepas filternya */}
+          <FilterChips
+            options={MEETING_KINDS.map((k) => ({
+              key: k.key,
+              label: `${k.icon} ${k.label}`,
+              count: history.filter((v) => v.kind === k.key).length,
+            }))}
+            value={filterKind}
+            onChange={setFilterKind}
+          />
+
           {sorted.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
               Belum ada riwayat — pertemuan yang sudah selesai atau terlewat
@@ -197,11 +215,11 @@ export default function VisitationsScreen() {
                 <VixText heading="label">
                   📆 {formatFullDate(v.date.toDate())}
                 </VixText>
-                {v.agenda ? (
-                  <VixText heading="label">🗒️ Agenda: {v.agenda}</VixText>
-                ) : null}
+                {/* Agenda sengaja TIDAK ditampilkan di sini — datanya sama
+                    dengan tab Pertemuan, dan di riwayat yang penting hasilnya,
+                    bukan rencananya. Tetap bisa dibaca & diubah di modal. */}
                 {v.note ? (
-                  <VixText heading="label">📝 Catatan: {v.note}</VixText>
+                  <VixText heading="label">🏷️ Judul: {v.note}</VixText>
                 ) : null}
               </PressableScale>
             );
@@ -220,32 +238,35 @@ export default function VisitationsScreen() {
         visible={!!editing}
         title="Edit Pertemuan"
         onClose={() => setEditing(null)}>
+        {/* Picker — sama seperti di tab Pertemuan (CORE). */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Jenis pertemuan
         </VixText>
-        <View style={styles.leaderWrap}>
-          {MEETING_KINDS.map((k) => (
-            <Chip
-              key={k.key}
-              label={`${k.icon} ${k.label}`}
-              active={fKind === k.key}
-              onPress={() => setFKind(k.key)}
-            />
-          ))}
+        <View style={styles.formGap}>
+          <SelectField
+            value={fKind}
+            options={MEETING_KINDS.map((k) => ({
+              key: k.key,
+              label: `${k.icon} ${k.label}`,
+            }))}
+            onChange={(k) => k && setFKind(k)}
+            placeholder="Pilih jenis pertemuan…"
+          />
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           CORE-nya siapa?
         </VixText>
-        <View style={styles.leaderWrap}>
-          {leaders.map((l) => (
-            <Chip
-              key={l.id}
-              label={`${l.heart} ${l.name}`}
-              active={fLeaderId === l.id}
-              onPress={() => setFLeaderId(l.id)}
-            />
-          ))}
+        <View style={styles.formGap}>
+          <SelectField
+            value={fLeaderId}
+            options={leaders.map((l) => ({
+              key: l.id,
+              label: `${l.heart} ${l.name}`,
+            }))}
+            onChange={(id) => id && setFLeaderId(id)}
+            placeholder="Pilih CORE Leader…"
+          />
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -256,6 +277,19 @@ export default function VisitationsScreen() {
           <DateField key={editing?.id} value={fDate} onChange={setFDate} />
         </View>
 
+        {/* Urutan & label SAMA PERSIS dengan tab Pertemuan — datanya memang
+            satu, cuma ditampilkan dari dua layar. */}
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🏷️ Judul Pertemuan
+        </VixText>
+        <FormInput
+          style={styles.formGap}
+          placeholder="Judul singkat"
+          value={fNote}
+          onChangeText={setFNote}
+          editable={!busy}
+        />
+
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🗒️ Agenda pertemuan
         </VixText>
@@ -264,18 +298,6 @@ export default function VisitationsScreen() {
           placeholder="Apa yang akan dibahas ke mereka…"
           value={fAgenda}
           onChangeText={setFAgenda}
-          editable={!busy}
-          multiline
-        />
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📝 Catatan pertemuan
-        </VixText>
-        <FormInput
-          style={[styles.textArea, styles.formGap]}
-          placeholder="Catatan hasil pertemuan / kondisi CL & member…"
-          value={fNote}
-          onChangeText={setFNote}
           editable={!busy}
           multiline
         />

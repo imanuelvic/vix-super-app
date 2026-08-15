@@ -91,6 +91,7 @@ export default function FitnessScreen() {
             done={done}
             dayId={dayId}
             streak={streak}
+            bodyWeightKg={profile?.weightKg ?? null}
           />
         ) : (
           <ProgressTab streak={streak} profile={profile} target={target} />

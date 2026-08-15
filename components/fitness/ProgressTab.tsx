@@ -70,9 +70,7 @@ export function ProgressTab({
       {profile && (
         <PressableScale
           style={styles.bodyCard}
-          onPress={() =>
-            router.push({ pathname: '/health', params: { tab: 'summary' } })
-          }>
+          onPress={() => router.push('/profile')}>
           <View style={styles.bodyTop}>
             <VixText heading="bold" additionalStyle={styles.bodyTitle}>
               🧍 Data Tubuh

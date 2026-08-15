@@ -3,7 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -14,6 +18,7 @@ import { UtilityTab } from '@/components/residence/UtilityTab';
 import { InfoTab } from '@/components/residence/InfoTab';
 import { useAuth } from '@/contexts/auth';
 import {
+  countResidenceAttention,
   deleteResidenceLogs,
   RESIDENCE_INFO,
   subscribeChoreStatus,
@@ -44,7 +49,8 @@ export default function ResidenceScreen() {
 
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. Default di
   // tengah (Air-Listrik).
-  const { tab, scrollKey, onTabPress } = useTabScroll<ResidenceTab>('utility');
+  // Masuk langsung ke Perawatan — sub-tab yang paling sering perlu dicek.
+  const { tab, scrollKey, onTabPress } = useTabScroll<ResidenceTab>('chores');
   const [logs, setLogs] = useState<ResidenceLog[] | null>(null);
   const [utilityTx, setUtilityTx] = useState<Transaction[] | null>(null);
   const [chores, setChores] = useState<ChoreStatusMap | null>(null);
@@ -118,7 +124,14 @@ export default function ResidenceScreen() {
         )}
       </View>
 
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Badge Perawatan = angka yang sama dengan badge tile Residence di Home */}
+      <BottomTabs
+        tabs={withBadge(TABS, {
+          chores: countResidenceAttention(chores ?? {}, new Date()),
+        })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }

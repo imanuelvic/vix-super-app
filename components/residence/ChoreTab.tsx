@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -24,8 +25,8 @@ import {
 
 const TONE_LABEL: Record<ChoreTone, string> = {
   ok: '✅ Bersih',
-  warn: '⚠️ Segera',
-  over: '🔴 Lewat jadwal',
+  warn: '⚠️ Besok', // rumah tidak memakai status ini (langsung hari-H)
+  over: '🔴 Sekarang',
   unknown: '❓ Belum dicatat',
 };
 
@@ -37,6 +38,7 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
 
   const [editing, setEditing] = useState<ResidenceChore | null>(null);
   const [fDate, setFDate] = useState(new Date());
+  const [fNote, setFNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -49,6 +51,8 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
   function openEdit(chore: ResidenceChore) {
     setEditing(chore);
     setFDate(new Date());
+    // Catatan terakhir untuk item ini muncul lagi — biar tak lupa.
+    setFNote(status[chore.key]?.note ?? '');
     setError(null);
   }
 
@@ -57,7 +61,7 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
     setBusy(true);
     setError(null);
     try {
-      await setChoreDate(user.uid, editing.key, fDate);
+      await setChoreDate(user.uid, editing.key, fDate, fNote.trim());
       setEditing(null);
     } catch {
       setError(SAVE_ERROR);
@@ -151,6 +155,15 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
         </VixText>
         {/* key = chore supaya state picker internal reset tiap ganti item */}
         <DateField key={editing?.key} value={fDate} onChange={setFDate} />
+        {/* Catatan pribadi — hanya terlihat di modal ini, tidak di daftar. */}
+        <FormInput
+          placeholder="Catatan (cairan/alat, tukang, harga…)"
+          value={fNote}
+          onChangeText={setFNote}
+          editable={!busy}
+          multiline
+          style={styles.noteInput}
+        />
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
             {error}
@@ -199,5 +212,6 @@ const styles = StyleSheet.create({
   dateLine: { color: Color.TEXT_PLACEHOLDER },
   modalTitle: { marginBottom: 2 },
   modalHint: { marginBottom: 10 },
+  noteInput: { marginTop: 10, minHeight: 76, textAlignVertical: 'top' },
   error: { color: Color.DANGER, marginTop: 8 },
 });

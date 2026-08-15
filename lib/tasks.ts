@@ -231,6 +231,9 @@ export type OtherTask = {
   note: string;
   priority: 1 | 2 | 3; // 1 = paling penting
   done: boolean;
+  // Kategori sama persis dengan sub-tab Reminder Harian (TASK_CATEGORIES),
+  // jadi emoji & urutannya seragam. Opsional — data lama dianggap 'personal'.
+  category?: TaskCategory;
   deadline?: Timestamp | null; // tenggat (opsional — data lama belum punya)
   createdAt: Timestamp | null;
 };
@@ -284,6 +287,7 @@ export function subscribeOtherTasks(
             ...data,
             priority: data.priority ?? 2,
             note: data.note ?? '',
+            category: data.category ?? 'personal',
           };
         }),
       );
@@ -294,12 +298,19 @@ export function subscribeOtherTasks(
 
 export function addOtherTask(
   uid: string,
-  data: { title: string; note: string; priority: 1 | 2 | 3; deadline: Date },
+  data: {
+    title: string;
+    note: string;
+    priority: 1 | 2 | 3;
+    category: TaskCategory;
+    deadline: Date;
+  },
 ) {
   return addDoc(otherTasksCollection(uid), {
     title: data.title.trim(),
     note: data.note.trim(),
     priority: data.priority,
+    category: data.category,
     deadline: Timestamp.fromDate(data.deadline),
     done: false,
     createdAt: serverTimestamp(),
@@ -313,6 +324,7 @@ export function updateOtherTask(
     title?: string;
     note?: string;
     priority?: 1 | 2 | 3;
+    category?: TaskCategory;
     deadline?: Date;
   },
 ) {

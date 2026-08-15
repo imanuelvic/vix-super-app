@@ -6,7 +6,11 @@ import { Color } from '@/assets/style/color';
 import { InfoTab } from '@/components/car/InfoTab';
 import { LogTab } from '@/components/car/LogTab';
 import { PartsTab } from '@/components/car/PartsTab';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -14,6 +18,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
   CAR_INFO,
+  countCarAttention,
   subscribeCarLogs,
   subscribePartStatus,
   type CarLog,
@@ -81,8 +86,15 @@ export default function CarScreen() {
         )}
       </View>
 
-      {/* Tab bar bawah khusus layar Car */}
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Tab bar bawah khusus layar Car — badge Sparepart = angka yang sama
+          dengan badge tile Car di Home & kartu "bagian perlu perhatian". */}
+      <BottomTabs
+        tabs={withBadge(TABS, {
+          parts: countCarAttention(parts ?? {}, new Date()),
+        })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }

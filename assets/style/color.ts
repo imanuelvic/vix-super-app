@@ -76,6 +76,9 @@ export const Color = {
   WORLD: '#BFE3E0', // teal pastel (fitur World — populasi & berita dunia)
   WORLD_DARK: '#1F6F6A',
 
+  LEARNING: '#FBE3B0', // kuning-madu pastel (fitur Learning — coming soon)
+  LEARNING_DARK: '#8A6A12',
+
   // Merek luar (tombol chat WhatsApp di fitur CORE)
   WHATSAPP: '#25D366',
 

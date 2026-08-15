@@ -15,7 +15,11 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -38,6 +42,7 @@ import {
   addRecurringTasks,
   addTask,
   deleteTask,
+  effectiveOtherTask,
   generateRecurringDays,
   MAX_RECURRING,
   pruneOrphanTasks,
@@ -664,8 +669,19 @@ export default function TasksScreen() {
       )}
       </View>
 
-      {/* Tab bar bawah: Harian (planner) / Prioritas (catatan penting) */}
-      <BottomTabs tabs={MAIN_TABS} value={mainTab} onChange={onTabPress} />
+      {/* Tab bar bawah: Harian (planner) / Prioritas (catatan penting).
+          Badge memakai perhitungan yang SAMA dengan badge tile Reminder di
+          Home: task hari ini yang belum selesai, dan prioritas yang sudah P1. */}
+      <BottomTabs
+        tabs={withBadge(MAIN_TABS, {
+          daily: tasks.filter((x) => !x.done && x.dayId === todayId).length,
+          priority: otherTasks.filter(
+            (x) => !x.done && effectiveOtherTask(x, new Date()).priority === 1,
+          ).length,
+        })}
+        value={mainTab}
+        onChange={onTabPress}
+      />
 
       {/* Ghost task yang mengikuti jari saat menyeret */}
       {dragTask && (

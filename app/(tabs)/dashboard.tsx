@@ -19,7 +19,7 @@ import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import { subscribeLoginStreak, type LoginStreak } from '@/lib/achievements';
+import { type LoginStreak } from '@/lib/achievements';
 import {
   carAttentionList,
   subscribePartStatus,
@@ -96,6 +96,7 @@ import {
   formatMonthsDays,
   formatShortDayDate,
   MONTH_NAMES,
+  whenLabel,
 } from '@/lib/format';
 import {
   daysSinceLastFun,
@@ -112,15 +113,18 @@ import {
   type ScheduledHabit,
 } from '@/lib/habits';
 import {
+  activeStreak,
   checkupDueReminders,
   dayDocId,
   needsWeighIn,
   subscribeCheckups,
   subscribeHabitDay,
   subscribeHealthProfile,
+  subscribeStreak,
   type Checkup,
   type HabitDay,
   type HealthProfile,
+  type Streak,
 } from '@/lib/health';
 import {
   residenceAttentionList,
@@ -168,7 +172,6 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [login, setLogin] = useState<LoginStreak | null | undefined>(undefined);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
   const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
@@ -182,6 +185,8 @@ export default function DashboardScreen() {
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
+  // Streak kebiasaan harian ✅ — ditampilkan di kartu Achievement atas.
+  const [habitStreak, setHabitStreak] = useState<Streak | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [coreIdeas, setCoreIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
   const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
@@ -222,7 +227,6 @@ export default function DashboardScreen() {
       subscribeOtherTasks(user.uid, setOtherTasks),
       subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
-      subscribeLoginStreak(user.uid, setLogin),
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeMainTeam(user.uid, setMainTeam),
       subscribeVisitations(user.uid, setVisitations),
@@ -232,6 +236,7 @@ export default function DashboardScreen() {
       subscribeHealthProfile(user.uid, setProfile),
       subscribeSermons(user.uid, setSermons),
       subscribeReviveStreak(user.uid, setRevive),
+      subscribeStreak(user.uid, setHabitStreak),
       subscribeFastingPlans(user.uid, setFastingPlans),
       subscribeRoadmap(user.uid, setRoadmap),
       subscribeCoreIdeas(user.uid, setCoreIdeas),
@@ -352,8 +357,7 @@ export default function DashboardScreen() {
     .sort((a, b) => a.dueDate.toMillis() - b.dueDate.toMillis())
     .map((d) => {
       const days = debtDaysUntil(d, now);
-      const when =
-        days === 0 ? 'HARI INI' : days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
+      const when = whenLabel(days);
       const arrow = d.direction === 'mine' ? '💸 Bayar' : '💰 Tagih';
       return {
         id: d.id,
@@ -368,9 +372,6 @@ export default function DashboardScreen() {
       c.days < 0 ? ` (lewat ${-c.days} hari)` : ''
     }`,
   }));
-
-  const whenLabel = (days: number) =>
-    days === 0 ? 'HARI INI' : days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
 
   // Reminder deadline KERJA: prioritas Fulltime + proyek Freelance yang sudah
   // H-7 (≤ 7 hari, termasuk yang lewat). Tiap baris menuju tab yang sesuai.
@@ -422,12 +423,11 @@ export default function DashboardScreen() {
   if (weighInDue) {
     healthRows.push({
       id: 'weigh',
+      // Data Tubuh sekarang tinggal di tab Profile — ?weighIn=1 langsung
+      // membuka editornya begitu layar Profile terbuka.
       text: '⚖️ Timbang berat minggu ini — update berat (kg)',
       onPress: () =>
-        router.push({
-          pathname: '/health',
-          params: { tab: 'summary', weighIn: '1' },
-        }),
+        router.push({ pathname: '/profile', params: { weighIn: '1' } }),
     });
   }
   // Donor darah — sudah boleh lagi (hari Minggu). "Sejak" dihitung bulan+hari.
@@ -504,18 +504,21 @@ export default function DashboardScreen() {
   const restDayDue = fitWindow && fitSession === null;
 
   // ===== Reminder Residence 🏠 & Car 🚗 =====
-  // Sumbernya SAMA dengan badge merah di tile Home: perawatan yang sudah dekat
-  // jadwalnya atau sudah lewat. Jadi badge muncul = kartunya muncul juga.
-  const residenceReminders = residenceAttentionList(residenceChores, now).map(
-    (c) => ({
+  // Dashboard HANYA menampilkan yang statusnya "Sekarang" (hari-H atau sudah
+  // lewat). Yang masih "Besok" cukup terlihat di badge & di layar fiturnya —
+  // biar Dashboard tidak penuh hal yang belum waktunya dikerjakan.
+  const residenceReminders = residenceAttentionList(residenceChores, now)
+    .filter((c) => c.tone === 'over')
+    .map((c) => ({
       id: c.key,
       text: `${c.label} — ${whenLabel(daysBetween(now, c.dueDate))}`,
-    }),
-  );
-  const carReminders = carAttentionList(carParts, now).map((p) => ({
-    id: p.key,
-    text: `${p.label} — ${whenLabel(daysBetween(now, p.dueDate))}`,
-  }));
+    }));
+  const carReminders = carAttentionList(carParts, now)
+    .filter((p) => p.tone === 'over')
+    .map((p) => ({
+      id: p.key,
+      text: `${p.label} — ${whenLabel(daysBetween(now, p.dueDate))}`,
+    }));
 
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
   // memutuskan apakah perlu memunculkan fallback produktivitas).
@@ -604,22 +607,14 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
+          {/* Streak doa pagi tidak ikut di sini — sudah tampil sebagai pil
+              🏆🔥 di header Home, jadi kartu ini fokus ke Revive & Habits. */}
+          <VixText heading="title" additionalStyle={styles.streakTitle}>
+            🏆 Achievement
+          </VixText>
           <PressableScale
             style={styles.streakCard}
             onPress={() => router.push('/achievements')}>
-            <View style={styles.streakItem}>
-              <VixText additionalStyle={styles.streakIcon}>🔥</VixText>
-              <VixText heading="header" additionalStyle={styles.streakNum}>
-                {login?.count ?? 0}
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.streakLabel}>
-                Doa Pagi
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.streakBest}>
-                rekor {login?.best ?? 0} hari
-              </VixText>
-            </View>
-            <View style={styles.streakDivider} />
             <View style={styles.streakItem}>
               <VixText additionalStyle={styles.streakIcon}>📖</VixText>
               <VixText heading="header" additionalStyle={styles.streakNum}>
@@ -630,6 +625,19 @@ export default function DashboardScreen() {
               </VixText>
               <VixText heading="label" additionalStyle={styles.streakBest}>
                 rekor {revive?.best ?? 0} hari
+              </VixText>
+            </View>
+            <View style={styles.streakDivider} />
+            <View style={styles.streakItem}>
+              <VixText additionalStyle={styles.streakIcon}>✅</VixText>
+              <VixText heading="header" additionalStyle={styles.streakNum}>
+                {activeStreak(habitStreak, todayId)}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.streakLabel}>
+                Habits
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.streakBest}>
+                hari beruntun
               </VixText>
             </View>
           </PressableScale>
@@ -1140,6 +1148,7 @@ const styles = StyleSheet.create({
   headerDate: { color: Color.TEXT_LABEL },
   content: { paddingBottom: 40, paddingTop: 12, alignItems: 'center' },
   contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20, gap: 20 },
+  streakTitle: { marginBottom: 8 },
   streakCard: {
     flexDirection: 'row',
     alignItems: 'center',

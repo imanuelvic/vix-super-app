@@ -57,13 +57,13 @@ export function InlineDelete({
 }
 
 const styles = StyleSheet.create({
-  // marginBottom → beri jarak dari footer (tombol Batal/Simpan yang menempel
-  // dengan garis pemisah) supaya tidak terlalu mepet.
+  // Jarak ke footer (tombol Batal/Simpan) sudah diatur global lewat
+  // `footer.marginTop` di SheetModal — di sini cukup jarak kecil saja.
   link: {
     color: Color.DANGER,
     textAlign: 'center',
     marginTop: 6,
-    marginBottom: 14,
+    marginBottom: 4,
   },
   confirmBox: {
     borderWidth: 1,
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     marginTop: 6,
-    marginBottom: 14,
+    marginBottom: 4,
     gap: 8,
   },
   confirmText: { color: Color.DANGER, textAlign: 'center' },

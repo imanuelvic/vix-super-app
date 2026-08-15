@@ -29,11 +29,18 @@ import {
   activeStreak,
   dayDocId,
   stepAchievements,
+  runRecords,
   stepTierLastDates,
+  subscribeHealthProfile,
   subscribeStepDays,
   subscribeStreak,
+  subscribeWaterStreak,
+  subscribeWeekStats,
+  weekGoalStats,
+  type HealthProfile,
   type StepDaysMap,
   type Streak,
+  type WeekStatsMap,
 } from '@/lib/health';
 import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
 import {
@@ -56,7 +63,11 @@ export default function AchievementsScreen() {
   const [revive, setRevive] = useState<LoginStreak | null>(null);
   const [bible, setBible] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   const [fit, setFit] = useState<LoginStreak | null>(null);
+  const [water, setWater] = useState<LoginStreak | null>(null);
   const [stepDays, setStepDays] = useState<StepDaysMap>({});
+  // Tinggi badan dipakai mengubah langkah → kilometer (patokan pelari).
+  const [body, setBody] = useState<HealthProfile | null>(null);
+  const [weeks, setWeeks] = useState<WeekStatsMap>({});
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,29 +101,39 @@ export default function AchievementsScreen() {
       subscribeReviveStreak(user.uid, setRevive, fail),
       subscribeBibleStreaks(user.uid, setBible, fail),
       subscribeFitStreak(user.uid, setFit, fail),
+      subscribeWaterStreak(user.uid, setWater, fail),
       subscribeStepDays(user.uid, setStepDays, fail),
+      subscribeHealthProfile(user.uid, setBody, fail),
+      subscribeWeekStats(user.uid, setWeeks, fail),
       subscribeSelfRewardBalance(user.uid, setBalance, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
   const stepAch = stepAchievements(stepDays);
+  const runs = runRecords(stepDays, body?.heightCm ?? 170);
+  const wk = weekGoalStats(weeks);
   const stats: AchievementStats = {
     loginCount: login?.count ?? 0,
     loginBest: login?.best ?? 0,
-    loginTotal: login?.total ?? 0,
     habitStreak: activeStreak(habit, dayDocId(new Date())),
     reviveBest: revive?.best ?? 0,
     reviveTotal: revive?.total ?? 0,
-    bibleTotal: bible.morning.total + bible.night.total,
     bibleMorningBest: bible.morning.best,
     bibleNightBest: bible.night.best,
-    bibleBothBest: bible.both.best,
-    bibleBothTotal: bible.both.total,
     fitTotal: fit?.total ?? 0,
     fitBest: fit?.best ?? 0,
     bestSteps: stepAch.best?.steps ?? 0,
     stepTierLastDate: stepTierLastDates(stepDays),
+    weekStepHits: wk.stepHits,
+    weekGymHits: wk.gymHits,
+    weekBothHits: wk.bothHits,
+    bestDayKm: runs.bestDayKm,
+    bestWeekKm: runs.bestWeekKm,
+    bestMonthKm: runs.bestMonthKm,
+    waterCount: water?.count ?? 0,
+    waterBest: water?.best ?? 0,
+    waterTotal: water?.total ?? 0,
   };
   const unlocked = ACHIEVEMENTS.filter((a) => a.of(stats) >= a.target).length;
 
@@ -152,9 +173,10 @@ export default function AchievementsScreen() {
               dari {ACHIEVEMENTS.length} achievement
             </VixText>
           </VixText>
+          {/* Cukup rentetannya — total seumur hidup sengaja tidak ditampilkan. */}
           <VixText heading="label" additionalStyle={styles.heroLabel}>
-            🙏 Streak doa {stats.loginCount} hari · terbaik {stats.loginBest} ·
-            total {stats.loginTotal} hari
+            🙏 Streak doa {stats.loginCount} hari · terbaik {stats.loginBest}{' '}
+            hari
           </VixText>
         </View>
 
@@ -281,7 +303,11 @@ export default function AchievementsScreen() {
                     <VixText
                       heading="bold"
                       additionalStyle={done ? styles.doneText : styles.lockText}>
-                      {done ? '✅' : `${Math.min(value, a.target)}/${a.target}`}
+                      {done
+                        ? '✅'
+                        : a.fmt
+                          ? `${a.fmt(Math.min(value, a.target))}/${a.fmt(a.target)}`
+                          : `${Math.min(value, a.target)}/${a.target}`}
                     </VixText>
                   </View>
                   <VixText heading="label">{a.desc}</VixText>

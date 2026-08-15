@@ -222,7 +222,12 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 4 },
   // Footer menempel di bawah: garis pemisah edge-to-edge + latar senada, jadi
   // tombol aksi (Batal/Simpan) selalu terlihat tanpa perlu scroll.
+  // marginTop → SEMUA modal otomatis punya jarak antara isi paling bawah dan
+  // garis pemisah, jadi tak ada tombol/kolom yang menempel ke Batal/Simpan.
+  // Berlaku untuk mode scroll maupun `scroll={false}` (footer selalu sibling
+  // dari isi), jadi tak perlu diatur satu-satu di tiap layar.
   footer: {
+    marginTop: 12,
     marginHorizontal: -20,
     paddingHorizontal: 20,
     borderTopWidth: 1,

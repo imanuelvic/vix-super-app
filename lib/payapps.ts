@@ -106,6 +106,15 @@ export const CATEGORY_APP: Record<string, string> = {
   'heirs-savings': 'binance',
 };
 
+/**
+ * App tujuan untuk sebuah SAKU — memakai peta yang sama dengan kategori
+ * Finance (key saku + "-fund"), jadi banknya tidak perlu didaftar dua kali.
+ * null = saku itu belum punya bank di daftar kategori.
+ */
+export function payAppForFund(fundKey: string): PayApp | null {
+  return payAppForCategory(`${fundKey}-fund`);
+}
+
 /** App tujuan untuk sebuah kategori — null kalau kategori tidak dipetakan. */
 export function payAppForCategory(categoryKey: string): PayApp | null {
   const appKey = CATEGORY_APP[categoryKey];

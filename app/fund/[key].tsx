@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -18,11 +19,13 @@ import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
+import { openPayApp, payAppForFund } from '@/lib/payapps';
 import {
   addFundEntry,
   deleteFundEntry,
@@ -42,10 +45,48 @@ export default function FundScreen() {
   const { user } = useAuth();
   const { key } = useLocalSearchParams<{ key: string }>();
   const fund = fundOf(key ?? '');
+  // Bank saku ini (kalau ada) — untuk tombol pintasan di kartu saldo.
+  const bank = payAppForFund(fund.key);
 
   const [entries, setEntries] = useState<FundEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Mode cari (dibuka via FAB 🔍) — sama persis dengan tab Transaksi Finance:
+  // cari kata di judul/catatan + urutkan terbaru / terbesar / terkecil.
+  const listRef = useRef<FlatList<FundEntry>>(null);
+  const [searchMode, setSearchMode] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<'recent' | 'high' | 'low'>('recent');
+
+  // Buka/tutup mode cari. Tutup = reset kata & urutan.
+  function toggleSearch() {
+    setSearchMode((s) => {
+      const next = !s;
+      if (!next) {
+        setQuery('');
+        setSort('recent');
+      }
+      return next;
+    });
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }
+
+  // Daftar yang ditampilkan: apa adanya, atau hasil pencarian saat mode cari.
+  const shown = useMemo(() => {
+    if (!searchMode) return entries;
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? entries.filter(
+          (e) =>
+            e.title.toLowerCase().includes(q) ||
+            (e.cause ?? '').toLowerCase().includes(q),
+        )
+      : [...entries];
+    if (sort === 'high') return list.sort((a, b) => b.amount - a.amount);
+    if (sort === 'low') return list.sort((a, b) => a.amount - b.amount);
+    return list;
+  }, [entries, searchMode, query, sort]);
 
   // Form tambah mutasi.
   const [direction, setDirection] = useState<FundDirection>('credit');
@@ -214,6 +255,19 @@ export default function FundScreen() {
               </VixText>
             </View>
           </View>
+
+          {/* Pintasan ke app bank saku ini — banknya diambil dari peta
+              kategori Finance, jadi tidak didaftar dua kali. Tidak muncul
+              kalau saku ini belum punya bank. */}
+          {bank && (
+            <PressableScale
+              style={[styles.bankButton, { backgroundColor: bank.color }]}
+              onPress={() => openPayApp(bank)}>
+              <VixText heading="label" additionalStyle={{ color: bank.fg }}>
+                💳 {bank.label}
+              </VixText>
+            </PressableScale>
+          )}
         </View>
 
         {/* Pilih arah mutasi */}
@@ -286,6 +340,44 @@ export default function FundScreen() {
     );
   }
 
+  // Header saat mode cari aktif — bentuknya sama dengan tab Transaksi.
+  function renderSearchHeader() {
+    const q = query.trim();
+    return (
+      <View key="search-header">
+        <VixText heading="label" additionalStyle={styles.searchTitle}>
+          🔍 Cari mutasi saku ini
+        </VixText>
+        <SearchBar
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Cari transaksi / catatan…"
+          autoFocus
+        />
+        <View style={styles.sortRow}>
+          {(
+            [
+              ['recent', '🕒 Terbaru'],
+              ['high', '🔺 Terbesar'],
+              ['low', '🔻 Terkecil'],
+            ] as const
+          ).map(([key, label]) => (
+            <Chip
+              key={key}
+              label={label}
+              active={sort === key}
+              onPress={() => setSort(key)}
+              additionalStyle={styles.sortChip}
+            />
+          ))}
+        </View>
+        <VixText heading="label" additionalStyle={styles.searchCount}>
+          {shown.length} mutasi{q ? ` untuk “${q}”` : ''}
+        </VixText>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView
@@ -303,18 +395,23 @@ export default function FundScreen() {
           </View>
         ) : (
           <FlatList
-            data={entries}
+            ref={listRef}
+            data={shown}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator
             persistentScrollbar
             indicatorStyle="black"
-            ListHeaderComponent={renderHeader()}
+            ListHeaderComponent={
+              searchMode ? renderSearchHeader() : renderHeader()
+            }
             ListEmptyComponent={
               <View style={styles.center}>
                 <VixText heading="label">
-                  Belum ada mutasi. Tambahkan di atas 👆
+                  {searchMode
+                    ? 'Tidak ada mutasi yang cocok.'
+                    : 'Belum ada mutasi. Tambahkan di atas 👆'}
                 </VixText>
               </View>
             }
@@ -368,6 +465,15 @@ export default function FundScreen() {
           />
         )}
       </KeyboardAvoidingView>
+
+      {/* FAB mengambang (sama seperti tab Transaksi): buka/tutup mode cari 🔍 */}
+      <PressableScale style={styles.fab} onPress={toggleSearch}>
+        <IconSymbol
+          name={searchMode ? 'xmark' : 'magnifyingglass'}
+          size={24}
+          color={Color.TEXT_REVERSE}
+        />
+      </PressableScale>
 
       {/* Bottom sheet: edit mutasi */}
       <SheetModal
@@ -446,6 +552,15 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row' },
   summaryItem: { flex: 1 },
   summaryValue: { color: Color.TEXT_REVERSE },
+  // Tombol kecil ke app bank saku ini — menempel di kanan atas kartu saldo.
+  bankButton: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
   directionRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   directionChip: {
     flex: 1,
@@ -469,7 +584,23 @@ const styles = StyleSheet.create({
   },
   disabled: { opacity: 0.6 },
   error: { color: Color.DANGER, marginTop: 8 },
-  listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
+  // Mode cari 🔍 — bentuknya sama dengan tab Transaksi Finance.
+  searchTitle: { marginBottom: 8 },
+  sortRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  sortChip: { flex: 1 },
+  searchCount: { marginTop: 10, marginBottom: 2 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 28,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Color.MAIN,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

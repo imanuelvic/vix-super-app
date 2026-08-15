@@ -83,6 +83,16 @@ export function startOfDay(d: Date): Date {
  * Positif = `to` di masa depan, 0 = hari yang sama, negatif = sudah lewat.
  * Dipakai untuk semua hitungan "x hari lagi" / "lewat x hari".
  */
+/**
+ * "HARI INI" / "5 hari lagi" / "lewat 3 hari" — teks tenggat yang dipakai
+ * seragam di Dashboard, Career, perawatan mobil & rumah. Pemakainya tinggal
+ * menambahkan emoji/awalannya sendiri.
+ */
+export function whenLabel(days: number): string {
+  if (days === 0) return 'HARI INI';
+  return days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
+}
+
 export function daysBetween(from: Date, to: Date): number {
   return Math.round(
     (startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000,

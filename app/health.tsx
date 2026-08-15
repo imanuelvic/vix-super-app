@@ -4,7 +4,11 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
@@ -12,31 +16,39 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { StreakPill } from '@/components/common/StreakPill';
 import { VixText } from '@/components/common/VixText';
 import { CheckupTab } from '@/components/health/CheckupTab';
-import { SummaryTab } from '@/components/health/SummaryTab';
+import { StepsTab } from '@/components/health/StepsTab';
 import { HabitsTab } from '@/components/health/HabitsTab';
 import { useAuth } from '@/contexts/auth';
-import { subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
+import {
+  pendingHabits,
+  subscribeHabitSchedule,
+  type ScheduledHabit,
+} from '@/lib/habits';
 import {
   activeStreak,
   dayDocId,
   subscribeCheckups,
   subscribeHabitDay,
   subscribeHealthProfile,
+  subscribeStepDays,
   subscribeStreak,
+  subscribeWeekStats,
   subscribeWeightTarget,
   type Checkup,
   type HabitDay,
   type HealthProfile,
+  type StepDaysMap,
   type Streak,
+  type WeekStatsMap,
   type WeightTarget,
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type HealthTab = 'summary' | 'habits' | 'checkup';
+type HealthTab = 'steps' | 'habits' | 'checkup';
 
 // Tab bar bawah di dalam layar Health.
 const TABS: BottomTab<HealthTab>[] = [
-  { key: 'summary', label: 'Summary', icon: 'heart.fill' },
+  { key: 'steps', label: 'Steps', icon: 'figure.walk' },
   { key: 'habits', label: 'Habits', icon: 'checklist' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
@@ -49,7 +61,12 @@ export default function HealthScreen() {
   // Default masuk ke tab Habits; reminder Home bisa mengarahkan ke tab lain.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, scrollKey, onTabPress } = useTabScroll<HealthTab>(
-    tabParam === 'summary' || tabParam === 'checkup' ? tabParam : 'habits',
+    // 'summary' masih diterima demi tautan lama yang mungkin tersimpan.
+    tabParam === 'steps' || tabParam === 'summary'
+      ? 'steps'
+      : tabParam === 'checkup'
+        ? 'checkup'
+        : 'habits',
   );
 
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
@@ -61,6 +78,8 @@ export default function HealthScreen() {
   // undefined = belum termuat; null = memang belum ada datanya.
   const [target, setTarget] = useState<WeightTarget | null | undefined>(undefined);
   const [streak, setStreak] = useState<Streak | null | undefined>(undefined);
+  const [stepDays, setStepDays] = useState<StepDaysMap>({});
+  const [weeks, setWeeks] = useState<WeekStatsMap>({});
   const [error, setError] = useState<string | null>(null);
 
   const dayId = dayDocId(new Date());
@@ -82,6 +101,8 @@ export default function HealthScreen() {
       subscribeCheckups(user.uid, setCheckups, fail),
       subscribeWeightTarget(user.uid, setTarget, fail),
       subscribeStreak(user.uid, setStreak, fail),
+      subscribeStepDays(user.uid, setStepDays, fail),
+      subscribeWeekStats(user.uid, setWeeks, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, dayId]);
@@ -103,7 +124,7 @@ export default function HealthScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Tombol kanan atas menyesuaikan sub-tab yang sedang dibuka:
-          Habits → streak 🔥 · Summary → rekor langkah · Check-up → info kesehatan. */}
+          Habits → streak 🔥 · Steps → rekor langkah · Check-up → info kesehatan. */}
       <ScreenHeader
         backLabel="Home"
         title="Health 🍎"
@@ -111,7 +132,7 @@ export default function HealthScreen() {
         right={
           tab === 'habits' ? (
             <StreakPill streak={streakDays} />
-          ) : tab === 'summary' ? (
+          ) : tab === 'steps' ? (
             <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
           ) : (
             <EmojiButton
@@ -131,8 +152,8 @@ export default function HealthScreen() {
       <View style={styles.content} key={scrollKey}>
         {loading ? (
           <LoadingCenter />
-        ) : tab === 'summary' ? (
-          <SummaryTab profile={profile} />
+        ) : tab === 'steps' ? (
+          <StepsTab profile={profile} stepDays={stepDays} weeks={weeks} />
         ) : tab === 'habits' ? (
           <HabitsTab
             habits={dayHabits}
@@ -147,8 +168,15 @@ export default function HealthScreen() {
         )}
       </View>
 
-      {/* Tab bar bawah khusus layar Health */}
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Badge Habits = kebiasaan yang sesinya sudah tiba tapi belum dicentang
+          — angka yang sama dengan badge tile Health di Home. */}
+      <BottomTabs
+        tabs={withBadge(TABS, {
+          habits: pendingHabits(dayHabits, day?.done ?? {}, new Date()).length,
+        })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }

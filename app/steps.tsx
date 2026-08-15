@@ -84,7 +84,7 @@ export default function StepsScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Health"
-        title="Rekor Langkah 👣🏆"
+        title="Langkah Kaki👣"
         subtitle="Pencapaian langkah harianmu"
       />
 
