@@ -158,7 +158,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
         <DateField key={editing?.key} value={fDate} onChange={setFDate} />
         {/* Catatan pribadi — hanya terlihat di modal ini, tidak di daftar. */}
         <FormInput
-          placeholder="Catatan (bengkel, merek, harga…)"
+          placeholder="Catatan"
           value={fNote}
           onChangeText={setFNote}
           editable={!busy}

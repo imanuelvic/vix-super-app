@@ -168,11 +168,11 @@ export default function ReviveEditorScreen() {
   // Template pesan untuk dibagikan ke WhatsApp (isi placeholder dari form).
   function buildShareText(): string {
     return (
-      `Judul Revive ${fTitle.trim()}\n` +
-      `Tgl ${formatFullDate(editingDate)}\n\n` +
+      `${fTitle.trim()}\n` +
+      `- ${formatFullDate(editingDate)}\n\n` +
       `Revive hari ini aku belajar ${fRhema.trim()}\n\n` +
-      `kesaksian…\n\n` +
-      `aplikasi, yuk sama2 semangat ${fReflection.trim()}`
+      `yuk semangat ${fReflection.trim()}\n\n` +
+      `God bless all, have a nice day!`
     );
   }
 

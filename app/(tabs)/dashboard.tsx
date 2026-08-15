@@ -146,6 +146,7 @@ import {
   subscribeFastingPlans,
   type FastingPlan,
 } from '@/lib/fasting';
+import { intercessionToday } from '@/lib/intercession';
 import {
   otherTaskDaysUntil,
   otherTaskUrgent,
@@ -478,6 +479,9 @@ export default function DashboardScreen() {
   const fastingPrayer = fastingNow
     ? fastingToday?.prayer || fastingNow.prayer
     : '';
+  // Selagi puasa, syafaat hari ini (keluarga/pasangan/gereja/negara) ikut
+  // diingatkan di kartu yang sama — sumber jadwalnya lib/intercession.ts.
+  const intercession = intercessionToday(now);
 
   // ===== Reminder Pokok Doa Bulanan (CORE) 📅 =====
   const prayerMonthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
@@ -648,9 +652,7 @@ export default function DashboardScreen() {
               bg={Color.FINANCE_EXPENSE}
               fg={Color.FINANCE_EXPENSE_DARK}
               title={`${slotMeta(curSlot).emoji} Kebiasaan ${slotMeta(curSlot).label}`}
-              onPress={() =>
-                router.push({ pathname: '/health', params: { tab: 'habits' } })
-              }>
+              onPress={() => router.push('/habits')}>
               <VixText heading="label" additionalStyle={styles.habitReminderSub}>
                 {slotUndone.length} kebiasaan belum dilakukan — ketuk untuk buka 💪
               </VixText>
@@ -890,6 +892,10 @@ export default function DashboardScreen() {
                   📜 {fastingNow.rules}
                 </VixText>
               ) : null}
+              <VixText heading="label" additionalStyle={styles.prayerText}>
+                🙏 Bawa juga syafaat hari ini: {intercession.emoji}{' '}
+                {intercession.label}
+              </VixText>
             </ReminderCard>
           )}
 

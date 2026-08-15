@@ -5,16 +5,24 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   budgetKey,
   copyBudgetFromPreviousMonth,
-  setBudgetAllocation,
+  customSubsOf,
+  newSubKey,
+  saveCategoryBudget,
+  saveSubcategories,
+  subBudgetKey,
+  subsOf,
   type BudgetMap,
+  type SubcategoryMap,
 } from '@/lib/budgets';
 import {
   categoryOf,
@@ -31,6 +39,18 @@ type BudgetRow = {
   category: FinanceCategory;
   allocated: number; // budget yang di-set manual
   realized: number; // realisasi otomatis dari transaksi
+  subCount: number; // jumlah sub-budget kategori ini
+};
+
+// Baris sub-budget yang sedang diedit di dalam modal. `amount` disimpan
+// sebagai teks (sudah berformat ribuan) karena langsung diikat ke MoneyInput.
+// `builtin` = sub bawaan (⛽ Bensin) — boleh diberi budget, tapi tak bisa
+// dihapus karena dipakai untuk sinkron ke fitur Car.
+type SubDraft = {
+  key: string;
+  label: string;
+  amount: string;
+  builtin?: boolean;
 };
 
 // Tab Budgeting: budget per kategori per bulan (di-set manual) dibandingkan
@@ -43,12 +63,14 @@ export function BudgetingTab({
   month,
   budget,
   copied,
+  subcats,
 }: {
   items: Transaction[];
   year: number;
   month: number;
   budget: BudgetMap;
   copied: boolean;
+  subcats: SubcategoryMap;
 }) {
   const { user } = useAuth();
 
@@ -60,16 +82,31 @@ export function BudgetingTab({
   const [copying, setCopying] = useState(false);
   const [confirmCopy, setConfirmCopy] = useState(false);
 
-  // Modal set budget.
+  // Modal set budget (kategori + sub-budget-nya).
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [editAmount, setEditAmount] = useState('');
   const [saving, setSaving] = useState(false);
+  // Salinan kerja sub-budget selama modal terbuka — baru ditulis saat Simpan.
+  const [subDraft, setSubDraft] = useState<SubDraft[]>([]);
+  const [removedSubs, setRemovedSubs] = useState<string[]>([]);
+  const [newSubLabel, setNewSubLabel] = useState('');
 
   // Realisasi per "jenis:kategori" dari seluruh transaksi bulan ini.
   const realization = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of items) {
       const key = budgetKey(t.type, t.category);
+      map.set(key, (map.get(key) ?? 0) + t.amount);
+    }
+    return map;
+  }, [items]);
+
+  // Realisasi per sub-kategori — hanya transaksi yang memang memilih sub.
+  const subRealization = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of items) {
+      if (!t.sub) continue;
+      const key = subBudgetKey(t.type, t.category, t.sub);
       map.set(key, (map.get(key) ?? 0) + t.amount);
     }
     return map;
@@ -84,19 +121,61 @@ export function BudgetingTab({
         category: categoryOf(type, c.key),
         allocated: budget[budgetKey(type, c.key)] ?? 0,
         realized: realization.get(budgetKey(type, c.key)) ?? 0,
+        subCount: subsOf(subcats, type, c.key).length,
       }))
       .filter((r) => r.category.active || r.allocated > 0 || r.realized > 0);
-  }, [type, budget, realization]) as BudgetRow[];
+  }, [type, budget, realization, subcats]) as BudgetRow[];
 
   const totalAllocated = rows.reduce((sum, r) => sum + r.allocated, 0);
   const totalRealized = rows.reduce((sum, r) => sum + r.realized, 0);
   const totalPercent =
     totalAllocated > 0 ? (totalRealized / totalAllocated) * 100 : 0;
 
+  // Ringkasan sub-budget di dalam modal: totalnya & apakah sudah melebihi
+  // budget kategori induknya.
+  const subTotal = subDraft.reduce((sum, s) => sum + parseAmount(s.amount), 0);
+  const editAllocated = parseAmount(editAmount);
+  const subOver = editAllocated > 0 && subTotal > editAllocated;
+
   function openEdit(category: FinanceCategory) {
     setEditing(category);
     const current = budget[budgetKey(type, category.key)] ?? 0;
     setEditAmount(current > 0 ? groupDigits(String(current)) : '');
+    // Sub-budget disalin dulu ke draft; nominalnya diambil dari alokasi bulan
+    // yang sedang dibuka.
+    setSubDraft(
+      subsOf(subcats, type, category.key).map((s) => {
+        const value = budget[subBudgetKey(type, category.key, s.key)] ?? 0;
+        return {
+          key: s.key,
+          label: s.label,
+          builtin: s.builtin,
+          amount: value > 0 ? groupDigits(String(value)) : '',
+        };
+      }),
+    );
+    setRemovedSubs([]);
+    setNewSubLabel('');
+  }
+
+  /** Tambah sub baru ke draft (belum ditulis ke Firestore sampai Simpan). */
+  function addSub() {
+    const label = newSubLabel.trim();
+    if (!label) return;
+    setSubDraft((list) => [...list, { key: newSubKey(label), label, amount: '' }]);
+    setNewSubLabel('');
+  }
+
+  /** Buang sub dari draft — alokasinya ikut dihapus permanen saat Simpan. */
+  function removeSub(key: string) {
+    setSubDraft((list) => list.filter((s) => s.key !== key));
+    setRemovedSubs((list) => [...list, key]);
+  }
+
+  function changeSubAmount(key: string, text: string) {
+    setSubDraft((list) =>
+      list.map((s) => (s.key === key ? { ...s, amount: groupDigits(text) } : s)),
+    );
   }
 
   function handleCopyPress() {
@@ -123,9 +202,29 @@ export function BudgetingTab({
   async function handleSave() {
     if (!user || !editing || saving) return;
     const value = parseAmount(editAmount); // 0 = hapus budget
+    const subAmounts: Record<string, number> = {};
+    for (const s of subDraft) subAmounts[s.key] = parseAmount(s.amount);
     setSaving(true);
     try {
-      await setBudgetAllocation(user.uid, year, month, type, editing.key, value);
+      // Daftar sub (lintas bulan) & nominalnya (per bulan) tersimpan di dua
+      // dokumen berbeda — daftarnya cuma ditulis kalau memang berubah.
+      const before = customSubsOf(subcats, type, editing.key);
+      const after = subDraft
+        .filter((s) => !s.builtin) // sub bawaan tidak ikut disimpan
+        .map((s) => ({ key: s.key, label: s.label }));
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        await saveSubcategories(user.uid, type, editing.key, after);
+      }
+      await saveCategoryBudget(
+        user.uid,
+        year,
+        month,
+        type,
+        editing.key,
+        value,
+        subAmounts,
+        removedSubs,
+      );
     } catch {
       setError('Gagal menyimpan budget. Coba lagi.');
     } finally {
@@ -223,6 +322,11 @@ export function BudgetingTab({
                   Budget: {formatRupiah(row.allocated)}
                 </VixText>
               </View>
+              {row.subCount > 0 && (
+                <VixText heading="label" additionalStyle={styles.subHint}>
+                  🧩 {row.subCount} sub-budget
+                </VixText>
+              )}
             </PressableScale>
           );
         })}
@@ -248,6 +352,96 @@ export function BudgetingTab({
         <VixText heading="label" additionalStyle={styles.modalHint}>
           Isi 0 atau kosongkan untuk menghapus budget.
         </VixText>
+
+        {/* Sub-budget: rincian di dalam kategori ini (mis. Groceries → Telur).
+            Totalnya dibandingkan dengan budget kategori di atas. */}
+        <View style={styles.subSection}>
+          <View style={styles.subHeader}>
+            <VixText heading="bold" additionalStyle={styles.subTitle}>
+              🧩 Sub-budget
+            </VixText>
+            <VixText
+              heading="label"
+              additionalStyle={subOver ? styles.overText : undefined}>
+              Total {formatRupiah(subTotal)}
+            </VixText>
+          </View>
+
+          {subDraft.length > 0 && (
+            <ScrollView style={styles.subScroll} nestedScrollEnabled>
+              {subDraft.map((s) => {
+                const real = editing
+                  ? (subRealization.get(
+                      subBudgetKey(type, editing.key, s.key),
+                    ) ?? 0)
+                  : 0;
+                return (
+                  <View key={s.key} style={styles.subRow}>
+                    <View style={styles.subRowTop}>
+                      <VixText
+                        heading="bold"
+                        numberOfLines={1}
+                        additionalStyle={styles.subLabel}>
+                        {s.label}
+                      </VixText>
+                      <VixText heading="label" additionalStyle={styles.realText}>
+                        {formatRupiah(real)}
+                      </VixText>
+                      {/* Hapus sub — permanen begitu Simpan ditekan.
+                          Sub bawaan (⛽ Bensin) tidak bisa dihapus. */}
+                      {!s.builtin && (
+                        <PressableScale
+                          onPress={() => removeSub(s.key)}
+                          disabled={saving}
+                          hitSlop={10}>
+                          <IconSymbol
+                            name="xmark"
+                            size={16}
+                            color={Color.TEXT_PLACEHOLDER}
+                          />
+                        </PressableScale>
+                      )}
+                    </View>
+                    <MoneyInput
+                      placeholder="Nominal sub-budget"
+                      value={s.amount}
+                      onChangeText={(t) => changeSubAmount(s.key, t)}
+                      editable={!saving}
+                    />
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          {/* Tambah sub baru — namanya bebas, diketik sendiri */}
+          <View style={styles.subAddRow}>
+            <FormInput
+              style={styles.subAddInput}
+              placeholder="Nama sub (mis. Telur)"
+              value={newSubLabel}
+              onChangeText={setNewSubLabel}
+              onSubmitEditing={addSub}
+              returnKeyType="done"
+              editable={!saving}
+            />
+            <PressableScale
+              style={styles.subAddButton}
+              onPress={addSub}
+              disabled={saving}>
+              <IconSymbol name="plus" size={20} color={Color.TEXT_REVERSE} />
+            </PressableScale>
+          </View>
+
+          <VixText
+            heading="label"
+            additionalStyle={subOver ? styles.overText : styles.modalHint}>
+            {subOver
+              ? `Total sub melebihi budget kategori (${formatRupiah(editAllocated)}).`
+              : 'Sub-budget cuma rincian — realisasinya tetap ikut kategori induk.'}
+          </VixText>
+        </View>
+
         <DualButtons
           confirmLabel="Simpan"
           busy={saving}
@@ -365,4 +559,36 @@ const styles = StyleSheet.create({
   modalTitle: { marginBottom: 2 },
   modalCategory: { marginBottom: 12 },
   modalHint: { marginTop: 6 },
+  // Penanda di baris kategori kalau ada rinciannya.
+  subHint: { color: Color.TEXT_LABEL },
+  // ===== Sub-budget di dalam modal Set Budget =====
+  subSection: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+  },
+  subHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  subTitle: { color: Color.TEXT_TITLE },
+  // Dibatasi tingginya supaya dialog tidak memanjang keluar layar.
+  subScroll: { maxHeight: 210 },
+  subRow: { marginBottom: 10, gap: 6 },
+  subRowTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  subLabel: { flex: 1, color: Color.TEXT_TITLE },
+  subAddRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  subAddInput: { flex: 1 },
+  subAddButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Color.MAIN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

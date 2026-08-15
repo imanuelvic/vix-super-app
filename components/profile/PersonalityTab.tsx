@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -66,19 +67,8 @@ export function PersonalityTab({ data }: { data: Personality }) {
     if (!user || saving) return;
     setSaving(true);
     setError(null);
-    // Ganti hasil tes → tanggal tesnya ikut diperbarui ke hari ini, supaya
-    // hitungan "setahun lagi" mulai dari sekarang.
-    const next: Personality = {
-      ...form,
-      mbtiDayId:
-        form.mbti && form.mbti !== data.mbti ? todayId : form.mbtiDayId,
-      loveDayId:
-        form.loveLanguage && form.loveLanguage !== data.loveLanguage
-          ? todayId
-          : form.loveDayId,
-    };
     try {
-      await saveSelfKnowledge(user.uid, { personality: next });
+      await saveSelfKnowledge(user.uid, { personality: form });
       setEditOpen(false);
     } catch {
       setError(SAVE_ERROR);
@@ -94,6 +84,23 @@ export function PersonalityTab({ data }: { data: Personality }) {
 
   function set<K extends keyof Personality>(key: K, value: Personality[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  /**
+   * Ganti hasil tes → tanggal tesnya otomatis diisi HARI INI supaya hitungan
+   * "setahun lagi" mulai dari sekarang. Tetap bisa diubah manual di bawahnya
+   * (mis. kalau tesnya sebenarnya dilakukan bulan lalu).
+   */
+  function setResult(
+    valueKey: 'mbti' | 'loveLanguage',
+    dateKey: 'mbtiDayId' | 'loveDayId',
+    value: string | null,
+  ) {
+    setForm((prev) => ({
+      ...prev,
+      [valueKey]: value,
+      [dateKey]: value ? (prev[dateKey] ?? todayId) : null,
+    }));
   }
 
   return (
@@ -200,10 +207,6 @@ export function PersonalityTab({ data }: { data: Personality }) {
             })}
           </>
         )}
-        <VixText heading="label" additionalStyle={styles.testHint}>
-          Jawaban tes ikut berubah seiring musim hidup — makanya diulang tiap
-          tahun. Ganti hasilnya di sini, tanggalnya otomatis diperbarui.
-        </VixText>
       </View>
 
       <PressableScale style={styles.editButton} onPress={openEdit}>
@@ -235,9 +238,13 @@ export function PersonalityTab({ data }: { data: Personality }) {
             key: m,
             label: `${m} · ${MBTI_NICKNAME[m]}`,
           }))}
-          onChange={(v) => set('mbti', v)}
+          onChange={(v) => setResult('mbti', 'mbtiDayId', v)}
           placeholder="Pilih tipe MBTI…"
           clearable
+        />
+        <TestDateField
+          value={form.mbtiDayId}
+          onChange={(id) => set('mbtiDayId', id)}
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -246,9 +253,13 @@ export function PersonalityTab({ data }: { data: Personality }) {
         <SelectField
           value={form.loveLanguage}
           options={LOVE_LANG_OPTIONS.map((l) => ({ key: l.key, label: l.label }))}
-          onChange={(v) => set('loveLanguage', v)}
+          onChange={(v) => setResult('loveLanguage', 'loveDayId', v)}
           placeholder="Pilih love language…"
           clearable
+        />
+        <TestDateField
+          value={form.loveDayId}
+          onChange={(id) => set('loveDayId', id)}
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -355,6 +366,30 @@ function TraitCard({
   );
 }
 
+// Tanggal TES TERAKHIR — muncul di bawah tiap pilihan hasil tes. Dari sinilah
+// hitungan "tes lagi setahun kemudian" dimulai, jadi bisa diisi tanggal
+// sebenarnya (bukan selalu hari ini).
+function TestDateField({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (dayId: string) => void;
+}) {
+  if (!value) return null;
+  return (
+    <View style={styles.testDateWrap}>
+      <VixText heading="label" additionalStyle={styles.testDateLabel}>
+        Tanggal tes terakhir
+      </VixText>
+      <DateField
+        value={dayIdToDate(value)}
+        onChange={(d) => onChange(dayDocId(d))}
+      />
+    </View>
+  );
+}
+
 // Baris jadwal tes ulang.
 function TestRow({
   label,
@@ -448,6 +483,8 @@ const styles = StyleSheet.create({
   },
   editText: { color: Color.MAIN_DARK },
   fieldLabel: { marginTop: 12, marginBottom: 6 },
+  testDateWrap: { marginTop: 8 },
+  testDateLabel: { color: Color.TEXT_LABEL, marginBottom: 6 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
   error: { color: Color.DANGER, marginTop: 8 },
 });

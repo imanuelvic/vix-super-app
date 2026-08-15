@@ -1,10 +1,17 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Color } from '@/assets/style/color';
 import { HapticTab } from '@/components/haptic-tab';
 import { RaisedHomeTab } from '@/components/raised-home-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAuth } from '@/contexts/auth';
+import {
+  pendingHabits,
+  subscribeHabitSchedule,
+  type ScheduledHabit,
+} from '@/lib/habits';
+import { dayDocId, subscribeHabitDay, type HabitDay } from '@/lib/health';
 
 // Home tetap tab pembuka meski Dashboard dideklarasikan lebih dulu (paling kiri).
 export const unstable_settings = {
@@ -12,6 +19,35 @@ export const unstable_settings = {
 };
 
 export default function TabLayout() {
+  const { user } = useAuth();
+
+  // Badge merah di tab Habits: kebiasaan yang sesinya sudah tiba tapi belum
+  // dicentang. Dulu angka ini nempel di tile Health; sekarang kebiasaannya
+  // pindah ke tab ini, jadi badge-nya ikut pindah ke sini.
+  const [schedule, setSchedule] = useState<ScheduledHabit[]>([]);
+  const [day, setDay] = useState<HabitDay | null>(null);
+
+  // Jam berjalan (per menit) supaya lewat tengah malam badge ikut kereset.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const todayId = dayDocId(now);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubs = [
+      subscribeHabitSchedule(user.uid, setSchedule),
+      subscribeHabitDay(user.uid, todayId, setDay),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [user, todayId]);
+
+  const habitsLeft = day
+    ? pendingHabits(schedule, day.done, now).length
+    : 0;
+
   return (
     <Tabs
       screenOptions={{
@@ -24,7 +60,9 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
-      {/* Urutan tab: Dashboard · Tournament · Home · Profile · System */}
+      {/* Urutan tab: Dashboard · Habits · Home · Profile · System.
+          Tournament 🏆 pindah ke grid Home; tempatnya di sini diisi Habits
+          (kebiasaan harian + Diet + Sleep) yang memang dibuka tiap hari. */}
       <Tabs.Screen
         name="dashboard"
         options={{
@@ -36,11 +74,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tournament"
+        name="habits"
         options={{
-          title: 'Tournament',
+          title: 'Habits',
+          tabBarBadge: habitsLeft > 0 ? habitsLeft : undefined,
+          tabBarBadgeStyle: { backgroundColor: Color.DANGER },
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="trophy.fill" color={color} />
+            <IconSymbol size={28} name="checklist" color={color} />
           ),
         }}
       />

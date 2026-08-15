@@ -157,7 +157,7 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
         <DateField key={editing?.key} value={fDate} onChange={setFDate} />
         {/* Catatan pribadi — hanya terlihat di modal ini, tidak di daftar. */}
         <FormInput
-          placeholder="Catatan (cairan/alat, tukang, harga…)"
+          placeholder="Catatan"
           value={fNote}
           onChangeText={setFNote}
           editable={!busy}

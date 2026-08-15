@@ -20,6 +20,7 @@ import {
   type MonthlyPrayers,
 } from '@/lib/core';
 import { dayDocId } from '@/lib/health';
+import { intercessionToday } from '@/lib/intercession';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 
 // Lock screen doa pagi — halaman PENUH di root stack (di luar tab), jadi
@@ -90,6 +91,7 @@ export default function MorningPrayerScreen() {
       reviveDone={reviveDone}
       chainDue={chainDue}
       chainLeft={chainLeft}
+      topic={intercessionToday(now)}
       onConfirm={handleConfirm}
       onOpenRevive={() => router.push('/revive')}
       onOpenChain={() =>

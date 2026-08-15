@@ -19,7 +19,17 @@ export type Transaction = {
   id: string;
   type: FinanceType;
   category: string; // key kategori dari lib/categories.ts
+  /**
+   * Key sub-kategori buatan sendiri (lib/budgets.ts) — opsional. Kosong /
+   * tidak ada = transaksi lama atau kategori yang memang belum punya sub.
+   */
+  sub?: string;
   amount: number; // rupiah, bilangan bulat positif
+  /**
+   * Khusus transaksi bensin (Transportation › Bensin) — dipakai menghitung
+   * Rp/liter di fitur Car. 0 / tidak ada = bukan pengisian bensin.
+   */
+  liters?: number;
   note: string;
   date: Timestamp;
 };
@@ -95,25 +105,47 @@ export function subscribeTransactionsByMonth(
 
 export function addTransaction(
   uid: string,
-  data: { type: FinanceType; category: string; amount: number; note: string },
+  data: {
+    type: FinanceType;
+    category: string;
+    sub?: string;
+    liters?: number;
+    amount: number;
+    note: string;
+  },
 ) {
   // Pakai Timestamp.now() (bukan serverTimestamp) supaya transaksi langsung
   // lolos filter bulan di listener tanpa menunggu balasan server.
-  return addDoc(transactionsCollection(uid), { ...data, date: Timestamp.now() });
+  // `sub`/`liters` ditulis "" & 0 kalau kosong — Firestore menolak undefined.
+  return addDoc(transactionsCollection(uid), {
+    ...data,
+    sub: data.sub ?? '',
+    liters: data.liters ?? 0,
+    date: Timestamp.now(),
+  });
 }
 
 /**
- * Perbarui sebagian data transaksi (nominal, catatan, dan/atau tanggal).
- * Kalau tanggal pindah bulan, transaksi otomatis pindah ke tampilan bulan itu.
+ * Perbarui sebagian data transaksi (nominal, catatan, sub-kategori, dan/atau
+ * tanggal). Kalau tanggal pindah bulan, transaksi otomatis pindah ke tampilan
+ * bulan itu.
  */
 export function updateTransaction(
   uid: string,
   id: string,
-  data: { amount?: number; note?: string; date?: Date },
+  data: {
+    amount?: number;
+    note?: string;
+    sub?: string;
+    liters?: number;
+    date?: Date;
+  },
 ) {
   const payload: Record<string, unknown> = {};
   if (data.amount !== undefined) payload.amount = data.amount;
   if (data.note !== undefined) payload.note = data.note;
+  if (data.sub !== undefined) payload.sub = data.sub;
+  if (data.liters !== undefined) payload.liters = data.liters;
   if (data.date !== undefined) payload.date = Timestamp.fromDate(data.date);
   return updateDoc(doc(db, 'users', uid, 'transactions', id), payload);
 }

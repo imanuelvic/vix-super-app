@@ -90,7 +90,7 @@ export default function BibleReadingScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Home"
-        title={`${meta.emoji} ${meta.title}`}
+        title={`${meta.title} ${meta.emoji}`}
         subtitle="Pilih kitab, lalu isi pasal & ayatnya"
       />
 

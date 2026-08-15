@@ -100,14 +100,25 @@ const SECTIONS: {
 // Field yang tampil di hero (nama/kewarganegaraan) → tidak diulang di daftar.
 const HERO_KEYS = new Set<FieldKey>(['fullName', 'nickname', 'nationality']);
 
-type Tab = 'profile' | 'personality' | 'ikigai' | 'swot';
+type Tab = 'profile' | 'body' | 'personality' | 'ikigai' | 'swot';
 
+// Sub-tab EMOJI SAJA — lima tab tidak muat kalau pakai teks (dulu terpotong
+// jadi "Prof…"). Nama panjangnya tetap muncul sebagai subjudul di bawah.
 const TABS: { key: Tab; label: string }[] = [
-  { key: 'profile', label: '🪪 Profile' },
-  { key: 'personality', label: '🧠 Personality' },
-  { key: 'ikigai', label: '🎌 Ikigai' },
-  { key: 'swot', label: '📊 SWOT' },
+  { key: 'profile', label: '🪪' },
+  { key: 'body', label: '🧍' },
+  { key: 'personality', label: '🧠' },
+  { key: 'ikigai', label: '🎌' },
+  { key: 'swot', label: '📊' },
 ];
+
+const TAB_TITLE: Record<Tab, string> = {
+  profile: 'Data Diri & Dokumen',
+  body: 'Data Tubuh',
+  personality: 'Personality',
+  ikigai: 'Ikigai',
+  swot: 'SWOT',
+};
 
 // Empat lingkaran Ikigai — warna pastel berbeda biar gampang dibedakan.
 const IKIGAI: Quadrant<'love' | 'goodAt' | 'worldNeeds' | 'paidFor'>[] = [
@@ -233,11 +244,20 @@ export default function ProfileScreen() {
           )}
         </View>
         <SegmentTabs tabs={TABS} value={tab} onChange={onTabPress} />
+        {/* Nama tab yang sedang dibuka — pengganti label di dalam chip */}
+        <VixText heading="label" additionalStyle={styles.tabTitle}>
+          {TAB_TITLE[tab]}
+        </VixText>
       </View>
 
       {/* key={scrollKey} → tab ditekan ulang = balik ke atas (pola app ini) */}
       <View style={styles.body} key={scrollKey}>
-        {tab === 'personality' ? (
+        {tab === 'body' ? (
+          // Data Tubuh punya sub-tab sendiri 🧍 — dulu menumpang di Profile.
+          <ScrollView contentContainerStyle={styles.content}>
+            {body ? <BodyCard profile={body} /> : <LoadingCenter />}
+          </ScrollView>
+        ) : tab === 'personality' ? (
           <PersonalityTab data={self.personality} />
         ) : tab === 'ikigai' ? (
           <QuadrantTab
@@ -304,9 +324,6 @@ export default function ProfileScreen() {
           </VixText>
           <IconSymbol name="chevron.right" size={18} color={Color.ACCENT_DARK} />
         </PressableScale>
-
-        {/* Data tubuh + saran menuju badan ideal */}
-        {body && <BodyCard profile={body} />}
 
         {/* Kartu per bagian data */}
         {SECTIONS.map((section) => {
@@ -419,6 +436,8 @@ const styles = StyleSheet.create({
   },
   title: { color: Color.MAIN },
   editText: { color: Color.MAIN },
+  // Nama sub-tab aktif (chip-nya cuma emoji, jadi namanya ditaruh di sini).
+  tabTitle: { color: Color.TEXT_LABEL, marginTop: -6, marginBottom: 8 },
   hero: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,

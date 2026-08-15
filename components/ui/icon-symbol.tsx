@@ -75,6 +75,12 @@ const MAPPING = {
   'dumbbell.fill': 'fitness-center',
   'graduationcap.fill': 'school',
   'figure.walk': 'directions-walk',
+  // Burung — satu-satunya ikon burung di Material Icons ("flutter-dash").
+  // Dipakai tile Spiritual 🕊️ supaya gayanya sama dengan tile lain.
+  'bird.fill': 'flutter-dash',
+  // Sub-menu tab Habits: Diet 🥗 & Sleep 😴.
+  'fork.knife': 'restaurant',
+  'bed.double.fill': 'king-bed',
 } as IconMapping;
 
 /**

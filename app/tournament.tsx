@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -9,6 +10,8 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -30,12 +33,25 @@ import {
 
 const SIZES: BracketSize[] = [4, 8, 16];
 
+/** Berapa laga sudah diputuskan dari total laga turnamen (size − 1). */
+function progressOf(t: Tournament): { done: number; total: number } {
+  return {
+    done: t.matches.filter((m) => m.winner !== null).length,
+    total: t.size - 1,
+  };
+}
+
+// Layar Tournament 🏆 — dibuka dari grid Home (dulu tab bawah). Bracket sistem
+// gugur bertema emas: kartu turnamen dengan bar kemajuan, babak dipilih lewat
+// tab (bukan scroll panjang), dan kartu juara yang bikin puas saat selesai.
 export default function TournamentScreen() {
   const { user } = useAuth();
 
   const [list, setList] = useState<Tournament[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Babak yang sedang dilihat di detail bracket (0 = babak pertama).
+  const [round, setRound] = useState(0);
 
   // Form buat turnamen.
   const [createOpen, setCreateOpen] = useState(false);
@@ -60,6 +76,11 @@ export default function TournamentScreen() {
   const selected = selectedId
     ? (list?.find((t) => t.id === selectedId) ?? null)
     : null;
+
+  function openTournament(id: string) {
+    setSelectedId(id);
+    setRound(0);
+  }
 
   function openCreate() {
     setCName('');
@@ -99,7 +120,7 @@ export default function TournamentScreen() {
       const t = createTournament(user.uid, cName.trim(), cSize, names);
       await saveTournament(user.uid, t);
       setCreateOpen(false);
-      setSelectedId(t.id);
+      openTournament(t.id);
     } catch {
       setFormError(SAVE_ERROR);
     } finally {
@@ -136,8 +157,17 @@ export default function TournamentScreen() {
     }
   }
 
+  const rounds = selected ? roundsOf(selected) : [];
+  const shownRound = rounds[Math.min(round, rounds.length - 1)] ?? [];
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader
+        backLabel="Home"
+        title="Tournament 🏆"
+        subtitle="Bracket sistem gugur — tinggal ketuk pemenangnya"
+      />
+
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>
           {error}
@@ -147,30 +177,42 @@ export default function TournamentScreen() {
       {list === null ? (
         <LoadingCenter />
       ) : selected ? (
-        // ===== Detail bracket =====
+        // ============ Detail bracket ============
         <ScrollView contentContainerStyle={styles.content}>
-          <PressableScale style={styles.back} onPress={() => setSelectedId(null)}>
+          <PressableScale
+            style={styles.back}
+            onPress={() => setSelectedId(null)}>
             <VixText heading="bold" additionalStyle={styles.backText}>
-              ‹ Daftar turnamen
+              ‹ Semua turnamen
             </VixText>
           </PressableScale>
 
-          <VixText heading="header" additionalStyle={styles.title}>
-            {selected.name}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.subtitle}>
-            🏸 {selected.size} Besar · sistem gugur
-          </VixText>
+          {/* Hero emas: nama + kemajuan laga */}
+          <Animated.View entering={FadeInDown.duration(280)} style={styles.hero}>
+            <VixText heading="label" additionalStyle={styles.heroKicker}>
+              🏸 {selected.size} BESAR · SISTEM GUGUR
+            </VixText>
+            <VixText heading="subheader" additionalStyle={styles.heroName}>
+              {selected.name}
+            </VixText>
+            <ProgressBar {...progressOf(selected)} />
+          </Animated.View>
 
           {selected.champion && (
-            <View style={styles.championCard}>
+            <Animated.View
+              entering={FadeInDown.delay(80).duration(320)}
+              style={styles.championCard}>
+              <VixText additionalStyle={styles.championEmoji}>🏆</VixText>
               <VixText heading="label" additionalStyle={styles.championLabel}>
-                🏆 JUARA
+                JUARA
               </VixText>
               <VixText heading="header" additionalStyle={styles.championName}>
                 {selected.champion}
               </VixText>
-            </View>
+              <VixText heading="label" additionalStyle={styles.championSub}>
+                🎉 Turnamen selesai — selamat!
+              </VixText>
+            </Animated.View>
           )}
 
           {!hasStarted(selected) && (
@@ -181,19 +223,24 @@ export default function TournamentScreen() {
             </PressableScale>
           )}
 
-          {roundsOf(selected).map((round, r) => (
-            <View key={r} style={styles.roundBlock}>
-              <VixText heading="title" additionalStyle={styles.roundTitle}>
-                {roundLabel(round.length)}
-              </VixText>
-              {round.map((m) => (
-                <MatchCard
-                  key={`${m.round}-${m.slot}`}
-                  match={m}
-                  onPick={(side) => pick(m, side)}
-                />
-              ))}
-            </View>
+          {/* Babak dipilih lewat tab — tidak perlu scroll panjang */}
+          <SegmentTabs
+            tabs={rounds.map((r, i) => ({
+              key: String(i),
+              label: roundLabel(r.length),
+              sub: `${r.filter((m) => m.winner).length}/${r.length}`,
+            }))}
+            value={String(Math.min(round, rounds.length - 1))}
+            onChange={(k) => setRound(Number(k))}
+          />
+
+          {shownRound.map((m, i) => (
+            <MatchCard
+              key={`${m.round}-${m.slot}`}
+              index={i}
+              match={m}
+              onPick={(side) => pick(m, side)}
+            />
           ))}
 
           <InlineDelete
@@ -204,15 +251,20 @@ export default function TournamentScreen() {
           />
         </ScrollView>
       ) : (
-        // ===== Daftar turnamen =====
+        // ============ Daftar turnamen ============
         <ScrollView contentContainerStyle={styles.content}>
-          <VixText heading="header" additionalStyle={styles.title}>
-            Tournament 🏆
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.subtitle}>
-            Bikin turnamen badminton sistem gugur — isi nama, pilih 4/8/16 besar,
-            lalu tentukan pemenang tiap laga.
-          </VixText>
+          {/* Tiga angka ringkas — biar sekilas tahu keadaannya */}
+          <View style={styles.statsRow}>
+            <StatBox value={list.length} label="Turnamen" />
+            <StatBox
+              value={list.filter((t) => !t.champion && hasStarted(t)).length}
+              label="Berjalan"
+            />
+            <StatBox
+              value={list.filter((t) => t.champion).length}
+              label="Selesai"
+            />
+          </View>
 
           <PrimaryButton
             label="Buat Turnamen"
@@ -228,26 +280,27 @@ export default function TournamentScreen() {
                 Belum ada turnamen
               </VixText>
               <VixText heading="label" additionalStyle={styles.emptyText}>
-                Ketuk “Buat Turnamen” untuk mulai. Peserta akan diundi acak, lalu
+                Ketuk “Buat Turnamen” untuk mulai. Peserta diundi acak, lalu
                 pemenang tiap laga otomatis maju ke babak berikutnya.
               </VixText>
             </View>
           ) : (
-            list.map((t) => (
-              <TournamentCard
+            list.map((t, i) => (
+              <Animated.View
                 key={t.id}
-                t={t}
-                onOpen={() => setSelectedId(t.id)}
-              />
+                entering={FadeInDown.delay(i * 50).duration(280)}>
+                <TournamentCard t={t} onOpen={() => openTournament(t.id)} />
+              </Animated.View>
             ))
           )}
         </ScrollView>
       )}
 
-      {/* ===== Modal buat turnamen ===== */}
+      {/* ============ Modal buat turnamen ============ */}
       <SheetModal
         visible={createOpen}
         title="Buat Turnamen"
+        subtitle="Undian babak pertama diacak otomatis 🎲"
         onClose={() => setCreateOpen(false)}>
         <FormInput
           style={styles.formGap}
@@ -276,14 +329,20 @@ export default function TournamentScreen() {
           Nama peserta ({cSize})
         </VixText>
         {cNames.map((n, i) => (
-          <FormInput
-            key={i}
-            style={styles.formGap}
-            placeholder={`Peserta ${i + 1}`}
-            value={n}
-            onChangeText={(v) => setName(i, v)}
-            editable={!busy}
-          />
+          <View key={i} style={styles.seedRow}>
+            <View style={styles.seedBadge}>
+              <VixText heading="label" additionalStyle={styles.seedText}>
+                {i + 1}
+              </VixText>
+            </View>
+            <FormInput
+              style={styles.seedInput}
+              placeholder={`Peserta ${i + 1}`}
+              value={n}
+              onChangeText={(v) => setName(i, v)}
+              editable={!busy}
+            />
+          </View>
         ))}
 
         {formError && (
@@ -298,25 +357,60 @@ export default function TournamentScreen() {
           additionalStyle={styles.createBtn}
         />
         <VixText heading="label" additionalStyle={styles.hint}>
-          Undian babak pertama diacak otomatis. Kamu masih bisa “acak ulang”
-          sebelum laga pertama diputuskan.
+          Masih bisa “acak ulang” selama belum ada laga yang diputuskan.
         </VixText>
       </SheetModal>
     </SafeAreaView>
   );
 }
 
-// ============ Kartu turnamen di daftar (module-scope) ============
+// ============ Bar kemajuan laga (emas di atas latar gelap) ============
+function ProgressBar({ done, total }: { done: number; total: number }) {
+  const percent = total > 0 ? (done / total) * 100 : 0;
+  return (
+    <View style={styles.progressWrap}>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${percent}%` }]} />
+      </View>
+      <VixText heading="label" additionalStyle={styles.progressText}>
+        {done}/{total} laga
+      </VixText>
+    </View>
+  );
+}
+
+// ============ Angka ringkas di daftar ============
+function StatBox({ value, label }: { value: number; label: string }) {
+  return (
+    <View style={styles.statBox}>
+      <VixText heading="header" additionalStyle={styles.statValue}>
+        {value}
+      </VixText>
+      <VixText heading="label" additionalStyle={styles.statLabel}>
+        {label}
+      </VixText>
+    </View>
+  );
+}
+
+// ============ Kartu turnamen di daftar ============
 function TournamentCard({ t, onOpen }: { t: Tournament; onOpen: () => void }) {
+  const { done, total } = progressOf(t);
+  const percent = total > 0 ? (done / total) * 100 : 0;
   const status = t.champion
-    ? `🏆 Juara: ${t.champion}`
+    ? `🏆 ${t.champion}`
     : hasStarted(t)
       ? '⏳ Sedang berlangsung'
       : '🎲 Siap diundi';
   return (
-    <PressableScale style={styles.tCard} onPress={onOpen}>
+    <PressableScale
+      style={[styles.tCard, t.champion && styles.tCardDone]}
+      onPress={onOpen}>
       <View style={styles.tCardTop}>
-        <VixText heading="subheader" additionalStyle={styles.tName}>
+        <VixText
+          heading="subheader"
+          numberOfLines={1}
+          additionalStyle={styles.tName}>
           {t.name}
         </VixText>
         <View style={styles.tSizeBadge}>
@@ -324,6 +418,9 @@ function TournamentCard({ t, onOpen }: { t: Tournament; onOpen: () => void }) {
             {t.size} Besar
           </VixText>
         </View>
+      </View>
+      <View style={styles.tBarTrack}>
+        <View style={[styles.tBarFill, { width: `${percent}%` }]} />
       </View>
       <VixText heading="label" additionalStyle={styles.tStatus}>
         {status}
@@ -334,14 +431,26 @@ function TournamentCard({ t, onOpen }: { t: Tournament; onOpen: () => void }) {
 
 // ============ Satu laga (dua sisi yang bisa dipilih) ============
 function MatchCard({
+  index,
   match,
   onPick,
 }: {
+  index: number;
   match: Match;
   onPick: (side: 'a' | 'b') => void;
 }) {
   return (
     <View style={styles.matchCard}>
+      <View style={styles.matchHead}>
+        <VixText heading="label" additionalStyle={styles.matchLabel}>
+          LAGA {index + 1}
+        </VixText>
+        {match.winner && (
+          <VixText heading="label" additionalStyle={styles.matchDone}>
+            ✓ selesai
+          </VixText>
+        )}
+      </View>
       <MatchSide match={match} side="a" onPick={onPick} />
       <VixText heading="label" additionalStyle={styles.vsText}>
         vs
@@ -385,7 +494,7 @@ function MatchSide({
       </VixText>
       {isWinner && (
         <VixText heading="bold" additionalStyle={styles.check}>
-          ✓
+          🏅
         </VixText>
       )}
     </PressableScale>
@@ -395,13 +504,23 @@ function MatchSide({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
-  title: { color: Color.MAIN, marginBottom: 4 },
-  subtitle: { color: Color.TEXT_LABEL, marginBottom: 14 },
-  addBtn: { marginBottom: 16 },
-  back: { alignSelf: 'flex-start', marginBottom: 8 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  back: { alignSelf: 'flex-start', marginBottom: 10 },
   backText: { color: Color.MAIN },
-  // Daftar turnamen
+  // ===== Daftar turnamen =====
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: Color.TOURNAMENT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.TOURNAMENT_DARK,
+    paddingVertical: 12,
+  },
+  statValue: { color: Color.TOURNAMENT_DARK },
+  statLabel: { color: Color.TOURNAMENT_DARK },
+  addBtn: { marginBottom: 16 },
   emptyCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,
@@ -416,13 +535,14 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', color: Color.TEXT_LABEL },
   tCard: {
     backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 18,
+    borderWidth: 1.5,
     borderColor: Color.BORDER,
     padding: 16,
-    gap: 6,
+    gap: 8,
     marginBottom: 12,
   },
+  tCardDone: { borderColor: Color.TOURNAMENT_DARK },
   tCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -431,44 +551,88 @@ const styles = StyleSheet.create({
   },
   tName: { color: Color.TEXT_TITLE, flexShrink: 1 },
   tSizeBadge: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
+    backgroundColor: Color.TOURNAMENT,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
-  tSizeText: { color: Color.ACCENT_DARK },
+  tSizeText: { color: Color.TOURNAMENT_DARK },
+  tBarTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    overflow: 'hidden',
+  },
+  tBarFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: Color.TOURNAMENT_DARK,
+  },
   tStatus: { color: Color.TEXT_LABEL },
-  // Detail bracket
-  championCard: {
+  // ===== Detail bracket =====
+  hero: {
     backgroundColor: Color.MAIN_DARK,
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 22,
+    padding: 20,
+    gap: 4,
+    marginBottom: 12,
+  },
+  heroKicker: { color: Color.TOURNAMENT, letterSpacing: 1 },
+  heroName: { color: Color.TEXT_REVERSE },
+  progressWrap: { gap: 4, marginTop: 8 },
+  progressTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Color.MAIN,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: Color.TOURNAMENT,
+  },
+  progressText: { color: Color.TEXT_ON_DARK_MUTED },
+  championCard: {
+    backgroundColor: Color.TOURNAMENT,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: Color.TOURNAMENT_DARK,
+    padding: 20,
     alignItems: 'center',
     gap: 2,
     marginBottom: 14,
   },
-  championLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  championName: { color: Color.TEXT_REVERSE, textAlign: 'center' },
+  championEmoji: { fontSize: 48, lineHeight: 58 },
+  championLabel: { color: Color.TOURNAMENT_DARK, letterSpacing: 2 },
+  championName: { color: Color.TEXT_TITLE, textAlign: 'center' },
+  championSub: { color: Color.TOURNAMENT_DARK },
   reshuffle: {
     alignSelf: 'flex-start',
-    backgroundColor: Color.CONTRAST_CONTAINER,
+    backgroundColor: Color.TOURNAMENT,
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginBottom: 14,
   },
-  reshuffleText: { color: Color.ACCENT_DARK },
-  roundBlock: { marginBottom: 18 },
-  roundTitle: { color: Color.MAIN_DARK, marginBottom: 10 },
+  reshuffleText: { color: Color.TOURNAMENT_DARK },
   matchCard: {
     backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Color.BORDER,
-    padding: 8,
+    padding: 10,
     gap: 4,
     marginBottom: 10,
   },
+  matchHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    marginBottom: 2,
+  },
+  matchLabel: { color: Color.TEXT_PLACEHOLDER, letterSpacing: 1 },
+  matchDone: { color: Color.MAIN },
   vsText: { color: Color.TEXT_PLACEHOLDER, textAlign: 'center' },
   sideRow: {
     flexDirection: 'row',
@@ -476,26 +640,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     backgroundColor: Color.BACKGROUND,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Color.BORDER,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
   sideWinner: {
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderColor: Color.MAIN,
+    backgroundColor: Color.TOURNAMENT,
+    borderColor: Color.TOURNAMENT_DARK,
   },
-  sideLoser: { opacity: 0.45 },
+  sideLoser: { opacity: 0.4 },
   sideName: { color: Color.TEXT_TITLE, flexShrink: 1 },
-  sideNameWinner: { color: Color.MAIN_DARK },
+  sideNameWinner: { color: Color.TEXT_TITLE, fontWeight: '700' },
   sideEmpty: { color: Color.TEXT_PLACEHOLDER },
-  check: { color: Color.MAIN_DARK },
-  // Form
+  check: { color: Color.TOURNAMENT_DARK },
+  // ===== Form =====
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   sizeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   sizeChip: { flex: 1 },
+  seedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  seedBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Color.TOURNAMENT,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seedText: { color: Color.TOURNAMENT_DARK },
+  seedInput: { flex: 1 },
   formError: { color: Color.DANGER, marginBottom: 8 },
   createBtn: { marginTop: 4 },
   hint: { color: Color.TEXT_LABEL, marginTop: 10, textAlign: 'center' },

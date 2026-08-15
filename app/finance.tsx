@@ -17,7 +17,12 @@ import { DashboardTab } from '@/components/finance/DashboardTab';
 import { TransactionsTab } from '@/components/finance/TransactionsTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import { subscribeBudget, type BudgetMap } from '@/lib/budgets';
+import {
+  subscribeBudget,
+  subscribeSubcategories,
+  type BudgetMap,
+  type SubcategoryMap,
+} from '@/lib/budgets';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactions';
@@ -57,6 +62,10 @@ export default function FinanceScreen() {
   // (mewarnai pilihan kategori) & Budgeting (bar realisasi).
   const [budget, setBudget] = useState<BudgetMap>({});
   const [budgetCopied, setBudgetCopied] = useState(false);
+
+  // Daftar sub-kategori buatan sendiri (mis. Groceries → Telur). Berlaku
+  // lintas bulan, jadi langganannya TIDAK ikut berganti saat bulan digeser.
+  const [subcats, setSubcats] = useState<SubcategoryMap>({});
 
   // Layar terkunci sampai PIN benar. Selama terkunci, Firestore belum
   // di-subscribe sama sekali — jadi tidak ada biaya read kalau batal masuk.
@@ -100,6 +109,12 @@ export default function FinanceScreen() {
     );
     return unsubscribe;
   }, [user, year, month, unlocked]);
+
+  // Langganan daftar sub-kategori (1 dokumen kecil, tidak per bulan).
+  useEffect(() => {
+    if (!user || !unlocked) return;
+    return subscribeSubcategories(user.uid, setSubcats, () => {});
+  }, [user, unlocked]);
 
   // Tekan label bulan di tengah → langsung balik ke bulan berjalan.
   function goNow() {
@@ -182,7 +197,7 @@ export default function FinanceScreen() {
             month={month}
           />
         ) : tab === 'transactions' ? (
-          <TransactionsTab items={items} budget={budget} />
+          <TransactionsTab items={items} budget={budget} subcats={subcats} />
         ) : (
           <BudgetingTab
             items={items}
@@ -190,6 +205,7 @@ export default function FinanceScreen() {
             month={month}
             budget={budget}
             copied={budgetCopied}
+            subcats={subcats}
           />
         )}
       </View>

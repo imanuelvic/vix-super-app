@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
+import { isChainTopic, type IntercessionTopic } from '@/lib/intercession';
 
 // Doa Bapa Kami (Matius 6:9–13).
 const BAPA_KAMI = `Bapa kami yang di sorga,
@@ -30,6 +31,7 @@ export function MorningPrayerGate({
   reviveDone,
   chainDue,
   chainLeft,
+  topic,
   onConfirm,
   onOpenRevive,
   onOpenChain,
@@ -42,6 +44,8 @@ export function MorningPrayerGate({
   chainDue: boolean;
   // Berapa CORE Leader yang belum di-follow up hari ini (0 = beres).
   chainLeft: number;
+  // Pokok doa syafaat hari ini (Senin Keluarga·Kesehatan, dst).
+  topic: IntercessionTopic;
   onConfirm: () => Promise<void>;
   onOpenRevive: () => void;
   onOpenChain: () => void;
@@ -49,12 +53,28 @@ export function MorningPrayerGate({
   onSkip: () => void;
 }) {
   const [prayed, setPrayed] = useState(false);
+  const [interceded, setInterceded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [skipConfirm, setSkipConfirm] = useState(false);
   // Langkah Revive & Doa Rantai HANYA tercentang otomatis dari datanya.
   const chainDone = !chainDue || chainLeft === 0;
-  const ready = prayed && reviveDone && chainDone;
-  const stepCount = chainDue ? 3 : 2;
+
+  // Selasa & Kamis syafaatnya MEMANG Doa Rantai → tidak dibuat langkah
+  // terpisah, cukup langkah Doa Rantai yang sudah ada (biar tidak dobel).
+  // Kecuali kalau langkah itu tidak muncul (belum ada CL yang punya pokok doa
+  // bulan ini) — supaya syafaat hari itu tidak hilang sama sekali.
+  const chainIsToday = isChainTopic(topic);
+  const showIntercession = !chainIsToday || !chainDue;
+
+  // Nomor langkah dihitung dari langkah mana saja yang muncul hari ini.
+  const nChain = 2;
+  const nIntercession = chainDue ? 3 : 2;
+  const stepCount =
+    2 + (chainDue ? 1 : 0) + (showIntercession ? 1 : 0); // Revive + … + Bapa Kami
+  const nPrayer = stepCount;
+
+  const ready =
+    prayed && reviveDone && chainDone && (!showIntercession || interceded);
 
   async function handleConfirm() {
     if (!ready || busy) return;
@@ -116,7 +136,8 @@ export function MorningPrayerGate({
             entering={FadeInDown.delay(270).duration(350)}
             style={styles.stepCard}>
             <VixText heading="title" additionalStyle={styles.stepTitle}>
-              2. Doa Rantai
+              {nChain}. Doa Rantai
+              {chainIsToday ? ` — syafaat hari ini ${topic.emoji}` : ''}
             </VixText>
             <VixText heading="label" additionalStyle={styles.stepHint}>
               Hari ini jadwalnya: doakan & tanyakan perkembangan pergumulan
@@ -139,12 +160,43 @@ export function MorningPrayerGate({
           </Animated.View>
         )}
 
-        {/* Langkah 3: Bapa Kami */}
+        {/* Langkah Doa Syafaat — pokok doanya berganti tiap hari (Senin
+            Keluarga·Kesehatan, Rabu Ekonomi, Sabtu Gereja, Minggu Negara).
+            Selasa & Kamis dilewati karena sudah jadi langkah Doa Rantai. */}
+        {showIntercession && (
+          <Animated.View
+            entering={FadeInDown.delay(290).duration(350)}
+            style={styles.stepCard}>
+            <VixText heading="title" additionalStyle={styles.stepTitle}>
+              {nIntercession}. Doa Syafaat — {topic.emoji} {topic.label}
+            </VixText>
+            <View style={styles.prayerBox}>
+              {topic.points.map((p) => (
+                <VixText
+                  key={p}
+                  heading="paragraph"
+                  additionalStyle={styles.pointText}>
+                  • {p}
+                </VixText>
+              ))}
+            </View>
+            <PressableScale
+              style={styles.checkRow}
+              onPress={() => setInterceded((v) => !v)}>
+              <CheckCircle checked={interceded} />
+              <VixText heading="bold" additionalStyle={styles.checkText}>
+                Sudah mendoakan syafaat hari ini
+              </VixText>
+            </PressableScale>
+          </Animated.View>
+        )}
+
+        {/* Langkah terakhir: Bapa Kami */}
         <Animated.View
           entering={FadeInDown.delay(120).duration(350)}
           style={styles.stepCard}>
           <VixText heading="title" additionalStyle={styles.stepTitle}>
-            3. Doa Bapa Kami
+            {nPrayer}. Doa Bapa Kami
           </VixText>
           <View style={styles.prayerBox}>
             <VixText heading="paragraph" additionalStyle={styles.prayerText}>
@@ -237,6 +289,8 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   prayerText: { color: Color.TEXT_TITLE, lineHeight: 24 },
+  // Butir pokok doa syafaat — sedikit lebih rapat dari teks Bapa Kami.
+  pointText: { color: Color.TEXT_TITLE, lineHeight: 22 },
   openRevive: {
     alignSelf: 'flex-start',
     backgroundColor: Color.SPIRITUAL,

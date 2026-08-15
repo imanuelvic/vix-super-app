@@ -73,6 +73,8 @@ export type CarLog = {
   note: string; // keterangan, boleh kosong
   cost: number; // Rp (0 diperbolehkan, mis. isi angin gratis)
   liters: number | null; // khusus bensin — untuk hitung Rp/liter
+  /** true = lahir otomatis dari transaksi Finance → diubah/hapusnya di sana. */
+  fromFinance?: boolean;
   date: Timestamp;
 };
 
@@ -127,6 +129,30 @@ export function updateCarLog(uid: string, id: string, data: CarLogInput) {
 
 export function deleteCarLog(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'carLogs', id));
+}
+
+/**
+ * Catat/perbarui log BENSIN yang berasal dari transaksi Finance.
+ *
+ * Id dokumennya sengaja DISAMAKAN dengan id transaksinya → satu transaksi
+ * selalu tepat satu catatan (tidak pernah dobel walau disimpan berkali-kali),
+ * dan menghapusnya cukup `deleteCarLog(uid, txId)`.
+ */
+export function syncFuelLog(
+  uid: string,
+  txId: string,
+  data: { title: string; cost: number; liters: number | null; date: Date },
+) {
+  return setDoc(doc(db, 'users', uid, 'carLogs', txId), {
+    type: 'bensin' as CarLogType,
+    title: data.title,
+    location: '',
+    note: '',
+    cost: data.cost,
+    liters: data.liters,
+    fromFinance: true,
+    date: Timestamp.fromDate(data.date),
+  });
 }
 
 export type CarPart = {

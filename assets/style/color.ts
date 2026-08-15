@@ -76,8 +76,15 @@ export const Color = {
   WORLD: '#BFE3E0', // teal pastel (fitur World — populasi & berita dunia)
   WORLD_DARK: '#1F6F6A',
 
-  LEARNING: '#FBE3B0', // kuning-madu pastel (fitur Learning — coming soon)
-  LEARNING_DARK: '#8A6A12',
+  // Learning dipindah dari kuning-madu ke periwinkle (biru-ungu) supaya tidak
+  // bertabrakan dengan emas Tournament & kuning Family.
+  LEARNING: '#C6CFF2', // periwinkle pastel (fitur Learning — coming soon)
+  LEARNING_DARK: '#3B4C9E',
+
+  // Tournament 🏆 — emas, sengaja paling pekat di antara tile lain biar
+  // langsung terbaca sebagai "piala".
+  TOURNAMENT: '#FFD24C',
+  TOURNAMENT_DARK: '#7A5300',
 
   // Merek luar (tombol chat WhatsApp di fitur CORE)
   WHATSAPP: '#25D366',

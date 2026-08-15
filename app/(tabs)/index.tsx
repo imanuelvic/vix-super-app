@@ -18,6 +18,7 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -51,11 +52,6 @@ import {
 import { OWNER_NAME } from '@/lib/family';
 import { formatShortDayDate } from '@/lib/format';
 import {
-  pendingHabits,
-  subscribeHabitSchedule,
-  type ScheduledHabit,
-} from '@/lib/habits';
-import {
   bumpWaterStreak,
   dayDocId,
   setWater,
@@ -64,6 +60,11 @@ import {
   WATER_GOAL,
   type HabitDay,
 } from '@/lib/health';
+import {
+  intercessionNightWindow,
+  intercessionToday,
+  isChainTopic,
+} from '@/lib/intercession';
 import {
   countResidenceAttention,
   subscribeChoreStatus,
@@ -109,15 +110,15 @@ const FEATURES: {
     | 'mountain.2.fill'
     | 'dumbbell.fill'
     | 'globe'
+    | 'bird.fill'
+    | 'trophy.fill'
     | 'graduationcap.fill';
-  /** Kalau diisi, tile memakai emoji ini alih-alih ikon (mis. 🕊️ Spiritual). */
-  emoji?: string;
   route: Href;
   bg: string;
   fg: string;
 }[] = [
   { key: 'tasks', label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK },
-  { key: 'spiritual', label: 'Spiritual', icon: 'book.closed.fill', emoji: '🕊️', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
+  { key: 'spiritual', label: 'Spiritual', icon: 'bird.fill', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
   { key: 'health', label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.FINANCE_EXPENSE, fg: Color.DANGER },
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
 
@@ -135,6 +136,8 @@ const FEATURES: {
   { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
   { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
   { key: 'learning', label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
+
+  { key: 'tournament', label: 'Tournament', icon: 'trophy.fill', route: '/tournament', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
 ];
 
 export default function HomeScreen() {
@@ -146,7 +149,6 @@ export default function HomeScreen() {
 
   // Data untuk badge tugas harian per fitur + air putih di kartu sapaan.
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
@@ -161,6 +163,8 @@ export default function HomeScreen() {
     useState<BibleReadingSessions | null>(null);
   // Rentetan hari "cukup 8 gelas" — dicatat saat gelas ke-8 hari ini tercapai.
   const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
+  // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
+  const [intercessionOpen, setIntercessionOpen] = useState(false);
 
   // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & badge yang
   // bergantung waktu (mobil/rumah).
@@ -182,7 +186,6 @@ export default function HomeScreen() {
       subscribeLoginStreak(user.uid, setLogin),
       subscribeChoreStatus(user.uid, setResidenceChores),
       subscribeTasks(user.uid, setTasks),
-      subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeReviveStreak(user.uid, setRevive),
@@ -207,9 +210,6 @@ export default function HomeScreen() {
     }
   }, [user, prayerMissed, login]);
 
-  // Kebiasaan harian (sama tiap hari) — untuk badge Health.
-  const daySchedule = schedule ?? [];
-
   // Air putih 💧 — gelas terminum hari ini (0..). Tersimpan per hari (HabitDay
   // per dayId) → otomatis kembali 0 tiap ganti hari.
   const water = day?.water ?? 0;
@@ -222,6 +222,23 @@ export default function HomeScreen() {
     bibleSession !== null &&
     bibleReading !== null &&
     !bibleReading[bibleSession];
+
+  // Doa Syafaat 🙏 — pokok doa tetap sesuai hari (lib/intercession.ts).
+  // Pagi sudah jadi langkah wajib di Morning Gateway; kartu ini pengingatnya
+  // sepanjang hari, dan mulai jam 18.00 berubah jadi ajakan mendoakan lagi.
+  // Ditampilkan RINGKAS (1 baris) supaya grid fitur tetap muat sekali layar —
+  // pokok doanya baru terbuka saat kartunya diketuk.
+  const intercession = intercessionToday(now);
+  const intercessionChain = isChainTopic(intercession);
+  const intercessionSummary = intercessionChain
+    ? 'Doakan & follow up pokok doa CORE Leader giliran hari ini'
+    : intercessionNightWindow(now)
+      ? '🌙 Doakan sekali lagi sebelum tidur — ketuk untuk pokok doanya'
+      : `${intercession.points.length} pokok doa — ketuk untuk melihatnya`;
+  const intercessionTexts =
+    intercessionOpen && !intercessionChain
+      ? intercession.points.map((p) => `• ${p}`)
+      : [intercessionSummary];
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -240,9 +257,8 @@ export default function HomeScreen() {
         (r) => r.status !== 'done' && effectiveRoadmap(r, now).priority === 1,
       ).length +
       freelance.filter((p) => freelanceReminderWindow(p, now)).length,
-    // Hanya sesi yang waktunya sudah tiba (Pagi ≥06:00 · Siang ≥12:00 ·
-    // Malam ≥18:00) — sesi yang belum waktunya tidak ikut dihitung.
-    health: day ? pendingHabits(daySchedule, day.done, now).length : 0,
+    // Kebiasaan harian pindah ke tab Habits ✅ — badge-nya ikut ke sana,
+    // jadi tile Health tidak lagi punya angka (isinya Steps & Check-up).
     // 2 CORE Leader fokus minggu ini yang belum di-follow up hari ini.
     core: weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
       (l) => l.lastFollowupDayId !== todayId,
@@ -364,6 +380,30 @@ export default function HomeScreen() {
             )}
           </Animated.View>
 
+          {/* Doa Syafaat 🙏 — pokok doa tetap sesuai hari dalam seminggu.
+              Hari Doa Rantai CL (Selasa & Kamis) kartunya menuju CORE Follow
+              Up; hari lain diketuk untuk membuka/menutup pokok doanya. */}
+          <Animated.View
+            entering={FadeInDown.delay(40).duration(350)}
+            style={styles.intercessionCard}>
+            <ReminderCard
+              bg={Color.SPIRITUAL}
+              fg={Color.SPIRITUAL_DARK}
+              title={`🙏 Doa Syafaat — ${intercession.emoji} ${intercession.label} ${
+                intercessionChain ? '→' : intercessionOpen ? '▴' : '▾'
+              }`}
+              texts={intercessionTexts}
+              onPress={() =>
+                intercessionChain
+                  ? router.push({
+                      pathname: '/core',
+                      params: { tab: 'followup' },
+                    })
+                  : setIntercessionOpen((v) => !v)
+              }
+            />
+          </Animated.View>
+
           {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00.
               Hanya muncul di dalam jendela jamnya & selama sesi itu belum
               diisi. Ketuk → layar catat bacaan (pilih kitab + pasal & ayat). */}
@@ -401,13 +441,7 @@ export default function HomeScreen() {
                       if (user) logFeatureUse(user.uid, feature.key, feature.label);
                       router.push(feature.route);
                     }}>
-                    {feature.emoji ? (
-                      <VixText additionalStyle={styles.tileEmoji}>
-                        {feature.emoji}
-                      </VixText>
-                    ) : (
-                      <IconSymbol name={feature.icon} size={30} color={feature.fg} />
-                    )}
+                    <IconSymbol name={feature.icon} size={30} color={feature.fg} />
                   </PressableScale>
                   {/* Badge merah: tugas harian fitur ini yang belum selesai */}
                   {badge > 0 && (
@@ -417,9 +451,20 @@ export default function HomeScreen() {
                       </VixText>
                     </View>
                   )}
-                  <VixText heading="label" additionalStyle={styles.tileLabel}>
-                    {feature.label}
-                  </VixText>
+                  {/* Judul berlatar pil sewarna tile-nya: separuh atas menyatu
+                      dengan tile, separuh bawah menggantung di latar krem —
+                      warnanya otomatis ikut palet tiap fitur. */}
+                  <View
+                    style={[
+                      styles.tileLabelPill,
+                      { backgroundColor: feature.bg },
+                    ]}>
+                    <VixText
+                      heading="label"
+                      additionalStyle={[styles.tileLabel, { color: feature.fg }]}>
+                      {feature.label}
+                    </VixText>
+                  </View>
                 </Animated.View>
               );
             })}
@@ -449,12 +494,16 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 24, alignItems: 'center' },
   // Lebar konten dibatasi & otomatis di tengah (HP: penuh; iPad: ~680 di tengah).
   contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20 },
+  // Jarak ke kartu di bawahnya dirapatkan supaya reminder (Doa Syafaat & Baca
+  // Alkitab) naik sedikit dan grid fitur tetap muat sekali layar.
   welcomeCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
     padding: 18,
-    marginBottom: 14,
+    marginBottom: 8,
   },
+  // Kartu Doa Syafaat — tepat di bawah kartu sapaan, di atas Baca Alkitab.
+  intercessionCard: { marginBottom: 10 },
   welcomeTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -506,7 +555,7 @@ const styles = StyleSheet.create({
     borderColor: Color.SPIRITUAL_DARK,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   readingTitle: { color: Color.TEXT_TITLE, flexShrink: 1 },
   grid: {
@@ -529,9 +578,13 @@ const styles = StyleSheet.create({
   // Judul ditarik naik setengah baris → separuh atasnya menumpang di bagian
   // bawah tile (lineHeight label 19.5 ÷ 2 ≈ 10). Judul digambar SETELAH tile,
   // jadi otomatis berada di atasnya.
-  // Emoji tile (mis. 🕊️) — disamakan tingginya dengan ikon 30px.
-  tileEmoji: { fontSize: 30, lineHeight: 38 },
-  tileLabel: { textAlign: 'center', marginTop: -10 },
+  tileLabelPill: {
+    marginTop: -10,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderRadius: 999,
+  },
+  tileLabel: { textAlign: 'center' },
   badge: {
     position: 'absolute',
     top: -6,

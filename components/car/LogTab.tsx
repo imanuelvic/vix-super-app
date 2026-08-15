@@ -43,7 +43,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
 
   // Form tambah/edit lewat bottom sheet. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<CarLog | 'new' | null>(null);
-  const [fType, setFType] = useState<CarLogType>('bensin');
+  const [fType, setFType] = useState<CarLogType>('servis');
   const [fTitle, setFTitle] = useState('');
   const [fLocation, setFLocation] = useState('');
   const [fNote, setFNote] = useState('');
@@ -76,7 +76,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
 
   function openAdd() {
     setEditing('new');
-    setFType('bensin');
+    setFType('servis');
     setFTitle('');
     setFLocation('');
     setFNote('');
@@ -171,12 +171,15 @@ export function LogTab({ items }: { items: CarLog[] }) {
           label="Catat Pengeluaran"
           icon="plus"
           onPress={openAdd}
-          additionalStyle={styles.addButton}
         />
+        <VixText heading="label" additionalStyle={styles.fuelHint}>
+          ⛽ Bensin tidak dicatat di sini — catat di Finance (Transportation ›
+          Bensin), otomatis muncul di daftar ini.
+        </VixText>
 
         {items.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada catatan. Mulai dari isi bensin berikutnya ⛽
+            Belum ada catatan. Servis, parkir & surat dicatat di sini 🔧
           </VixText>
         )}
 
@@ -188,15 +191,22 @@ export function LogTab({ items }: { items: CarLog[] }) {
               ? Math.round(item.cost / item.liters)
               : null;
           return (
-            // Tekan untuk edit/hapus.
+            // Tekan untuk edit/hapus. Catatan dari Finance tidak bisa diedit
+            // di sini — sumbernya transaksi Finance, biar tidak beda data.
             <PressableScale
               key={item.id}
               style={styles.row}
+              disabled={item.fromFinance}
               onPress={() => openEdit(item)}>
               <View style={styles.rowLeft}>
                 <VixText heading="bold" additionalStyle={styles.rowTitle}>
                   {meta.icon} {item.title}
                 </VixText>
+                {item.fromFinance && (
+                  <VixText heading="label" additionalStyle={styles.fromFinance}>
+                    💰 dari Finance — ubah/hapusnya di sana
+                  </VixText>
+                )}
                 {subParts.length > 0 && (
                   <VixText heading="label" numberOfLines={1}>
                     {subParts.join(' · ')}
@@ -222,8 +232,13 @@ export function LogTab({ items }: { items: CarLog[] }) {
         visible={!!editing}
         title={editing === 'new' ? 'Catat Pengeluaran' : 'Edit Catatan'}
         onClose={() => setEditing(null)}>
+        {/* Pilihan jenis TANPA "Bensin" — pengisian bensin sekarang dicatat di
+            Finance (Transportation › ⛽ Bensin) dan otomatis masuk ke sini.
+            Chip Bensin cuma muncul saat mengedit catatan bensin lama. */}
         <View style={styles.chipRow}>
-          {CAR_LOG_TYPES.map((t) => (
+          {CAR_LOG_TYPES.filter(
+            (t) => t.key !== 'bensin' || fType === 'bensin',
+          ).map((t) => (
             <Chip
               key={t.key}
               label={`${t.icon} ${t.label}`}
@@ -323,7 +338,9 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 10,
   },
-  addButton: { marginBottom: 12 },
+  // Keterangan kenapa Bensin tidak ada di sini lagi.
+  fuelHint: { color: Color.TEXT_LABEL, marginTop: 8, marginBottom: 12 },
+  fromFinance: { color: Color.MAIN },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     flexDirection: 'row',
