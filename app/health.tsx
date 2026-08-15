@@ -11,10 +11,13 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { CheckupTab } from '@/components/health/CheckupTab';
+import { DietTab } from '@/components/health/DietTab';
+import { SleepTab } from '@/components/health/SleepTab';
 import { StepsTab } from '@/components/health/StepsTab';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
+import { EMPTY_DIET_DAY, subscribeDietDay, type DietDay } from '@/lib/diet';
 import {
-  dayDocId,
   subscribeCheckups,
   subscribeHealthProfile,
   subscribeStepDays,
@@ -25,14 +28,18 @@ import {
   type WeekStatsMap,
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
+import { subscribeSleepNights, type SleepNight } from '@/lib/sleep';
 
-type HealthTab = 'steps' | 'checkup';
+type HealthTab = 'steps' | 'diet' | 'sleep' | 'checkup';
 
 // Tab bar bawah di dalam layar Health.
 // Kebiasaan harian TIDAK lagi di sini — pindah ke tab besar Habits ✅
-// (app/(tabs)/habits.tsx) bersama Diet & Sleep.
+// (app/(tabs)/habits.tsx). Yang tinggal di sini semuanya soal tubuh:
+// langkah kaki, makan, tidur, dan pemeriksaan.
 const TABS: BottomTab<HealthTab>[] = [
   { key: 'steps', label: 'Steps', icon: 'figure.walk' },
+  { key: 'diet', label: 'Diet', icon: 'fork.knife' },
+  { key: 'sleep', label: 'Sleep', icon: 'bed.double.fill' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
 
@@ -41,10 +48,12 @@ export default function HealthScreen() {
   const router = useRouter();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
-  // Default masuk ke tab Steps; reminder Dashboard bisa mengarahkan ke Check-up.
+  // Default masuk ke tab Steps; reminder Dashboard bisa mengarahkan ke tab lain.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, scrollKey, onTabPress } = useTabScroll<HealthTab>(
-    tabParam === 'checkup' ? 'checkup' : 'steps',
+    tabParam === 'checkup' || tabParam === 'diet' || tabParam === 'sleep'
+      ? tabParam
+      : 'steps',
   );
 
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
@@ -53,9 +62,13 @@ export default function HealthScreen() {
   const [checkups, setCheckups] = useState<Checkup[] | null>(null);
   const [stepDays, setStepDays] = useState<StepDaysMap>({});
   const [weeks, setWeeks] = useState<WeekStatsMap>({});
+  const [diet, setDiet] = useState<DietDay>(EMPTY_DIET_DAY);
+  const [nights, setNights] = useState<SleepNight[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const dayId = dayDocId(new Date());
+  // Lewat tengah malam id harinya ikut berganti sendiri — catatan makan hari
+  // ini kembali kosong tanpa restart (lihat hooks/useNow.ts).
+  const { todayId: dayId } = useNow();
 
   useEffect(() => {
     if (!user) return;
@@ -72,6 +85,8 @@ export default function HealthScreen() {
       subscribeCheckups(user.uid, setCheckups, fail),
       subscribeStepDays(user.uid, setStepDays, fail),
       subscribeWeekStats(user.uid, setWeeks, fail),
+      subscribeDietDay(user.uid, dayId, setDiet, fail),
+      subscribeSleepNights(user.uid, setNights, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, dayId]);
@@ -109,6 +124,10 @@ export default function HealthScreen() {
           <LoadingCenter />
         ) : tab === 'steps' ? (
           <StepsTab profile={profile} stepDays={stepDays} weeks={weeks} />
+        ) : tab === 'diet' ? (
+          <DietTab day={diet} dayId={dayId} profile={profile} />
+        ) : tab === 'sleep' ? (
+          <SleepTab nights={nights} dayId={dayId} />
         ) : (
           <CheckupTab checkups={checkups} />
         )}

@@ -303,7 +303,7 @@ export type NewsItem = {
   id: string;
   title: string;
   link: string;
-  source: string; // penerbit asli, mis. "Bloomberg"
+  source: string;
   publishedAt: Date | null;
 };
 

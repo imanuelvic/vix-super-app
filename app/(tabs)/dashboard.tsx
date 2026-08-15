@@ -112,10 +112,10 @@ import {
   subscribeHabitSchedule,
   type ScheduledHabit,
 } from '@/lib/habits';
+import { useNow } from '@/hooks/useNow';
 import {
   activeStreak,
   checkupDueReminders,
-  dayDocId,
   needsWeighIn,
   subscribeCheckups,
   subscribeHabitDay,
@@ -207,14 +207,9 @@ export default function DashboardScreen() {
   // Periode puasa 🍽️ — untuk kartu "sedang berpuasa" + pokok doa hari ini.
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
 
-  // Jam berjalan (di-refresh tiap menit) — untuk reminder yang bergantung waktu.
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(t);
-  }, []);
-
-  const todayId = dayDocId(new Date());
+  // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk reminder yang
+  // bergantung waktu. Lihat hooks/useNow.ts.
+  const { now, todayId } = useNow();
 
   useEffect(() => {
     if (!user) return;
@@ -1236,7 +1231,6 @@ const styles = StyleSheet.create({
   wheelTip: { color: Color.WHEEL_DARK },
   wheelText: { color: Color.WHEEL_DARK },
   prayerText: { color: Color.SPIRITUAL_DARK },
-  // Teks isi kartu bertema CORE (biru) — mis. Doa Rantai.
   coreText: { color: Color.FINANCE_INVESTMENT_DARK },
   readingCard: {
     flexDirection: 'row',

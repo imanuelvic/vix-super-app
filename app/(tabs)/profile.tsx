@@ -436,7 +436,6 @@ const styles = StyleSheet.create({
   },
   title: { color: Color.MAIN },
   editText: { color: Color.MAIN },
-  // Nama sub-tab aktif (chip-nya cuma emoji, jadi namanya ditaruh di sini).
   tabTitle: { color: Color.TEXT_LABEL, marginTop: -6, marginBottom: 8 },
   hero: {
     backgroundColor: Color.MAIN_DARK,

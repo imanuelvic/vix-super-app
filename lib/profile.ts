@@ -14,7 +14,7 @@ export type Profile = {
   fullName: string;
   nickname: string;
   birthPlace: string;
-  birthDate: string; // teks bebas, mis. "01 Januari 1998"
+  birthDate: string;
   gender: string;
   religion: string;
   bloodType: string;

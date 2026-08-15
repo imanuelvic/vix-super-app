@@ -15,7 +15,7 @@
 // pokok doa bulanan tiap CORE Leader (lib/core.ts), jadi kartunya mengarah ke
 // CORE → Follow Up.
 
-export type IntercessionKey =
+type IntercessionKey =
   | 'family-health'
   | 'family-economy'
   | 'family-unity'
@@ -42,7 +42,7 @@ const CHAIN: IntercessionTopic = {
 };
 
 /** Index = hasil `Date.getDay()`: 0 Minggu … 6 Sabtu. */
-export const INTERCESSION_WEEK: IntercessionTopic[] = [
+const INTERCESSION_WEEK: IntercessionTopic[] = [
   // 0 — Minggu
   {
     key: 'nation',
@@ -120,9 +120,9 @@ export function isChainTopic(topic: IntercessionTopic): boolean {
 }
 
 // Jendela pengingat malam: mulai jam 18.00 sampai ganti hari. Di dalam jendela
-// ini kartu Home menampilkan seluruh pokok doanya (di luar itu cukup judulnya).
-export const INTERCESSION_NIGHT_FROM_HOUR = 18;
+// ini kartu Home berubah jadi ajakan mendoakan sekali lagi sebelum tidur.
+const NIGHT_FROM_HOUR = 18;
 
 export function intercessionNightWindow(now: Date): boolean {
-  return now.getHours() >= INTERCESSION_NIGHT_FROM_HOUR;
+  return now.getHours() >= NIGHT_FROM_HOUR;
 }

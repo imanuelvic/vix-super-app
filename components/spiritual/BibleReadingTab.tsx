@@ -149,7 +149,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
           Kitab, pasal & ayat
         </VixText>
         <FormInput
-          placeholder="mis. Yakobus 1:2-4, Mazmur 23"
+          placeholder="Alkitab"
           value={text}
           onChangeText={setText}
           editable={!busy}

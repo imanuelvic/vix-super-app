@@ -131,11 +131,13 @@ export function BudgetingTab({
   const totalPercent =
     totalAllocated > 0 ? (totalRealized / totalAllocated) * 100 : 0;
 
-  // Ringkasan sub-budget di dalam modal: totalnya & apakah sudah melebihi
-  // budget kategori induknya.
+  // Sub-budget MENJUMLAH jadi budget kategorinya. Begitu ada minimal satu sub
+  // yang diisi nominal, kolom budget utama tidak diketik manual lagi —
+  // nilainya = total semua sub (satu sumber angka, tidak bisa beda).
   const subTotal = subDraft.reduce((sum, s) => sum + parseAmount(s.amount), 0);
-  const editAllocated = parseAmount(editAmount);
-  const subOver = editAllocated > 0 && subTotal > editAllocated;
+  const rolledUp = subTotal > 0;
+  // Nominal yang benar-benar disimpan sebagai budget kategori ini.
+  const mainAmount = rolledUp ? subTotal : parseAmount(editAmount);
 
   function openEdit(category: FinanceCategory) {
     setEditing(category);
@@ -201,7 +203,9 @@ export function BudgetingTab({
 
   async function handleSave() {
     if (!user || !editing || saving) return;
-    const value = parseAmount(editAmount); // 0 = hapus budget
+    // Budget kategori = total sub-budget kalau ada; kalau tidak, angka yang
+    // diketik manual. 0 = budget dihapus.
+    const value = mainAmount;
     const subAmounts: Record<string, number> = {};
     for (const s of subDraft) subAmounts[s.key] = parseAmount(s.amount);
     setSaving(true);
@@ -342,27 +346,28 @@ export function BudgetingTab({
             {editing.icon} {editing.label} · {FINANCE_TYPE_LABEL[type]}
           </VixText>
         )}
+        {/* Ada sub-budget → kolom ini jadi hasil penjumlahan (tidak diketik) */}
         <MoneyInput
           placeholder="Nominal budget"
-          value={editAmount}
+          value={rolledUp ? groupDigits(String(subTotal)) : editAmount}
           onChangeText={(t) => setEditAmount(groupDigits(t))}
-          autoFocus
-          editable={!saving}
+          autoFocus={!rolledUp}
+          editable={!saving && !rolledUp}
         />
         <VixText heading="label" additionalStyle={styles.modalHint}>
-          Isi 0 atau kosongkan untuk menghapus budget.
+          {rolledUp
+            ? '🧮 Terisi otomatis dari total sub-budget di bawah.'
+            : 'Isi 0 atau kosongkan untuk menghapus budget.'}
         </VixText>
 
         {/* Sub-budget: rincian di dalam kategori ini (mis. Groceries → Telur).
-            Totalnya dibandingkan dengan budget kategori di atas. */}
+            Totalnya LANGSUNG jadi budget kategori di atas. */}
         <View style={styles.subSection}>
           <View style={styles.subHeader}>
             <VixText heading="bold" additionalStyle={styles.subTitle}>
               🧩 Sub-budget
             </VixText>
-            <VixText
-              heading="label"
-              additionalStyle={subOver ? styles.overText : undefined}>
+            <VixText heading="bold" additionalStyle={styles.subTotalText}>
               Total {formatRupiah(subTotal)}
             </VixText>
           </View>
@@ -418,7 +423,7 @@ export function BudgetingTab({
           <View style={styles.subAddRow}>
             <FormInput
               style={styles.subAddInput}
-              placeholder="Nama sub (mis. Telur)"
+              placeholder="Nama sub-budget"
               value={newSubLabel}
               onChangeText={setNewSubLabel}
               onSubmitEditing={addSub}
@@ -433,12 +438,10 @@ export function BudgetingTab({
             </PressableScale>
           </View>
 
-          <VixText
-            heading="label"
-            additionalStyle={subOver ? styles.overText : styles.modalHint}>
-            {subOver
-              ? `Total sub melebihi budget kategori (${formatRupiah(editAllocated)}).`
-              : 'Sub-budget cuma rincian — realisasinya tetap ikut kategori induk.'}
+          <VixText heading="label" additionalStyle={styles.modalHint}>
+            {rolledUp
+              ? 'Total sub inilah budget kategorinya. Butuh jatah bebas? Tambah sub “Lain-lain”.'
+              : 'Isi sub-budget kalau mau dirinci — totalnya otomatis jadi budget kategori ini.'}
           </VixText>
         </View>
 
@@ -576,6 +579,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subTitle: { color: Color.TEXT_TITLE },
+  // Total sub = budget kategorinya, jadi ditonjolkan warna utama.
+  subTotalText: { color: Color.MAIN_DARK },
   // Dibatasi tingginya supaya dialog tidak memanjang keluar layar.
   subScroll: { maxHeight: 210 },
   subRow: { marginBottom: 10, gap: 6 },

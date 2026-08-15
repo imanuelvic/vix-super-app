@@ -230,7 +230,6 @@ export default function TasksScreen() {
   }, [user, tasks, todayId]);
 
   // Sekali saja: hapus PERMANEN task dari kategori lama yang sudah dihapus
-  // (mis. 'fun' & 'relax') — biar Firestore ikut bersih.
   useEffect(() => {
     if (!user || pruned.current || loading || tasks.length === 0) return;
     pruned.current = true;

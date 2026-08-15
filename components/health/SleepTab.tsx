@@ -219,7 +219,7 @@ export function SleepTab({
 
         <FormInput
           style={styles.noteInput}
-          placeholder="Catatan (opsional) — mis. begadang kerjaan"
+          placeholder="Catatan (opsional)"
           value={fNote}
           onChangeText={setFNote}
           editable={!busy}

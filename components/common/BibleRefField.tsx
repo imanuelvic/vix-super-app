@@ -114,7 +114,7 @@ export function BibleRefField({
             Ayat dari
           </VixText>
           <FormInput
-            placeholder="mis. 4"
+            placeholder="Ayat"
             keyboardType="number-pad"
             value={verseFrom}
             onChangeText={(v) => {
@@ -130,7 +130,7 @@ export function BibleRefField({
             sampai
           </VixText>
           <FormInput
-            placeholder="mis. 7"
+            placeholder="Ayat"
             keyboardType="number-pad"
             value={verseTo}
             onChangeText={(v) => {

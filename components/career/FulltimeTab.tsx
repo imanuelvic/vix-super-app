@@ -122,24 +122,6 @@ export function FulltimeTab({
     ).length;
   const column = columnOf(board);
 
-  /** Pindahkan satu kartu ke kolom lain — sekali ketuk, tanpa buka modal. */
-  async function moveTo(item: RoadmapItem, status: RoadmapStatus) {
-    if (!user || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await saveRoadmap(
-        user.uid,
-        items.map((i) => (i.id === item.id ? { ...i, status } : i)),
-      );
-      setBoard(status);
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   function openAdd() {
     setEditing('new');
     setFTitle('');
@@ -273,8 +255,8 @@ export function FulltimeTab({
         {board === 'todo' && urgentIn('todo') > 0 && (
           <View style={styles.warnCard}>
             <VixText heading="bold" additionalStyle={styles.warnText}>
-              ⚠️ {urgentIn('todo')} kartu di Rencana sudah H-7 — pindahkan ke
-              Dikerjakan sekarang.
+              ⚠️ {urgentIn('todo')} kartu di Rencana sudah H-7 — buka kartunya
+              & ubah statusnya jadi Dikerjakan.
             </VixText>
           </View>
         )}
@@ -302,15 +284,17 @@ export function FulltimeTab({
             dl !== null &&
             dl <= CAREER_REMINDER_DAYS;
           return (
-            // Tekan untuk edit status/prioritas.
-            <View
+            // Seluruh kartu ditekan → buka modal edit (di sana status, prioritas
+            // & deadline-nya diubah). Tidak ada lagi tombol pindah kolom cepat.
+            <PressableScale
               key={item.id}
               style={[
                 styles.card,
                 item.status === 'done' && styles.cardDone,
                 mustMove && styles.cardMustMove,
-              ]}>
-              <PressableScale onPress={() => openEdit(item)}>
+              ]}
+              onPress={() => openEdit(item)}>
+              <View>
                 <View style={styles.cardTop}>
                   <PriorityBadge priority={item.priority} />
                   <VixText
@@ -340,29 +324,14 @@ export function FulltimeTab({
                     📥 Backlog · PR (tanpa deadline)
                   </VixText>
                 )}
-              </PressableScale>
+              </View>
 
               {mustMove && (
                 <VixText heading="label" additionalStyle={styles.mustMoveText}>
                   ⚠️ Sudah H-7 tapi masih Rencana — harus mulai dikerjakan.
                 </VixText>
               )}
-
-              {/* Pindah kolom sekali ketuk (ala Trello) */}
-              <View style={styles.moveRow}>
-                {ROADMAP_STATUS.filter((s) => s.key !== item.status).map((s) => (
-                  <PressableScale
-                    key={s.key}
-                    style={styles.moveButton}
-                    disabled={busy}
-                    onPress={() => moveTo(item, s.key)}>
-                    <VixText heading="label" additionalStyle={styles.moveText}>
-                      {s.icon} {s.label} ›
-                    </VixText>
-                  </PressableScale>
-                ))}
-              </View>
-            </View>
+            </PressableScale>
           );
         })}
       </ScrollView>
@@ -526,23 +495,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   warnText: { color: Color.DANGER },
-  // Baris tombol pindah kolom (ala Trello).
-  moveRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 2,
-    borderTopWidth: 1,
-    borderTopColor: Color.BORDER,
-    paddingTop: 10,
-  },
-  moveButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 7,
-    borderRadius: 10,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-  },
-  moveText: { color: Color.TEXT_LABEL },
   deadline: { color: Color.TEXT_LABEL },
   deadlineUrgent: { color: Color.DANGER },
   backlog: { color: Color.CAREER_DARK },

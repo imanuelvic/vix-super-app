@@ -61,7 +61,7 @@ export function pendingHabits(
 }
 
 /** Semua kebiasaan (semua sesi) sudah dicentang hari ini? */
-export function allHabitsDone(
+function allHabitsDone(
   habits: ScheduledHabit[],
   done: Record<string, boolean>,
 ): boolean {

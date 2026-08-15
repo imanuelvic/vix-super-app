@@ -51,9 +51,9 @@ import {
 } from '@/lib/core';
 import { OWNER_NAME } from '@/lib/family';
 import { formatShortDayDate } from '@/lib/format';
+import { useNow } from '@/hooks/useNow';
 import {
   bumpWaterStreak,
-  dayDocId,
   setWater,
   subscribeHabitDay,
   subscribeWaterStreak,
@@ -127,7 +127,7 @@ const FEATURES: {
   { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
 
-  { key: 'investment', label: 'Investment', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
+  { key: 'investment', label: 'Invest', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
   { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
   { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
   { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
@@ -137,7 +137,7 @@ const FEATURES: {
   { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
   { key: 'learning', label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
 
-  { key: 'tournament', label: 'Tournament', icon: 'trophy.fill', route: '/tournament', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
+  { key: 'tournament', label: 'Games', icon: 'trophy.fill', route: '/tournament', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
 ];
 
 export default function HomeScreen() {
@@ -166,19 +166,10 @@ export default function HomeScreen() {
   // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
   const [intercessionOpen, setIntercessionOpen] = useState(false);
 
-  // Jam berjalan (di-refresh tiap menit) — untuk gate doa jam 4 & badge yang
-  // bergantung waktu (mobil/rumah).
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(t);
-  }, []);
-
-  // Diturunkan dari `now` (bukan `new Date()` lepas) supaya pergantian hari
-  // benar-benar terdeteksi: lewat tengah malam id-nya berubah → listener di
-  // bawah berlangganan ulang ke dokumen hari BARU, jadi air putih & ceklis
-  // kembali 0 sendiri walau app dibiarkan terbuka semalaman.
-  const todayId = dayDocId(now);
+  // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
+  // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
+  // malam. Lihat catatan lengkapnya di hooks/useNow.ts.
+  const { now, todayId } = useNow();
 
   useEffect(() => {
     if (!user) return;

@@ -154,8 +154,8 @@ export type SubcategoryMap = Record<string, Subcategory[]>;
 // fitur Car 🚗: transaksi Expense › Transportation › Bensin otomatis jadi
 // catatan di Car → Log, jadi pengeluaran bensin cukup dicatat SEKALI di
 // Finance. Karena itu key-nya tidak boleh diubah.
-export const FUEL_CATEGORY_KEY = 'transportation';
-export const FUEL_SUB_KEY = 'bensin';
+const FUEL_CATEGORY_KEY = 'transportation';
+const FUEL_SUB_KEY = 'bensin';
 
 const BUILTIN_SUBS: SubcategoryMap = {
   [budgetKey('expense', FUEL_CATEGORY_KEY)]: [

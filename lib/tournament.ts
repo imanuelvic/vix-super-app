@@ -60,7 +60,7 @@ function totalRounds(size: BracketSize): number {
 }
 
 /** Bangun semua laga kosong dari daftar peserta (sudah terurut/teracak). */
-export function buildMatches(participants: string[]): Match[] {
+function buildMatches(participants: string[]): Match[] {
   const size = participants.length;
   const rounds = Math.log2(size);
   const matches: Match[] = [];
@@ -162,7 +162,7 @@ function tournamentsCollection(uid: string) {
   return collection(db, 'users', uid, 'tournaments');
 }
 
-export function newTournamentId(): string {
+function newTournamentId(): string {
   return `t${Date.now().toString(36)}`;
 }
 

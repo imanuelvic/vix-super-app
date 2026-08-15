@@ -6,12 +6,13 @@ import { HapticTab } from '@/components/haptic-tab';
 import { RaisedHomeTab } from '@/components/raised-home-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
 import {
   pendingHabits,
   subscribeHabitSchedule,
   type ScheduledHabit,
 } from '@/lib/habits';
-import { dayDocId, subscribeHabitDay, type HabitDay } from '@/lib/health';
+import { subscribeHabitDay, type HabitDay } from '@/lib/health';
 
 // Home tetap tab pembuka meski Dashboard dideklarasikan lebih dulu (paling kiri).
 export const unstable_settings = {
@@ -27,13 +28,8 @@ export default function TabLayout() {
   const [schedule, setSchedule] = useState<ScheduledHabit[]>([]);
   const [day, setDay] = useState<HabitDay | null>(null);
 
-  // Jam berjalan (per menit) supaya lewat tengah malam badge ikut kereset.
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(t);
-  }, []);
-  const todayId = dayDocId(now);
+  // Lewat tengah malam badge ikut kereset sendiri (lihat hooks/useNow.ts).
+  const { now, todayId } = useNow();
 
   useEffect(() => {
     if (!user) return;

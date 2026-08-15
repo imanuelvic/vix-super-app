@@ -194,7 +194,7 @@ export default function FastingScreen() {
             Nama puasa
           </VixText>
           <FormInput
-            placeholder="mis. Puasa Daniel 7 Hari"
+            placeholder="Nama Puasa"
             value={title}
             onChangeText={setTitle}
             editable={!busy}
@@ -216,7 +216,7 @@ export default function FastingScreen() {
             📜 Peraturan puasa saya
           </VixText>
           <FormInput
-            placeholder="mis. makan hanya jam 18.00–20.00, tanpa daging & gula"
+            placeholder="mis. makan hanya jam 18.00–20.00"
             value={rules}
             onChangeText={setRules}
             editable={!busy}
