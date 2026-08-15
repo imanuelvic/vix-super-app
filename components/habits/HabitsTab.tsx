@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -65,6 +65,16 @@ export function HabitsTab({
   const [activeSlot, setActiveSlot] = useState<HabitSlot>(() =>
     defaultSlot(habits, day.done, new Date()),
   );
+
+  // Ganti hari (lewat tengah malam) → `dayId` dari induk berubah, dan tab sesi
+  // dikembalikan ke default hari BARU yaitu Pagi. Tanpa ini tabnya nyangkut di
+  // Malam kemarin walau ceklisnya sudah kosong lagi.
+  // Sengaja HANYA bergantung pada dayId: kalau `habits`/`day.done` ikut jadi
+  // dependency, tab akan lompat sendiri tiap kali satu kebiasaan dicentang.
+  useEffect(() => {
+    setActiveSlot(defaultSlot(habits, day.done, new Date()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dayId]);
 
   // Modal tambah/edit kebiasaan.
   const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);

@@ -36,15 +36,28 @@ export function slotNow(now: Date): HabitSlot {
 
 /**
  * Sesi yang WAKTUNYA SUDAH TIBA hari ini — Pagi ≥06:00, Siang ≥12:00,
- * Malam ≥18:00 (kumulatif: siang tetap membawa sisa pagi). Dini hari (<06:00)
- * hanya Malam, mengikuti aturan `slotNow` di atas.
+ * Malam ≥18:00 (kumulatif: siang tetap membawa sisa pagi).
+ *
+ * Jam 00.00–05.59 sengaja KOSONG: lewat tengah malam ceklis sudah kereset ke
+ * hari baru (sisa kebiasaan malam kemarin hangus), sementara sesi Pagi baru
+ * mulai jam 6. Jadi di jam-jam itu memang belum ada yang perlu dikerjakan —
+ * badge & kartu reminder ikut hilang.
  */
 function openSlots(now: Date): HabitSlot[] {
   const h = now.getHours();
-  if (h < 6) return ['night'];
+  if (h < 6) return [];
   if (h < 12) return ['morning'];
   if (h < 18) return ['morning', 'daytime'];
   return ['morning', 'daytime', 'night'];
+}
+
+/**
+ * Sesi yang SEDANG berjalan sekarang — dasar kartu reminder di Dashboard.
+ * null = belum ada sesi yang dibuka (jam 00.00–05.59).
+ */
+export function currentOpenSlot(now: Date): HabitSlot | null {
+  const open = openSlots(now);
+  return open.length > 0 ? open[open.length - 1] : null;
 }
 
 /**
@@ -73,13 +86,19 @@ function allHabitsDone(
  * KECUALI kalau semua kebiasaan hari ini sudah beres. Kalau sudah beres tidak
  * ada lagi yang perlu dikerjakan, jadi mulai dari Pagi biar enak dibaca dari
  * awal hari.
+ *
+ * Beda dengan `slotNow`: jam 00.00–00.59 di sini dihitung PAGI hari baru, bukan
+ * lanjutan malam kemarin. Alasannya lewat tengah malam ceklis harian memang
+ * sudah kereset ke hari berikutnya, jadi tab pembukanya harus ikut balik ke
+ * Pagi. (`slotNow` tetap apa adanya — dipakai kartu reminder Dashboard.)
  */
 export function defaultSlot(
   habits: ScheduledHabit[],
   done: Record<string, boolean>,
   now: Date,
 ): HabitSlot {
-  return allHabitsDone(habits, done) ? 'morning' : slotNow(now);
+  if (allHabitsDone(habits, done)) return 'morning';
+  return now.getHours() < 1 ? 'morning' : slotNow(now);
 }
 
 /** ID unik untuk kebiasaan baru yang dibuat pengguna. */

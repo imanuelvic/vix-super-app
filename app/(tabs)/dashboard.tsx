@@ -107,8 +107,8 @@ import {
   type FunData,
 } from '@/lib/fun';
 import {
+  currentOpenSlot,
   slotMeta,
-  slotNow,
   subscribeHabitSchedule,
   type ScheduledHabit,
 } from '@/lib/habits';
@@ -275,11 +275,13 @@ export default function DashboardScreen() {
     }
   }
 
-  // Kebiasaan sesi saat ini (Pagi/Siang/Malam) yang belum dilakukan hari ini.
-  const curSlot = slotNow(now);
-  const slotUndone = day
-    ? daySchedule.filter((h) => h.slot === curSlot && !day.done[h.id])
-    : [];
+  // Kebiasaan sesi yang SEDANG berjalan & belum dilakukan hari ini.
+  // null = jam 00.00–05.59, sesi Pagi belum mulai → kartunya tidak muncul.
+  const curSlot = currentOpenSlot(now);
+  const slotUndone =
+    day && curSlot
+      ? daySchedule.filter((h) => h.slot === curSlot && !day.done[h.id])
+      : [];
 
   // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan
   // (hanya keluarga inti; saudara & yang sudah tiada ✝ tidak diikutkan).
@@ -642,7 +644,7 @@ export default function DashboardScreen() {
           </PressableScale>
 
           {/* Reminder kebiasaan sesi saat ini (Pagi/Siang/Malam). */}
-          {slotUndone.length > 0 && (
+          {curSlot && slotUndone.length > 0 && (
             <ReminderCard
               bg={Color.FINANCE_EXPENSE}
               fg={Color.FINANCE_EXPENSE_DARK}

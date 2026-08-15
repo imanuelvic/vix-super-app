@@ -137,7 +137,7 @@ const FEATURES: {
   { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
   { key: 'learning', label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
 
-  { key: 'tournament', label: 'Games', icon: 'trophy.fill', route: '/tournament', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
+  { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
 ];
 
 export default function HomeScreen() {
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   // bawah tile (lineHeight label 19.5 ÷ 2 ≈ 10). Judul digambar SETELAH tile,
   // jadi otomatis berada di atasnya.
   tileLabelPill: {
-    marginTop: -10,
+    marginTop: -20,
     paddingHorizontal: 7,
     paddingVertical: 1,
     borderRadius: 999,

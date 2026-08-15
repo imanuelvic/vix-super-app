@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
@@ -10,7 +9,6 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -41,10 +39,10 @@ function progressOf(t: Tournament): { done: number; total: number } {
   };
 }
 
-// Layar Tournament 🏆 — dibuka dari grid Home (dulu tab bawah). Bracket sistem
-// gugur bertema emas: kartu turnamen dengan bar kemajuan, babak dipilih lewat
-// tab (bukan scroll panjang), dan kartu juara yang bikin puas saat selesai.
-export default function TournamentScreen() {
+// Sub-menu Tournament 🏆 — bracket sistem gugur bertema emas: kartu turnamen
+// dengan bar kemajuan, babak dipilih lewat tab (bukan scroll panjang), dan
+// kartu juara yang bikin puas saat selesai.
+export function TournamentTab() {
   const { user } = useAuth();
 
   const [list, setList] = useState<Tournament[] | null>(null);
@@ -161,13 +159,7 @@ export default function TournamentScreen() {
   const shownRound = rounds[Math.min(round, rounds.length - 1)] ?? [];
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader
-        backLabel="Home"
-        title="Tournament 🏆"
-        subtitle="Bracket sistem gugur — tinggal ketuk pemenangnya"
-      />
-
+    <View style={styles.flex}>
       {error && (
         <VixText heading="label" additionalStyle={styles.error}>
           {error}
@@ -360,7 +352,7 @@ export default function TournamentScreen() {
           Masih bisa “acak ulang” selama belum ada laga yang diputuskan.
         </VixText>
       </SheetModal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -502,9 +494,9 @@ function MatchSide({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  flex: { flex: 1 },
   error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   back: { alignSelf: 'flex-start', marginBottom: 10 },
   backText: { color: Color.MAIN },
   // ===== Daftar turnamen =====

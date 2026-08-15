@@ -13,54 +13,82 @@ import { DonutChart } from '@/components/finance/DonutChart';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
+  BREAKFAST_COMBOS,
+  comboMeals,
+  comboTotals,
   dietTone,
   dietTotals,
   fatLimitG,
-  kcalTargetOf,
+  FOOD_GROUP_LABEL,
+  FOOD_PRESETS,
+  foodPreset,
+  kcalGoal,
+  KCAL_MODE_LABEL,
   MEAL_SLOTS,
+  mealFromPreset,
   mealSlotMeta,
   mealsBySlot,
   newMealId,
+  proteinTargetG,
   saveDietDay,
   SUGAR_IDEAL_G,
   SUGAR_LIMIT_G,
   type DietDay,
   type Meal,
+  type MealCombo,
   type MealSlot,
 } from '@/lib/diet';
-import { parseDecimal } from '@/lib/format';
-import { ageFromBirthYear, type HealthProfile } from '@/lib/health';
+import { formatDecimal, parseDecimal } from '@/lib/format';
+import {
+  ageFromBirthYear,
+  WATER_GOAL,
+  type HealthProfile,
+  type WeightTarget,
+} from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
 
-// Sub-tab Diet 🥗 — "less sugar, less fat". Ring kalori di atas, lalu dua bar
-// batas (gula & lemak), lalu daftar makan hari ini per waktu makan.
-// Angka kalori/gula/lemak diisi manual dari label kemasan atau perkiraan —
-// tidak ada database makanan, sengaja simpel & tanpa biaya API.
+// Sub-tab Diet 🥗 — "less sugar, less fat, cukup protein".
+// Susunannya dari atas ke bawah = urutan yang paling sering dilihat:
+//   1. Ring kalori + target yang sudah disesuaikan dengan target berat
+//   2. Tiga takaran penting: protein (dikejar), gula & lemak (dibatasi)
+//   3. Air putih — angka yang sama dengan yang di Home
+//   4. Daftar makan per waktu makan + paket sarapan sekali ketuk
+//   5. Panduan singkat
 export function DietTab({
   day,
   dayId,
   profile,
+  target,
+  water,
+  onChangeWater,
 }: {
   day: DietDay;
   dayId: string;
   profile: HealthProfile;
+  target: WeightTarget | null;
+  water: number;
+  onChangeWater: (delta: number) => void;
 }) {
   const { user } = useAuth();
 
   const [editing, setEditing] = useState<Meal | 'new' | null>(null);
   const [fSlot, setFSlot] = useState<MealSlot>('sarapan');
+  const [fPreset, setFPreset] = useState<string | null>(null);
+  const [fQty, setFQty] = useState('1');
   const [fName, setFName] = useState('');
   const [fKcal, setFKcal] = useState('');
+  const [fProtein, setFProtein] = useState('');
   const [fSugar, setFSugar] = useState('');
   const [fFat, setFFat] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const totals = dietTotals(day);
-  const kcalTarget = kcalTargetOf(profile, ageFromBirthYear(profile.birthYear));
-  const fatLimit = fatLimitG(kcalTarget);
+  const goal = kcalGoal(profile, ageFromBirthYear(profile.birthYear), target);
+  const protein = proteinTargetG(profile.weightKg);
+  const fatLimit = fatLimitG(goal.kcal);
   const grouped = mealsBySlot(day);
-  const kcalLeft = kcalTarget - totals.kcal;
+  const kcalLeft = goal.kcal - totals.kcal;
 
   async function saveMeals(meals: Meal[]) {
     if (!user) return;
@@ -75,8 +103,11 @@ export function DietTab({
   function openAdd(slot: MealSlot) {
     setEditing('new');
     setFSlot(slot);
+    setFPreset(null);
+    setFQty('1');
     setFName('');
     setFKcal('');
+    setFProtein('');
     setFSugar('');
     setFFat('');
   }
@@ -84,10 +115,37 @@ export function DietTab({
   function openEdit(meal: Meal) {
     setEditing(meal);
     setFSlot(meal.slot);
+    setFPreset(null);
+    setFQty('1');
     setFName(meal.name);
     setFKcal(meal.kcal ? String(meal.kcal) : '');
+    setFProtein(meal.proteinG ? String(meal.proteinG) : '');
     setFSugar(meal.sugarG ? String(meal.sugarG) : '');
     setFFat(meal.fatG ? String(meal.fatG) : '');
+  }
+
+  /** Pilih dari daftar makanan → semua angkanya terisi sendiri (× porsi). */
+  function applyPreset(key: string | null, qtyText: string) {
+    setFPreset(key);
+    const preset = key ? foodPreset(key) : null;
+    if (!preset) return;
+    const m = mealFromPreset(preset, fSlot, parseDecimal(qtyText) || 1);
+    setFName(m.name);
+    setFKcal(String(m.kcal));
+    setFProtein(String(m.proteinG));
+    setFSugar(String(m.sugarG));
+    setFFat(String(m.fatG));
+  }
+
+  /** Tambahkan seluruh isi satu paket sarapan sekaligus. */
+  async function addCombo(combo: MealCombo) {
+    if (busy) return;
+    setBusy(true);
+    await saveMeals([
+      ...day.meals,
+      ...comboMeals(combo).map((m) => ({ id: newMealId(), ...m })),
+    ]);
+    setBusy(false);
   }
 
   async function handleSave() {
@@ -99,6 +157,7 @@ export function DietTab({
       slot: fSlot,
       name,
       kcal: Math.round(parseDecimal(fKcal)),
+      proteinG: Math.round(parseDecimal(fProtein)),
       sugarG: Math.round(parseDecimal(fSugar)),
       fatG: Math.round(parseDecimal(fFat)),
     };
@@ -122,17 +181,14 @@ export function DietTab({
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* ===== Ring kalori ===== */}
+        {/* ===== 1. Ring kalori ===== */}
         <View style={styles.hero}>
           <DonutChart
             size={104}
             thickness={12}
             slices={[
-              { value: Math.min(totals.kcal, kcalTarget), color: Color.FUN },
-              {
-                value: Math.max(kcalTarget - totals.kcal, 0),
-                color: Color.MAIN,
-              },
+              { value: Math.min(totals.kcal, goal.kcal), color: Color.FUN },
+              { value: Math.max(goal.kcal - totals.kcal, 0), color: Color.MAIN },
             ]}>
             <VixText heading="title" additionalStyle={styles.heroRing}>
               {totals.kcal}
@@ -143,20 +199,34 @@ export function DietTab({
           </DonutChart>
           <View style={styles.heroSide}>
             <VixText heading="label" additionalStyle={styles.heroLabel}>
-              Target hari ini
+              {KCAL_MODE_LABEL[goal.mode]}
             </VixText>
             <VixText heading="subheader" additionalStyle={styles.heroValue}>
-              {kcalTarget} kkal
+              {goal.kcal} kkal
             </VixText>
             <VixText heading="label" additionalStyle={styles.heroLabel}>
               {kcalLeft >= 0
                 ? `Sisa ${kcalLeft} kkal 💪`
                 : `Lewat ${-kcalLeft} kkal 😅`}
             </VixText>
+            {target && (
+              <VixText heading="label" additionalStyle={styles.heroTarget}>
+                🎯 {formatDecimal(profile.weightKg)} →{' '}
+                {formatDecimal(target.targetWeightKg)} kg
+              </VixText>
+            )}
           </View>
         </View>
 
-        {/* ===== Dua batas yang paling penting ===== */}
+        {/* ===== 2. Tiga takaran penting ===== */}
+        <GoalBar
+          emoji="🥩"
+          label="Protein"
+          value={totals.proteinG}
+          min={protein.min}
+          max={protein.max}
+          hint={`${formatDecimal(profile.weightKg)} kg × 1,6–2,0 g — ini yang menjaga ototmu`}
+        />
         <LimitBar
           emoji="🍬"
           label="Gula tambahan"
@@ -172,7 +242,30 @@ export function DietTab({
           hint="±30% dari kebutuhan kalori"
         />
 
-        {/* ===== Daftar makan per waktu makan ===== */}
+        {/* ===== 3. Air putih — sumber angkanya sama dengan di Home ===== */}
+        <View style={styles.waterCard}>
+          <VixText heading="bold" additionalStyle={styles.waterLabel}>
+            💧 Air putih {water}/{WATER_GOAL} gelas
+          </VixText>
+          <View style={styles.waterButtons}>
+            <PressableScale
+              style={styles.waterButton}
+              onPress={() => onChangeWater(-1)}
+              hitSlop={6}>
+              <VixText heading="bold" additionalStyle={styles.waterButtonText}>
+                −
+              </VixText>
+            </PressableScale>
+            <PressableScale
+              style={[styles.waterButton, styles.waterButtonPlus]}
+              onPress={() => onChangeWater(1)}
+              hitSlop={6}>
+              <IconSymbol name="plus" size={16} color={Color.MAIN_DARK} />
+            </PressableScale>
+          </View>
+        </View>
+
+        {/* ===== 4. Daftar makan per waktu makan ===== */}
         {MEAL_SLOTS.map((slot) => {
           const list = grouped[slot.key];
           const slotKcal = list.reduce((s, m) => s + m.kcal, 0);
@@ -184,6 +277,33 @@ export function DietTab({
                 </VixText>
                 <VixText heading="label">{slotKcal} kkal</VixText>
               </View>
+
+              {/* Paket sarapan sekali ketuk — hanya di kartu Sarapan */}
+              {slot.key === 'sarapan' && list.length === 0 && (
+                <View style={styles.comboBox}>
+                  <VixText heading="label" additionalStyle={styles.comboHint}>
+                    Sarapan tinggi gula → ganti Protein + Serat + Mikronutrien:
+                  </VixText>
+                  {BREAKFAST_COMBOS.map((c) => {
+                    const t = comboTotals(c);
+                    return (
+                      <PressableScale
+                        key={c.key}
+                        style={styles.comboButton}
+                        disabled={busy}
+                        onPress={() => addCombo(c)}>
+                        <VixText heading="bold" additionalStyle={styles.comboTitle}>
+                          {c.emoji} {c.title}
+                        </VixText>
+                        <VixText heading="label" additionalStyle={styles.comboSub}>
+                          {t.kcal} kkal · 🥩 {t.proteinG} g · 🍬 {t.sugarG} g
+                        </VixText>
+                      </PressableScale>
+                    );
+                  })}
+                </View>
+              )}
+
               {list.map((m) => (
                 <PressableScale
                   key={m.id}
@@ -197,7 +317,7 @@ export function DietTab({
                       {m.name}
                     </VixText>
                     <VixText heading="label">
-                      🍬 {m.sugarG} g · 🧈 {m.fatG} g
+                      🥩 {m.proteinG} g · 🍬 {m.sugarG} g · 🧈 {m.fatG} g
                     </VixText>
                   </View>
                   <VixText heading="bold" additionalStyle={styles.mealKcal}>
@@ -205,6 +325,7 @@ export function DietTab({
                   </VixText>
                 </PressableScale>
               ))}
+
               <PressableScale
                 style={styles.addRow}
                 onPress={() => openAdd(slot.key)}>
@@ -223,9 +344,27 @@ export function DietTab({
           </VixText>
         )}
 
+        {/* ===== 5. Panduan singkat ===== */}
+        <View style={styles.guideCard}>
+          <VixText heading="bold" additionalStyle={styles.guideTitle}>
+            📋 Pegangan Harian
+          </VixText>
+          {[
+            `🥩 Protein ${protein.min}–${protein.max} g/hari — jangan sampai kurang, ini yang menjaga otot saat lemak turun.`,
+            '📉 Jangan defisit terlalu agresif. Incar body recomposition: lemak turun pelan, otot tetap/naik.',
+            '📏 Berat tidak banyak turun tapi lingkar pinggang mengecil & strength naik = tetap berhasil.',
+            '🍬 Batasi gula tambahan & makanan ultra-proses — bukan dilarang, tapi dihitung.',
+            '🥗 Tiap makan usahakan lengkap: sayur, buah, protein, whole grain, lemak sehat.',
+          ].map((t) => (
+            <VixText key={t} heading="label" additionalStyle={styles.guideText}>
+              {t}
+            </VixText>
+          ))}
+        </View>
+
         <VixText heading="label" additionalStyle={styles.footNote}>
-          ℹ️ Angka diisi manual dari label kemasan atau perkiraan. Tidak harus
-          presisi — yang penting sadar polanya.
+          ℹ️ Angka gizi di daftar makanan itu PERKIRAAN untuk porsi yang
+          tertulis. Semua tetap bisa diedit setelah dipilih.
         </VixText>
       </ScrollView>
 
@@ -235,13 +374,51 @@ export function DietTab({
         title={editing === 'new' ? 'Tambah Makanan' : 'Ubah Makanan'}
         subtitle={`${mealSlotMeta(fSlot).emoji} ${mealSlotMeta(fSlot).label}`}
         onClose={() => setEditing(null)}>
-        <FormInput
-          placeholder="Nama makanan / minuman"
-          value={fName}
-          onChangeText={setFName}
-          autoFocus
-          editable={!busy}
+        {/* Pilih dari daftar → nama & semua angkanya terisi sendiri */}
+        <VixText heading="label" additionalStyle={styles.fieldLabelTop}>
+          ⚡ Pilih dari daftar makanan
+        </VixText>
+        <SelectField
+          value={fPreset}
+          options={FOOD_PRESETS.map((f) => ({
+            key: f.key,
+            label: `${f.emoji} ${f.name}`,
+            sub: `${FOOD_GROUP_LABEL[f.group]} · ${f.portion} · ${f.kcal} kkal · 🥩 ${f.proteinG} g`,
+          }))}
+          onChange={(k) => applyPreset(k, fQty)}
+          placeholder="Pilih makanan / minuman…"
+          disabled={busy}
+          clearable
         />
+
+        <View style={styles.numberRow}>
+          <View style={styles.qtyBox}>
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              Porsi ×
+            </VixText>
+            <FormInput
+              placeholder="1"
+              keyboardType="decimal-pad"
+              value={fQty}
+              onChangeText={(t) => {
+                setFQty(t);
+                applyPreset(fPreset, t);
+              }}
+              editable={!busy}
+            />
+          </View>
+          <View style={styles.nameBox}>
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              Nama
+            </VixText>
+            <FormInput
+              placeholder="Nama makanan / minuman"
+              value={fName}
+              onChangeText={setFName}
+              editable={!busy}
+            />
+          </View>
+        </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Waktu makan
@@ -269,6 +446,20 @@ export function DietTab({
               editable={!busy}
             />
           </View>
+          <View style={styles.numberBox}>
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              🥩 Protein
+            </VixText>
+            <FormInput
+              placeholder="gram"
+              keyboardType="decimal-pad"
+              value={fProtein}
+              onChangeText={setFProtein}
+              editable={!busy}
+            />
+          </View>
+        </View>
+        <View style={styles.numberRow}>
           <View style={styles.numberBox}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
               🍬 Gula
@@ -315,7 +506,56 @@ export function DietTab({
   );
 }
 
-// Bar batas harian (gula / lemak) — hijau → kuning saat ≥80% → merah kalau lewat.
+// Bar TARGET (protein): dikejar sampai minimal tercapai — hijau saat sudah
+// masuk rentang, abu-abu selama masih kurang.
+function GoalBar({
+  emoji,
+  label,
+  value,
+  min,
+  max,
+  hint,
+}: {
+  emoji: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  hint: string;
+}) {
+  const percent = min > 0 ? Math.min((value / min) * 100, 100) : 0;
+  const reached = value >= min;
+  return (
+    <View style={styles.limitCard}>
+      <View style={styles.limitTop}>
+        <VixText heading="bold" additionalStyle={styles.limitLabel}>
+          {emoji} {label}
+        </VixText>
+        <VixText
+          heading="bold"
+          additionalStyle={reached ? styles.goalReached : undefined}>
+          {value} / {min}–{max} g
+        </VixText>
+      </View>
+      <View style={styles.limitTrack}>
+        <View
+          style={[
+            styles.limitFill,
+            {
+              width: `${percent}%`,
+              backgroundColor: reached ? Color.MAIN : Color.MAIN_LIGHT,
+            },
+          ]}
+        />
+      </View>
+      <VixText heading="label" additionalStyle={styles.limitHint}>
+        {reached ? '✅ Target protein tercapai' : hint}
+      </VixText>
+    </View>
+  );
+}
+
+// Bar BATAS (gula/lemak): hijau → kuning saat ≥80% → merah kalau lewat.
 function LimitBar({
   emoji,
   label,
@@ -378,6 +618,7 @@ const styles = StyleSheet.create({
   heroSide: { flex: 1, gap: 2 },
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   heroValue: { color: Color.TEXT_REVERSE },
+  heroTarget: { color: Color.MAIN_LIGHT, marginTop: 2 },
   limitCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -395,6 +636,7 @@ const styles = StyleSheet.create({
   },
   limitLabel: { color: Color.TEXT_TITLE },
   limitOver: { color: Color.DANGER },
+  goalReached: { color: Color.MAIN_DARK },
   limitTrack: {
     height: 8,
     borderRadius: 4,
@@ -403,6 +645,30 @@ const styles = StyleSheet.create({
   },
   limitFill: { height: '100%', borderRadius: 4 },
   limitHint: { color: Color.TEXT_LABEL },
+  // Air putih — bentuknya disamakan dengan baris air di kartu sapaan Home.
+  waterCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Color.MAIN_DARK,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  waterLabel: { color: Color.MAIN_LIGHT, flexShrink: 1 },
+  waterButtons: { flexDirection: 'row', gap: 8 },
+  waterButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Color.MAIN_LIGHT,
+  },
+  waterButtonPlus: { backgroundColor: Color.ACCENT },
+  waterButtonText: { color: Color.MAIN_DARK, fontSize: 18, lineHeight: 22 },
   slotCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -418,6 +684,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   slotTitle: { color: Color.TEXT_TITLE },
+  // Paket sarapan siap pakai
+  comboBox: { gap: 8 },
+  comboHint: { color: Color.TEXT_LABEL },
+  comboButton: {
+    backgroundColor: Color.FUN,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.FUN_DARK,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 1,
+  },
+  comboTitle: { color: Color.TEXT_TITLE },
+  comboSub: { color: Color.FUN_DARK },
   mealRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -443,8 +723,22 @@ const styles = StyleSheet.create({
   },
   addText: { color: Color.MAIN },
   error: { color: Color.DANGER, marginTop: 10 },
-  footNote: { color: Color.TEXT_LABEL, marginTop: 14, textAlign: 'center' },
+  guideCard: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.MAIN_LIGHT,
+    padding: 16,
+    gap: 6,
+    marginTop: 14,
+  },
+  guideTitle: { color: Color.MAIN_DARK },
+  guideText: { color: Color.TEXT_PARAGRAPH },
+  footNote: { color: Color.TEXT_LABEL, marginTop: 12, textAlign: 'center' },
+  fieldLabelTop: { marginBottom: 6 },
   fieldLabel: { marginTop: 12, marginBottom: 6 },
   numberRow: { flexDirection: 'row', gap: 8 },
   numberBox: { flex: 1 },
+  qtyBox: { width: 84 },
+  nameBox: { flex: 1 },
 });

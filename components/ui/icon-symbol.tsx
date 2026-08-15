@@ -81,6 +81,8 @@ const MAPPING = {
   // Sub-menu tab Habits: Diet 🥗 & Sleep 😴.
   'fork.knife': 'restaurant',
   'bed.double.fill': 'king-bed',
+  // Sub-menu fitur Games 🎮 (Snake).
+  'gamecontroller.fill': 'sports-esports',
 } as IconMapping;
 
 /**
