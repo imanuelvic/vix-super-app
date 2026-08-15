@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   // bawah tile (lineHeight label 19.5 ÷ 2 ≈ 10). Judul digambar SETELAH tile,
   // jadi otomatis berada di atasnya.
   tileLabelPill: {
-    marginTop: -15,
+    marginTop: -12,
     paddingHorizontal: 7,
     paddingVertical: 1,
     borderRadius: 999,
