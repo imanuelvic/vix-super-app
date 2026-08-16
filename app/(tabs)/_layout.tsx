@@ -8,6 +8,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import {
+  countedHabits,
   pendingHabits,
   subscribeHabitSchedule,
   type ScheduledHabit,
@@ -40,8 +41,9 @@ export default function TabLayout() {
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
 
+  // Yang ditandai ✗ (dilewati) tidak ikut dihitung — badge-nya ikut hilang.
   const habitsLeft = day
-    ? pendingHabits(schedule, day.done, now).length
+    ? pendingHabits(countedHabits(schedule, day.skipped), day.done, now).length
     : 0;
 
   return (

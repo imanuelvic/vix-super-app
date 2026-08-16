@@ -354,11 +354,13 @@ export function BudgetingTab({
           autoFocus={!rolledUp}
           editable={!saving && !rolledUp}
         />
-        <VixText heading="label" additionalStyle={styles.modalHint}>
-          {rolledUp
-            ? '🧮 Terisi otomatis dari total sub-budget di bawah.'
-            : 'Isi 0 atau kosongkan untuk menghapus budget.'}
-        </VixText>
+        {/* Saat sudah ada sub-budget, kolom di atas jelas terisi sendiri &
+            terkunci — keterangannya dihapus biar modalnya tidak bertele-tele. */}
+        {!rolledUp && (
+          <VixText heading="label" additionalStyle={styles.modalHint}>
+            Isi 0 atau kosongkan untuk menghapus budget.
+          </VixText>
+        )}
 
         {/* Sub-budget: rincian di dalam kategori ini (mis. Groceries → Telur).
             Totalnya LANGSUNG jadi budget kategori di atas. */}
@@ -438,11 +440,14 @@ export function BudgetingTab({
             </PressableScale>
           </View>
 
-          <VixText heading="label" additionalStyle={styles.modalHint}>
-            {rolledUp
-              ? 'Total sub inilah budget kategorinya. Butuh jatah bebas? Tambah sub “Lain-lain”.'
-              : 'Isi sub-budget kalau mau dirinci — totalnya otomatis jadi budget kategori ini.'}
-          </VixText>
+          {/* Keterangan hanya perlu saat sub-budget masih kosong (mengajak
+              mengisi). Begitu sudah ada isinya, tulisannya dihapus. */}
+          {!rolledUp && (
+            <VixText heading="label" additionalStyle={styles.modalHint}>
+              Isi sub-budget kalau mau dirinci — totalnya otomatis jadi budget
+              kategori ini.
+            </VixText>
+          )}
         </View>
 
         <DualButtons

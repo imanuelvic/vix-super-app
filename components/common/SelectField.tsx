@@ -19,6 +19,11 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 //
 // Daftarnya dibuka INLINE (bukan modal baru) — modal di atas modal tidak
 // andal di iOS, dan ini sudah dipakai di dalam SheetModal.
+//
+// ⚠️ Kolom & daftarnya adalah DUA elemen berurutan (bukan satu bungkus), supaya
+// lebar kolom tetap mengikuti induknya. Konsekuensinya: pembungkusnya harus
+// KOLOM. Kalau ditaruh di dalam View ber-`flexDirection: 'row'`, daftarnya akan
+// muncul di SAMPING kolom, bukan turun ke bawah.
 export type SelectOption<T extends string> = {
   key: T;
   label: string;

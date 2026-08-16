@@ -24,6 +24,7 @@ import {
   areaProgress,
   classifyAll,
   coreDone,
+  countedHabits,
   dailyScore,
   defaultSlot,
   HABIT_AREAS,
@@ -50,6 +51,7 @@ import {
   saveWeightTarget,
   setHabitDone,
   setHabitNote,
+  setHabitSkipped,
   type HabitDay,
   type HealthProfile,
   type Streak,
@@ -80,7 +82,7 @@ export function HabitsTab({
   const [error, setError] = useState<string | null>(null);
   // Tab sesi aktif — default ke sesi sesuai jam sekarang (Pagi/Siang/Malam).
   const [activeSlot, setActiveSlot] = useState<HabitSlot>(() =>
-    defaultSlot(habits, day.done, new Date()),
+    defaultSlot(countedHabits(habits, day.skipped), day.done, new Date()),
   );
 
   // Ganti hari (lewat tengah malam) → `dayId` dari induk berubah, dan tab sesi
@@ -89,7 +91,9 @@ export function HabitsTab({
   // Sengaja HANYA bergantung pada dayId: kalau `habits`/`day.done` ikut jadi
   // dependency, tab akan lompat sendiri tiap kali satu kebiasaan dicentang.
   useEffect(() => {
-    setActiveSlot(defaultSlot(habits, day.done, new Date()));
+    setActiveSlot(
+      defaultSlot(countedHabits(habits, day.skipped), day.done, new Date()),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayId]);
 
@@ -111,10 +115,18 @@ export function HabitsTab({
   const grouped = habitsBySlot(habits);
   const activeList = grouped[activeSlot];
 
+  // DUA daftar yang sengaja dibedakan:
+  // • `grouped`  — daftar LENGKAP, yang ditampilkan di layar (baris yang
+  //                dilewati tetap kelihatan, cuma bertanda ⏭️).
+  // • `counted`  — yang BERLAKU hari ini, dasar semua angka. Kebiasaan yang
+  //                ditandai ✗ dikeluarkan supaya tidak menahan skor.
+  const counted = countedHabits(habits, day.skipped);
+  const countedBySlot = habitsBySlot(counted);
+
   // Ukuran keberhasilan hari ini: skor 0–10 + 5 area hidup yang terjaga —
   // bukan lagi "berapa dari 39 tercentang".
-  const score = dailyScore(habits, day.done);
-  const areas = areaProgress(habits, day.done);
+  const score = dailyScore(counted, day.done);
+  const areas = areaProgress(counted, day.done);
   const keptCount = areas.filter((a) => a.kept).length;
   // Penataan sekali jalan: kebiasaan lama belum bertanda, paket malam belum ada.
   const unclassified = needsClassify(habits);
@@ -163,12 +175,41 @@ export function HabitsTab({
       // menunggu ke-39 semuanya tercentang (itu praktis mustahil).
       if (nextChecked) {
         const nextDone = { ...day.done, [habit.id]: true };
-        if (coreDone(habits, nextDone)) {
+        if (coreDone(counted, nextDone)) {
           await bumpStreak(user.uid, streak, dayId);
         }
       }
     } catch {
       setError('Gagal menyimpan centang. Coba lagi.');
+    }
+  }
+
+  /**
+   * Tandai ✗ = kebiasaan ini DILEWATI hari ini (atau batalkan lagi).
+   * Bedanya dengan centang: ini bukan "selesai", tapi "hari ini tidak berlaku".
+   * Efeknya ia keluar dari skor, area, badge tab, & kartu reminder Dashboard.
+   */
+  async function handleSkip(habit: ScheduledHabit) {
+    if (!user) return;
+    setError(null);
+    const nextSkipped = !day.skipped[habit.id];
+    try {
+      await setHabitSkipped(user.uid, dayId, habit.id, nextSkipped);
+      // Kalau yang dilewati ini kebiasaan 🟢 Inti terakhir yang menggantung,
+      // sisa yang berlaku hari ini jadi beres semua → rentetan 🔥 ikut naik,
+      // supaya skor 10/10 tidak pernah tampil tanpa streaknya.
+      if (nextSkipped) {
+        const rest = countedHabits(habits, {
+          ...day.skipped,
+          [habit.id]: true,
+        });
+        const nextDone = { ...day.done, [habit.id]: false };
+        if (coreDone(rest, nextDone)) {
+          await bumpStreak(user.uid, streak, dayId);
+        }
+      }
+    } catch {
+      setError('Gagal menyimpan tanda lewati. Coba lagi.');
     }
   }
 
@@ -447,13 +488,20 @@ export function HabitsTab({
             tak perlu scroll panjang; default ke sesi jam sekarang) ===== */}
         <SegmentTabs
           tabs={HABIT_SLOTS.map((s) => {
-            const list = grouped[s.key];
+            // Hitungan sesi ikut memakai daftar yang BERLAKU: yang dilewati ✗
+            // hilang dari pembilang maupun penyebut.
+            const list = countedBySlot[s.key];
             const slotDone = list.filter((h) => day.done[h.id]).length;
             const complete = list.length > 0 && slotDone === list.length;
+            const allSkipped = grouped[s.key].length > 0 && list.length === 0;
             return {
               key: s.key,
               label: `${s.emoji} ${s.label}`,
-              sub: complete ? '✅ beres' : `${slotDone}/${list.length}`,
+              sub: allSkipped
+                ? '⏭️ dilewati'
+                : complete
+                  ? '✅ beres'
+                  : `${slotDone}/${list.length}`,
             };
           })}
           value={activeSlot}
@@ -465,7 +513,10 @@ export function HabitsTab({
       <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <View style={styles.slotBlock}>
           {activeList.map((habit, index) => {
-            const checked = !!day.done[habit.id];
+            // ✗ menang atas centang: baris yang dilewati tidak pernah tampil
+            // tercentang (tanda done-nya memang ikut dilepas saat di-skip).
+            const skipped = !!day.skipped[habit.id];
+            const checked = !skipped && !!day.done[habit.id];
             const tier = habitTier(habit);
             return (
               // Berganti sesi (Pagi→Siang→Malam) = daftar baru masuk berurutan
@@ -480,13 +531,16 @@ export function HabitsTab({
                   style={[
                     styles.row,
                     checked && styles.rowDone,
+                    skipped && styles.rowSkipped,
                     // Opsional diredupkan sedikit: bonus, bukan tuntutan.
                     tier === 'optional' && styles.rowOptional,
                   ]}>
                   {/* Getaran "berhasil" khusus saat MENCENTANG — melepas
-                      centang cukup ketukan biasa. */}
+                      centang cukup ketukan biasa. Yang sudah dilewati tidak
+                      bisa dicentang: batalkan ✗ dulu. */}
                   <PressableScale
                     onPress={() => handleToggle(habit)}
+                    disabled={skipped}
                     hitSlop={8}
                     haptic={checked ? 'light' : 'success'}>
                     <CheckCircle checked={checked} />
@@ -497,21 +551,48 @@ export function HabitsTab({
                       heading="paragraph"
                       additionalStyle={[
                         styles.habitText,
-                        checked && styles.habitTextDone,
+                        (checked || skipped) && styles.habitTextDone,
                       ]}>
                       {tierMeta(tier).emoji} {habit.label}
                     </VixText>
+                    {skipped && (
+                      <VixText heading="label" additionalStyle={styles.skipNote}>
+                        ⏭️ Dilewati hari ini — tidak ikut dihitung
+                      </VixText>
+                    )}
                   </View>
-                  {/* Tombol edit → buka modal ubah / urutkan / hapus */}
-                  <PressableScale
-                    style={styles.editButton}
-                    onPress={() => openEdit(habit)}
-                    hitSlop={8}>
-                    <IconSymbol name="pencil" size={18} color={Color.TEXT_LABEL} />
-                  </PressableScale>
+                  {/* Dua tombol kanan dirapatkan sendiri (gap lebih kecil dari
+                      gap baris) supaya nama kebiasaan tidak kehilangan ruang. */}
+                  <View style={styles.rowActions}>
+                    {/* ✗ → lewati kebiasaan ini KHUSUS hari ini (tekan lagi =
+                        batal). Bukan hapus: daftarnya tetap utuh besok. */}
+                    <PressableScale
+                      style={[styles.editButton, skipped && styles.skipButtonOn]}
+                      onPress={() => handleSkip(habit)}
+                      hitSlop={8}
+                      haptic="warning">
+                      <IconSymbol
+                        name="xmark"
+                        size={16}
+                        color={skipped ? Color.WARNING : Color.TEXT_LABEL}
+                      />
+                    </PressableScale>
+                    {/* Tombol edit → buka modal ubah / urutkan / hapus */}
+                    <PressableScale
+                      style={styles.editButton}
+                      onPress={() => openEdit(habit)}
+                      hitSlop={8}>
+                      <IconSymbol
+                        name="pencil"
+                        size={18}
+                        color={Color.TEXT_LABEL}
+                      />
+                    </PressableScale>
+                  </View>
                 </View>
-                {/* Kebiasaan yang minta catatan (refleksi, syukur, rhema) */}
-                {habit.note && (
+                {/* Kebiasaan yang minta catatan (refleksi, syukur, rhema).
+                    Yang dilewati tidak perlu diisi. */}
+                {habit.note && !skipped && (
                   <HabitNote
                     key={`${habit.id}-${dayId}`}
                     placeholder={habit.notePrompt ?? 'Tulis singkat saja…'}
@@ -805,6 +886,14 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
   },
+  // ⏭️ Dilewati hari ini — sengaja cokelat kalem, bukan hijau (bukan prestasi)
+  // dan bukan merah (bukan kesalahan): cuma "tidak berlaku hari ini".
+  rowSkipped: {
+    backgroundColor: Color.WARNING_TRANSPARENT,
+    borderColor: Color.BORDER,
+  },
+  skipNote: { color: Color.TEXT_PLACEHOLDER, marginTop: 2 },
+  skipButtonOn: { backgroundColor: Color.ACCENT },
   // ⚪ Opsional — bonus, jadi tampilannya sengaja lebih kalem.
   rowOptional: { opacity: 0.7 },
   // Catatan singkat di bawah kebiasaan refleksi/syukur/rhema.
@@ -819,6 +908,7 @@ const styles = StyleSheet.create({
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pickChip: { flex: 1 },
   rowMain: { flex: 1 },
+  rowActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   editButton: {
     width: 32,
     height: 32,

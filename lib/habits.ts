@@ -125,6 +125,24 @@ export function currentOpenSlot(now: Date): HabitSlot | null {
 }
 
 /**
+ * Kebiasaan yang BERLAKU hari ini — yang ditandai ✗ (dilewati) dibuang.
+ *
+ * Satu-satunya pintu masuk untuk semua penghitung harian (skor, area, badge
+ * tab Habits, kartu reminder Dashboard, hitungan tiap sesi). Yang sudah
+ * sengaja dilewati bukan lagi "bolong": ia dianggap tidak berlaku hari ini,
+ * jadi tidak lagi menagih dan tidak menahan skor.
+ *
+ * Daftar yang DITAMPILKAN di layar tetap memakai daftar lengkap — barisnya
+ * masih kelihatan, cuma bertanda ⏭️.
+ */
+export function countedHabits(
+  habits: ScheduledHabit[],
+  skipped: Record<string, boolean>,
+): ScheduledHabit[] {
+  return habits.filter((h) => !skipped[h.id]);
+}
+
+/**
  * Kebiasaan yang sesinya sudah tiba tapi belum dicentang hari ini — dipakai
  * badge Health di Home supaya sesi yang belum waktunya tidak ikut dihitung.
  */

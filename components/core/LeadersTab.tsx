@@ -754,11 +754,14 @@ function PersonalityFields({
         })}
       </View>
       {/* Picker — daftar 5 love language & 16 MBTI baru muncul saat ditekan,
-          jadi modal tidak langsung penuh oleh semua pilihan. */}
+          jadi modal tidak langsung penuh oleh semua pilihan.
+          Pembungkusnya WAJIB kolom (bukan `pWrap` yang baris): SelectField
+          menaruh kolom & daftarnya sebagai dua elemen berurutan, jadi di dalam
+          pembungkus baris daftarnya melipir ke samping, bukan turun. */}
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
         💞 Love Language
       </VixText>
-      <View style={styles.pWrap}>
+      <View style={styles.formGap}>
         <SelectField
           value={love}
           options={LOVE_LANG_OPTIONS.map((l) => ({ key: l.key, label: l.label }))}
@@ -770,7 +773,7 @@ function PersonalityFields({
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
         🧩 MBTI
       </VixText>
-      <View style={styles.pWrap}>
+      <View style={styles.formGap}>
         <SelectField
           value={mbti}
           options={MBTI_TYPES.map((m) => ({ key: m, label: m }))}

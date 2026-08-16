@@ -107,6 +107,7 @@ import {
   type FunData,
 } from '@/lib/fun';
 import {
+  countedHabits,
   currentOpenSlot,
   slotMeta,
   subscribeHabitSchedule,
@@ -299,9 +300,13 @@ export default function DashboardScreen() {
   // Kebiasaan sesi yang SEDANG berjalan & belum dilakukan hari ini.
   // null = jam 00.00–05.59, sesi Pagi belum mulai → kartunya tidak muncul.
   const curSlot = currentOpenSlot(now);
+  // Yang ditandai ✗ (dilewati) dibuang dulu — sudah sengaja dilewati, jadi
+  // tidak perlu ditagih lagi di kartu reminder.
   const slotUndone =
     day && curSlot
-      ? daySchedule.filter((h) => h.slot === curSlot && !day.done[h.id])
+      ? countedHabits(daySchedule, day.skipped).filter(
+          (h) => h.slot === curSlot && !day.done[h.id],
+        )
       : [];
 
   // Reminder ulang tahun keluarga: hari ini + 7 hari ke depan

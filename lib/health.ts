@@ -302,6 +302,14 @@ export type HabitDayMap = Record<string, boolean>;
 // otomatis reset tiap ganti hari.
 export type HabitDay = {
   done: HabitDayMap;
+  /**
+   * Kebiasaan yang sengaja DILEWATI hari ini (✗) — id kebiasaan → true.
+   * Bukan "selesai" dan bukan "gagal": hari ini kebiasaan itu dianggap TIDAK
+   * BERLAKU, jadi ia keluar dari semua hitungan harian (skor, area, badge tab
+   * Habits, kartu reminder Dashboard). Ikut kereset tiap ganti hari karena
+   * disimpan di dokumen harian yang sama.
+   */
+  skipped: HabitDayMap;
   water: number;
   /**
    * Catatan singkat untuk kebiasaan yang memintanya (refleksi harian,
@@ -325,6 +333,7 @@ export function subscribeHabitDay(
       const data = snapshot.data();
       onChange({
         done: (data?.done as HabitDayMap) ?? {},
+        skipped: (data?.skipped as HabitDayMap) ?? {},
         water: (data?.water as number) ?? 0,
         notes: (data?.notes as Record<string, string>) ?? {},
       });
@@ -342,6 +351,29 @@ export function setHabitDone(
   const ref = doc(db, 'users', uid, 'habitDays', dayId);
   // merge: hanya key kebiasaan ini yang berubah, centang lain tetap.
   return setDoc(ref, { done: { [habitId]: done } }, { merge: true });
+}
+
+/**
+ * Tandai satu kebiasaan DILEWATI hari ini (✗), atau batalkan lagi.
+ *
+ * Melewati sekaligus melepas centangnya — supaya tidak pernah ada baris yang
+ * tercentang tapi juga dilewati. Keduanya ditulis dalam satu `setDoc` merge,
+ * jadi tetap satu kali tulis Firestore.
+ */
+export function setHabitSkipped(
+  uid: string,
+  dayId: string,
+  habitId: string,
+  skipped: boolean,
+) {
+  const ref = doc(db, 'users', uid, 'habitDays', dayId);
+  return setDoc(
+    ref,
+    skipped
+      ? { skipped: { [habitId]: true }, done: { [habitId]: false } }
+      : { skipped: { [habitId]: false } },
+    { merge: true },
+  );
 }
 
 /** Simpan catatan singkat satu kebiasaan hari itu (refleksi, syukur, rhema). */
