@@ -1,6 +1,7 @@
-import { doc, onSnapshot, setDoc, type FirestoreError } from 'firebase/firestore';
+import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { dayIdToDate, daysBetween } from './format';
 
 // Mengenal diri 🧠 — Personality (MBTI, Love Language, DISC, dll), Ikigai,
@@ -90,7 +91,7 @@ export const TEMPERAMENT_OPTIONS: { key: string; label: string; sub: string }[] 
 
 // Tes kepribadian sebaiknya diulang SETAHUN sekali — jawabanmu ikut berubah
 // seiring musim hidup. Angka ini juga dipakai untuk kartu "waktunya tes lagi".
-export const TEST_INTERVAL_DAYS = 365;
+const TEST_INTERVAL_DAYS = 365;
 
 /**
  * Berapa hari lagi tes ini perlu diulang. null = belum pernah dites.
@@ -110,7 +111,7 @@ export function subscribeSelfKnowledge(
   onChange: (data: SelfKnowledge) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     ref(uid),
     (snapshot) => {
       const d = snapshot.data() as Partial<SelfKnowledge> | undefined;

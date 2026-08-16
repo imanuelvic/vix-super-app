@@ -8,6 +8,7 @@ import {
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { auth } from '@/lib/firebase';
+import { clearLiveCache } from '@/lib/liveDoc';
 
 // Hanya email pemilik yang boleh masuk. Kalau env kosong, gate dimatikan
 // (Security Rules Firestore tetap jadi lapisan pertahanan utama).
@@ -74,6 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
       },
       logout: async () => {
+        // Bersihkan simpanan dokumen di HP dulu — jangan sampai data akun lama
+        // tertinggal di disk/memori setelah keluar.
+        await clearLiveCache();
         await signOut(auth);
       },
     }),

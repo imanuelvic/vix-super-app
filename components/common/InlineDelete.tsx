@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -21,8 +22,13 @@ export function InlineDelete({
   const [confirming, setConfirming] = useState(false);
 
   if (!confirming) {
+    // Getaran "warning" — tubuh ikut diberi tahu bahwa ini jalur berbahaya,
+    // beda rasanya dari ketukan biasa.
     return (
-      <PressableScale onPress={() => setConfirming(true)} disabled={busy}>
+      <PressableScale
+        onPress={() => setConfirming(true)}
+        disabled={busy}
+        haptic="warning">
         <VixText heading="bold" additionalStyle={styles.link}>
           {label}
         </VixText>
@@ -31,7 +37,9 @@ export function InlineDelete({
   }
 
   return (
-    <View style={styles.confirmBox}>
+    <Animated.View
+      entering={FadeInDown.duration(200)}
+      style={styles.confirmBox}>
       <VixText heading="label" additionalStyle={styles.confirmText}>
         Yakin mau menghapus? Tindakan ini permanen.
       </VixText>
@@ -42,7 +50,11 @@ export function InlineDelete({
           disabled={busy}>
           <VixText heading="bold">Batal</VixText>
         </PressableScale>
-        <PressableScale style={styles.delete} onPress={onDelete} disabled={busy}>
+        <PressableScale
+          style={styles.delete}
+          onPress={onDelete}
+          disabled={busy}
+          haptic="medium">
           {busy ? (
             <ActivityIndicator color={Color.TEXT_REVERSE} />
           ) : (
@@ -52,7 +64,7 @@ export function InlineDelete({
           )}
         </PressableScale>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

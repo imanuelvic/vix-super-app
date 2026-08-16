@@ -35,7 +35,7 @@ export type Transaction = {
 };
 
 // Kategori pengeluaran yang direkap di fitur Home (tab Air-Listrik).
-export const UTILITY_CATEGORIES = ['electricity', 'water'] as const;
+const UTILITY_CATEGORIES = ['electricity', 'water'] as const;
 
 // Semua transaksi milik satu user: users/{uid}/transactions
 // Path ini otomatis tercakup Security Rules users/{userId}/{document=**}.

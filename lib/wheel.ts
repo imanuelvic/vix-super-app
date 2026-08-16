@@ -1,12 +1,12 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   Timestamp,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // Wheel of Life 🎡 — versi app dari assessment website lama:
 // nilai 8 area hidup (1–10) per KUARTAL, lalu pilih minimal 3 area fokus
@@ -150,7 +150,7 @@ export function subscribeWheel(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'wheel', qid);
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const data = snapshot.data();
@@ -190,7 +190,7 @@ export function wheelHasScores(data: WheelData): boolean {
 }
 
 /** Hari reminder fokus Wheel: Senin (1), Rabu (3), Jumat (5). */
-export const WHEEL_FOCUS_DAYS = [1, 3, 5];
+const WHEEL_FOCUS_DAYS = [1, 3, 5];
 const WHEEL_START_MINUTE = 9 * 60; // 09.00
 const WHEEL_END_MINUTE = 12 * 60 + 30; // 12.30
 

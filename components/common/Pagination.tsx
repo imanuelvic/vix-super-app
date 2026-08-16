@@ -1,4 +1,11 @@
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -62,18 +69,12 @@ export function Pagination({
             </VixText>
           </View>
         ) : (
-          <PressableScale
+          <PageCell
             key={it.value}
-            style={[styles.cell, it.value === page && styles.cellActive]}
-            onPress={() => go(it.value)}>
-            <VixText
-              heading="bold"
-              additionalStyle={
-                it.value === page ? styles.cellActiveText : styles.cellText
-              }>
-              {it.value}
-            </VixText>
-          </PressableScale>
+            value={it.value}
+            active={it.value === page}
+            onPress={() => go(it.value)}
+          />
         ),
       )}
 
@@ -89,6 +90,43 @@ export function Pagination({
         />
       </PressableScale>
     </View>
+  );
+}
+
+// Kotak nomor halaman: warnanya berpindah halus, jadi terlihat "hijau
+// berjalan" dari nomor lama ke nomor baru — bukan lompat mendadak.
+function PageCell({
+  value,
+  active,
+  onPress,
+}: {
+  value: number;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const on = useSharedValue(active ? 1 : 0);
+
+  useEffect(() => {
+    on.value = withTiming(active ? 1 : 0, { duration: 200 });
+  }, [active, on]);
+
+  const skin = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      on.value,
+      [0, 1],
+      [Color.CONTAINER, Color.MAIN],
+    ),
+    borderColor: interpolateColor(on.value, [0, 1], [Color.BORDER, Color.MAIN]),
+  }));
+
+  return (
+    <PressableScale style={[styles.cell, skin]} onPress={onPress}>
+      <VixText
+        heading="bold"
+        additionalStyle={active ? styles.cellActiveText : styles.cellText}>
+        {value}
+      </VixText>
+    </PressableScale>
   );
 }
 
@@ -114,7 +152,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cellActive: { backgroundColor: Color.MAIN, borderColor: Color.MAIN },
   cellText: { color: Color.TEXT_TITLE },
   cellActiveText: { color: Color.TEXT_REVERSE },
   cellDisabled: { opacity: 0.45 },

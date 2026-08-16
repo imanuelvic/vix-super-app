@@ -2,13 +2,13 @@ import {
   deleteField,
   doc,
   getDoc,
-  onSnapshot,
   setDoc,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import type { FinanceType } from './categories';
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 /**
  * Budget bulanan disimpan SATU dokumen per bulan:
@@ -57,7 +57,7 @@ export function subscribeBudget(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'budgets', monthDocId(year, month));
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const data = snapshot.data();
@@ -225,7 +225,7 @@ export function subscribeSubcategories(
   onChange: (map: SubcategoryMap) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'app', 'subcategories'),
     (snapshot) => onChange((snapshot.data()?.map as SubcategoryMap) ?? {}),
     onError,

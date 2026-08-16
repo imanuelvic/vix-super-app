@@ -1,11 +1,11 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // Fitur Book 📚 — daftar buku yang mau / lagi dibaca, dikelompokkan per tema.
 //
@@ -24,6 +24,9 @@ export type BookCategory = { key: string; label: string };
 export const BOOK_CATEGORIES: BookCategory[] = [
   { key: 'financial', label: '💵 Financial' },
   { key: 'mindset', label: '🧠 Mindset' },
+  // Buku rujukan skill mingguan di fitur Learning 🎓 — lihat `bookKey`
+  // pada daftar SKILLS di lib/learning.ts.
+  { key: 'insight', label: '🌍 Wawasan' },
 ];
 
 // free = teks lengkap gratis & legal (domain publik / kitab / esai penulis)
@@ -315,6 +318,91 @@ export const BOOKS: Book[] = [
       'The Downside of Creating Good Habits',
     ],
   },
+  // ---------- 🌍 Wawasan ----------
+  // Dua buku ini persis yang tertulis di daftar Skills-mu, jadi sekalian
+  // dimasukkan ke sini supaya bisa dicentang per bab dari fitur Learning.
+  {
+    key: 'sapiens',
+    category: 'insight',
+    title: 'Sapiens: A Brief History of Humankind',
+    author: 'Yuval Noah Harari',
+    year: 2011,
+    info: 'Sejarah manusia dari kera biasa jadi penguasa bumi — lewat cerita bersama: uang, agama, negara, dan perusahaan. Modal dasar memahami cara kerja dunia hari ini.',
+    url: 'https://www.ynharari.com/book/sapiens-2/',
+    linkKind: 'info',
+    chapters: [
+      'Bagian 1 · 1. An Animal of No Significance',
+      'Bagian 1 · 2. The Tree of Knowledge',
+      'Bagian 1 · 3. A Day in the Life of Adam and Eve',
+      'Bagian 1 · 4. The Flood',
+      'Bagian 2 · 5. History’s Biggest Fraud',
+      'Bagian 2 · 6. Building Pyramids',
+      'Bagian 2 · 7. Memory Overload',
+      'Bagian 2 · 8. There is No Justice in History',
+      'Bagian 3 · 9. The Arrow of History',
+      'Bagian 3 · 10. The Scent of Money',
+      'Bagian 3 · 11. Imperial Visions',
+      'Bagian 3 · 12. The Law of Religion',
+      'Bagian 3 · 13. The Secret of Success',
+      'Bagian 4 · 14. The Discovery of Ignorance',
+      'Bagian 4 · 15. The Marriage of Science and Empire',
+      'Bagian 4 · 16. The Capitalist Creed',
+      'Bagian 4 · 17. The Wheels of Industry',
+      'Bagian 4 · 18. A Permanent Revolution',
+      'Bagian 4 · 19. And They Lived Happily Ever After',
+      'Bagian 4 · 20. The End of Homo Sapiens',
+    ],
+  },
+  {
+    key: 'thinking-fast-and-slow',
+    category: 'insight',
+    title: 'Thinking, Fast and Slow',
+    author: 'Daniel Kahneman',
+    year: 2011,
+    info: 'Dua cara otak berpikir: cepat & otomatis vs lambat & teliti. Membongkar kenapa kita gampang termakan hoax, iklan, dan firasat yang keliru.',
+    url: 'https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow',
+    linkKind: 'info',
+    chapters: [
+      'I · 1. The Characters of the Story',
+      'I · 2. Attention and Effort',
+      'I · 3. The Lazy Controller',
+      'I · 4. The Associative Machine',
+      'I · 5. Cognitive Ease',
+      'I · 6. Norms, Surprises, and Causes',
+      'I · 7. A Machine for Jumping to Conclusions',
+      'I · 8. How Judgments Happen',
+      'I · 9. Answering an Easier Question',
+      'II · 10. The Law of Small Numbers',
+      'II · 11. Anchors',
+      'II · 12. The Science of Availability',
+      'II · 13. Availability, Emotion, and Risk',
+      'II · 14. Tom W’s Specialty',
+      'II · 15. Linda: Less is More',
+      'II · 16. Causes Trump Statistics',
+      'II · 17. Regression to the Mean',
+      'II · 18. Taming Intuitive Predictions',
+      'III · 19. The Illusion of Understanding',
+      'III · 20. The Illusion of Validity',
+      'III · 21. Intuitions vs. Formulas',
+      'III · 22. Expert Intuition: When Can We Trust It?',
+      'III · 23. The Outside View',
+      'III · 24. The Engine of Capitalism',
+      'IV · 25. Bernoulli’s Errors',
+      'IV · 26. Prospect Theory',
+      'IV · 27. The Endowment Effect',
+      'IV · 28. Bad Events',
+      'IV · 29. The Fourfold Pattern',
+      'IV · 30. Rare Events',
+      'IV · 31. Risk Policies',
+      'IV · 32. Keeping Score',
+      'IV · 33. Reversals',
+      'IV · 34. Frames and Reality',
+      'V · 35. Two Selves',
+      'V · 36. Life as a Story',
+      'V · 37. Experienced Well-Being',
+      'V · 38. Thinking About Life',
+    ],
+  },
 ];
 
 // ===================== Progres baca per-bab =====================
@@ -331,7 +419,7 @@ export function subscribeReadingProgress(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'reading', 'books');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.chapters as ChaptersReadMap) ?? {});

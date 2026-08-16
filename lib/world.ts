@@ -1,6 +1,7 @@
-import { doc, onSnapshot, setDoc, type FirestoreError } from 'firebase/firestore';
+import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { dayIdToDate, daysBetween } from './format';
 import { dayDocId } from './health';
 
@@ -23,7 +24,7 @@ export type PopulationPoint = {
 
 export const POPULATION_SOURCE = 'https://www.worldometers.info/world-population/';
 
-export const POPULATION_HISTORY: PopulationPoint[] = [
+const POPULATION_HISTORY: PopulationPoint[] = [
   { dayId: '2015-09-15', count: 7_367_170_043 },
   { dayId: '2015-10-15', count: 7_373_980_516 },
   { dayId: '2015-11-14', count: 7_380_837_378 },
@@ -165,7 +166,7 @@ const PREV_KNOWN = POPULATION_HISTORY[POPULATION_HISTORY.length - 2];
  * worldometers menampilkan angka "hidup"-nya: ekstrapolasi dari data PBB,
  * bukan sensus real-time.
  */
-export const POPULATION_PER_DAY = Math.round(
+const POPULATION_PER_DAY = Math.round(
   (LAST_KNOWN.count - PREV_KNOWN.count) /
     Math.max(
       1,
@@ -215,7 +216,7 @@ export function subscribePopulationLog(
   onChange: (points: PopulationSaved) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'world', 'population'),
     (snapshot) => onChange((snapshot.data()?.points as PopulationSaved) ?? {}),
     onError,

@@ -13,9 +13,11 @@ import { useAuth } from '@/contexts/auth';
 import { dayDocId } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
+  BIBLE_SKIPPED,
   bibleSessionMeta,
   bumpBibleStreaks,
   EMPTY_BIBLE_STREAKS,
+  isBibleSkipped,
   saveBibleReading,
   subscribeBibleReadingToday,
   subscribeBibleStreaks,
@@ -54,9 +56,13 @@ export default function BibleReadingScreen() {
   }, [user, dayId]);
 
   // Sudah pernah diisi hari ini → tampilkan lagi supaya bisa ditambah/dibetulkan.
+  // Hari yang dilewati tidak punya acuan, jadi kolomnya dibiarkan kosong.
   const existing = today?.[session] ?? '';
+  const skipped = isBibleSkipped(existing);
   useEffect(() => {
-    if (existing) setRefs(existing.split(',').map((s) => s.trim()));
+    if (existing && !isBibleSkipped(existing)) {
+      setRefs(existing.split(',').map((s) => s.trim()));
+    }
   }, [existing]);
 
   const filled = refs.map((r) => r.trim()).filter(Boolean);
@@ -79,6 +85,30 @@ export default function BibleReadingScreen() {
       const other = session === 'morning' ? 'night' : 'morning';
       await bumpBibleStreaks(user.uid, streaks, dayId, session, !!today[other]);
       router.back();
+    } catch {
+      setError(SAVE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Lewati sesi hari ini. Kartu reminder di Home berhenti menagih, tapi
+   * streak 🔥 SENGAJA tidak dinaikkan — supaya angkanya tetap jujur.
+   * Menekannya lagi (saat sudah dilewati) membatalkan status itu.
+   */
+  async function handleSkip() {
+    if (!user || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await saveBibleReading(
+        user.uid,
+        dayId,
+        session,
+        skipped ? '' : BIBLE_SKIPPED,
+      );
+      if (!skipped) router.back();
     } catch {
       setError(SAVE_ERROR);
     } finally {
@@ -143,6 +173,19 @@ export default function BibleReadingScreen() {
           </VixText>
         )}
 
+        {/* Sedang berstatus dilewati → beri tahu, dan tombolnya jadi pembatal */}
+        {skipped && (
+          <View style={styles.skippedCard}>
+            <VixText heading="bold" additionalStyle={styles.skippedText}>
+              ⏭️ Sesi ini ditandai dilewati hari ini
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.skippedSub}>
+              Rentetan 🔥 tidak bertambah. Masih bisa dibatalkan — atau
+              langsung isi bacaannya lalu tekan &quot;Sudah baca&quot;.
+            </VixText>
+          </View>
+        )}
+
         {/* Aktif setelah minimal satu bacaan terisi (handleSave juga menjaga). */}
         <PrimaryButton
           label="✅ Sudah baca"
@@ -153,6 +196,17 @@ export default function BibleReadingScreen() {
             filled.length === 0 && styles.saveDisabled,
           ]}
         />
+
+        {/* Jujur lebih baik daripada mengarang bacaan demi streak. */}
+        <PressableScale
+          style={styles.skipButton}
+          onPress={handleSkip}
+          disabled={busy}
+          haptic="warning">
+          <VixText heading="bold" additionalStyle={styles.skipText}>
+            {skipped ? '↩️ Batalkan lewati' : '⏭️ Lewati baca hari ini'}
+          </VixText>
+        </PressableScale>
       </ScrollView>
     </SafeAreaView>
   );
@@ -203,4 +257,16 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, marginBottom: 8 },
   save: { marginBottom: 10 },
   saveDisabled: { opacity: 0.45 },
+  skippedCard: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 2,
+    marginBottom: 12,
+  },
+  skippedText: { color: Color.ACCENT_DARK },
+  skippedSub: { color: Color.ACCENT_DARK },
+  skipButton: { alignItems: 'center', paddingVertical: 10 },
+  skipText: { color: Color.TEXT_LABEL },
 });

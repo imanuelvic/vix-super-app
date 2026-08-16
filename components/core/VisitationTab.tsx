@@ -12,9 +12,11 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { SearchBar } from '@/components/common/SearchBar';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   MEETING_KINDS,
@@ -64,6 +66,10 @@ export function VisitationTab({
   const [filterModal, setFilterModal] = useState(false);
   const [filterLeaderId, setFilterLeaderId] = useState<string | null>(null);
   const [filterKind, setFilterKind] = useState<MeetingKind | null>(null);
+  // Mode cari (dibuka dari FAB 🔍) — mencari di SELURUH pertemuan, termasuk
+  // yang sudah lewat & selesai, karena yang biasanya dicari justru arsipnya.
+  const [searchMode, setSearchMode] = useState(false);
+  const [query, setQuery] = useState('');
 
   const today = new Date();
 
@@ -88,6 +94,28 @@ export function VisitationTab({
       (!filterKind || v.kind === filterKind),
   );
   const activeLeader = leaders.find((l) => l.id === filterLeaderId);
+
+  // Hasil pencarian: cocok kalau SETIAP kata yang kamu ketik muncul di judul,
+  // agenda, catatan, atau nama CL-nya. Jadi "rules reyki" tetap ketemu walau
+  // urutan katanya beda dari yang tertulis. Terbaru di atas.
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const results =
+    words.length === 0
+      ? []
+      : visitations
+          .filter((v) => {
+            const cl = leaderOf(v);
+            const hay = `${v.note} ${v.agenda} ${cl?.name ?? ''} ${
+              meetingKindMeta(v.kind).label
+            }`.toLowerCase();
+            return words.every((w) => hay.includes(w));
+          })
+          .sort((a, b) => b.date.toMillis() - a.date.toMillis());
+
+  function toggleSearch() {
+    setSearchMode((on) => !on);
+    setQuery('');
+  }
 
   function openAdd() {
     setEditing('new');
@@ -233,6 +261,49 @@ export function VisitationTab({
     );
   }
 
+  // Mode cari: kotak pencarian + hasilnya saja, tanpa tombol & filter.
+  if (searchMode) {
+    return (
+      <View style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled">
+          <View style={styles.searchWrap}>
+            {/* Langsung terfokus begitu FAB 🔍 ditekan */}
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Cari judul atau agenda rapat…"
+              autoFocus
+            />
+          </View>
+
+          {words.length === 0 ? (
+            <VixText heading="label" additionalStyle={styles.empty}>
+              Ketik kata yang kamu ingat dari judul atau agendanya — urutan kata
+              tidak harus sama 🔍
+            </VixText>
+          ) : results.length === 0 ? (
+            <VixText heading="label" additionalStyle={styles.empty}>
+              Tidak ada pertemuan yang cocok dengan “{query.trim()}”.
+            </VixText>
+          ) : (
+            <>
+              <VixText heading="label" additionalStyle={styles.searchCount}>
+                {results.length} pertemuan ditemukan
+              </VixText>
+              {results.map(renderCard)}
+            </>
+          )}
+        </ScrollView>
+
+        <PressableScale style={styles.fab} onPress={toggleSearch}>
+          <IconSymbol name="xmark" size={24} color={Color.TEXT_REVERSE} />
+        </PressableScale>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -296,6 +367,15 @@ export function VisitationTab({
           filtered.map(renderCard)
         )}
       </ScrollView>
+
+      {/* FAB mengambang (sama seperti Transaksi di Finance): buka mode cari 🔍 */}
+      <PressableScale style={styles.fab} onPress={toggleSearch}>
+        <IconSymbol
+          name="magnifyingglass"
+          size={24}
+          color={Color.TEXT_REVERSE}
+        />
+      </PressableScale>
 
       {/* Bottom sheet tambah/edit jadwal */}
       <SheetModal
@@ -479,7 +559,22 @@ export function VisitationTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  // paddingBottom disisakan lega supaya kartu terakhir tidak tertutup FAB.
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
+  // Mode cari 🔍
+  searchWrap: { marginBottom: 10 },
+  searchCount: { color: Color.TEXT_LABEL, marginBottom: 8 },
+  fab: {
+    position: 'absolute',
+    right: 18,
+    bottom: 18,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Color.MAIN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addButton: { marginBottom: 6 },
   error: { color: Color.DANGER, marginBottom: 8 },
   sectionRow: {

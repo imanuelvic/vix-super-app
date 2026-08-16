@@ -39,7 +39,7 @@ export type FastingPlan = {
   days: Record<string, FastingDay>;
 };
 
-export const EMPTY_FASTING_DAY: FastingDay = {
+const EMPTY_FASTING_DAY: FastingDay = {
   prayer: '',
   done: false,
   answer: '',
@@ -85,7 +85,7 @@ export function fastingProgress(plan: FastingPlan): {
 }
 
 /** Hari ini masih di dalam rentang puasa ini? */
-export function fastingActive(plan: FastingPlan, now: Date): boolean {
+function fastingActive(plan: FastingPlan, now: Date): boolean {
   const today = dayDocId(now);
   return today >= plan.startId && today <= plan.endId;
 }

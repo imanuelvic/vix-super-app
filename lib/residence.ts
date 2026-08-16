@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { daysBetween } from './format';
 
 // Fitur Residence 🏠 — rumah kontrakan Casa Jardin. Mirip fitur Car:
@@ -227,7 +228,7 @@ export function subscribeChoreStatus(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'house', 'chores');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.status as ChoreStatusMap) ?? {});

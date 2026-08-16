@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { daysBetween } from './format';
 
 // Fitur Car 🚗 — Mazda 2 R Skyactiv 2015 (merah):
@@ -231,7 +232,7 @@ export function subscribePartStatus(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'car', 'parts');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.status as PartStatusMap) ?? {});

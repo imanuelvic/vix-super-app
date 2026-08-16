@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -319,14 +320,17 @@ export function HabitsTab({
             tombol di pojok kanan atas header Health, bukan di sini. */}
         <GreetingHeader />
 
-        {/* ===== Baris atas: Kebiasaan (ring) + Target berat ===== */}
+        {/* ===== Baris atas: Kebiasaan (ring) + Target berat =====
+            Sengaja dibuat serendah mungkin: ring mengecil & rekap area
+            digeser ke SAMPING ring, supaya daftar kebiasaan di bawah dapat
+            ruang scroll yang lega. */}
         <View style={styles.statsRow}>
-          {/* Skor 0–10 dari kebiasaan Inti (70%) + Pendukung (30%).
-              Opsional tidak ikut dihitung — biar tidak jadi beban. */}
+          {/* Skor 0–10 murni dari kebiasaan 🟢 Inti — Pendukung & Opsional
+              tidak menambah angka ini (lihat `dailyScore`). */}
           <View style={styles.heroCard}>
             <DonutChart
-              size={88}
-              thickness={11}
+              size={64}
+              thickness={8}
               slices={[
                 { value: score, color: Color.MAIN_LIGHT },
                 { value: 10 - score, color: Color.MAIN },
@@ -334,24 +338,24 @@ export function HabitsTab({
               <VixText heading="title" additionalStyle={styles.heroRingText}>
                 {score}
               </VixText>
+              {/* 🟢 = penanda skor ini hanya naik dari kebiasaan Inti */}
               <VixText heading="label" additionalStyle={styles.heroRingSub}>
-                /10
+                🟢/10
               </VixText>
             </DonutChart>
-            <VixText heading="label" additionalStyle={styles.heroRingSub}>
-              {keptCount}/5 area terjaga
-            </VixText>
+            <View style={styles.heroSide}>
+              <VixText heading="bold" additionalStyle={styles.heroSideValue}>
+                {keptCount}/5
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.heroRingSub}>
+                area terjaga
+              </VixText>
+            </View>
           </View>
 
-          <View style={styles.targetCard}>
-            <View style={styles.cardHeader}>
-              <VixText heading="title">🎯 Target</VixText>
-              <PressableScale onPress={openTarget} hitSlop={10}>
-                <VixText heading="bold" additionalStyle={styles.editText}>
-                  {target ? 'Ubah' : 'Pasang'}
-                </VixText>
-              </PressableScale>
-            </View>
+          {/* Seluruh kartu = tombol ubah/pasang target. Judul "🎯 Target" &
+              tombol "Ubah" dihapus biar kartunya pendek. */}
+          <PressableScale style={styles.targetCard} onPress={openTarget}>
             {target ? (
               <>
                 <VixText heading="subheader" additionalStyle={styles.targetValue}>
@@ -367,6 +371,7 @@ export function HabitsTab({
                   />
                 </View>
                 <VixText heading="label" additionalStyle={styles.targetSub}>
+                  🎯{' '}
                   {reached
                     ? 'Tercapai! 🎉'
                     : `sisa ${formatDecimal(remaining)} kg 💪`}
@@ -374,11 +379,11 @@ export function HabitsTab({
               </>
             ) : (
               <VixText heading="label">
-                Belum ada target. Sehat {formatDecimal(range.min)}–
-                {formatDecimal(range.max)} kg.
+                🎯 Belum ada target — ketuk untuk pasang. Sehat{' '}
+                {formatDecimal(range.min)}–{formatDecimal(range.max)} kg.
               </VixText>
             )}
-          </View>
+          </PressableScale>
         </View>
 
         {/* Lima area hidup hari ini — kelihatan mana yang masih bolong. */}
@@ -459,11 +464,18 @@ export function HabitsTab({
       {/* Kebiasaan sesi yang aktif — bagian yang bisa di-scroll */}
       <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         <View style={styles.slotBlock}>
-          {activeList.map((habit) => {
+          {activeList.map((habit, index) => {
             const checked = !!day.done[habit.id];
             const tier = habitTier(habit);
             return (
-              <View key={habit.id}>
+              // Berganti sesi (Pagi→Siang→Malam) = daftar baru masuk berurutan
+              // dari bawah, bukan berkedip sekaligus. Jedanya dibatasi 8 baris
+              // pertama supaya daftar panjang tidak terasa lambat.
+              <Animated.View
+                key={habit.id}
+                entering={FadeInDown.delay(Math.min(index, 8) * 30).duration(
+                  260,
+                )}>
                 <View
                   style={[
                     styles.row,
@@ -471,7 +483,12 @@ export function HabitsTab({
                     // Opsional diredupkan sedikit: bonus, bukan tuntutan.
                     tier === 'optional' && styles.rowOptional,
                   ]}>
-                  <PressableScale onPress={() => handleToggle(habit)} hitSlop={8}>
+                  {/* Getaran "berhasil" khusus saat MENCENTANG — melepas
+                      centang cukup ketukan biasa. */}
+                  <PressableScale
+                    onPress={() => handleToggle(habit)}
+                    hitSlop={8}
+                    haptic={checked ? 'light' : 'success'}>
                     <CheckCircle checked={checked} />
                   </PressableScale>
                   {/* Teks tidak bisa ditekan — ubah/urutkan/hapus lewat tombol edit */}
@@ -502,7 +519,7 @@ export function HabitsTab({
                     onSave={(t) => handleNote(habit, t)}
                   />
                 )}
-              </View>
+              </Animated.View>
             );
           })}
 
@@ -698,17 +715,21 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  // Ring + rekap area berdampingan (bukan bertumpuk) → kartunya jadi pendek.
   heroCard: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+    gap: 10,
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
-    padding: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   heroRingText: { color: Color.TEXT_REVERSE },
   heroRingSub: { color: Color.TEXT_ON_DARK_MUTED },
+  heroSide: { flex: 1 },
+  heroSideValue: { color: Color.TEXT_REVERSE },
   // Lima area hidup — hijau muda kalau kebiasaan intinya sudah beres.
   areaRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
   areaChip: {
@@ -758,21 +779,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   targetSub: { color: Color.TEXT_LABEL },
-  card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    padding: 16,
-    marginBottom: 12,
-    gap: 8,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  editText: { color: Color.MAIN },
   targetValue: { color: Color.TEXT_TITLE },
   targetBarTrack: {
     height: 8,

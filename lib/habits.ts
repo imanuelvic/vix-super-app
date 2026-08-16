@@ -1,6 +1,7 @@
-import { doc, onSnapshot, setDoc, type FirestoreError } from 'firebase/firestore';
+import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // Kebiasaan (habit) harian dibagi 3 sesi waktu (Pagi/Siang/Malam). SATU daftar
 // kebiasaan dipakai untuk SEMUA hari (sama tiap hari — biar simple). Disimpan di
@@ -89,7 +90,7 @@ export function habitTier(h: ScheduledHabit): HabitTier {
  * Pagi 06:00–11:59 · Siang 12:00–17:59 · Malam ≥18:00.
  * Dini hari (<06:00) masih dihitung Malam — lanjutan malam sebelumnya.
  */
-export function slotNow(now: Date): HabitSlot {
+function slotNow(now: Date): HabitSlot {
   const h = now.getHours();
   if (h < 1) return 'night';
   if (h < 10) return 'morning';
@@ -149,7 +150,7 @@ function allHabitsDone(
 // itu praktis mustahil, dan rentetannya jadi selalu 0). Yang menentukan cuma
 // kebiasaan 🟢 Inti; pendukung & opsional murni bonus.
 
-export function coreHabits(habits: ScheduledHabit[]): ScheduledHabit[] {
+function coreHabits(habits: ScheduledHabit[]): ScheduledHabit[] {
   return habits.filter((h) => habitTier(h) === 'core');
 }
 
@@ -163,24 +164,21 @@ export function coreDone(
 }
 
 /**
- * Skor harian 0–10: 70% dari kebiasaan Inti, 30% dari Pendukung.
- * Opsional sengaja tidak ikut dihitung — biar mengejarnya tidak jadi beban.
+ * Skor harian 0–10 — HANYA dari kebiasaan 🟢 Inti.
+ * 🟡 Pendukung & ⚪ Opsional sengaja tidak ikut dihitung supaya skor ini
+ * menjawab satu pertanyaan saja: "yang wajib hari ini sudah beres belum?"
+ * Efeknya 10/10 selalu sama artinya dengan naiknya streak 🔥 (`coreDone`).
  */
 export function dailyScore(
   habits: ScheduledHabit[],
   done: Record<string, boolean>,
 ): number {
-  const part = (tier: HabitTier) => {
-    const list = habits.filter((h) => habitTier(h) === tier);
-    if (list.length === 0) return null;
-    return list.filter((h) => done[h.id]).length / list.length;
-  };
-  const core = part('core');
-  const support = part('support');
-  if (core === null && support === null) return 0;
-  if (core === null) return Math.round(support! * 10);
-  if (support === null) return Math.round(core * 10);
-  return Math.round((core * 0.7 + support * 0.3) * 10);
+  const core = coreHabits(habits);
+  if (core.length === 0) return 0;
+  const ratio = core.filter((h) => done[h.id]).length / core.length;
+  // Angka 10 disimpan khusus untuk yang benar-benar beres semua — tanpa ini
+  // pembulatan bisa menampilkan "10/10" padahal masih ada satu yang bolong.
+  return ratio === 1 ? 10 : Math.min(9, Math.round(ratio * 10));
 }
 
 export type AreaProgress = {
@@ -292,7 +290,7 @@ const CLASSIFY_RULES: {
 ];
 
 /** Tebak area & tingkat satu kebiasaan dari namanya. */
-export function classifyHabit(label: string): {
+function classifyHabit(label: string): {
   area: HabitArea;
   tier: HabitTier;
 } {
@@ -319,7 +317,7 @@ export function needsClassify(habits: ScheduledHabit[]): number {
 // (plus satu di pagi) ditambahkan sekali ketuk — bukan dipaksa masuk, supaya
 // daftar tetap milikmu.
 
-export const RECOVERY_PACK: Omit<ScheduledHabit, 'id'>[] = [
+const RECOVERY_PACK: Omit<ScheduledHabit, 'id'>[] = [
   {
     label: '📱 Phone Away — 21.30',
     slot: 'night',
@@ -377,7 +375,7 @@ export function subscribeHabitSchedule(
   onChange: (habits: ScheduledHabit[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     scheduleRef(uid),
     (snapshot) =>
       onChange((snapshot.data()?.habits as ScheduledHabit[]) ?? []),

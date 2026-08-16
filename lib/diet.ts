@@ -1,12 +1,12 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   Timestamp,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { dayIdToDate } from './format';
 import { bmrMale, type HealthProfile, type WeightTarget } from './health';
 
@@ -63,8 +63,8 @@ export function fatLimitG(kcalTarget: number): number {
 // Protein bukan batas, tapi TARGET MINIMUM: 1,6–2,0 g per kg berat badan per
 // hari — rentang yang lazim dipakai untuk mempertahankan/menambah otot sambil
 // menurunkan lemak (body recomposition).
-export const PROTEIN_PER_KG_MIN = 1.6;
-export const PROTEIN_PER_KG_MAX = 2.0;
+const PROTEIN_PER_KG_MIN = 1.6;
+const PROTEIN_PER_KG_MAX = 2.0;
 
 export function proteinTargetG(weightKg: number): { min: number; max: number } {
   return {
@@ -75,8 +75,8 @@ export function proteinTargetG(weightKg: number): { min: number; max: number } {
 
 // Penyesuaian kalori saat mengejar target berat. Sengaja TIDAK agresif:
 // defisit terlalu dalam bikin otot ikut hilang & progres malah mandek.
-export const DEFICIT_KCAL = 400;
-export const SURPLUS_KCAL = 300;
+const DEFICIT_KCAL = 400;
+const SURPLUS_KCAL = 300;
 
 export type KcalMode = 'defisit' | 'surplus' | 'jaga';
 
@@ -90,7 +90,7 @@ export const KCAL_MODE_LABEL: Record<KcalMode, string> = {
  * Kebutuhan kalori harian: BMR × 1,4 (aktivitas ringan) — angka yang sama
  * dipakai kartu saran di Data Tubuh, biar tidak beda-beda antar layar.
  */
-export function kcalTargetOf(profile: HealthProfile, age: number): number {
+function kcalTargetOf(profile: HealthProfile, age: number): number {
   return Math.round(bmrMale(profile.weightKg, profile.heightCm, age) * 1.4);
 }
 
@@ -314,7 +314,7 @@ export function subscribeDietDay(
   onChange: (day: DietDay) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     dietRef(uid, dayId),
     (snapshot) =>
       onChange({

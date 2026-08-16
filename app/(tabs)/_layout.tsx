@@ -55,6 +55,13 @@ export default function TabLayout() {
         },
         headerShown: false,
         tabBarButton: HapticTab,
+        // Tab yang tidak sedang dilihat DIBEKUKAN (react-native-screens).
+        // Sekali dibuka, sebuah tab tetap terpasang selamanya — tanpa ini
+        // Dashboard, Habits, Home, Profile & System sama-sama ikut me-render
+        // ulang tiap menit (useNow) walau tak terlihat. Dibekukan = render
+        // berhenti, memori & baterai turun; datanya TIDAK ikut dilepas jadi
+        // tak ada baca Firestore tambahan saat kembali.
+        freezeOnBlur: true,
       }}>
       {/* Urutan tab: Dashboard · Habits · Home · Profile · System.
           Tournament 🏆 pindah ke grid Home; tempatnya di sini diisi Habits

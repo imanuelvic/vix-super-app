@@ -22,7 +22,6 @@ import { VixText } from '@/components/common/VixText';
 import { BodyCard } from '@/components/health/BodyCard';
 import { PersonalityTab } from '@/components/profile/PersonalityTab';
 import { QuadrantTab, type Quadrant } from '@/components/profile/QuadrantTab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { pickCompressedPhoto } from '@/lib/family';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
@@ -315,15 +314,34 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* My Timeline (pindah dari Home) — fungsi penting, jarang dipencet */}
-        <PressableScale
-          style={styles.timelineButton}
-          onPress={() => router.push('/timeline')}>
-          <VixText heading="bold" additionalStyle={styles.timelineText}>
-            📍 My Timeline
-          </VixText>
-          <IconSymbol name="chevron.right" size={18} color={Color.ACCENT_DARK} />
-        </PressableScale>
+        {/* Sepasang catatan hidup — sengaja DI SINI, bukan di grid Home:
+            isinya paling pribadi (pertobatan, relasi, gaji) jadi tidak ikut
+            terpampang saat app dibuka atau ditunjukkan ke orang lain, tapi
+            tetap cuma 2 ketukan untuk dipantau rutin.
+              📜 History  = masa lalu, biar ingat dari mana kamu datang
+              📍 Timeline = masa depan, biar tahu mau ke mana */}
+        <View style={styles.lifeRow}>
+          <PressableScale
+            style={styles.lifeButton}
+            onPress={() => router.push('/history')}>
+            <VixText heading="bold" additionalStyle={styles.lifeText}>
+              📜 My History
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.lifeSub}>
+              Masa lalu
+            </VixText>
+          </PressableScale>
+          <PressableScale
+            style={styles.lifeButton}
+            onPress={() => router.push('/timeline')}>
+            <VixText heading="bold" additionalStyle={styles.lifeText}>
+              📍 My Timeline
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.lifeSub}>
+              Masa depan
+            </VixText>
+          </PressableScale>
+        </View>
 
         {/* Kartu per bagian data */}
         {SECTIONS.map((section) => {
@@ -469,17 +487,18 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   heroBadgeText: { color: Color.MAIN_DARK },
-  timelineButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  // Sepasang tombol catatan hidup: History (masa lalu) & Timeline (masa depan).
+  lifeRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  lifeButton: {
+    flex: 1,
+    gap: 1,
     backgroundColor: Color.ACCENT,
     borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  timelineText: { color: Color.ACCENT_DARK },
+  lifeText: { color: Color.ACCENT_DARK },
+  lifeSub: { color: Color.ACCENT_DARK },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

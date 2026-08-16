@@ -1,54 +1,109 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { BottomTabs, withBadge, type BottomTab } from '@/components/common/BottomTabs';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { VixText } from '@/components/common/VixText';
+import { useTabScroll } from '@/components/common/useTabScroll';
+import { SkillsTab } from '@/components/learning/SkillsTab';
+import { TopicsTab } from '@/components/learning/TopicsTab';
+import { WeekTab } from '@/components/learning/WeekTab';
+import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
+import {
+  dueStep,
+  EMPTY_WEEK,
+  subscribeLearningWeek,
+  subscribeSkillsDone,
+  subscribeTopicsDone,
+  weekDocId,
+  type LearningWeek,
+  type SkillsDone,
+  type TopicsDone,
+} from '@/lib/learning';
 
-// Learning 🎓 — catatan ilmu-ilmu di luar bacaan buku: kursus, seminar,
-// video, obrolan, pengalaman kerja. BELUM dibangun; halaman ini sengaja
-// placeholder supaya tile-nya sudah ada tempatnya di Home.
+type LearningTabKey = 'week' | 'skills' | 'topics';
+
+// Fitur Learning 🎓 — satu ilmu baru tiap minggu.
+//   🎯 Minggu Ini — topik giliran minggu ini + 4 langkah kecilnya
+//   🧠 Skills     — 22 topik dari daftarmu, per bidang
+//   💬 Obrolan    — 62 bahan percakapan, supaya ilmunya keluar jadi omongan
+const TABS: BottomTab<LearningTabKey>[] = [
+  { key: 'week', label: 'Minggu Ini', icon: 'target' },
+  { key: 'skills', label: 'Skills', icon: 'graduationcap.fill' },
+  { key: 'topics', label: 'Obrolan', icon: 'bubble.left.fill' },
+];
+
 export default function LearningScreen() {
+  const { user } = useAuth();
+  const { tab, scrollKey, onTabPress } = useTabScroll<LearningTabKey>('week');
+  const { now } = useNow();
+
+  // id minggu = tanggal Senin minggu ini → otomatis ganti tiap Senin.
+  const weekId = weekDocId(now);
+
+  const [week, setWeek] = useState<LearningWeek | null>(null);
+  const [skillsDone, setSkillsDone] = useState<SkillsDone>({});
+  const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubs = [
+      subscribeLearningWeek(user.uid, weekId, setWeek),
+      subscribeSkillsDone(user.uid, setSkillsDone),
+      subscribeTopicsDone(user.uid, setTopicsDone),
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [user, weekId]);
+
+  const current = week ?? EMPTY_WEEK;
+  // Badge sub-menu "Minggu Ini": 1 = ada langkah yang harinya sudah tiba tapi
+  // belum dikerjakan. Sama artinya dengan kartu reminder di Dashboard.
+  const pending = dueStep(current.steps, now) ? 1 : 0;
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Home"
         title="Learning 🎓"
-        subtitle="Catatan ilmu yang sudah kamu pelajari"
+        subtitle="Satu ilmu baru tiap minggu"
       />
 
-      <View style={styles.center}>
-        <View style={styles.card}>
-          <VixText additionalStyle={styles.emoji}>🚧</VixText>
-          <VixText heading="title" additionalStyle={styles.title}>
-            Coming Soon
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.text}>
-            Tempat mencatat ilmu-ilmu dari luar — kursus, seminar, video,
-            obrolan, sampai pelajaran dari pengalaman kerja. Sedang disiapkan 🎓
-          </VixText>
-        </View>
+      <View style={styles.content} key={scrollKey}>
+        {week === null ? (
+          <LoadingCenter />
+        ) : tab === 'week' ? (
+          <WeekTab
+            week={current}
+            weekId={weekId}
+            now={now}
+            skillsDone={skillsDone}
+            topicsDone={topicsDone}
+          />
+        ) : tab === 'skills' ? (
+          <SkillsTab
+            week={current}
+            weekId={weekId}
+            now={now}
+            skillsDone={skillsDone}
+          />
+        ) : (
+          <TopicsTab topicsDone={topicsDone} />
+        )}
       </View>
+
+      <BottomTabs
+        tabs={withBadge(TABS, { week: pending })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Color.LEARNING,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: Color.LEARNING_DARK,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
-  },
-  emoji: { fontSize: 44, lineHeight: 54 },
-  title: { color: Color.LEARNING_DARK },
-  text: { color: Color.LEARNING_DARK, textAlign: 'center' },
+  content: { flex: 1 },
 });

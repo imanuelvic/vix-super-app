@@ -10,7 +10,7 @@ import { formatRupiah } from './transactions';
 // share sheet OS (expo-sharing → WhatsApp / Save to Files, dll).
 
 // Data perusahaan (dari letterhead resmi). Ubah di sini kalau berubah.
-export const COMPANY_INFO = {
+const COMPANY_INFO = {
   name: 'PT. Victory Technology Indonesia',
   address:
     'Flamboyan Tower, Apt. Mediterania G.R.2, RT.3/RW.8 Podomoro City, Jl. Letjen S. Parman No.28, Tj. Duren Sel., Grogol Petamburan, Jakarta Barat, DKI Jakarta 11470',
@@ -52,7 +52,7 @@ function esc(s: string): string {
 }
 
 /** Susun HTML invoice (satu halaman A4, rapi & resmi). */
-export function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
+function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
   const items: InvoiceItem[] = p.invoiceItems ?? [];
   const total = invoiceTotal(items);
   const rows =

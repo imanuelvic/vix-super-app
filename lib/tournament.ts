@@ -45,7 +45,7 @@ export type Tournament = {
 // ===================== Logika bracket (murni) =====================
 
 /** Acak urutan (Fisher–Yates) — untuk undian babak pertama. */
-export function shuffle<T>(arr: T[]): T[] {
+function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -85,7 +85,7 @@ function buildMatches(participants: string[]): Match[] {
 }
 
 /** Nama pemenang satu laga (atau null bila belum diputuskan). */
-export function winnerName(m: Match | undefined): string | null {
+function winnerName(m: Match | undefined): string | null {
   if (!m || !m.winner) return null;
   return m.winner === 'a' ? m.a : m.b;
 }

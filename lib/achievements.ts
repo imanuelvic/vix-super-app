@@ -1,12 +1,12 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   writeBatch,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { dayIdToDate, formatShortDayDate } from './format';
 import { dayDocId } from './health';
 import { alreadyCounted, nextStreak } from './streak';
@@ -30,7 +30,7 @@ export function subscribeLoginStreak(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'app', 'login');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange(snapshot.exists() ? (snapshot.data() as LoginStreak) : null);
@@ -43,7 +43,7 @@ export function subscribeLoginStreak(
  * "Hari doa" pakai batas jam 04:00 pagi — sebelum jam 4 masih dihitung hari
  * sebelumnya (biar doa subuh tetap masuk hari kemarin bila diinginkan).
  */
-export function prayerDayId(now: Date): string {
+function prayerDayId(now: Date): string {
   return dayDocId(new Date(now.getTime() - 4 * 3_600_000));
 }
 
@@ -57,7 +57,7 @@ export function prayerDoneToday(
 
 // Batas waktu menyelesaikan doa pagi (Bapa Kami + Revive). Lewat jam ini &
 // belum selesai → streak hangus dan lock screen tidak lagi dipaksakan.
-export const PRAYER_DEADLINE_HOUR = 11;
+const PRAYER_DEADLINE_HOUR = 11;
 
 /** Sudah lewat jam 11.00 setempat? (jendela doa pagi habis) */
 export function prayerDeadlinePassed(now: Date): boolean {
@@ -304,7 +304,7 @@ export function subscribeSelfRewardBalance(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'funds', 'self-reward');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.balance as number) ?? 0);

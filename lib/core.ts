@@ -1,7 +1,12 @@
 import {
   arrayUnion,
+  collection,
+  deleteDoc,
   doc,
+  limit,
   onSnapshot,
+  orderBy,
+  query,
   setDoc,
   Timestamp,
   writeBatch,
@@ -9,6 +14,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // CORE — komunitas sel gereja. Pemilik app adalah MCL (Mentor CORE Leader)
 // yang menggembalakan beberapa CORE Leader (CL). Fitur ini membantu:
@@ -34,7 +40,7 @@ export type CoreLeader = {
 };
 
 // Data awal para CL — tampil sebelum dokumen pernah disimpan.
-export const DEFAULT_LEADERS: CoreLeader[] = [
+const DEFAULT_LEADERS: CoreLeader[] = [
   { id: 'febryna', name: 'Febryna', heart: '💛', birthYear: 1999, birthMonth: 1, birthDay: 4, phone: null, lastFollowupDayId: null },
   { id: 'novia', name: 'Novia', heart: '💜', birthYear: 1998, birthMonth: 10, birthDay: 4, phone: null, lastFollowupDayId: null },
   { id: 'lanemey', name: 'Lanemey', heart: '💚', birthYear: 2002, birthMonth: 4, birthDay: 9, phone: null, lastFollowupDayId: null },
@@ -72,7 +78,7 @@ export function subscribeMainTeam(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'core', 'mainTeam');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const list = snapshot.data()?.list as MainTeamMember[] | undefined;
@@ -99,7 +105,7 @@ export function subscribeCoreLeaders(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'core', 'leaders');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const list = snapshot.data()?.list as CoreLeader[] | undefined;
@@ -249,7 +255,7 @@ export function subscribeExLeaders(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'core', 'exLeaders');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const list = (snapshot.data()?.list as ExLeader[]) ?? [];
@@ -259,7 +265,7 @@ export function subscribeExLeaders(
   );
 }
 
-export function saveExLeaders(uid: string, list: ExLeader[]) {
+function saveExLeaders(uid: string, list: ExLeader[]) {
   return setDoc(doc(db, 'users', uid, 'core', 'exLeaders'), { list });
 }
 
@@ -356,7 +362,7 @@ export function subscribeVisitations(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'core', 'visitations');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const list = (snapshot.data()?.list as Visitation[]) ?? [];
@@ -382,6 +388,103 @@ export function saveVisitations(uid: string, list: Visitation[]) {
 /** Id unik untuk jadwal visitasi baru. */
 export function newVisitationId(): string {
   return `v${Date.now().toString(36)}`;
+}
+
+// ===================== Mentoring Bulanan 🗒️ =====================
+// Notulen rapat mentoring dari gereja. Susunannya SELALU 5 poin yang sama,
+// jadi poin-poinnya dipatok di sini dan tinggal diisi tiap rapat.
+//
+// Beda penyimpanan dari Visitation: rapat menumpuk terus tiap bulan dan
+// isinya panjang (5 blok teks), jadi SATU DOKUMEN PER RAPAT — bukan satu array
+// besar yang harus ditulis ulang tiap kali salah satu poin diubah.
+//   users/{uid}/coreMonthly/{id} → { title, date, points }
+
+export type MonthlyPointKey =
+  | 'mentorship'
+  | 'leadersMessage'
+  | 'ndcInfo'
+  | 'core'
+  | 'events';
+
+export const MONTHLY_AGENDA_POINTS: {
+  key: MonthlyPointKey;
+  label: string;
+  icon: string;
+  hint: string;
+}[] = [
+  { key: 'mentorship', label: 'MENTORSHIP', icon: '🎓', hint: 'Pembekalan untuk para mentor' },
+  { key: 'leadersMessage', label: "LEADER'S MESSAGE", icon: '📢', hint: 'Pesan dari gembala / pemimpin' },
+  { key: 'ndcInfo', label: 'NDC INFORMATION', icon: 'ℹ️', hint: 'Info & pengumuman gereja' },
+  { key: 'core', label: 'CORE', icon: '🙏', hint: 'Hal-hal seputar komunitas CORE' },
+  { key: 'events', label: 'OUR EVENTS', icon: '📅', hint: 'Acara yang akan datang' },
+];
+
+export type MonthlyMeeting = {
+  id: string;
+  title: string;
+  date: Timestamp;
+  points: Record<string, string>; // key = MonthlyPointKey
+};
+
+/** Semua poin kosong — bentuk awal rapat baru. */
+export function emptyMonthlyPoints(): Record<string, string> {
+  return Object.fromEntries(MONTHLY_AGENDA_POINTS.map((p) => [p.key, '']));
+}
+
+/** Berapa dari 5 poin yang sudah diisi — dipakai penanda di kartu. */
+export function monthlyFilledCount(m: MonthlyMeeting): number {
+  return MONTHLY_AGENDA_POINTS.filter((p) => (m.points[p.key] ?? '').trim())
+    .length;
+}
+
+function monthlyCollection(uid: string) {
+  return collection(db, 'users', uid, 'coreMonthly');
+}
+
+export function subscribeMonthlyMeetings(
+  uid: string,
+  onChange: (list: MonthlyMeeting[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  // orderBy satu field saja → tidak butuh composite index.
+  const q = query(monthlyCollection(uid), orderBy('date', 'desc'), limit(60));
+  return onSnapshot(
+    q,
+    (snapshot) =>
+      onChange(
+        snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            title: (data.title as string) ?? '',
+            date: data.date as Timestamp,
+            points: (data.points as Record<string, string>) ?? {},
+          };
+        }),
+      ),
+    onError,
+  );
+}
+
+export function saveMonthlyMeeting(
+  uid: string,
+  id: string,
+  data: { title: string; date: Date; points: Record<string, string> },
+) {
+  return setDoc(doc(db, 'users', uid, 'coreMonthly', id), {
+    title: data.title,
+    date: Timestamp.fromDate(data.date),
+    points: data.points,
+  });
+}
+
+/** Hapus satu notulen rapat — PERMANEN. */
+export function deleteMonthlyMeeting(uid: string, id: string) {
+  return deleteDoc(doc(db, 'users', uid, 'coreMonthly', id));
+}
+
+export function newMonthlyMeetingId(): string {
+  return `m${Date.now().toString(36)}`;
 }
 
 /** Selisih hari ke jadwal visit (0 = hari ini, negatif = sudah lewat). */
@@ -446,7 +549,7 @@ export function subscribeCoreIdeas(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'core', 'ideas');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const data = snapshot.data();
@@ -464,7 +567,7 @@ export function saveCoreIdeas(uid: string, data: CoreIdeasData) {
 }
 
 /** Hari sejak ide terakhir dibuat (null kalau belum ada ide sama sekali). */
-export function daysSinceLastIdea(
+function daysSinceLastIdea(
   data: CoreIdeasData,
   today: Date,
 ): number | null {
@@ -495,7 +598,7 @@ export type CoreCategory = {
   questions: string[];
 };
 
-export const CORE_CATEGORIES: CoreCategory[] = [
+const CORE_CATEGORIES: CoreCategory[] = [
   {
     key: 'spirituality',
     label: 'Spirituality',
@@ -620,7 +723,7 @@ export function weeklyLeaders<T>(
 }
 
 // Pertanyaan ringan pembuka obrolan (this-or-that / random).
-export const OPEN_QUESTIONS: string[] = [
+const OPEN_QUESTIONS: string[] = [
   'Kopi atau teh? ☕🍵',
   'Kalau bisa liburan sekarang: Thailand atau Singapura? ✈️',
   'Pagi atau malam orangnya? 🌅🌙',
@@ -634,7 +737,7 @@ export const OPEN_QUESTIONS: string[] = [
 ];
 
 // Pertanyaan penggali kepribadian — dipakai kalau datanya belum diisi.
-export const PERSONALITY_QUESTIONS: {
+const PERSONALITY_QUESTIONS: {
   field: 'disc' | 'mbti' | 'loveLanguage';
   icon: string;
   label: string;
@@ -736,7 +839,7 @@ export function subscribeMonthlyPrayers(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'core', 'monthlyPrayers');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const d = snapshot.data();
@@ -768,7 +871,7 @@ export function subscribeBirthdayGreets(
   onChange: (greets: BirthdayGreets) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'core', 'birthdayGreets'),
     (snapshot) =>
       onChange((snapshot.data()?.greeted as BirthdayGreets) ?? {}),
@@ -821,8 +924,8 @@ export function monthlyPrayersFilled(data: MonthlyPrayers, now: Date): boolean {
 }
 
 // Follow up pokok doa berkala: Selasa (2), Kamis (4), Sabtu (6).
-export const PRAYER_FOLLOWUP_DAYS = [2, 4, 6];
-export const PRAYER_FOLLOWUP_COUNT = 3; // CL yang difokuskan tiap sesi (bergilir)
+const PRAYER_FOLLOWUP_DAYS = [2, 4, 6];
+const PRAYER_FOLLOWUP_COUNT = 3; // CL yang difokuskan tiap sesi (bergilir)
 
 /** Hari ini jadwal follow up pokok doa? (Selasa/Kamis/Sabtu) */
 export function isPrayerFollowupDay(d: Date): boolean {
@@ -830,7 +933,7 @@ export function isPrayerFollowupDay(d: Date): boolean {
 }
 
 /** Index sesi — stabil sepanjang hari, berganti tiap hari (untuk rotasi). */
-export function prayerSessionIndex(d: Date): number {
+function prayerSessionIndex(d: Date): number {
   const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   return Math.floor(midnight.getTime() / 86_400_000);
 }

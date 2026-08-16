@@ -1,12 +1,12 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   Timestamp,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { daysBetween } from './format';
 
 // Fitur Donor Darah 🩸 — jadwal & tempat donor, catatan pribadi, dan hitung
@@ -17,7 +17,7 @@ import { daysBetween } from './format';
 // sedikit) sehingga cukup 1 listener & hemat baca Firestore.
 // Path ini otomatis tercakup Security Rules users/{userId}/{document=**}.
 
-export const DONOR_INTERVAL_DAYS = 90; // jeda minimal donor darah lengkap
+const DONOR_INTERVAL_DAYS = 90; // jeda minimal donor darah lengkap
 
 export type DonorSchedule = {
   id: string;
@@ -50,7 +50,7 @@ export function subscribeDonor(
   onChange: (data: DonorData) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     donorDoc(uid),
     (snapshot) => {
       onChange(snapshot.exists() ? (snapshot.data() as DonorData) : EMPTY_DONOR);

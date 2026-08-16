@@ -1,5 +1,13 @@
-import type { ComponentProps } from 'react';
+import { useEffect, useRef, type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+  ZoomIn,
+} from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -46,36 +54,76 @@ export function BottomTabs<T extends string>({
 }) {
   return (
     <View style={styles.tabBar}>
-      {tabs.map((t) => {
-        const active = value === t.key;
-        return (
-          <PressableScale
-            key={t.key}
-            style={styles.tabButton}
-            onPress={() => onChange(t.key)}>
-            <View>
-              <IconSymbol
-                name={t.icon}
-                size={24}
-                color={active ? Color.MAIN : Color.TEXT_LABEL}
-              />
-              {!!t.badge && t.badge > 0 && (
-                <View style={styles.badge}>
-                  <VixText heading="label" additionalStyle={styles.badgeText}>
-                    {t.badge > 9 ? '9+' : t.badge}
-                  </VixText>
-                </View>
-              )}
-            </View>
-            <VixText
-              heading="label"
-              additionalStyle={active ? styles.active : undefined}>
-              {t.label}
-            </VixText>
-          </PressableScale>
-        );
-      })}
+      {tabs.map((t) => (
+        <Tab
+          key={t.key}
+          tab={t}
+          active={value === t.key}
+          onPress={() => onChange(t.key)}
+        />
+      ))}
     </View>
+  );
+}
+
+// Satu tab. Saat jadi aktif, ikonnya melompat kecil (membesar + naik lalu
+// memantul balik) — penanda "kamu sekarang di sini" yang terasa, bukan cuma
+// warna yang berubah diam-diam.
+function Tab<T extends string>({
+  tab,
+  active,
+  onPress,
+}: {
+  tab: BottomTab<T>;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const jump = useSharedValue(0);
+  // Jangan melompat saat layar pertama dibuka — hanya saat pengguna berpindah.
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (active && mounted.current) {
+      jump.value = withSequence(
+        withTiming(1, { duration: 130 }),
+        withSpring(0, { damping: 8, stiffness: 260 }),
+      );
+    }
+    mounted.current = true;
+  }, [active, jump]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: 1 + jump.value * 0.25 },
+      { translateY: jump.value * -4 },
+    ],
+  }));
+
+  return (
+    <PressableScale style={styles.tabButton} onPress={onPress}>
+      <View>
+        {/* Hanya ikonnya yang melompat; badge tetap diam di pojok. */}
+        <Animated.View style={iconStyle}>
+          <IconSymbol
+            name={tab.icon}
+            size={24}
+            color={active ? Color.MAIN : Color.TEXT_LABEL}
+          />
+        </Animated.View>
+        {!!tab.badge && tab.badge > 0 && (
+          <Animated.View entering={ZoomIn.duration(220)} style={styles.badge}>
+            <VixText heading="label" additionalStyle={styles.badgeText}>
+              {tab.badge > 9 ? '9+' : tab.badge}
+            </VixText>
+          </Animated.View>
+        )}
+      </View>
+      <VixText
+        heading="label"
+        additionalStyle={active ? styles.active : undefined}>
+        {tab.label}
+      </VixText>
+    </PressableScale>
   );
 }
 

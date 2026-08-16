@@ -1,0 +1,264 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  onSnapshot,
+  Timestamp,
+  type DocumentData,
+  type DocumentReference,
+  type FirestoreError,
+} from 'firebase/firestore';
+
+// Lapisan bersama untuk semua langganan DOKUMEN Firestore. Dua masalah yang
+// diselesaikan sekaligus:
+//
+// 1. LANGGANAN KEMBAR. Dokumen yang sama dipasang berkali-kali oleh layar
+//    berbeda — `health/profile` dipasang 7 layar, `core/leaders` 7 layar,
+//    `habitDays/{hari ini}` 5 layar. Karena tab tetap terpasang setelah
+//    dibuka, semuanya hidup berbarengan: 7 koneksi, 7 salinan data di memori,
+//    dan 7× biaya baca Firestore untuk isi yang persis sama.
+//    Di sini semuanya digabung jadi SATU listener per dokumen, hasilnya
+//    dibagikan ke semua pemakai (dihitung dengan ref-count).
+//
+// 2. LAYAR KOSONG SAAT DIBUKA. Firebase JS SDK TIDAK punya cache disk di
+//    React Native (butuh IndexedDB yang tidak ada di RN), jadi tiap kali app
+//    dibuka semua data harus ditunggu dari server dulu. Di sini nilai terakhir
+//    tiap dokumen ditulis ke AsyncStorage, lalu ditampilkan LEBIH DULU sambil
+//    menunggu server — layar langsung terisi, bukan berkedip kosong.
+//    Nilai dari server selalu menimpa nilai cache begitu tiba.
+//
+// Catatan tipe: yang di-cache hanya string/angka/boolean/array/map/Timestamp —
+// itu semua yang dipakai app ini. Tipe Firestore lain (GeoPoint, Bytes,
+// DocumentReference) TIDAK ditangani; kalau nanti dipakai, tambahkan di
+// encode/decode di bawah.
+
+/** Isi dokumen apa adanya. `undefined` = dokumennya memang belum ada. */
+export type DocData = DocumentData | undefined;
+
+/**
+ * Bentuk minimal yang dipakai semua pemanggil: `.data()` & `.exists()`.
+ * Snapshot asli dari Firestore sudah memenuhi bentuk ini, jadi mengganti
+ * `onSnapshot(` menjadi `liveDoc(` TIDAK menuntut isi callback-nya diubah —
+ * dan saat data datang dari disk, dibuatkan tiruannya dengan bentuk sama.
+ */
+export type DocLike = {
+  data(): DocData;
+  exists(): boolean;
+  readonly id: string;
+};
+
+/** Snapshot tiruan dari cache disk. */
+function fromCache(id: string, data: DocData): DocLike {
+  return { id, data: () => data, exists: () => data !== undefined };
+}
+
+// Jeda sebelum listener benar-benar dilepas setelah pemakai terakhir pergi.
+// Gunanya supaya pindah-pindah layar tidak memasang & melepas terus-menerus.
+const IDLE_MS = 30_000;
+
+const CACHE_PREFIX = 'fs1:';
+const INDEX_KEY = 'fs1:index';
+// Batas jumlah dokumen yang disimpan di disk. Dokumen harian (habitDays,
+// bibleRead, dst) bertambah satu tiap hari, jadi harus ada batas.
+const MAX_CACHED = 200;
+
+// ===================== Penyandian Timestamp =====================
+// JSON tidak mengenal Timestamp Firestore, padahal banyak kode memanggil
+// `.toDate()` pada field tanggal. Jadi Timestamp diubah jadi penanda khusus
+// saat disimpan, dan dibentuk kembali saat dibaca.
+
+const TS_KEY = '__ts__';
+
+function encode(value: unknown): unknown {
+  if (value instanceof Timestamp) {
+    return { [TS_KEY]: [value.seconds, value.nanoseconds] };
+  }
+  if (Array.isArray(value)) return value.map(encode);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [
+        k,
+        encode(v),
+      ]),
+    );
+  }
+  return value;
+}
+
+function decode(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(decode);
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const ts = obj[TS_KEY];
+    if (Array.isArray(ts) && ts.length === 2) {
+      return new Timestamp(Number(ts[0]), Number(ts[1]));
+    }
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => [k, decode(v)]),
+    );
+  }
+  return value;
+}
+
+// ===================== Cache disk =====================
+// Semua operasi disk sengaja "tembak & lupakan": cache cuma mempercepat, jadi
+// kalau gagal sekalipun app harus tetap jalan normal dari data server.
+
+/** Urutan pemakaian dokumen (paling lama di depan) — untuk membuang yang basi. */
+let index: string[] | null = null;
+
+async function loadIndex(): Promise<string[]> {
+  if (index) return index;
+  try {
+    const raw = await AsyncStorage.getItem(INDEX_KEY);
+    index = raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    index = [];
+  }
+  return index;
+}
+
+async function touchIndex(path: string) {
+  const list = await loadIndex();
+  const at = list.indexOf(path);
+  if (at >= 0) list.splice(at, 1);
+  list.push(path);
+  // Lewat batas → buang yang paling lama tidak dipakai.
+  const dropped = list.length > MAX_CACHED ? list.splice(0, list.length - MAX_CACHED) : [];
+  try {
+    if (dropped.length > 0) {
+      await AsyncStorage.multiRemove(dropped.map((p) => CACHE_PREFIX + p));
+    }
+    await AsyncStorage.setItem(INDEX_KEY, JSON.stringify(list));
+  } catch {
+    // Diamkan — cache hanya mempercepat, bukan sumber kebenaran.
+  }
+}
+
+async function readCache(path: string): Promise<{ data: DocData } | null> {
+  try {
+    const raw = await AsyncStorage.getItem(CACHE_PREFIX + path);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { x: boolean; d: unknown };
+    return { data: parsed.x ? (decode(parsed.d) as DocumentData) : undefined };
+  } catch {
+    // Format lama / rusak → anggap tidak ada cache.
+    return null;
+  }
+}
+
+function writeCache(path: string, data: DocData) {
+  const payload = JSON.stringify({
+    x: data !== undefined,
+    d: data === undefined ? null : encode(data),
+  });
+  AsyncStorage.setItem(CACHE_PREFIX + path, payload)
+    .then(() => touchIndex(path))
+    .catch(() => {});
+}
+
+/**
+ * Buang seluruh cache dokumen + lepas semua listener — dipanggil saat keluar
+ * akun, supaya data akun lama tidak tertinggal di HP maupun di memori.
+ */
+export async function clearLiveCache(): Promise<void> {
+  // Lepas dulu listener-nya, jangan cuma dibuang dari peta (nanti menggantung).
+  entries.forEach((e) => {
+    if (e.idle) clearTimeout(e.idle);
+    e.stop?.();
+  });
+  entries.clear();
+  try {
+    const list = await loadIndex();
+    await AsyncStorage.multiRemove([
+      INDEX_KEY,
+      ...list.map((p) => CACHE_PREFIX + p),
+    ]);
+  } catch {
+    // Diamkan — gagal membersihkan cache tidak boleh menggagalkan logout.
+  } finally {
+    index = [];
+  }
+}
+
+// ===================== Langganan bersama =====================
+
+type Entry = {
+  subs: Set<(snapshot: DocLike) => void>;
+  errs: Set<(error: FirestoreError) => void>;
+  stop: (() => void) | null;
+  last: DocLike | null;
+  /** true = sudah pernah dapat data dari SERVER (bukan sekadar dari disk). */
+  live: boolean;
+  idle: ReturnType<typeof setTimeout> | null;
+};
+
+const entries = new Map<string, Entry>();
+
+/**
+ * Langganan satu dokumen — pengganti langsung `onSnapshot(ref, …)`.
+ * Isi callback TIDAK perlu diubah: yang dioper tetap punya `.data()` dan
+ * `.exists()` seperti snapshot asli.
+ *
+ * Bedanya: dokumen yang sama hanya dipasang SEKALI walau dipakai banyak layar,
+ * dan nilai terakhirnya tersimpan di disk sehingga muncul seketika saat dibuka.
+ */
+export function liveDoc(
+  ref: DocumentReference,
+  onChange: (snapshot: DocLike) => void,
+  onError?: (error: FirestoreError) => void,
+): () => void {
+  const path = ref.path;
+  let entry = entries.get(path);
+  if (!entry) {
+    entry = { subs: new Set(), errs: new Set(), stop: null, last: null, live: false, idle: null };
+    entries.set(path, entry);
+  }
+  const e = entry;
+
+  // Ada pemakai baru → batalkan rencana pelepasan.
+  if (e.idle) {
+    clearTimeout(e.idle);
+    e.idle = null;
+  }
+  e.subs.add(onChange);
+  if (onError) e.errs.add(onError);
+
+  if (e.live && e.last) {
+    // Layar lain sudah memegang datanya → langsung pakai, tanpa baca apa pun.
+    onChange(e.last);
+  } else {
+    // Belum ada yang punya → tampilkan simpanan disk dulu supaya tidak kosong.
+    // Kalau server keburu menjawab, hasil disk diabaikan (cek `e.live`).
+    readCache(path)
+      .then((cached) => {
+        if (cached && !e.live && e.subs.has(onChange)) {
+          onChange(fromCache(ref.id, cached.data));
+        }
+      })
+      .catch(() => {});
+  }
+
+  if (!e.stop) {
+    e.stop = onSnapshot(
+      ref,
+      (snapshot) => {
+        e.last = snapshot;
+        e.live = true;
+        writeCache(path, snapshot.exists() ? snapshot.data() : undefined);
+        e.subs.forEach((fn) => fn(snapshot));
+      },
+      (error) => e.errs.forEach((fn) => fn(error)),
+    );
+  }
+
+  return () => {
+    e.subs.delete(onChange);
+    if (onError) e.errs.delete(onError);
+    if (e.subs.size > 0 || e.idle) return;
+    // Pemakai terakhir pergi — tunggu sebentar, siapa tahu cuma pindah layar.
+    e.idle = setTimeout(() => {
+      if (e.subs.size > 0) return;
+      e.stop?.();
+      entries.delete(path);
+    }, IDLE_MS);
+  };
+}

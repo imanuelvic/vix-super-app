@@ -17,6 +17,7 @@ import {
 
 import { type LoginStreak as DayStreak } from './achievements';
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { daysBetween } from './format';
 import { alreadyCounted, nextStreak } from './streak';
 
@@ -52,7 +53,7 @@ export type HealthProfile = {
 export const BLOOD_TYPES = ['A', 'B', 'AB', 'O'];
 
 // Nilai awal sebelum dokumen pernah disimpan (data pemilik app).
-export const DEFAULT_PROFILE: HealthProfile = {
+const DEFAULT_PROFILE: HealthProfile = {
   birthYear: 1998,
   heightCm: 169,
   weightKg: 71,
@@ -79,7 +80,7 @@ export function subscribeHealthProfile(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'health', 'profile');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       // Dokumen belum ada → pakai default; field yang tersimpan menimpa default.
@@ -260,7 +261,7 @@ export function subscribeWeightTarget(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'health', 'target');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange(snapshot.exists() ? (snapshot.data() as WeightTarget) : null);
@@ -318,7 +319,7 @@ export function subscribeHabitDay(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'habitDays', dayId);
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       const data = snapshot.data();
@@ -373,7 +374,7 @@ export function subscribeWaterStreak(
   onChange: (streak: DayStreak | null) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'app', 'waterStreak'),
     (snapshot) => onChange(snapshot.exists() ? (snapshot.data() as DayStreak) : null),
     onError,
@@ -406,7 +407,7 @@ export function subscribeStreak(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'health', 'streak');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange(snapshot.exists() ? (snapshot.data() as Streak) : null);
@@ -713,7 +714,7 @@ export function subscribeStepDays(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'health', 'steps');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.days as StepDaysMap) ?? {});
@@ -937,7 +938,7 @@ export function subscribeWeekStats(
   onChange: (weeks: WeekStatsMap) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'health', 'weeks'),
     (snapshot) => onChange((snapshot.data()?.weeks as WeekStatsMap) ?? {}),
     onError,

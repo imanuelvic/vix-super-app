@@ -61,8 +61,13 @@ function RootNavigator() {
     <>
     {/* headerShown: false untuk SEMUA layar — tiap layar sudah punya header
         sendiri (ScreenHeader). Diset sekali di sini, jadi layar baru pun
-        otomatis tanpa header bawaan (tak perlu didaftarkan satu-satu lagi). */}
-    <Stack screenOptions={{ headerShown: false }}>
+        otomatis tanpa header bawaan (tak perlu didaftarkan satu-satu lagi).
+
+        freezeOnBlur: layar yang tertutup layar lain berhenti me-render selama
+        tertimbun. Membuka Finance dari Home tidak lagi menyisakan Home yang
+        terus bekerja di belakang. Langganan Firestore tetap hidup, jadi
+        datanya tetap segar & tak ada biaya baca tambahan. */}
+    <Stack screenOptions={{ headerShown: false, freezeOnBlur: true }}>
       {/* Hanya bisa diakses kalau sudah login (login cukup SEKALI per perangkat) */}
       <Stack.Protected guard={!!user}>
         {/* Home + tab bar utama */}
@@ -110,7 +115,8 @@ function RootNavigator() {
         <Stack.Screen name="book/[key]" />
         <Stack.Screen name="world" />
 
-        {/* Diakses dari kartu welcome & tombol streak di Home */}
+        {/* Sepasang: masa lalu & masa depan — dibuka dari tab Profile */}
+        <Stack.Screen name="history" />
         <Stack.Screen name="timeline" />
         <Stack.Screen name="achievements" />
       </Stack.Protected>

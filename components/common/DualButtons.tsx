@@ -26,7 +26,10 @@ export function DualButtons({
       <PressableScale
         style={[styles.confirm, danger && styles.danger, busy && styles.busy]}
         onPress={onConfirm}
-        disabled={busy}>
+        disabled={busy}
+        // Aksi destruktif terasa beda dari simpan biasa — sebelum ditekan pun
+        // sudah "berbunyi" lain.
+        haptic={danger ? 'warning' : 'medium'}>
         {busy ? (
           <ActivityIndicator color={Color.TEXT_REVERSE} />
         ) : (

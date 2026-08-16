@@ -4,7 +4,6 @@ import {
   getDoc,
   getDocs,
   increment,
-  onSnapshot,
   query,
   setDoc,
   where,
@@ -13,6 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { MONTH_NAMES } from './format';
 import { dayDocId } from './health';
 
@@ -63,7 +63,7 @@ export function subscribeUsageDay(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'usage', dayId);
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snap) => {
       const d = snap.data();

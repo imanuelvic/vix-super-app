@@ -1,6 +1,5 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   Timestamp,
   type FirestoreError,
@@ -9,6 +8,7 @@ import {
 import { type LoginStreak as DayStreak } from './achievements';
 import { hashString, weekIndex } from './core';
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { formatDecimal } from './format';
 import {
   bmiCategory,
@@ -201,8 +201,8 @@ export const FIT_PROGRAM: Record<FitBlock, FitSession[]> = {
 
 // Latihan jam 17.00; kartu reminder Dashboard tampil 16.00–20.59.
 export const FIT_HOUR_LABEL = '17.00';
-export const FIT_FROM_HOUR = 16;
-export const FIT_TO_HOUR = 21;
+const FIT_FROM_HOUR = 16;
+const FIT_TO_HOUR = 21;
 
 /** Nama hari pendek untuk deretan hari (indeks = getDay(), 0 = Minggu). */
 export const FIT_DAY_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -225,7 +225,7 @@ export function fitSessionOfWeekday(
   return FIT_PROGRAM[block].find((s) => s.weekday === weekday) ?? null;
 }
 
-export function isFitRestDay(d: Date): boolean {
+function isFitRestDay(d: Date): boolean {
   return fitSessionFor(d) === null;
 }
 
@@ -357,7 +357,7 @@ export function subscribeFitWeights(
   onChange: (weights: FitWeights) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'fitness', 'weights'),
     (snapshot) => onChange((snapshot.data()?.map as FitWeights) ?? {}),
     onError,
@@ -387,7 +387,7 @@ export function subscribeFitDay(
   onChange: (done: FitDayDone) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
     (snapshot) => onChange((snapshot.data()?.done as FitDayDone) ?? {}),
     onError,
@@ -417,7 +417,7 @@ export function subscribeFitStreak(
   onChange: (streak: DayStreak | null) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'app', 'fitnessStreak'),
     (snapshot) => onChange(snapshot.exists() ? (snapshot.data() as DayStreak) : null),
     onError,

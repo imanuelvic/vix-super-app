@@ -112,6 +112,15 @@ import {
   subscribeHabitSchedule,
   type ScheduledHabit,
 } from '@/lib/habits';
+import {
+  dueStep,
+  EMPTY_WEEK,
+  skillOf,
+  skillOfWeek,
+  subscribeLearningWeek,
+  weekDocId,
+  type LearningWeek,
+} from '@/lib/learning';
 import { useNow } from '@/hooks/useNow';
 import {
   activeStreak,
@@ -206,16 +215,21 @@ export default function DashboardScreen() {
   );
   // Periode puasa 🍽️ — untuk kartu "sedang berpuasa" + pokok doa hari ini.
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
+  const [learningWeek, setLearningWeek] = useState<LearningWeek>(EMPTY_WEEK);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk reminder yang
   // bergantung waktu. Lihat hooks/useNow.ts.
   const { now, todayId } = useNow();
+  // id minggu berjalan (tanggal Senin) — nilainya sama sepanjang minggu, jadi
+  // langganan Learning di bawah tidak ikut dipasang ulang tiap menit.
+  const weekId = weekDocId(now);
 
   useEffect(() => {
     if (!user) return;
     const nowQ = quarterOf(new Date());
     const wheelQid = quarterDocId(nowQ.year, nowQ.q);
     const unsubs = [
+      subscribeLearningWeek(user.uid, weekId, setLearningWeek),
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
       subscribeFitDay(user.uid, todayId, setFitDone),
@@ -244,10 +258,17 @@ export default function DashboardScreen() {
       subscribeChoreStatus(user.uid, setResidenceChores),
     ];
     return () => unsubs.forEach((unsub) => unsub());
-  }, [user, todayId]);
+  }, [user, todayId, weekId]);
 
   // Kebiasaan harian (sama tiap hari) — untuk reminder sesi.
   const daySchedule = schedule ?? [];
+
+  // Learning 🎓 — langkah mingguan yang harinya sudah tiba tapi belum
+  // dikerjakan (Senin/Rabu/Jumat/Minggu). null = tidak perlu ditagih hari ini.
+  const learningSkill =
+    (learningWeek.skillKey ? skillOf(learningWeek.skillKey) : null) ??
+    skillOfWeek(now);
+  const learningDue = dueStep(learningWeek.steps, now);
 
   // Task hari ini — HANYA yang belum selesai.
   const catIcon = (key: string) =>
@@ -1061,6 +1082,24 @@ export default function DashboardScreen() {
             </View>
           )}
 
+          {/* Reminder Learning 🎓 — satu ilmu baru per minggu, dicicil 4 langkah
+              di Senin/Rabu/Jumat/Minggu (hari yang jadwalmu lowong). Kartunya
+              hilang sendiri begitu langkah hari itu dicentang. */}
+          {learningDue && (
+            <ReminderCard
+              bg={Color.LEARNING}
+              fg={Color.LEARNING_DARK}
+              title={`🎓 Learning — ${learningDue.emoji} ${learningDue.label} (${learningDue.minutes} mnt)`}
+              onPress={() => router.push('/learning')}>
+              <VixText heading="label" additionalStyle={styles.learningText}>
+                Topik minggu ini: {learningSkill.title}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.learningText}>
+                {learningDue.how}
+              </VixText>
+            </ReminderCard>
+          )}
+
           {/* Reminder Residence 🏠 — perawatan/kebersihan rumah yang perlu
               perhatian (warna senada tile Residence di Home). */}
           {residenceReminders.length > 0 && (
@@ -1261,6 +1300,7 @@ const styles = StyleSheet.create({
   productivityText: { color: Color.FINANCE_INCOME_DARK },
   funSub: { color: Color.FUN_DARK, marginBottom: 2 },
   funText: { color: Color.FUN_DARK },
+  learningText: { color: Color.LEARNING_DARK },
   taskCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

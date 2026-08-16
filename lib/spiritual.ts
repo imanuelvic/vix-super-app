@@ -13,6 +13,7 @@ import {
 
 import { type LoginStreak as DayStreak } from './achievements';
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 import { dayIdToDate } from './format';
 import { yesterdayId } from './health';
 import { hashString } from './core';
@@ -90,7 +91,7 @@ export function subscribeReviveStreak(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'app', 'revive');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange(snapshot.exists() ? (snapshot.data() as DayStreak) : null);
@@ -140,6 +141,17 @@ export const BIBLE_SESSIONS: {
 
 export function bibleSessionMeta(session: BibleSession) {
   return BIBLE_SESSIONS.find((s) => s.key === session)!;
+}
+
+/**
+ * Penanda "hari ini dilewati" — disimpan di kolom yang sama dengan bacaannya.
+ * Gunanya: kartu reminder di Home berhenti menagih untuk hari itu, TAPI
+ * rentetan 🔥 sengaja TIDAK naik — dilewati ya dilewati, tidak dihitung baca.
+ */
+export const BIBLE_SKIPPED = '__skip__';
+
+export function isBibleSkipped(passage: string): boolean {
+  return passage === BIBLE_SKIPPED;
 }
 
 /** Isi kedua sesi dalam satu hari ("" = belum diisi). */
@@ -199,7 +211,7 @@ export function subscribeBibleReadingToday(
   onChange: (sessions: BibleReadingSessions) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'bibleRead', dayId),
     (snapshot) => onChange(readSessions(snapshot.data())),
     onError,
@@ -257,7 +269,7 @@ export function subscribeBibleStreaks(
   onChange: (streaks: BibleStreaks) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     doc(db, 'users', uid, 'app', 'bibleStreak'),
     (snapshot) => {
       const d = snapshot.data();

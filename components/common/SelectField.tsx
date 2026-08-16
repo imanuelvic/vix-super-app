@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, {
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -38,6 +44,16 @@ export function SelectField<T extends string>({
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.key === value) ?? null;
 
+  // Panah berputar 180° (bukan berganti ikon) → terasa seperti satu benda yang
+  // membalik, dan daftarnya membentang turun dari balik kolom.
+  const turn = useSharedValue(0);
+  useEffect(() => {
+    turn.value = withTiming(open ? 1 : 0, { duration: 200 });
+  }, [open, turn]);
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${turn.value * 180}deg` }],
+  }));
+
   return (
     <>
       <PressableScale
@@ -50,15 +66,13 @@ export function SelectField<T extends string>({
           additionalStyle={selected ? styles.value : styles.placeholder}>
           {selected ? selected.label : placeholder}
         </VixText>
-        <IconSymbol
-          name={open ? 'chevron.up' : 'chevron.down'}
-          size={18}
-          color={Color.TEXT_LABEL}
-        />
+        <Animated.View style={chevronStyle}>
+          <IconSymbol name="chevron.down" size={18} color={Color.TEXT_LABEL} />
+        </Animated.View>
       </PressableScale>
 
       {open && (
-        <View style={styles.list}>
+        <Animated.View entering={FadeInUp.duration(180)} style={styles.list}>
           <ScrollView
             style={styles.listScroll}
             nestedScrollEnabled
@@ -92,7 +106,7 @@ export function SelectField<T extends string>({
               );
             })}
           </ScrollView>
-        </View>
+        </Animated.View>
       )}
     </>
   );

@@ -22,7 +22,7 @@ export type PayApp = {
 const WHITE = '#FFFFFF';
 const DARK = '#181A20';
 
-export const PAY_APPS: Record<string, PayApp> = {
+const PAY_APPS: Record<string, PayApp> = {
   jago: { key: 'jago', label: 'Bank JAGO', scheme: 'jago://', color: '#FF6D00', fg: WHITE },
   gopay: { key: 'gopay', label: 'GoPay', scheme: 'gojek://', color: '#00AAD2', fg: WHITE },
   bca: { key: 'bca', label: 'BCA Mobile', scheme: 'bca://', color: '#0060AF', fg: WHITE },
@@ -41,7 +41,7 @@ export const PAY_APPS: Record<string, PayApp> = {
 
 // Kategori (key) → app. Kategori yang TIDAK ada di sini (mis. Insurance,
 // Gathering CORE, Rent) tidak menampilkan tombol apa pun.
-export const CATEGORY_APP: Record<string, string> = {
+const CATEGORY_APP: Record<string, string> = {
   // 💳 Bank JAGO
   'food-drink': 'jago',
   travel: 'jago',

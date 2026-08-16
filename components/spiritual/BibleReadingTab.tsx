@@ -18,6 +18,7 @@ import {
   bibleSessionMeta,
   bibleSessionNow,
   deleteBibleReading,
+  isBibleSkipped,
   saveBibleReading,
   type BibleReadingDay,
   type BibleSession,
@@ -48,7 +49,9 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
 
   function openEdit(d: BibleReadingDay) {
     setEditing(d);
-    setText(d[session]);
+    // Hari yang dilewati tidak punya acuan → kotaknya dibiarkan kosong,
+    // penanda "__skip__" jangan sampai ikut terbaca sebagai bacaan.
+    setText(isBibleSkipped(d[session]) ? '' : d[session]);
     setFormError(null);
   }
 
@@ -108,6 +111,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
 
         {list.map((d) => {
           const editable = d.id === todayId;
+          const wasSkipped = isBibleSkipped(d[session]);
           return (
             <View key={d.id} style={styles.card}>
               <View style={styles.cardTop}>
@@ -123,8 +127,10 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
                   </PressableScale>
                 )}
               </View>
-              <VixText heading="paragraph" additionalStyle={styles.cardText}>
-                {d[session]}
+              <VixText
+                heading="paragraph"
+                additionalStyle={wasSkipped ? styles.cardSkipped : styles.cardText}>
+                {wasSkipped ? '⏭️ Dilewati hari itu' : d[session]}
               </VixText>
             </View>
           );
@@ -198,6 +204,7 @@ const styles = StyleSheet.create({
   cardDate: { color: Color.SPIRITUAL_DARK },
   editText: { color: Color.MAIN },
   cardText: { color: Color.TEXT_TITLE },
+  cardSkipped: { color: Color.TEXT_PLACEHOLDER },
   fieldLabel: { marginBottom: 6 },
   input: { minHeight: 88, textAlignVertical: 'top' },
   error: { color: Color.DANGER, marginTop: 8 },

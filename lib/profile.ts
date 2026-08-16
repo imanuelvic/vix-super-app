@@ -1,6 +1,7 @@
-import { doc, onSnapshot, setDoc, type FirestoreError } from 'firebase/firestore';
+import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // Profil diri 🪪 — data penting pribadi (identitas WNI) supaya tidak lupa.
 // SATU dokumen kecil: users/{uid}/app/profile. Foto base64 kecil ikut di dalam.
@@ -62,7 +63,7 @@ export function subscribeProfile(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'app', 'profile');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       // Dokumen belum ada → pakai default; field tersimpan menimpa default.

@@ -2,7 +2,6 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import {
   doc,
-  onSnapshot,
   setDoc,
   type FirestoreError,
   type Timestamp,
@@ -11,6 +10,7 @@ import {
 import { Color } from '@/assets/style/color';
 import { hashString } from './core';
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // Fitur Fun & Recreation 🎉 — arsip tempat & pencapaian yang sudah dikunjungi:
 // Summit gunung, Race, tempat refleksi, dan tempat rekreasi.
@@ -68,7 +68,7 @@ export const newFunId = () => `fun${Date.now().toString(36)}`;
 
 // Meta tiap kategori: label, emoji, warna aksen (bg/fg), & label field form
 // yang menyesuaikan konteks (mis. "Ketinggian" untuk Summit).
-export const FUN_CATEGORIES: {
+const FUN_CATEGORIES: {
   key: FunCategory;
   label: string;
   emoji: string;
@@ -130,7 +130,7 @@ export function subscribeFun(
   onChange: (data: FunData) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  return liveDoc(
     funDoc(uid),
     (snapshot) => {
       onChange(snapshot.exists() ? (snapshot.data() as FunData) : EMPTY_FUN);
@@ -172,10 +172,10 @@ export async function pickCompressedMedal(): Promise<string | null> {
 // Kerja terus tanpa jeda gampang burnout. Kalau sudah lama tidak mengisi
 // kegiatan Fun, Home mengingatkan + kasih ide biar tidak bingung mau ngapain.
 
-export const FUN_REMINDER_DAYS = 30;
+const FUN_REMINDER_DAYS = 30;
 
 /** Tanggal kegiatan Fun TERBARU (yang punya tanggal). null kalau belum ada. */
-export function lastFunDate(data: FunData): Date | null {
+function lastFunDate(data: FunData): Date | null {
   let latest: number | null = null;
   for (const e of data.entries) {
     if (!e.date) continue;
@@ -203,7 +203,7 @@ export function daysSinceLastFun(data: FunData, now: Date): number | null {
 }
 
 // Ide kegiatan Fun — biar tidak bingung mau ngapain hari ini.
-export const FUN_IDEAS: string[] = [
+const FUN_IDEAS: string[] = [
   '⛰️ Cari info & jadwalkan hiking ke gunung terdekat akhir pekan ini.',
   '🏃 Ikut fun run / lari santai 5K — target kecil yang seru.',
   '🏝️ Staycation atau ke pantai sehari — recharge total.',

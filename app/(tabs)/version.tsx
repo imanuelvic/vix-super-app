@@ -12,8 +12,8 @@ import { useAuth } from '@/contexts/auth';
 import {
   dayIdToDate,
   formatFullDate,
-  formatFullDateTime,
   formatShortDayDate,
+  formatShortDayDateTime,
 } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import {
@@ -208,7 +208,7 @@ export default function VersionScreen() {
             value={
               Updates.isEmbeddedLaunch || !Updates.createdAt
                 ? 'Belum ada — bundle build'
-                : formatFullDateTime(Updates.createdAt)
+                : formatShortDayDateTime(Updates.createdAt)
             }
           />
           <DetailRow label="Runtime" value={Updates.runtimeVersion ?? '-'} />

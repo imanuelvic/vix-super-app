@@ -1,11 +1,11 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // Timeline hidup — versi app dari sheet "TIME LIST 📍" & "Timeline 📋":
 // wishlist/target per tahun, bisa ditempel ke bulan tertentu atau jadi
@@ -57,7 +57,7 @@ export function subscribeTimelineYear(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'timeline', String(year));
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.items as TimelineItem[]) ?? []);

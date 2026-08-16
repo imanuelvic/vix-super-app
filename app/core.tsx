@@ -16,6 +16,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { FollowupTab } from '@/components/core/FollowupTab';
 import { LeadersTab } from '@/components/core/LeadersTab';
+import { MonthlyTab } from '@/components/core/MonthlyTab';
 import { VisitationTab } from '@/components/core/VisitationTab';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -24,6 +25,7 @@ import {
     subscribeCoreIdeas,
     subscribeCoreLeaders,
     subscribeMainTeam,
+    subscribeMonthlyMeetings,
     subscribeMonthlyPrayers,
     subscribeVisitations,
     weekIndex,
@@ -32,20 +34,27 @@ import {
     type CoreIdeasData,
     type CoreLeader,
     type MainTeamMember,
+    type MonthlyMeeting,
     type MonthlyPrayers,
     type Visitation,
 } from '@/lib/core';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type CoreTab = 'visitation' | 'followup' | 'leaders';
+type CoreTab = 'visitation' | 'followup' | 'monthly' | 'leaders';
 
 // Tab bar bawah di dalam layar CORE.
 const TABS: BottomTab<CoreTab>[] = [
   { key: 'visitation', label: 'Pertemuan', icon: 'calendar' },
   { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
+  { key: 'monthly', label: 'Monthly', icon: 'list.bullet' },
   { key: 'leaders', label: 'Leaders', icon: 'person.2.fill' },
 ];
+
+/** Nilai ?tab=… yang dikenali (dipakai reminder Dashboard & deep link). */
+function asCoreTab(value?: string): CoreTab | null {
+  return TABS.some((t) => t.key === value) ? (value as CoreTab) : null;
+}
 
 // CORE — penggembalaan sebagai MCL: follow up harian para CORE Leader.
 export default function CoreScreen() {
@@ -69,17 +78,12 @@ export default function CoreScreen() {
   }, [editParam, router]);
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, setTab, scrollKey, onTabPress } = useTabScroll<CoreTab>(
-    tabParam === 'visitation' || tabParam === 'leaders' ? tabParam : 'followup',
+    asCoreTab(tabParam) ?? 'followup',
   );
 
   useEffect(() => {
-    if (
-      tabParam === 'visitation' ||
-      tabParam === 'followup' ||
-      tabParam === 'leaders'
-    ) {
-      setTab(tabParam);
-    }
+    const next = asCoreTab(tabParam);
+    if (next) setTab(next);
   }, [tabParam, setTab]);
   const [leaders, setLeaders] = useState<CoreLeader[] | null>(null);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[] | null>(null);
@@ -88,6 +92,7 @@ export default function CoreScreen() {
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
   );
+  const [meetings, setMeetings] = useState<MonthlyMeeting[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const dayId = dayDocId(new Date());
@@ -108,6 +113,7 @@ export default function CoreScreen() {
       subscribeVisitations(user.uid, setVisitations, fail),
       subscribeCoreIdeas(user.uid, setIdeas, fail),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers, fail),
+      subscribeMonthlyMeetings(user.uid, setMeetings, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -121,6 +127,7 @@ export default function CoreScreen() {
         // Tombol kanan atas menyesuaikan tab yang aktif:
         // Pertemuan → 🕘 riwayat pertemuan · Follow Up → 🙏 pokok doa bulanan ·
         // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang).
+        // Monthly tidak punya halaman pendamping → tombolnya sengaja kosong.
         right={
           tab === 'visitation' ? (
             <EmojiButton emoji="🕘" onPress={() => router.push('/visitations')} />
@@ -129,9 +136,9 @@ export default function CoreScreen() {
               emoji="🙏"
               onPress={() => router.push('/monthly-prayers')}
             />
-          ) : (
+          ) : tab === 'leaders' ? (
             <EmojiButton emoji="🗂️" onPress={() => router.push('/ex-leaders')} />
-          )
+          ) : undefined
         }
       />
 
@@ -159,6 +166,8 @@ export default function CoreScreen() {
             ideas={ideas}
             monthlyPrayers={monthlyPrayers}
           />
+        ) : tab === 'monthly' ? (
+          <MonthlyTab meetings={meetings} />
         ) : (
           <LeadersTab leaders={leaders} mainTeam={mainTeam} />
         )}

@@ -1,12 +1,12 @@
 import {
   doc,
-  onSnapshot,
   setDoc,
   Timestamp,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveDoc } from './liveDoc';
 
 // Career 💼 — empat "topi" pekerjaan pemilik app:
 // 1) Fulltime : Software Engineer / Mobile Developer di NDC → roadmap prioritas
@@ -86,7 +86,7 @@ export function subscribeRoadmap(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'career', 'fulltime');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.list as RoadmapItem[]) ?? []);
@@ -130,7 +130,7 @@ export function subscribeFreelance(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'career', 'freelance');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.list as FreelanceProject[]) ?? []);
@@ -205,7 +205,7 @@ export function subscribeInsurance(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'career', 'insurance');
-  return onSnapshot(
+  return liveDoc(
     ref,
     (snapshot) => {
       onChange((snapshot.data()?.months as InsuranceMonths) ?? {});
