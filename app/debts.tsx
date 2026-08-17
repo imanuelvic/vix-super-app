@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { ScreenError } from '@/components/common/ScreenError';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -251,11 +252,7 @@ export default function DebtsScreen() {
         subtitle="Pinjam-meminjam, cicilan & jatuh tempo"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {debts === null ? (
         <LoadingCenter />
@@ -477,11 +474,7 @@ export default function DebtsScreen() {
             </>
           )}
 
-          {formError && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {formError}
-            </VixText>
-          )}
+          <ScreenError message={formError} />
           {editing !== 'new' && editing !== null && (
             <InlineDelete
               key={editing.id}
@@ -530,11 +523,7 @@ export default function DebtsScreen() {
               onChange={setPDate}
             />
           </View>
-          {pError && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {pError}
-            </VixText>
-          )}
+          <ScreenError message={pError} />
           <PrimaryButton
             label="Catat Pembayaran"
             busy={pBusy}
@@ -588,7 +577,6 @@ export default function DebtsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },

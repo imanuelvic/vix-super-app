@@ -16,6 +16,7 @@ import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -552,11 +553,7 @@ export function TransactionsTab({
           </VixText>
         )}
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="top" />
       </View>
     );
   }
@@ -782,11 +779,7 @@ export function TransactionsTab({
         <View style={styles.inputGap}>
           <DateField key={editing?.id} value={editDate} onChange={setEditDate} />
         </View>
-        {editError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {editError}
-          </VixText>
-        )}
+        <FormError message={editError} gap="top" />
         <DualButtons
           confirmLabel="Simpan"
           busy={editSaving}
@@ -899,7 +892,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
   },
-  error: { color: Color.DANGER, marginTop: 8 },
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 88 },
   row: {
     flexDirection: 'row',

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -177,11 +178,7 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
         </VixText>
       </View>
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <FormError message={error} />
 
       <MetricCard
         icon="🎯"
@@ -292,7 +289,6 @@ const styles = StyleSheet.create({
   },
   monthText: { minWidth: 130 },
   roleText: { marginLeft: 'auto' },
-  error: { color: Color.DANGER, marginBottom: 8 },
   metricCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

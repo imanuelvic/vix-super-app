@@ -12,6 +12,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -184,11 +185,7 @@ export default function HistoryScreen() {
         subtitle="Perjalanan hidup yang sudah kulewati"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {items === null ? (
         <LoadingCenter />
@@ -425,11 +422,7 @@ export default function HistoryScreen() {
           editable={!busy}
         />
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <ScreenError message={formError} />
         {editing !== 'new' && editing !== null && (
           <InlineDelete
             key={editing.id}
@@ -452,7 +445,6 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 90 },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   // Kartu ajakan isi otomatis (hanya muncul saat masih kosong).
   seedCard: {
     alignItems: 'center',

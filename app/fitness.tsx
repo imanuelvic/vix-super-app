@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { VixText } from '@/components/common/VixText';
 import { ExerciseTab } from '@/components/fitness/ExerciseTab';
 import { ProgramTab } from '@/components/fitness/ProgramTab';
 import { ProgressTab } from '@/components/fitness/ProgressTab';
@@ -76,11 +76,7 @@ export default function FitnessScreen() {
         subtitle="Strength · 5 hari/minggu · target sixpack"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.body} key={scrollKey}>
         {tab === 'program' ? (
@@ -105,6 +101,5 @@ export default function FitnessScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   body: { flex: 1 },
 });

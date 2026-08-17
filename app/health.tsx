@@ -7,12 +7,11 @@ import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { VixText } from '@/components/common/VixText';
 import { CheckupTab } from '@/components/health/CheckupTab';
 import { DietTab } from '@/components/health/DietTab';
-import { SleepTab } from '@/components/health/SleepTab';
 import { StepsTab } from '@/components/health/StepsTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
@@ -37,18 +36,16 @@ import {
   type WeightTarget,
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
-import { subscribeSleepNights, type SleepNight } from '@/lib/sleep';
 
-type HealthTab = 'steps' | 'diet' | 'sleep' | 'checkup';
+type HealthTab = 'steps' | 'diet' | 'checkup';
 
 // Tab bar bawah di dalam layar Health.
 // Kebiasaan harian TIDAK lagi di sini — pindah ke tab besar Habits ✅
 // (app/(tabs)/habits.tsx). Yang tinggal di sini semuanya soal tubuh:
-// langkah kaki, makan, tidur, dan pemeriksaan.
+// langkah kaki, makan, dan pemeriksaan.
 const TABS: BottomTab<HealthTab>[] = [
   { key: 'steps', label: 'Steps', icon: 'figure.walk' },
   { key: 'diet', label: 'Diet', icon: 'fork.knife' },
-  { key: 'sleep', label: 'Sleep', icon: 'bed.double.fill' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
 
@@ -60,9 +57,7 @@ export default function HealthScreen() {
   // Default masuk ke tab Steps; reminder Dashboard bisa mengarahkan ke tab lain.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, scrollKey, onTabPress } = useTabScroll<HealthTab>(
-    tabParam === 'checkup' || tabParam === 'diet' || tabParam === 'sleep'
-      ? tabParam
-      : 'steps',
+    tabParam === 'checkup' || tabParam === 'diet' ? tabParam : 'steps',
   );
 
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
@@ -72,7 +67,6 @@ export default function HealthScreen() {
   const [stepDays, setStepDays] = useState<StepDaysMap>({});
   const [weeks, setWeeks] = useState<WeekStatsMap>({});
   const [diet, setDiet] = useState<DietDay>(EMPTY_DIET_DAY);
-  const [nights, setNights] = useState<SleepNight[]>([]);
   // Target berat (dipasang di tab Habits) — dipakai Diet untuk menentukan
   // defisit/surplus kalorinya, biar satu tujuan dengan tab Habits.
   const [target, setTarget] = useState<WeightTarget | null>(null);
@@ -102,7 +96,6 @@ export default function HealthScreen() {
       subscribeStepDays(user.uid, setStepDays, fail),
       subscribeWeekStats(user.uid, setWeeks, fail),
       subscribeDietDay(user.uid, dayId, setDiet, fail),
-      subscribeSleepNights(user.uid, setNights, fail),
       subscribeWeightTarget(user.uid, setTarget, fail),
       subscribeHabitDay(user.uid, dayId, setDay, fail),
       subscribeWaterStreak(user.uid, setWaterStreak, fail),
@@ -147,11 +140,7 @@ export default function HealthScreen() {
         }
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
         {loading ? (
@@ -167,8 +156,6 @@ export default function HealthScreen() {
             water={day?.water ?? 0}
             onChangeWater={changeWater}
           />
-        ) : tab === 'sleep' ? (
-          <SleepTab nights={nights} dayId={dayId} />
         ) : (
           <CheckupTab checkups={checkups} />
         )}
@@ -181,6 +168,5 @@ export default function HealthScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

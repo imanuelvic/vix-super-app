@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BibleRefField } from '@/components/common/BibleRefField';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -271,11 +272,7 @@ export default function ReviveEditorScreen() {
                 </VixText>
               </PressableScale>
             )}
-            {formError && (
-              <VixText heading="label" additionalStyle={styles.error}>
-                {formError}
-              </VixText>
-            )}
+            <FormError message={formError} />
             <PrimaryButton
               label="Simpan"
               busy={busy}
@@ -339,7 +336,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 8,
   },
-  error: { color: Color.DANGER, marginBottom: 8 },
   saveButton: { marginTop: 4 },
   // Tombol share ke WhatsApp — muncul setelah keempat bagian terisi.
   waButton: {

@@ -32,6 +32,7 @@ export function MorningPrayerGate({
   chainDue,
   chainLeft,
   topic,
+  minutesLeft,
   onConfirm,
   onOpenRevive,
   onOpenChain,
@@ -46,6 +47,9 @@ export function MorningPrayerGate({
   chainLeft: number;
   // Pokok doa syafaat hari ini (Senin Keluarga·Kesehatan, dst).
   topic: IntercessionTopic;
+  // Sisa menit sampai jendela doa pagi tutup (jam 09.00). Dipakai untuk
+  // hitung mundur peringatan & untuk menyembunyikan tombol lewati saat habis.
+  minutesLeft: number;
   onConfirm: () => Promise<void>;
   onOpenRevive: () => void;
   onOpenChain: () => void;
@@ -76,6 +80,11 @@ export function MorningPrayerGate({
   const ready =
     prayed && reviveDone && chainDone && (!showIntercession || interceded);
 
+  // Peringatan mulai muncul 1 jam sebelum tutup. Lewat jam 09.00 doa pagi
+  // hari ini terlewat sendiri — gerbangnya menghilang & streak 🔥 hangus.
+  const closingSoon = minutesLeft > 0 && minutesLeft <= 60;
+  const stillOpen = minutesLeft > 0;
+
   async function handleConfirm() {
     if (!ready || busy) return;
     setBusy(true);
@@ -102,6 +111,19 @@ export function MorningPrayerGate({
             </View>
           )}
         </Animated.View>
+
+        {/* Hitung mundur — muncul 1 jam terakhir sebelum jendelanya tutup. */}
+        {closingSoon && (
+          <Animated.View entering={FadeIn.duration(300)} style={styles.warnCard}>
+            <VixText heading="bold" additionalStyle={styles.warnText}>
+              ⏰ Tinggal {minutesLeft} menit lagi
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.warnSub}>
+              Lewat jam 09.00 doa pagi hari ini otomatis terlewat — gerbang ini
+              menghilang sendiri & streak 🔥 hangus.
+            </VixText>
+          </Animated.View>
+        )}
 
         {/* Langkah 1: Revive */}
         <Animated.View
@@ -233,14 +255,18 @@ export function MorningPrayerGate({
           )}
         </Animated.View>
 
-        {/* Escape hatch: keadaan mendesak → relakan streak & langsung ke Home */}
-        <PressableScale
-          style={styles.skipButton}
-          onPress={() => setSkipConfirm(true)}>
-          <VixText heading="label" additionalStyle={styles.skipText}>
-            Keadaan mendesak? Lewati doa pagi — streak 🔥 hangus
-          </VixText>
-        </PressableScale>
+        {/* Escape hatch: keadaan mendesak → relakan streak & langsung ke Home.
+            Hanya selama jendelanya masih terbuka; lewat jam 09.00 tidak ada
+            lagi yang perlu dilewati (hari ini sudah terlewat sendiri). */}
+        {stillOpen && (
+          <PressableScale
+            style={styles.skipButton}
+            onPress={() => setSkipConfirm(true)}>
+            <VixText heading="label" additionalStyle={styles.skipText}>
+              Keadaan mendesak? Lewati doa pagi hari ini — streak 🔥 hangus
+            </VixText>
+          </PressableScale>
+        )}
       </ScrollView>
 
       {/* Konfirmasi sebelum melewatkan (streak hilang) */}
@@ -274,6 +300,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   streakText: { color: Color.SPIRITUAL_DARK },
+  // Hitung mundur menuju jam 09.00 — krem, supaya menonjol di latar ungu
+  // tanpa terasa seperti pesan kesalahan.
+  warnCard: {
+    backgroundColor: Color.ACCENT,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.ACCENT_DARK,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 2,
+    marginBottom: 14,
+  },
+  warnText: { color: Color.ACCENT_DARK },
+  warnSub: { color: Color.ACCENT_DARK },
   stepCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,

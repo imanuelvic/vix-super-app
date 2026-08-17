@@ -56,12 +56,47 @@ export function prayerDoneToday(
 }
 
 // Batas waktu menyelesaikan doa pagi (Bapa Kami + Revive). Lewat jam ini &
-// belum selesai → streak hangus dan lock screen tidak lagi dipaksakan.
-const PRAYER_DEADLINE_HOUR = 11;
+// belum selesai → streak hangus dan gerbang pagi tidak lagi dipaksakan.
+export const PRAYER_DEADLINE_HOUR = 9;
 
-/** Sudah lewat jam 11.00 setempat? (jendela doa pagi habis) */
+/** Sisa menit sampai jendela doa pagi tutup. ≤ 0 = sudah lewat. */
+export function prayerMinutesLeft(now: Date): number {
+  return PRAYER_DEADLINE_HOUR * 60 - (now.getHours() * 60 + now.getMinutes());
+}
+
+/** Sudah lewat jam 09.00 setempat? (jendela doa pagi habis) */
 export function prayerDeadlinePassed(now: Date): boolean {
-  return now.getHours() >= PRAYER_DEADLINE_HOUR;
+  return prayerMinutesLeft(now) <= 0;
+}
+
+// Ingatan sesaat DI HP INI: hari doa yang barusan dikonfirmasi/dilewati.
+//
+// Menulis ke Firestore perlu sepersekian detik sebelum kembali sebagai
+// snapshot. Tanpa ingatan ini, Home & pengawal sempat membaca data LAMA lalu
+// menarik balik ke gerbang — itulah sebabnya dulu harus konfirmasi dua kali.
+// Cukup di memori: sesudah app dimulai ulang, dokumen Firestore-nya sudah
+// menjadi sumber yang benar.
+let handledDayId: string | null = null;
+
+/** Panggil TEPAT SEBELUM pindah halaman sesudah konfirmasi / lewati. */
+export function markPrayerHandled(now: Date) {
+  handledDayId = prayerDayId(now);
+}
+
+/**
+ * Gerbang doa pagi masih perlu ditampilkan sekarang? Ini SATU-SATUNYA
+ * penentunya — dipakai pengawal, layar Home, dan layar gerbangnya sendiri,
+ * supaya ketiganya mustahil berbeda pendapat.
+ *
+ * Tidak perlu ditampilkan kalau salah satu benar:
+ *   • sudah lewat jam 09.00 (hari ini dianggap terlewat),
+ *   • barusan dikonfirmasi di HP ini (belum sempat balik dari server),
+ *   • sudah dikonfirmasi — dari HP mana pun (dibaca langsung dari Firestore).
+ */
+export function prayerGateDue(streak: LoginStreak | null, now: Date): boolean {
+  if (prayerDeadlinePassed(now)) return false;
+  if (handledDayId === prayerDayId(now)) return false;
+  return !prayerDoneToday(streak, now);
 }
 
 /**
@@ -121,8 +156,6 @@ export type AchievementStats = {
   loginCount: number; // streak doa pagi berjalan
   loginBest: number; // rekor streak doa pagi
   habitStreak: number; // streak kebiasaan Health 🔥
-  reviveBest: number; // streak terbaik Revive ✝️
-  reviveTotal: number; // total Revive
   bibleMorningBest: number; // streak terbaik baca pagi 🌅
   bibleNightBest: number; // streak terbaik baca malam 🌙
   fitTotal: number; // total sesi gym selesai
@@ -145,7 +178,6 @@ export type AchievementStats = {
 export type AchievementCategoryKey =
   | 'login'
   | 'health'
-  | 'revive'
   | 'bibleMorning'
   | 'bibleNight'
   | 'fitness'
@@ -162,7 +194,6 @@ export const ACHIEVEMENT_CATEGORIES: {
 }[] = [
   { key: 'login', icon: '🙏', label: 'Doa Pagi', desc: 'Streak doa pagi di gerbang pagi' },
   { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit di fitur Health' },
-  { key: 'revive', icon: '📖', label: 'Revive Rohani', desc: 'Konsisten menulis Revive' },
   { key: 'bibleMorning', icon: '🌅', label: 'Alkitab Pagi', desc: 'Streak baca Alkitab pagi' },
   { key: 'bibleNight', icon: '🌙', label: 'Alkitab Malam', desc: 'Streak baca Alkitab malam' },
   { key: 'fitness', icon: '🏋️', label: 'Gym Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
@@ -235,9 +266,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   ...streakLadder('login', 'login', 'Berdoa pagi', (s) => s.loginBest),
   { id: 'habit3', category: 'health', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan Health 3 hari', target: 3, of: (s) => s.habitStreak },
   { id: 'habit7', category: 'health', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan Health 7 hari', target: 7, of: (s) => s.habitStreak },
-  { id: 'revive1', category: 'revive', icon: '📖', title: 'Revive Pertama', desc: 'Tulis Revive pertamamu', target: 1, of: (s) => s.reviveTotal },
-  { id: 'revive7', category: 'revive', icon: '🕊️', title: 'Seminggu Bersama Firman', desc: 'Revive 7 hari beruntun', target: 7, of: (s) => s.reviveBest },
-  { id: 'revive30', category: 'revive', icon: '⛪', title: 'Sebulan Dalam Hadirat', desc: 'Revive 30 hari beruntun', target: 30, of: (s) => s.reviveBest },
+  // Kategori "Revive Rohani" DIHAPUS — pemicunya sama saja dengan Doa Pagi
+  // (Revive memang langkah 1 di gerbang pagi), jadi dulu satu perbuatan
+  // menghasilkan dua pencapaian. Streak Revive 🔥 sendiri tetap ada & tetap
+  // tampil di fitur Revive; yang dibuang cuma lencananya.
   ...streakLadder('bibleMorning', 'bibleMorning', 'Baca Alkitab pagi', (s) => s.bibleMorningBest),
   ...streakLadder('bibleNight', 'bibleNight', 'Baca Alkitab malam', (s) => s.bibleNightBest),
   { id: 'fit1', category: 'fitness', icon: '🐣', title: 'Sesi Pertama', desc: 'Selesaikan satu sesi gym penuh', target: 1, of: (s) => s.fitTotal },
@@ -321,9 +353,13 @@ export function subscribeSelfRewardBalance(
 // - funds/self-reward → itu saldo uang beneran di Finance, bukan pencapaian.
 // - Catatan harian (Revive, bacaan Alkitab, habit, sesi gym) → yang direset
 //   hitungan streak-nya saja, isinya tetap aman.
+//
+// app/revive TETAP ikut dihapus walau kategori "Revive Rohani" sudah dibuang:
+// rentetan Revive 🔥 masih tampil di fitur Revive, dan tombol ini menjanjikan
+// "semua streak kembali ke 0" — jadi ia harus benar-benar ikut nol.
 const ACHIEVEMENT_DOCS: [collection: string, id: string][] = [
   ['app', 'login'], // streak doa pagi 🙏
-  ['app', 'revive'], // streak Revive 📖
+  ['app', 'revive'], // streak Revive 📖 (bukan achievement lagi, tetap direset)
   ['app', 'bibleStreak'], // streak baca Alkitab 📚
   ['app', 'fitnessStreak'], // streak gym 🏋️
   ['app', 'waterStreak'], // streak air putih 💧

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -44,11 +45,7 @@ export default function FundsScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {FUNDS.map((fund) => {
           const balance = balances[fund.key] ?? 0;
@@ -91,7 +88,6 @@ export default function FundsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

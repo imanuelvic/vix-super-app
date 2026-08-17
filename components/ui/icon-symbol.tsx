@@ -78,11 +78,14 @@ const MAPPING = {
   // Burung — satu-satunya ikon burung di Material Icons ("flutter-dash").
   // Dipakai tile Spiritual 🕊️ supaya gayanya sama dengan tile lain.
   'bird.fill': 'flutter-dash',
-  // Sub-menu tab Habits: Diet 🥗 & Sleep 😴.
+  // Sub-tab fitur Health: Diet 🥗.
   'fork.knife': 'restaurant',
-  'bed.double.fill': 'king-bed',
-  // Sub-menu fitur Games 🎮 (Snake).
+  // Sub-menu fitur Games 🎮 (Snake & Tetris).
   'gamecontroller.fill': 'sports-esports',
+  'square.grid.3x3.fill': 'grid-on',
+  // Tombol kendali Tetris: putar balok & jatuhkan langsung ke dasar.
+  'arrow.clockwise': 'rotate-right',
+  'arrow.down.to.line': 'vertical-align-bottom',
 } as IconMapping;
 
 /**

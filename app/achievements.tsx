@@ -7,6 +7,7 @@ import { Color } from '@/assets/style/color';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -46,7 +47,6 @@ import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
 import {
   EMPTY_BIBLE_STREAKS,
   subscribeBibleStreaks,
-  subscribeReviveStreak,
   type BibleStreaks,
 } from '@/lib/spiritual';
 import { formatRupiah } from '@/lib/transactions';
@@ -60,7 +60,6 @@ export default function AchievementsScreen() {
 
   const [login, setLogin] = useState<LoginStreak | null>(null);
   const [habit, setHabit] = useState<Streak | null>(null);
-  const [revive, setRevive] = useState<LoginStreak | null>(null);
   const [bible, setBible] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   const [fit, setFit] = useState<LoginStreak | null>(null);
   const [water, setWater] = useState<LoginStreak | null>(null);
@@ -98,7 +97,6 @@ export default function AchievementsScreen() {
     const unsubs = [
       subscribeLoginStreak(user.uid, setLogin, fail),
       subscribeStreak(user.uid, setHabit, fail),
-      subscribeReviveStreak(user.uid, setRevive, fail),
       subscribeBibleStreaks(user.uid, setBible, fail),
       subscribeFitStreak(user.uid, setFit, fail),
       subscribeWaterStreak(user.uid, setWater, fail),
@@ -117,8 +115,6 @@ export default function AchievementsScreen() {
     loginCount: login?.count ?? 0,
     loginBest: login?.best ?? 0,
     habitStreak: activeStreak(habit, dayDocId(new Date())),
-    reviveBest: revive?.best ?? 0,
-    reviveTotal: revive?.total ?? 0,
     bibleMorningBest: bible.morning.best,
     bibleNightBest: bible.night.best,
     fitTotal: fit?.total ?? 0,
@@ -157,11 +153,7 @@ export default function AchievementsScreen() {
         subtitle="Streak, pencapaian & self-reward"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Hero: ringkasan streak */}
@@ -172,11 +164,6 @@ export default function AchievementsScreen() {
             <VixText heading="label" additionalStyle={styles.heroLabel}>
               dari {ACHIEVEMENTS.length} achievement
             </VixText>
-          </VixText>
-          {/* Cukup rentetannya — total seumur hidup sengaja tidak ditampilkan. */}
-          <VixText heading="label" additionalStyle={styles.heroLabel}>
-            🙏 Streak doa {stats.loginCount} hari · terbaik {stats.loginBest}{' '}
-            hari
           </VixText>
         </View>
 
@@ -347,7 +334,6 @@ export default function AchievementsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   heroCard: {
     backgroundColor: Color.MAIN_DARK,

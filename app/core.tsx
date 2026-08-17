@@ -11,9 +11,9 @@ import {
 } from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { VixText } from '@/components/common/VixText';
 import { FollowupTab } from '@/components/core/FollowupTab';
 import { LeadersTab } from '@/components/core/LeadersTab';
 import { MonthlyTab } from '@/components/core/MonthlyTab';
@@ -142,11 +142,7 @@ export default function CoreScreen() {
         }
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
         {leaders === null || mainTeam === null || visitations === null ? (
@@ -192,6 +188,5 @@ export default function CoreScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

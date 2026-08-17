@@ -14,9 +14,9 @@ import {
   type BottomTab,
 } from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
   effectiveRoadmap,
@@ -105,11 +105,7 @@ export default function CareerScreen() {
         subtitle="Empat topi, satu panggilan"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
         {roadmap === null || freelance === null || insurance === null ? (
@@ -155,6 +151,5 @@ export default function CareerScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

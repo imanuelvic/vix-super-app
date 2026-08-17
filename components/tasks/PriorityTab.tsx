@@ -6,6 +6,7 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -190,11 +191,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
           onChange={setFilterCat}
         />
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {sorted.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
@@ -326,11 +323,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
             />
           ))}
         </View>
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         {editing !== 'new' && editing !== null && (
           <InlineDelete
             key={editing.id}
@@ -363,7 +356,6 @@ const styles = StyleSheet.create({
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   heroValue: { color: Color.TEXT_REVERSE },
   addButton: { marginBottom: 12 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     flexDirection: 'row',

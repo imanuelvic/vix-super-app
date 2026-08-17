@@ -9,6 +9,7 @@ import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PinLock } from '@/components/common/PinLock';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
@@ -179,11 +180,7 @@ export default function FinanceScreen() {
         </View>
       </View>
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {/* key=scrollKey → konten re-mount tiap sub-menu ditekan (scroll ke atas) */}
       <View style={styles.content} key={scrollKey}>
@@ -231,6 +228,5 @@ const styles = StyleSheet.create({
   // berganti panjang (Mei ↔ September).
   monthText: { minWidth: 140, textAlign: 'left', color: Color.TEXT_TITLE },
   headerButtons: { flexDirection: 'row', gap: 8 },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

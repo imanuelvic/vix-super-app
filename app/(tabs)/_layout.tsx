@@ -67,7 +67,7 @@ export default function TabLayout() {
       }}>
       {/* Urutan tab: Dashboard · Habits · Home · Profile · System.
           Tournament 🏆 pindah ke grid Home; tempatnya di sini diisi Habits
-          (kebiasaan harian + Diet + Sleep) yang memang dibuka tiap hari. */}
+          (kebiasaan harian Pagi/Siang/Malam) yang memang dibuka tiap hari. */}
       <Tabs.Screen
         name="dashboard"
         options={{

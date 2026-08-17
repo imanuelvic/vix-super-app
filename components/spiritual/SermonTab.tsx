@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -332,11 +333,7 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
                 multiline
                 editable={!busy}
               />
-              {formError && (
-                <VixText heading="label" additionalStyle={styles.error}>
-                  {formError}
-                </VixText>
-              )}
+              <FormError message={formError} />
               {editing !== 'new' && editing !== null && (
                 <InlineDelete
                   key={editing.id}
@@ -457,5 +454,4 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 10,
   },
-  error: { color: Color.DANGER, marginBottom: 8 },
 });

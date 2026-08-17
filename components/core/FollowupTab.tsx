@@ -8,6 +8,7 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -383,11 +384,7 @@ export function FollowupTab({
     <ScrollView contentContainerStyle={styles.content}>
       <GreetingHeader />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <FormError message={error} />
 
       {/* ===== Ulang tahun hari ini (CL + Main Team) =====
           Yang sudah dikirimi ucapan hari ini tidak ditampilkan lagi. */}
@@ -576,11 +573,7 @@ export function FollowupTab({
           onChange={setIDate}
         />
       </View>
-      {iError && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {iError}
-        </VixText>
-      )}
+      <FormError message={iError} />
       {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
       {editingIdea !== 'new' && editingIdea !== null && (
         <InlineDelete
@@ -748,7 +741,6 @@ export function FollowupTab({
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   birthdayCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,

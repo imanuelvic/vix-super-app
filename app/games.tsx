@@ -6,16 +6,19 @@ import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { SnakeTab } from '@/components/games/SnakeTab';
+import { TetrisTab } from '@/components/games/TetrisTab';
 import { TournamentTab } from '@/components/games/TournamentTab';
 
-type GamesTab = 'tournament' | 'snake';
+type GamesTab = 'tournament' | 'snake' | 'tetris';
 
-// Fitur Games 🎮 — dibuka dari grid Home. Isinya dua sub-menu:
+// Fitur Games 🎮 — dibuka dari grid Home. Isinya tiga sub-menu:
 //   🏆 Tournament — bracket sistem gugur (badminton, dll)
 //   🐍 Snake      — game ular ala HP Nokia, main lokal di HP
+//   🧱 Tetris     — susun balok, baris penuh hilang; juga lokal di HP
 const TABS: BottomTab<GamesTab>[] = [
   { key: 'tournament', label: 'Tournament', icon: 'trophy.fill' },
   { key: 'snake', label: 'Snake', icon: 'gamecontroller.fill' },
+  { key: 'tetris', label: 'Tetris', icon: 'square.grid.3x3.fill' },
 ];
 
 export default function GamesScreen() {
@@ -30,9 +33,15 @@ export default function GamesScreen() {
       />
 
       {/* key=scrollKey → konten re-mount tiap sub-menu ditekan (scroll ke atas).
-          Untuk Snake ini sekaligus me-reset papannya. */}
+          Untuk Snake & Tetris ini sekaligus me-reset papannya. */}
       <View style={styles.content} key={scrollKey}>
-        {tab === 'tournament' ? <TournamentTab /> : <SnakeTab />}
+        {tab === 'tournament' ? (
+          <TournamentTab />
+        ) : tab === 'snake' ? (
+          <SnakeTab />
+        ) : (
+          <TetrisTab />
+        )}
       </View>
 
       <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />

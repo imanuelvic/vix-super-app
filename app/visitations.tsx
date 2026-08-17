@@ -13,6 +13,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -150,11 +151,7 @@ export default function VisitationsScreen() {
         subtitle={`${sorted.length} riwayat`}
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {visitations === null ? (
         <LoadingCenter />
@@ -339,7 +336,6 @@ export default function VisitationsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SelectField } from '@/components/common/SelectField';
@@ -319,11 +320,7 @@ export function PersonalityTab({ data }: { data: Personality }) {
           multiline
         />
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="top" />
       </SheetModal>
     </ScrollView>
   );
@@ -486,5 +483,4 @@ const styles = StyleSheet.create({
   testDateWrap: { marginTop: 8 },
   testDateLabel: { color: Color.TEXT_LABEL, marginBottom: 6 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
-  error: { color: Color.DANGER, marginTop: 8 },
 });

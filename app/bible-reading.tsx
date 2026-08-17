@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BibleRefField } from '@/components/common/BibleRefField';
+import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -167,11 +168,7 @@ export default function BibleReadingScreen() {
           </View>
         )}
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {/* Sedang berstatus dilewati → beri tahu, dan tombolnya jadi pembatal */}
         {skipped && (
@@ -254,7 +251,6 @@ const styles = StyleSheet.create({
   },
   summaryLabel: { color: Color.TEXT_LABEL },
   summaryText: { color: Color.TEXT_TITLE },
-  error: { color: Color.DANGER, marginBottom: 8 },
   save: { marginBottom: 10 },
   saveDisabled: { opacity: 0.45 },
   skippedCard: {

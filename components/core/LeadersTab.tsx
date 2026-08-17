@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -303,11 +304,7 @@ export function LeadersTab({
           {leaders.length} CORE Leader · {mainTeam.length} Main Team
         </VixText>
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {/* Dropdown CORE Leader (default tertutup) */}
         <PressableScale
@@ -492,11 +489,7 @@ export function LeadersTab({
                 editable={!busy}
                 multiline
               />
-              {formError && (
-                <VixText heading="label" additionalStyle={styles.error}>
-                  {formError}
-                </VixText>
-              )}
+              <FormError message={formError} />
             </>
           ) : (
             // ===== Form edit/tambah CL =====
@@ -566,11 +559,7 @@ export function LeadersTab({
                 setLove={setFLove}
               />
 
-              {formError && (
-                <VixText heading="label" additionalStyle={styles.error}>
-                  {formError}
-                </VixText>
-              )}
+              <FormError message={formError} />
               {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
               {editing !== 'new' && editing !== null && (
                 <InlineDelete
@@ -671,11 +660,7 @@ export function LeadersTab({
           setLove={setMtLove}
         />
 
-        {mtFormError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {mtFormError}
-          </VixText>
-        )}
+        <FormError message={mtFormError} />
         {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editingMT !== 'new' && editingMT !== null && (
           <InlineDelete
@@ -871,7 +856,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   toggleRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   emptyText: { textAlign: 'center', marginBottom: 12 },
   card: {
     flexDirection: 'row',

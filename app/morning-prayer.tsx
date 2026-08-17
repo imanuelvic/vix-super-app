@@ -1,9 +1,13 @@
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { MorningPrayerGate } from '@/components/spiritual/MorningPrayerGate';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
 import {
+  markPrayerHandled,
+  prayerGateDue,
+  prayerMinutesLeft,
   recordDailyPrayer,
   skipDailyPrayer,
   subscribeLoginStreak,
@@ -19,7 +23,6 @@ import {
   type CoreLeader,
   type MonthlyPrayers,
 } from '@/lib/core';
-import { dayDocId } from '@/lib/health';
 import { intercessionToday } from '@/lib/intercession';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 
@@ -47,8 +50,10 @@ export default function MorningPrayerScreen() {
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
-  const now = new Date();
-  const todayId = dayDocId(now);
+  // Jam BERJALAN (di-segarkan tiap menit), bukan `new Date()` sekali render —
+  // dipakai untuk hitung mundur ke jam 09.00 & untuk keluar sendiri saat
+  // jendelanya habis.
+  const { now, todayId } = useNow();
 
   // Revive hari ini sudah disimpan → gate mencentang langkah Revive otomatis.
   const reviveDone = reviveStreak?.lastDayId === todayId;
@@ -67,8 +72,12 @@ export default function MorningPrayerScreen() {
     : 0;
 
   async function handleConfirm() {
-    // Fire-and-forget: jangan tunggu server (biar tidak hang saat offline);
-    // cache lokal langsung terupdate sehingga watcher tak mengarahkan balik.
+    // Tandai LOKAL dulu, sebelum pindah halaman. Inilah yang menghilangkan bug
+    // "harus konfirmasi 2×": tulisan ke Firestore butuh sesaat untuk kembali
+    // sebagai snapshot, dan tanpa penanda ini Home masih membaca data lama lalu
+    // melempar balik ke gerbang. Tulisannya sendiri tetap fire-and-forget
+    // supaya tidak menggantung saat sinyal jelek.
+    markPrayerHandled(new Date());
     if (user) {
       recordDailyPrayer(user.uid, login, new Date()).catch(() => {});
     }
@@ -77,12 +86,21 @@ export default function MorningPrayerScreen() {
 
   function handleSkip() {
     // Keadaan mendesak: streak hangus tapi hari ini ditandai selesai supaya
-    // lock screen tidak muncul lagi, lalu langsung ke Home. Fire-and-forget
-    // biar tidak hang saat offline.
+    // gerbang tidak muncul lagi hari ini, lalu langsung ke Home.
+    markPrayerHandled(new Date());
     if (user) {
       skipDailyPrayer(user.uid, login, new Date()).catch(() => {});
     }
     router.replace('/');
+  }
+
+  // CEK LANGSUNG tiap kali layar ini digambar: kalau doa hari ini ternyata
+  // sudah dikonfirmasi — di HP ini maupun HP lain — atau jam 09.00 sudah
+  // lewat, gerbangnya tidak ditampilkan sama sekali. Karena `login` datang
+  // dari langganan Firestore yang hidup, konfirmasi di HP A menutup layar ini
+  // di HP B dalam hitungan detik, tanpa disentuh.
+  if (!prayerGateDue(login, now)) {
+    return <Redirect href="/" />;
   }
 
   return (
@@ -92,6 +110,7 @@ export default function MorningPrayerScreen() {
       chainDue={chainDue}
       chainLeft={chainLeft}
       topic={intercessionToday(now)}
+      minutesLeft={prayerMinutesLeft(now)}
       onConfirm={handleConfirm}
       onOpenRevive={() => router.push('/revive')}
       onOpenChain={() =>

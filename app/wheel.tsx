@@ -10,6 +10,7 @@ import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScroll
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -232,11 +233,7 @@ export default function WheelScreen() {
         )}
       </ScreenHeader>
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {data === null ? (
         <LoadingCenter />
@@ -295,11 +292,7 @@ export default function WheelScreen() {
             editable={!busy}
           />
 
-          {assessError && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {assessError}
-            </VixText>
-          )}
+          <ScreenError message={assessError} />
 
           <View style={styles.navRow}>
             <PressableScale
@@ -382,11 +375,7 @@ export default function WheelScreen() {
             );
           })}
 
-          {focusError && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {focusError}
-            </VixText>
-          )}
+          <ScreenError message={focusError} />
           <View style={styles.navRow}>
             <PressableScale
               style={styles.backButton}
@@ -582,7 +571,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   quarterText: { minWidth: 80, textAlign: 'center' },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Wizard
   progressTrack: {

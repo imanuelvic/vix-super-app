@@ -2,8 +2,8 @@
 // TAB HABITS ✅ — menggantikan tab Tournament (yang kini jadi tile di grid Home).
 // Isinya kebiasaan harian Pagi/Siang/Malam, pindahan dari fitur Health.
 //
-// Diet 🥗 & Sleep 😴 TIDAK di sini — keduanya soal tubuh, jadi tinggal di
-// fitur Health bersama Steps & Check-up (app/health.tsx).
+// Diet 🥗 TIDAK di sini — itu soal tubuh, jadi tinggal di fitur Health
+// bersama Steps & Check-up (app/health.tsx).
 // ============================================================================
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { ScreenError } from '@/components/common/ScreenError';
 import { StreakPill } from '@/components/common/StreakPill';
 import { VixText } from '@/components/common/VixText';
 import { HabitsTab } from '@/components/habits/HabitsTab';
@@ -77,11 +78,7 @@ export default function HabitsScreen() {
         <StreakPill streak={activeStreak(streak ?? null, dayId)} />
       </View>
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.content}>
         {loading ? (
@@ -114,6 +111,5 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   title: { color: Color.MAIN },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

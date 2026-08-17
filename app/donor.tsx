@@ -13,6 +13,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -236,11 +237,7 @@ export default function DonorScreen() {
         subtitle="Jadwal, tempat & kelayakan donor"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {data === null ? (
         <LoadingCenter />
@@ -410,11 +407,7 @@ export default function DonorScreen() {
             Sudah donor ✅ (jadikan donor terakhir)
           </VixText>
         </PressableScale>
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <ScreenError message={formError} />
         {editing !== 'new' && editing !== null && (
           <InlineDelete
             key={editing.id}
@@ -473,7 +466,6 @@ export default function DonorScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   heroCard: {
     backgroundColor: Color.MAIN_DARK,

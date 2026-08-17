@@ -6,6 +6,7 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -229,11 +230,7 @@ export function FulltimeTab({
           additionalStyle={styles.addButton}
         />
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {/* Papan ala Trello: Rencana · Dikerjakan · Selesai. Angka kecil =
             jumlah kartu, ⚠️ = ada yang deadline-nya sudah H-7. */}
@@ -441,11 +438,7 @@ export function FulltimeTab({
             )}
           </>
         )}
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
           <InlineDelete
@@ -470,7 +463,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     backgroundColor: Color.CONTAINER,

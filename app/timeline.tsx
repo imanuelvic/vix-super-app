@@ -12,6 +12,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -245,11 +246,7 @@ export default function TimelineScreen() {
         </View>
       </ScreenHeader>
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {items === null ? (
         <LoadingCenter />
@@ -404,11 +401,7 @@ export default function TimelineScreen() {
           ))}
         </View>
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <ScreenError message={formError} />
         {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
           <InlineDelete
@@ -447,7 +440,6 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   ageText: { color: Color.ACCENT_DARK },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   progressCard: {
     backgroundColor: Color.MAIN_DARK,

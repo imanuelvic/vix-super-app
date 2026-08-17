@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -205,11 +206,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           />
         )}
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {/* Pengingat susunan agenda — biar tidak ada poin yang kelupaan */}
         {!searchMode && (
@@ -292,11 +289,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           </View>
         ))}
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
           <InlineDelete
@@ -323,7 +316,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
   addButton: { marginBottom: 12 },
   searchWrap: { marginBottom: 12 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   guideCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 14,

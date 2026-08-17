@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/auth';
 import {
   prayerDeadlinePassed,
   prayerDoneToday,
+  prayerGateDue,
   resetPrayerStreak,
   subscribeLoginStreak,
   type LoginStreak,
@@ -190,9 +191,9 @@ export default function HomeScreen() {
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
 
-  // Doa pagi terlewat: sudah lewat jam 11 & belum dikonfirmasi hari ini.
-  // Saat ini terjadi, streak doa dihanguskan (sekali) lalu Home tidak lagi
-  // memaksa lock screen — langsung ke Home meski streak sudah 0.
+  // Doa pagi TERLEWAT OTOMATIS: sudah lewat jam 09.00 & belum dikonfirmasi
+  // hari ini. Saat itu terjadi streak doa dihanguskan (sekali saja), lalu Home
+  // tidak lagi memaksa gerbang — langsung ke Home meski streak sudah 0.
   const prayerMissed =
     login != null && !prayerDoneToday(login, now) && prayerDeadlinePassed(now);
   useEffect(() => {
@@ -291,13 +292,18 @@ export default function HomeScreen() {
     );
   }
 
-  // Doa pagi belum dikonfirmasi & MASIH di jendela pagi (sebelum jam 11) →
-  // lock screen penuh (di luar tab supaya menutupi tab bar). Lewat jam 11
-  // tanpa doa → tidak dipaksa lagi; langsung Home (streak sudah dihanguskan).
+  // Doa pagi belum dikonfirmasi & MASIH di jendela pagi (sebelum jam 09.00) →
+  // gerbang penuh (di luar tab supaya menutupi tab bar). Lewat jam 09.00 tanpa
+  // doa → tidak dipaksa lagi; langsung Home (streak sudah dihanguskan).
   //
   // Layar lain diurus <MorningPrayerWatcher/> di app/_layout.tsx. Cek di sini
   // tetap ada supaya Home tidak sempat tergambar sekejap sebelum dialihkan.
-  if (!prayerDoneToday(login, now) && !prayerDeadlinePassed(now)) {
+  //
+  // WAJIB memakai `prayerGateDue` — bukan `prayerDoneToday` langsung. Cek di
+  // sini berjalan saat MENGGAMBAR, jadi ia pasti mendahului snapshot Firestore
+  // yang baru saja ditulis; `prayerGateDue` ikut melihat penanda lokal
+  // "barusan dikonfirmasi", sehingga Home tidak lagi melempar balik ke gerbang.
+  if (prayerGateDue(login, now)) {
     return <Redirect href="/morning-prayer" />;
   }
 

@@ -6,6 +6,7 @@ import { Color } from '@/assets/style/color';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -85,11 +86,7 @@ export default function ExLeadersScreen() {
         subtitle="Yang sudah tidak kamu gembalakan"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {loading ? (
         <LoadingCenter />
@@ -161,7 +158,6 @@ export default function ExLeadersScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
   emptyCard: {
     backgroundColor: Color.CONTAINER,

@@ -8,6 +8,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -314,11 +315,7 @@ export function VisitationTab({
           additionalStyle={styles.addButton}
         />
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {/* ===== Jadwal mendatang ===== */}
         <View style={styles.sectionRow}>
@@ -459,11 +456,7 @@ export function VisitationTab({
           </PressableScale>
         )}
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
           <InlineDelete
@@ -576,7 +569,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButton: { marginBottom: 6 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',

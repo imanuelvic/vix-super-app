@@ -9,6 +9,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -160,11 +161,7 @@ export function TournamentTab() {
 
   return (
     <View style={styles.flex}>
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {list === null ? (
         <LoadingCenter />
@@ -495,7 +492,6 @@ function MatchSide({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   back: { alignSelf: 'flex-start', marginBottom: 10 },
   backText: { color: Color.MAIN },

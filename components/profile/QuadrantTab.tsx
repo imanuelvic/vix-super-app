@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -140,11 +141,7 @@ export function QuadrantTab<K extends string>({
           multiline
           autoFocus
         />
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="top" />
       </SheetModal>
     </ScrollView>
   );
@@ -182,5 +179,4 @@ const styles = StyleSheet.create({
   footerLabel: { color: Color.TEXT_ON_DARK_MUTED },
   footerText: { color: Color.TEXT_REVERSE },
   textArea: { minHeight: 140, textAlignVertical: 'top' },
-  error: { color: Color.DANGER, marginTop: 8 },
 });

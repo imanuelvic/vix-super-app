@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -300,11 +301,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
             Isi liter supaya harga per liter terhitung otomatis.
           </VixText>
         )}
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
           <InlineDelete
@@ -369,5 +366,4 @@ const styles = StyleSheet.create({
   moneyInput: { flex: 2 },
   literInput: { flex: 1 },
   hint: { marginBottom: 8 },
-  error: { color: Color.DANGER, marginBottom: 8 },
 });

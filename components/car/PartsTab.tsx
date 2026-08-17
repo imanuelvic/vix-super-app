@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SummaryCard } from '@/components/common/SummaryCard';
@@ -165,11 +166,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
           multiline
           style={styles.noteInput}
         />
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="top" />
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}
@@ -214,5 +211,4 @@ const styles = StyleSheet.create({
   modalTitle: { marginBottom: 2 },
   modalHint: { marginBottom: 10 },
   noteInput: { marginTop: 10, minHeight: 76, textAlignVertical: 'top' },
-  error: { color: Color.DANGER, marginTop: 8 },
 });

@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -213,11 +214,7 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
             onChange={setFDate}
           />
         </View>
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         {editing !== 'new' && editing !== null && (
           <InlineDelete
             key={editing.id}
@@ -265,5 +262,4 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   formGap: { marginBottom: 10 },
-  error: { color: Color.DANGER, marginBottom: 8 },
 });

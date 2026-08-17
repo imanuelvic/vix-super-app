@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -244,11 +245,7 @@ export function BudgetingTab({
         <TypeChips value={type} onChange={setType} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {/* Ringkasan budget jenis terpilih */}
         <View style={styles.summaryCard}>
@@ -506,7 +503,6 @@ const styles = StyleSheet.create({
     backgroundColor: Color.BACKGROUND,
   },
   content: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 24 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   summaryTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',

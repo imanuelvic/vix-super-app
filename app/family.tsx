@@ -21,6 +21,7 @@ import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScroll
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -457,11 +458,7 @@ export default function FamilyScreen() {
         }
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {members === null ? (
         <LoadingCenter />
@@ -826,7 +823,6 @@ export default function FamilyScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   addButton: { marginBottom: 12 },
   emptyCard: {

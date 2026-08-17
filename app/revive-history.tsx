@@ -7,6 +7,7 @@ import { Color } from '@/assets/style/color';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SearchBar } from '@/components/common/SearchBar';
 import { VixText } from '@/components/common/VixText';
@@ -62,11 +63,7 @@ export default function ReviveHistoryScreen() {
         }
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       {entries === null ? (
         <LoadingCenter />
@@ -132,7 +129,6 @@ export default function ReviveHistoryScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   searchWrap: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 6, gap: 4 },
   resultCount: { color: Color.TEXT_LABEL, paddingHorizontal: 2 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },

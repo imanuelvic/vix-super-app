@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { VixText } from '@/components/common/VixText';
 import { NewsTab } from '@/components/world/NewsTab';
 import { PopulationTab } from '@/components/world/PopulationTab';
 import { useAuth } from '@/contexts/auth';
@@ -55,11 +55,7 @@ export default function WorldScreen() {
         subtitle="Populasi dunia & berita terkini"
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.body} key={scrollKey}>
         {tab === 'population' ? <PopulationTab saved={saved} /> : <NewsTab />}
@@ -72,6 +68,5 @@ export default function WorldScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   body: { flex: 1 },
 });

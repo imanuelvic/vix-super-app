@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { FormError } from '@/components/common/FormError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -277,11 +278,7 @@ export default function FunScreen() {
                   background={meta.fg}
                   onPress={openAdd}
                 />
-                {error && (
-                  <VixText heading="label" additionalStyle={styles.error}>
-                    {error}
-                  </VixText>
-                )}
+                <FormError message={error} gap="top" />
               </View>
             }
             ListEmptyComponent={
@@ -542,11 +539,7 @@ export default function FunScreen() {
             )}
           </View>
         )}
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} gap="top" />
         {/* Hapus dari DALAM modal (hanya saat mengedit) — konfirmasi inline,
             sama seperti "Hapus kebiasaan ini" / "Hapus jadwal ini". */}
         {editingId && (
@@ -575,7 +568,6 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', paddingHorizontal: 20 },
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   listHeader: { marginBottom: 6 },
-  error: { color: Color.DANGER, marginTop: 8 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

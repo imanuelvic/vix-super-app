@@ -6,6 +6,7 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -268,11 +269,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           <DateField value={date} onChange={setDate} />
         </View>
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         <DualButtons
           confirmLabel="Simpan"
           busy={saving}
@@ -462,7 +459,6 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   chipFlex: { flex: 1 },
   formGap: { marginBottom: 10 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     flexDirection: 'row',

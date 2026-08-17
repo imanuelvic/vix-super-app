@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -163,11 +164,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
           style={styles.input}
         />
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} gap="top" />
 
         {/* key per hari+sesi → konfirmasi hapus ikut reset tiap ganti catatan */}
         <InlineDelete
@@ -207,5 +204,4 @@ const styles = StyleSheet.create({
   cardSkipped: { color: Color.TEXT_PLACEHOLDER },
   fieldLabel: { marginBottom: 6 },
   input: { minHeight: 88, textAlignVertical: 'top' },
-  error: { color: Color.DANGER, marginTop: 8 },
 });

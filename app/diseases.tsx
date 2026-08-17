@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { FormError } from '@/components/common/FormError';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -146,11 +147,7 @@ export default function DiseasesScreen() {
           additionalStyle={styles.addButton}
         />
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} />
 
         {items === null ? (
           <View style={styles.center}>
@@ -257,11 +254,7 @@ export default function DiseasesScreen() {
           </View>
         )}
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
         {editing !== 'new' && editing !== null && (
           <InlineDelete
@@ -287,7 +280,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   addButton: { marginBottom: 14 },
-  error: { color: Color.DANGER, marginBottom: 8 },
   center: { alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
   card: {
     backgroundColor: Color.CONTAINER,

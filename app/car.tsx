@@ -12,9 +12,9 @@ import {
   type BottomTab,
 } from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
   CAR_INFO,
@@ -68,11 +68,7 @@ export default function CarScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader backLabel="Home" title="Car 🚗" subtitle={CAR_INFO.name} />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
         {logs === null || parts === null ? (
@@ -101,6 +97,5 @@ export default function CarScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   content: { flex: 1 },
 });

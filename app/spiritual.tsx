@@ -10,6 +10,7 @@ import {
   type BottomTab,
 } from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { GreetingHeader } from '@/components/common/Greeting';
@@ -103,11 +104,7 @@ export default function SpiritualScreen() {
         }
       />
 
-      {error && (
-        <VixText heading="label" additionalStyle={styles.error}>
-          {error}
-        </VixText>
-      )}
+      <ScreenError message={error} />
 
       <View style={styles.body} key={scrollKey}>
         {entries === null ? (
@@ -176,7 +173,6 @@ export default function SpiritualScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 6 },
   body: { flex: 1 },
   // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
