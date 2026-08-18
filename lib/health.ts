@@ -236,7 +236,7 @@ export function bodyAdvice(profile: HealthProfile, age: number): string[] {
   out.push(
     `🍽️ Kebutuhan harian ±${Math.round(bmr * 1.4)} kkal (aktivitas ringan). Defisit sehat = kurangi ±400 kkal.`,
   );
-  out.push('💧 Minum 8 gelas air & tidur 7–8 jam — dua hal yang paling sering bikin progres mandek.');
+  out.push('💧 Minum 8 gelas air & tidur 7–8 jam.');
   return out;
 }
 
@@ -355,7 +355,6 @@ export function setHabitDone(
 
 /**
  * Tandai satu kebiasaan DILEWATI hari ini (✗), atau batalkan lagi.
- *
  * Melewati sekaligus melepas centangnya — supaya tidak pernah ada baris yang
  * tercentang tapi juga dilewati. Keduanya ditulis dalam satu `setDoc` merge,
  * jadi tetap satu kali tulis Firestore.

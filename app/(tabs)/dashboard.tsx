@@ -87,8 +87,10 @@ import {
   fitQuote,
   fitReminderWindow,
   fitSessionFor,
+  fitPendingToday,
   subscribeFitDay,
-  type FitDayDone,
+  EMPTY_FIT_DAY,
+  type FitDay,
 } from '@/lib/fitness';
 import {
   daysBetween,
@@ -208,8 +210,9 @@ export default function DashboardScreen() {
   // sebagai kartu reminder di sini.
   const [carParts, setCarParts] = useState<PartStatusMap>({});
   const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
-  // Centang gerakan gym hari ini — untuk kartu "Gym Day" (1 dokumen).
-  const [fitDone, setFitDone] = useState<FitDayDone>({});
+  // Centang gerakan gym hari ini (+ tanda ✕ kalau dilewati) — untuk kartu
+  // "Gym Day" (1 dokumen).
+  const [fitDay, setFitDay] = useState<FitDay>(EMPTY_FIT_DAY);
   const [wheel, setWheel] = useState<WheelData | null>(null);
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
@@ -233,7 +236,7 @@ export default function DashboardScreen() {
       subscribeLearningWeek(user.uid, weekId, setLearningWeek),
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
-      subscribeFitDay(user.uid, todayId, setFitDone),
+      subscribeFitDay(user.uid, todayId, setFitDay),
       subscribeTasks(user.uid, setTasks),
       subscribeOtherTasks(user.uid, setOtherTasks),
       subscribeHabitSchedule(user.uid, setSchedule),
@@ -519,15 +522,17 @@ export default function DashboardScreen() {
     : 0;
   const prayerFollowupDue = prayerUndone > 0;
 
-  // ===== Reminder Fitness 💪 — jam 16.00–20.59 saja =====
-  // Hari latihan (Sen/Sel/Kam/Jum/Sab) → kartu "Gym Day" sampai semua gerakan
-  // dicentang. Rabu & Minggu → kartu "Rest Day" berisi pengingat pemulihan.
+  // ===== Reminder Fitness 💪 — jam 09.00–20.59 =====
+  // Hari latihan (Sen/Sel/Kam/Jum/Sab) → kartu "Gym Day" muncul dari PAGI
+  // (walau latihannya nanti jam 17.00) sampai semua gerakan dicentang, atau
+  // sampai harinya ditandai ✕ lewat tombol "Lewati" di Fitness → Exercise.
+  // Rabu & Minggu → kartu "Rest Day" berisi pengingat pemulihan.
   const fitSession = fitSessionFor(now);
   const fitWindow = fitReminderWindow(now);
-  const fitLeft = fitSession
-    ? fitSession.exercises.filter((e) => !fitDone[e.id]).length
-    : 0;
-  const gymDayDue = fitWindow && fitSession !== null && fitLeft > 0;
+  // Satu sumber angka dengan badge tile Home & sub-tab Exercise: jendela jam,
+  // hari istirahat, dan tanda ✕ semuanya sudah diurus di dalamnya.
+  const fitLeft = fitPendingToday(fitDay, now);
+  const gymDayDue = fitSession !== null && fitLeft > 0;
   const restDayDue = fitWindow && fitSession === null;
 
   // ===== Reminder Residence 🏠 & Car 🚗 =====

@@ -18,7 +18,7 @@ import {
   type HealthProfile,
   type WeightTarget,
 } from './health';
-import { alreadyCounted, nextStreak } from './streak';
+import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Fitness 💪 — program STRENGTH 5 hari/minggu untuk menaikkan massa otot,
 // dengan fokus tambahan di perut (target sixpack). Senin/Selasa/Kamis/Jumat/
@@ -269,9 +269,11 @@ export const FIT_PROGRAM: Record<FitBlock, FitSession[]> = {
   C: BLOCK_C,
 };
 
-// Latihan jam 17.00; kartu reminder Dashboard tampil 16.00–20.59.
+// Latihan tetap jam 17.00, tapi pengingatnya sudah muncul dari PAGI jam 09.00
+// dan berhenti jam 21.00 — supaya sepanjang hari kamu sudah tahu "nanti sore
+// gym", bukan baru diberi tahu satu jam sebelum berangkat.
 export const FIT_HOUR_LABEL = '17.00';
-const FIT_FROM_HOUR = 16;
+const FIT_FROM_HOUR = 9;
 const FIT_TO_HOUR = 21;
 
 /** Nama hari pendek untuk deretan hari (indeks = getDay(), 0 = Minggu). */
@@ -308,8 +310,9 @@ export function fitSessionMinutes(session: FitSession): number {
 }
 
 /**
- * Kartu Gym Day / Rest Day tampil di Dashboard: hanya jam 16.00–20.59, biar
- * tidak meramaikan Dashboard sepanjang hari.
+ * Kartu Gym Day / Rest Day tampil di Dashboard: jam 09.00–20.59. Sengaja
+ * dimulai pagi biar sempat siap-siap (bawa baju ganti, atur jadwal), dan
+ * berhenti jam 21.00 supaya Dashboard tidak menagih latihan tengah malam.
  */
 export function fitReminderWindow(now: Date): boolean {
   const h = now.getHours();
@@ -367,7 +370,7 @@ export function fitTargets(
     ? `Berat ${formatDecimal(w)} → ${formatDecimal(target.targetWeightKg)} kg`
     : `Berat sekarang ${formatDecimal(w)} kg`;
   const weightDesc = !target
-    ? 'Belum ada target berat. Pasang dulu di Health → Habits → 🎯 Target.'
+    ? 'Belum ada target berat. Pasang dulu di tab Habits → 🎯 Target.'
     : Math.abs(gap) < 0.1
       ? 'Target berat sudah tercapai 🎉 Sekarang fokus jaga & tambah otot.'
       : `Sisa ${formatDecimal(Math.abs(gap))} kg · aman ±0,4 kg/minggu ≈ ${weeks} minggu. Lebih cepat dari itu, otot ikut hilang.`;
@@ -390,7 +393,7 @@ export function fitTargets(
         ? waist < waistGoal
           ? 'Sudah di bawah ambang — perut mulai kelihatan. Pertahankan 💪'
           : `Sisa ${formatDecimal(waist - waistGoal)} cm. Perut sudah dilatih tiap sesi; yang bikin kelihatan adalah defisit kalori.`
-        : 'Isi lingkar perut di Health → Summary → Data Tubuh biar bisa dilacak.',
+        : 'Isi lingkar perut di Profile → 🧍 Data Tubuh biar bisa dilacak.',
     },
     {
       icon: '🥩',
@@ -454,15 +457,28 @@ export function weightOf(ex: Exercise, weights: FitWeights): number | null {
 
 export type FitDayDone = Record<string, boolean>;
 
+/**
+ * Satu hari latihan: gerakan yang sudah dicentang + apakah harinya sengaja
+ * DILEWATI. `skipped` disimpan di dokumen harian yang sama, jadi ia ikut
+ * kereset sendiri lewat tengah malam — persis seperti tanda ⏭️ di Habits.
+ */
+export type FitDay = { done: FitDayDone; skipped: boolean };
+
+export const EMPTY_FIT_DAY: FitDay = { done: {}, skipped: false };
+
 export function subscribeFitDay(
   uid: string,
   dayId: string,
-  onChange: (done: FitDayDone) => void,
+  onChange: (day: FitDay) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   return liveDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
-    (snapshot) => onChange((snapshot.data()?.done as FitDayDone) ?? {}),
+    (snapshot) =>
+      onChange({
+        done: (snapshot.data()?.done as FitDayDone) ?? {},
+        skipped: snapshot.data()?.skipped === true,
+      }),
     onError,
   );
 }
@@ -470,18 +486,31 @@ export function subscribeFitDay(
 /**
  * Angka badge Fitness 💪 — berapa gerakan HARI INI yang belum dicentang.
  *
- * Baru muncul mulai jam 16.00, satu jam sebelum jadwal latihan 17.00, dan
- * hilang lagi jam 21.00 — jendela yang sama persis dengan kartu reminder di
- * Dashboard, jadi badge & kartunya tidak mungkin berbeda pendapat.
+ * Muncul mulai jam 09.00 (pagi, jauh sebelum jadwal latihan 17.00) dan hilang
+ * lagi jam 21.00 — jendela yang sama persis dengan kartu reminder di Dashboard,
+ * jadi badge & kartunya tidak mungkin berbeda pendapat.
  *
- * 0 = tidak usah ditampilkan: belum waktunya, hari istirahat, atau memang
- * sudah beres semua 🎉
+ * 0 = tidak usah ditampilkan: belum waktunya, hari istirahat, hari ini sengaja
+ * dilewati ✕, atau memang sudah beres semua 🎉
  */
-export function fitPendingToday(done: FitDayDone, now: Date): number {
+export function fitPendingToday(day: FitDay, now: Date): number {
   if (!fitReminderWindow(now)) return 0;
+  if (day.skipped) return 0;
   const session = fitSessionFor(now);
   if (!session) return 0;
-  return session.exercises.filter((e) => !done[e.id]).length;
+  return session.exercises.filter((e) => !day.done[e.id]).length;
+}
+
+/**
+ * Tandai hari ini DILEWATI (atau batalkan lagi). Bukan "selesai": semua
+ * gerakan tampil bertanda ✕ dan hari ini tidak dihitung sebagai sesi latihan.
+ */
+export function setFitDaySkipped(uid: string, dayId: string, skipped: boolean) {
+  return setDoc(
+    doc(db, 'users', uid, 'fitnessDays', dayId),
+    { skipped, date: Timestamp.fromDate(new Date()) },
+    { merge: true },
+  );
 }
 
 export function setFitExerciseDone(
@@ -532,4 +561,23 @@ export function bumpFitStreak(uid: string, current: DayStreak | null, d: Date) {
     doc(db, 'users', uid, 'app', 'fitnessStreak'),
     nextStreak(current, todayId, prevWorkoutDayId(d)),
   );
+}
+
+/**
+ * Putus rentetan 🔥 — dipakai saat hari latihan sengaja DILEWATI.
+ *
+ * Yang hilang cuma rentetan berjalannya (`count` → 0). Rekor terbaik & total
+ * sesi sengaja DIPERTAHANKAN: itu catatan sejarah yang benar-benar pernah kamu
+ * capai, dan achievement "10/50/100 sesi" dihitung dari sana.
+ *
+ * `lastDayId` dikosongkan supaya hitungannya benar-benar mulai dari awal:
+ * sesi berikutnya (termasuk kalau tanda lewatinya dibatalkan lagi hari ini)
+ * kembali dihitung sebagai rentetan ke-1.
+ */
+export function breakFitStreak(uid: string, current: DayStreak | null) {
+  return setDoc(doc(db, 'users', uid, 'app', 'fitnessStreak'), {
+    ...(current ?? EMPTY_DAY_STREAK),
+    count: 0,
+    lastDayId: '',
+  });
 }

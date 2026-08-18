@@ -53,9 +53,10 @@ import {
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { OWNER_NAME } from '@/lib/family';
 import {
+  EMPTY_FIT_DAY,
   fitPendingToday,
   subscribeFitDay,
-  type FitDayDone,
+  type FitDay,
 } from '@/lib/fitness';
 import {
   EMPTY_WEEK,
@@ -87,9 +88,11 @@ import {
 import {
   bibleSessionMeta,
   bibleSessionNow,
+  reviveHandledToday,
   subscribeBibleReadingToday,
   subscribeReviveStreak,
   type BibleReadingSessions,
+  type ReviveStreak,
 } from '@/lib/spiritual';
 import {
   effectiveOtherTask,
@@ -165,11 +168,14 @@ export default function HomeScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
-  const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
+  const [revive, setRevive] = useState<ReviveStreak | null | undefined>(
+    undefined,
+  );
   const [carParts, setCarParts] = useState<PartStatusMap>({});
   const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
-  // Centang gerakan gym hari ini — untuk badge tile Fitness 💪.
-  const [fitDone, setFitDone] = useState<FitDayDone>({});
+  // Centang gerakan gym hari ini (+ tanda ✕ kalau dilewati) — untuk badge
+  // tile Fitness 💪.
+  const [fitDay, setFitDay] = useState<FitDay>(EMPTY_FIT_DAY);
   // Langkah belajar minggu ini — untuk badge tile Learning 🎓.
   const [learningWeek, setLearningWeek] = useState<LearningWeek>(EMPTY_WEEK);
   // Pinjaman 🤝 — untuk badge tile Finance saat ada yang sudah H-1.
@@ -210,7 +216,7 @@ export default function HomeScreen() {
       subscribeOtherTasks(user.uid, setOtherTasks),
       subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
       subscribeWaterStreak(user.uid, setWaterStreak),
-      subscribeFitDay(user.uid, todayId, setFitDone),
+      subscribeFitDay(user.uid, todayId, setFitDay),
       subscribeDebts(user.uid, setDebts),
     ];
     return () => unsubs.forEach((unsub) => unsub());
@@ -280,16 +286,18 @@ export default function HomeScreen() {
     core: weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
       (l) => l.lastFollowupDayId !== todayId,
     ).length,
-    // Revive belum ditulis hari ini = 1 (streak doc menyimpan hari terakhir).
+    // Revive belum ditulis DAN belum ditandai dilewati hari ini = 1 (dua-duanya
+    // tersimpan di dokumen streak yang sama).
     spiritual:
-      revive === undefined ? 0 : revive?.lastDayId === todayId ? 0 : 1,
+      revive === undefined ? 0 : reviveHandledToday(revive, todayId) ? 0 : 1,
     // Jumlah part mobil yang perlu perhatian (segera/lewat jadwal).
     car: countCarAttention(carParts, now),
     // Jumlah perawatan/kebersihan rumah yang perlu perhatian.
     residence: countResidenceAttention(residenceChores, now),
-    // Gerakan gym hari ini yang belum dicentang — baru menyala jam 16.00,
-    // sejam sebelum jadwal latihan, bareng kartu reminder di Dashboard.
-    fitness: fitPendingToday(fitDone, now),
+    // Gerakan gym hari ini yang belum dicentang — menyala dari pagi jam 09.00,
+    // bareng kartu reminder di Dashboard. Hari yang ditandai ✕ (dilewati)
+    // tidak memunculkan badge sama sekali.
+    fitness: fitPendingToday(fitDay, now),
     // Langkah belajar minggu ini yang harinya sudah tiba tapi belum
     // dikerjakan (Sen/Rab/Jum/Min) — aturan yang sama persis dengan kartu
     // reminder Learning di Dashboard.

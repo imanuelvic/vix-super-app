@@ -18,11 +18,12 @@ import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import { type LoginStreak } from '@/lib/achievements';
 import {
+  EMPTY_FIT_DAY,
   fitPendingToday,
   subscribeFitDay,
   subscribeFitStreak,
   subscribeFitWeights,
-  type FitDayDone,
+  type FitDay,
   type FitWeights,
 } from '@/lib/fitness';
 import {
@@ -52,7 +53,7 @@ export default function FitnessScreen() {
   const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('exercise');
 
   const [weights, setWeights] = useState<FitWeights>({});
-  const [done, setDone] = useState<FitDayDone>({});
+  const [day, setDay] = useState<FitDay>(EMPTY_FIT_DAY);
   const [streak, setStreak] = useState<LoginStreak | null>(null);
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [target, setTarget] = useState<WeightTarget | null>(null);
@@ -67,7 +68,7 @@ export default function FitnessScreen() {
     const fail = () => setError(LOAD_ERROR);
     const unsubs = [
       subscribeFitWeights(user.uid, setWeights, fail),
-      subscribeFitDay(user.uid, dayId, setDone, fail),
+      subscribeFitDay(user.uid, dayId, setDay, fail),
       subscribeFitStreak(user.uid, setStreak, fail),
       subscribeHealthProfile(user.uid, setProfile, fail),
       subscribeWeightTarget(user.uid, setTarget, fail),
@@ -91,7 +92,7 @@ export default function FitnessScreen() {
         ) : tab === 'exercise' ? (
           <ExerciseTab
             weights={weights}
-            done={done}
+            day={day}
             dayId={dayId}
             streak={streak}
             bodyWeightKg={profile?.weightKg ?? null}
@@ -102,9 +103,10 @@ export default function FitnessScreen() {
       </View>
 
       {/* Badge Exercise = gerakan hari ini yang belum dicentang, angkanya
-          SAMA dengan badge tile Fitness di Home & kartu reminder Dashboard. */}
+          SAMA dengan badge tile Fitness di Home & kartu reminder Dashboard.
+          Hari yang ditandai ✕ (dilewati) tidak lagi menampilkan badge. */}
       <BottomTabs
-        tabs={withBadge(TABS, { exercise: fitPendingToday(done, now) })}
+        tabs={withBadge(TABS, { exercise: fitPendingToday(day, now) })}
         value={tab}
         onChange={onTabPress}
       />

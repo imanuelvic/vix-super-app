@@ -543,7 +543,7 @@ export function HabitsTab({
                     disabled={skipped}
                     hitSlop={8}
                     haptic={checked ? 'light' : 'success'}>
-                    <CheckCircle checked={checked} />
+                    <CheckCircle checked={checked} skipped={skipped} />
                   </PressableScale>
                   {/* Teks tidak bisa ditekan — ubah/urutkan/hapus lewat tombol edit */}
                   <View style={styles.rowMain}>
@@ -557,7 +557,7 @@ export function HabitsTab({
                     </VixText>
                     {skipped && (
                       <VixText heading="label" additionalStyle={styles.skipNote}>
-                        ⏭️ Dilewati hari ini — tidak ikut dihitung
+                        ⏭️ Dilewati hari ini
                       </VixText>
                     )}
                   </View>

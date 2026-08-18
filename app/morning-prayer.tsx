@@ -24,7 +24,7 @@ import {
   type MonthlyPrayers,
 } from '@/lib/core';
 import { intercessionToday } from '@/lib/intercession';
-import { subscribeReviveStreak } from '@/lib/spiritual';
+import { reviveHandledToday, subscribeReviveStreak } from '@/lib/spiritual';
 
 // Lock screen doa pagi — halaman PENUH di root stack (di luar tab), jadi
 // menutupi seluruh layar termasuk tab bar. Yang mengarahkan ke sini adalah
@@ -55,8 +55,10 @@ export default function MorningPrayerScreen() {
   // jendelanya habis.
   const { now, todayId } = useNow();
 
-  // Revive hari ini sudah disimpan → gate mencentang langkah Revive otomatis.
-  const reviveDone = reviveStreak?.lastDayId === todayId;
+  // Revive hari ini sudah diurus (ditulis ATAU sengaja dilewati) → gate
+  // mencentang langkah Revive otomatis. Tanpa memperhitungkan tanda "dilewati",
+  // melewati Revive akan mengunci gerbang doa pagi sampai jam 09.00.
+  const reviveDone = reviveHandledToday(reviveStreak, todayId);
 
   // Doa Rantai: hanya di hari jadwalnya (Sel/Kam/Sab) & kalau memang ada CL
   // giliran hari ini. Sumber hitungannya SAMA dengan kartu Dashboard.

@@ -174,7 +174,7 @@ export default function BibleReadingScreen() {
         {skipped && (
           <View style={styles.skippedCard}>
             <VixText heading="bold" additionalStyle={styles.skippedText}>
-              ⏭️ Sesi ini ditandai dilewati hari ini
+              ⏭️ Dilewati hari ini
             </VixText>
             <VixText heading="label" additionalStyle={styles.skippedSub}>
               Rentetan 🔥 tidak bertambah. Masih bisa dibatalkan — atau

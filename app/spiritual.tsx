@@ -24,13 +24,17 @@ import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
 import { subscribeFastingPlans, type FastingPlan } from '@/lib/fasting';
 import { dayDocId } from '@/lib/health';
-import { LOAD_ERROR } from '@/lib/messages';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
+  reviveHandledToday,
+  setReviveSkipped,
   subscribeBibleReadingDays,
   subscribeReviveEntries,
+  subscribeReviveStreak,
   type BibleReadingDay,
   type ReviveEntry,
+  type ReviveStreak,
 } from '@/lib/spiritual';
 
 type Tab = 'revive' | 'sermon' | 'bible' | 'fasting';
@@ -59,6 +63,10 @@ export default function SpiritualScreen() {
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [bibleDays, setBibleDays] = useState<BibleReadingDay[]>([]);
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
+  // Streak Revive — dibaca di sini bukan untuk angkanya, tapi untuk tanda
+  // "hari ini dilewati" yang menempel di dokumen yang sama.
+  const [reviveStreak, setReviveStreak] = useState<ReviveStreak | null>(null);
+  const [skipBusy, setSkipBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Reminder Dashboard bisa mengarahkan ke tab tertentu lewat param.
@@ -81,12 +89,27 @@ export default function SpiritualScreen() {
       subscribeSermons(user.uid, setSermons, fail),
       subscribeBibleReadingDays(user.uid, setBibleDays, fail),
       subscribeFastingPlans(user.uid, setFastingPlans, fail),
+      subscribeReviveStreak(user.uid, setReviveStreak, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
 
   const todayId = dayDocId(new Date());
   const todayEntry = entries?.find((e) => e.id === todayId) ?? null;
+  // Hari ini sengaja dilewati? (tandanya menempel di dokumen streak yang sama)
+  const skippedToday = reviveStreak?.skippedDayId === todayId;
+
+  async function toggleSkip() {
+    if (!user || skipBusy) return;
+    setSkipBusy(true);
+    try {
+      await setReviveSkipped(user.uid, reviveStreak, todayId, !skippedToday);
+    } catch {
+      setError(SAVE_ERROR);
+    } finally {
+      setSkipBusy(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -143,12 +166,40 @@ export default function SpiritualScreen() {
                   </VixText>
                 ) : null}
               </PressableScale>
+            ) : skippedToday ? (
+              // Sudah ditandai dilewati — badge hilang, tombol jadi pembatal.
+              <View style={styles.skippedCard}>
+                <VixText heading="bold" additionalStyle={styles.skippedText}>
+                  ⏭️ Revive hari ini dilewati
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.skippedSub}>
+                  Rentetan 🔥 tidak bertambah hari ini. Masih bisa dibatalkan —
+                  atau langsung tulis Revive-nya.
+                </VixText>
+              </View>
             ) : (
               <PrimaryButton
                 label="✍️ Tulis Revive Hari Ini"
                 onPress={() => router.push('/revive')}
                 additionalStyle={styles.writeButton}
               />
+            )}
+
+            {/* ⏭️ Lewati hari ini — badge harian Revive ikut hilang. Tidak
+                pakai konfirmasi karena tidak ada yang hangus & bisa dibatalkan
+                kapan saja (sama seperti lewati baca Alkitab). */}
+            {!todayEntry && (
+              <PressableScale
+                style={styles.skipButton}
+                onPress={toggleSkip}
+                disabled={skipBusy}
+                haptic="warning">
+                <VixText heading="bold" additionalStyle={styles.skipText}>
+                  {skippedToday
+                    ? '↩️ Batalkan lewati'
+                    : '⏭️ Lewati Revive hari ini'}
+                </VixText>
+              </PressableScale>
             )}
           </ScrollView>
         ) : tab === 'sermon' ? (
@@ -160,10 +211,14 @@ export default function SpiritualScreen() {
         )}
       </View>
 
-      {/* Badge Revive = 1 kalau Revive hari ini belum ditulis — angka yang
-          sama dengan badge tile Spiritual di Home. */}
+      {/* Badge Revive = 1 kalau Revive hari ini belum ditulis DAN belum
+          ditandai dilewati — aturan yang sama persis dengan badge tile
+          Spiritual di Home. */}
       <BottomTabs
-        tabs={withBadge(TABS, { revive: todayEntry ? 0 : 1 })}
+        tabs={withBadge(TABS, {
+          revive:
+            todayEntry || reviveHandledToday(reviveStreak, todayId) ? 0 : 1,
+        })}
         value={tab}
         onChange={onTabPress}
       />
@@ -177,6 +232,19 @@ const styles = StyleSheet.create({
   // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   writeButton: { marginTop: 4 },
+  // Status "dilewati" + tombolnya — gaya disamakan dengan layar Baca Alkitab.
+  skippedCard: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 2,
+    marginTop: 4,
+  },
+  skippedText: { color: Color.ACCENT_DARK },
+  skippedSub: { color: Color.ACCENT_DARK },
+  skipButton: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
+  skipText: { color: Color.TEXT_LABEL },
   todayCard: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 20,

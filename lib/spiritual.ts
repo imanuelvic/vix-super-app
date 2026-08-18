@@ -83,34 +83,79 @@ export function deleteReviveEntry(uid: string, dayId: string) {
 }
 
 // ===================== Streak Revive 🔥 =====================
-// users/{uid}/app/revive — bentuknya sama dengan streak login.
+// users/{uid}/app/revive — bentuknya sama dengan streak login, plus penanda
+// hari yang sengaja dilewati. Ditumpangkan di dokumen yang SAMA supaya tidak
+// menambah satu pun pembacaan Firestore.
+
+export type ReviveStreak = DayStreak & {
+  /**
+   * dayId yang ditandai "dilewati". Hanya berlaku untuk hari itu saja — besok
+   * nilainya sudah tidak cocok lagi dengan todayId, jadi tandanya hilang
+   * sendiri tanpa perlu dibersihkan.
+   */
+  skippedDayId?: string;
+};
 
 export function subscribeReviveStreak(
   uid: string,
-  onChange: (streak: DayStreak | null) => void,
+  onChange: (streak: ReviveStreak | null) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'app', 'revive');
   return liveDoc(
     ref,
     (snapshot) => {
-      onChange(snapshot.exists() ? (snapshot.data() as DayStreak) : null);
+      onChange(snapshot.exists() ? (snapshot.data() as ReviveStreak) : null);
     },
     onError,
   );
 }
 
+/**
+ * Revive hari ini sudah "selesai diurus"? Yaitu SUDAH DITULIS atau sengaja
+ * DILEWATI. Inilah satu-satunya penentu badge Revive — dipakai bareng oleh
+ * tile Spiritual di Home, sub-tab Revive, dan langkah 1 di gerbang doa pagi,
+ * jadi ketiganya tidak mungkin berbeda pendapat.
+ */
+export function reviveHandledToday(
+  streak: ReviveStreak | null,
+  todayId: string,
+): boolean {
+  if (!streak) return false;
+  return streak.lastDayId === todayId || streak.skippedDayId === todayId;
+}
+
+/**
+ * Tandai Revive hari ini DILEWATI (atau batalkan lagi).
+ *
+ * Rentetan 🔥 tidak diubah di sini — dan memang tidak perlu: hari yang
+ * dilewati tidak pernah tercatat, jadi rentetannya putus dengan sendirinya
+ * saat kamu menulis Revive lagi nanti.
+ */
+export function setReviveSkipped(
+  uid: string,
+  current: ReviveStreak | null,
+  todayId: string,
+  skipped: boolean,
+) {
+  return setDoc(doc(db, 'users', uid, 'app', 'revive'), {
+    ...(current ?? EMPTY_DAY_STREAK),
+    skippedDayId: skipped ? todayId : '',
+  });
+}
+
 /** Panggil saat Revive HARI INI pertama kali disimpan — naik maks 1×/hari. */
 export function bumpReviveStreak(
   uid: string,
-  current: DayStreak | null,
+  current: ReviveStreak | null,
   todayId: string,
 ) {
   if (alreadyCounted(current, todayId)) return Promise.resolve();
-  return setDoc(
-    doc(db, 'users', uid, 'app', 'revive'),
-    nextStreak(current, todayId, yesterdayId()),
-  );
+  return setDoc(doc(db, 'users', uid, 'app', 'revive'), {
+    ...nextStreak(current, todayId, yesterdayId()),
+    // Ditulis beneran → tanda "dilewati" hari ini otomatis dicabut.
+    skippedDayId: '',
+  });
 }
 
 // ===================== Bacaan Alkitab 📖 (Pagi & Malam) =====================

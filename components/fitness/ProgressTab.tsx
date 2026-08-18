@@ -14,7 +14,7 @@ import {
   type WeightTarget,
 } from '@/lib/health';
 
-// Tab Progress 📈 — rentetan sesi, Data Tubuh (dibaca dari fitur Health),
+// Tab Progress 📈 — rentetan sesi, Data Tubuh (dibaca dari fitur Profile),
 // target yang dikejar, dan daftar persiapan sebelum berangkat gym.
 export function ProgressTab({
   streak,
@@ -65,18 +65,20 @@ export function ProgressTab({
         </View>
       </View>
 
-      {/* Data Tubuh — dibaca langsung dari fitur Health, tidak diisi dua kali.
-          Ketuk untuk mengubahnya di sana. */}
+      {/* Data Tubuh — dibaca langsung dari fitur Profile, tidak diisi dua kali.
+          Ketuk untuk langsung membuka Profile → 🧍 Data Tubuh. */}
       {profile && (
         <PressableScale
           style={styles.bodyCard}
-          onPress={() => router.push('/profile')}>
+          onPress={() =>
+            router.push({ pathname: '/profile', params: { tab: 'body' } })
+          }>
           <View style={styles.bodyTop}>
             <VixText heading="bold" additionalStyle={styles.bodyTitle}>
               🧍 Data Tubuh
             </VixText>
             <VixText heading="label" additionalStyle={styles.bodyLink}>
-              Ubah di Health ›
+              Ubah di Profile ›
             </VixText>
           </View>
           <View style={styles.bodyRow}>
