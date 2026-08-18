@@ -347,6 +347,9 @@ export function TransactionsTab({
       }
       setConfirmCopy(false);
       setEditing(null);
+      // Salinan bertanggal hari ini → posisinya paling atas daftar. Langsung
+      // digulir ke atas biar hasilnya kelihatan tanpa perlu scroll manual.
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
     } catch {
       setEditError(SAVE_ERROR);
     } finally {
@@ -548,45 +551,52 @@ export function TransactionsTab({
           </View>
         )}
 
-        {/* Catatan dulu, lalu nominal — urutan sama seperti Saku */}
-        <FormInput
-          placeholder="Catatan"
-          value={note}
-          onChangeText={setNote}
-          editable={!saving}
-        />
-        <View style={[styles.inputRow, styles.inputGap]}>
-          <MoneyInput
-            style={styles.flexInput}
-            placeholder="Nominal"
-            value={amount}
-            onChangeText={(t) => setAmount(groupDigits(t))}
-            onSubmitEditing={handleAdd}
-            returnKeyType="done"
-            editable={!saving}
-          />
-          {/* Liter — khusus bensin, dipakai menghitung Rp/liter di fitur Car */}
-          {isFuel && (
+        {/* Catatan, nominal & tombol + BARU muncul setelah kategori dipilih —
+            satu paket, sama seperti pilihan sub-kategori di atasnya. Sebelum
+            kategori dipilih form-nya sengaja ringkas: jenis → kategori saja.
+            Catatan dulu, lalu nominal — urutan sama seperti Saku. */}
+        {category && (
+          <>
             <FormInput
-              style={styles.literInput}
-              placeholder="Liter"
-              keyboardType="decimal-pad"
-              value={liters}
-              onChangeText={setLiters}
+              placeholder="Catatan"
+              value={note}
+              onChangeText={setNote}
               editable={!saving}
             />
-          )}
-          <PressableScale
-            style={[styles.addButton, saving && styles.disabled]}
-            onPress={handleAdd}
-            disabled={saving}>
-            {saving ? (
-              <ActivityIndicator color={Color.TEXT_REVERSE} />
-            ) : (
-              <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
-            )}
-          </PressableScale>
-        </View>
+            <View style={[styles.inputRow, styles.inputGap]}>
+              <MoneyInput
+                style={styles.flexInput}
+                placeholder="Nominal"
+                value={amount}
+                onChangeText={(t) => setAmount(groupDigits(t))}
+                onSubmitEditing={handleAdd}
+                returnKeyType="done"
+                editable={!saving}
+              />
+              {/* Liter — khusus bensin, dipakai menghitung Rp/liter di Car */}
+              {isFuel && (
+                <FormInput
+                  style={styles.literInput}
+                  placeholder="Liter"
+                  keyboardType="decimal-pad"
+                  value={liters}
+                  onChangeText={setLiters}
+                  editable={!saving}
+                />
+              )}
+              <PressableScale
+                style={[styles.addButton, saving && styles.disabled]}
+                onPress={handleAdd}
+                disabled={saving}>
+                {saving ? (
+                  <ActivityIndicator color={Color.TEXT_REVERSE} />
+                ) : (
+                  <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
+                )}
+              </PressableScale>
+            </View>
+          </>
+        )}
 
         {/* Tombol deeplink ke app tujuan (warna brand) — hanya kalau kategori
             terpilih punya app terkait. Buka vix → isi data → lompat ke app. */}
@@ -813,14 +823,6 @@ export function TransactionsTab({
             <VixText heading="bold" additionalStyle={styles.copyBoxTitle}>
               📋 Salin jadi transaksi baru?
             </VixText>
-            <VixText heading="label" additionalStyle={styles.copyBoxDetail}>
-              {formatRupiah(parseAmount(editAmount))} ·{' '}
-              {editNote.trim() || 'tanpa catatan'}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.copyBoxDetail}>
-              📆 Tanggalnya jadi {formatFullDate(new Date())} — transaksi yang
-              ini tidak berubah.
-            </VixText>
             <View style={styles.copyRow}>
               <PressableScale
                 style={styles.copyCancel}
@@ -1005,7 +1007,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   copyBoxTitle: { color: Color.MAIN_DARK },
-  copyBoxDetail: { color: Color.TEXT_LABEL },
   copyRow: { flexDirection: 'row', gap: 8, marginTop: 2 },
   copyCancel: {
     flex: 1,
