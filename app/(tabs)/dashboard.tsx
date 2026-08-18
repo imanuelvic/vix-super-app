@@ -634,11 +634,6 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
-          {/* Streak doa pagi tidak ikut di sini — sudah tampil sebagai pil
-              🏆🔥 di header Home, jadi kartu ini fokus ke Revive & Habits. */}
-          <VixText heading="title">
-            🏆 Achievement
-          </VixText>
           <PressableScale
             style={styles.streakCard}
             onPress={() => router.push('/achievements')}>
@@ -1202,7 +1197,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Color.ACCENT_DARK,
-    paddingVertical: 14,
+    paddingVertical: 18,
   },
   streakItem: { flex: 1, alignItems: 'center', gap: 1 },
   streakDivider: {

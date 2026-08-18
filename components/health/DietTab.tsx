@@ -3,8 +3,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -486,14 +486,12 @@ export function DietTab({
           </View>
         </View>
 
-        {editing && editing !== 'new' && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus makanan ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus makanan ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
 
         <DualButtons
           confirmLabel="Simpan"

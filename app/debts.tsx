@@ -4,7 +4,13 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
+import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
+import { EditDelete } from '@/components/common/EditDelete';
 import { ScreenError } from '@/components/common/ScreenError';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { useTabScroll } from '@/components/common/useTabScroll';
@@ -14,7 +20,6 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -22,10 +27,13 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { deadlineLabel } from '@/lib/deadline';
 import {
   addDebtPayment,
   debtDaysUntil,
   debtPaid,
+  debtTone,
+  debtUrgentCount,
   debtRemaining,
   deleteDebt,
   deleteDebtPayment,
@@ -288,21 +296,17 @@ export default function DebtsScreen() {
             const paid = debtPaid(d);
             const percent = d.total > 0 ? (paid / d.total) * 100 : 0;
             const days = debtDaysUntil(d, today);
-            const overdue = !d.done && days < 0;
-            const status = d.done
-              ? '✅ Lunas'
-              : days === 0
-                ? '⏰ Jatuh tempo HARI INI!'
-                : days > 0
-                  ? `⏳ ${days} hari lagi`
-                  : `⚠️ Lewat ${-days} hari`;
+            // Nada & warnanya dari aturan bersama — sama persis dengan
+            // sparepart mobil & perawatan rumah.
+            const tone = debtTone(d, today);
             return (
               // Tekan kartu → edit; tombol Bayar terpisah di dalam.
+              // Garis tepi: 🔴 hari-H/lewat · 🟡 besok · 🟢 masih aman.
               <PressableScale
                 key={d.id}
                 style={[
                   styles.card,
-                  overdue && styles.cardOverdue,
+                  deadlineBorder(tone),
                   d.done && styles.cardDone,
                 ]}
                 onPress={() => openEdit(d)}>
@@ -337,21 +341,20 @@ export default function DebtsScreen() {
                 </VixText>
 
                 <View style={styles.cardBottom}>
-                  <VixText
-                    heading="label"
-                    additionalStyle={[
-                      styles.statusText,
-                      d.done
-                        ? styles.statusDone
-                        : overdue
-                          ? styles.statusLate
-                          : days === 0
-                            ? styles.statusToday
-                            : styles.statusSoon,
-                    ]}>
-                    {status}
-                    {!d.done && ` · ${formatShortDayDate(d.dueDate.toDate())}`}
-                  </VixText>
+                  {d.done ? (
+                    <VixText
+                      heading="label"
+                      additionalStyle={[styles.statusText, styles.statusDone]}>
+                      ✅ Lunas
+                    </VixText>
+                  ) : (
+                    <View style={styles.statusText}>
+                      <DeadlineTag
+                        tone={tone}
+                        label={`${deadlineLabel(days)} · ${formatShortDayDate(d.dueDate.toDate())}`}
+                      />
+                    </View>
+                  )}
                   {!d.done && (
                     <PressableScale
                       style={styles.payButton}
@@ -368,8 +371,16 @@ export default function DebtsScreen() {
         </ScrollView>
       )}
 
-      {/* Tab bar bawah */}
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Tab bar bawah — angka merah tiap sub-tab = pinjaman arah itu yang
+          sudah H-1, jadi kelihatan badge-nya datang dari sisi mana. */}
+      <BottomTabs
+        tabs={withBadge(TABS, {
+          theirs: debtUrgentCount(debts ?? [], today, 'theirs'),
+          mine: debtUrgentCount(debts ?? [], today, 'mine'),
+        })}
+        value={tab}
+        onChange={onTabPress}
+      />
 
       {/* ===== Sheet tambah / edit pinjaman ===== */}
       <SheetModal
@@ -475,14 +486,12 @@ export default function DebtsScreen() {
           )}
 
           <ScreenError message={formError} />
-          {editing !== 'new' && editing !== null && (
-            <InlineDelete
-              key={editing.id}
-              label="Hapus pinjaman ini"
-              busy={busy}
-              onDelete={handleDelete}
-            />
-          )}
+          <EditDelete
+            editing={editing}
+            label="Hapus pinjaman ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         </ScrollView>
         {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
         <DualButtons
@@ -589,10 +598,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 6,
   },
-  cardOverdue: {
-    backgroundColor: Color.FINANCE_EXPENSE,
-    borderColor: Color.DANGER,
-  },
   cardDone: { opacity: 0.6 },
   cardTop: {
     flexDirection: 'row',
@@ -622,9 +627,6 @@ const styles = StyleSheet.create({
   // jadi tombol Bayar tidak terdorong keluar kartu.
   statusText: { flex: 1 },
   statusDone: { color: Color.SUCCESS },
-  statusLate: { color: Color.DANGER },
-  statusToday: { color: Color.DANGER },
-  statusSoon: { color: Color.TEXT_LABEL },
   payButton: {
     backgroundColor: Color.MAIN,
     borderRadius: 999,

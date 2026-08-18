@@ -7,8 +7,8 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -402,15 +402,12 @@ export default function TimelineScreen() {
         </View>
 
         <ScreenError message={formError} />
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editing !== 'new' && editing !== null && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus wishlist ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus wishlist ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}

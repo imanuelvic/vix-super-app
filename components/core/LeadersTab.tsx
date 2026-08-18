@@ -5,9 +5,9 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SelectField } from '@/components/common/SelectField';
@@ -572,15 +572,12 @@ export function LeadersTab({
               />
 
               <FormError message={formError} />
-              {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-              {editing !== 'new' && editing !== null && (
-                <InlineDelete
-                  key={editing.id}
-                  label="Hapus CORE Leader ini"
-                  busy={busy}
-                  onDelete={handleDelete}
-                />
-              )}
+              <EditDelete
+                editing={editing}
+                label="Hapus CORE Leader ini"
+                busy={busy}
+                onDelete={handleDelete}
+              />
               {/* Lepas CL (arsipkan, beda dari hapus permanen) */}
               {editing !== 'new' && editing !== null && (
                 <PressableScale
@@ -675,15 +672,12 @@ export function LeadersTab({
         />
 
         <FormError message={mtFormError} />
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editingMT !== 'new' && editingMT !== null && (
-          <InlineDelete
-            key={editingMT.id}
-            label="Hapus Main Team ini"
-            busy={busy}
-            onDelete={handleDeleteMT}
-          />
-        )}
+        <EditDelete
+          editing={editingMT}
+          label="Hapus Main Team ini"
+          busy={busy}
+          onDelete={handleDeleteMT}
+        />
         </ScrollView>
         {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
         <DualButtons

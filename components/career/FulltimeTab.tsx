@@ -6,9 +6,9 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { PriorityBadge } from '@/components/common/PriorityBadge';
@@ -439,15 +439,12 @@ export function FulltimeTab({
           </>
         )}
         <FormError message={formError} />
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editing !== 'new' && editing !== null && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus prioritas ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus prioritas ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}

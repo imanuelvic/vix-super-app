@@ -8,8 +8,8 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -408,14 +408,12 @@ export default function DonorScreen() {
           </VixText>
         </PressableScale>
         <ScreenError message={formError} />
-        {editing !== 'new' && editing !== null && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus jadwal ini"
-            busy={busy}
-            onDelete={handleDeleteSchedule}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus jadwal ini"
+          busy={busy}
+          onDelete={handleDeleteSchedule}
+        />
         <DualButtons
           confirmLabel={editing === 'new' ? 'Tambah' : 'Simpan'}
           busy={busy}

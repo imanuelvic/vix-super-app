@@ -15,8 +15,8 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -799,15 +799,12 @@ export default function FamilyScreen() {
               {formError}
             </VixText>
           )}
-          {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-          {editing !== 'new' && editing !== null && (
-            <InlineDelete
-              key={editing.id}
-              label="Hapus anggota ini"
-              busy={busy}
-              onDelete={handleDelete}
-            />
-          )}
+          <EditDelete
+            editing={editing}
+            label="Hapus anggota ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         </ScrollView>
         {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
         <DualButtons

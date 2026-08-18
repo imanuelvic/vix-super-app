@@ -20,6 +20,7 @@ import {
   withBadge,
   type BottomTab,
 } from '@/components/common/BottomTabs';
+import { EditDelete } from '@/components/common/EditDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -27,7 +28,6 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -892,15 +892,12 @@ export default function TasksScreen() {
             {formError}
           </VixText>
         )}
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editing !== 'new' && editing !== null && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus task ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus task ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
         <DualButtons
           confirmLabel={editing === 'new' ? 'Tambah' : 'Ubah'}
           busy={busy}

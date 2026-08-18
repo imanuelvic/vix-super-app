@@ -6,10 +6,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
+import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -31,6 +32,7 @@ import {
   type MeetingKind,
   type Visitation,
 } from '@/lib/core';
+import { deadlineLabel, deadlineTone } from '@/lib/deadline';
 import { daysBetween, formatFullDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
@@ -177,34 +179,25 @@ export default function VisitationsScreen() {
           {pageItems.map((v) => {
             const cl = leaders.find((l) => l.id === v.leaderId);
             const days = visitDaysUntil(v, today);
-            const status = v.done
-              ? '✅ Selesai'
-              : days === 0
-                ? '📍 HARI INI!'
-                : days > 0
-                  ? `${days} hari lagi`
-                  : '⚠️ Terlewat';
+            // Warna & label dari aturan bersama (lihat lib/deadline.ts).
+            const tone = v.done ? 'unknown' : deadlineTone(days);
             return (
               // Tap → edit status/tanggal/catatan atau hapus permanen.
               <PressableScale
                 key={v.id}
-                style={styles.card}
+                style={[styles.card, deadlineBorder(tone)]}
                 onPress={() => openEdit(v)}>
                 <View style={styles.cardTop}>
                   <VixText heading="bold" additionalStyle={styles.cardTitle}>
                     {cl ? `${cl.heart} ${cl.name}` : '(CL tidak ditemukan)'}
                   </VixText>
-                  <VixText
-                    heading="label"
-                    additionalStyle={
-                      v.done
-                        ? styles.statusDone
-                        : days < 0
-                          ? styles.statusLate
-                          : styles.statusUpcoming
-                    }>
-                    {status}
-                  </VixText>
+                  {v.done ? (
+                    <VixText heading="label" additionalStyle={styles.statusDone}>
+                      ✅ Selesai
+                    </VixText>
+                  ) : (
+                    <DeadlineTag tone={tone} label={deadlineLabel(days)} />
+                  )}
                 </View>
                 <VixText heading="label" additionalStyle={styles.kindLine}>
                   {meetingKindMeta(v.kind).icon} {meetingKindMeta(v.kind).label}
@@ -314,15 +307,12 @@ export default function VisitationsScreen() {
             {formError}
           </VixText>
         )}
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editing && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus permanen jadwal ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus permanen jadwal ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}
@@ -356,8 +346,6 @@ const styles = StyleSheet.create({
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   kindLine: { color: Color.MAIN },
   statusDone: { color: Color.SUCCESS },
-  statusLate: { color: Color.WARNING },
-  statusUpcoming: { color: Color.ACCENT_DARK },
   fieldLabel: { marginBottom: 6 },
   leaderWrap: {
     flexDirection: 'row',

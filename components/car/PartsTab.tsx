@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
+import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -106,12 +107,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
                 // Tap = tandai baru diganti/dicek.
                 <PressableScale
                   key={part.key}
-                  style={[
-                    styles.row,
-                    tone === 'ok' && styles.rowOk,
-                    tone === 'warn' && styles.rowWarn,
-                    tone === 'over' && styles.rowOver,
-                  ]}
+                  style={[styles.row, deadlineBorder(tone)]}
                   onPress={() => openEdit(part)}>
                   <View style={styles.rowTop}>
                     <VixText
@@ -120,19 +116,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
                       additionalStyle={styles.rowLabel}>
                       {part.label}
                     </VixText>
-                    <VixText
-                      heading="label"
-                      additionalStyle={
-                        tone === 'ok'
-                          ? styles.toneOk
-                          : tone === 'warn'
-                            ? styles.toneWarn
-                            : tone === 'over'
-                              ? styles.toneOver
-                              : styles.toneUnknown
-                      }>
-                      {TONE_LABEL[tone]}
-                    </VixText>
+                    <DeadlineTag tone={tone} label={TONE_LABEL[tone]} />
                   </View>
                   <VixText heading="label">{part.tip}</VixText>
                   <VixText heading="label" additionalStyle={styles.dateLine}>
@@ -192,10 +176,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 4,
   },
-  // Border warna status: hijau aman / kuning segera / merah lewat jadwal.
-  rowOk: { borderColor: Color.SUCCESS, borderWidth: 1.5 },
-  rowWarn: { borderColor: Color.BUDGET_WARN, borderWidth: 1.5 },
-  rowOver: { borderColor: Color.DANGER, borderWidth: 1.5 },
   rowTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -203,10 +183,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowLabel: { flex: 1, color: Color.TEXT_TITLE },
-  toneOk: { color: Color.SUCCESS },
-  toneWarn: { color: Color.WARNING },
-  toneOver: { color: Color.DANGER },
-  toneUnknown: { color: Color.TEXT_PLACEHOLDER },
   dateLine: { color: Color.TEXT_PLACEHOLDER },
   modalTitle: { marginBottom: 2 },
   modalHint: { marginBottom: 10 },

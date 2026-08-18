@@ -7,9 +7,9 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
@@ -702,14 +702,12 @@ export function HabitsTab({
           </View>
         )}
 
-        {editing && editing !== 'new' && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus kebiasaan ini"
-            busy={busy}
-            onDelete={handleDeleteHabit}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus kebiasaan ini"
+          busy={busy}
+          onDelete={handleDeleteHabit}
+        />
 
         <DualButtons
           confirmLabel="Simpan"

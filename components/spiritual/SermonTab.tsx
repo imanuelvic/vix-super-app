@@ -3,9 +3,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -334,14 +334,12 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
                 editable={!busy}
               />
               <FormError message={formError} />
-              {editing !== 'new' && editing !== null && (
-                <InlineDelete
-                  key={editing.id}
-                  label="Hapus catatan ini"
-                  busy={busy}
-                  onDelete={handleDelete}
-                />
-              )}
+              <EditDelete
+                editing={editing}
+                label="Hapus catatan ini"
+                busy={busy}
+                onDelete={handleDelete}
+              />
             </>
           )}
 

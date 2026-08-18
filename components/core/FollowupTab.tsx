@@ -8,10 +8,10 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -612,15 +612,12 @@ export function FollowupTab({
         />
       </View>
       <FormError message={iError} />
-      {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-      {editingIdea !== 'new' && editingIdea !== null && (
-        <InlineDelete
-          key={editingIdea.id}
-          label="Hapus idea ini"
-          busy={iBusy}
-          onDelete={handleDeleteIdea}
-        />
-      )}
+      <EditDelete
+        editing={editingIdea}
+        label="Hapus idea ini"
+        busy={iBusy}
+        onDelete={handleDeleteIdea}
+      />
       <DualButtons
         confirmLabel="Simpan"
         busy={iBusy}

@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -255,15 +255,12 @@ export default function DiseasesScreen() {
         )}
 
         <FormError message={formError} />
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editing !== 'new' && editing !== null && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus catatan ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus catatan ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}

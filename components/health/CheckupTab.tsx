@@ -6,10 +6,10 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -302,9 +302,8 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           {/* key = id supaya state picker internal ikut reset tiap ganti item */}
           <DateField key={editing?.id} value={editDate} onChange={setEditDate} />
         </View>
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        <InlineDelete
-          key={editing?.id}
+        <EditDelete
+          editing={editing}
           label="Hapus pemeriksaan ini"
           busy={busy}
           onDelete={handleDelete}

@@ -6,11 +6,12 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
+import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -26,6 +27,7 @@ import {
 } from '@/lib/career';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
 import { INVOICE_PRESETS, shareInvoicePdf } from '@/lib/invoice';
+import { deadlineLabel, deadlineTone } from '@/lib/deadline';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
@@ -256,19 +258,13 @@ export function FreelanceTab({
 
         {sorted.map((p) => {
           const days = deadlineDaysUntil(p, today);
-          const status = p.done
-            ? '✅ Selesai'
-            : days === 0
-              ? '⏰ DEADLINE HARI INI!'
-              : days > 0
-                ? `⏳ ${days} hari lagi`
-                : `⚠️ Lewat ${-days} hari`;
-          const urgent = !p.done && days <= 3;
+          // Warna & label dari aturan bersama (lihat lib/deadline.ts).
+          const tone = p.done ? 'unknown' : deadlineTone(days);
           return (
             // Tekan untuk edit / tandai selesai.
             <PressableScale
               key={p.id}
-              style={[styles.card, urgent && styles.cardUrgent]}
+              style={[styles.card, deadlineBorder(tone)]}
               onPress={() => openEdit(p)}>
               <View style={styles.cardTop}>
                 <VixText
@@ -291,19 +287,13 @@ export function FreelanceTab({
                   📋 {p.requirement}
                 </VixText>
               ) : null}
-              <VixText
-                heading="label"
-                additionalStyle={
-                  p.done
-                    ? styles.statusDone
-                    : days < 0 || days === 0
-                      ? styles.statusLate
-                      : urgent
-                        ? styles.statusWarn
-                        : undefined
-                }>
-                {status}
-              </VixText>
+              {p.done ? (
+                <VixText heading="label" additionalStyle={styles.statusDone}>
+                  ✅ Selesai
+                </VixText>
+              ) : (
+                <DeadlineTag tone={tone} label={deadlineLabel(days)} />
+              )}
             </PressableScale>
           );
         })}
@@ -456,15 +446,12 @@ export function FreelanceTab({
           </View>
 
           <FormError message={formError} />
-          {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-          {editing !== 'new' && editing !== null && (
-            <InlineDelete
-              key={editing.id}
-              label="Hapus proyek ini"
-              busy={busy}
-              onDelete={handleDelete}
-            />
-          )}
+          <EditDelete
+            editing={editing}
+            label="Hapus proyek ini"
+            busy={busy}
+            onDelete={handleDelete}
+          />
         </ScrollView>
         {/* DualButtons di luar ScrollView → otomatis dipin di footer SheetModal */}
         <DualButtons
@@ -501,10 +488,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 4,
   },
-  cardUrgent: {
-    backgroundColor: Color.WARNING_TRANSPARENT,
-    borderColor: Color.WARNING,
-  },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -514,8 +497,6 @@ const styles = StyleSheet.create({
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   feeText: { color: Color.MAIN_DARK },
   statusDone: { color: Color.SUCCESS },
-  statusLate: { color: Color.DANGER },
-  statusWarn: { color: Color.WARNING },
   formScroll: { flexShrink: 1 },
   formGap: { marginBottom: 10 },
   reqInput: {

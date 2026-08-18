@@ -8,6 +8,7 @@ import {
   type FirestoreError,
 } from 'firebase/firestore';
 
+import { deadlineDue, deadlineTone, type DeadlineTone } from './deadline';
 import { db } from './firebase';
 import { daysBetween } from './format';
 
@@ -112,6 +113,16 @@ export function debtReminderWindow(debt: Debt, today: Date): boolean {
 }
 
 /**
+ * Nada tenggat satu pinjaman — memakai aturan bersama `lib/deadline.ts`, sama
+ * dengan sparepart mobil & perawatan rumah. Yang sudah lunas tidak punya
+ * tenggat lagi ('unknown' = tidak diberi warna).
+ */
+export function debtTone(debt: Debt, today: Date): DeadlineTone {
+  if (debt.done) return 'unknown';
+  return deadlineTone(debtDaysUntil(debt, today));
+}
+
+/**
  * Sudah H-1: belum lunas & jatuh tempo tinggal SEHARI atau kurang — termasuk
  * yang jatuh tempo hari ini dan yang sudah kelewat.
  *
@@ -121,16 +132,24 @@ export function debtReminderWindow(debt: Debt, today: Date): boolean {
  * jadi tidak berarti.
  */
 export function debtUrgent(debt: Debt, today: Date): boolean {
-  return !debt.done && debtDaysUntil(debt, today) <= 1;
+  return deadlineDue(debtTone(debt, today));
 }
 
 /**
  * Berapa pinjaman yang sudah H-1 — angka badge tile Finance di Home & tombol
- * 🤝 Pinjaman di header Finance. DUA arah ikut dihitung: yang kamu tagih ke
- * orang maupun yang harus kamu bayar.
+ * 🤝 Pinjaman di header Finance. Tanpa `direction` DUA arah ikut dihitung;
+ * dengan `direction` cuma satu arah (untuk badge sub-tab di layar Pinjaman).
  */
-export function debtUrgentCount(debts: Debt[], today: Date): number {
-  return debts.filter((d) => debtUrgent(d, today)).length;
+export function debtUrgentCount(
+  debts: Debt[],
+  today: Date,
+  direction?: DebtDirection,
+): number {
+  return debts.filter(
+    (d) =>
+      (direction === undefined || d.direction === direction) &&
+      debtUrgent(d, today),
+  ).length;
 }
 
 /** Majukan tanggal satu periode (untuk jatuh tempo cicilan berikutnya). */

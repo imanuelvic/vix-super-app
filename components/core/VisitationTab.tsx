@@ -6,11 +6,12 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
+import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
@@ -30,6 +31,7 @@ import {
   type MeetingKind,
   type Visitation,
 } from '@/lib/core';
+import { deadlineLabel, deadlineTone } from '@/lib/deadline';
 import { daysBetween, formatFullDate } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
@@ -207,39 +209,26 @@ export function VisitationTab({
   function renderCard(v: Visitation) {
     const cl = leaderOf(v);
     const days = visitDaysUntil(v, today);
-    const soon = !v.done && days >= 0 && days <= 3; // masuk jendela reminder
-    const status = v.done
-      ? '✅ Selesai'
-      : days === 0
-        ? '📍 HARI INI!'
-        : days > 0
-          ? `${days} hari lagi`
-          : '⚠️ Terlewat';
+    // Nada & warnanya dari aturan bersama — sama dengan Pinjaman, sparepart
+    // mobil, & perawatan rumah: 🔴 hari-H/terlewat · 🟡 besok · 🟢 masih aman.
+    const tone = v.done ? 'unknown' : deadlineTone(days);
     return (
       // Tekan untuk edit / tandai selesai.
       <PressableScale
         key={v.id}
-        style={[styles.card, soon && styles.cardSoon]}
+        style={[styles.card, deadlineBorder(tone)]}
         onPress={() => openEdit(v)}>
         <View style={styles.cardTop}>
           <VixText heading="bold" additionalStyle={styles.cardTitle}>
             {cl ? `${cl.heart} ${cl.name}` : '(CL tidak ditemukan)'}
           </VixText>
-          <VixText
-            heading="label"
-            additionalStyle={
-              v.done
-                ? styles.statusDone
-                : days === 0
-                  ? styles.statusToday
-                  : days < 0
-                    ? styles.statusLate
-                    : soon
-                      ? styles.statusSoon
-                      : undefined
-            }>
-            {status}
-          </VixText>
+          {v.done ? (
+            <VixText heading="label" additionalStyle={styles.statusDone}>
+              ✅ Selesai
+            </VixText>
+          ) : (
+            <DeadlineTag tone={tone} label={deadlineLabel(days)} />
+          )}
         </View>
         <VixText heading="label" additionalStyle={styles.kindLine}>
           {meetingKindMeta(v.kind).icon} {meetingKindMeta(v.kind).label}
@@ -454,15 +443,12 @@ export function VisitationTab({
         )}
 
         <FormError message={formError} />
-        {/* Konfirmasi hapus inline — iOS tidak bisa modal di atas modal */}
-        {editing !== 'new' && editing !== null && (
-          <InlineDelete
-            key={editing.id}
-            label="Hapus jadwal ini"
-            busy={busy}
-            onDelete={handleDelete}
-          />
-        )}
+        <EditDelete
+          editing={editing}
+          label="Hapus jadwal ini"
+          busy={busy}
+          onDelete={handleDelete}
+        />
         <DualButtons
           confirmLabel="Simpan"
           busy={busy}
@@ -592,10 +578,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 3,
   },
-  cardSoon: {
-    backgroundColor: Color.ACCENT,
-    borderColor: Color.ACCENT_DARK,
-  },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -606,10 +588,7 @@ const styles = StyleSheet.create({
   kindLine: { color: Color.MAIN },
   // Isi kolom panjang (agenda/catatan) — sedikit menjorok dari labelnya.
   blockText: { color: Color.TEXT_PARAGRAPH, paddingLeft: 2 },
-  statusSoon: { color: Color.ACCENT_DARK },
-  statusToday: { color: Color.DANGER },
   statusDone: { color: Color.SUCCESS },
-  statusLate: { color: Color.WARNING },
   tip: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
   // Footer modal filter: dua tombol (Bersihkan / Selesai).
   filterFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },
