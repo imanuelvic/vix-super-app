@@ -17,6 +17,7 @@ import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { BibleReadingTab } from '@/components/spiritual/BibleReadingTab';
 import { FastingTab } from '@/components/spiritual/FastingTab';
@@ -168,15 +169,14 @@ export default function SpiritualScreen() {
               </PressableScale>
             ) : skippedToday ? (
               // Sudah ditandai dilewati — badge hilang, tombol jadi pembatal.
-              <View style={styles.skippedCard}>
-                <VixText heading="bold" additionalStyle={styles.skippedText}>
-                  ⏭️ Revive hari ini dilewati
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.skippedSub}>
-                  Rentetan 🔥 tidak bertambah hari ini. Masih bisa dibatalkan —
-                  atau langsung tulis Revive-nya.
-                </VixText>
-              </View>
+              <SkipNotice
+                title="⏭️ Revive hari ini dilewati"
+                detail={
+                  'Rentetan 🔥 tidak bertambah hari ini. Masih bisa ' +
+                  'dibatalkan — atau langsung tulis Revive-nya.'
+                }
+                additionalStyle={styles.skippedGap}
+              />
             ) : (
               <PrimaryButton
                 label="✍️ Tulis Revive Hari Ini"
@@ -189,17 +189,13 @@ export default function SpiritualScreen() {
                 pakai konfirmasi karena tidak ada yang hangus & bisa dibatalkan
                 kapan saja (sama seperti lewati baca Alkitab). */}
             {!todayEntry && (
-              <PressableScale
-                style={styles.skipButton}
+              <SkipButton
+                skipped={skippedToday}
+                label="⏭️ Lewati Revive hari ini"
+                busy={skipBusy}
                 onPress={toggleSkip}
-                disabled={skipBusy}
-                haptic="warning">
-                <VixText heading="bold" additionalStyle={styles.skipText}>
-                  {skippedToday
-                    ? '↩️ Batalkan lewati'
-                    : '⏭️ Lewati Revive hari ini'}
-                </VixText>
-              </PressableScale>
+                additionalStyle={styles.skippedGap}
+              />
             )}
           </ScrollView>
         ) : tab === 'sermon' ? (
@@ -232,19 +228,8 @@ const styles = StyleSheet.create({
   // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   writeButton: { marginTop: 4 },
-  // Status "dilewati" + tombolnya — gaya disamakan dengan layar Baca Alkitab.
-  skippedCard: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 2,
-    marginTop: 4,
-  },
-  skippedText: { color: Color.ACCENT_DARK },
-  skippedSub: { color: Color.ACCENT_DARK },
-  skipButton: { alignItems: 'center', paddingVertical: 12, marginTop: 4 },
-  skipText: { color: Color.TEXT_LABEL },
+  // Bentuk kartu & tombolnya ada di components/common/SkipToday.tsx.
+  skippedGap: { marginTop: 4 },
   todayCard: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 20,

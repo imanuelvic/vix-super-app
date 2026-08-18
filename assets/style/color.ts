@@ -94,6 +94,9 @@ export const Color = {
   WARNING: '#5B4B3A',
   WARNING_TRANSPARENT: '#5B4B3A1A',
   DANGER: '#C0392B',
+  // Merah samar (10%) — latar baris yang ditandai ✕ "dilewati". Pasangan merah
+  // dari MAIN_TRANSPARENT yang dipakai baris tercentang.
+  DANGER_TRANSPARENT: '#C0392B1A',
   // Kuning peringatan pemakaian budget (bar & latar pilihan saat ≥75%).
   BUDGET_WARN: '#EAB308',
 } as const;

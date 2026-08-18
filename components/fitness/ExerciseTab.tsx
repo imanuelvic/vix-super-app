@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
@@ -241,15 +242,13 @@ export function ExerciseTab({
             </View>
 
             {isToday && skipped ? (
-              <View style={styles.skippedCard}>
-                <VixText heading="bold" additionalStyle={styles.skippedText}>
-                  ✕ Latihan hari ini dilewati
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.skippedSub}>
-                  Rentetan 🔥 sudah kembali ke 0. Besok mulai lagi dari satu —
-                  yang penting jangan dua kali berturut-turut.
-                </VixText>
-              </View>
+              <SkipNotice
+                title="✕ Latihan hari ini dilewati"
+                detail={
+                  'Rentetan 🔥 sudah kembali ke 0. Besok mulai lagi dari ' +
+                  'satu — yang penting jangan dua kali berturut-turut.'
+                }
+              />
             ) : isToday ? (
               <View style={styles.quoteCard}>
                 <VixText heading="label" additionalStyle={styles.quoteText}>
@@ -343,15 +342,13 @@ export function ExerciseTab({
                 latihan", bukan menyembunyikannya. Tekan lagi untuk membatalkan
                 tandanya (rentetan 🔥 tetap tidak kembali). */}
             {canSkip && (
-              <PressableScale
-                style={styles.skipButton}
+              <SkipButton
+                skipped={skipped}
+                label="⏭️ Lewati latihan hari ini"
+                busy={busy}
                 onPress={skipped ? handleUnskip : () => setConfirmSkip(true)}
-                disabled={busy}
-                haptic="warning">
-                <VixText heading="bold" additionalStyle={styles.skipButtonText}>
-                  {skipped ? '↩️ Batalkan lewati' : '⏭️ Lewati latihan hari ini'}
-                </VixText>
-              </PressableScale>
+                additionalStyle={styles.skipGap}
+              />
             )}
           </>
         ) : (
@@ -486,18 +483,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   previewText: { color: Color.TEXT_LABEL },
-  // Kartu status "hari ini dilewati" — menggantikan kartu kata-kata semangat.
-  skippedCard: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 2,
-  },
-  skippedText: { color: Color.ACCENT_DARK },
-  skippedSub: { color: Color.ACCENT_DARK },
-  skipButton: { alignItems: 'center', paddingVertical: 12, marginTop: 2 },
-  skipButtonText: { color: Color.TEXT_LABEL },
+  // Kartu status & tombolnya ada di components/common/SkipToday.tsx.
+  skipGap: { marginTop: 2 },
   exCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -515,8 +502,8 @@ const styles = StyleSheet.create({
   },
   // Dilewati ✕ — warnanya sama dengan baris kebiasaan yang dilewati di Habits.
   exCardSkipped: {
-    backgroundColor: Color.WARNING_TRANSPARENT,
-    borderColor: Color.BORDER,
+    backgroundColor: Color.DANGER_TRANSPARENT,
+    borderColor: Color.DANGER,
   },
   exMain: { flex: 1, gap: 3 },
   exName: { color: Color.TEXT_TITLE },

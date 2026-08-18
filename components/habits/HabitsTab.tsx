@@ -555,11 +555,6 @@ export function HabitsTab({
                       ]}>
                       {tierMeta(tier).emoji} {habit.label}
                     </VixText>
-                    {skipped && (
-                      <VixText heading="label" additionalStyle={styles.skipNote}>
-                        ⏭️ Dilewati hari ini
-                      </VixText>
-                    )}
                   </View>
                   {/* Dua tombol kanan dirapatkan sendiri (gap lebih kecil dari
                       gap baris) supaya nama kebiasaan tidak kehilangan ruang. */}
@@ -574,7 +569,7 @@ export function HabitsTab({
                       <IconSymbol
                         name="xmark"
                         size={16}
-                        color={skipped ? Color.WARNING : Color.TEXT_LABEL}
+                        color={skipped ? Color.DANGER : Color.TEXT_LABEL}
                       />
                     </PressableScale>
                     {/* Tombol edit → buka modal ubah / urutkan / hapus */}
@@ -884,14 +879,13 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
   },
-  // ⏭️ Dilewati hari ini — sengaja cokelat kalem, bukan hijau (bukan prestasi)
-  // dan bukan merah (bukan kesalahan): cuma "tidak berlaku hari ini".
+  // ✕ Dilewati hari ini — merah samar, pasangan sejajar dari hijau samar milik
+  // baris tercentang: sama-sama "sudah diputuskan", cuma hasilnya berlawanan.
   rowSkipped: {
-    backgroundColor: Color.WARNING_TRANSPARENT,
-    borderColor: Color.BORDER,
+    backgroundColor: Color.DANGER_TRANSPARENT,
+    borderColor: Color.DANGER,
   },
-  skipNote: { color: Color.TEXT_PLACEHOLDER, marginTop: 2 },
-  skipButtonOn: { backgroundColor: Color.ACCENT },
+  skipButtonOn: { backgroundColor: Color.FINANCE_EXPENSE },
   // ⚪ Opsional — bonus, jadi tampilannya sengaja lebih kalem.
   rowOptional: { opacity: 0.7 },
   // Catatan singkat di bawah kebiasaan refleksi/syukur/rhema.

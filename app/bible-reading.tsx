@@ -9,6 +9,7 @@ import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { dayDocId } from '@/lib/health';
@@ -172,15 +173,14 @@ export default function BibleReadingScreen() {
 
         {/* Sedang berstatus dilewati → beri tahu, dan tombolnya jadi pembatal */}
         {skipped && (
-          <View style={styles.skippedCard}>
-            <VixText heading="bold" additionalStyle={styles.skippedText}>
-              ⏭️ Dilewati hari ini
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.skippedSub}>
-              Rentetan 🔥 tidak bertambah. Masih bisa dibatalkan — atau
-              langsung isi bacaannya lalu tekan &quot;Sudah baca&quot;.
-            </VixText>
-          </View>
+          <SkipNotice
+            title="⏭️ Dilewati hari ini"
+            detail={
+              'Rentetan 🔥 tidak bertambah. Masih bisa dibatalkan — atau ' +
+              'langsung isi bacaannya lalu tekan “Sudah baca”.'
+            }
+            additionalStyle={styles.skippedGap}
+          />
         )}
 
         {/* Aktif setelah minimal satu bacaan terisi (handleSave juga menjaga). */}
@@ -195,15 +195,12 @@ export default function BibleReadingScreen() {
         />
 
         {/* Jujur lebih baik daripada mengarang bacaan demi streak. */}
-        <PressableScale
-          style={styles.skipButton}
+        <SkipButton
+          skipped={skipped}
+          label="⏭️ Lewati baca hari ini"
+          busy={busy}
           onPress={handleSkip}
-          disabled={busy}
-          haptic="warning">
-          <VixText heading="bold" additionalStyle={styles.skipText}>
-            {skipped ? '↩️ Batalkan lewati' : '⏭️ Lewati baca hari ini'}
-          </VixText>
-        </PressableScale>
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -253,16 +250,7 @@ const styles = StyleSheet.create({
   summaryText: { color: Color.TEXT_TITLE },
   save: { marginBottom: 10 },
   saveDisabled: { opacity: 0.45 },
-  skippedCard: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 2,
-    marginBottom: 12,
-  },
-  skippedText: { color: Color.ACCENT_DARK },
-  skippedSub: { color: Color.ACCENT_DARK },
-  skipButton: { alignItems: 'center', paddingVertical: 10 },
-  skipText: { color: Color.TEXT_LABEL },
+  // Bentuk kartunya ada di components/common/SkipToday.tsx — di sini cukup
+  // jaraknya saja, karena tiap layar menaruhnya di posisi berbeda.
+  skippedGap: { marginBottom: 12 },
 });
