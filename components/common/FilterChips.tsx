@@ -2,21 +2,21 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { Chip } from '@/components/common/Chip';
 
-// Baris chip filter yang bisa digeser: "Semua" + satu chip per pilihan,
+// Baris chip filter yang bisa digeser: "ALL" + satu chip per pilihan,
 // masing-masing boleh menampilkan angka. Menekan chip yang sedang aktif akan
 // melepas filternya. Dipakai Reminder Prioritas (kategori) dan Riwayat
 // Pertemuan (jenis pertemuan) — satu bentuk, satu tempat mengubahnya.
 export type FilterOption<T extends string> = {
   key: T;
   label: string;
-  count?: number; // ditempel di belakang label kalau > 0
+  count?: number; // ditempel dalam kurung di belakang label kalau > 0
 };
 
 export function FilterChips<T extends string>({
   options,
   value,
   onChange,
-  allLabel = 'Semua',
+  allLabel = 'ALL',
 }: {
   options: FilterOption<T>[];
   value: T | null; // null = tanpa filter
@@ -36,7 +36,7 @@ export function FilterChips<T extends string>({
       {options.map((o) => (
         <Chip
           key={o.key}
-          label={o.count ? `${o.label} ${o.count}` : o.label}
+          label={o.count ? `${o.label} (${o.count})` : o.label}
           active={value === o.key}
           onPress={() => onChange(value === o.key ? null : o.key)}
         />

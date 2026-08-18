@@ -10,6 +10,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
@@ -133,6 +134,10 @@ export function TransactionsTab({
   const [editDate, setEditDate] = useState(new Date());
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  // Salin transaksi (📋 di modal edit) — konfirmasinya INLINE di dalam modal,
+  // karena iOS tidak mendukung modal bertumpuk (sama seperti InlineDelete).
+  const [confirmCopy, setConfirmCopy] = useState(false);
+  const [copying, setCopying] = useState(false);
 
   // Modal konfirmasi hapus.
   const [confirmDelete, setConfirmDelete] = useState<Transaction | null>(null);
@@ -293,6 +298,60 @@ export function TransactionsTab({
     setEditLiters(item.liters ? String(item.liters) : '');
     setEditDate(item.date ? item.date.toDate() : new Date());
     setEditError(null);
+    setConfirmCopy(false);
+  }
+
+  /**
+   * Salin transaksi yang sedang dibuka jadi DATA BARU — isinya persis seperti
+   * yang tampil di modal (nominal, catatan, sub, liter), kecuali TANGGALNYA
+   * yang otomatis jadi hari ini (saat tombol Salin ditekan). Transaksi aslinya
+   * tidak diubah sama sekali.
+   */
+  async function handleCopy() {
+    if (!user || !editing || copying) return;
+    const value = parseAmount(editAmount);
+    const invalid = validate(value, editNote);
+    if (invalid) {
+      setEditError(invalid);
+      setConfirmCopy(false);
+      return;
+    }
+    setEditError(null);
+    setCopying(true);
+    const nowFuel = isFuelTransaction(
+      editing.type,
+      editing.category,
+      editSub ?? undefined,
+    );
+    const copyLiters = nowFuel ? parseDecimal(editLiters) : 0;
+    try {
+      // addTransaction selalu memakai Timestamp.now() → tanggalnya otomatis
+      // hari ini, persis seperti menambah lewat form biasa.
+      const ref = await addTransaction(user.uid, {
+        type: editing.type,
+        category: editing.category,
+        sub: editSub ?? '',
+        liters: copyLiters,
+        amount: value,
+        note: editNote.trim(),
+      });
+      // Bensin → salinannya ikut tercatat di fitur Car 🚗 (Log), sama seperti
+      // transaksi bensin yang ditambah manual.
+      if (nowFuel) {
+        await syncFuelLog(user.uid, ref.id, {
+          title: editNote.trim() || 'Bensin',
+          cost: value,
+          liters: copyLiters > 0 ? copyLiters : null,
+          date: new Date(),
+        });
+      }
+      setConfirmCopy(false);
+      setEditing(null);
+    } catch {
+      setEditError(SAVE_ERROR);
+    } finally {
+      setCopying(false);
+    }
   }
 
   async function handleSaveEdit() {
@@ -732,7 +791,59 @@ export function TransactionsTab({
             ? `${editingCategory.icon} ${editingCategory.label} · ${FINANCE_TYPE_LABEL[editing.type]}`
             : undefined
         }
-        onClose={() => setEditing(null)}>
+        onClose={() => setEditing(null)}
+        headerRight={
+          // 📋 = salin jadi transaksi baru bertanggal hari ini (sama seperti
+          // tombol 📋 di sub-menu Budgeting).
+          <PressableScale
+            style={styles.copyChip}
+            onPress={() => setConfirmCopy(true)}
+            disabled={copying || editSaving}
+            hitSlop={8}>
+            <VixText heading="label" additionalStyle={styles.copyChipText}>
+              📋
+            </VixText>
+          </PressableScale>
+        }>
+        {/* Konfirmasi salin — inline (bukan modal baru) supaya muncul di iOS */}
+        {confirmCopy && (
+          <Animated.View
+            entering={FadeInDown.duration(200)}
+            style={styles.copyBox}>
+            <VixText heading="bold" additionalStyle={styles.copyBoxTitle}>
+              📋 Salin jadi transaksi baru?
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.copyBoxDetail}>
+              {formatRupiah(parseAmount(editAmount))} ·{' '}
+              {editNote.trim() || 'tanpa catatan'}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.copyBoxDetail}>
+              📆 Tanggalnya jadi {formatFullDate(new Date())} — transaksi yang
+              ini tidak berubah.
+            </VixText>
+            <View style={styles.copyRow}>
+              <PressableScale
+                style={styles.copyCancel}
+                onPress={() => setConfirmCopy(false)}
+                disabled={copying}>
+                <VixText heading="bold">Batal</VixText>
+              </PressableScale>
+              <PressableScale
+                style={styles.copyConfirm}
+                onPress={handleCopy}
+                disabled={copying}
+                haptic="medium">
+                {copying ? (
+                  <ActivityIndicator color={Color.TEXT_REVERSE} />
+                ) : (
+                  <VixText heading="bold" additionalStyle={styles.copyChipText}>
+                    Ya, Salin
+                  </VixText>
+                )}
+              </PressableScale>
+            </View>
+          </Animated.View>
+        )}
         <MoneyInput
           placeholder="Nominal"
           value={editAmount}
@@ -871,6 +982,48 @@ const styles = StyleSheet.create({
   },
   inputRow: { flexDirection: 'row', gap: 10 },
   inputGap: { marginTop: 8 },
+  // Tombol 📋 salin di kanan judul modal edit — bentuknya disamakan persis
+  // dengan tombol 📋 di sub-menu Budgeting.
+  copyChip: {
+    backgroundColor: Color.MAIN,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  copyChipText: { color: Color.TEXT_REVERSE },
+  // Kotak konfirmasi salin (inline, di dalam modal edit).
+  copyBox: {
+    borderWidth: 1,
+    borderColor: Color.MAIN,
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+    gap: 6,
+  },
+  copyBoxTitle: { color: Color.MAIN_DARK },
+  copyBoxDetail: { color: Color.TEXT_LABEL },
+  copyRow: { flexDirection: 'row', gap: 8, marginTop: 2 },
+  copyCancel: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: Color.CONTAINER,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+  },
+  copyConfirm: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: Color.MAIN,
+  },
   flexInput: { flex: 1 },
   // Kolom Liter di samping Nominal (hanya saat mencatat bensin).
   literInput: { width: 84 },

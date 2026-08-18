@@ -43,6 +43,8 @@ const TOP_GAP = 72;
 //   `scroll={false}` kalau modal sudah punya scroll/daftar sendiri).
 // - `footer` = area tombol aksi (mis. Batal/Simpan) yang MENEMPEL di bawah —
 //   selalu terlihat tanpa perlu scroll, dengan garis pemisah di atasnya.
+// - `headerRight` = tombol kecil di kanan judul (mis. 📋 salin). Tanpa prop ini
+//   tata letak judul persis seperti semula.
 // - Bisa ditutup dengan menyeret gagang/judul ke bawah atau menekan area gelap.
 export function SheetModal({
   visible,
@@ -52,6 +54,7 @@ export function SheetModal({
   scroll = true,
   children,
   footer,
+  headerRight,
 }: {
   visible: boolean;
   title: string;
@@ -60,6 +63,7 @@ export function SheetModal({
   scroll?: boolean;
   children: ReactNode;
   footer?: ReactNode;
+  headerRight?: ReactNode;
 }) {
   const { height } = useWindowDimensions();
   // `rendered` menjaga Modal tetap terpasang selama animasi keluar berjalan.
@@ -170,14 +174,21 @@ export function SheetModal({
             <GestureDetector gesture={pan}>
               <View style={styles.grabZone}>
                 <View style={styles.handle} />
-                <VixText heading="title" additionalStyle={styles.title}>
-                  {title}
-                </VixText>
-                {subtitle ? (
-                  <VixText heading="label" additionalStyle={styles.subtitle}>
-                    {subtitle}
-                  </VixText>
-                ) : null}
+                {/* Judul memenuhi lebar seperti biasa; `headerRight` hanya
+                    mengambil sisa ruang di kanan kalau memang dioper. */}
+                <View style={styles.titleRow}>
+                  <View style={styles.titleMain}>
+                    <VixText heading="title" additionalStyle={styles.title}>
+                      {title}
+                    </VixText>
+                    {subtitle ? (
+                      <VixText heading="label" additionalStyle={styles.subtitle}>
+                        {subtitle}
+                      </VixText>
+                    ) : null}
+                  </View>
+                  {headerRight}
+                </View>
               </View>
             </GestureDetector>
             {body}
@@ -215,6 +226,10 @@ const styles = StyleSheet.create({
     backgroundColor: Color.BORDER,
     marginBottom: 12,
   },
+  // Baris judul: teks di kiri (memuai), tombol opsional di kanan. Margin bawah
+  // judul/subjudul tetap di dalam kolom teks → tinggi header tidak berubah.
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  titleMain: { flex: 1 },
   title: { marginBottom: 2 },
   subtitle: { marginBottom: 14 },
   // flexShrink:1 → ScrollView menyusut mengikuti batas sheet lalu menggulir isi.

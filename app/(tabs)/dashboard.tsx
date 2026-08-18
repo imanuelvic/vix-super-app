@@ -1092,10 +1092,7 @@ export default function DashboardScreen() {
               title={`🎓 Learning — ${learningDue.emoji} ${learningDue.label} (${learningDue.minutes} mnt)`}
               onPress={() => router.push('/learning')}>
               <VixText heading="label" additionalStyle={styles.learningText}>
-                Topik minggu ini: {learningSkill.title}
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.learningText}>
-                {learningDue.how}
+                {learningSkill.title}
               </VixText>
             </ReminderCard>
           )}

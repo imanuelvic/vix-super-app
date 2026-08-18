@@ -327,18 +327,12 @@ export default function ProfileScreen() {
             <VixText heading="bold" additionalStyle={styles.lifeText}>
               📜 My History
             </VixText>
-            <VixText heading="label" additionalStyle={styles.lifeSub}>
-              Masa lalu
-            </VixText>
           </PressableScale>
           <PressableScale
             style={styles.lifeButton}
             onPress={() => router.push('/timeline')}>
             <VixText heading="bold" additionalStyle={styles.lifeText}>
               📍 My Timeline
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.lifeSub}>
-              Masa depan
             </VixText>
           </PressableScale>
         </View>
@@ -498,7 +492,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   lifeText: { color: Color.ACCENT_DARK },
-  lifeSub: { color: Color.ACCENT_DARK },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
