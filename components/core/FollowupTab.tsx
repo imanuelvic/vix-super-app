@@ -17,6 +17,8 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
+  birthdayGroupText,
+  birthdayPersonalText,
   isCurrentMonthPrayers,
   isPrayerFollowupDay,
   markBirthdayGreeted,
@@ -46,6 +48,7 @@ import {
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
 // Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
 // membangun hubungan — Senin pertanyaan doa wajib, hari lain pertanyaan acak
@@ -190,6 +193,7 @@ export function FollowupTab({
         label: `${l.heart} ${l.name}`,
         sub: null as string | null,
         phone: l.phone,
+        gender: l.gender ?? null,
         birthDay: l.birthDay,
         birthMonth: l.birthMonth,
         ...nextBirthday(l, today),
@@ -202,6 +206,7 @@ export function FollowupTab({
           label: `👤 ${m.name}`,
           sub: cl ? `Main Team ${cl.heart} ${cl.name}` : 'Main Team',
           phone: m.phone,
+          gender: m.gender ?? null,
           birthDay: m.birthDay,
           birthMonth: m.birthMonth,
           ...nextBirthday(m, today),
@@ -286,6 +291,12 @@ export function FollowupTab({
     Linking.openURL(waLink(phone, text)).catch(() =>
       setError('Gagal membuka WhatsApp.'),
     );
+  }
+
+  /** Tandai sudah diucapkan hari ini → kartunya hilang dari daftar. */
+  function markGreeted(personId: string) {
+    if (!user) return;
+    markBirthdayGreeted(user.uid, personId, dayId).catch(() => {});
   }
 
   // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: ketuk untuk buka
@@ -399,22 +410,49 @@ export function FollowupTab({
               {b.sub ? `${b.sub} — ` : ''}Genap {b.turningAge} tahun. Jangan
               lupa kirim ucapan & doa 🥳
             </VixText>
-            {b.phone && (
+            {/* Dua ucapan, dua templat berbeda:
+                • Grup     → dibuka tanpa nomor, nama grupnya dipilih di WhatsApp
+                • Personal → langsung ke nomornya, isinya menyesuaikan cowok/cewek
+                Keduanya sama-sama menandai "sudah diucapkan hari ini". */}
+            <View style={styles.waRow}>
               <PressableScale
-                style={styles.waButton}
+                style={[styles.waButton, styles.waFlex]}
                 onPress={() => {
-                  openWhatsApp(
-                    b.phone!,
-                    `Selamat ulang tahun ke-${b.turningAge}, ${b.name}! 🎉 Tuhan Yesus memberkati tahun barumu 🙏`,
+                  shareTextToWhatsApp(birthdayGroupText(b.name), () =>
+                    setError(WHATSAPP_ERROR),
                   );
-                  if (user) {
-                    markBirthdayGreeted(user.uid, b.key, dayId).catch(() => {});
-                  }
+                  markGreeted(b.key);
                 }}>
                 <VixText heading="bold" additionalStyle={styles.waText}>
-                  💬 Chat
+                  👥 Grup
                 </VixText>
               </PressableScale>
+              {b.phone && (
+                <PressableScale
+                  style={[styles.waButton, styles.waFlex]}
+                  onPress={() => {
+                    openWhatsApp(
+                      b.phone!,
+                      birthdayPersonalText(b.name, b.gender),
+                    );
+                    markGreeted(b.key);
+                  }}>
+                  <VixText heading="bold" additionalStyle={styles.waText}>
+                    💬 Personal
+                  </VixText>
+                </PressableScale>
+              )}
+            </View>
+            {!b.phone && (
+              <VixText heading="label" additionalStyle={styles.birthdayHint}>
+                ℹ️ Nomor WA-nya belum diisi — chat pribadi belum bisa langsung.
+              </VixText>
+            )}
+            {!b.gender && (
+              <VixText heading="label" additionalStyle={styles.birthdayHint}>
+                ℹ️ Cowok/cewek belum diisi di tab Leaders — ucapan pribadinya
+                pakai versi umum dulu.
+              </VixText>
             )}
           </View>
         ))}
@@ -750,6 +788,10 @@ const styles = StyleSheet.create({
   },
   birthdayTitle: { color: Color.ACCENT_DARK },
   birthdayText: { color: Color.ACCENT_DARK },
+  birthdayHint: { color: Color.ACCENT_DARK },
+  // Dua tombol ucapan bersebelahan, lebarnya dibagi rata.
+  waRow: { flexDirection: 'row', gap: 10 },
+  waFlex: { flex: 1 },
   upcomingCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

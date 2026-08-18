@@ -50,7 +50,20 @@ import {
   weeklyLeaders,
   type CoreLeader,
 } from '@/lib/core';
+import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { OWNER_NAME } from '@/lib/family';
+import {
+  fitPendingToday,
+  subscribeFitDay,
+  type FitDayDone,
+} from '@/lib/fitness';
+import {
+  EMPTY_WEEK,
+  pendingSteps,
+  subscribeLearningWeek,
+  weekDocId,
+  type LearningWeek,
+} from '@/lib/learning';
 import { formatShortDayDate } from '@/lib/format';
 import { useNow } from '@/hooks/useNow';
 import {
@@ -155,6 +168,12 @@ export default function HomeScreen() {
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
   const [carParts, setCarParts] = useState<PartStatusMap>({});
   const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
+  // Centang gerakan gym hari ini — untuk badge tile Fitness 💪.
+  const [fitDone, setFitDone] = useState<FitDayDone>({});
+  // Langkah belajar minggu ini — untuk badge tile Learning 🎓.
+  const [learningWeek, setLearningWeek] = useState<LearningWeek>(EMPTY_WEEK);
+  // Pinjaman 🤝 — untuk badge tile Finance saat ada yang sudah H-1.
+  const [debts, setDebts] = useState<Debt[]>([]);
   // Prioritas P1 — untuk badge Career (Fulltime + Freelance) & Reminder.
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
@@ -171,10 +190,14 @@ export default function HomeScreen() {
   // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
   // malam. Lihat catatan lengkapnya di hooks/useNow.ts.
   const { now, todayId } = useNow();
+  // id minggu berjalan (tanggal Senin) — nilainya sama sepanjang minggu, jadi
+  // langganan Learning di bawah tidak ikut dipasang ulang tiap menit.
+  const weekId = weekDocId(now);
 
   useEffect(() => {
     if (!user) return;
     const unsubs = [
+      subscribeLearningWeek(user.uid, weekId, setLearningWeek),
       subscribeLoginStreak(user.uid, setLogin),
       subscribeChoreStatus(user.uid, setResidenceChores),
       subscribeTasks(user.uid, setTasks),
@@ -187,9 +210,11 @@ export default function HomeScreen() {
       subscribeOtherTasks(user.uid, setOtherTasks),
       subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
       subscribeWaterStreak(user.uid, setWaterStreak),
+      subscribeFitDay(user.uid, todayId, setFitDone),
+      subscribeDebts(user.uid, setDebts),
     ];
     return () => unsubs.forEach((unsub) => unsub());
-  }, [user, todayId]);
+  }, [user, todayId, weekId]);
 
   // Doa pagi TERLEWAT OTOMATIS: sudah lewat jam 09.00 & belum dikonfirmasi
   // hari ini. Saat itu terjadi streak doa dihanguskan (sekali saja), lalu Home
@@ -262,6 +287,16 @@ export default function HomeScreen() {
     car: countCarAttention(carParts, now),
     // Jumlah perawatan/kebersihan rumah yang perlu perhatian.
     residence: countResidenceAttention(residenceChores, now),
+    // Gerakan gym hari ini yang belum dicentang — baru menyala jam 16.00,
+    // sejam sebelum jadwal latihan, bareng kartu reminder di Dashboard.
+    fitness: fitPendingToday(fitDone, now),
+    // Langkah belajar minggu ini yang harinya sudah tiba tapi belum
+    // dikerjakan (Sen/Rab/Jum/Min) — aturan yang sama persis dengan kartu
+    // reminder Learning di Dashboard.
+    learning: pendingSteps(learningWeek.steps, now),
+    // Pinjaman yang jatuh temponya sudah H-1 (termasuk hari ini & yang
+    // kelewat). Angkanya sama dengan badge tombol 🤝 di header Finance.
+    finance: debtUrgentCount(debts, now),
   };
 
   // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).

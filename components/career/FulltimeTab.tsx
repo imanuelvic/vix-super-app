@@ -224,7 +224,7 @@ export function FulltimeTab({
         </SummaryCard>
 
         <PrimaryButton
-          label="Tambah Prioritas"
+          label="Tambah Kartu"
           icon="plus"
           onPress={openAdd}
           additionalStyle={styles.addButton}

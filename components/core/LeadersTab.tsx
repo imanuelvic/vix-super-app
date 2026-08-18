@@ -19,6 +19,7 @@ import {
   archiveCoreLeader,
   currentAge,
   DISC_OPTIONS,
+  GENDER_OPTIONS,
   HEARTS,
   LOVE_LANG_OPTIONS,
   loveLangLabel,
@@ -30,6 +31,7 @@ import {
   saveCoreLeaders,
   saveMainTeam,
   type CoreLeader,
+  type Gender,
   type MainTeamMember,
 } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
@@ -61,6 +63,7 @@ export function LeadersTab({
   const [fHeart, setFHeart] = useState('❤️');
   const [fBirthday, setFBirthday] = useState(new Date(2000, 0, 1));
   const [fPhone, setFPhone] = useState('');
+  const [fGender, setFGender] = useState<Gender | null>(null);
   const [fDisc, setFDisc] = useState<string | null>(null);
   const [fMbti, setFMbti] = useState<string | null>(null);
   const [fLove, setFLove] = useState<string | null>(null);
@@ -75,6 +78,7 @@ export function LeadersTab({
   const [mtLeaderId, setMtLeaderId] = useState('');
   const [mtBirthday, setMtBirthday] = useState(new Date(2000, 0, 1));
   const [mtPhone, setMtPhone] = useState('');
+  const [mtGender, setMtGender] = useState<Gender | null>(null);
   const [mtDisc, setMtDisc] = useState<string | null>(null);
   const [mtMbti, setMtMbti] = useState<string | null>(null);
   const [mtLove, setMtLove] = useState<string | null>(null);
@@ -102,6 +106,7 @@ export function LeadersTab({
     setFHeart('💚');
     setFBirthday(new Date(2000, 0, 1));
     setFPhone('');
+    setFGender(null);
     setFDisc(null);
     setFMbti(null);
     setFLove(null);
@@ -116,6 +121,7 @@ export function LeadersTab({
     setFHeart(l.heart);
     setFBirthday(new Date(l.birthYear, l.birthMonth, l.birthDay));
     setFPhone(l.phone ?? '');
+    setFGender(l.gender ?? null);
     setFDisc(l.disc ?? null);
     setFMbti(l.mbti ?? null);
     setFLove(l.loveLanguage ?? null);
@@ -141,6 +147,7 @@ export function LeadersTab({
       birthDay: fBirthday.getDate(),
       phone: normalizePhone(fPhone), // "08…" / "+62…" / "62…" semua dirapikan
       lastFollowupDayId: editing === 'new' ? null : editing.lastFollowupDayId,
+      gender: fGender,
       disc: fDisc,
       mbti: fMbti,
       loveLanguage: fLove,
@@ -206,6 +213,7 @@ export function LeadersTab({
     setMtLeaderId(leaders[0]?.id ?? '');
     setMtBirthday(new Date(2000, 0, 1));
     setMtPhone('');
+    setMtGender(null);
     setMtDisc(null);
     setMtMbti(null);
     setMtLove(null);
@@ -218,6 +226,7 @@ export function LeadersTab({
     setMtLeaderId(m.leaderId);
     setMtBirthday(new Date(m.birthYear, m.birthMonth, m.birthDay));
     setMtPhone(m.phone ?? '');
+    setMtGender(m.gender ?? null);
     setMtDisc(m.disc ?? null);
     setMtMbti(m.mbti ?? null);
     setMtLove(m.loveLanguage ?? null);
@@ -245,6 +254,7 @@ export function LeadersTab({
       birthDay: mtBirthday.getDate(),
       phone: normalizePhone(mtPhone),
       lastFollowupDayId: editingMT === 'new' ? null : editingMT.lastFollowupDayId,
+      gender: mtGender,
       disc: mtDisc,
       mbti: mtMbti,
       loveLanguage: mtLove,
@@ -549,6 +559,8 @@ export function LeadersTab({
                 />
               </View>
 
+              <GenderField value={fGender} onChange={setFGender} />
+
               {/* Kepribadian — bantu cara pendekatan & ide chat */}
               <PersonalityFields
                 disc={fDisc}
@@ -650,6 +662,8 @@ export function LeadersTab({
           />
         </View>
 
+        <GenderField value={mtGender} onChange={setMtGender} />
+
         {/* Kepribadian Main Team */}
         <PersonalityFields
           disc={mtDisc}
@@ -681,6 +695,38 @@ export function LeadersTab({
       </SheetModal>
 
     </View>
+  );
+}
+
+// Cowok / cewek — penentu ucapan ulang tahun mana yang dikirim. Tekan pilihan
+// yang sedang aktif untuk mengosongkannya lagi (sama seperti chip lain).
+function GenderField({
+  value,
+  onChange,
+}: {
+  value: Gender | null;
+  onChange: (v: Gender | null) => void;
+}) {
+  return (
+    <>
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        🚻 Cowok / Cewek
+      </VixText>
+      <View style={styles.genderRow}>
+        {GENDER_OPTIONS.map((g) => (
+          <Chip
+            key={g.key}
+            label={g.label}
+            active={value === g.key}
+            onPress={() => onChange(value === g.key ? null : g.key)}
+            additionalStyle={styles.genderChip}
+          />
+        ))}
+      </View>
+      <VixText heading="label" additionalStyle={styles.genderHint}>
+        Menentukan ucapan ulang tahun mana yang dipakai saat chat pribadi.
+      </VixText>
+    </>
   );
 }
 
@@ -896,6 +942,10 @@ const styles = StyleSheet.create({
   },
   phonePrefixText: { color: Color.TEXT_PARAGRAPH },
   phoneInput: { flex: 1 },
+  // Cowok / cewek — dua chip selebar setengah baris.
+  genderRow: { flexDirection: 'row', gap: 8 },
+  genderChip: { flex: 1 },
+  genderHint: { marginTop: 6, marginBottom: 10 },
   heartWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',

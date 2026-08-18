@@ -262,10 +262,14 @@ export function VisitationTab({
     );
   }
 
-  // Mode cari: kotak pencarian + hasilnya saja, tanpa tombol & filter.
-  if (searchMode) {
-    return (
-      <View style={styles.flex}>
+  return (
+    <View style={styles.flex}>
+      {/* Mode cari 🔍 — yang berganti hanya ISI layarnya; semuanya tetap di
+          dalam pohon yang sama. Dulu bagian ini `return` sendiri lebih awal,
+          akibatnya modal di bawah tidak ikut terpasang: menekan hasil
+          pencarian memang menyetel jadwal yang mau diedit, tapi sheet-nya
+          tak pernah muncul. Sekarang satu modal dipakai kedua mode. */}
+      {searchMode ? (
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
@@ -297,78 +301,71 @@ export function VisitationTab({
             </>
           )}
         </ScrollView>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>
+          <PrimaryButton
+            label="Jadwalkan Pertemuan"
+            icon="plus"
+            onPress={openAdd}
+            additionalStyle={styles.addButton}
+          />
 
-        <PressableScale style={styles.fab} onPress={toggleSearch}>
-          <IconSymbol name="xmark" size={24} color={Color.TEXT_REVERSE} />
-        </PressableScale>
-      </View>
-    );
-  }
+          <FormError message={error} />
 
-  return (
-    <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <PrimaryButton
-          label="Jadwalkan Pertemuan"
-          icon="plus"
-          onPress={openAdd}
-          additionalStyle={styles.addButton}
-        />
-
-        <FormError message={error} />
-
-        {/* ===== Jadwal mendatang ===== */}
-        <View style={styles.sectionRow}>
-          <VixText heading="title" additionalStyle={styles.sectionTitleFlex}>
-            📅 Jadwal Mendatang
-          </VixText>
-          <View style={styles.sectionActions}>
-            {/* Tips pertemuan (buka modal) */}
-            <EmojiButton emoji="💡" onPress={() => setTipsModal(true)} />
-            {/* Filter jadwal (per CL / jenis) — menyala kalau ada filter aktif */}
-            <EmojiButton
-              emoji="🎚️"
-              active={hasFilter}
-              onPress={() => setFilterModal(true)}
-            />
-          </View>
-        </View>
-
-        {/* Chip filter yang sedang aktif — ketuk untuk menghapusnya */}
-        {hasFilter && (
-          <View style={styles.activeFilterRow}>
-            {filterLeaderId && (
-              <Chip
-                label={`${activeLeader ? `${activeLeader.heart} ${activeLeader.name}` : 'CL'} ✕`}
-                active
-                onPress={() => setFilterLeaderId(null)}
+          {/* ===== Jadwal mendatang ===== */}
+          <View style={styles.sectionRow}>
+            <VixText heading="title" additionalStyle={styles.sectionTitleFlex}>
+              📅 Jadwal Mendatang
+            </VixText>
+            <View style={styles.sectionActions}>
+              {/* Tips pertemuan (buka modal) */}
+              <EmojiButton emoji="💡" onPress={() => setTipsModal(true)} />
+              {/* Filter jadwal (per CL / jenis) — menyala kalau ada filter aktif */}
+              <EmojiButton
+                emoji="🎚️"
+                active={hasFilter}
+                onPress={() => setFilterModal(true)}
               />
-            )}
-            {filterKind && (
-              <Chip
-                label={`${meetingKindMeta(filterKind).icon} ${meetingKindMeta(filterKind).label} ✕`}
-                active
-                onPress={() => setFilterKind(null)}
-              />
-            )}
+            </View>
           </View>
-        )}
 
-        {filtered.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
-            {hasFilter
-              ? 'Tidak ada jadwal yang cocok dengan filter ini.'
-              : 'Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉'}
-          </VixText>
-        ) : (
-          filtered.map(renderCard)
-        )}
-      </ScrollView>
+          {/* Chip filter yang sedang aktif — ketuk untuk menghapusnya */}
+          {hasFilter && (
+            <View style={styles.activeFilterRow}>
+              {filterLeaderId && (
+                <Chip
+                  label={`${activeLeader ? `${activeLeader.heart} ${activeLeader.name}` : 'CL'} ✕`}
+                  active
+                  onPress={() => setFilterLeaderId(null)}
+                />
+              )}
+              {filterKind && (
+                <Chip
+                  label={`${meetingKindMeta(filterKind).icon} ${meetingKindMeta(filterKind).label} ✕`}
+                  active
+                  onPress={() => setFilterKind(null)}
+                />
+              )}
+            </View>
+          )}
 
-      {/* FAB mengambang (sama seperti Transaksi di Finance): buka mode cari 🔍 */}
+          {filtered.length === 0 ? (
+            <VixText heading="label" additionalStyle={styles.empty}>
+              {hasFilter
+                ? 'Tidak ada jadwal yang cocok dengan filter ini.'
+                : 'Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉'}
+            </VixText>
+          ) : (
+            filtered.map(renderCard)
+          )}
+        </ScrollView>
+      )}
+
+      {/* FAB mengambang (sama seperti Transaksi di Finance): buka & tutup
+          mode cari 🔍 */}
       <PressableScale style={styles.fab} onPress={toggleSearch}>
         <IconSymbol
-          name="magnifyingglass"
+          name={searchMode ? 'xmark' : 'magnifyingglass'}
           size={24}
           color={Color.TEXT_REVERSE}
         />

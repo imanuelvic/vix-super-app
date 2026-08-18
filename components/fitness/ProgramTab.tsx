@@ -7,6 +7,7 @@ import { VixText } from '@/components/common/VixText';
 import { formatDecimal } from '@/lib/format';
 import {
   fitBlockOf,
+  FIT_BLOCK_ORDER,
   FIT_DAY_SHORT,
   FIT_PROGRAM,
   weightOf,
@@ -14,21 +15,34 @@ import {
   type FitWeights,
 } from '@/lib/fitness';
 
-// Tab Program 📅 — seluruh isi program dalam satu layar: Blok A & Blok B,
-// lima hari latihan beserta gerakan & beban tersimpannya. Blok berganti
-// otomatis tiap 2 minggu supaya tidak bosan tapi progres tetap terukur.
+// Tab Program 📅 — seluruh isi program dalam satu layar: Blok A, B & C, lima
+// hari latihan beserta gerakan & beban tersimpannya. Blok berganti otomatis
+// tiap 2 minggu supaya tidak bosan tapi progres tetap terukur.
 export function ProgramTab({ weights }: { weights: FitWeights }) {
   const activeBlock = fitBlockOf(new Date());
   const [block, setBlock] = useState<FitBlock>(activeBlock);
 
+  // Daftar bloknya diambil dari lib (bukan ditulis ulang di sini) supaya
+  // menambah blok baru cukup sekali di satu tempat.
+  const activeAt = FIT_BLOCK_ORDER.indexOf(activeBlock);
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <SegmentTabs
-        tabs={(['A', 'B'] as FitBlock[]).map((b) => ({
-          key: b,
-          label: `Blok ${b}`,
-          sub: b === activeBlock ? '● sedang jalan' : 'giliran berikutnya',
-        }))}
+        tabs={FIT_BLOCK_ORDER.map((b, i) => {
+          // Berapa giliran lagi sampai blok ini jalan (0 = sedang jalan).
+          const turns = (i - activeAt + FIT_BLOCK_ORDER.length) % FIT_BLOCK_ORDER.length;
+          return {
+            key: b,
+            label: `Blok ${b}`,
+            sub:
+              turns === 0
+                ? '● sedang jalan'
+                : turns === 1
+                  ? 'giliran berikutnya'
+                  : `${turns} giliran lagi`,
+          };
+        })}
         value={block}
         onChange={setBlock}
       />

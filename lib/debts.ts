@@ -111,6 +111,28 @@ export function debtReminderWindow(debt: Debt, today: Date): boolean {
   return !debt.done && debtDaysUntil(debt, today) <= 3;
 }
 
+/**
+ * Sudah H-1: belum lunas & jatuh tempo tinggal SEHARI atau kurang — termasuk
+ * yang jatuh tempo hari ini dan yang sudah kelewat.
+ *
+ * Sengaja lebih ketat dari `debtReminderWindow` (H-3). Kartu di Dashboard
+ * mulai mengingatkan 3 hari sebelumnya, sedangkan badge merah baru menyala
+ * saat benar-benar mepet — supaya angkanya tidak menyala terus-terusan dan
+ * jadi tidak berarti.
+ */
+export function debtUrgent(debt: Debt, today: Date): boolean {
+  return !debt.done && debtDaysUntil(debt, today) <= 1;
+}
+
+/**
+ * Berapa pinjaman yang sudah H-1 — angka badge tile Finance di Home & tombol
+ * 🤝 Pinjaman di header Finance. DUA arah ikut dihitung: yang kamu tagih ke
+ * orang maupun yang harus kamu bayar.
+ */
+export function debtUrgentCount(debts: Debt[], today: Date): number {
+  return debts.filter((d) => debtUrgent(d, today)).length;
+}
+
 /** Majukan tanggal satu periode (untuk jatuh tempo cicilan berikutnya). */
 function addPeriod(date: Date, period: DebtPeriod): Date {
   const d = new Date(date);

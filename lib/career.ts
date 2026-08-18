@@ -11,7 +11,7 @@ import { liveDoc } from './liveDoc';
 // Career 💼 — empat "topi" pekerjaan pemilik app:
 // 1) Fulltime : Software Engineer / Mobile Developer di NDC → roadmap prioritas
 // 2) Freelance : proyek website & aplikasi → client, deadline, requirement, fee
-// 3) Insurance : agent Allianz → target pitching/closing/premi per bulan
+// 3) Insurance : agent Manulife → target pitching/closing/premi per bulan
 // 4) Business  : es cendol & roa Manado (masih coming soon)
 //
 // Penyimpanan hemat: SATU dokumen per bidang di users/{uid}/career/*.

@@ -3,7 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
@@ -11,8 +15,10 @@ import { ExerciseTab } from '@/components/fitness/ExerciseTab';
 import { ProgramTab } from '@/components/fitness/ProgramTab';
 import { ProgressTab } from '@/components/fitness/ProgressTab';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
 import { type LoginStreak } from '@/lib/achievements';
 import {
+  fitPendingToday,
   subscribeFitDay,
   subscribeFitStreak,
   subscribeFitWeights,
@@ -20,7 +26,6 @@ import {
   type FitWeights,
 } from '@/lib/fitness';
 import {
-  dayDocId,
   subscribeHealthProfile,
   subscribeWeightTarget,
   type HealthProfile,
@@ -53,7 +58,9 @@ export default function FitnessScreen() {
   const [target, setTarget] = useState<WeightTarget | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const dayId = dayDocId(new Date());
+  // Jam berjalan — badge Exercise baru menyala jam 16.00 dan ikut kereset
+  // sendiri lewat tengah malam (lihat hooks/useNow.ts).
+  const { now, todayId: dayId } = useNow();
 
   useEffect(() => {
     if (!user) return;
@@ -94,7 +101,13 @@ export default function FitnessScreen() {
         )}
       </View>
 
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      {/* Badge Exercise = gerakan hari ini yang belum dicentang, angkanya
+          SAMA dengan badge tile Fitness di Home & kartu reminder Dashboard. */}
+      <BottomTabs
+        tabs={withBadge(TABS, { exercise: fitPendingToday(done, now) })}
+        value={tab}
+        onChange={onTabPress}
+      />
     </SafeAreaView>
   );
 }

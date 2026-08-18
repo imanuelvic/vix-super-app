@@ -32,7 +32,7 @@ import { alreadyCounted, nextStreak } from './streak';
 // Catatan: ini panduan latihan umum, bukan nasihat medis. Kalau ada keluhan
 // sendi/jantung atau cedera, konsultasi ke dokter atau pelatih dulu.
 
-export type FitBlock = 'A' | 'B';
+export type FitBlock = 'A' | 'B' | 'C';
 
 export type Exercise = {
   id: string; // stabil — kunci untuk beban tersimpan & centang harian
@@ -194,9 +194,79 @@ const BLOCK_B: FitSession[] = [
   },
 ];
 
+// ===================== BLOK C — Push / Pull / Legs =====================
+// Program klasik hipertrofi: dada-bahu-trisep (Push), punggung-bisep (Pull),
+// lalu kaki. Tiap sesi ditutup kardio ringan, persis seperti sumbernya.
+//
+// Sumbernya program 6 hari (Push · Pull · Legs · Push · Pull · Rest). Di sini
+// dipetakan ke lima hari latihan yang SUDAH kamu jalani — Sen, Sel, Kam, Jum,
+// Sab — jadi hari istirahatnya tetap Rabu & Minggu, tidak ada jadwal hidup
+// yang perlu digeser.
+//
+// Beda dari Blok A & B: TIDAK ada gerakan perut khusus (`core`) karena
+// programnya memang tidak punya. Selama blok ini berjalan, hitungan gerakan
+// inti untuk target sixpack jadi kosong.
+//
+// Gerakan yang sama dengan blok lain sengaja memakai `id` yang sama, supaya
+// beban yang sudah kamu simpan langsung terpakai lagi.
+
+const PUSH_DAY: Omit<FitSession, 'weekday'> = {
+  emoji: '💥',
+  title: 'Push Day',
+  focus: 'Dada, bahu & trisep',
+  exercises: [
+    { id: 'flatbench', emoji: '🏋️', name: 'Flat Bench Press', sets: 4, reps: '8–12', weight: 20 },
+    { id: 'inclinepress', emoji: '💪', name: 'Incline Dumbbell Press', sets: 3, reps: '10–12', weight: 10 },
+    { id: 'ohp', emoji: '🔥', name: 'Overhead Shoulder Press', sets: 4, reps: '8–10', weight: 14 },
+    { id: 'lateralraise', emoji: '⚡', name: 'Lateral Raises', sets: 3, reps: '12–15', weight: 5 },
+    { id: 'triceppushdown', emoji: '💥', name: 'Tricep Pushdown', sets: 3, reps: '12–15', weight: 10 },
+    { id: 'overheadext', emoji: '🚀', name: 'Overhead Tricep Extension', sets: 3, reps: '10–12', weight: 8 },
+    { id: 'inclinewalk', emoji: '🚶', name: 'Incline Treadmill Walk', sets: 1, reps: '20 menit', weight: null },
+  ],
+};
+
+const PULL_DAY: Omit<FitSession, 'weekday'> = {
+  emoji: '🔙',
+  title: 'Pull Day',
+  focus: 'Punggung, bisep & rear delt',
+  exercises: [
+    { id: 'latpulldown', emoji: '🏋️', name: 'Lat Pulldown', sets: 4, reps: '6–10', weight: 8, video: 'https://youtu.be/CAwf7n6Luuc' },
+    { id: 'seatedrow', emoji: '💪', name: 'Seated Cable Row', sets: 4, reps: '8–12', weight: 15 },
+    { id: 'dbrow', emoji: '🔥', name: 'Single-Arm Dumbbell Row', sets: 3, reps: '10–12 / lengan', weight: 8, video: 'https://youtu.be/6KNmHxw-SpE' },
+    { id: 'facepull', emoji: '⚡', name: 'Face Pulls', sets: 3, reps: '12–15', weight: 10 },
+    { id: 'barbellcurl', emoji: '💥', name: 'Barbell Curl', sets: 3, reps: '10–12', weight: 15 },
+    { id: 'hammercurl', emoji: '🚀', name: 'Hammer Curls', sets: 3, reps: '10–12', weight: 10, video: 'https://youtu.be/L1bDrPlfu1Q' },
+    { id: 'cycling', emoji: '🚴', name: 'Cycling', sets: 1, reps: '12–15 menit', weight: null },
+  ],
+};
+
+const LEG_DAY: Omit<FitSession, 'weekday'> = {
+  emoji: '🦵',
+  title: 'Leg Day',
+  focus: 'Paha, hamstring & betis',
+  exercises: [
+    { id: 'barbellsquat', emoji: '🦵', name: 'Barbell Squat', sets: 4, reps: '8–12', weight: 20 },
+    { id: 'rdl', emoji: '🏋️', name: 'Romanian Deadlift', sets: 4, reps: '10–12', weight: 12, video: 'https://youtu.be/eDFAAb6vJH4' },
+    { id: 'legpress', emoji: '💪', name: 'Leg Press', sets: 3, reps: '10–15', weight: 13, video: 'https://youtu.be/IZxyjW7MPJQ' },
+    { id: 'hamcurl', emoji: '⚡', name: 'Leg Curls', sets: 3, reps: '10–12', weight: 3, video: 'https://youtu.be/NIZeAGZ_YJw' },
+    { id: 'lunges', emoji: '🔥', name: 'Walking Lunges', sets: 3, reps: '12 / kaki', weight: 8, video: 'https://youtu.be/1J8mVmtyYpk' },
+    { id: 'calfraise', emoji: '💥', name: 'Calf Raises', sets: 4, reps: '15–20', weight: 10, video: 'https://youtu.be/GQa_N7wft7M' },
+    { id: 'normalwalk', emoji: '🚶', name: 'Jalan Santai', sets: 1, reps: '5 menit', weight: null },
+  ],
+};
+
+const BLOCK_C: FitSession[] = [
+  { weekday: 1, ...PUSH_DAY },
+  { weekday: 2, ...PULL_DAY },
+  { weekday: 4, ...LEG_DAY },
+  { weekday: 5, ...PUSH_DAY },
+  { weekday: 6, ...PULL_DAY },
+];
+
 export const FIT_PROGRAM: Record<FitBlock, FitSession[]> = {
   A: BLOCK_A,
   B: BLOCK_B,
+  C: BLOCK_C,
 };
 
 // Latihan jam 17.00; kartu reminder Dashboard tampil 16.00–20.59.
@@ -207,9 +277,12 @@ const FIT_TO_HOUR = 21;
 /** Nama hari pendek untuk deretan hari (indeks = getDay(), 0 = Minggu). */
 export const FIT_DAY_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-/** Blok yang berlaku pada tanggal ini — berganti tiap 2 minggu (A→B→A…). */
+/** Urutan giliran blok. Satu-satunya sumber daftar blok — tab Program ikut ini. */
+export const FIT_BLOCK_ORDER: FitBlock[] = ['A', 'B', 'C'];
+
+/** Blok yang berlaku pada tanggal ini — berganti tiap 2 minggu (A→B→C→A…). */
 export function fitBlockOf(d: Date): FitBlock {
-  return Math.floor(weekIndex(d) / 2) % 2 === 0 ? 'A' : 'B';
+  return FIT_BLOCK_ORDER[Math.floor(weekIndex(d) / 2) % FIT_BLOCK_ORDER.length];
 }
 
 /** Sesi latihan untuk hari ini — null berarti hari istirahat (Rabu & Minggu). */
@@ -392,6 +465,23 @@ export function subscribeFitDay(
     (snapshot) => onChange((snapshot.data()?.done as FitDayDone) ?? {}),
     onError,
   );
+}
+
+/**
+ * Angka badge Fitness 💪 — berapa gerakan HARI INI yang belum dicentang.
+ *
+ * Baru muncul mulai jam 16.00, satu jam sebelum jadwal latihan 17.00, dan
+ * hilang lagi jam 21.00 — jendela yang sama persis dengan kartu reminder di
+ * Dashboard, jadi badge & kartunya tidak mungkin berbeda pendapat.
+ *
+ * 0 = tidak usah ditampilkan: belum waktunya, hari istirahat, atau memang
+ * sudah beres semua 🎉
+ */
+export function fitPendingToday(done: FitDayDone, now: Date): number {
+  if (!fitReminderWindow(now)) return 0;
+  const session = fitSessionFor(now);
+  if (!session) return 0;
+  return session.exercises.filter((e) => !done[e.id]).length;
 }
 
 export function setFitExerciseDone(

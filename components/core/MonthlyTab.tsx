@@ -208,20 +208,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
 
         <FormError message={error} />
 
-        {/* Pengingat susunan agenda — biar tidak ada poin yang kelupaan */}
-        {!searchMode && (
-          <View style={styles.guideCard}>
-            <VixText heading="bold" additionalStyle={styles.guideTitle}>
-              📋 Susunan agenda tiap rapat
-            </VixText>
-            {MONTHLY_AGENDA_POINTS.map((p) => (
-              <VixText key={p.key} heading="label" additionalStyle={styles.guideText}>
-                {p.icon} {p.label} — {p.hint}
-              </VixText>
-            ))}
-          </View>
-        )}
-
         {shown.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
             {words.length > 0
@@ -316,17 +302,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
   addButton: { marginBottom: 12 },
   searchWrap: { marginBottom: 12 },
-  guideCard: {
-    backgroundColor: Color.ACCENT,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: Color.ACCENT_DARK,
-    padding: 14,
-    gap: 2,
-    marginBottom: 12,
-  },
-  guideTitle: { color: Color.ACCENT_DARK, marginBottom: 2 },
-  guideText: { color: Color.ACCENT_DARK },
   empty: { textAlign: 'center', marginTop: 10 },
   card: {
     backgroundColor: Color.CONTAINER,

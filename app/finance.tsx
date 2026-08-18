@@ -24,6 +24,8 @@ import {
   type BudgetMap,
   type SubcategoryMap,
 } from '@/lib/budgets';
+import { useNow } from '@/hooks/useNow';
+import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactions';
@@ -71,6 +73,16 @@ export default function FinanceScreen() {
   // Layar terkunci sampai PIN benar. Selama terkunci, Firestore belum
   // di-subscribe sama sekali — jadi tidak ada biaya read kalau batal masuk.
   const [unlocked, setUnlocked] = useState(false);
+
+  // Pinjaman 🤝 — cuma untuk angka merah di tombol header. Jam berjalannya
+  // dipakai supaya badge ikut berganti sendiri lewat tengah malam.
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const { now: liveNow } = useNow();
+
+  useEffect(() => {
+    if (!user || !unlocked) return;
+    return subscribeDebts(user.uid, setDebts);
+  }, [user, unlocked]);
 
   useEffect(() => {
     if (!user || !unlocked) return;
@@ -154,8 +166,13 @@ export default function FinanceScreen() {
         subtitle="Catat pemasukan, pengeluaran & budget"
         right={
           <View style={styles.headerButtons}>
-            {/* Pinjaman 🤝 (pinjam-meminjam) */}
-            <EmojiButton emoji="🤝" onPress={() => router.push('/debts')} />
+            {/* Pinjaman 🤝 (pinjam-meminjam). Angka merah = pinjaman yang
+                jatuh temponya sudah H-1 — tombolnya sama di semua sub-menu. */}
+            <EmojiButton
+              emoji="🤝"
+              badge={debtUrgentCount(debts, liveNow)}
+              onPress={() => router.push('/debts')}
+            />
             {/* Saku 👛 (dana per tujuan) */}
             <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
           </View>

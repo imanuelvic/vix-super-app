@@ -451,17 +451,42 @@ export function topicOfWeek(now = new Date()): Topic {
 }
 
 /**
- * Langkah yang SUDAH waktunya tapi belum dikerjakan — dasar kartu reminder di
- * Dashboard. Langkah yang harinya belum tiba sengaja tidak ditagih, dan yang
+ * Langkah yang HARINYA SUDAH TIBA tapi belum dikerjakan.
+ *
+ * Satu-satunya aturan penagihan Learning — kartu reminder Dashboard & badge
+ * tile Home sama-sama berangkat dari sini, jadi keduanya mustahil berbeda
+ * pendapat. Langkah yang harinya belum tiba sengaja tidak ditagih, dan yang
  * kelewat tetap muncul sampai dikerjakan (tidak hangus di tengah minggu).
+ */
+function overdueSteps(
+  steps: Record<string, boolean>,
+  now: Date,
+): typeof LEARNING_STEPS {
+  const today = dayPos(now);
+  return LEARNING_STEPS.filter((s) => s.pos <= today && !steps[s.key]);
+}
+
+/**
+ * Langkah TERDEKAT yang perlu dikerjakan — isi kartu reminder di Dashboard.
  * null = tidak ada yang perlu ditagih hari ini.
  */
 export function dueStep(
   steps: Record<string, boolean>,
   now = new Date(),
 ): (typeof LEARNING_STEPS)[number] | null {
-  const today = dayPos(now);
-  return LEARNING_STEPS.find((s) => s.pos <= today && !steps[s.key]) ?? null;
+  return overdueSteps(steps, now)[0] ?? null;
+}
+
+/**
+ * BERAPA langkah yang tertagih — angka badge tile Learning di Home.
+ * 0 = badge hilang: belum ada yang jatuh tempo, atau minggu ini memang sudah
+ * beres 🎉 (mis. hari Minggu & semuanya kosong → 4).
+ */
+export function pendingSteps(
+  steps: Record<string, boolean>,
+  now = new Date(),
+): number {
+  return overdueSteps(steps, now).length;
 }
 
 /** Berapa dari 4 langkah minggu ini yang sudah beres. */

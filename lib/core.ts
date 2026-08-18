@@ -24,6 +24,14 @@ import { liveDoc } from './liveDoc';
 // Penyimpanan: SATU dokumen (users/{uid}/core/leaders) berisi array CL —
 // daftarnya kecil, jadi 1 read per buka dan tulis utuh saat berubah.
 
+/** Cowok / cewek — penentu ucapan ulang tahun mana yang dipakai. */
+export type Gender = 'm' | 'f';
+
+export const GENDER_OPTIONS: { key: Gender; label: string }[] = [
+  { key: 'm', label: '🙋🏻‍♂️ Cowok' },
+  { key: 'f', label: '🙋🏻‍♀️ Cewek' },
+];
+
 export type CoreLeader = {
   id: string;
   name: string;
@@ -33,6 +41,8 @@ export type CoreLeader = {
   birthDay: number;
   phone: string | null; // digit SETELAH +62 (semua CL orang Indonesia)
   lastFollowupDayId: string | null; // "YYYY-MM-DD" terakhir di follow up
+  /** Cowok/cewek — dipakai memilih ucapan ulang tahun. null = belum diisi. */
+  gender?: Gender | null;
   // Kepribadian (opsional) — bantu cara pendekatan & ide chat.
   disc?: string | null; // 'D' | 'I' | 'S' | 'C'
   mbti?: string | null; // mis. 'INFJ'
@@ -66,6 +76,8 @@ export type MainTeamMember = {
   birthDay: number;
   phone: string | null; // digit setelah +62
   lastFollowupDayId: string | null;
+  /** Cowok/cewek — dipakai memilih ucapan ulang tahun. null = belum diisi. */
+  gender?: Gender | null;
   // Kepribadian (opsional).
   disc?: string | null;
   mbti?: string | null;
@@ -132,12 +144,58 @@ export function waLink(phone: string, text?: string): string {
   return text ? `${base}?text=${encodeURIComponent(text)}` : base;
 }
 
+// ==================== Ucapan ulang tahun 🎂 ====================
+// Tiga templat: satu untuk dilempar ke GRUP, dua untuk chat PRIBADI
+// (cowok/cewek). Ketiganya ditutup doa yang sama — empat pokok doa yang
+// memang selalu didoakan, ditulis ulang jadi doa untuk yang berulang tahun.
+
+/** Doa penutup yang ikut di setiap ucapan. */
+function birthdayPrayer(name: string): string {
+  return `🙏 Doaku buat ${name}:
+Kiranya semua yang kamu kerjakan berkenan & menyenangkan hati Tuhan.
+Kiranya kamu makin mengenal dan makin mengasihi Dia setiap hari.
+Bukan kehendak kita, tapi kehendak-Nya yang jadi.
+Dan Tuhan kirimkan orang-orang baik di sekelilingmu — yang mendukung, yang mendoakan, yang menemani.`;
+}
+
+/**
+ * Ucapan untuk GRUP. Sengaja dibuka tanpa nomor tujuan: WhatsApp akan
+ * menanyakan mau dikirim ke chat/grup yang mana.
+ */
+export function birthdayGroupText(name: string): string {
+  return `Selamatt ulang tahun ${name} 🔥💪 semakin dewasa rohani dan karakter, makin bijak, makin jadi berkat buat keluarga & teman2. Enjoy your special dayy! God bless you alwaysss 💛💜💚🤍💙🧡🩵🖤
+
+${birthdayPrayer(name)}`;
+}
+
+/**
+ * Ucapan untuk chat PRIBADI, menyesuaikan cowok/cewek.
+ *
+ * Yang belum diisi jenis kelaminnya memakai versi yang sama dengan cewek —
+ * isinya memang netral (soal berkenalan & melayani bareng di CORE), jadi tetap
+ * pantas dikirim ke siapa pun. Hanya versi cowok yang punya sapaan khas
+ * ("ma bro"), makanya ia butuh penandanya lebih dulu.
+ */
+export function birthdayPersonalText(
+  name: string,
+  gender: Gender | null | undefined,
+): string {
+  const body =
+    gender === 'm'
+      ? `${name}, happy bday ma bro! 🎂🎉 tetap humble, sehat selalu, usaha & mimpi2 lancar jayaa, maju terus! Tuhan berkati habisss. Semoga makin kuat di dalam Tuhan 💪🙏`
+      : `${name}, Happy birthdayy! bersyukur bisa kenal ${name}, gk kebetulan kita bisa bertemu di CORE ini, ada tujuan dari Tuhan✨ Senang bisa melayani bareng, semoga umur baru ini bawa banyak kemajuan di kerjaan, pelayanan, dan kehidupan pribadi! Tuhan sertaii selalu 🙏💛💜💚🤍💙🧡🩵🖤`;
+  return `${body}
+
+${birthdayPrayer(name)}`;
+}
+
 // ==================== Kepribadian 🧠 (DISC · MBTI · Love Language) ====================
 // Dipakai untuk memahami tiap orang & memberi ide cara chat / pendekatan yang
 // pas dengan kepribadiannya saat menggembalakan.
 
 type HasPersonality = {
   phone?: string | null;
+  gender?: Gender | null;
   disc?: string | null;
   mbti?: string | null;
   loveLanguage?: string | null;
@@ -147,6 +205,7 @@ type HasPersonality = {
 function normalizePersonality(p: HasPersonality) {
   return {
     phone: p.phone ?? null,
+    gender: p.gender ?? null,
     disc: p.disc ?? null,
     mbti: p.mbti ?? null,
     loveLanguage: p.loveLanguage ?? null,

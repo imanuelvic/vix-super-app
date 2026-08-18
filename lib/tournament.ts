@@ -35,12 +35,23 @@ export type Tournament = {
   id: string;
   name: string;
   size: BracketSize;
+  /**
+   * Tanggal turnamennya DIADAKAN (ms epoch) — beda dari `createdAt` yang cuma
+   * mencatat kapan datanya dibuat di app. Turnamen lama yang belum punya ini
+   * memakai `createdAt` sebagai gantinya (lihat `tournamentDate`).
+   */
+  date: number | null;
   participants: string[]; // urutan hasil undian (acak), panjang = size
   matches: Match[]; // datar; kelompokkan per babak dengan roundsOf()
   champion: string | null; // terisi saat final selesai
   createdAt: number;
   updatedAt: number;
 };
+
+/** Tanggal yang ditampilkan — turnamen lama jatuh balik ke tanggal dibuat. */
+export function tournamentDate(t: Tournament): Date {
+  return new Date(t.date ?? t.createdAt);
+}
 
 // ===================== Logika bracket (murni) =====================
 
@@ -172,12 +183,14 @@ export function createTournament(
   name: string,
   size: BracketSize,
   names: string[],
+  date: Date,
 ): Tournament {
   const participants = shuffle(names);
   const t: Tournament = {
     id: newTournamentId(),
     name,
     size,
+    date: date.getTime(),
     participants,
     matches: buildMatches(participants),
     champion: null,
@@ -215,6 +228,9 @@ export function subscribeTournaments(
             id: d.id,
             name: data.name ?? 'Turnamen',
             size: data.size ?? 8,
+            // Turnamen lama belum punya tanggal → null, nanti jatuh balik ke
+            // createdAt lewat `tournamentDate()`.
+            date: data.date ?? null,
             participants: data.participants ?? [],
             matches: data.matches ?? [],
             champion: data.champion ?? null,

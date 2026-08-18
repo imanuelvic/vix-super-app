@@ -23,7 +23,7 @@ import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
-// Tab Insurance 🛡️: target bulanan agent Allianz — pitching, closing,
+// Tab Insurance 🛡️: target bulanan agent Manulife — pitching, closing,
 // dan premi. Counter cepat (− +) untuk pencapaian, target di-set sendiri.
 export function InsuranceTab({ months }: { months: InsuranceMonths }) {
   const { user } = useAuth();
@@ -174,7 +174,7 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
           <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
         </PressableScale>
         <VixText heading="label" additionalStyle={styles.roleText}>
-          🛡️ Agent Allianz
+          🛡️ Agent Manulife
         </VixText>
       </View>
 

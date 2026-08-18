@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
-import {
+import { StyleSheet, View } from 'react-native';
+import Animated, {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  ZoomIn,
 } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
@@ -23,10 +24,13 @@ export function EmojiButton({
   emoji,
   onPress,
   active = false,
+  badge = 0,
 }: {
   emoji: string;
   onPress: () => void;
   active?: boolean;
+  /** Angka merah di pojok — bentuknya sama dengan badge tile Home & tab bawah. */
+  badge?: number;
 }) {
   const on = useSharedValue(active ? 1 : 0);
 
@@ -43,10 +47,25 @@ export function EmojiButton({
     borderColor: interpolateColor(on.value, [0, 1], [Color.ACCENT, Color.MAIN]),
   }));
 
+  // Badge dipasang di pembungkus, BUKAN di dalam tombol: PressableScale
+  // memakai `overflow` bulatnya sendiri, dan angkanya memang harus
+  // menggantung keluar dari lingkaran.
   return (
-    <PressableScale style={[styles.button, skin]} onPress={onPress} hitSlop={6}>
-      <VixText additionalStyle={styles.emoji}>{emoji}</VixText>
-    </PressableScale>
+    <View>
+      <PressableScale
+        style={[styles.button, skin]}
+        onPress={onPress}
+        hitSlop={6}>
+        <VixText additionalStyle={styles.emoji}>{emoji}</VixText>
+      </PressableScale>
+      {badge > 0 && (
+        <Animated.View entering={ZoomIn.duration(220)} style={styles.badge}>
+          <VixText heading="label" additionalStyle={styles.badgeText}>
+            {badge > 9 ? '9+' : badge}
+          </VixText>
+        </Animated.View>
+      )}
+    </View>
   );
 }
 
@@ -62,4 +81,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emoji: { fontSize: 19, lineHeight: 25 },
+  // Ukuran & warnanya disamakan persis dengan badge di BottomTabs.
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    minWidth: 18,
+    paddingHorizontal: 5,
+    borderRadius: 9,
+    backgroundColor: Color.DANGER,
+    borderWidth: 1.5,
+    borderColor: Color.BACKGROUND,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: Color.TEXT_REVERSE, fontSize: 11, lineHeight: 16 },
 });

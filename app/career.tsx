@@ -41,7 +41,7 @@ const TABS: BottomTab<CareerTab>[] = [
 ];
 
 // Career 💼 — empat topi pekerjaan: engineer NDC, freelancer,
-// agent Allianz, dan (nanti) bisnis kuliner Manado.
+// agent Manulife, dan (nanti) bisnis kuliner Manado.
 export default function CareerScreen() {
   const { user } = useAuth();
   const router = useRouter();

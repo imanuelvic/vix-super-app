@@ -636,7 +636,7 @@ export default function DashboardScreen() {
         <View style={styles.contentInner}>
           {/* Streak doa pagi tidak ikut di sini — sudah tampil sebagai pil
               🏆🔥 di header Home, jadi kartu ini fokus ke Revive & Habits. */}
-          <VixText heading="title" additionalStyle={styles.streakTitle}>
+          <VixText heading="title">
             🏆 Achievement
           </VixText>
           <PressableScale
@@ -1195,7 +1195,6 @@ const styles = StyleSheet.create({
   headerDate: { color: Color.TEXT_LABEL },
   content: { paddingBottom: 40, paddingTop: 12, alignItems: 'center' },
   contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20, gap: 20 },
-  streakTitle: { marginBottom: 8 },
   streakCard: {
     flexDirection: 'row',
     alignItems: 'center',

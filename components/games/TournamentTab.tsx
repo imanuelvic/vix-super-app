@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
+import { DateField } from '@/components/common/DateField';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -14,6 +15,7 @@ import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { formatFullDate, formatShortDayDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   applyWinner,
@@ -25,6 +27,7 @@ import {
   roundsOf,
   saveTournament,
   subscribeTournaments,
+  tournamentDate,
   type BracketSize,
   type Match,
   type Tournament,
@@ -55,6 +58,7 @@ export function TournamentTab() {
   // Form buat turnamen.
   const [createOpen, setCreateOpen] = useState(false);
   const [cName, setCName] = useState('');
+  const [cDate, setCDate] = useState(() => new Date());
   const [cSize, setCSize] = useState<BracketSize>(8);
   const [cNames, setCNames] = useState<string[]>(() => Array(8).fill(''));
   const [busy, setBusy] = useState(false);
@@ -83,6 +87,7 @@ export function TournamentTab() {
 
   function openCreate() {
     setCName('');
+    setCDate(new Date());
     setCSize(8);
     setCNames(Array(8).fill(''));
     setFormError(null);
@@ -116,7 +121,7 @@ export function TournamentTab() {
     setBusy(true);
     setFormError(null);
     try {
-      const t = createTournament(user.uid, cName.trim(), cSize, names);
+      const t = createTournament(user.uid, cName.trim(), cSize, names, cDate);
       await saveTournament(user.uid, t);
       setCreateOpen(false);
       openTournament(t.id);
@@ -183,6 +188,9 @@ export function TournamentTab() {
             </VixText>
             <VixText heading="subheader" additionalStyle={styles.heroName}>
               {selected.name}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.heroDate}>
+              📆 {formatFullDate(tournamentDate(selected))}
             </VixText>
             <ProgressBar {...progressOf(selected)} />
           </Animated.View>
@@ -300,6 +308,19 @@ export function TournamentTab() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          📆 Tanggal turnamen
+        </VixText>
+        <View style={styles.formGap}>
+          {/* key = sesi buka modal → picker kembali ke tanggal awal tiap kali
+              form dibuka lagi, tidak menyimpan sisa pilihan sebelumnya. */}
+          <DateField
+            key={createOpen ? 'open' : 'closed'}
+            value={cDate}
+            onChange={setCDate}
+          />
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Jumlah peserta
         </VixText>
         <View style={styles.sizeRow}>
@@ -408,6 +429,9 @@ function TournamentCard({ t, onOpen }: { t: Tournament; onOpen: () => void }) {
           </VixText>
         </View>
       </View>
+      <VixText heading="label" additionalStyle={styles.tDate}>
+        📆 {formatShortDayDate(tournamentDate(t))}
+      </VixText>
       <View style={styles.tBarTrack}>
         <View style={[styles.tBarFill, { width: `${percent}%` }]} />
       </View>
@@ -557,6 +581,7 @@ const styles = StyleSheet.create({
     backgroundColor: Color.TOURNAMENT_DARK,
   },
   tStatus: { color: Color.TEXT_LABEL },
+  tDate: { color: Color.TEXT_LABEL },
   // ===== Detail bracket =====
   hero: {
     backgroundColor: Color.MAIN_DARK,
@@ -567,6 +592,7 @@ const styles = StyleSheet.create({
   },
   heroKicker: { color: Color.TOURNAMENT, letterSpacing: 1 },
   heroName: { color: Color.TEXT_REVERSE },
+  heroDate: { color: Color.TEXT_ON_DARK_MUTED, marginTop: 2 },
   progressWrap: { gap: 4, marginTop: 8 },
   progressTrack: {
     height: 8,
