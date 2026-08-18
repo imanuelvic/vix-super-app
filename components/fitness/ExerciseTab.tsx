@@ -28,8 +28,8 @@ import {
   fitSessionMinutes,
   fitSessionOfWeekday,
   FIT_DAY_SHORT,
-  FIT_HOUR_LABEL,
   FIT_RECOVERY,
+  FIT_TIME_LABEL,
   saveFitWeight,
   setFitDaySkipped,
   setFitExerciseDone,
@@ -43,6 +43,9 @@ import { type LoginStreak } from '@/lib/achievements';
 // Tab Exercise 💪 — deretan hari (ala BetterMe) + sesi hari yang dipilih.
 // Hanya sesi HARI INI yang bisa dicentang; hari lain tampil sebagai pratinjau
 // biar kamu tahu besok latihan apa dan bisa siap-siap.
+//
+// Tiap hari SELALU ada sesinya: beban, lari, atau jalan pagi. Yang membedakan
+// hari jalan pagi cuma perlakuan rentetan 🔥 — lihat `isWalkDay` di bawah.
 export function ExerciseTab({
   weights,
   day,
@@ -76,32 +79,39 @@ export function ExerciseTab({
   const { done, skipped } = day;
   const session = fitSessionOfWeekday(weekday, block);
   const isToday = weekday === todayWeekday;
+  // Hari jalan pagi = pemulihan: boleh dicentang sebagai bonus, tapi tidak
+  // pernah menaikkan maupun memutus rentetan 🔥.
+  const isWalkDay = session.kind === 'walk';
   // Hari yang dilewati ✕ dianggap tidak ada centangnya sama sekali.
   const doneCount =
-    session && !(isToday && skipped)
-      ? session.exercises.filter((e) => done[e.id]).length
-      : 0;
-  const total = session?.exercises.length ?? 0;
+    isToday && skipped
+      ? 0
+      : session.exercises.filter((e) => done[e.id]).length;
+  const total = session.exercises.length;
   const allDone = total > 0 && doneCount === total;
-  // Tombol lewati hanya masuk akal untuk hari latihan HARI INI, dan hanya
-  // selama sesinya belum beres — sesi yang sudah selesai tidak bisa "dilewati"
-  // (kalau bisa, rentetan yang baru saja naik malah ikut hangus).
-  const canSkip = isToday && session !== null && (skipped || !allDone);
+  // Tombol lewati hanya untuk HARI INI, dan hanya selama sesinya belum beres —
+  // sesi yang sudah selesai tidak bisa "dilewati" (kalau bisa, rentetan yang
+  // baru saja naik malah ikut hangus).
+  const canSkip = isToday && (skipped || !allDone);
 
   async function toggle(ex: Exercise) {
-    if (!user || !isToday || !session || busy || skipped) return;
+    if (!user || !isToday || busy || skipped) return;
     setBusy(true);
     const next = !done[ex.id];
     try {
       await setFitExerciseDone(user.uid, dayId, ex.id, next);
-      // Centang terakhir yang melengkapi sesi → streak naik 🔥 dan hari ini
-      // dihitung sebagai 1 hari strength training di rekap mingguan Health
-      // (target anjuran: minimal 2 hari/minggu).
-      if (next) {
+      // Centang terakhir yang melengkapi sesi → streak naik 🔥. Hari jalan pagi
+      // dikecualikan: itu pemulihan, bukan sesi latihan.
+      if (next && !isWalkDay) {
         const after = { ...done, [ex.id]: true };
         if (session.exercises.every((e) => after[e.id])) {
           await bumpFitStreak(user.uid, streak, today);
-          await bumpWeekGym(user.uid, today);
+          // Rekap mingguan Health hanya menghitung hari ANGKAT BEBAN (target
+          // anjuran: strength training minimal 2 hari/minggu) — hari lari tidak
+          // ikut, supaya angkanya tetap jujur.
+          if (session.kind === 'strength') {
+            await bumpWeekGym(user.uid, today);
+          }
         }
       }
     } catch {
@@ -120,7 +130,8 @@ export function ExerciseTab({
     setBusy(true);
     try {
       await setFitDaySkipped(user.uid, dayId, true);
-      await breakFitStreak(user.uid, streak);
+      // Jalan pagi tidak pernah menyentuh rentetan — melewatinya pun tidak.
+      if (!isWalkDay) await breakFitStreak(user.uid, streak);
     } catch {
       // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
     } finally {
@@ -180,8 +191,13 @@ export function ExerciseTab({
           active && styles.dayPillActive,
         ]}
         onPress={() => setWeekday(wd)}>
-        <VixText additionalStyle={[styles.dayEmoji, !s && styles.dayEmojiRest]}>
-          {s ? s.emoji : '😴'}
+        {/* Hari jalan pagi diredupkan — tetap ada isinya, tapi bukan hari inti */}
+        <VixText
+          additionalStyle={[
+            styles.dayEmoji,
+            s.kind === 'walk' && styles.dayEmojiRest,
+          ]}>
+          {s.emoji}
         </VixText>
         <VixText
           heading="bold"
@@ -195,7 +211,7 @@ export function ExerciseTab({
 
   return (
     <View style={styles.flex}>
-      {/* Deretan hari — Senin di kiri, hari istirahat ditandai 😴 */}
+      {/* Deretan hari — Senin di kiri, hari jalan pagi 🚶 tampil lebih redup */}
       <View style={styles.dayStripWrap}>
         {oneRow ? (
           <View style={styles.dayStrip}>{dayPills}</View>
@@ -210,14 +226,12 @@ export function ExerciseTab({
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {session ? (
-          <>
-            {/* Hero sesi — warna oranye Fitness sesuai grid Home */}
-            <View style={styles.hero}>
+        {/* Hero sesi — warna oranye Fitness sesuai grid Home */}
+        <View style={styles.hero}>
               <View style={styles.heroMain}>
                 <VixText heading="label" additionalStyle={styles.heroSub}>
                   Blok {block} · ±{fitSessionMinutes(session)} menit ·{' '}
-                  {FIT_HOUR_LABEL}
+                  {FIT_TIME_LABEL}
                 </VixText>
                 <VixText heading="subheader" additionalStyle={styles.heroTitle}>
                   {session.emoji} {session.title}
@@ -243,10 +257,16 @@ export function ExerciseTab({
 
             {isToday && skipped ? (
               <SkipNotice
-                title="✕ Latihan hari ini dilewati"
+                title={
+                  isWalkDay
+                    ? '✕ Jalan pagi hari ini dilewati'
+                    : '✕ Latihan hari ini dilewati'
+                }
                 detail={
-                  'Rentetan 🔥 sudah kembali ke 0. Besok mulai lagi dari ' +
-                  'satu — yang penting jangan dua kali berturut-turut.'
+                  isWalkDay
+                    ? 'Hari jalan pagi memang bonus — rentetan 🔥 tidak terpengaruh sama sekali.'
+                    : 'Rentetan 🔥 sudah kembali ke 0. Besok mulai lagi dari ' +
+                      'satu — yang penting jangan dua kali berturut-turut.'
                 }
               />
             ) : isToday ? (
@@ -283,7 +303,13 @@ export function ExerciseTab({
                     onPress={() => toggle(ex)}
                     disabled={!isToday || exSkipped}
                     hitSlop={8}>
-                    <CheckCircle checked={checked} skipped={exSkipped} />
+                    {/* Hari lain cuma PRATINJAU — centangnya mati, jadi
+                        cincinnya abu-abu biar tidak terlihat bisa ditekan. */}
+                    <CheckCircle
+                      checked={checked}
+                      skipped={exSkipped}
+                      locked={!isToday}
+                    />
                   </PressableScale>
 
                   <View style={styles.exMain}>
@@ -301,11 +327,13 @@ export function ExerciseTab({
                     </VixText>
 
                     <View style={styles.exActions}>
-                      {/* Gerakan berat badan → angkanya IKUT fitur Health dan
+                      {/* Lari & jalan tidak punya beban sama sekali → chip kg
+                          disembunyikan; durasinya sudah tertulis di baris atas.
+                          Gerakan berat badan → angkanya IKUT fitur Health dan
                           tidak bisa diubah di sini (berat badan cuma berubah
                           lewat pengingat timbang tiap Minggu di Health).
                           Gerakan berbeban → ketuk untuk ubah bebannya. */}
-                      {ex.weight === null ? (
+                      {ex.cardio ? null : ex.weight === null ? (
                         <View style={styles.weightChip}>
                           <VixText heading="label" additionalStyle={styles.weightText}>
                             🏋️ Berat badan
@@ -341,51 +369,34 @@ export function ExerciseTab({
             {/* ⏭️ Lewati latihan hari ini — jujur mencatat "hari ini tidak
                 latihan", bukan menyembunyikannya. Tekan lagi untuk membatalkan
                 tandanya (rentetan 🔥 tetap tidak kembali). */}
-            {canSkip && (
-              <SkipButton
-                skipped={skipped}
-                label="⏭️ Lewati latihan hari ini"
-                busy={busy}
-                onPress={skipped ? handleUnskip : () => setConfirmSkip(true)}
-                additionalStyle={styles.skipGap}
-              />
-            )}
-          </>
-        ) : (
-          // Rabu & Minggu — hari istirahat.
-          <>
-            <View style={styles.hero}>
-              <View style={styles.heroMain}>
-                <VixText heading="label" additionalStyle={styles.heroSub}>
-                  {FIT_DAY_SHORT[weekday]} · tidak ada latihan
-                </VixText>
-                <VixText heading="subheader" additionalStyle={styles.heroTitle}>
-                  😴 Rest Day
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.heroSub}>
-                  Istirahat itu bagian dari program, bukan bolos
-                </VixText>
-              </View>
-            </View>
-            {FIT_RECOVERY.map((tip) => (
-              <View key={tip} style={styles.tipRow}>
-                <VixText heading="label" additionalStyle={styles.tipText}>
-                  {tip}
-                </VixText>
-              </View>
-            ))}
-          </>
+        {canSkip && (
+          <SkipButton
+            skipped={skipped}
+            label={
+              isWalkDay ? '⏭️ Lewati jalan hari ini' : '⏭️ Lewati latihan hari ini'
+            }
+            busy={busy}
+            onPress={skipped ? handleUnskip : () => setConfirmSkip(true)}
+            additionalStyle={styles.skipGap}
+          />
         )}
+
+        {/* Hari jalan pagi ditutup pengingat pemulihan — dulu ini isi layar
+            "Rest Day"; sekarang menempel di bawah sesi jalannya. */}
+        {isWalkDay &&
+          FIT_RECOVERY.map((tip) => (
+            <View key={tip} style={styles.tipRow}>
+              <VixText heading="label" additionalStyle={styles.tipText}>
+                {tip}
+              </VixText>
+            </View>
+          ))}
       </ScrollView>
 
       {/* Modal ubah beban */}
       <CenterDialog visible={!!editing} onClose={() => setEditing(null)}>
         <VixText heading="title" additionalStyle={styles.modalTitle}>
           🏋️ Beban {editing?.name}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.modalHint}>
-          Isi beban yang benar-benar kamu pakai. Tersimpan sebagai patokan sesi
-          berikutnya. Isi 0 kalau gerakannya tanpa beban tambahan.
         </VixText>
         <FormInput
           placeholder="Beban (kg)"
@@ -405,11 +416,11 @@ export function ExerciseTab({
           jadi wajib ditanya dulu. */}
       <ConfirmDialog
         visible={confirmSkip}
-        title="Lewati latihan hari ini?"
+        title={isWalkDay ? 'Lewati jalan pagi hari ini?' : 'Lewati latihan hari ini?'}
         detail={
-          session
-            ? `${session.emoji} ${session.title} ditandai ✕ — semua gerakan dianggap tidak dikerjakan.\n\n🔥 Rentetan gym kembali ke 0 dan TIDAK bisa dikembalikan. Rekor terbaik & total sesimu tetap aman.`
-            : undefined
+          isWalkDay
+            ? `${session.emoji} ${session.title} ditandai ✕.\n\n🔥 Rentetan tidak terpengaruh — hari jalan pagi memang tidak pernah dihitung sebagai sesi latihan.`
+            : `${session.emoji} ${session.title} ditandai ✕ — semua gerakan dianggap tidak dikerjakan.\n\n🔥 Rentetan kembali ke 0 dan TIDAK bisa dikembalikan. Rekor terbaik & total sesimu tetap aman.`
         }
         confirmLabel="Ya, Lewati"
         busy={busy}
@@ -536,5 +547,4 @@ const styles = StyleSheet.create({
   },
   tipText: { color: Color.TEXT_TITLE },
   modalTitle: { color: Color.TEXT_TITLE, marginBottom: 4 },
-  modalHint: { marginBottom: 10 },
 });

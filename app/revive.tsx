@@ -27,9 +27,11 @@ import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
+  applicationPrompt,
   bumpReviveStreak,
   dailyReminder,
   deleteReviveEntry,
+  rhemaPrompt,
   saveReviveEntry,
   subscribeReviveEntries,
   subscribeReviveStreak,
@@ -244,7 +246,7 @@ export default function ReviveEditorScreen() {
             </VixText>
             <FormInput
               style={styles.bigInput}
-              placeholder="Jujur saja di sini, renungan hari ini bicara apa ke kamu?"
+              placeholder={rhemaPrompt(targetDay)}
               value={fRhema}
               onChangeText={setFRhema}
               multiline
@@ -255,7 +257,7 @@ export default function ReviveEditorScreen() {
             </VixText>
             <FormInput
               style={styles.mediumInput}
-              placeholder="Apa yang mau kamu lakukan menanggapi firman ini?"
+              placeholder={applicationPrompt(targetDay)}
               value={fReflection}
               onChangeText={setFReflection}
               multiline

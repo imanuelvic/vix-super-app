@@ -15,6 +15,7 @@ import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -229,17 +230,17 @@ export function FreelanceTab({
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Ringkasan usaha freelance */}
-        <View style={styles.heroCard}>
-          <VixText heading="label" additionalStyle={styles.heroLabel}>
+        <SummaryCard>
+          <VixText heading="label" additionalStyle={summaryText.label}>
             🌐 Website & App Developer — Freelance
           </VixText>
-          <VixText heading="subheader" additionalStyle={styles.heroValue}>
+          <VixText heading="subheader" additionalStyle={summaryText.value}>
             {active.length}{' '}
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               proyek aktif · nilai {formatRupiah(activeFee)}
             </VixText>
           </VixText>
-        </View>
+        </SummaryCard>
 
         <PrimaryButton
           label="Tambah Proyek"
@@ -468,15 +469,7 @@ export function FreelanceTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  heroCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 4,
-    marginBottom: 10,
-  },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  heroValue: { color: Color.TEXT_REVERSE },
+  // Kartu hero-nya persis <SummaryCard> bawaan — tak perlu gaya sendiri.
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {

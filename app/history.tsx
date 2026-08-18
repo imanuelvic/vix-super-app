@@ -16,6 +16,7 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -220,23 +221,23 @@ export default function HistoryScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           {/* Ringkasan perjalanan */}
-          <View style={styles.heroCard}>
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
+          <SummaryCard style={styles.heroCard}>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               Perjalanan hidup
             </VixText>
-            <VixText heading="header" additionalStyle={styles.heroValue}>
+            <VixText heading="header" additionalStyle={summaryText.value}>
               {all.length}
-              <VixText heading="label" additionalStyle={styles.heroLabel}>
+              <VixText heading="label" additionalStyle={summaryText.label}>
                 {' '}
                 kejadian tercatat
               </VixText>
             </VixText>
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               🎂 {Math.min(...all.map((i) => i.year))} –{' '}
               {Math.max(...all.map((i) => i.endYear ?? i.year))} · sekarang umur{' '}
               {ageAtYear(thisYear)}
             </VixText>
-          </View>
+          </SummaryCard>
 
           <View style={styles.searchWrap}>
             <SearchBar
@@ -460,15 +461,8 @@ const styles = StyleSheet.create({
   seedText: { color: Color.TEXT_LABEL, textAlign: 'center' },
   seedButton: { alignSelf: 'stretch', marginTop: 10 },
   seedLink: { color: Color.MAIN, marginTop: 6 },
-  heroCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 2,
-    marginBottom: 12,
-  },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  heroValue: { color: Color.TEXT_REVERSE },
+  // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
+  heroCard: { gap: 2, marginBottom: 12 },
   searchWrap: { marginBottom: 10 },
   sortRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 10 },

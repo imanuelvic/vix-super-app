@@ -12,7 +12,7 @@ import {
   type FinanceCategory,
   type FinanceType,
 } from '@/lib/categories';
-import { hashString } from '@/lib/core';
+import { pickOfDay } from '@/lib/core';
 import { formatShortRupiah } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { formatRupiah, type Transaction } from '@/lib/transactions';
@@ -166,8 +166,9 @@ export function DashboardTab({
     return { data, total };
   }, [items, type]);
 
-  // Quote hari ini (ganti otomatis tiap hari).
-  const quote = QUOTES[hashString(dayDocId(now)) % QUOTES.length];
+  // Quote hari ini (ganti otomatis tiap hari). Tanpa garam — supaya quote yang
+  // muncul persis sama seperti sebelum dirapikan.
+  const quote = pickOfDay(QUOTES, dayDocId(now));
 
   return (
     <ScrollView contentContainerStyle={styles.content}>

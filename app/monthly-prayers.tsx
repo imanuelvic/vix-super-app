@@ -10,6 +10,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -136,18 +137,19 @@ export default function MonthlyPrayersScreen() {
       ) : (
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           {/* Intro: pertanyaan pembuka + info reset + progres pengisian */}
-          <View style={styles.introCard}>
+          <SummaryCard style={styles.introCard}>
+            {/* Kutipannya sengaja mint miring, bukan warna label biasa. */}
             <VixText heading="label" additionalStyle={styles.introQuote}>
               “{MONTHLY_PRAYER_QUESTION}”
             </VixText>
-            <VixText heading="bold" additionalStyle={styles.introValue}>
+            <VixText heading="bold" additionalStyle={summaryText.value}>
               {filledCount}
-              <VixText heading="label" additionalStyle={styles.introLabel}>
+              <VixText heading="label" additionalStyle={summaryText.label}>
                 {' '}
                 dari {leaders.length} CORE Leader sudah terisi
               </VixText>
             </VixText>
-          </View>
+          </SummaryCard>
 
           {/* Bulan baru: poin masih dari bulan lalu → ajak tinjau/perbarui */}
           {stale && (
@@ -295,16 +297,9 @@ export default function MonthlyPrayersScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  introCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 6,
-    marginBottom: 14,
-  },
+  // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
+  introCard: { gap: 6, marginBottom: 14 },
   introQuote: { color: Color.MAIN_LIGHT, fontStyle: 'italic' },
-  introValue: { color: Color.TEXT_REVERSE },
-  introLabel: { color: Color.TEXT_ON_DARK_MUTED },
   staleCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,

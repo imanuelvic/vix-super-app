@@ -42,7 +42,9 @@ const TABS: BottomTab<Tab>[] = [
   { key: 'progress', label: 'Progress', icon: 'chart.line.uptrend.xyaxis' },
 ];
 
-// Fitness 💪 — program strength 5 hari/minggu (Sen, Sel, Kam, Jum, Sab).
+// Fitness 💪 — program lean-atletis: 3 hari angkat beban (Sen/Kam/Sab), 2 hari
+// lari (Sel santai, Jum interval), 2 hari jalan pagi (Rab & Min). Jamnya bebas
+// pagi atau sore; pengingatnya menyala di dua jendela (05.00 & 16.00).
 // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab tidak
 // memutus-sambung listener Firestore terus-menerus. Semuanya dokumen kecil.
 //
@@ -81,7 +83,7 @@ export default function FitnessScreen() {
       <ScreenHeader
         backLabel="Home"
         title="Fitness 💪"
-        subtitle="Strength · 5 hari/minggu · target sixpack"
+        subtitle="3 beban · 2 lari · 2 jalan · pagi atau sore"
       />
 
       <ScreenError message={error} />

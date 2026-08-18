@@ -13,6 +13,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { daysBetween, formatDate } from '@/lib/format';
@@ -159,17 +160,17 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heroCard}>
-          <VixText heading="label" additionalStyle={styles.heroLabel}>
+        <SummaryCard style={styles.heroCard}>
+          <VixText heading="label" additionalStyle={summaryText.label}>
             📌 Reminder Prioritas
           </VixText>
-          <VixText heading="subheader" additionalStyle={styles.heroValue}>
+          <VixText heading="subheader" additionalStyle={summaryText.value}>
             {activeCount}{' '}
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               belum dikerjakan
             </VixText>
           </VixText>
-        </View>
+        </SummaryCard>
 
         <PrimaryButton
           label="Tambah Reminder Prioritas"
@@ -344,15 +345,8 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  heroCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 2,
-    marginBottom: 12,
-  },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  heroValue: { color: Color.TEXT_REVERSE },
+  // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
+  heroCard: { gap: 2, marginBottom: 12 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {

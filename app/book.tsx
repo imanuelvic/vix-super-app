@@ -88,8 +88,9 @@ export default function BookScreen() {
                         {book.author} · {book.year}
                       </VixText>
                     </View>
-                    {/* Indikator selesai (otomatis dari centang bab) */}
-                    <CheckCircle checked={complete} size={24} />
+                    {/* Indikator selesai (otomatis dari centang bab) — `locked`
+                        karena ini penanda status, bukan tombol centang. */}
+                    <CheckCircle checked={complete} size={24} locked />
                   </View>
 
                   <VixText heading="paragraph" additionalStyle={styles.info}>

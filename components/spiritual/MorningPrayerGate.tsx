@@ -132,22 +132,20 @@ export function MorningPrayerGate({
           <VixText heading="title" additionalStyle={styles.stepTitle}>
             1. Revive
           </VixText>
-          <VixText heading="label" additionalStyle={styles.stepHint}>
-            Baca firman & tulis rhema hari ini di Revive.
-          </VixText>
           <PressableScale style={styles.openRevive} onPress={onOpenRevive}>
             <VixText heading="bold" additionalStyle={styles.openReviveText}>
               📖 Buka Revive →
             </VixText>
           </PressableScale>
           {/* Centang otomatis — TIDAK bisa ditekan manual; tercentang sendiri
-              begitu Revive hari ini tersimpan. */}
+              begitu Revive hari ini tersimpan. `locked` bikin cincinnya abu-abu
+              supaya beda jelas dari langkah yang memang dicentang sendiri. */}
           <View style={styles.checkRow}>
-            <CheckCircle checked={reviveDone} />
+            <CheckCircle checked={reviveDone} locked />
             <VixText heading="bold" additionalStyle={styles.checkText}>
               {reviveDone
                 ? 'Sudah Revive hari ini'
-                : 'Terisi otomatis setelah kamu isi Revive'}
+                : '✅ otomatis setelah Tulis Revive'}
             </VixText>
           </View>
         </Animated.View>
@@ -172,7 +170,7 @@ export function MorningPrayerGate({
             </PressableScale>
             {/* Centang otomatis begitu semua CL giliran hari ini ditandai selesai. */}
             <View style={styles.checkRow}>
-              <CheckCircle checked={chainLeft === 0} />
+              <CheckCircle checked={chainLeft === 0} locked />
               <VixText heading="bold" additionalStyle={styles.checkText}>
                 {chainLeft === 0
                   ? 'Semua CORE Leader hari ini sudah di-follow up'

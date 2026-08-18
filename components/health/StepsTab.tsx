@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -122,18 +123,18 @@ export function StepsTab({
       <GreetingHeader />
 
       {/* ===== Hari ini ===== */}
-      <View style={styles.heroCard}>
-        <VixText heading="label" additionalStyle={styles.heroLabel}>
+      <SummaryCard style={styles.heroCard}>
+        <VixText heading="label" additionalStyle={summaryText.label}>
           👣 Langkah hari ini
         </VixText>
-        <VixText heading="header" additionalStyle={styles.heroValue}>
+        <VixText heading="header" additionalStyle={summaryText.value}>
           {groupDigits(String(todaySteps))}
         </VixText>
-        <VixText heading="label" additionalStyle={styles.heroLabel}>
+        <VixText heading="label" additionalStyle={summaryText.label}>
           ≈ {formatDecimal(todayKm)} km
           {dayHit ? `  ·  ${dayHit.emoji} ${dayHit.label}` : ''}
         </VixText>
-      </View>
+      </SummaryCard>
 
       {/* ===== Minggu ini (Senin–Minggu, reset tiap Senin) ===== */}
       <MileageCard
@@ -357,15 +358,8 @@ function StatTile({ value, label }: { value: string; label: string }) {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  heroCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 2,
-    marginBottom: 14,
-  },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  heroValue: { color: Color.TEXT_REVERSE },
+  // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
+  heroCard: { gap: 2, marginBottom: 14 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

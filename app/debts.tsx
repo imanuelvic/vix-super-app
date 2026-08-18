@@ -572,7 +572,8 @@ export default function DebtsScreen() {
 
           {payingLive?.done && (
             <View style={styles.lunasRow}>
-              <CheckCircle checked size={22} />
+              {/* Penanda status, bukan tombol → cincin abu-abu. */}
+              <CheckCircle checked size={22} locked />
               <VixText heading="bold" additionalStyle={styles.lunasText}>
                 Pinjaman ini sudah LUNAS 🎉
               </VixText>

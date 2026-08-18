@@ -173,10 +173,6 @@ export function LogTab({ items }: { items: CarLog[] }) {
           icon="plus"
           onPress={openAdd}
         />
-        <VixText heading="label" additionalStyle={styles.fuelHint}>
-          ⛽ Bensin tidak dicatat di sini — catat di Finance (Transportation ›
-          Bensin), otomatis muncul di daftar ini.
-        </VixText>
 
         {items.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
@@ -194,9 +190,13 @@ export function LogTab({ items }: { items: CarLog[] }) {
           return (
             // Tekan untuk edit/hapus. Catatan dari Finance tidak bisa diedit
             // di sini — sumbernya transaksi Finance, biar tidak beda data.
+            //
+            // Garis tepi HIJAU = baris ini bisa ditekan. Garis tepi krem biasa
+            // = datang dari Finance, jadi memang tidak menanggapi ketukan —
+            // supaya tidak ada baris yang kelihatan bisa ditekan tapi diam.
             <PressableScale
               key={item.id}
-              style={styles.row}
+              style={[styles.row, !item.fromFinance && styles.rowEditable]}
               disabled={item.fromFinance}
               onPress={() => openEdit(item)}>
               <View style={styles.rowLeft}>
@@ -332,8 +332,6 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 10,
   },
-  // Keterangan kenapa Bensin tidak ada di sini lagi.
-  fuelHint: { color: Color.TEXT_LABEL, marginTop: 8, marginBottom: 12 },
   fromFinance: { color: Color.MAIN },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
@@ -349,6 +347,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 10,
   },
+  // Hijau = bisa ditekan untuk diubah/dihapus. Baris dari Finance memakai
+  // garis tepi krem bawaan `row` karena memang tidak bisa disentuh di sini.
+  rowEditable: { borderColor: Color.MAIN },
   rowLeft: { flex: 1, gap: 2 },
   rowTitle: { color: Color.TEXT_TITLE },
   rowCost: { color: Color.MAIN_DARK },

@@ -15,6 +15,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -253,13 +254,13 @@ export default function TimelineScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           {/* Progress tahun ini */}
-          <View style={styles.progressCard}>
-            <VixText heading="label" additionalStyle={styles.progressLabel}>
+          <SummaryCard style={styles.progressCard}>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               Wishlist {year}
             </VixText>
-            <VixText heading="subheader" additionalStyle={styles.progressValue}>
+            <VixText heading="subheader" additionalStyle={summaryText.value}>
               {doneCount}{' '}
-              <VixText heading="label" additionalStyle={styles.progressLabel}>
+              <VixText heading="label" additionalStyle={summaryText.label}>
                 dari {total} tercapai
               </VixText>
             </VixText>
@@ -271,14 +272,14 @@ export default function TimelineScreen() {
                 ]}
               />
             </View>
-            <VixText heading="label" additionalStyle={styles.progressLabel}>
+            <VixText heading="label" additionalStyle={summaryText.label}>
               {total === 0
                 ? 'Belum ada wishlist tahun ini — mulai isi impianmu ✨'
                 : doneCount === total
                   ? 'Semua tercapai — luar biasa! 🎉'
                   : 'Kejar terus panggilanmu 💪'}
             </VixText>
-          </View>
+          </SummaryCard>
 
           <PrimaryButton
             label="Tambah Wishlist"
@@ -438,15 +439,8 @@ const styles = StyleSheet.create({
   },
   ageText: { color: Color.ACCENT_DARK },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  progressCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 18,
-    gap: 6,
-    marginBottom: 12,
-  },
-  progressLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  progressValue: { color: Color.TEXT_REVERSE },
+  // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
+  progressCard: { gap: 6, marginBottom: 12 },
   barTrack: {
     height: 8,
     borderRadius: 4,

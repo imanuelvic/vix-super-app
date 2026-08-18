@@ -82,10 +82,9 @@ import {
 } from '@/lib/donor';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import {
-  FIT_HOUR_LABEL,
+  fitWindowLabel,
   FIT_RECOVERY,
   fitQuote,
-  fitReminderWindow,
   fitSessionFor,
   fitPendingToday,
   subscribeFitDay,
@@ -522,18 +521,20 @@ export default function DashboardScreen() {
     : 0;
   const prayerFollowupDue = prayerUndone > 0;
 
-  // ===== Reminder Fitness 💪 — jam 09.00–20.59 =====
-  // Hari latihan (Sen/Sel/Kam/Jum/Sab) → kartu "Gym Day" muncul dari PAGI
-  // (walau latihannya nanti jam 17.00) sampai semua gerakan dicentang, atau
-  // sampai harinya ditandai ✕ lewat tombol "Lewati" di Fitness → Exercise.
-  // Rabu & Minggu → kartu "Rest Day" berisi pengingat pemulihan.
+  // ===== Reminder Fitness 💪 — dua jendela: 05.00–08.59 & 16.00–20.59 =====
+  // Jamnya bebas (pagi atau sore), jadi kartunya muncul di kedua jendela itu
+  // sampai semua gerakan dicentang — atau sampai harinya ditandai ✕ lewat
+  // tombol "Lewati" di Fitness → Exercise.
+  //
+  // Hari inti (beban Sen/Kam/Sab & lari Sel/Jum) → kartu sesi latihan.
+  // Rabu & Minggu → kartu jalan pagi, isinya pengingat pemulihan.
   const fitSession = fitSessionFor(now);
-  const fitWindow = fitReminderWindow(now);
-  // Satu sumber angka dengan badge tile Home & sub-tab Exercise: jendela jam,
-  // hari istirahat, dan tanda ✕ semuanya sudah diurus di dalamnya.
+  const fitWalkDay = fitSession.kind === 'walk';
+  // Satu sumber angka dengan badge tile Home & sub-tab Exercise: jendela jam
+  // dan tanda ✕ sudah diurus di dalamnya.
   const fitLeft = fitPendingToday(fitDay, now);
-  const gymDayDue = fitSession !== null && fitLeft > 0;
-  const restDayDue = fitWindow && fitSession === null;
+  const gymDayDue = !fitWalkDay && fitLeft > 0;
+  const restDayDue = fitWalkDay && fitLeft > 0;
 
   // ===== Reminder Residence 🏠 & Car 🚗 =====
   // Dashboard HANYA menampilkan yang statusnya "Sekarang" (hari-H atau sudah
@@ -980,26 +981,26 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Gym Day 💪 — hari latihan, jam 16.00–20.59 (oranye Fitness) */}
-          {gymDayDue && fitSession && (
+          {/* Sesi inti 💪 — beban atau lari, pagi maupun sore (oranye Fitness) */}
+          {gymDayDue && (
             <ReminderCard
               bg={Color.FITNESS}
               fg={Color.FITNESS_DARK}
-              title={`🏋️ Gym Day — ${fitSession.emoji} ${fitSession.title}`}
+              title={`${fitSession.emoji} ${fitSession.title}`}
               texts={[
-                `⏰ Mulai ${FIT_HOUR_LABEL} · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
+                `${fitWindowLabel(now)} · bebas pagi atau sore · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
                 fitQuote(todayId),
               ]}
               onPress={() => router.push('/fitness')}
             />
           )}
 
-          {/* Rest Day 😴 — Rabu & Minggu, pengingat pemulihan */}
+          {/* Jalan pagi 🚶 — Rabu & Minggu, pemulihan (tidak memutus streak) */}
           {restDayDue && (
             <ReminderCard
               bg={Color.FITNESS}
               fg={Color.FITNESS_DARK}
-              title="😴 Rest Day — jatah pemulihan"
+              title={`${fitSession.emoji} ${fitSession.title}`}
               texts={FIT_RECOVERY}
               onPress={() => router.push('/fitness')}
             />

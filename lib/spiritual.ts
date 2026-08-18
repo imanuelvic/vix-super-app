@@ -16,7 +16,7 @@ import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { dayIdToDate } from './format';
 import { yesterdayId } from './health';
-import { hashString } from './core';
+import { pickOfDay } from './core';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Spiritual ✝️ — Revive harian (mengikuti struktur renungan NDC:
@@ -382,5 +382,72 @@ const REMINDERS: string[] = [
 
 /** Reminder hari ini — sama sepanjang hari, ganti otomatis tiap hari. */
 export function dailyReminder(todayId: string): string {
-  return REMINDERS[hashString(todayId + 'revive') % REMINDERS.length];
+  return pickOfDay(REMINDERS, todayId, 'revive');
+}
+
+// ===================== Pertanyaan pemantik ✨ =====================
+// Placeholder kolom Rhema & Aplikasi berganti tiap hari. Satu pertanyaan tetap
+// ("renungan hari ini bicara apa ke kamu?") lama-lama cuma jadi hiasan dan
+// tidak lagi dibaca — pertanyaan yang berganti memaksa berhenti sebentar dan
+// benar-benar berpikir.
+//
+// Dikunci ke dayId Revive-nya (bukan hari ini), jadi membuka lagi renungan
+// tanggal lama akan menampilkan pertanyaan yang sama seperti saat ditulis.
+
+const RHEMA_PROMPTS: string[] = [
+  'Bagian mana yang tiba-tiba terasa ditujukan buat kamu?',
+  'Kalau ayat ini bicara, Dia sedang bilang apa ke kamu?',
+  'Satu kalimat yang paling nempel hari ini — kenapa itu?',
+  'Apa yang bikin kamu berhenti sejenak saat membacanya?',
+  'Ada bagian yang bikin nggak nyaman? Tulis jujur saja.',
+  'Kalau harus diringkas satu kalimat, isinya apa?',
+  'Hal apa yang baru kamu sadari hari ini?',
+  'Bacaan ini menegur, menghibur, atau menguatkan?',
+  'Apa yang Tuhan tunjukkan tentang diri-Nya di sini?',
+  'Apa yang Tuhan tunjukkan tentang dirimu di sini?',
+  'Kata mana yang paling berat kamu terima? Kenapa?',
+  'Kalau ini surat pribadi buat kamu, isinya apa?',
+  'Apa yang berubah dari caramu melihat sesuatu?',
+  'Ada janji yang justru kamu butuhkan hari ini?',
+  'Bagian ini menjawab pergumulanmu yang mana?',
+  'Apa yang kamu lihat sekarang, yang kemarin terlewat?',
+  'Kalau cerita ke teman, bagian apa yang kamu ceritakan?',
+  'Ada yang bikin lega? Tulis pelan-pelan.',
+  'Firman ini menyentuh bagian hatimu yang mana?',
+  'Satu hal yang tidak mau kamu lupakan dari sini?',
+];
+
+const APPLICATION_PROMPTS: string[] = [
+  'Satu langkah kecil hari ini — sekecil apa pun.',
+  'Apa yang mau kamu lakukan sebelum tidur nanti?',
+  'Siapa orang pertama yang perlu merasakan ini?',
+  'Apa yang mau kamu berhentikan mulai hari ini?',
+  'Kalau ini benar, apa yang harus berubah besok pagi?',
+  'Satu hal yang bisa kamu kerjakan dalam 10 menit.',
+  'Apa yang mau kamu doakan setelah menutup app ini?',
+  'Siapa yang perlu kamu maafkan atau hubungi hari ini?',
+  'Kebiasaan mana yang mau kamu ubah minggu ini?',
+  'Apa yang mau kamu lakukan walau tidak ada yang lihat?',
+  'Bagaimana ini mengubah caramu memperlakukan orang?',
+  'Satu keputusan kecil yang bisa kamu ambil sekarang.',
+  'Apa yang mau kamu lepaskan hari ini?',
+  'Kalau besok kamu lupa semuanya, apa yang tetap kamu bawa?',
+  'Apa yang mau kamu kerjakan beda dari kemarin?',
+  'Siapa yang bisa kamu kuatkan dengan ini?',
+  'Apa yang mau kamu syukuri hari ini?',
+  'Hal apa yang mau kamu mulai, walau kecil?',
+  'Bagaimana kamu menanggapinya — bukan cuma menyetujuinya?',
+  'Apa langkahmu kalau ini benar-benar kamu percaya?',
+];
+
+/** Pertanyaan pemantik kolom ✨ Rhema untuk satu hari. */
+export function rhemaPrompt(dayId: string): string {
+  return pickOfDay(RHEMA_PROMPTS, dayId, 'rhema');
+}
+
+/** Pertanyaan pemantik kolom 🏃🏻‍➡️ Aplikasi untuk satu hari. */
+export function applicationPrompt(dayId: string): string {
+  // Garam berbeda dari rhemaPrompt supaya pasangannya ikut berganti-ganti,
+  // bukan selalu kombinasi yang itu-itu juga.
+  return pickOfDay(APPLICATION_PROMPTS, dayId, 'aplikasi');
 }

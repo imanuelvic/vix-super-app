@@ -747,6 +747,18 @@ export function hashString(s: string): number {
   return Math.abs(h);
 }
 
+/**
+ * Ambil SATU isi daftar untuk satu hari — terasa acak, tapi tetap sama
+ * sepanjang hari itu dan berganti sendiri besok. Dipakai untuk kata-kata
+ * semangat Fitness, reminder & pertanyaan pemantik Revive, quote Finance.
+ *
+ * `salt` memisahkan undiannya: dua daftar dengan dayId sama tapi salt beda
+ * tidak akan bergerak seirama (mis. pertanyaan Rhema & Aplikasi di Revive).
+ */
+export function pickOfDay<T>(list: T[], dayId: string, salt = ''): T {
+  return list[hashString(dayId + salt) % list.length];
+}
+
 // ==================== Follow up mingguan (fokus 2 CL) ====================
 // Tiap minggu (Senin–Minggu) fokus ke 2 CORE Leader saja untuk membangun
 // hubungan. Rotasi 2-per-minggu yang deterministik → bergilir & kebagian semua.

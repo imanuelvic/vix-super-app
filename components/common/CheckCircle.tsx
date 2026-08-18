@@ -23,14 +23,24 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 // animasi yang sama persis seperti centang (letup + goresan miring), cuma
 // miringnya ke arah berlawanan supaya rasanya beda: centang = "berhasil",
 // ✕ = "dilewati". Bentuk & ukurannya identik, jadi baris tidak bergeser.
+// `locked` = lingkaran ini BUKAN tombol: isinya terisi sendiri dari data lain
+// (mis. langkah "Revive" di gerbang doa pagi yang tercentang otomatis begitu
+// Revive tersimpan). Bedanya dibuat kelihatan supaya tidak ada yang menekan
+// lingkaran yang memang tidak akan menanggapi:
+//   • cincinnya ABU-ABU, bukan mint — mint = "silakan tekan"
+//   • saat masih kosong, dalamnya diberi isian krem samar → terlihat "belum
+//     waktunya", bukan kotak kosong yang menunggu ditekan
+//   • tidak pernah meletup saat berubah (letupan itu umpan balik sentuhan)
 export function CheckCircle({
   checked,
   size = 26,
   skipped = false,
+  locked = false,
 }: {
   checked: boolean;
   size?: number;
   skipped?: boolean;
+  locked?: boolean;
 }) {
   const progress = useSharedValue(checked ? 1 : 0); // isian mint
   const mark = useSharedValue(checked ? 1 : 0); // tanda centang
@@ -49,19 +59,20 @@ export function CheckCircle({
     cross.value = skipped
       ? withSpring(1, { damping: 10, stiffness: 320 })
       : withTiming(0, { duration: 120 });
-    if ((checked || skipped) && mounted.current) {
+    if ((checked || skipped) && mounted.current && !locked) {
       pop.value = withSequence(
         withTiming(1.18, { duration: 110 }),
         withSpring(1, { damping: 9, stiffness: 260 }),
       );
     }
     mounted.current = true;
-  }, [checked, skipped, progress, mark, cross, pop]);
+  }, [checked, skipped, locked, progress, mark, cross, pop]);
 
   // Isian lingkaran + letupan. ✕ menang atas centang: isiannya merah muda,
   // bukan mint. Warna garis tepi diatur statis di bawah (Reanimated hanya
   // menyentuh properti yang ditulis di sini).
   const circleStyle = useAnimatedStyle(() => {
+    const empty = locked ? Color.CONTRAST_CONTAINER : 'transparent';
     const fill =
       cross.value > 0
         ? interpolateColor(
@@ -69,11 +80,7 @@ export function CheckCircle({
             [0, 1],
             ['transparent', Color.FINANCE_EXPENSE],
           )
-        : interpolateColor(
-            progress.value,
-            [0, 1],
-            ['transparent', Color.MAIN_LIGHT],
-          );
+        : interpolateColor(progress.value, [0, 1], [empty, Color.MAIN_LIGHT]);
     return { backgroundColor: fill, transform: [{ scale: pop.value }] };
   });
 
@@ -101,6 +108,7 @@ export function CheckCircle({
         styles.circle,
         { width: size, height: size, borderRadius: size / 2 },
         circleStyle,
+        locked && styles.circleLocked,
         skipped && styles.circleSkipped,
       ]}>
       {/* Dua tanda ditumpuk (absolut) supaya yang tersembunyi tidak memakan
@@ -132,6 +140,9 @@ const styles = StyleSheet.create({
   },
   // Hanya garis tepinya yang diubah: isian lingkaran diatur animasi (Reanimated)
   // dan akan menimpa gaya statis apa pun, jadi jangan diatur dari sini.
+  // Cincin abu-abu = terisi otomatis, bukan tombol. Isian dalamnya diatur di
+  // `circleStyle` (animasi), jadi jangan ditulis di sini.
+  circleLocked: { borderColor: Color.TEXT_PLACEHOLDER },
   circleSkipped: { borderColor: Color.DANGER },
   mark: {
     ...StyleSheet.absoluteFillObject,

@@ -15,9 +15,9 @@ import {
   type FitWeights,
 } from '@/lib/fitness';
 
-// Tab Program 📅 — seluruh isi program dalam satu layar: Blok A, B & C, lima
-// hari latihan beserta gerakan & beban tersimpannya. Blok berganti otomatis
-// tiap 2 minggu supaya tidak bosan tapi progres tetap terukur.
+// Tab Program 📅 — seluruh isi program dalam satu layar: Blok A & B, ketujuh
+// hari beserta gerakan & beban tersimpannya. Blok berganti otomatis tiap 2
+// minggu supaya tidak bosan tapi progres tetap terukur.
 export function ProgramTab({ weights }: { weights: FitWeights }) {
   const activeBlock = fitBlockOf(new Date());
   const [block, setBlock] = useState<FitBlock>(activeBlock);
@@ -37,9 +37,9 @@ export function ProgramTab({ weights }: { weights: FitWeights }) {
             label: `Blok ${b}`,
             sub:
               turns === 0
-                ? '● sedang jalan'
+                ? '● sekarang'
                 : turns === 1
-                  ? 'giliran berikutnya'
+                  ? 'berikutnya'
                   : `${turns} giliran lagi`,
           };
         })}
@@ -53,7 +53,7 @@ export function ProgramTab({ weights }: { weights: FitWeights }) {
             {FIT_DAY_SHORT[session.weekday]} — {session.emoji} {session.title}
           </VixText>
           <VixText heading="label" additionalStyle={styles.dayFocus}>
-            {session.focus}
+            {session.focus} · ±{session.minutes} menit
           </VixText>
           {session.exercises.map((ex) => {
             const kg = weightOf(ex, weights);
@@ -67,8 +67,13 @@ export function ProgramTab({ weights }: { weights: FitWeights }) {
                     {ex.sets} set × {ex.reps}
                   </VixText>
                 </View>
+                {/* Lari & jalan tidak punya beban — kolomnya dikosongkan. */}
                 <VixText heading="label" additionalStyle={styles.exWeight}>
-                  {kg == null || kg === 0 ? 'BW' : `${formatDecimal(kg)} kg`}
+                  {ex.cardio
+                    ? '⏱️'
+                    : kg == null || kg === 0
+                      ? 'BW'
+                      : `${formatDecimal(kg)} kg`}
                 </VixText>
               </View>
             );
@@ -78,11 +83,11 @@ export function ProgramTab({ weights }: { weights: FitWeights }) {
 
       <View style={styles.restBlock}>
         <VixText heading="bold" additionalStyle={styles.restTitle}>
-          😴 Rabu & Minggu — Rest Day
+          🚶 Rabu & Minggu — Jalan Pagi
         </VixText>
         <VixText heading="label" additionalStyle={styles.restText}>
-          Bukan bolos: otot dibangun saat istirahat. Tidur cukup, protein tetap
-          jalan, jalan santai boleh.
+          Bukan bolos: otot dibangun saat istirahat. Jalan pagi boleh dicentang
+          sebagai bonus, tapi tidak pernah memutus rentetan 🔥.
         </VixText>
       </View>
     </ScrollView>
