@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -28,16 +29,20 @@ import {
   countedHabits,
   dailyScore,
   defaultSlot,
+  FITNESS_HABIT,
+  FITNESS_HABIT_ID,
   HABIT_AREAS,
   HABIT_SLOTS,
   HABIT_TIERS,
   habitArea,
   habitsBySlot,
   habitTier,
+  mergeExerciseHabits,
   missingFromPack,
   needsClassify,
   newHabitId,
   saveHabits,
+  separateExercise,
   slotMeta,
   tierMeta,
   type HabitArea,
@@ -79,6 +84,7 @@ export function HabitsTab({
   streak: Streak | null;
 }) {
   const { user } = useAuth();
+  const router = useRouter();
 
   const [error, setError] = useState<string | null>(null);
   // Tab sesi aktif — default ke sesi sesuai jam sekarang (Pagi/Siang/Malam).
@@ -132,6 +138,23 @@ export function HabitsTab({
   // Penataan sekali jalan: kebiasaan lama belum bertanda, paket malam belum ada.
   const unclassified = needsClassify(habits);
   const packMissing = missingFromPack(habits);
+  // Kebiasaan olahraga yang masih terpisah-pisah → tawarkan dilebur jadi satu.
+  const separate = separateExercise(habits);
+  const coreAllDone = coreDone(counted, day.done);
+
+  // Rentetan 🔥 bisa jadi lengkap dari LUAR layar ini: olahraga dicentang di
+  // fitur Fitness, lalu baris cerminnya di sini ikut tercentang tanpa ada
+  // tombol yang ditekan di layar ini. Kalau rentetan cuma dinaikkan di dalam
+  // handleToggle, hari yang ditutup oleh olahraga tidak pernah terhitung.
+  // `bumpStreak` sendiri menolak menghitung dua kali sehari → aman berulang.
+  useEffect(() => {
+    if (!user || !coreAllDone || streak?.lastDayId === dayId) return;
+    bumpStreak(user.uid, streak, dayId).catch(() => undefined);
+    // `streak` utuh dipakai bumpStreak, tapi yang menentukan perlu-tidaknya
+    // menulis cuma lastDayId — dependency sengaja dibatasi ke itu supaya
+    // objek streak yang baru tiap snapshot tidak memicu tulis ulang.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, coreAllDone, dayId, streak?.lastDayId]);
 
   // Progress target berat (rumus sama untuk turun / naik).
   let targetPercent = 0;
@@ -219,6 +242,17 @@ export function HabitsTab({
     if (busy) return;
     setBusy(true);
     await saveList(classifyAll(habits));
+    setBusy(false);
+  }
+
+  /**
+   * Lebur semua kebiasaan olahraga terpisah jadi SATU baris yang disetir fitur
+   * Fitness. Menulis ulang array kebiasaan — yang lama benar-benar hilang.
+   */
+  async function handleMergeExercise() {
+    if (busy || separate.length === 0) return;
+    setBusy(true);
+    await saveList(mergeExerciseHabits(habits));
     setBusy(false);
   }
 
@@ -450,11 +484,26 @@ export function HabitsTab({
         </View>
 
         {/* Penataan sekali jalan — kartunya hilang sendiri setelah beres. */}
-        {(unclassified > 0 || packMissing.length > 0) && (
+        {(unclassified > 0 || packMissing.length > 0 || separate.length > 0) && (
           <View style={styles.setupCard}>
             <VixText heading="bold" additionalStyle={styles.setupTitle}>
               ⚡ Tata Ulang Kebiasaan
             </VixText>
+            {separate.length > 0 && (
+              <PressableScale
+                style={styles.setupButton}
+                disabled={busy}
+                onPress={handleMergeExercise}>
+                <VixText heading="bold" additionalStyle={styles.setupButtonText}>
+                  🏋️ Satukan {separate.length} olahraga jadi 1 baris
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.setupHint}>
+                  {separate.map((h) => h.label).join(' · ')} → “
+                  {FITNESS_HABIT.label}”, centangnya ikut fitur Fitness yang
+                  sudah punya jadwal mingguannya sendiri.
+                </VixText>
+              </PressableScale>
+            )}
             {unclassified > 0 && (
               <PressableScale
                 style={styles.setupButton}
@@ -519,6 +568,9 @@ export function HabitsTab({
             const skipped = !!day.skipped[habit.id];
             const checked = !skipped && !!day.done[habit.id];
             const tier = habitTier(habit);
+            // Baris olahraga gabungan: centangnya datang dari fitur Fitness,
+            // jadi di sini ia cuma cermin + pintasan ke sana.
+            const fromFitness = habit.id === FITNESS_HABIT_ID;
             return (
               // Berganti sesi (Pagi→Siang→Malam) = daftar baru masuk berurutan
               // dari bawah, bukan berkedip sekaligus. Jedanya dibatasi 8 baris
@@ -540,11 +592,19 @@ export function HabitsTab({
                       centang cukup ketukan biasa. Yang sudah dilewati tidak
                       bisa dicentang: batalkan ✗ dulu. */}
                   <PressableScale
-                    onPress={() => handleToggle(habit)}
-                    disabled={skipped}
+                    onPress={() =>
+                      fromFitness
+                        ? router.push('/fitness')
+                        : handleToggle(habit)
+                    }
+                    disabled={skipped && !fromFitness}
                     hitSlop={8}
-                    haptic={checked ? 'light' : 'success'}>
-                    <CheckCircle checked={checked} skipped={skipped} />
+                    haptic={checked || fromFitness ? 'light' : 'success'}>
+                    <CheckCircle
+                      checked={checked}
+                      skipped={skipped}
+                      locked={fromFitness}
+                    />
                   </PressableScale>
                   {/* Teks tidak bisa ditekan — ubah/urutkan/hapus lewat tombol edit */}
                   <View style={styles.rowMain}>
@@ -556,23 +616,33 @@ export function HabitsTab({
                       ]}>
                       {tierMeta(tier).emoji} {habit.label}
                     </VixText>
+                    {fromFitness && (
+                      <VixText heading="label" additionalStyle={styles.linkHint}>
+                        🏋️ Dicentang dari fitur Fitness — ketuk untuk buka
+                      </VixText>
+                    )}
                   </View>
                   {/* Dua tombol kanan dirapatkan sendiri (gap lebih kecil dari
                       gap baris) supaya nama kebiasaan tidak kehilangan ruang. */}
                   <View style={styles.rowActions}>
                     {/* ✗ → lewati kebiasaan ini KHUSUS hari ini (tekan lagi =
-                        batal). Bukan hapus: daftarnya tetap utuh besok. */}
-                    <PressableScale
-                      style={[styles.editButton, skipped && styles.skipButtonOn]}
-                      onPress={() => handleSkip(habit)}
-                      hitSlop={8}
-                      haptic="warning">
-                      <IconSymbol
-                        name="xmark"
-                        size={16}
-                        color={skipped ? Color.DANGER : Color.TEXT_LABEL}
-                      />
-                    </PressableScale>
+                        batal). Bukan hapus: daftarnya tetap utuh besok.
+                        Baris olahraga tidak punya tombol ini: melewati latihan
+                        dilakukan di fitur Fitness, biar tandanya tidak bisa
+                        beda antara dua layar. */}
+                    {!fromFitness && (
+                      <PressableScale
+                        style={[styles.editButton, skipped && styles.skipButtonOn]}
+                        onPress={() => handleSkip(habit)}
+                        hitSlop={8}
+                        haptic="warning">
+                        <IconSymbol
+                          name="xmark"
+                          size={16}
+                          color={skipped ? Color.DANGER : Color.TEXT_LABEL}
+                        />
+                      </PressableScale>
+                    )}
                     {/* Tombol edit → buka modal ubah / urutkan / hapus */}
                     <PressableScale
                       style={styles.editButton}
@@ -911,6 +981,8 @@ const styles = StyleSheet.create({
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
+  // Keterangan baris olahraga: centangnya datang dari fitur Fitness.
+  linkHint: { color: Color.FITNESS_DARK, marginTop: 1 },
   addRow: {
     flexDirection: 'row',
     alignItems: 'center',

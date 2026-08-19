@@ -143,8 +143,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               🗒️ {m.title}
             </VixText>
             <VixText heading="label" additionalStyle={styles.cardDate}>
-              📆 {formatFullDate(m.date.toDate())} · {filled}/
-              {MONTHLY_AGENDA_POINTS.length} poin terisi
+              📆 {formatFullDate(m.date.toDate())}
             </VixText>
           </View>
           <IconSymbol
@@ -160,7 +159,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               const text = (m.points[p.key] ?? '').trim();
               return (
                 <View key={p.key} style={styles.pointBlock}>
-                  <VixText heading="label" additionalStyle={styles.pointLabel}>
+                  <VixText heading="title" additionalStyle={styles.pointLabel}>
                     {p.icon} {p.label}
                   </VixText>
                   <VixText
@@ -325,7 +324,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   pointBlock: { gap: 1 },
-  pointLabel: { color: Color.MAIN_DARK },
+  pointLabel: { color: Color.MAIN_DARK, marginTop: 10, },
   pointText: { color: Color.TEXT_PARAGRAPH },
   pointEmpty: { color: Color.TEXT_PLACEHOLDER },
   editRow: {

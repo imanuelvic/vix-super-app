@@ -152,7 +152,15 @@ export function pendingHabits(
   now: Date,
 ): ScheduledHabit[] {
   const open = openSlots(now);
-  return habits.filter((h) => open.includes(h.slot) && !done[h.id]);
+  return habits.filter(
+    (h) =>
+      open.includes(h.slot) &&
+      !done[h.id] &&
+      // Olahraga sengaja TIDAK ikut menagih di sini — penagihannya sudah
+      // dipegang fitur Fitness (badge & kartu reminder-nya sendiri). Kalau
+      // ikut, satu olahraga ditagih dua kali dari dua tempat berbeda.
+      h.id !== FITNESS_HABIT_ID,
+  );
 }
 
 /** Semua kebiasaan (semua sesi) sudah dicentang hari ini? */
@@ -373,6 +381,65 @@ const RECOVERY_PACK: Omit<ScheduledHabit, 'id'>[] = [
     notePrompt: 'Hari ini Tuhan mengingatkanku bahwa…',
   },
 ];
+
+// ===================== Olahraga: satu baris, disetir fitur Fitness ==========
+// Dulu olahraga tersebar jadi beberapa kebiasaan terpisah (Easy Run Sen/Rab/Jum,
+// Brisk Walk Sel/Kam, Long Walk akhir pekan, Fitness pk. 17.00) — padahal fitur
+// Fitness sudah punya jadwal mingguannya sendiri. Isinya jadi dobel: dicentang
+// di Habits, dicentang lagi di Fitness.
+//
+// Sekarang cukup SATU baris. Centangnya tidak diketuk di sini, melainkan ikut
+// hasil sesi Fitness hari ini (lihat `syncFitnessHabit` di lib/fitness.ts).
+
+/**
+ * Id TETAP kebiasaan olahraga gabungan. Sengaja bukan id acak: fitur Fitness
+ * bisa menulis centangnya tanpa perlu membaca daftar kebiasaan lebih dulu.
+ */
+export const FITNESS_HABIT_ID = 'fitness-link';
+
+/** Baris tunggal pengganti semua kebiasaan olahraga yang terpisah-pisah. */
+export const FITNESS_HABIT: ScheduledHabit = {
+  id: FITNESS_HABIT_ID,
+  label: '🏋️ Morning Exercise',
+  slot: 'morning',
+  area: 'body',
+  tier: 'core',
+};
+
+// Kata kunci kebiasaan olahraga yang layak dilebur. Sengaja TIDAK memuat
+// "stretch/mobility" & "peregangan": itu pemulihan, bukan sesi olahraga.
+const EXERCISE_MATCH =
+  /\b(run|jog|lari|walk|jalan|fitness|gym|workout|olahraga|latihan|angkat beban|strength|cardio)\b/i;
+
+function isMergeableExercise(h: ScheduledHabit): boolean {
+  return h.id === FITNESS_HABIT_ID || EXERCISE_MATCH.test(h.label);
+}
+
+/**
+ * Kebiasaan olahraga terpisah yang masih ada di daftar. Dipakai untuk
+ * menawarkan peleburan — sekaligus ditampilkan namanya supaya kelihatan dulu
+ * apa saja yang akan hilang sebelum tombolnya ditekan.
+ */
+export function separateExercise(habits: ScheduledHabit[]): ScheduledHabit[] {
+  return habits.filter((h) => h.id !== FITNESS_HABIT_ID && EXERCISE_MATCH.test(h.label));
+}
+
+/**
+ * Ganti semua kebiasaan olahraga terpisah dengan SATU baris gabungan, di
+ * posisi olahraga pagi yang pertama (bukan dilempar ke bawah daftar).
+ * Aman dijalankan berulang: hasilnya selalu tepat satu baris gabungan.
+ */
+export function mergeExerciseHabits(habits: ScheduledHabit[]): ScheduledHabit[] {
+  const g = habitsBySlot(habits);
+  const at = g.morning.findIndex(isMergeableExercise);
+  const morning = g.morning.filter((h) => !isMergeableExercise(h));
+  morning.splice(at < 0 ? morning.length : at, 0, FITNESS_HABIT);
+  return [
+    ...morning,
+    ...g.daytime.filter((h) => !isMergeableExercise(h)),
+    ...g.night.filter((h) => !isMergeableExercise(h)),
+  ];
+}
 
 /** Kebiasaan dari paket yang BELUM ada di daftar (dicocokkan dari namanya). */
 export function missingFromPack(habits: ScheduledHabit[]): Omit<ScheduledHabit, 'id'>[] {

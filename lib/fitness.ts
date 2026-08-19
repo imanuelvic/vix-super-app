@@ -10,11 +10,14 @@ import { pickOfDay, weekIndex } from './core';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { formatDecimal } from './format';
+import { FITNESS_HABIT_ID } from './habits';
 import {
   bmiCategory,
   bmiValue,
   dayDocId,
   idealWeightRange,
+  setHabitDone,
+  setHabitSkipped,
   type HealthProfile,
   type WeightTarget,
 } from './health';
@@ -560,6 +563,37 @@ export function setFitExerciseDone(
     doc(db, 'users', uid, 'fitnessDays', dayId),
     { done: { [exerciseId]: done }, date: Timestamp.fromDate(new Date()) },
     { merge: true },
+  );
+}
+
+// ---- Cermin ke baris "🏋️ Morning Exercise" di Habits ----
+// Olahraga cukup dikerjakan di SATU tempat — di sini — lalu baris di Habits
+// ikut sendiri, jadi tidak ada lagi centang dobel.
+//
+// Keduanya sengaja dipisah jadi dua fungsi (bukan satu yang menulis dua-duanya
+// sekaligus) supaya tiap ketukan cuma memicu SATU tulis Firestore. Ketukan
+// gerakan terjadi berkali-kali tiap sesi; tanda lewati jarang.
+//
+// Sengaja tidak melempar error ke pemanggil: gagal menyinkronkan baris cermin
+// tidak boleh membatalkan centang latihan yang sebenarnya.
+
+/** Sesi hari ini beres semua? → baris Habits ikut tercentang. */
+export function syncFitnessHabit(uid: string, dayId: string, done: boolean) {
+  return setHabitDone(uid, dayId, FITNESS_HABIT_ID, done).catch(() => undefined);
+}
+
+/**
+ * Hari ini sengaja dilewati? → baris Habits bertanda ✕ dan keluar dari skor
+ * harian, sama seperti kebiasaan lain yang dilewati. (`setHabitSkipped`
+ * sekalian melepas centangnya, jadi tidak perlu tulis kedua.)
+ */
+export function syncFitnessHabitSkipped(
+  uid: string,
+  dayId: string,
+  skipped: boolean,
+) {
+  return setHabitSkipped(uid, dayId, FITNESS_HABIT_ID, skipped).catch(
+    () => undefined,
   );
 }
 

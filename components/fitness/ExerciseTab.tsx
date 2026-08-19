@@ -33,6 +33,8 @@ import {
   saveFitWeight,
   setFitDaySkipped,
   setFitExerciseDone,
+  syncFitnessHabit,
+  syncFitnessHabitSkipped,
   weightOf,
   type Exercise,
   type FitDay,
@@ -100,10 +102,17 @@ export function ExerciseTab({
     const next = !done[ex.id];
     try {
       await setFitExerciseDone(user.uid, dayId, ex.id, next);
+      // Baris "🏋️ Morning Exercise" di Habits ikut hasil sesi ini — jadi
+      // olahraga cukup dicentang di sini saja, tidak dua kali.
+      const after = { ...done, [ex.id]: next };
+      await syncFitnessHabit(
+        user.uid,
+        dayId,
+        session.exercises.every((e) => after[e.id]),
+      );
       // Centang terakhir yang melengkapi sesi → streak naik 🔥. Hari jalan pagi
       // dikecualikan: itu pemulihan, bukan sesi latihan.
       if (next && !isWalkDay) {
-        const after = { ...done, [ex.id]: true };
         if (session.exercises.every((e) => after[e.id])) {
           await bumpFitStreak(user.uid, streak, today);
           // Rekap mingguan Health hanya menghitung hari ANGKAT BEBAN (target
@@ -130,6 +139,9 @@ export function ExerciseTab({
     setBusy(true);
     try {
       await setFitDaySkipped(user.uid, dayId, true);
+      // Baris di Habits ikut bertanda ✕ — keluar dari skor harian, bukan
+      // menggantung sebagai kebiasaan yang belum dikerjakan.
+      await syncFitnessHabitSkipped(user.uid, dayId, true);
       // Jalan pagi tidak pernah menyentuh rentetan — melewatinya pun tidak.
       if (!isWalkDay) await breakFitStreak(user.uid, streak);
     } catch {
@@ -150,6 +162,14 @@ export function ExerciseTab({
     setBusy(true);
     try {
       await setFitDaySkipped(user.uid, dayId, false);
+      // Tanda ✕ di Habits ikut dicabut; centangnya kembali mengikuti
+      // gerakan yang sudah/belum beres hari ini.
+      await syncFitnessHabitSkipped(user.uid, dayId, false);
+      await syncFitnessHabit(
+        user.uid,
+        dayId,
+        session.exercises.every((e) => done[e.id]),
+      );
     } catch {
       // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
     } finally {
