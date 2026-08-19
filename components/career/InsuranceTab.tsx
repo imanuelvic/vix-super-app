@@ -9,6 +9,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -128,15 +129,13 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
           {done}
           <VixText heading="label"> / {target > 0 ? target : '—'} target</VixText>
         </VixText>
-        <View style={styles.barTrack}>
-          <View
-            style={[
-              styles.barFill,
-              { width: `${percent}%` },
-              hit && styles.barFillHit,
-            ]}
-          />
-        </View>
+        <ProgressBar
+          value={percent}
+          total={100}
+          height={8}
+          color={hit ? Color.SUCCESS : Color.MAIN}
+          track={Color.CONTRAST_CONTAINER}
+        />
         {hit && (
           <VixText heading="label" additionalStyle={styles.hitText}>
             🎉 Target tercapai — luar biasa!
@@ -209,15 +208,13 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
             / {data.premiTarget > 0 ? formatRupiah(data.premiTarget) : '—'}
           </VixText>
         </VixText>
-        <View style={styles.barTrack}>
-          <View
-            style={[
-              styles.barFill,
-              { width: `${premiPercent}%` },
-              premiHit && styles.barFillHit,
-            ]}
-          />
-        </View>
+        <ProgressBar
+          value={premiPercent}
+          total={100}
+          height={8}
+          color={premiHit ? Color.SUCCESS : Color.MAIN}
+          track={Color.CONTRAST_CONTAINER}
+        />
         {premiHit && (
           <VixText heading="label" additionalStyle={styles.hitText}>
             🎉 Target premi tercapai!
@@ -323,18 +320,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  barTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: 4,
-    backgroundColor: Color.MAIN,
-  },
-  barFillHit: { backgroundColor: Color.SUCCESS },
   hitText: { color: Color.SUCCESS },
   hint: { textAlign: 'center', marginTop: 10 },
   modalTitle: { marginBottom: 10 },

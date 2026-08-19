@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
@@ -11,19 +11,20 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
+import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   deleteMonthlyMeeting,
   emptyMonthlyPoints,
-  monthlyFilledCount,
   MONTHLY_AGENDA_POINTS,
   newMonthlyMeetingId,
   saveMonthlyMeeting,
   type MonthlyMeeting,
 } from '@/lib/core';
-import { formatFullDate, MONTH_NAMES } from '@/lib/format';
+import { formatFullDate, formatTime, MONTH_NAMES } from '@/lib/format';
+import { shareMonthlyPdf } from '@/lib/monthlyPdf';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Sub-tab 🗒️ Monthly — notulen Mentoring Bulanan dari gereja.
@@ -45,11 +46,16 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   // Form tambah/edit.
   const [editing, setEditing] = useState<MonthlyMeeting | 'new' | null>(null);
   const [fTitle, setFTitle] = useState('');
+  // Satu objek Date memuat tanggal SEKALIGUS jam mulai: DateField mengubah
+  // tanggalnya (jamnya dipertahankan), TimeField mengubah jamnya.
   const [fDate, setFDate] = useState(new Date());
+  const [fPlace, setFPlace] = useState('');
   const [fPoints, setFPoints] = useState<Record<string, string>>(
     emptyMonthlyPoints(),
   );
   const [formError, setFormError] = useState<string | null>(null);
+  // Notulen yang PDF-nya sedang dibuat (null = tidak ada).
+  const [sharingId, setSharingId] = useState<string | null>(null);
 
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const shown =
@@ -72,6 +78,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     setEditing('new');
     setFTitle(`Mentoring ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`);
     setFDate(now);
+    setFPlace('');
     setFPoints(emptyMonthlyPoints());
     setFormError(null);
   }
@@ -80,8 +87,23 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     setEditing(m);
     setFTitle(m.title);
     setFDate(m.date.toDate());
+    setFPlace(m.place);
     setFPoints({ ...emptyMonthlyPoints(), ...m.points });
     setFormError(null);
+  }
+
+  /** Cetak notulen jadi PDF lalu buka share sheet (ada WhatsApp di dalamnya). */
+  async function handleShare(m: MonthlyMeeting) {
+    if (sharingId) return;
+    setSharingId(m.id);
+    setError(null);
+    try {
+      await shareMonthlyPdf(m);
+    } catch {
+      setError('Gagal membuat PDF notulen. Coba lagi.');
+    } finally {
+      setSharingId(null);
+    }
   }
 
   async function handleSave() {
@@ -99,6 +121,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
         {
           title: fTitle.trim(),
           date: fDate,
+          place: fPlace.trim(),
           // Rapikan spasi di ujung tiap poin sebelum disimpan.
           points: Object.fromEntries(
             MONTHLY_AGENDA_POINTS.map((p) => [
@@ -131,7 +154,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
 
   function renderCard(m: MonthlyMeeting) {
     const expanded = openId === m.id;
-    const filled = monthlyFilledCount(m);
     return (
       <View key={m.id} style={styles.card}>
         {/* Ketuk judul untuk buka/tutup isinya; ✏️ untuk mengubah */}
@@ -143,8 +165,14 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               🗒️ {m.title}
             </VixText>
             <VixText heading="label" additionalStyle={styles.cardDate}>
-              📆 {formatFullDate(m.date.toDate())}
+              📆 {formatFullDate(m.date.toDate())} · 🕒{' '}
+              {formatTime(m.date.toDate())}
             </VixText>
+            {m.place ? (
+              <VixText heading="label" additionalStyle={styles.cardDate}>
+                📍 {m.place}
+              </VixText>
+            ) : null}
           </View>
           <IconSymbol
             name={expanded ? 'chevron.up' : 'chevron.down'}
@@ -170,12 +198,34 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
                 </View>
               );
             })}
-            <PressableScale style={styles.editRow} onPress={() => openEdit(m)}>
-              <IconSymbol name="pencil" size={16} color={Color.MAIN} />
-              <VixText heading="bold" additionalStyle={styles.editText}>
-                Ubah notulen
-              </VixText>
-            </PressableScale>
+            <View style={styles.actionRow}>
+              <PressableScale style={styles.editRow} onPress={() => openEdit(m)}>
+                <IconSymbol name="pencil" size={16} color={Color.MAIN} />
+                <VixText heading="bold" additionalStyle={styles.editText}>
+                  Ubah notulen
+                </VixText>
+              </PressableScale>
+              {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
+              <PressableScale
+                style={styles.shareRow}
+                onPress={() => handleShare(m)}
+                disabled={sharingId !== null}>
+                {sharingId === m.id ? (
+                  <ActivityIndicator color={Color.TEXT_REVERSE} />
+                ) : (
+                  <>
+                    <IconSymbol
+                      name="square.and.arrow.up"
+                      size={16}
+                      color={Color.TEXT_REVERSE}
+                    />
+                    <VixText heading="bold" additionalStyle={styles.shareText}>
+                      Share PDF
+                    </VixText>
+                  </>
+                )}
+              </PressableScale>
+            </View>
           </View>
         )}
       </View>
@@ -198,7 +248,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           </View>
         ) : (
           <PrimaryButton
-            label="Catat Rapat Bulanan"
+            label="Tambah Rapat Bulanan"
             icon="plus"
             onPress={openAdd}
             additionalStyle={styles.addButton}
@@ -255,6 +305,30 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             onChange={setFDate}
           />
         </View>
+
+        {/* Jam mulai — menempel di objek Date yang sama dengan tanggal di atas,
+            jadi keduanya tersimpan sebagai SATU field. */}
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🕒 Jam mulai
+        </VixText>
+        <View style={styles.formGap}>
+          <TimeField
+            key={`t-${editing === 'new' ? 'new' : editing?.id}`}
+            value={fDate}
+            onChange={setFDate}
+          />
+        </View>
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          📍 Tempat
+        </VixText>
+        <FormInput
+          style={styles.formGap}
+          placeholder="mis. Gereja NDC lt. 3"
+          value={fPlace}
+          onChangeText={setFPlace}
+          editable={!busy}
+        />
 
         {MONTHLY_AGENDA_POINTS.map((p) => (
           <View key={p.key}>
@@ -327,7 +401,10 @@ const styles = StyleSheet.create({
   pointLabel: { color: Color.MAIN_DARK, marginTop: 10, },
   pointText: { color: Color.TEXT_PARAGRAPH },
   pointEmpty: { color: Color.TEXT_PLACEHOLDER },
+  // Dua tombol sejajar di kaki kartu: ubah (garis putus) & share PDF (isi).
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
   editRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -338,6 +415,17 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: Color.MAIN_LIGHT,
   },
+  shareRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: Color.MAIN,
+  },
+  shareText: { color: Color.TEXT_REVERSE },
   editText: { color: Color.MAIN },
   fab: {
     position: 'absolute',

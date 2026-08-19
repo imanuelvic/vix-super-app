@@ -106,9 +106,6 @@ export function NewsTab() {
               </View>
             </PressableScale>
           ))}
-          <VixText heading="label" additionalStyle={styles.footer}>
-            Ketuk judul untuk membuka artikel aslinya di browser.
-          </VixText>
         </ScrollView>
       )}
     </View>
@@ -146,5 +143,4 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   source: { color: Color.WORLD_DARK, flexShrink: 1 },
-  footer: { textAlign: 'center', marginTop: 6 },
 });

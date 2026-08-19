@@ -481,19 +481,16 @@ export const MONTHLY_AGENDA_POINTS: {
 export type MonthlyMeeting = {
   id: string;
   title: string;
+  /** Tanggal SEKALIGUS jam mulai — satu Timestamp, tidak dipisah dua field. */
   date: Timestamp;
+  /** Tempat rapat, mis. "Gereja NDC lt. 3". Notulen lama belum punya → "". */
+  place: string;
   points: Record<string, string>; // key = MonthlyPointKey
 };
 
 /** Semua poin kosong — bentuk awal rapat baru. */
 export function emptyMonthlyPoints(): Record<string, string> {
   return Object.fromEntries(MONTHLY_AGENDA_POINTS.map((p) => [p.key, '']));
-}
-
-/** Berapa dari 5 poin yang sudah diisi — dipakai penanda di kartu. */
-export function monthlyFilledCount(m: MonthlyMeeting): number {
-  return MONTHLY_AGENDA_POINTS.filter((p) => (m.points[p.key] ?? '').trim())
-    .length;
 }
 
 function monthlyCollection(uid: string) {
@@ -517,6 +514,7 @@ export function subscribeMonthlyMeetings(
             id: d.id,
             title: (data.title as string) ?? '',
             date: data.date as Timestamp,
+            place: (data.place as string) ?? '',
             points: (data.points as Record<string, string>) ?? {},
           };
         }),
@@ -528,11 +526,17 @@ export function subscribeMonthlyMeetings(
 export function saveMonthlyMeeting(
   uid: string,
   id: string,
-  data: { title: string; date: Date; points: Record<string, string> },
+  data: {
+    title: string;
+    date: Date; // tanggal + jam mulai
+    place: string;
+    points: Record<string, string>;
+  },
 ) {
   return setDoc(doc(db, 'users', uid, 'coreMonthly', id), {
     title: data.title,
     date: Timestamp.fromDate(data.date),
+    place: data.place,
     points: data.points,
   });
 }

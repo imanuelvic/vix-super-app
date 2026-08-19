@@ -635,8 +635,7 @@ export default function FamilyScreen() {
               </View>
               {query === '' ? (
                 <VixText heading="label" additionalStyle={styles.searchHint}>
-                  Ketik nama untuk mencari anggota — ketuk hasilnya untuk
-                  menampilkannya di pohon di atas 🌳
+                  Ketik nama untuk mencari anggota
                 </VixText>
               ) : searchResults.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.searchHint}>

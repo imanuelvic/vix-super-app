@@ -418,9 +418,6 @@ export const LEARNING_STEPS: {
   },
 ];
 
-/** Total waktu belajar seminggu (menit) — dipakai di kartu penjelasan. */
-export const WEEK_MINUTES = LEARNING_STEPS.reduce((n, s) => n + s.minutes, 0);
-
 /** Posisi hari dalam minggu Senin-dulu: Sen=0 … Min=6. */
 function dayPos(d: Date): number {
   return (d.getDay() + 6) % 7;

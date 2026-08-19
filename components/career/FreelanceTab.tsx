@@ -363,7 +363,7 @@ export function FreelanceTab({
               🧾 Rincian Biaya (Invoice)
             </VixText>
             <VixText heading="label" additionalStyle={styles.invoiceHint}>
-              Ketuk preset untuk menambah cepat, lalu isi qty & harganya.
+              Isi qty & harganya.
             </VixText>
             <View style={styles.presetWrap}>
               {INVOICE_PRESETS.map((desc) => (

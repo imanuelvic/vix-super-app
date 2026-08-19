@@ -160,7 +160,6 @@ export default function VisitationsScreen() {
         <LoadingCenter />
       ) : (
         <ScrollView key={currentPage} contentContainerStyle={styles.content}>
-          {/* Filter jenis pertemuan — ketuk lagi untuk melepas filternya */}
           <FilterChips
             options={MEETING_KINDS.map((k) => ({
               key: k.key,

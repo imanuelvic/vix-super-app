@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
@@ -14,6 +14,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -24,28 +25,23 @@ import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
   areaMeta,
   areaProgress,
-  classifyAll,
   coreDone,
   countedHabits,
   dailyScore,
   defaultSlot,
-  FITNESS_HABIT,
-  FITNESS_HABIT_ID,
   HABIT_AREAS,
   HABIT_SLOTS,
   HABIT_TIERS,
   habitArea,
+  habitLink,
   habitsBySlot,
   habitTier,
-  mergeExerciseHabits,
-  missingFromPack,
-  needsClassify,
   newHabitId,
   saveHabits,
-  separateExercise,
   slotMeta,
   tierMeta,
   type HabitArea,
+  type HabitLink,
   type HabitSlot,
   type HabitTier,
   type ScheduledHabit,
@@ -87,6 +83,7 @@ export function HabitsTab({
   const router = useRouter();
 
   const [error, setError] = useState<string | null>(null);
+  const [areaFilter, setAreaFilter] = useState<HabitArea | null>(null);
   // Tab sesi aktif — default ke sesi sesuai jam sekarang (Pagi/Siang/Malam).
   const [activeSlot, setActiveSlot] = useState<HabitSlot>(() =>
     defaultSlot(countedHabits(habits, day.skipped), day.done, new Date()),
@@ -120,7 +117,13 @@ export function HabitsTab({
 
   const range = idealWeightRange(profile.heightCm);
   const grouped = habitsBySlot(habits);
-  const activeList = grouped[activeSlot];
+  // Saringan area hidup (ketuk ikonnya di atas). null = tampilkan semua.
+  // Berlaku BERSAMA tab sesi: yang tampil = area ini, di sesi yang sedang
+  // dibuka. Sengaja tidak ikut kereset saat pindah sesi — supaya bisa menyusuri
+  // satu area dari Pagi ke Malam tanpa memilih ulang.
+  const activeList = areaFilter
+    ? grouped[activeSlot].filter((h) => habitArea(h) === areaFilter)
+    : grouped[activeSlot];
 
   // DUA daftar yang sengaja dibedakan:
   // • `grouped`  — daftar LENGKAP, yang ditampilkan di layar (baris yang
@@ -135,11 +138,6 @@ export function HabitsTab({
   const score = dailyScore(counted, day.done);
   const areas = areaProgress(counted, day.done);
   const keptCount = areas.filter((a) => a.kept).length;
-  // Penataan sekali jalan: kebiasaan lama belum bertanda, paket malam belum ada.
-  const unclassified = needsClassify(habits);
-  const packMissing = missingFromPack(habits);
-  // Kebiasaan olahraga yang masih terpisah-pisah → tawarkan dilebur jadi satu.
-  const separate = separateExercise(habits);
   const coreAllDone = coreDone(counted, day.done);
 
   // Rentetan 🔥 bisa jadi lengkap dari LUAR layar ini: olahraga dicentang di
@@ -187,6 +185,22 @@ export function HabitsTab({
 
   function reassemble(g: Record<HabitSlot, ScheduledHabit[]>): ScheduledHabit[] {
     return [...g.morning, ...g.daytime, ...g.night];
+  }
+
+  /**
+   * Buka tempat kebiasaan ini dikerjakan: layar lain di dalam app, atau
+   * aplikasi luar. Kalau aplikasinya belum terpasang, jatuh ke alamat webnya —
+   * jangan sampai ketukannya terasa mati begitu saja.
+   */
+  function openHabitLink(link: HabitLink) {
+    if (link.route) {
+      router.push({ pathname: link.route.pathname, params: link.route.params });
+      return;
+    }
+    if (!link.external) return;
+    Linking.openURL(link.external.scheme).catch(() =>
+      Linking.openURL(link.external!.web).catch(() => undefined),
+    );
   }
 
   async function handleToggle(habit: ScheduledHabit) {
@@ -237,37 +251,6 @@ export function HabitsTab({
     }
   }
 
-  /** Tandai area & tingkat semua kebiasaan yang belum bertanda (sekali jalan). */
-  async function handleClassify() {
-    if (busy) return;
-    setBusy(true);
-    await saveList(classifyAll(habits));
-    setBusy(false);
-  }
-
-  /**
-   * Lebur semua kebiasaan olahraga terpisah jadi SATU baris yang disetir fitur
-   * Fitness. Menulis ulang array kebiasaan — yang lama benar-benar hilang.
-   */
-  async function handleMergeExercise() {
-    if (busy || separate.length === 0) return;
-    setBusy(true);
-    await saveList(mergeExerciseHabits(habits));
-    setBusy(false);
-  }
-
-  /** Tambahkan kebiasaan pemulihan yang belum ada (Phone Away, refleksi, dll). */
-  async function handleAddPack() {
-    if (busy || packMissing.length === 0) return;
-    setBusy(true);
-    const g = habitsBySlot(habits);
-    for (const p of packMissing) {
-      g[p.slot] = [...g[p.slot], { id: newHabitId(), ...p }];
-    }
-    await saveList(reassemble(g));
-    setBusy(false);
-  }
-
   /** Simpan catatan singkat (refleksi / syukur / rhema) kebiasaan hari ini. */
   async function handleNote(habit: ScheduledHabit, text: string) {
     if (!user) return;
@@ -296,20 +279,21 @@ export function HabitsTab({
 
   async function handleSaveHabit() {
     if (!user || busy) return;
+    // Saat MENGUBAH tidak ada lagi yang bisa disunting di sheet ini: nama,
+    // tingkat, & area sudah final di kode, dan Naik/Turun menyimpan sendiri
+    // begitu ditekan. Jadi "Simpan" cukup menutup — tanpa tulis Firestore.
+    if (editing !== 'new') {
+      setEditing(null);
+      return;
+    }
     const label = fLabel.trim();
     if (!label) return;
     setBusy(true);
     const g = habitsBySlot(habits);
-    if (editing === 'new') {
-      g[editSlot] = [
-        ...g[editSlot],
-        { id: newHabitId(), label, slot: editSlot, area: fArea, tier: fTier },
-      ];
-    } else if (editing) {
-      g[editing.slot] = g[editing.slot].map((h) =>
-        h.id === editing.id ? { ...h, label, area: fArea, tier: fTier } : h,
-      );
-    }
+    g[editSlot] = [
+      ...g[editSlot],
+      { id: newHabitId(), label, slot: editSlot, area: fArea, tier: fTier },
+    ];
     await saveList(reassemble(g));
     setBusy(false);
     setEditing(null);
@@ -441,11 +425,13 @@ export function HabitsTab({
                     → {formatDecimal(target.targetWeightKg)} kg
                   </VixText>
                 </VixText>
-                <View style={styles.targetBarTrack}>
-                  <View
-                    style={[styles.targetBarFill, { width: `${targetPercent}%` }]}
-                  />
-                </View>
+                <ProgressBar
+                  value={targetPercent}
+                  total={100}
+                  height={8}
+                  color={Color.MAIN}
+                  track={Color.CONTRAST_CONTAINER}
+                />
                 <VixText heading="label" additionalStyle={styles.targetSub}>
                   🎯{' '}
                   {reached
@@ -455,84 +441,49 @@ export function HabitsTab({
               </>
             ) : (
               <VixText heading="label">
-                🎯 Belum ada target — ketuk untuk pasang. Sehat{' '}
+                🎯 Belum ada target. Sehat{' '}
                 {formatDecimal(range.min)}–{formatDecimal(range.max)} kg.
               </VixText>
             )}
           </PressableScale>
         </View>
 
-        {/* Lima area hidup hari ini — kelihatan mana yang masih bolong. */}
+        {/* Lima area hidup hari ini — kelihatan mana yang masih bolong.
+            Sekaligus SARINGAN: ketuk satu area → daftar di bawah hanya berisi
+            area itu; ketuk lagi area yang sama → saringannya lepas. */}
         <View style={styles.areaRow}>
           {areas.map((a) => {
             const meta = areaMeta(a.area);
+            const picked = areaFilter === a.area;
             return (
-              <View
+              <PressableScale
                 key={a.area}
-                style={[styles.areaChip, a.kept && styles.areaChipKept]}>
+                style={[
+                  styles.areaChip,
+                  a.kept && styles.areaChipKept,
+                  picked && styles.areaChipPicked,
+                ]}
+                onPress={() =>
+                  setAreaFilter((prev) => (prev === a.area ? null : a.area))
+                }>
                 <VixText additionalStyle={styles.areaEmoji}>
                   {meta.emoji}
                 </VixText>
                 <VixText
                   heading="label"
-                  additionalStyle={a.kept ? styles.areaTextKept : styles.areaText}>
+                  additionalStyle={
+                    picked
+                      ? styles.areaTextPicked
+                      : a.kept
+                        ? styles.areaTextKept
+                        : styles.areaText
+                  }>
                   {a.total === 0 ? '—' : `${a.done}/${a.total}`}
                 </VixText>
-              </View>
+              </PressableScale>
             );
           })}
         </View>
-
-        {/* Penataan sekali jalan — kartunya hilang sendiri setelah beres. */}
-        {(unclassified > 0 || packMissing.length > 0 || separate.length > 0) && (
-          <View style={styles.setupCard}>
-            <VixText heading="bold" additionalStyle={styles.setupTitle}>
-              ⚡ Tata Ulang Kebiasaan
-            </VixText>
-            {separate.length > 0 && (
-              <PressableScale
-                style={styles.setupButton}
-                disabled={busy}
-                onPress={handleMergeExercise}>
-                <VixText heading="bold" additionalStyle={styles.setupButtonText}>
-                  🏋️ Satukan {separate.length} olahraga jadi 1 baris
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.setupHint}>
-                  {separate.map((h) => h.label).join(' · ')} → “
-                  {FITNESS_HABIT.label}”, centangnya ikut fitur Fitness yang
-                  sudah punya jadwal mingguannya sendiri.
-                </VixText>
-              </PressableScale>
-            )}
-            {unclassified > 0 && (
-              <PressableScale
-                style={styles.setupButton}
-                disabled={busy}
-                onPress={handleClassify}>
-                <VixText heading="bold" additionalStyle={styles.setupButtonText}>
-                  🏷️ Tandai {unclassified} kebiasaan otomatis
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.setupHint}>
-                  Ditebak dari namanya (area + inti/pendukung/opsional). Bisa
-                  dibetulkan satu-satu lewat tombol ✏️.
-                </VixText>
-              </PressableScale>
-            )}
-            {packMissing.length > 0 && (
-              <PressableScale
-                style={styles.setupButton}
-                disabled={busy}
-                onPress={handleAddPack}>
-                <VixText heading="bold" additionalStyle={styles.setupButtonText}>
-                  🌙 Tambah {packMissing.length} kebiasaan pemulihan
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.setupHint}>
-                  {packMissing.map((p) => p.label).join(' · ')}
-                </VixText>
-              </PressableScale>
-            )}
-          </View>
-        )}
 
         {/* ===== Kebiasaan: tab sesi Pagi/Siang/Malam (satu sesi tampil biar
             tak perlu scroll panjang; default ke sesi jam sekarang) ===== */}
@@ -568,9 +519,12 @@ export function HabitsTab({
             const skipped = !!day.skipped[habit.id];
             const checked = !skipped && !!day.done[habit.id];
             const tier = habitTier(habit);
-            // Baris olahraga gabungan: centangnya datang dari fitur Fitness,
-            // jadi di sini ia cuma cermin + pintasan ke sana.
-            const fromFitness = habit.id === FITNESS_HABIT_ID;
+            // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
+            // dapat keterangan kecil + ketukan yang langsung ke sana.
+            const link = habitLink(habit);
+            // Baris cermin (olahraga): centangnya datang dari fitur Fitness,
+            // jadi di sini ia cuma penunjuk keadaan + pintasan ke sana.
+            const fromFitness = link?.mirror === true;
             return (
               // Berganti sesi (Pagi→Siang→Malam) = daftar baru masuk berurutan
               // dari bawah, bukan berkedip sekaligus. Jedanya dibatasi 8 baris
@@ -593,9 +547,7 @@ export function HabitsTab({
                       bisa dicentang: batalkan ✗ dulu. */}
                   <PressableScale
                     onPress={() =>
-                      fromFitness
-                        ? router.push('/fitness')
-                        : handleToggle(habit)
+                      fromFitness ? openHabitLink(link!) : handleToggle(habit)
                     }
                     disabled={skipped && !fromFitness}
                     hitSlop={8}
@@ -606,8 +558,13 @@ export function HabitsTab({
                       locked={fromFitness}
                     />
                   </PressableScale>
-                  {/* Teks tidak bisa ditekan — ubah/urutkan/hapus lewat tombol edit */}
-                  <View style={styles.rowMain}>
+                  {/* Nama kebiasaan tidak bisa ditekan — ubah/urutkan/hapus
+                      lewat tombol ✏️. KECUALI yang punya pintasan: di situ
+                      ketukan membawa ke tempat kebiasaannya dikerjakan. */}
+                  <PressableScale
+                    style={styles.rowMain}
+                    onPress={() => link && openHabitLink(link)}
+                    disabled={!link}>
                     <VixText
                       heading="paragraph"
                       additionalStyle={[
@@ -616,12 +573,14 @@ export function HabitsTab({
                       ]}>
                       {tierMeta(tier).emoji} {habit.label}
                     </VixText>
-                    {fromFitness && (
-                      <VixText heading="label" additionalStyle={styles.linkHint}>
-                        🏋️ Dicentang dari fitur Fitness — ketuk untuk buka
+                    {link && (
+                      <VixText
+                        heading="label"
+                        additionalStyle={[styles.linkHint, { color: link.color }]}>
+                        {link.note}
                       </VixText>
                     )}
-                  </View>
+                  </PressableScale>
                   {/* Dua tombol kanan dirapatkan sendiri (gap lebih kecil dari
                       gap baris) supaya nama kebiasaan tidak kehilangan ruang. */}
                   <View style={styles.rowActions}>
@@ -670,14 +629,33 @@ export function HabitsTab({
             );
           })}
 
-          <PressableScale
-            style={styles.addRow}
-            onPress={() => openAdd(activeSlot)}>
-            <IconSymbol name="plus" size={16} color={Color.MAIN} />
-            <VixText heading="label" additionalStyle={styles.addText}>
-              Tambah kebiasaan {slotMeta(activeSlot).label.toLowerCase()}
-            </VixText>
-          </PressableScale>
+          {/* Sesi ini memang tidak punya kebiasaan dari area yang disaring —
+              jelaskan, jangan cuma tampil kosong tanpa sebab. */}
+          {areaFilter && activeList.length === 0 && (
+            <PressableScale
+              style={styles.emptyFilter}
+              onPress={() => setAreaFilter(null)}>
+              <VixText heading="label" additionalStyle={styles.emptyFilterText}>
+                Tidak ada kebiasaan {areaMeta(areaFilter).emoji}{' '}
+                {areaMeta(areaFilter).label} di sesi{' '}
+                {slotMeta(activeSlot).label.toLowerCase()}
+              </VixText>
+            </PressableScale>
+          )}
+
+          {/* Tombol tambah disembunyikan saat menyaring: kebiasaan baru masuk
+              ke sesi ini, bukan ke area yang sedang disaring — kalau muncul,
+              hasilnya terasa "hilang" begitu ditambahkan. */}
+          {!areaFilter && (
+            <PressableScale
+              style={styles.addRow}
+              onPress={() => openAdd(activeSlot)}>
+              <IconSymbol name="plus" size={16} color={Color.MAIN} />
+              <VixText heading="label" additionalStyle={styles.addText}>
+                Tambah kebiasaan {slotMeta(activeSlot).label.toLowerCase()}
+              </VixText>
+            </PressableScale>
+          )}
         </View>
 
         <FormError message={error} gap="none" additionalStyle={styles.error} />
@@ -695,43 +673,56 @@ export function HabitsTab({
             : undefined
         }
         onClose={() => setEditing(null)}>
-        <FormInput
-          placeholder="Nama kebiasaan"
-          value={fLabel}
-          onChangeText={setFLabel}
-          autoFocus
-          editable={!busy}
-        />
-
-        {/* Tingkat menentukan streak & skor — inilah pengganti "39/39" */}
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tingkat (yang 🟢 Inti menentukan streak 🔥)
-        </VixText>
-        <View style={styles.pickRow}>
-          {HABIT_TIERS.map((t) => (
-            <Chip
-              key={t.key}
-              label={`${t.emoji} ${t.label}`}
-              active={fTier === t.key}
-              onPress={() => setFTier(t.key)}
-              additionalStyle={styles.pickChip}
+        {/* Daftar kebiasaan sudah FINAL. Saat MENGUBAH, namanya cuma
+            ditampilkan — ganti nama, tingkat, & area dilakukan langsung di
+            kode. Isian lengkapnya tinggal untuk kebiasaan BARU. */}
+        {editing === 'new' ? (
+          <>
+            <FormInput
+              placeholder="Nama kebiasaan"
+              value={fLabel}
+              onChangeText={setFLabel}
+              autoFocus
+              editable={!busy}
             />
-          ))}
-        </View>
 
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Area hidup
-        </VixText>
-        <View style={styles.pickRow}>
-          {HABIT_AREAS.map((a) => (
-            <Chip
-              key={a.key}
-              label={`${a.emoji} ${a.label}`}
-              active={fArea === a.key}
-              onPress={() => setFArea(a.key)}
-            />
-          ))}
-        </View>
+            {/* Tingkat menentukan streak & skor — inilah pengganti "39/39" */}
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              Tingkat (yang 🟢 Inti menentukan streak 🔥)
+            </VixText>
+            <View style={styles.pickRow}>
+              {HABIT_TIERS.map((t) => (
+                <Chip
+                  key={t.key}
+                  label={`${t.emoji} ${t.label}`}
+                  active={fTier === t.key}
+                  onPress={() => setFTier(t.key)}
+                  additionalStyle={styles.pickChip}
+                />
+              ))}
+            </View>
+
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              Area hidup
+            </VixText>
+            <View style={styles.pickRow}>
+              {HABIT_AREAS.map((a) => (
+                <Chip
+                  key={a.key}
+                  label={`${a.emoji} ${a.label}`}
+                  active={fArea === a.key}
+                  onPress={() => setFArea(a.key)}
+                />
+              ))}
+            </View>
+          </>
+        ) : (
+          <View style={styles.fixedNameBox}>
+            <VixText heading="bold" additionalStyle={styles.fixedNameText}>
+              {fLabel}
+            </VixText>
+          </View>
+        )}
 
         {/* Urutkan dalam sesi (Naik/Turun) — hanya saat mengedit */}
         {editing && editing !== 'new' && (
@@ -887,29 +878,17 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN,
     backgroundColor: Color.MAIN_TRANSPARENT,
   },
+  // Area yang sedang dipakai menyaring — sengaja PEKAT, bukan pucat seperti
+  // "terjaga", supaya "sedang menyaring" tidak tertukar dengan "sudah beres".
+  areaChipPicked: {
+    borderColor: Color.MAIN_DARK,
+    backgroundColor: Color.MAIN_DARK,
+  },
   areaEmoji: { fontSize: 16, lineHeight: 20 },
   areaText: { color: Color.TEXT_PLACEHOLDER },
   areaTextKept: { color: Color.MAIN_DARK },
+  areaTextPicked: { color: Color.TEXT_REVERSE },
   // Kartu penataan sekali jalan (hilang sendiri setelah semua beres).
-  setupCard: {
-    backgroundColor: Color.ACCENT,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.ACCENT_DARK,
-    padding: 14,
-    gap: 10,
-    marginBottom: 12,
-  },
-  setupTitle: { color: Color.ACCENT_DARK },
-  setupButton: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 2,
-  },
-  setupButtonText: { color: Color.TEXT_TITLE },
-  setupHint: { color: Color.TEXT_LABEL },
   targetCard: {
     flex: 1,
     backgroundColor: Color.CONTAINER,
@@ -921,13 +900,6 @@ const styles = StyleSheet.create({
   },
   targetSub: { color: Color.TEXT_LABEL },
   targetValue: { color: Color.TEXT_TITLE },
-  targetBarTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    overflow: 'hidden',
-  },
-  targetBarFill: { height: '100%', borderRadius: 4, backgroundColor: Color.MAIN },
   // Blok sesi aktif
   slotBlock: { marginBottom: 16 },
   row: {
@@ -981,6 +953,15 @@ const styles = StyleSheet.create({
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
+  // Nama kebiasaan di sheet Ubah — hanya dibaca, bukan diisi. Sengaja TIDAK
+  // dibuat mirip kolom isian supaya tidak terkesan bisa diketik.
+  fixedNameBox: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  fixedNameText: { color: Color.TEXT_TITLE },
   // Keterangan baris olahraga: centangnya datang dari fitur Fitness.
   linkHint: { color: Color.FITNESS_DARK, marginTop: 1 },
   addRow: {
@@ -995,6 +976,14 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN_LIGHT,
   },
   addText: { color: Color.MAIN },
+  // Keterangan saat saringan area tidak menyisakan apa pun di sesi ini.
+  emptyFilter: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  emptyFilterText: { color: Color.ACCENT_DARK },
   // Naik/Turun di sheet edit
   moveRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
   moveButton: {

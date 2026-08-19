@@ -264,10 +264,6 @@ export default function FastingScreen() {
               <VixText heading="title" additionalStyle={styles.sectionTitle}>
                 📆 Hari per Hari
               </VixText>
-              <VixText heading="label" additionalStyle={styles.sectionHint}>
-                Ketuk lingkaran kalau hari itu berhasil, ketuk kartunya untuk
-                menulis pokok doa & jawaban doa hari itu.
-              </VixText>
 
               {dayIds.map((dayId, i) => {
                 const d = fastingDay(plan, dayId);
@@ -421,7 +417,6 @@ const styles = StyleSheet.create({
   progressLabel: { color: Color.TEXT_ON_DARK_MUTED },
   progressValue: { color: Color.TEXT_REVERSE },
   sectionTitle: { marginTop: 18, marginBottom: 4 },
-  sectionHint: { marginBottom: 10 },
   dayCard: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -96,8 +96,7 @@ export function SkillsTab({
         </View>
         <VixText heading="label" additionalStyle={styles.hint}>
           Satu topik per minggu → seluruh daftar ini habis dalam ±
-          {Math.ceil(SKILLS.length / 4)} bulan. Ketuk topik untuk lihat detail
-          atau menjadikannya topik minggu ini.
+          {Math.ceil(SKILLS.length / 4)} bulan.
         </VixText>
 
         {SKILL_AREAS.map((area) => {

@@ -7,6 +7,7 @@ import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
@@ -532,17 +533,13 @@ function GoalBar({
           {value} / {min}–{max} g
         </VixText>
       </View>
-      <View style={styles.limitTrack}>
-        <View
-          style={[
-            styles.limitFill,
-            {
-              width: `${percent}%`,
-              backgroundColor: reached ? Color.MAIN : Color.MAIN_LIGHT,
-            },
-          ]}
-        />
-      </View>
+      <ProgressBar
+        value={percent}
+        total={100}
+        height={8}
+        color={reached ? Color.MAIN : Color.MAIN_LIGHT}
+        track={Color.CONTRAST_CONTAINER}
+      />
       <VixText heading="label" additionalStyle={styles.limitHint}>
         {reached ? '✅ Target protein tercapai' : hint}
       </VixText>
@@ -584,11 +581,13 @@ function LimitBar({
           {value} / {limit} g
         </VixText>
       </View>
-      <View style={styles.limitTrack}>
-        <View
-          style={[styles.limitFill, { width: `${percent}%`, backgroundColor: fill }]}
-        />
-      </View>
+      <ProgressBar
+        value={percent}
+        total={100}
+        height={8}
+        color={fill}
+        track={Color.CONTRAST_CONTAINER}
+      />
       <VixText heading="label" additionalStyle={styles.limitHint}>
         {hint}
       </VixText>
@@ -632,13 +631,6 @@ const styles = StyleSheet.create({
   limitLabel: { color: Color.TEXT_TITLE },
   limitOver: { color: Color.DANGER },
   goalReached: { color: Color.MAIN_DARK },
-  limitTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    overflow: 'hidden',
-  },
-  limitFill: { height: '100%', borderRadius: 4 },
   limitHint: { color: Color.TEXT_LABEL },
   // Air putih — bentuknya disamakan dengan baris air di kartu sapaan Home.
   waterCard: {

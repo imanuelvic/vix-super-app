@@ -9,6 +9,7 @@ import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -274,7 +275,7 @@ export function BudgetingTab({
               dari {formatRupiah(totalAllocated)}
             </VixText>
           </VixText>
-          <ProgressBar percent={totalPercent} onDark />
+          <BudgetBar percent={totalPercent} onDark />
           <VixText heading="label" additionalStyle={styles.summaryLabel}>
             {totalAllocated > 0
               ? `${totalPercent.toFixed(1)}% terpakai`
@@ -309,7 +310,7 @@ export function BudgetingTab({
                       : '—'}
                 </VixText>
               </View>
-              <ProgressBar percent={percent} />
+              <BudgetBar percent={percent} />
               <View style={styles.rowBottom}>
                 <VixText heading="label">
                   Realisasi:{' '}
@@ -471,7 +472,10 @@ export function BudgetingTab({
 
 // Bar kemajuan realisasi vs budget. Hijau normal → kuning saat pemakaian
 // ≥75% → biru saat pas 100% (budget habis persis) → merah saat MELEBIHI 100%.
-function ProgressBar({
+//
+// Bentuk barnya sendiri dipinjam dari <ProgressBar> bersama; yang khas Budgeting
+// dan tinggal di sini cuma ATURAN WARNANYA.
+function BudgetBar({
   percent,
   onDark = false,
 }: {
@@ -488,9 +492,13 @@ function ProgressBar({
           ? Color.BUDGET_WARN
           : Color.MAIN_LIGHT;
   return (
-    <View style={[styles.barTrack, onDark && styles.barTrackDark]}>
-      <View style={[styles.barFill, { width: `${width}%`, backgroundColor: fill }]} />
-    </View>
+    <ProgressBar
+      value={width}
+      total={100}
+      height={8}
+      color={fill}
+      track={onDark ? Color.MAIN : Color.CONTRAST_CONTAINER}
+    />
   );
 }
 
@@ -549,17 +557,6 @@ const styles = StyleSheet.create({
   rowBottom: { flexDirection: 'row', justifyContent: 'space-between' },
   realText: { color: Color.MAIN },
   overText: { color: Color.DANGER },
-  barTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    overflow: 'hidden',
-  },
-  barTrackDark: { backgroundColor: Color.MAIN },
-  barFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
   modalTitle: { marginBottom: 2 },
   modalCategory: { marginBottom: 12 },
   modalHint: { marginTop: 6 },

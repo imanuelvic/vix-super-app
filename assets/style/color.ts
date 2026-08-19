@@ -86,8 +86,9 @@ export const Color = {
   TOURNAMENT: '#FFD24C',
   TOURNAMENT_DARK: '#7A5300',
 
-  // Merek luar (tombol chat WhatsApp di fitur CORE)
+  // Merek luar (tombol chat WhatsApp di fitur CORE, pintasan IG di Habits)
   WHATSAPP: '#25D366',
+  INSTAGRAM: '#E1306C',
 
   // Status
   SUCCESS: '#1D8D7A',

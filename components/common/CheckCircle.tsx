@@ -30,6 +30,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 //   • cincinnya ABU-ABU, bukan mint — mint = "silakan tekan"
 //   • saat masih kosong, dalamnya diberi isian krem samar → terlihat "belum
 //     waktunya", bukan kotak kosong yang menunggu ditekan
+//   • saat tercentang, tanda centangnya ABU-ABU (bukan teal pekat) → kebaca
+//     "tercentang, tapi bukan olehmu"
 //   • tidak pernah meletup saat berubah (letupan itu umpan balik sentuhan)
 export function CheckCircle({
   checked,
@@ -117,7 +119,9 @@ export function CheckCircle({
         <IconSymbol
           name="checkmark"
           size={Math.round(size * 0.62)}
-          color={Color.MAIN_DARK}
+          // Abu-abu untuk centang otomatis — pembeda kedua setelah cincinnya,
+          // supaya "dicentang sendiri" tidak tertukar dengan "aku yang centang".
+          color={locked ? Color.TEXT_LABEL : Color.MAIN_DARK}
         />
       </Animated.View>
       <Animated.View style={[styles.mark, crossStyle]}>

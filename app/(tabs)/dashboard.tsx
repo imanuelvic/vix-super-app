@@ -678,7 +678,7 @@ export default function DashboardScreen() {
               title={`${slotMeta(curSlot).emoji} Kebiasaan ${slotMeta(curSlot).label}`}
               onPress={() => router.push('/habits')}>
               <VixText heading="label" additionalStyle={styles.habitReminderSub}>
-                {slotUndone.length} kebiasaan belum dilakukan — ketuk untuk buka 💪
+                {slotUndone.length} kebiasaan belum dilakukan 💪
               </VixText>
               {slotUndone.slice(0, 4).map((h) => (
                 <VixText

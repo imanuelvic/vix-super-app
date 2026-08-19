@@ -181,8 +181,7 @@ export function WeekTab({
                   📚 {book.title}
                 </VixText>
                 <VixText heading="label" additionalStyle={styles.bookSub}>
-                  {book.author} · {book.chapters.length} bab — ketuk untuk baca &
-                  centang babnya
+                  {book.author} · {book.chapters.length} bab
                 </VixText>
               </View>
               <IconSymbol name="chevron.right" size={18} color={Color.MAIN_DARK} />

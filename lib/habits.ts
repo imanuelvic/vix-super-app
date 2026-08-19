@@ -1,5 +1,7 @@
 import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
+import { Color } from '@/assets/style/color';
+
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
@@ -270,186 +272,91 @@ export function newHabitId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ===================== Penata otomatis =====================
-// Menebak area & tingkat dari NAMA kebiasaan, supaya 39 kebiasaan yang sudah
-// ada tidak perlu ditandai satu-satu. Urutan aturan penting: yang paling
-// spesifik (dan yang Opsional) diperiksa duluan.
-//
-// Hasil tebakan boleh salah — tinggal dibetulkan lewat modal ubah kebiasaan.
-
-const CLASSIFY_RULES: {
-  match: RegExp;
-  area: HabitArea;
-  tier: HabitTier;
-}[] = [
-  // ⚪ Opsional — enak dilakukan, tapi bukan penentu kesehatan.
-  { match: /cotton|korek kuping/i, area: 'body', tier: 'optional' },
-  { match: /castor/i, area: 'body', tier: 'optional' },
-  { match: /cider|cuka apel|\bacv\b/i, area: 'body', tier: 'optional' },
-  { match: /honey|madu/i, area: 'body', tier: 'optional' },
-  { match: /(cold|dingin).*(face|wajah|muka)|soak face/i, area: 'body', tier: 'optional' },
-  { match: /warm water|air hangat/i, area: 'body', tier: 'optional' },
-  // 😴 Recovery
-  { match: /wake ?up|bangun/i, area: 'recovery', tier: 'core' },
-  { match: /sleep|tidur|phone away|wind ?down|jauhkan hp|matikan hp/i, area: 'recovery', tier: 'core' },
-  { match: /prepare|persiap|siapkan|besok|tomorrow/i, area: 'recovery', tier: 'support' },
-  // 🙏 Spirit
-  { match: /communion|perjamuan/i, area: 'spirit', tier: 'core' },
-  { match: /bible|alkitab|revive|renungan|khotbah|sermon|\bdoa\b|pray|firman|rhema|syukur|gratitude/i, area: 'spirit', tier: 'core' },
-  { match: /share|ig story|instagram|whatsapp|\bwa\b/i, area: 'spirit', tier: 'support' },
-  // ❤️ Relationship
-  { match: /encourage|semangati|bless|memberkati|follow ?up|kabari|hubungi/i, area: 'social', tier: 'core' },
-  // 🧠 Mind
-  { match: /plan|prioritas|priorit/i, area: 'mind', tier: 'core' },
-  { match: /reflect|refleksi|journal|jurnal/i, area: 'mind', tier: 'core' },
-  { match: /news|berita|duolingo|belajar|learn|reading the|baca buku/i, area: 'mind', tier: 'support' },
-  { match: /\bbed\b|rapikan/i, area: 'mind', tier: 'support' },
-  // 🏃 Body — inti
-  { match: /run|lari|walk|jalan|fitness|gym|strength|workout|olahraga|latihan|angkat beban/i, area: 'body', tier: 'core' },
-  { match: /sunscreen|\bspf\b|tabir surya/i, area: 'body', tier: 'core' },
-  { match: /protein|telur|\begg|whey|sayur|buah|makan|breakfast|sarapan|lunch|dinner|minum air|air putih/i, area: 'body', tier: 'core' },
-  // 🏃 Body — pendukung
-  { match: /stretch|mobility|peregangan/i, area: 'body', tier: 'support' },
-  { match: /vitamin|fish oil|creatine|suplemen|supplement|omega/i, area: 'body', tier: 'support' },
-  { match: /shower|mandi|scrub|lotion|skincare|serum|gigi|cukur/i, area: 'body', tier: 'support' },
-  { match: /kopi|coffee|americano|caffeine|kafein/i, area: 'body', tier: 'support' },
-];
-
-/** Tebak area & tingkat satu kebiasaan dari namanya. */
-function classifyHabit(label: string): {
-  area: HabitArea;
-  tier: HabitTier;
-} {
-  for (const rule of CLASSIFY_RULES) {
-    if (rule.match.test(label)) return { area: rule.area, tier: rule.tier };
-  }
-  return { area: 'body', tier: 'support' };
-}
-
-/** Isi area & tingkat untuk kebiasaan yang BELUM ditandai (yang sudah, dibiarkan). */
-export function classifyAll(habits: ScheduledHabit[]): ScheduledHabit[] {
-  return habits.map((h) =>
-    h.area && h.tier ? h : { ...h, ...classifyHabit(h.label) },
-  );
-}
-
-/** Ada kebiasaan yang belum punya area/tingkat? → tawarkan penataan otomatis. */
-export function needsClassify(habits: ScheduledHabit[]): number {
-  return habits.filter((h) => !h.area || !h.tier).length;
-}
-
-// ===================== Paket kebiasaan malam =====================
-// Bagian paling lemah dari rutinitas: tidur & pemulihan. Empat kebiasaan ini
-// (plus satu di pagi) ditambahkan sekali ketuk — bukan dipaksa masuk, supaya
-// daftar tetap milikmu.
-
-const RECOVERY_PACK: Omit<ScheduledHabit, 'id'>[] = [
-  {
-    label: '📱 Phone Away — 21.30',
-    slot: 'night',
-    area: 'recovery',
-    tier: 'core',
-  },
-  {
-    label: '🧠 Refleksi Hari Ini',
-    slot: 'night',
-    area: 'mind',
-    tier: 'core',
-    note: true,
-    notePrompt: 'Win hari ini… / Pelajaran… / Besok…',
-  },
-  {
-    label: '🙏 Bersyukur 3 Hal',
-    slot: 'night',
-    area: 'spirit',
-    tier: 'core',
-    note: true,
-    notePrompt: 'Terima kasih Tuhan untuk… (3 hal)',
-  },
-  {
-    label: '😴 Tidur 22.00–22.30',
-    slot: 'night',
-    area: 'recovery',
-    tier: 'core',
-  },
-  {
-    label: '✍️ 1 Kalimat Rhema',
-    slot: 'morning',
-    area: 'spirit',
-    tier: 'support',
-    note: true,
-    notePrompt: 'Hari ini Tuhan mengingatkanku bahwa…',
-  },
-];
-
-// ===================== Olahraga: satu baris, disetir fitur Fitness ==========
-// Dulu olahraga tersebar jadi beberapa kebiasaan terpisah (Easy Run Sen/Rab/Jum,
-// Brisk Walk Sel/Kam, Long Walk akhir pekan, Fitness pk. 17.00) — padahal fitur
-// Fitness sudah punya jadwal mingguannya sendiri. Isinya jadi dobel: dicentang
-// di Habits, dicentang lagi di Fitness.
-//
-// Sekarang cukup SATU baris. Centangnya tidak diketuk di sini, melainkan ikut
-// hasil sesi Fitness hari ini (lihat `syncFitnessHabit` di lib/fitness.ts).
-
 /**
- * Id TETAP kebiasaan olahraga gabungan. Sengaja bukan id acak: fitur Fitness
- * bisa menulis centangnya tanpa perlu membaca daftar kebiasaan lebih dulu.
+ * Id TETAP baris olahraga gabungan "🏋️ Morning Exercise" — satu baris yang
+ * menggantikan lari/jalan/gym yang dulu terpisah-pisah, karena fitur Fitness
+ * sudah punya jadwal mingguannya sendiri.
+ *
+ * Sengaja bukan id acak: fitur Fitness bisa menulis centangnya tanpa perlu
+ * membaca daftar kebiasaan lebih dulu (lihat `syncFitnessHabit` di
+ * lib/fitness.ts). Kalau baris ini dihapus lalu dibuat ulang dari layar
+ * Tambah Kebiasaan, id-nya jadi acak → cerminnya berhenti bekerja.
  */
 export const FITNESS_HABIT_ID = 'fitness-link';
 
-/** Baris tunggal pengganti semua kebiasaan olahraga yang terpisah-pisah. */
-export const FITNESS_HABIT: ScheduledHabit = {
-  id: FITNESS_HABIT_ID,
-  label: '🏋️ Morning Exercise',
-  slot: 'morning',
-  area: 'body',
-  tier: 'core',
+// ===================== Pintasan kebiasaan =====================
+// Sebagian kebiasaan sebenarnya DIKERJAKAN di layar lain (atau di aplikasi
+// lain). Daripada mengingat sendiri harus buka apa, baris-baris itu diberi
+// keterangan kecil + ketukan yang langsung membawa ke tempatnya.
+//
+// Warnanya sengaja mengikuti warna ubin fitur tujuannya di Home (atau warna
+// merek aplikasi luar), jadi tujuannya sudah kebaca sebelum teksnya dibaca.
+
+export type HabitLink = {
+  /** Cocokkan lewat id tetap — dipakai baris olahraga gabungan. */
+  id?: string;
+  /** Atau lewat kata kunci di nama kebiasaan. */
+  match?: RegExp;
+  /** Keterangan kecil di bawah nama kebiasaan. */
+  note: string;
+  /** Warna keterangan. */
+  color: string;
+  /**
+   * Tujuan di DALAM app. Ditulis sebagai literal (bukan `string`) supaya
+   * typed routes expo-router ikut memeriksa rutenya memang ada.
+   */
+  route?: {
+    pathname: '/fitness' | '/spiritual' | '/health';
+    params?: Record<string, string>;
+  };
+  /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
+  external?: { scheme: string; web: string };
+  /**
+   * true = centangnya TIDAK diketuk di Habits, melainkan ikut layar tujuan.
+   * Baris begini dikunci: lingkarannya abu-abu & ketukannya membuka tujuan.
+   */
+  mirror?: boolean;
 };
 
-// Kata kunci kebiasaan olahraga yang layak dilebur. Sengaja TIDAK memuat
-// "stretch/mobility" & "peregangan": itu pemulihan, bukan sesi olahraga.
-const EXERCISE_MATCH =
-  /\b(run|jog|lari|walk|jalan|fitness|gym|workout|olahraga|latihan|angkat beban|strength|cardio)\b/i;
+// Urutan penting: yang lebih spesifik diperiksa duluan. "Revive + IG Story" &
+// "Share Revive ke WA CORE" sama-sama memuat kata "revive".
+export const HABIT_LINKS: HabitLink[] = [
+  {
+    id: FITNESS_HABIT_ID,
+    note: 'Dicentang dari fitur Fitness',
+    color: Color.FITNESS_DARK,
+    route: { pathname: '/fitness' },
+    mirror: true,
+  },
+  {
+    match: /\b(ig|instagram)\b/i,
+    note: 'Buka aplikasi Instagram',
+    color: Color.INSTAGRAM,
+    external: { scheme: 'instagram://app', web: 'https://www.instagram.com/' },
+  },
+  {
+    match: /revive.*(\bwa\b|whatsapp|core)/i,
+    note: 'Buka Spiritual › Revive',
+    color: Color.SPIRITUAL_DARK,
+    route: { pathname: '/spiritual', params: { tab: 'revive' } },
+  },
+  {
+    match: /(protein.*fiber)|micronutrien/i,
+    note: 'Buka Health › Diet',
+    color: Color.DANGER,
+    route: { pathname: '/health', params: { tab: 'diet' } },
+  },
+];
 
-function isMergeableExercise(h: ScheduledHabit): boolean {
-  return h.id === FITNESS_HABIT_ID || EXERCISE_MATCH.test(h.label);
-}
-
-/**
- * Kebiasaan olahraga terpisah yang masih ada di daftar. Dipakai untuk
- * menawarkan peleburan — sekaligus ditampilkan namanya supaya kelihatan dulu
- * apa saja yang akan hilang sebelum tombolnya ditekan.
- */
-export function separateExercise(habits: ScheduledHabit[]): ScheduledHabit[] {
-  return habits.filter((h) => h.id !== FITNESS_HABIT_ID && EXERCISE_MATCH.test(h.label));
-}
-
-/**
- * Ganti semua kebiasaan olahraga terpisah dengan SATU baris gabungan, di
- * posisi olahraga pagi yang pertama (bukan dilempar ke bawah daftar).
- * Aman dijalankan berulang: hasilnya selalu tepat satu baris gabungan.
- */
-export function mergeExerciseHabits(habits: ScheduledHabit[]): ScheduledHabit[] {
-  const g = habitsBySlot(habits);
-  const at = g.morning.findIndex(isMergeableExercise);
-  const morning = g.morning.filter((h) => !isMergeableExercise(h));
-  morning.splice(at < 0 ? morning.length : at, 0, FITNESS_HABIT);
-  return [
-    ...morning,
-    ...g.daytime.filter((h) => !isMergeableExercise(h)),
-    ...g.night.filter((h) => !isMergeableExercise(h)),
-  ];
+/** Pintasan untuk satu kebiasaan (null = kebiasaan biasa). */
+export function habitLink(h: ScheduledHabit): HabitLink | null {
+  return (
+    HABIT_LINKS.find((l) => (l.id ? h.id === l.id : l.match!.test(h.label))) ??
+    null
+  );
 }
 
 /** Kebiasaan dari paket yang BELUM ada di daftar (dicocokkan dari namanya). */
-export function missingFromPack(habits: ScheduledHabit[]): Omit<ScheduledHabit, 'id'>[] {
-  const owned = habits.map((h) => h.label.toLowerCase());
-  return RECOVERY_PACK.filter((p) => {
-    // Bandingkan tanpa emoji & jam, cukup kata kuncinya.
-    const key = p.label.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8);
-    return !owned.some((o) => o.replace(/[^a-z]/g, '').includes(key));
-  });
-}
 
 function scheduleRef(uid: string) {
   return doc(db, 'users', uid, 'health', 'habitSchedule');

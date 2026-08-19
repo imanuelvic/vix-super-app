@@ -115,7 +115,7 @@ export function PersonalityTab({ data }: { data: Personality }) {
           {data.mbti ?? '????'}
         </VixText>
         <VixText heading="bold" additionalStyle={styles.heroNick}>
-          {data.mbti ? MBTI_NICKNAME[data.mbti] : 'Belum dites — ketuk untuk isi'}
+          {data.mbti ? MBTI_NICKNAME[data.mbti] : 'Belum dites'}
         </VixText>
         {data.mbti && MBTI_TIP[data.mbti] ? (
           <VixText heading="label" additionalStyle={styles.heroTip}>

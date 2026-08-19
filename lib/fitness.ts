@@ -577,6 +577,26 @@ export function setFitExerciseDone(
 // Sengaja tidak melempar error ke pemanggil: gagal menyinkronkan baris cermin
 // tidak boleh membatalkan centang latihan yang sebenarnya.
 
+/**
+ * Keadaan yang SEHARUSNYA tampil di baris cermin Habits untuk hari ini,
+ * dihitung langsung dari dokumen harian Fitness.
+ *
+ * Dipakai untuk menyelaraskan ulang: cerminnya ditulis saat gerakan dicentang,
+ * jadi sesi yang beres SEBELUM fitur cermin ini ada (atau tulis yang gagal)
+ * tidak akan pernah tercermin sendiri. Layar Habits memakai ini untuk
+ * membetulkan begitu dibuka.
+ */
+export function fitMirrorState(
+  day: FitDay,
+  now: Date,
+): { done: boolean; skipped: boolean } {
+  const list = fitSessionFor(now).exercises;
+  return {
+    done: !day.skipped && list.length > 0 && list.every((e) => day.done[e.id]),
+    skipped: day.skipped,
+  };
+}
+
 /** Sesi hari ini beres semua? → baris Habits ikut tercentang. */
 export function syncFitnessHabit(uid: string, dayId: string, done: boolean) {
   return setHabitDone(uid, dayId, FITNESS_HABIT_ID, done).catch(() => undefined);
