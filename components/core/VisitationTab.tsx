@@ -337,10 +337,13 @@ export function VisitationTab({
       {/* Kirim pertemuan + panduan acaranya ke CORE Leader lewat WhatsApp.
           Menyala penuh pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk
           acara besar) supaya tidak terlewat. */}
+      {/* Rupanya selalu hijau penuh, sama dengan tombol di Monthly. Penanda
+          hari pengingat pindah ke LABEL-nya ("Kirim PDF — H-3"); badge di Home
+          & Dashboard tetap yang menagih. */}
       <CardActionButton
         icon="square.and.arrow.up"
         label={perluKirim ? `Kirim PDF — H-${days}` : 'Share PDF'}
-        variant={perluKirim ? 'filled' : 'outline'}
+        variant="filled"
         onPress={() => handleShare(v)}
         busy={sharingId === v.id}
         disabled={sharingId !== null}

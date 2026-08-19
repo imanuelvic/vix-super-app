@@ -19,6 +19,16 @@ export const PDF_BRAND = 'CORE MCL Imanuel Victory';
 const MAX_FILE_NAME = 80;
 
 /**
+ * Jarak tepi kertas, dalam poin (kertas bawaan expo-print 612×792 @72 PPI).
+ *
+ * Dipasang lewat opsi `margins` expo-print, BUKAN padding body: iOS memakai
+ * angka ini membentuk area cetak yang berlaku di SETIAP halaman, sedangkan
+ * padding body hanya mendorong isi sekali di awal dokumen — akibatnya halaman
+ * kedua dan seterusnya mulai mepet di ujung atas kertas.
+ */
+const PAGE_MARGINS = { top: 36, right: 40, bottom: 44, left: 40 };
+
+/**
  * Ubah judul dokumen jadi nama berkas PDF yang aman.
  * "44. Meeting MCL CL - Juli 2026" → "44. Meeting MCL CL - Juli 2026.pdf"
  *
@@ -45,16 +55,31 @@ export function escapeHtml(s: string): string {
 }
 
 /**
- * Ubah teks berbaris jadi paragraf HTML; baris kosong dibuang, isi kosong
- * ditandai jelas supaya blok yang belum diisi tidak terlihat seperti bug.
+ * Ubah teks berbaris jadi paragraf HTML.
+ *
+ * Enter yang kamu ketik DIHORMATI: baris kosong jadi jeda antar-kelompok,
+ * bukan dibuang. Tapi beberapa enter beruntun tetap jadi SATU jeda saja, dan
+ * enter di awal/akhir catatan dibuang — itu sisa mengetik, bukan jeda yang
+ * disengaja; kalau ikut dicetak, PDF-nya jadi berlubang-lubang.
  */
 export function htmlParagraphs(text: string): string {
-  const lines = text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const lines = text.split('\n').map((l) => l.trim());
+  while (lines.length > 0 && !lines[0]) lines.shift();
+  while (lines.length > 0 && !lines[lines.length - 1]) lines.pop();
   if (lines.length === 0) return '<p class="kosong">— belum diisi —</p>';
-  return lines.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
+
+  const out: string[] = [];
+  let adaJeda = false;
+  for (const line of lines) {
+    if (!line) {
+      adaJeda = true;
+      continue;
+    }
+    if (adaJeda) out.push('<div class="jeda"></div>');
+    adaJeda = false;
+    out.push(`<p>${escapeHtml(line)}</p>`);
+  }
+  return out.join('');
 }
 
 /** Satu kartu keterangan di dalam kop, mis. "TANGGAL / Rabu, 19 Agustus 2026". */
@@ -74,8 +99,11 @@ const BASE_CSS = `
   body {
     font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
     color: #10221C;
+    /* Jarak tepi TIDAK diatur di sini, melainkan lewat opsi margins
+       expo-print (lihat PAGE_MARGINS) — padding body cuma berlaku sekali di
+       awal dokumen, jadi halaman kedua dan seterusnya akan mepet tanpa jeda. */
     margin: 0;
-    padding: 36px 40px 44px;
+    padding: 0;
     font-size: 13px;
     line-height: 1.6;
     background: #fff;
@@ -160,6 +188,9 @@ const BASE_CSS = `
     letter-spacing: 1.1px;
     text-transform: uppercase;
   }
+
+  /* Jeda dari baris kosong yang kamu ketik sendiri (lihat htmlParagraphs) */
+  .jeda { height: 9px; }
 
   /* ============ Kaki ============ */
   .kaki {
@@ -250,7 +281,7 @@ export async function sharePdf(
   dialogTitle: string,
   fileName?: string,
 ): Promise<void> {
-  const { uri } = await Print.printToFileAsync({ html });
+  const { uri } = await Print.printToFileAsync({ html, margins: PAGE_MARGINS });
 
   // expo-print selalu menamai hasilnya acak (cache/Print/<UUID>.pdf), jadi di
   // WhatsApp muncul sebagai "9F3C1A….pdf".
