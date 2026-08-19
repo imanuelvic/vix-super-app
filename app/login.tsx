@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -116,11 +117,7 @@ export default function LoginScreen() {
             editable={!loading}
           />
 
-          {error && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {error}
-            </VixText>
-          )}
+          <FormError message={error} gap="none" />
 
           <PressableScale
             style={[styles.button, loading && styles.buttonDisabled]}
@@ -184,7 +181,6 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: Color.TEXT_REVERSE },
   switchText: { textAlign: 'center', marginTop: 14 },
-  error: { color: Color.DANGER },
   warning: {
     backgroundColor: Color.WARNING_TRANSPARENT,
     borderRadius: 10,

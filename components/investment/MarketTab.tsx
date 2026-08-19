@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -143,11 +144,7 @@ export function MarketTab({
           </View>
         ) : data ? (
           <>
-            {error && (
-              <VixText heading="label" additionalStyle={styles.error}>
-                {error}
-              </VixText>
-            )}
+            <FormError message={error} />
 
             {/* Statistik ringkas */}
             <View style={styles.statsCard}>
@@ -253,6 +250,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   linkText: { color: Color.ACCENT_DARK },
+  // Dipakai di kartu gagal-muat (yang ada tombol "Coba lagi") — bukan pesan
+  // satu baris seperti FormError, jadi tetap ditulis sendiri di sini.
   error: { color: Color.DANGER, marginBottom: 8 },
   errorCard: {
     backgroundColor: Color.CONTAINER,

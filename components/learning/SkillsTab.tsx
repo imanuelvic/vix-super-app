@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
@@ -155,11 +156,7 @@ export function SkillsTab({
           );
         })}
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="none" additionalStyle={styles.error} />
       </ScrollView>
 
       {/* Detail satu topik */}
@@ -311,5 +308,5 @@ const styles = StyleSheet.create({
   bookTitle: { color: Color.TEXT_TITLE },
   detailDone: { color: Color.MAIN_DARK, marginTop: 10 },
   detailButton: { marginTop: 14 },
-  error: { color: Color.DANGER, marginTop: 10 },
+  error: { marginTop: 10 },
 });

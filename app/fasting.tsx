@@ -13,6 +13,7 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -234,11 +235,7 @@ export default function FastingScreen() {
           </VixText>
           <DateField value={endDate} onChange={setEndDate} />
 
-          {error && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {error}
-            </VixText>
-          )}
+          <FormError message={error} gap="none" additionalStyle={styles.error} />
 
           <PrimaryButton
             label={planId ? '💾 Simpan Perubahan' : '✅ Mulai Puasa'}
@@ -411,7 +408,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   fieldLabel: { marginTop: 12, marginBottom: 6 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
-  error: { color: Color.DANGER, marginTop: 10 },
+  error: { marginTop: 10 },
   saveButton: { marginTop: 14 },
   hint: { marginTop: 16, textAlign: 'center' },
   progressCard: {

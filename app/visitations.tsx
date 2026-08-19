@@ -10,6 +10,7 @@ import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FilterChips } from '@/components/common/FilterChips';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
@@ -302,11 +303,7 @@ export default function VisitationsScreen() {
           </PressableScale>
         )}
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.sheetError}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         <EditDelete
           editing={editing}
           label="Hapus permanen jadwal ini"
@@ -363,5 +360,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   doneText: { color: Color.TEXT_TITLE },
-  sheetError: { color: Color.DANGER, marginBottom: 8 },
 });

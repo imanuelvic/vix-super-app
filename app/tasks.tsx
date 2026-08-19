@@ -21,6 +21,7 @@ import {
   type BottomTab,
 } from '@/components/common/BottomTabs';
 import { EditDelete } from '@/components/common/EditDelete';
+import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -590,11 +591,7 @@ export default function TasksScreen() {
             </VixText>
           )}
 
-          {error && (
-            <VixText heading="label" additionalStyle={styles.error}>
-              {error}
-            </VixText>
-          )}
+          <FormError message={error} gap="none" additionalStyle={styles.error} />
 
           {loading ? (
             <LoadingCenter />
@@ -847,11 +844,7 @@ export default function TasksScreen() {
                   ? `Lebih dari ${MAX_RECURRING} reminder — persempit rentangnya.`
                   : `Akan membuat ${recurDays.length} reminder pada ${activeMeta.label} ${activeMeta.icon}.`}
             </VixText>
-            {rError && (
-              <VixText heading="label" additionalStyle={styles.sheetError}>
-                {rError}
-              </VixText>
-            )}
+            <FormError message={rError} />
             <PrimaryButton
               label="Buat Reminder Berulang"
               busy={rBusy}
@@ -887,11 +880,7 @@ export default function TasksScreen() {
             onChange={setFDate}
           />
         </View>
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} gap="none" additionalStyle={styles.error} />
         <EditDelete
           editing={editing}
           label="Hapus task ini"
@@ -957,7 +946,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chipBadgeText: { color: Color.TEXT_REVERSE },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginBottom: 8 },
+  error: { paddingHorizontal: 20, marginBottom: 8 },
   listContent: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 120 },
   dayBlock: {
     paddingVertical: 10,
@@ -1114,7 +1103,6 @@ const styles = StyleSheet.create({
   freqRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   freqChip: { flex: 1 },
   recurPreview: { marginBottom: 10 },
-  sheetError: { color: Color.DANGER, marginBottom: 8 },
 });
 
 // Satu baris task yang bisa DISERET (tahan ±0,2 detik lalu geser). Identitas

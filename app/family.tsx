@@ -16,6 +16,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -794,11 +795,7 @@ export default function FamilyScreen() {
             }}
           />
 
-          {formError && (
-            <VixText heading="label" additionalStyle={styles.sheetError}>
-              {formError}
-            </VixText>
-          )}
+          <FormError message={formError} />
           <EditDelete
             editing={editing}
             label="Hapus anggota ini"
@@ -1025,5 +1022,4 @@ const styles = StyleSheet.create({
   pickerRowActive: { backgroundColor: Color.MAIN_TRANSPARENT },
   pickerRowText: { color: Color.TEXT_TITLE, flexShrink: 1, marginRight: 8 },
   pickerRowTextActive: { color: Color.MAIN_DARK },
-  sheetError: { color: Color.DANGER, marginBottom: 8 },
 });

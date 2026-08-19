@@ -5,6 +5,7 @@ import { StyleSheet, View, type KeyboardTypeOptions } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -324,11 +325,7 @@ export function BodyCard({ profile }: { profile: HealthProfile }) {
           <FormInput style={styles.pairInput} placeholder="Silinder kanan" keyboardType="decimal-pad" value={fCylR} onChangeText={setFCylR} editable={!saving} />
         </View>
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} gap="none" additionalStyle={styles.error} />
       </SheetModal>
     </>
   );
@@ -431,5 +428,5 @@ const styles = StyleSheet.create({
   bloodChip: { flex: 1 },
   pairRow: { flexDirection: 'row', gap: 8, marginTop: 4, marginBottom: 10 },
   pairInput: { flex: 1 },
-  error: { color: Color.DANGER, marginTop: 4 },
+  error: { marginTop: 4 },
 });

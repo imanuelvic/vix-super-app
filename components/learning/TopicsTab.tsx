@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FilterChips } from '@/components/common/FilterChips';
+import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { SummaryCard } from '@/components/common/SummaryCard';
@@ -109,11 +110,7 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
           );
         })}
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="none" additionalStyle={styles.error} />
       </ScrollView>
     </View>
   );
@@ -145,5 +142,5 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1, gap: 2 },
   rowTitleDone: { color: Color.TEXT_LABEL },
   rowGroup: { color: Color.TEXT_LABEL },
-  error: { color: Color.DANGER, marginTop: 10 },
+  error: { marginTop: 10 },
 });

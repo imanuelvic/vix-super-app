@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -435,11 +436,7 @@ export default function ProfileScreen() {
           </View>
         ))}
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} gap="none" additionalStyle={styles.error} />
         <DualButtons
           confirmLabel="Simpan"
           busy={saving}
@@ -457,7 +454,7 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   headerWrap: { paddingHorizontal: 20, paddingTop: 12 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  error: { color: Color.DANGER, paddingHorizontal: 20, marginTop: 12 },
+  error: { paddingHorizontal: 20, marginTop: 12 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

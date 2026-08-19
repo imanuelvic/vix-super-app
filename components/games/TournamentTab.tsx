@@ -5,6 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -355,11 +356,7 @@ export function TournamentTab() {
           </View>
         ))}
 
-        {formError && (
-          <VixText heading="label" additionalStyle={styles.formError}>
-            {formError}
-          </VixText>
-        )}
+        <FormError message={formError} />
         <PrimaryButton
           label="🎲 Acak & Mulai"
           onPress={handleCreate}
@@ -690,7 +687,6 @@ const styles = StyleSheet.create({
   },
   seedText: { color: Color.TOURNAMENT_DARK },
   seedInput: { flex: 1 },
-  formError: { color: Color.DANGER, marginBottom: 8 },
   createBtn: { marginTop: 4 },
   hint: { color: Color.TEXT_LABEL, marginTop: 10, textAlign: 'center' },
 });

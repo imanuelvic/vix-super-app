@@ -8,6 +8,7 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
@@ -609,11 +610,7 @@ export function HabitsTab({
           </PressableScale>
         </View>
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="none" additionalStyle={styles.error} />
       </KeyboardAwareScrollView>
 
       {/* Sheet tambah / edit kebiasaan */}
@@ -730,11 +727,11 @@ export function HabitsTab({
           autoFocus
           editable={!savingTarget}
         />
-        {targetError && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {targetError}
-          </VixText>
-        )}
+        <FormError
+          message={targetError}
+          gap="none"
+          additionalStyle={styles.error}
+        />
         {target && (
           <PressableScale onPress={handleClearTarget} disabled={savingTarget}>
             <VixText heading="bold" additionalStyle={styles.deleteText}>
@@ -942,7 +939,7 @@ const styles = StyleSheet.create({
   },
   moveDisabled: { opacity: 0.4 },
   moveText: { color: Color.MAIN_DARK },
-  error: { color: Color.DANGER, marginBottom: 8, marginTop: 6 },
+  error: { marginBottom: 8, marginTop: 6 },
   modalTitle: { marginBottom: 4 },
   modalHint: { marginBottom: 10 },
   deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 12 },

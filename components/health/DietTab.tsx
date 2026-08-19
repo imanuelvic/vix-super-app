@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SelectField } from '@/components/common/SelectField';
@@ -338,11 +339,7 @@ export function DietTab({
           );
         })}
 
-        {error && (
-          <VixText heading="label" additionalStyle={styles.error}>
-            {error}
-          </VixText>
-        )}
+        <FormError message={error} gap="none" additionalStyle={styles.error} />
 
         {/* ===== 5. Panduan singkat ===== */}
         <View style={styles.guideCard}>
@@ -720,7 +717,7 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN_LIGHT,
   },
   addText: { color: Color.MAIN },
-  error: { color: Color.DANGER, marginTop: 10 },
+  error: { marginTop: 10 },
   guideCard: {
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderRadius: 16,
