@@ -44,11 +44,14 @@ import {
   type RoadmapItem,
 } from '@/lib/career';
 import {
+  needsPdfShare,
   subscribeCoreLeaders,
+  subscribeVisitations,
   weekIndex,
   WEEKLY_FOCUS_COUNT,
   weeklyLeaders,
   type CoreLeader,
+  type Visitation,
 } from '@/lib/core';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { OWNER_NAME } from '@/lib/family';
@@ -168,6 +171,7 @@ export default function HomeScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
+  const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [revive, setRevive] = useState<ReviveStreak | null | undefined>(
     undefined,
   );
@@ -209,6 +213,7 @@ export default function HomeScreen() {
       subscribeTasks(user.uid, setTasks),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeCoreLeaders(user.uid, setLeaders),
+      subscribeVisitations(user.uid, setVisitations),
       subscribeReviveStreak(user.uid, setRevive),
       subscribePartStatus(user.uid, setCarParts),
       subscribeRoadmap(user.uid, setRoadmap),
@@ -282,10 +287,14 @@ export default function HomeScreen() {
       freelance.filter((p) => freelanceReminderWindow(p, now)).length,
     // Kebiasaan harian pindah ke tab Habits ✅ — badge-nya ikut ke sana,
     // jadi tile Health tidak lagi punya angka (isinya Steps & Check-up).
-    // 2 CORE Leader fokus minggu ini yang belum di-follow up hari ini.
-    core: weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
-      (l) => l.lastFollowupDayId !== todayId,
-    ).length,
+    // 2 CORE Leader fokus minggu ini yang belum di-follow up hari ini,
+    // + acara yang panduannya perlu dikirim hari ini (H-3; acara besar
+    // H-14/7/3/2/1). Yang PDF-nya sudah dikirim hari ini tidak dihitung.
+    core:
+      weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
+        (l) => l.lastFollowupDayId !== todayId,
+      ).length +
+      visitations.filter((v) => needsPdfShare(v, now, todayId)).length,
     // Revive belum ditulis DAN belum ditandai dilewati hari ini = 1 (dua-duanya
     // tersimpan di dokumen streak yang sama).
     spiritual:

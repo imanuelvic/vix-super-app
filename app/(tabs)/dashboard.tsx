@@ -46,6 +46,8 @@ import {
   ideaReminderDue,
   isPrayerFollowupDay,
   meetingKindMeta,
+  meetingLeaderNames,
+  needsPdfShare,
   monthlyPointsFor,
   monthlyPrayerStartReminder,
   nextBirthday,
@@ -326,20 +328,40 @@ export default function DashboardScreen() {
           : `${b.m.name} — ${b.daysUntil} hari lagi (ke-${b.turningAge})`,
     }));
 
+  // Reminder KIRIM PDF: pertemuan biasa H-3; acara besar (Gathering, Charity,
+  // Thanksgiving, Christmas) jauh lebih awal — H-14, H-7, H-3, H-2, H-1.
+  // Yang PDF-nya sudah dikirim hari ini otomatis hilang dari daftar.
+  const pdfReminders = visitations
+    .filter((v) => needsPdfShare(v, now, todayId))
+    .sort((a, b) => a.date.toMillis() - b.date.toMillis())
+    .map((v) => {
+      const cl = meetingLeaderNames(v, leaders, {
+        fallback: 'CORE',
+        maxNames: 2,
+      });
+      return {
+        id: `pdf-${v.id}`,
+        text: `📄 Kirim panduan ${meetingKindMeta(v.kind).label} ke ${cl} — H-${visitDaysUntil(v, now)}`,
+      };
+    });
+
   // Reminder pertemuan CORE: H-3 sampai hari-H, yang belum selesai.
   const visitReminders = visitations
     .filter((v) => visitReminderWindow(v, now))
     .sort((a, b) => a.date.toMillis() - b.date.toMillis())
     .map((v) => {
-      const cl = leaders.find((l) => l.id === v.leaderId);
       const days = visitDaysUntil(v, now);
+      // Acara gabungan bisa berisi banyak CL — di reminder cukup 2 nama,
+      // sisanya diringkas supaya barisnya tidak jadi sepanjang kereta.
+      const cl = meetingLeaderNames(v, leaders, {
+        fallback: 'CORE',
+        maxNames: 2,
+      });
       return {
         id: v.id,
-        text: `${meetingKindMeta(v.kind).icon} ${
-          cl ? `${cl.heart} ${cl.name}` : 'CORE'
-        } — ${days === 0 ? 'HARI INI' : `${days} hari lagi`} (${formatDate(
-          v.date.toDate(),
-        )})`,
+        text: `${meetingKindMeta(v.kind).icon} ${cl} — ${
+          days === 0 ? 'HARI INI' : `${days} hari lagi`
+        } (${formatDate(v.date.toDate())})`,
       };
     });
 
@@ -557,6 +579,7 @@ export default function DashboardScreen() {
   // memutuskan apakah perlu memunculkan fallback produktivitas).
   const hasActionReminder =
     famBirthdays.length > 0 ||
+    pdfReminders.length > 0 ||
     visitReminders.length > 0 ||
     coreBirthdays.length > 0 ||
     coreIdeaDue ||
@@ -815,12 +838,41 @@ export default function DashboardScreen() {
 
           {/* Reminder CORE: visitasi (H-3 s/d hari-H) + ulang tahun CL & Main
               Team (≤7 hari) + Idea For CORE mingguan */}
-          {(visitReminders.length > 0 ||
+          {(pdfReminders.length > 0 ||
+            visitReminders.length > 0 ||
             coreBirthdays.length > 0 ||
             coreIdeaDue) && (
             <View style={styles.visitCard}>
-              {visitReminders.length > 0 && (
+              {/* Kirim panduan acara — ditaruh PALING ATAS karena ini yang
+                  punya tenggat paling jauh (acara besar sudah menagih H-14). */}
+              {pdfReminders.length > 0 && (
                 <View>
+                  <VixText heading="bold" additionalStyle={styles.visitTitle}>
+                    📄 Kirim Panduan Acara
+                  </VixText>
+                  {pdfReminders.map((r) => (
+                    <PressableScale
+                      key={r.id}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/core',
+                          params: { tab: 'visitation' },
+                        })
+                      }>
+                      <VixText
+                        heading="label"
+                        additionalStyle={styles.visitText}>
+                        {r.text}
+                      </VixText>
+                    </PressableScale>
+                  ))}
+                </View>
+              )}
+              {visitReminders.length > 0 && (
+                <View
+                  style={
+                    pdfReminders.length > 0 ? styles.ideaReminder : undefined
+                  }>
                   <VixText heading="bold" additionalStyle={styles.visitTitle}>
                     📍 Reminder Pertemuan CORE
                   </VixText>
@@ -847,7 +899,11 @@ export default function DashboardScreen() {
               {/* Ulang tahun CL & Main Team → CORE tab Follow Up */}
               {coreBirthdays.length > 0 && (
                 <PressableScale
-                  style={visitReminders.length > 0 ? styles.ideaReminder : undefined}
+                  style={
+                    pdfReminders.length > 0 || visitReminders.length > 0
+                      ? styles.ideaReminder
+                      : undefined
+                  }
                   onPress={() =>
                     router.push({ pathname: '/core', params: { tab: 'followup' } })
                   }>
@@ -867,7 +923,9 @@ export default function DashboardScreen() {
               {coreIdeaDue && (
                 <PressableScale
                   style={
-                    visitReminders.length > 0 || coreBirthdays.length > 0
+                    pdfReminders.length > 0 ||
+                    visitReminders.length > 0 ||
+                    coreBirthdays.length > 0
                       ? styles.ideaReminder
                       : undefined
                   }

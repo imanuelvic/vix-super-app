@@ -7,6 +7,7 @@ import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
@@ -15,6 +16,7 @@ import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { usePagination } from '@/hooks/usePagination';
 import {
   deleteMonthlyMeeting,
   emptyMonthlyPoints,
@@ -67,6 +69,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           ).join(' ')}`.toLowerCase();
           return words.every((w) => hay.includes(w));
         });
+
+  // Halaman notulen — sama seperti daftar panjang lain di app ini.
+  const { currentPage, pageCount, pageItems, setPage } = usePagination(shown);
 
   function toggleSearch() {
     setSearchMode((on) => !on);
@@ -234,7 +239,11 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
 
   return (
     <View style={styles.flex}>
+      {/* key = halaman → balik ke atas tiap ganti halaman. Saat mode cari
+          sengaja dipatok tetap, supaya SearchBar tidak ter-mount ulang &
+          kehilangan fokus di tengah pengetikan. */}
       <ScrollView
+        key={searchMode ? 'search' : currentPage}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
         {searchMode ? (
@@ -264,7 +273,14 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               : 'Belum ada notulen. Catat rapat mentoring bulan ini 🗒️'}
           </VixText>
         ) : (
-          shown.map(renderCard)
+          <>
+            {pageItems.map(renderCard)}
+            <Pagination
+              page={currentPage}
+              pageCount={pageCount}
+              onChange={setPage}
+            />
+          </>
         )}
       </ScrollView>
 

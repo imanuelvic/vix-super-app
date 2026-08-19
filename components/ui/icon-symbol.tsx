@@ -28,6 +28,7 @@ const MAPPING = {
   'chart.bar.fill': 'bar-chart',
   'rectangle.portrait.and.arrow.right': 'logout',
   'arrow.triangle.2.circlepath': 'sync',
+  'arrow.triangle.branch': 'call-split',
   'gearshape.fill': 'settings',
   'bell.fill': 'notifications',
   'heart.fill': 'favorite',

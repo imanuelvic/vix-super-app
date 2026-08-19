@@ -118,8 +118,13 @@ function Tab<T extends string>({
           </Animated.View>
         )}
       </View>
+      {/* Label panjang (mis. "Multiplication" di layar CORE yang punya 5 tab)
+          mengecil sendiri agar tetap satu baris — tanpa ini ia terpotong dan
+          tinggi tab jadi tidak rata. Label pendek tak terpengaruh. */}
       <VixText
         heading="label"
+        numberOfLines={1}
+        adjustsFontSizeToFit
         additionalStyle={active ? styles.active : undefined}>
         {tab.label}
       </VixText>

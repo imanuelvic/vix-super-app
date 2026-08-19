@@ -390,30 +390,135 @@ export type MeetingKind =
   | 'visitasi'
   | 'fellowship'
   | 'oneOnOne'
-  | 'mentoringMclClMt';
+  | 'mentoringMclClMt'
+  | 'gathering'
+  | 'charity'
+  | 'thanksgiving'
+  | 'christmas'
+  | 'coreGabungan'
+  | 'fellowshipGabungan';
 
-export const MEETING_KINDS: { key: MeetingKind; label: string; icon: string }[] =
-  [
-    { key: 'visitasi', label: 'Visitasi CORE', icon: '🔥' },
-    { key: 'fellowship', label: 'Fellowship CORE', icon: '👥' },
-    { key: 'oneOnOne', label: 'One-on-One', icon: '1️⃣' },
-    { key: 'mentoringMclClMt', label: 'Mentoring MCL CL MT', icon: '✨' },
-  ];
+export const MEETING_KINDS: {
+  key: MeetingKind;
+  label: string;
+  icon: string;
+  /** Acara gabungan → boleh mencentang LEBIH DARI SATU CORE Leader. */
+  multiLeader?: boolean;
+  /** Acara besar → panduannya perlu dikirim jauh-jauh hari (lihat
+      PDF_REMINDER_DAYS_BIG), bukan cuma H-3 seperti pertemuan biasa. */
+  bigEvent?: boolean;
+}[] = [
+  { key: 'visitasi', label: 'Visitasi CORE', icon: '🔥' },
+  { key: 'fellowship', label: 'Fellowship CORE', icon: '👥' },
+  { key: 'oneOnOne', label: 'One-on-One', icon: '1️⃣' },
+  { key: 'mentoringMclClMt', label: 'Mentoring MCL CL MT', icon: '✨' },
+  { key: 'gathering', label: 'Gathering CORE', icon: '🏡', bigEvent: true },
+  { key: 'charity', label: 'Charity CORE', icon: '💌', bigEvent: true },
+  { key: 'thanksgiving', label: 'Thanksgiving', icon: '🎉', bigEvent: true },
+  { key: 'christmas', label: 'Christmas CORE', icon: '🎄', bigEvent: true },
+  { key: 'coreGabungan', label: 'CORE Gabungan', icon: '⛪', multiLeader: true },
+  { key: 'fellowshipGabungan', label: 'Fellowship CORE Gabungan', icon: '👥', multiLeader: true, },
+];
 
 /** Meta satu jenis pertemuan — fallback ke Visitasi kalau tak dikenal. */
 export function meetingKindMeta(kind: MeetingKind) {
   return MEETING_KINDS.find((k) => k.key === kind) ?? MEETING_KINDS[0];
 }
 
+/** Jenis acara gabungan → pemilih CORE-nya jadi centang banyak. */
+export function isMultiLeaderKind(kind: MeetingKind): boolean {
+  return !!meetingKindMeta(kind).multiLeader;
+}
+
 export type Visitation = {
   id: string;
   kind: MeetingKind; // jenis pertemuan
-  leaderId: string; // CORE Leader yang ditemui
+  // CORE Leader yang ditemui. Biasanya satu; jenis "gabungan" boleh banyak.
+  leaderIds: string[];
+  // Penanda TAMBAHAN: acara apa pun bisa sekalian jadi Thanksgiving, jadi ini
+  // berdiri sendiri dari `kind` (Christmas CORE + Thanksgiving itu sah).
+  // Kalau kind-nya sendiri 'thanksgiving', penanda ini tidak dipakai.
+  thanksgiving: boolean;
   date: Timestamp;
   agenda: string; // agenda — apa yang akan dibahas ke mereka, boleh kosong
   note: string; // catatan pertemuan — hasil/observasi, boleh kosong
   done: boolean; // sudah selesai
+  /** "YYYY-MM-DD" terakhir PDF-nya dibagikan — dipakai supaya badge reminder
+      padam begitu hari itu sudah dikirim. null = belum pernah. */
+  pdfSentDayId: string | null;
 };
+
+// ---- Reminder kirim PDF panduan ke CORE Leader -------------------------
+// Pertemuan biasa cukup diingatkan H-3. Acara besar (Gathering, Charity,
+// Thanksgiving, Christmas) butuh persiapan panjang, jadi diingatkan jauh
+// lebih awal dan makin sering saat harinya mendekat.
+
+export const PDF_REMINDER_DAYS_NORMAL = [3];
+export const PDF_REMINDER_DAYS_BIG = [14, 7, 3, 2, 1];
+
+/** Hari-hari (H-n) saat kamu diingatkan mengirim panduan acara ini. */
+export function pdfReminderDays(kind: MeetingKind): number[] {
+  return meetingKindMeta(kind).bigEvent
+    ? PDF_REMINDER_DAYS_BIG
+    : PDF_REMINDER_DAYS_NORMAL;
+}
+
+/**
+ * Hari ini termasuk hari pengingat kirim PDF untuk pertemuan ini?
+ * Yang sudah selesai, sudah lewat, atau PDF-nya SUDAH dikirim hari ini
+ * tidak lagi menagih.
+ */
+export function needsPdfShare(
+  v: Visitation,
+  today: Date,
+  todayId: string,
+): boolean {
+  if (v.done || v.pdfSentDayId === todayId) return false;
+  return pdfReminderDays(v.kind).includes(visitDaysUntil(v, today));
+}
+
+/** Catat bahwa PDF pertemuan ini sudah dibagikan hari ini. */
+export function markVisitationPdfSent(
+  uid: string,
+  list: Visitation[],
+  id: string,
+  dayId: string,
+) {
+  return saveVisitations(
+    uid,
+    list.map((v) => (v.id === id ? { ...v, pdfSentDayId: dayId } : v)),
+  );
+}
+
+/** Semua label jenis acara satu pertemuan — termasuk penanda Thanksgiving. */
+export function meetingKindLabels(v: Visitation): string {
+  const meta = meetingKindMeta(v.kind);
+  const utama = `${meta.icon} ${meta.label}`;
+  const tg = meetingKindMeta('thanksgiving');
+  return v.thanksgiving && v.kind !== 'thanksgiving'
+    ? `${utama} · ${tg.icon} ${tg.label}`
+    : utama;
+}
+
+/**
+ * Nama CORE Leader yang ditemui, dirangkai jadi satu baris.
+ * Acara gabungan bisa berisi banyak CL, jadi di tempat sempit (mis. reminder
+ * Dashboard) pakai `maxNames` supaya sisanya diringkas jadi "+N lagi".
+ */
+export function meetingLeaderNames(
+  v: Visitation,
+  leaders: CoreLeader[],
+  { fallback = '(CL tidak ditemukan)', maxNames = Infinity } = {},
+): string {
+  const nama = v.leaderIds
+    .map((id) => leaders.find((l) => l.id === id))
+    .filter((l): l is CoreLeader => !!l)
+    .map((l) => `${l.heart} ${l.name}`);
+  if (nama.length === 0) return fallback;
+  if (nama.length <= maxNames) return nama.join(', ');
+  const sisa = nama.length - maxNames;
+  return `${nama.slice(0, maxNames).join(', ')} +${sisa} lagi`;
+}
 
 export function subscribeVisitations(
   uid: string,
@@ -425,13 +530,22 @@ export function subscribeVisitations(
     ref,
     (snapshot) => {
       const list = (snapshot.data()?.list as Visitation[]) ?? [];
-      // Data lama belum punya `kind`/`agenda` → beri default aman.
+      // Data lama belum punya `kind`/`agenda`/`thanksgiving`, dan menyimpan
+      // SATU CORE Leader di `leaderId` (bukan array `leaderIds`). Dinormalkan
+      // di sini supaya seluruh app cukup membaca satu bentuk saja; `leaderId`
+      // lama sengaja dibuang agar tidak ada dua sumber kebenaran.
       onChange(
-        list.map((v) => ({
-          ...v,
-          kind: v.kind ?? 'visitasi',
-          agenda: v.agenda ?? '',
-        })),
+        list.map((v) => {
+          const { leaderId, ...rest } = v as Visitation & { leaderId?: string };
+          return {
+            ...rest,
+            kind: v.kind ?? 'visitasi',
+            agenda: v.agenda ?? '',
+            thanksgiving: v.thanksgiving ?? false,
+            leaderIds: v.leaderIds ?? (leaderId ? [leaderId] : []),
+            pdfSentDayId: v.pdfSentDayId ?? null,
+          };
+        }),
       );
     },
     onError,

@@ -17,6 +17,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { FollowupTab } from '@/components/core/FollowupTab';
 import { LeadersTab } from '@/components/core/LeadersTab';
 import { MonthlyTab } from '@/components/core/MonthlyTab';
+import { MultiplicationTab } from '@/components/core/MultiplicationTab';
 import { VisitationTab } from '@/components/core/VisitationTab';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -41,7 +42,12 @@ import {
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type CoreTab = 'visitation' | 'followup' | 'monthly' | 'leaders';
+type CoreTab =
+  | 'visitation'
+  | 'followup'
+  | 'monthly'
+  | 'leaders'
+  | 'multiplication';
 
 // Tab bar bawah di dalam layar CORE.
 const TABS: BottomTab<CoreTab>[] = [
@@ -49,6 +55,7 @@ const TABS: BottomTab<CoreTab>[] = [
   { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
   { key: 'monthly', label: 'Monthly', icon: 'list.bullet' },
   { key: 'leaders', label: 'Leaders', icon: 'person.2.fill' },
+  { key: 'multiplication', label: 'Multiplication', icon: 'arrow.triangle.branch' },
 ];
 
 /** Nilai ?tab=… yang dikenali (dipakai reminder Dashboard & deep link). */
@@ -125,12 +132,22 @@ export default function CoreScreen() {
         title="CORE 🙏"
         subtitle="Gembalakan & muridkan CORE Leader-mu"
         // Tombol kanan atas menyesuaikan tab yang aktif:
-        // Pertemuan → 🕘 riwayat pertemuan · Follow Up → 🙏 pokok doa bulanan ·
+        // Pertemuan → 📜 Rules & Suggestions + 🕘 riwayat pertemuan ·
+        // Follow Up → 🙏 pokok doa bulanan ·
         // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang).
-        // Monthly tidak punya halaman pendamping → tombolnya sengaja kosong.
+        // Monthly & Multiplication belum punya halaman pendamping.
         right={
           tab === 'visitation' ? (
-            <EmojiButton emoji="🕘" onPress={() => router.push('/visitations')} />
+            <View style={styles.headerButtons}>
+              <EmojiButton
+                emoji="📜"
+                onPress={() => router.push('/core-rules')}
+              />
+              <EmojiButton
+                emoji="🕘"
+                onPress={() => router.push('/visitations')}
+              />
+            </View>
           ) : tab === 'followup' ? (
             <EmojiButton
               emoji="🙏"
@@ -164,8 +181,10 @@ export default function CoreScreen() {
           />
         ) : tab === 'monthly' ? (
           <MonthlyTab meetings={meetings} />
-        ) : (
+        ) : tab === 'leaders' ? (
           <LeadersTab leaders={leaders} mainTeam={mainTeam} />
+        ) : (
+          <MultiplicationTab />
         )}
       </View>
 
@@ -189,4 +208,6 @@ export default function CoreScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { flex: 1 },
+  // Dua tombol emoji berdampingan di kanan atas (tab Pertemuan).
+  headerButtons: { flexDirection: 'row', gap: 8 },
 });

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -23,8 +24,10 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
 import {
+  isMultiLeaderKind,
   MEETING_KINDS,
-  meetingKindMeta,
+  meetingKindLabels,
+  meetingLeaderNames,
   saveVisitations,
   subscribeCoreLeaders,
   subscribeVisitations,
@@ -50,7 +53,8 @@ export default function VisitationsScreen() {
   // Form edit lewat bottom sheet.
   const [editing, setEditing] = useState<Visitation | null>(null);
   const [fKind, setFKind] = useState<MeetingKind>('visitasi');
-  const [fLeaderId, setFLeaderId] = useState('');
+  const [fLeaderIds, setFLeaderIds] = useState<string[]>([]);
+  const [fThanksgiving, setFThanksgiving] = useState(false);
   const [fDate, setFDate] = useState(new Date());
   const [fAgenda, setFAgenda] = useState('');
   const [fNote, setFNote] = useState('');
@@ -76,14 +80,19 @@ export default function VisitationsScreen() {
   const history = all.filter((v) => v.done || visitDaysUntil(v, today) < 0);
 
   // Filter jenis pertemuan — sama seperti di tab Pertemuan (null = semua).
+  // Filter Thanksgiving ikut menangkap acara yang cuma "sekalian" Thanksgiving.
   const [filterKind, setFilterKind] = useState<MeetingKind | null>(null);
+  const matchKind = (v: Visitation, k: MeetingKind) =>
+    v.kind === k || (k === 'thanksgiving' && v.thanksgiving);
   const shown = filterKind
-    ? history.filter((v) => v.kind === filterKind)
+    ? history.filter((v) => matchKind(v, filterKind))
     : history;
 
   // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
   // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
   const futureDate = daysBetween(today, fDate) > 0;
+  // Acara gabungan → CORE-nya boleh dicentang lebih dari satu.
+  const multiLeader = isMultiLeaderKind(fKind);
   const sorted = [...shown].sort(
     (a, b) => b.date.toMillis() - a.date.toMillis(),
   );
@@ -92,7 +101,8 @@ export default function VisitationsScreen() {
   function openEdit(v: Visitation) {
     setEditing(v);
     setFKind(v.kind);
-    setFLeaderId(v.leaderId);
+    setFLeaderIds(v.leaderIds);
+    setFThanksgiving(v.thanksgiving);
     setFDate(v.date.toDate());
     setFAgenda(v.agenda);
     setFNote(v.note);
@@ -100,9 +110,22 @@ export default function VisitationsScreen() {
     setFormError(null);
   }
 
+  /** Pindah ke jenis biasa → sisakan satu CORE saja (pemilihnya tunggal lagi). */
+  function changeKind(k: MeetingKind) {
+    setFKind(k);
+    if (!isMultiLeaderKind(k)) setFLeaderIds((ids) => ids.slice(0, 1));
+  }
+
+  /** Centang / hapus centang satu CORE Leader (mode gabungan). */
+  function toggleLeader(id: string) {
+    setFLeaderIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+    );
+  }
+
   async function handleSave() {
     if (!user || !editing || busy) return;
-    if (!fLeaderId) {
+    if (fLeaderIds.length === 0) {
       setFormError('Pilih CORE Leader-nya dulu.');
       return;
     }
@@ -111,12 +134,16 @@ export default function VisitationsScreen() {
     const data: Visitation = {
       id: editing.id,
       kind: fKind,
-      leaderId: fLeaderId,
+      leaderIds: fLeaderIds,
+      // Kalau jenisnya memang Thanksgiving, penanda tambahannya tak perlu.
+      thanksgiving: fKind === 'thanksgiving' ? false : fThanksgiving,
       date: Timestamp.fromDate(fDate),
       agenda: fAgenda.trim(),
       note: fNote.trim(),
       // Jadwal masa depan dipaksa belum divisit — toggle-nya juga disembunyikan.
       done: futureDate ? false : fDone,
+      // Catatan kirim PDF milik jadwalnya, bukan formnya — dipertahankan.
+      pdfSentDayId: editing.pdfSentDayId,
     };
     try {
       await saveVisitations(
@@ -164,7 +191,7 @@ export default function VisitationsScreen() {
             options={MEETING_KINDS.map((k) => ({
               key: k.key,
               label: `${k.icon} ${k.label}`,
-              count: history.filter((v) => v.kind === k.key).length,
+              count: history.filter((v) => matchKind(v, k.key)).length,
             }))}
             value={filterKind}
             onChange={setFilterKind}
@@ -177,7 +204,6 @@ export default function VisitationsScreen() {
             </VixText>
           )}
           {pageItems.map((v) => {
-            const cl = leaders.find((l) => l.id === v.leaderId);
             const days = visitDaysUntil(v, today);
             // Warna & label dari aturan bersama (lihat lib/deadline.ts).
             const tone = v.done ? 'unknown' : deadlineTone(days);
@@ -189,7 +215,7 @@ export default function VisitationsScreen() {
                 onPress={() => openEdit(v)}>
                 <View style={styles.cardTop}>
                   <VixText heading="bold" additionalStyle={styles.cardTitle}>
-                    {cl ? `${cl.heart} ${cl.name}` : '(CL tidak ditemukan)'}
+                    {meetingLeaderNames(v, leaders)}
                   </VixText>
                   {v.done ? (
                     <VixText heading="label" additionalStyle={styles.statusDone}>
@@ -200,8 +226,14 @@ export default function VisitationsScreen() {
                   )}
                 </View>
                 <VixText heading="label" additionalStyle={styles.kindLine}>
-                  {meetingKindMeta(v.kind).icon} {meetingKindMeta(v.kind).label}
+                  {meetingKindLabels(v)}
                 </VixText>
+                {/* Acara gabungan: perjelas berapa CORE yang ikut */}
+                {v.leaderIds.length > 1 ? (
+                  <VixText heading="label" additionalStyle={styles.kindLine}>
+                    🤝 {v.leaderIds.length} CORE gabung
+                  </VixText>
+                ) : null}
                 <VixText heading="label">
                   📆 {formatFullDate(v.date.toDate())}
                 </VixText>
@@ -239,25 +271,51 @@ export default function VisitationsScreen() {
               key: k.key,
               label: `${k.icon} ${k.label}`,
             }))}
-            onChange={(k) => k && setFKind(k)}
+            onChange={(k) => k && changeKind(k)}
             placeholder="Pilih jenis pertemuan…"
           />
         </View>
 
+        {/* Penanda TAMBAHAN — acara apa pun bisa sekalian jadi Thanksgiving */}
+        {fKind !== 'thanksgiving' && (
+          <PressableScale
+            style={styles.doneRow}
+            onPress={() => setFThanksgiving((t) => !t)}>
+            <CheckCircle checked={fThanksgiving} />
+            <VixText heading="paragraph" additionalStyle={styles.doneText}>
+              🎉 Sekalian Thanksgiving
+            </VixText>
+          </PressableScale>
+        )}
+
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          CORE-nya siapa?
+          {multiLeader ? 'CORE mana saja yang gabung?' : 'CORE-nya siapa?'}
         </VixText>
-        <View style={styles.formGap}>
-          <SelectField
-            value={fLeaderId}
-            options={leaders.map((l) => ({
-              key: l.id,
-              label: `${l.heart} ${l.name}`,
-            }))}
-            onChange={(id) => id && setFLeaderId(id)}
-            placeholder="Pilih CORE Leader…"
-          />
-        </View>
+        {multiLeader ? (
+          // Acara gabungan → centang sebanyak-banyaknya.
+          <View style={styles.leaderWrap}>
+            {leaders.map((l) => (
+              <Chip
+                key={l.id}
+                label={`${l.heart} ${l.name}`}
+                active={fLeaderIds.includes(l.id)}
+                onPress={() => toggleLeader(l.id)}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.formGap}>
+            <SelectField
+              value={fLeaderIds[0] ?? ''}
+              options={leaders.map((l) => ({
+                key: l.id,
+                label: `${l.heart} ${l.name}`,
+              }))}
+              onChange={(id) => id && setFLeaderIds([id])}
+              placeholder="Pilih CORE Leader…"
+            />
+          </View>
+        )}
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Tanggal pertemuan

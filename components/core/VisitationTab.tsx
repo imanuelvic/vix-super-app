@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -12,6 +12,7 @@ import { EditDelete } from '@/components/common/EditDelete';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
@@ -20,9 +21,15 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { usePagination } from '@/hooks/usePagination';
 import {
+  isMultiLeaderKind,
+  markVisitationPdfSent,
   MEETING_KINDS,
+  meetingKindLabels,
   meetingKindMeta,
+  meetingLeaderNames,
+  needsPdfShare,
   newVisitationId,
   saveVisitations,
   VISIT_TIPS,
@@ -31,9 +38,12 @@ import {
   type MeetingKind,
   type Visitation,
 } from '@/lib/core';
+import { subscribeCoreRules, type CoreRule } from '@/lib/coreRules';
 import { deadlineLabel, deadlineTone } from '@/lib/deadline';
 import { daysBetween, formatFullDate } from '@/lib/format';
+import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { shareVisitationPdf } from '@/lib/visitationPdf';
 
 // Tab Pertemuan 📅: jadwal MCL bertemu CORE para CL (Visitasi / Fellowship) —
 // diisi manual, reminder H-3 & hari-H muncul otomatis di Home.
@@ -58,7 +68,8 @@ export function VisitationTab({
   // Form tambah/edit. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<Visitation | 'new' | null>(null);
   const [fKind, setFKind] = useState<MeetingKind>('visitasi');
-  const [fLeaderId, setFLeaderId] = useState('');
+  const [fLeaderIds, setFLeaderIds] = useState<string[]>([]);
+  const [fThanksgiving, setFThanksgiving] = useState(false);
   const [fDate, setFDate] = useState(new Date());
   const [fAgenda, setFAgenda] = useState('');
   const [fNote, setFNote] = useState('');
@@ -74,29 +85,44 @@ export function VisitationTab({
   const [searchMode, setSearchMode] = useState(false);
   const [query, setQuery] = useState('');
 
+  // Panduan acara ikut ditempel ke PDF undangan, jadi didengarkan di sini.
+  const [rules, setRules] = useState<CoreRule[]>([]);
+  const [sharingId, setSharingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeCoreRules(user.uid, setRules, () => undefined);
+  }, [user]);
+
   const today = new Date();
+  const todayId = dayDocId(today);
 
   // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
   // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
   const futureDate = daysBetween(today, fDate) > 0;
 
-  function leaderOf(v: Visitation): CoreLeader | undefined {
-    return leaders.find((l) => l.id === v.leaderId);
-  }
+  // Acara gabungan → CORE-nya boleh dicentang lebih dari satu.
+  const multiLeader = isMultiLeaderKind(fKind);
 
   // Mendatang (belum done, belum lewat) urut terdekat; sisanya jadi riwayat.
   const upcoming = visitations
     .filter((v) => !v.done && visitDaysUntil(v, today) >= 0)
     .sort((a, b) => a.date.toMillis() - b.date.toMillis());
 
-  // Filter opsional: per CORE Leader dan/atau per jenis pertemuan.
+  // Filter opsional: per CORE Leader dan/atau per jenis pertemuan. Filter
+  // Thanksgiving ikut menangkap acara yang cuma "sekalian" Thanksgiving.
   const hasFilter = filterLeaderId !== null || filterKind !== null;
   const filtered = upcoming.filter(
     (v) =>
-      (!filterLeaderId || v.leaderId === filterLeaderId) &&
-      (!filterKind || v.kind === filterKind),
+      (!filterLeaderId || v.leaderIds.includes(filterLeaderId)) &&
+      (!filterKind ||
+        v.kind === filterKind ||
+        (filterKind === 'thanksgiving' && v.thanksgiving)),
   );
   const activeLeader = leaders.find((l) => l.id === filterLeaderId);
+
+  // Halaman jadwal mendatang — sama seperti daftar panjang lain di app ini.
+  const { currentPage, pageCount, pageItems, setPage } = usePagination(filtered);
 
   // Hasil pencarian: cocok kalau SETIAP kata yang kamu ketik muncul di judul,
   // agenda, catatan, atau nama CL-nya. Jadi "rules reyki" tetap ketemu walau
@@ -107,10 +133,10 @@ export function VisitationTab({
       ? []
       : visitations
           .filter((v) => {
-            const cl = leaderOf(v);
-            const hay = `${v.note} ${v.agenda} ${cl?.name ?? ''} ${
-              meetingKindMeta(v.kind).label
-            }`.toLowerCase();
+            const hay = `${v.note} ${v.agenda} ${meetingLeaderNames(
+              v,
+              leaders,
+            )} ${meetingKindLabels(v)}`.toLowerCase();
             return words.every((w) => hay.includes(w));
           })
           .sort((a, b) => b.date.toMillis() - a.date.toMillis());
@@ -123,7 +149,8 @@ export function VisitationTab({
   function openAdd() {
     setEditing('new');
     setFKind('visitasi');
-    setFLeaderId(leaders[0]?.id ?? '');
+    setFLeaderIds(leaders[0] ? [leaders[0].id] : []);
+    setFThanksgiving(false);
     setFDate(new Date());
     setFAgenda('');
     setFNote('');
@@ -134,13 +161,31 @@ export function VisitationTab({
   const openEdit = useCallback((v: Visitation) => {
     setEditing(v);
     setFKind(v.kind);
-    setFLeaderId(v.leaderId);
+    setFLeaderIds(v.leaderIds);
+    setFThanksgiving(v.thanksgiving);
     setFDate(v.date.toDate());
     setFAgenda(v.agenda);
     setFNote(v.note);
     setFDone(v.done);
     setFormError(null);
   }, []);
+
+  /**
+   * Ganti jenis acara. Kalau pindah dari jenis gabungan ke jenis biasa, sisakan
+   * SATU CORE saja — kalau tidak, pilihan ganda ikut tersimpan diam-diam
+   * padahal pemilihnya sudah kembali jadi tunggal.
+   */
+  function changeKind(k: MeetingKind) {
+    setFKind(k);
+    if (!isMultiLeaderKind(k)) setFLeaderIds((ids) => ids.slice(0, 1));
+  }
+
+  /** Centang / hapus centang satu CORE Leader (mode gabungan). */
+  function toggleLeader(id: string) {
+    setFLeaderIds((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+    );
+  }
 
   // Auto-buka modal saat dibuka dari reminder Dashboard (?edit=<id>). Setelah
   // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
@@ -159,7 +204,7 @@ export function VisitationTab({
 
   async function handleSave() {
     if (!user || !editing || busy) return;
-    if (!fLeaderId) {
+    if (fLeaderIds.length === 0) {
       setFormError('Pilih CORE Leader-nya dulu.');
       return;
     }
@@ -168,12 +213,16 @@ export function VisitationTab({
     const data: Visitation = {
       id: editing === 'new' ? newVisitationId() : editing.id,
       kind: fKind,
-      leaderId: fLeaderId,
+      leaderIds: fLeaderIds,
+      // Kalau jenisnya memang Thanksgiving, penanda tambahannya tak perlu.
+      thanksgiving: fKind === 'thanksgiving' ? false : fThanksgiving,
       date: Timestamp.fromDate(fDate),
       agenda: fAgenda.trim(),
       note: fNote.trim(),
       // Jadwal masa depan dipaksa belum divisit — toggle-nya juga disembunyikan.
       done: futureDate ? false : fDone,
+      // Catatan kirim PDF milik jadwalnya, bukan formnya — dipertahankan.
+      pdfSentDayId: editing === 'new' ? null : editing.pdfSentDayId,
     };
     const next =
       editing === 'new'
@@ -186,6 +235,35 @@ export function VisitationTab({
       setFormError(SAVE_ERROR);
     } finally {
       setBusy(false);
+    }
+  }
+
+  /**
+   * Cetak undangan + panduan acaranya jadi PDF, buka share sheet, lalu catat
+   * bahwa hari ini sudah dikirim supaya badge remindernya padam.
+   */
+  async function handleShare(v: Visitation) {
+    if (!user || sharingId) return;
+    setSharingId(v.id);
+    setError(null);
+    try {
+      await shareVisitationPdf(
+        v,
+        leaders,
+        rules.find((r) => r.kind === v.kind),
+      );
+      // Dicatat SESUDAH share sheet terbuka. Kalau pencatatannya gagal, PDF
+      // sudah terlanjur terkirim — jadi kegagalannya cukup diabaikan, badge
+      // menyala sehari lagi jauh lebih baik daripada pesan error palsu.
+      if (v.pdfSentDayId !== todayId) {
+        markVisitationPdfSent(user.uid, visitations, v.id, todayId).catch(
+          () => undefined,
+        );
+      }
+    } catch {
+      setError('Gagal membuat PDF undangan. Coba lagi.');
+    } finally {
+      setSharingId(null);
     }
   }
 
@@ -207,20 +285,20 @@ export function VisitationTab({
 
   // Kartu satu jadwal visitasi.
   function renderCard(v: Visitation) {
-    const cl = leaderOf(v);
     const days = visitDaysUntil(v, today);
     // Nada & warnanya dari aturan bersama — sama dengan Pinjaman, sparepart
     // mobil, & perawatan rumah: 🔴 hari-H/terlewat · 🟡 besok · 🟢 masih aman.
     const tone = v.done ? 'unknown' : deadlineTone(days);
+    const perluKirim = needsPdfShare(v, today, todayId);
     return (
-      // Tekan untuk edit / tandai selesai.
-      <PressableScale
-        key={v.id}
-        style={[styles.card, deadlineBorder(tone)]}
-        onPress={() => openEdit(v)}>
+      <View key={v.id} style={[styles.card, deadlineBorder(tone)]}>
+      {/* Tekan bagian ini untuk edit / tandai selesai. Tombol share sengaja
+          jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin ketukan
+          tombolnya ikut membuka modal edit. */}
+      <PressableScale onPress={() => openEdit(v)}>
         <View style={styles.cardTop}>
           <VixText heading="bold" additionalStyle={styles.cardTitle}>
-            {cl ? `${cl.heart} ${cl.name}` : '(CL tidak ditemukan)'}
+            {meetingLeaderNames(v, leaders)}
           </VixText>
           {v.done ? (
             <VixText heading="label" additionalStyle={styles.statusDone}>
@@ -231,8 +309,14 @@ export function VisitationTab({
           )}
         </View>
         <VixText heading="label" additionalStyle={styles.kindLine}>
-          {meetingKindMeta(v.kind).icon} {meetingKindMeta(v.kind).label}
+          {meetingKindLabels(v)}
         </VixText>
+        {/* Acara gabungan: perjelas berapa CORE yang ikut */}
+        {v.leaderIds.length > 1 ? (
+          <VixText heading="label" additionalStyle={styles.kindLine}>
+            🤝 {v.leaderIds.length} CORE gabung
+          </VixText>
+        ) : null}
         <VixText heading="label">📆 {formatFullDate(v.date.toDate())}</VixText>
         {v.note ? (
           <VixText heading="label">🏷️ Judul: {v.note}</VixText>
@@ -248,6 +332,32 @@ export function VisitationTab({
           </View>
         ) : null}
       </PressableScale>
+
+      {/* Kirim undangan + panduan acaranya ke CORE Leader lewat WhatsApp.
+          Menyala penuh pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk
+          acara besar) supaya tidak terlewat. */}
+      <PressableScale
+        style={[styles.shareRow, perluKirim && styles.shareRowDue]}
+        onPress={() => handleShare(v)}
+        disabled={sharingId !== null}>
+        {sharingId === v.id ? (
+          <ActivityIndicator color={perluKirim ? Color.TEXT_REVERSE : Color.MAIN} />
+        ) : (
+          <>
+            <IconSymbol
+              name="square.and.arrow.up"
+              size={15}
+              color={perluKirim ? Color.TEXT_REVERSE : Color.MAIN}
+            />
+            <VixText
+              heading="bold"
+              additionalStyle={perluKirim ? styles.shareTextDue : styles.shareText}>
+              {perluKirim ? `Kirim PDF — H-${days}` : 'Share PDF'}
+            </VixText>
+          </>
+        )}
+      </PressableScale>
+      </View>
     );
   }
 
@@ -291,7 +401,9 @@ export function VisitationTab({
           )}
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        // key = halaman → balik ke atas tiap ganti halaman (pola yang sama
+        // dipakai Riwayat Pertemuan & daftar panjang lainnya).
+        <ScrollView key={currentPage} contentContainerStyle={styles.content}>
           <PrimaryButton
             label="Jadwalkan Pertemuan"
             icon="plus"
@@ -345,7 +457,14 @@ export function VisitationTab({
                 : 'Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉'}
             </VixText>
           ) : (
-            filtered.map(renderCard)
+            <>
+              {pageItems.map(renderCard)}
+              <Pagination
+                page={currentPage}
+                pageCount={pageCount}
+                onChange={setPage}
+              />
+            </>
           )}
         </ScrollView>
       )}
@@ -377,25 +496,53 @@ export function VisitationTab({
               key: k.key,
               label: `${k.icon} ${k.label}`,
             }))}
-            onChange={(k) => k && setFKind(k)}
+            onChange={(k) => k && changeKind(k)}
             placeholder="Pilih jenis pertemuan…"
           />
         </View>
 
+        {/* Thanksgiving itu penanda TAMBAHAN — acara apa pun bisa sekalian
+            jadi Thanksgiving. Disembunyikan kalau jenisnya memang Thanksgiving
+            supaya tidak menanyakan hal yang sama dua kali. */}
+        {fKind !== 'thanksgiving' && (
+          <PressableScale
+            style={styles.doneRow}
+            onPress={() => setFThanksgiving((t) => !t)}>
+            <CheckCircle checked={fThanksgiving} />
+            <VixText heading="paragraph" additionalStyle={styles.doneText}>
+              🎉 Sekalian Thanksgiving
+            </VixText>
+          </PressableScale>
+        )}
+
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          CORE-nya siapa?
+          {multiLeader ? 'CORE mana saja yang gabung?' : 'CORE-nya siapa?'}
         </VixText>
-        <View style={styles.formGap}>
-          <SelectField
-            value={fLeaderId}
-            options={leaders.map((l) => ({
-              key: l.id,
-              label: `${l.heart} ${l.name}`,
-            }))}
-            onChange={(id) => id && setFLeaderId(id)}
-            placeholder="Pilih CORE Leader…"
-          />
-        </View>
+        {multiLeader ? (
+          // Acara gabungan → centang sebanyak-banyaknya.
+          <View style={styles.leaderWrap}>
+            {leaders.map((l) => (
+              <Chip
+                key={l.id}
+                label={`${l.heart} ${l.name}`}
+                active={fLeaderIds.includes(l.id)}
+                onPress={() => toggleLeader(l.id)}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.formGap}>
+            <SelectField
+              value={fLeaderIds[0] ?? ''}
+              options={leaders.map((l) => ({
+                key: l.id,
+                label: `${l.heart} ${l.name}`,
+              }))}
+              onChange={(id) => id && setFLeaderIds([id])}
+              placeholder="Pilih CORE Leader…"
+            />
+          </View>
+        )}
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Tanggal pertemuan
@@ -586,6 +733,27 @@ const styles = StyleSheet.create({
   },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   kindLine: { color: Color.MAIN },
+  // Tombol kirim PDF di kaki kartu. Bentuk normal = garis putus (tenang);
+  // pada hari pengingat berubah jadi hijau penuh supaya menarik perhatian.
+  shareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Color.MAIN_LIGHT,
+  },
+  shareRowDue: {
+    backgroundColor: Color.MAIN,
+    borderStyle: 'solid',
+    borderColor: Color.MAIN,
+  },
+  shareText: { color: Color.MAIN },
+  shareTextDue: { color: Color.TEXT_REVERSE },
   // Isi kolom panjang (agenda/catatan) — sedikit menjorok dari labelnya.
   blockText: { color: Color.TEXT_PARAGRAPH, paddingLeft: 2 },
   statusDone: { color: Color.SUCCESS },
