@@ -15,6 +15,7 @@ import {
 
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
+import { pickCompressedImage } from './photo';
 
 // CORE — komunitas sel gereja. Pemilik app adalah MCL (Mentor CORE Leader)
 // yang menggembalakan beberapa CORE Leader (CL). Fitur ini membantu:
@@ -600,7 +601,28 @@ export type MonthlyMeeting = {
   /** Tempat rapat, mis. "Gereja NDC lt. 3". Notulen lama belum punya → "". */
   place: string;
   points: Record<string, string>; // key = MonthlyPointKey
+  /** Dokumentasi rapat: JPEG base64 kecil (tanpa prefix `data:`), ikut ke PDF. */
+  photos: string[];
 };
+
+// ---- Dokumentasi foto rapat -------------------------------------------
+// Fotonya menumpang di dokumen rapatnya sendiri (pola yang sama dengan foto
+// medali Race), jadi ukurannya sengaja ditekan: 640px · JPEG 50% ≈ 50–80 KB
+// sesudah base64. Batasnya 4 foto → paling banter ±300 KB per rapat, aman di
+// bawah batas keras Firestore 1 MB per dokumen.
+//
+// Batas itu juga menjaga ONGKOS BACA: subscribeMonthlyMeetings menarik sampai
+// 60 notulen sekaligus tiap kali sub-tab Monthly dibuka, dan fotonya ikut
+// terbawa. Kalau nanti fotonya terasa memberatkan, langkah berikutnya adalah
+// memindahkan foto ke dokumen terpisah yang baru dibaca saat kartunya dibuka.
+
+/** Paling banyak berapa foto dokumentasi per rapat. */
+export const MAX_MEETING_PHOTOS = 4;
+
+/** Pilih 1 foto dokumentasi rapat dari galeri → JPEG base64. */
+export function pickMeetingPhoto(): Promise<string | null> {
+  return pickCompressedImage({ width: 640, compress: 0.5 });
+}
 
 /** Semua poin kosong — bentuk awal rapat baru. */
 export function emptyMonthlyPoints(): Record<string, string> {
@@ -630,6 +652,8 @@ export function subscribeMonthlyMeetings(
             date: data.date as Timestamp,
             place: (data.place as string) ?? '',
             points: (data.points as Record<string, string>) ?? {},
+            // Notulen lama belum punya dokumentasi foto → daftar kosong.
+            photos: (data.photos as string[]) ?? [],
           };
         }),
       ),
@@ -645,6 +669,7 @@ export function saveMonthlyMeeting(
     date: Date; // tanggal + jam mulai
     place: string;
     points: Record<string, string>;
+    photos: string[];
   },
 ) {
   return setDoc(doc(db, 'users', uid, 'coreMonthly', id), {
@@ -652,6 +677,7 @@ export function saveMonthlyMeeting(
     date: Timestamp.fromDate(data.date),
     place: data.place,
     points: data.points,
+    photos: data.photos,
   });
 }
 

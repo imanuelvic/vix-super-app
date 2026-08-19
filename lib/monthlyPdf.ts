@@ -39,6 +39,25 @@ const ISI_CSS = `
   .poin-isi p { margin: 0 0 7px; color: #2E3B35; }
   .poin-isi p:last-child { margin-bottom: 0; }
   .poin-isi .kosong { color: #A8B3AB; font-style: italic; }
+
+  /* Dokumentasi foto rapat — sejajar dengan kartu catatan di atasnya (35px),
+     dua kolom supaya satu halaman tidak habis oleh satu foto saja. Foto
+     tunggal dibiarkan selebar isi. Tinggi TIDAK dipatok: fotonya tampil utuh
+     apa adanya, tidak ada wajah yang terpotong. */
+  .foto-grid {
+    margin: 9px 0 0 35px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .foto-grid img {
+    width: calc(50% - 5px);
+    border-radius: 12px;
+    border: 1px solid #EBDCC5;
+    display: block;
+  }
+  .foto-grid.tunggal img { width: 100%; }
 `;
 
 /** Susun HTML notulen: kop berlogo, keterangan rapat, lalu 5 poin agenda. */
@@ -60,6 +79,28 @@ function buildHtml(m: MonthlyMeeting): string {
     (m.points[p.key] ?? '').trim(),
   ).length;
 
+  // Dokumentasi foto ditempel sesudah 5 poin agenda — bukti rapatnya benar
+  // terjadi. Isinya sudah pasti base64 buatan app sendiri, tapi tetap disaring
+  // ke abjad base64 saja supaya tak mungkin ada tanda kutip yang mematahkan
+  // atribut src-nya.
+  const fotoBersih = m.photos
+    .map((p) => p.replace(/[^A-Za-z0-9+/=]/g, ''))
+    .filter(Boolean);
+  const foto = fotoBersih.length
+    ? `
+      <section class="poin">
+        <div class="poin-kepala">
+          <span class="nomor">📸</span>
+          <h2>DOKUMENTASI</h2>
+        </div>
+        <div class="foto-grid${fotoBersih.length === 1 ? ' tunggal' : ''}">
+          ${fotoBersih
+            .map((p) => `<img src="data:image/jpeg;base64,${p}" alt="" />`)
+            .join('')}
+        </div>
+      </section>`
+    : '';
+
   return pdfShellHtml({
     eyebrow: 'Notulen Mentoring Bulanan',
     title: m.title || 'Rapat Bulanan',
@@ -68,9 +109,10 @@ function buildHtml(m: MonthlyMeeting): string {
       { label: 'Mulai', value: `${formatTime(d)} WIB` },
       { label: 'Tempat', value: m.place },
     ],
-    bodyHtml: isi,
+    bodyHtml: isi + foto,
     footerNote:
       `${terisi} dari ${MONTHLY_AGENDA_POINTS.length} poin agenda terisi · ` +
+      (fotoBersih.length ? `${fotoBersih.length} foto dokumentasi · ` : '') +
       `dicetak ${formatFullDate(new Date())}`,
     extraCss: ISI_CSS,
   });

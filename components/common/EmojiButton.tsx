@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -25,12 +25,17 @@ export function EmojiButton({
   onPress,
   active = false,
   badge = 0,
+  busy = false,
+  disabled = false,
 }: {
   emoji: string;
   onPress: () => void;
   active?: boolean;
   /** Angka merah di pojok — bentuknya sama dengan badge tile Home & tab bawah. */
   badge?: number;
+  /** Sedang bekerja → spinner menggantikan emojinya (mis. PDF sedang dibuat). */
+  busy?: boolean;
+  disabled?: boolean;
 }) {
   const on = useSharedValue(active ? 1 : 0);
 
@@ -55,8 +60,13 @@ export function EmojiButton({
       <PressableScale
         style={[styles.button, skin]}
         onPress={onPress}
+        disabled={disabled || busy}
         hitSlop={6}>
-        <VixText additionalStyle={styles.emoji}>{emoji}</VixText>
+        {busy ? (
+          <ActivityIndicator size="small" color={Color.MAIN} />
+        ) : (
+          <VixText additionalStyle={styles.emoji}>{emoji}</VixText>
+        )}
       </PressableScale>
       {badge > 0 && (
         <Animated.View entering={ZoomIn.duration(220)} style={styles.badge}>

@@ -318,7 +318,7 @@ export function FreelanceTab({
           />
           <FormInput
             style={styles.formGap}
-            placeholder="Client — siapa pemesannya"
+            placeholder="Client"
             value={fClient}
             onChangeText={setFClient}
             editable={!busy}

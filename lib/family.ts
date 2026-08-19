@@ -1,5 +1,3 @@
-import * as ImageManipulator from 'expo-image-manipulator';
-import * as ImagePicker from 'expo-image-picker';
 import {
   collection,
   doc,
@@ -12,6 +10,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { pickCompressedImage } from './photo';
 
 // Family Tree 👨‍👩‍👧‍👦 — silsilah keluarga ala The Sims:
 // tiap anggota punya nama, tanggal lahir, foto kecil, status meninggal,
@@ -225,22 +224,6 @@ export function countGenerations(members: FamilyMember[]): number {
  * Pilih foto dari galeri lalu kompres SANGAT kecil tapi tetap jelas
  * untuk avatar: crop kotak → 144px → JPEG 50% → base64 (±4–8 KB).
  */
-export async function pickCompressedPhoto(): Promise<string | null> {
-  const res = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    allowsEditing: true,
-    aspect: [1, 1],
-    quality: 1,
-  });
-  if (res.canceled || !res.assets[0]) return null;
-  const small = await ImageManipulator.manipulateAsync(
-    res.assets[0].uri,
-    [{ resize: { width: 144 } }],
-    {
-      compress: 0.5,
-      format: ImageManipulator.SaveFormat.JPEG,
-      base64: true,
-    },
-  );
-  return small.base64 ?? null;
+export function pickCompressedPhoto(): Promise<string | null> {
+  return pickCompressedImage({ width: 144, compress: 0.5, square: true });
 }

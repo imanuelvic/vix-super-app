@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { CardActionButton } from '@/components/common/CardActionButton';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -293,10 +292,11 @@ export function VisitationTab({
     const perluKirim = needsPdfShare(v, today, todayId);
     return (
       <View key={v.id} style={[styles.card, deadlineBorder(tone)]}>
+      <View style={styles.cardRow}>
       {/* Tekan bagian ini untuk edit / tandai selesai. Tombol share sengaja
           jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin ketukan
           tombolnya ikut membuka modal edit. */}
-      <PressableScale onPress={() => openEdit(v)}>
+      <PressableScale style={styles.cardTapArea} onPress={() => openEdit(v)}>
         <View style={styles.cardTop}>
           <VixText heading="bold" additionalStyle={styles.cardTitle}>
             {meetingLeaderNames(v, leaders)}
@@ -335,20 +335,17 @@ export function VisitationTab({
       </PressableScale>
 
       {/* Kirim pertemuan + panduan acaranya ke CORE Leader lewat WhatsApp.
-          Menyala penuh pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk
-          acara besar) supaya tidak terlewat. */}
-      {/* Rupanya selalu hijau penuh, sama dengan tombol di Monthly. Penanda
-          hari pengingat pindah ke LABEL-nya ("Kirim PDF — H-3"); badge di Home
-          & Dashboard tetap yang menagih. */}
-      <CardActionButton
-        icon="square.and.arrow.up"
-        label={perluKirim ? `Kirim PDF — H-${days}` : 'Share PDF'}
-        variant="filled"
+          Cuma emoji di pojok kanan atas supaya tidak makan tempat. Latarnya
+          menyala hijau pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk acara
+          besar); badge di Home & Dashboard tetap yang menagih. */}
+      <EmojiButton
+        emoji="📤"
+        active={perluKirim}
         onPress={() => handleShare(v)}
         busy={sharingId === v.id}
         disabled={sharingId !== null}
-        additionalStyle={styles.shareRow}
       />
+      </View>
       </View>
     );
   }
@@ -717,6 +714,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 3,
   },
+  // Isi kartu (area ketuk) + tombol kirim PDF di kanan ATAS-nya.
+  // 'flex-start' menahan tombolnya tetap di ujung atas walau kartunya
+  // memanjang karena agenda yang berbaris-baris.
+  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  cardTapArea: { flex: 1 },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -725,9 +727,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   kindLine: { color: Color.MAIN },
-  // Tombol kirim PDF di kaki kartu — rupa garis putus / hijau penuh diatur
-  // lewat prop `variant` CardActionButton; di sini tinggal jaraknya.
-  shareRow: { marginTop: 10 },
   // Isi kolom panjang (agenda/catatan) — sedikit menjorok dari labelnya.
   blockText: { color: Color.TEXT_PARAGRAPH, paddingLeft: 2 },
   statusDone: { color: Color.SUCCESS },

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { CardActionButton } from '@/components/common/CardActionButton';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { Pagination } from '@/components/common/Pagination';
@@ -21,14 +21,16 @@ import { usePagination } from '@/hooks/usePagination';
 import {
   deleteMonthlyMeeting,
   emptyMonthlyPoints,
+  MAX_MEETING_PHOTOS,
   MONTHLY_AGENDA_POINTS,
   newMonthlyMeetingId,
+  pickMeetingPhoto,
   saveMonthlyMeeting,
   type MonthlyMeeting,
 } from '@/lib/core';
 import { formatFullDate, formatTime, MONTH_NAMES } from '@/lib/format';
+import { DELETE_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
-import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Sub-tab 🗒️ Monthly — notulen Mentoring Bulanan dari gereja.
 // Susunan agendanya selalu 5 poin yang sama (MENTORSHIP · LEADER'S MESSAGE ·
@@ -56,6 +58,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const [fPoints, setFPoints] = useState<Record<string, string>>(
     emptyMonthlyPoints(),
   );
+  // Dokumentasi foto rapat — JPEG base64 kecil, ikut tercetak di PDF.
+  const [fPhotos, setFPhotos] = useState<string[]>([]);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   // Notulen yang PDF-nya sedang dibuat (null = tidak ada).
   const [sharingId, setSharingId] = useState<string | null>(null);
@@ -86,6 +91,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     setFDate(now);
     setFPlace('');
     setFPoints(emptyMonthlyPoints());
+    setFPhotos([]);
     setFormError(null);
   }
 
@@ -95,7 +101,22 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     setFDate(m.date.toDate());
     setFPlace(m.place);
     setFPoints({ ...emptyMonthlyPoints(), ...m.points });
+    setFPhotos(m.photos);
     setFormError(null);
+  }
+
+  /** Tambah satu foto dokumentasi dari galeri (sudah dikecilkan otomatis). */
+  async function handleAddPhoto() {
+    if (photoBusy || busy || fPhotos.length >= MAX_MEETING_PHOTOS) return;
+    setPhotoBusy(true);
+    try {
+      const photo = await pickMeetingPhoto();
+      if (photo) setFPhotos((prev) => [...prev, photo]);
+    } catch {
+      setFormError(PHOTO_ERROR);
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   /** Cetak notulen jadi PDF lalu buka share sheet (ada WhatsApp di dalamnya). */
@@ -135,6 +156,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               (fPoints[p.key] ?? '').trim(),
             ]),
           ),
+          photos: fPhotos,
         },
       );
       setEditing(null);
@@ -162,11 +184,15 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     const expanded = openId === m.id;
     return (
       <View key={m.id} style={styles.card}>
-        {/* Ketuk judul untuk buka/tutup isinya; ✏️ untuk mengubah */}
-        <PressableScale
-          style={styles.cardHeader}
-          onPress={() => setOpenId(expanded ? null : m.id)}>
-          <View style={styles.cardMain}>
+        {/* Semua tombol ada DI ATAS, sebaris dengan judul — tak perlu
+            menggulung notulen yang panjang dulu untuk bisa mengubah atau
+            mengirimnya. Tombolnya sengaja jadi SAUDARA dari area ketuk, bukan
+            anaknya: Pressable bersarang di iOS bikin ketukan tombolnya ikut
+            membuka/menutup kartu. */}
+        <View style={styles.cardHeader}>
+          <PressableScale
+            style={styles.cardMain}
+            onPress={() => setOpenId(expanded ? null : m.id)}>
             <VixText heading="bold" additionalStyle={styles.cardTitle}>
               🗒️ {m.title}
             </VixText>
@@ -179,16 +205,44 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
                 📍 {m.place}
               </VixText>
             ) : null}
-          </View>
-          <IconSymbol
-            name={expanded ? 'chevron.up' : 'chevron.down'}
-            size={18}
-            color={Color.TEXT_LABEL}
+            {/* Penanda ada dokumentasi walau kartunya masih tertutup */}
+            {m.photos.length > 0 ? (
+              <VixText heading="label" additionalStyle={styles.cardDate}>
+                📸 {m.photos.length} foto dokumentasi
+              </VixText>
+            ) : null}
+          </PressableScale>
+          <EmojiButton emoji="✏️" onPress={() => openEdit(m)} />
+          {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
+          <EmojiButton
+            emoji="📤"
+            onPress={() => handleShare(m)}
+            busy={sharingId === m.id}
+            disabled={sharingId !== null}
           />
-        </PressableScale>
+          <PressableScale
+            style={styles.chevronTap}
+            hitSlop={8}
+            onPress={() => setOpenId(expanded ? null : m.id)}>
+            <IconSymbol
+              name={expanded ? 'chevron.up' : 'chevron.down'}
+              size={18}
+              color={Color.TEXT_LABEL}
+            />
+          </PressableScale>
+        </View>
 
         {expanded && (
           <View style={styles.cardBody}>
+            {/* Dokumentasi rapat — bukti fotonya, sama yang ikut ke PDF */}
+            {m.photos.map((photo, i) => (
+              <Image
+                key={`${i}-${photo.slice(0, 16)}`}
+                source={{ uri: `data:image/jpeg;base64,${photo}` }}
+                style={styles.cardPhoto}
+                resizeMode="cover"
+              />
+            ))}
             {MONTHLY_AGENDA_POINTS.map((p) => {
               const text = (m.points[p.key] ?? '').trim();
               return (
@@ -204,24 +258,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
                 </View>
               );
             })}
-            <View style={styles.actionRow}>
-              <CardActionButton
-                icon="pencil"
-                label="Ubah notulen"
-                onPress={() => openEdit(m)}
-                additionalStyle={styles.actionButton}
-              />
-              {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
-              <CardActionButton
-                icon="square.and.arrow.up"
-                label="Share PDF"
-                variant="filled"
-                onPress={() => handleShare(m)}
-                busy={sharingId === m.id}
-                disabled={sharingId !== null}
-                additionalStyle={styles.actionButton}
-              />
-            </View>
           </View>
         )}
       </View>
@@ -355,6 +391,48 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           </View>
         ))}
 
+        {/* Dokumentasi rapat — ikut tercetak di PDF sebagai bukti foto.
+            Dibatasi {MAX_MEETING_PHOTOS} biar dokumen notulennya tetap ringan. */}
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          📸 Dokumentasi rapat (opsional) — {fPhotos.length}/
+          {MAX_MEETING_PHOTOS}
+        </VixText>
+        <View style={styles.photoWrap}>
+          {fPhotos.map((photo, i) => (
+            <View key={`${i}-${photo.slice(0, 16)}`} style={styles.photoBox}>
+              <Image
+                source={{ uri: `data:image/jpeg;base64,${photo}` }}
+                style={styles.photoFill}
+                resizeMode="cover"
+              />
+              <PressableScale
+                style={styles.photoRemove}
+                hitSlop={6}
+                onPress={() =>
+                  setFPhotos((prev) => prev.filter((_, x) => x !== i))
+                }>
+                <VixText heading="bold" additionalStyle={styles.photoRemoveText}>
+                  ✕
+                </VixText>
+              </PressableScale>
+            </View>
+          ))}
+          {fPhotos.length < MAX_MEETING_PHOTOS && (
+            <PressableScale
+              style={[styles.photoBox, styles.photoAdd]}
+              onPress={handleAddPhoto}
+              disabled={photoBusy || busy}>
+              {photoBusy ? (
+                <ActivityIndicator color={Color.MAIN} />
+              ) : (
+                <VixText heading="label" additionalStyle={styles.photoAddText}>
+                  📸{'\n'}Tambah
+                </VixText>
+              )}
+            </PressableScale>
+          )}
+        </View>
+
         <FormError message={formError} />
         <EditDelete
           editing={editing}
@@ -389,12 +467,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 10,
   },
+  // Judul (area ketuk buka/tutup) + tombol-tombolnya, semua di baris paling
+  // atas. 'flex-start' menahan tombol tetap di KANAN ATAS walau judulnya
+  // memanjang jadi beberapa baris.
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'flex-start',
+    gap: 8,
   },
   cardMain: { flex: 1, gap: 2 },
+  // Panah buka/tutup disamakan tingginya dengan tombol emoji di sebelahnya
+  // supaya ketiganya sejajar rapi, bukan menggantung di ujung atas.
+  chevronTap: { height: 42, justifyContent: 'center' },
   cardTitle: { color: Color.TEXT_TITLE },
   cardDate: { color: Color.TEXT_LABEL },
   cardBody: {
@@ -408,9 +492,50 @@ const styles = StyleSheet.create({
   pointLabel: { color: Color.MAIN_DARK, marginTop: 10, },
   pointText: { color: Color.TEXT_PARAGRAPH },
   pointEmpty: { color: Color.TEXT_PLACEHOLDER },
-  // Dua tombol sejajar di kaki kartu: ubah (garis putus) & share PDF (isi).
-  actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  actionButton: { flex: 1 },
+  // Foto dokumentasi di dalam kartu — selebar kartu, ditumpuk ke bawah.
+  cardPhoto: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: Color.BORDER,
+  },
+  // Petak foto di form: thumbnail berjajar + satu kotak "Tambah" di ujungnya.
+  photoWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  photoBox: {
+    width: 96,
+    height: 96,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.BACKGROUND,
+    overflow: 'hidden',
+  },
+  photoFill: { width: '100%', height: '100%' },
+  // Tombol ✕ menempel di pojok foto — hapus foto ini dari daftar.
+  photoRemove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Color.DANGER,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoRemoveText: { color: Color.TEXT_REVERSE, fontSize: 12, lineHeight: 16 },
+  photoAdd: {
+    borderStyle: 'dashed',
+    borderColor: Color.MAIN_LIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoAddText: { textAlign: 'center', color: Color.MAIN },
   fab: {
     position: 'absolute',
     right: 18,

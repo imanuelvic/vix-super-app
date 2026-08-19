@@ -1,5 +1,3 @@
-import * as ImageManipulator from 'expo-image-manipulator';
-import * as ImagePicker from 'expo-image-picker';
 import {
   doc,
   setDoc,
@@ -11,6 +9,7 @@ import { Color } from '@/assets/style/color';
 import { hashString } from './core';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
+import { pickCompressedImage } from './photo';
 
 // Fitur Fun & Recreation 🎉 — arsip tempat & pencapaian yang sudah dikunjungi:
 // Summit gunung, Race, tempat refleksi, dan tempat rekreasi.
@@ -150,22 +149,8 @@ export function saveFun(uid: string, data: FunData) {
  * JPEG 50% → base64 (±15–25 KB). Cukup jelas untuk kenang-kenangan, tapi tetap
  * ringan karena ikut tersimpan di dokumen arsip Fun (yang juga dibaca Home).
  */
-export async function pickCompressedMedal(): Promise<string | null> {
-  const res = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    quality: 1,
-  });
-  if (res.canceled || !res.assets[0]) return null;
-  const small = await ImageManipulator.manipulateAsync(
-    res.assets[0].uri,
-    [{ resize: { width: 360 } }],
-    {
-      compress: 0.5,
-      format: ImageManipulator.SaveFormat.JPEG,
-      base64: true,
-    },
-  );
-  return small.base64 ?? null;
+export function pickCompressedMedal(): Promise<string | null> {
+  return pickCompressedImage({ width: 360, compress: 0.5 });
 }
 
 // ===================== Reminder "waktunya refreshing" =====================
