@@ -6,7 +6,7 @@ import { escapeHtml, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
 // Strukturnya dibaca oleh parseRuleBody() — parser YANG SAMA dengan yang
 // dipakai layar, jadi PDF & layar tak mungkin menafsirkan dokumen berbeda.
 
-/** CSS isi panduan — dipakai juga oleh PDF undangan pertemuan. */
+/** CSS isi panduan — dipakai juga oleh PDF notulen pertemuan. */
 export const RULE_ISI_CSS = `
   .isi { margin-top: 26px; }
   .isi h2 {
@@ -124,7 +124,7 @@ export function shareRulePdf(rule: CoreRule): Promise<void> {
   });
   return sharePdf(
     html,
-    pdfFileName(ruleFullTitle(rule), 'Rules CORE'),
     'Kirim panduan ke WhatsApp',
+    pdfFileName(ruleFullTitle(rule), 'Rules CORE'),
   );
 }

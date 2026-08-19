@@ -7,9 +7,15 @@ import {
 import { type CoreRule } from './coreRules';
 import { ruleBodyHtml, RULE_ISI_CSS } from './coreRulesPdf';
 import { formatFullDate, formatTime } from './format';
-import { escapeHtml, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
+import {
+  escapeHtml,
+  htmlParagraphs,
+  pdfFileName,
+  pdfShellHtml,
+  sharePdf,
+} from './pdfDoc';
 
-// Undangan pertemuan CORE → PDF yang dikirim ke CORE Leader-nya.
+// Notulen pertemuan CORE → PDF yang dikirim ke CORE Leader-nya.
 //
 // Isinya dua bagian: keterangan acara (judul & agenda) lalu panduan resmi
 // jenis acara itu dari Rules & Suggestions — memang itu gunanya: satu berkas
@@ -47,16 +53,6 @@ const ACARA_CSS = `
   .panduan-meta { margin: 3px 0 0; font-size: 10.5px; color: #9AA79F; }
 `;
 
-/** Ubah teks berbaris jadi paragraf HTML; kosong → penanda jelas. */
-function paragraphs(text: string): string {
-  const lines = text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-  if (lines.length === 0) return '<p class="kosong">— belum diisi —</p>';
-  return lines.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
-}
-
 /**
  * Nama berkas: jenis pertemuan + nama CORE-nya.
  * "Visitasi CORE - Riky.pdf" · gabungan → "CORE Gabungan - Riky, Sarah.pdf"
@@ -86,10 +82,10 @@ function buildHtml(
   const acara = `
     <section class="acara">
       <h2>🗒️ ${escapeHtml(v.note.trim() || 'Agenda Pertemuan')}</h2>
-      <div class="kotak">${paragraphs(v.agenda)}</div>
+      <div class="kotak">${htmlParagraphs(v.agenda)}</div>
     </section>`;
 
-  // Panduan resminya ditempel di bawah undangan — tanpa ini, PDF-nya cuma
+  // Panduan resminya ditempel di bawah notulen — tanpa ini, PDF-nya cuma
   // pengumuman jadwal dan CORE Leader tetap harus dikirimi berkas kedua.
   const panduan = rule?.body.trim()
     ? `
@@ -103,7 +99,7 @@ function buildHtml(
     : '';
 
   return pdfShellHtml({
-    eyebrow: `Undangan ${meta.label}`,
+    eyebrow: `Meeting ${meta.label}`,
     title: meetingLeaderNames(v, leaders, { fallback: 'CORE' }),
     subtitle: v.thanksgiving && v.kind !== 'thanksgiving' ? '🎉 Sekalian Thanksgiving' : undefined,
     chips: [
@@ -113,14 +109,14 @@ function buildHtml(
     ],
     bodyHtml: acara + panduan,
     footerNote: rule?.body.trim()
-      ? `Undangan & panduan acara · dicetak ${formatFullDate(new Date())}`
-      : `Undangan acara · dicetak ${formatFullDate(new Date())}`,
+      ? `Notulen & panduan acara · dikirim ${formatFullDate(new Date())}`
+      : `Notulen · dikirim ${formatFullDate(new Date())}`,
     extraCss: ACARA_CSS + RULE_ISI_CSS,
   });
 }
 
 /**
- * Buat PDF undangan pertemuan lalu buka share sheet (WhatsApp / Files / dll).
+ * Buat PDF notulen pertemuan lalu buka share sheet (WhatsApp / Files / dll).
  * `rule` boleh undefined — PDF-nya tetap terbit, hanya tanpa bagian panduan.
  * Melempar error kalau gagal supaya pemanggil bisa menampilkan pesan.
  */
@@ -131,7 +127,7 @@ export function shareVisitationPdf(
 ): Promise<void> {
   return sharePdf(
     buildHtml(v, leaders, rule),
+    'Kirim notulen ke WhatsApp',
     visitationPdfName(v, leaders),
-    'Kirim undangan ke WhatsApp',
   );
 }

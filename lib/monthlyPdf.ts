@@ -1,6 +1,12 @@
 import { MONTHLY_AGENDA_POINTS, type MonthlyMeeting } from './core';
 import { formatFullDate, formatTime } from './format';
-import { escapeHtml, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
+import {
+  escapeHtml,
+  htmlParagraphs,
+  pdfFileName,
+  pdfShellHtml,
+  sharePdf,
+} from './pdfDoc';
 
 // Notulen Mentoring Bulanan → PDF. Kop, logo, kartu keterangan, & kaki
 // dokumennya dipinjam dari kerangka bersama (lib/pdfDoc.ts) — berkas ini
@@ -35,18 +41,6 @@ const ISI_CSS = `
   .poin-isi .kosong { color: #A8B3AB; font-style: italic; }
 `;
 
-/** Ubah baris-baris catatan jadi paragraf HTML (baris kosong dibuang). */
-function paragraphs(text: string): string {
-  const lines = text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-  if (lines.length === 0) {
-    return '<p class="kosong">— belum diisi —</p>';
-  }
-  return lines.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
-}
-
 /** Susun HTML notulen: kop berlogo, keterangan rapat, lalu 5 poin agenda. */
 function buildHtml(m: MonthlyMeeting): string {
   const d = m.date.toDate();
@@ -58,7 +52,7 @@ function buildHtml(m: MonthlyMeeting): string {
           <span class="nomor">${i + 1}</span>
           <h2>${p.icon} ${escapeHtml(p.label)}</h2>
         </div>
-        <div class="poin-isi">${paragraphs(text)}</div>
+        <div class="poin-isi">${htmlParagraphs(text)}</div>
       </section>`;
   }).join('');
 
@@ -89,7 +83,7 @@ function buildHtml(m: MonthlyMeeting): string {
 export function shareMonthlyPdf(m: MonthlyMeeting): Promise<void> {
   return sharePdf(
     buildHtml(m),
-    pdfFileName(m.title, 'Notulen Rapat'),
     'Kirim notulen ke WhatsApp',
+    pdfFileName(m.title, 'Notulen Rapat'),
   );
 }

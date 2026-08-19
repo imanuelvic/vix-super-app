@@ -1,13 +1,14 @@
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-
 import { invoiceTotal, type FreelanceProject, type InvoiceItem } from './career';
 import { formatDate } from './format';
+import { escapeHtml, sharePdf } from './pdfDoc';
 import { formatRupiah } from './transactions';
 
 // Invoice PDF untuk proyek freelance — template resmi PT. Victory Technology
-// Indonesia. HTML sederhana lalu diubah ke PDF (expo-print) & dibagikan lewat
-// share sheet OS (expo-sharing → WhatsApp / Save to Files, dll).
+// Indonesia. Berkas ini hanya menyusun HTML-nya; pencetakan ke PDF & pembukaan
+// share sheet ditangani util bersama lib/pdfDoc.ts.
+//
+// Catatan: invoice TIDAK memakai kop/logo CORE dari pdfShellHtml — ini surat
+// resmi perusahaan dengan letterhead sendiri, jadi HTML-nya berdiri sendiri.
 
 // Data perusahaan (dari letterhead resmi). Ubah di sini kalau berubah.
 const COMPANY_INFO = {
@@ -43,14 +44,6 @@ function invoiceNumber(p: FreelanceProject, date: Date): string {
   return `${seq}/VTI/${ROMAN[date.getMonth()]}/${date.getFullYear()}`;
 }
 
-/** Escape teks pengguna agar aman dimasukkan ke HTML. */
-function esc(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
 /** Susun HTML invoice (satu halaman A4, rapi & resmi). */
 function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
   const items: InvoiceItem[] = p.invoiceItems ?? [];
@@ -60,7 +53,7 @@ function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
       .map(
         (it) => `
         <tr>
-          <td class="desc">${esc(it.desc)}</td>
+          <td class="desc">${escapeHtml(it.desc)}</td>
           <td class="num">${it.qty}</td>
           <td class="num">${formatRupiah(it.price)}</td>
           <td class="num">${formatRupiah(it.qty * it.price)}</td>
@@ -127,8 +120,8 @@ function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
 </head>
 <body>
   <div class="brand">
-    <h1>${esc(COMPANY_INFO.name)}</h1>
-    <p>${esc(COMPANY_INFO.address)}<br/>Phone: ${esc(COMPANY_INFO.phone)}</p>
+    <h1>${escapeHtml(COMPANY_INFO.name)}</h1>
+    <p>${escapeHtml(COMPANY_INFO.address)}<br/>Phone: ${escapeHtml(COMPANY_INFO.phone)}</p>
   </div>
   <hr class="rule" />
 
@@ -142,8 +135,8 @@ function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
 
   <div class="to">
     <div class="label">Kepada</div>
-    <div class="name">${esc(p.client || '-')}</div>
-    ${p.name ? `<div class="sub">Perihal: ${esc(p.name)}</div>` : ''}
+    <div class="name">${escapeHtml(p.client || '-')}</div>
+    ${p.name ? `<div class="sub">Perihal: ${escapeHtml(p.name)}</div>` : ''}
   </div>
 
   <table>
@@ -166,16 +159,16 @@ function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
 
   <div class="note">
     Terima kasih atas kepercayaan Anda. Untuk pertanyaan lebih lanjut, silakan
-    hubungi kami di ${esc(COMPANY_INFO.phone)}.
+    hubungi kami di ${escapeHtml(COMPANY_INFO.phone)}.
   </div>
 
   <div class="sign">
     <div class="greet">Hormat kami,</div>
-    <div class="name">${esc(COMPANY_INFO.signer)}</div>
-    <div class="co">${esc(COMPANY_INFO.name)}</div>
+    <div class="name">${escapeHtml(COMPANY_INFO.signer)}</div>
+    <div class="co">${escapeHtml(COMPANY_INFO.name)}</div>
   </div>
 
-  <div class="foot">${esc(COMPANY_INFO.name)} · ${esc(COMPANY_INFO.phone)}</div>
+  <div class="foot">${escapeHtml(COMPANY_INFO.name)} · ${escapeHtml(COMPANY_INFO.phone)}</div>
 </body>
 </html>`;
 }
@@ -184,14 +177,9 @@ function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
  * Buat PDF invoice lalu buka share sheet (WhatsApp / Save to Files / dll).
  * Lempar error kalau gagal supaya pemanggil bisa menampilkan pesan.
  */
-export async function shareInvoicePdf(p: FreelanceProject): Promise<void> {
-  const html = buildInvoiceHtml(p, new Date());
-  const { uri } = await Print.printToFileAsync({ html });
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(uri, {
-      mimeType: 'application/pdf',
-      dialogTitle: 'Bagikan Invoice',
-      UTI: 'com.adobe.pdf',
-    });
-  }
+export function shareInvoicePdf(p: FreelanceProject): Promise<void> {
+  // Tanpa nama berkas: invoice tetap memakai nama acak bawaan expo-print,
+  // persis seperti sebelumnya. (Bisa dinamai "Invoice 042-VTI-VIII-2026.pdf"
+  // kalau kamu mau — tinggal minta.)
+  return sharePdf(buildInvoiceHtml(p, new Date()), 'Bagikan Invoice');
 }

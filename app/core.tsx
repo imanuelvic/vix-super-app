@@ -52,8 +52,8 @@ type CoreTab =
 // Tab bar bawah di dalam layar CORE.
 const TABS: BottomTab<CoreTab>[] = [
   { key: 'visitation', label: 'Pertemuan', icon: 'calendar' },
-  { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
   { key: 'monthly', label: 'Monthly', icon: 'list.bullet' },
+  { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
   { key: 'leaders', label: 'Leaders', icon: 'person.2.fill' },
   { key: 'multiplication', label: 'Multiplication', icon: 'arrow.triangle.branch' },
 ];

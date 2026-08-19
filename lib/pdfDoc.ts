@@ -44,6 +44,19 @@ export function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;');
 }
 
+/**
+ * Ubah teks berbaris jadi paragraf HTML; baris kosong dibuang, isi kosong
+ * ditandai jelas supaya blok yang belum diisi tidak terlihat seperti bug.
+ */
+export function htmlParagraphs(text: string): string {
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return '<p class="kosong">— belum diisi —</p>';
+  return lines.map((l) => `<p>${escapeHtml(l)}</p>`).join('');
+}
+
 /** Satu kartu keterangan di dalam kop, mis. "TANGGAL / Rabu, 19 Agustus 2026". */
 export type PdfChip = { label: string; value: string };
 
@@ -226,19 +239,21 @@ export function pdfShellHtml({
 }
 
 /**
- * Cetak HTML jadi PDF bernama `fileName`, lalu buka share sheet OS.
- * Melempar error kalau gagal supaya pemanggil bisa menampilkan pesan.
+ * Cetak HTML jadi PDF lalu buka share sheet OS.
+ *
+ * `fileName` opsional: kalau diisi, berkasnya dinamai ulang supaya penerima
+ * langsung tahu isinya; kalau tidak, nama acak bawaan expo-print dipakai apa
+ * adanya. Melempar error kalau gagal supaya pemanggil bisa menampilkan pesan.
  */
 export async function sharePdf(
   html: string,
-  fileName: string,
   dialogTitle: string,
+  fileName?: string,
 ): Promise<void> {
   const { uri } = await Print.printToFileAsync({ html });
 
   // expo-print selalu menamai hasilnya acak (cache/Print/<UUID>.pdf), jadi di
-  // WhatsApp muncul sebagai "9F3C1A….pdf". Ganti dengan judul dokumen supaya
-  // penerima langsung tahu isinya.
+  // WhatsApp muncul sebagai "9F3C1A….pdf".
   //
   // rename() memakai nama POLOS & tetap di folder yang sama. Folder Print/ itu
   // dipakai bersama semua PDF, jadi membagikan dokumen yang sama dua kali akan
@@ -246,12 +261,14 @@ export async function sharePdf(
   // sebab lain, PDF tetap dibagikan apa adanya; nama jelek lebih baik daripada
   // batal kirim.
   const pdf = new File(uri);
-  try {
-    const bentrok = new File(pdf.parentDirectory, fileName);
-    if (bentrok.exists) bentrok.delete();
-    pdf.rename(fileName);
-  } catch {
-    // Biarkan nama bawaan expo-print.
+  if (fileName) {
+    try {
+      const bentrok = new File(pdf.parentDirectory, fileName);
+      if (bentrok.exists) bentrok.delete();
+      pdf.rename(fileName);
+    } catch {
+      // Biarkan nama bawaan expo-print.
+    }
   }
 
   if (await Sharing.isAvailableAsync()) {

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { CardActionButton } from '@/components/common/CardActionButton';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
@@ -204,32 +205,22 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               );
             })}
             <View style={styles.actionRow}>
-              <PressableScale style={styles.editRow} onPress={() => openEdit(m)}>
-                <IconSymbol name="pencil" size={16} color={Color.MAIN} />
-                <VixText heading="bold" additionalStyle={styles.editText}>
-                  Ubah notulen
-                </VixText>
-              </PressableScale>
+              <CardActionButton
+                icon="pencil"
+                label="Ubah notulen"
+                onPress={() => openEdit(m)}
+                additionalStyle={styles.actionButton}
+              />
               {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
-              <PressableScale
-                style={styles.shareRow}
+              <CardActionButton
+                icon="square.and.arrow.up"
+                label="Share PDF"
+                variant="filled"
                 onPress={() => handleShare(m)}
-                disabled={sharingId !== null}>
-                {sharingId === m.id ? (
-                  <ActivityIndicator color={Color.TEXT_REVERSE} />
-                ) : (
-                  <>
-                    <IconSymbol
-                      name="square.and.arrow.up"
-                      size={16}
-                      color={Color.TEXT_REVERSE}
-                    />
-                    <VixText heading="bold" additionalStyle={styles.shareText}>
-                      Share PDF
-                    </VixText>
-                  </>
-                )}
-              </PressableScale>
+                busy={sharingId === m.id}
+                disabled={sharingId !== null}
+                additionalStyle={styles.actionButton}
+              />
             </View>
           </View>
         )}
@@ -257,7 +248,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           </View>
         ) : (
           <PrimaryButton
-            label="Tambah Rapat Bulanan"
+            label="Buat Rapat Bulanan"
             icon="plus"
             onPress={openAdd}
             additionalStyle={styles.addButton}
@@ -419,30 +410,7 @@ const styles = StyleSheet.create({
   pointEmpty: { color: Color.TEXT_PLACEHOLDER },
   // Dua tombol sejajar di kaki kartu: ubah (garis putus) & share PDF (isi).
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  editRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Color.MAIN_LIGHT,
-  },
-  shareRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: Color.MAIN,
-  },
-  shareText: { color: Color.TEXT_REVERSE },
-  editText: { color: Color.MAIN },
+  actionButton: { flex: 1 },
   fab: {
     position: 'absolute',
     right: 18,

@@ -1,8 +1,9 @@
 import { Timestamp } from 'firebase/firestore';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { CardActionButton } from '@/components/common/CardActionButton';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -85,7 +86,7 @@ export function VisitationTab({
   const [searchMode, setSearchMode] = useState(false);
   const [query, setQuery] = useState('');
 
-  // Panduan acara ikut ditempel ke PDF undangan, jadi didengarkan di sini.
+  // Panduan acara ikut ditempel ke notulen pertemuan PDF, jadi didengarkan di sini.
   const [rules, setRules] = useState<CoreRule[]>([]);
   const [sharingId, setSharingId] = useState<string | null>(null);
 
@@ -239,7 +240,7 @@ export function VisitationTab({
   }
 
   /**
-   * Cetak undangan + panduan acaranya jadi PDF, buka share sheet, lalu catat
+   * Cetak pertemuan + panduan acaranya jadi PDF, buka share sheet, lalu catat
    * bahwa hari ini sudah dikirim supaya badge remindernya padam.
    */
   async function handleShare(v: Visitation) {
@@ -261,7 +262,7 @@ export function VisitationTab({
         );
       }
     } catch {
-      setError('Gagal membuat PDF undangan. Coba lagi.');
+      setError('Gagal membuat notulen pertemuan. Coba lagi.');
     } finally {
       setSharingId(null);
     }
@@ -333,30 +334,18 @@ export function VisitationTab({
         ) : null}
       </PressableScale>
 
-      {/* Kirim undangan + panduan acaranya ke CORE Leader lewat WhatsApp.
+      {/* Kirim pertemuan + panduan acaranya ke CORE Leader lewat WhatsApp.
           Menyala penuh pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk
           acara besar) supaya tidak terlewat. */}
-      <PressableScale
-        style={[styles.shareRow, perluKirim && styles.shareRowDue]}
+      <CardActionButton
+        icon="square.and.arrow.up"
+        label={perluKirim ? `Kirim PDF — H-${days}` : 'Share PDF'}
+        variant={perluKirim ? 'filled' : 'outline'}
         onPress={() => handleShare(v)}
-        disabled={sharingId !== null}>
-        {sharingId === v.id ? (
-          <ActivityIndicator color={perluKirim ? Color.TEXT_REVERSE : Color.MAIN} />
-        ) : (
-          <>
-            <IconSymbol
-              name="square.and.arrow.up"
-              size={15}
-              color={perluKirim ? Color.TEXT_REVERSE : Color.MAIN}
-            />
-            <VixText
-              heading="bold"
-              additionalStyle={perluKirim ? styles.shareTextDue : styles.shareText}>
-              {perluKirim ? `Kirim PDF — H-${days}` : 'Share PDF'}
-            </VixText>
-          </>
-        )}
-      </PressableScale>
+        busy={sharingId === v.id}
+        disabled={sharingId !== null}
+        additionalStyle={styles.shareRow}
+      />
       </View>
     );
   }
@@ -733,27 +722,9 @@ const styles = StyleSheet.create({
   },
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   kindLine: { color: Color.MAIN },
-  // Tombol kirim PDF di kaki kartu. Bentuk normal = garis putus (tenang);
-  // pada hari pengingat berubah jadi hijau penuh supaya menarik perhatian.
-  shareRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 10,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Color.MAIN_LIGHT,
-  },
-  shareRowDue: {
-    backgroundColor: Color.MAIN,
-    borderStyle: 'solid',
-    borderColor: Color.MAIN,
-  },
-  shareText: { color: Color.MAIN },
-  shareTextDue: { color: Color.TEXT_REVERSE },
+  // Tombol kirim PDF di kaki kartu — rupa garis putus / hijau penuh diatur
+  // lewat prop `variant` CardActionButton; di sini tinggal jaraknya.
+  shareRow: { marginTop: 10 },
   // Isi kolom panjang (agenda/catatan) — sedikit menjorok dari labelnya.
   blockText: { color: Color.TEXT_PARAGRAPH, paddingLeft: 2 },
   statusDone: { color: Color.SUCCESS },

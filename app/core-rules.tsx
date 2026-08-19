@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CardActionButton } from '@/components/common/CardActionButton';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
@@ -231,32 +232,22 @@ export default function CoreRulesScreen() {
               </VixText>
             )}
             <View style={styles.actionRow}>
-              <PressableScale style={styles.editRow} onPress={() => openEdit(r)}>
-                <IconSymbol name="pencil" size={16} color={Color.MAIN} />
-                <VixText heading="bold" additionalStyle={styles.editText}>
-                  Ubah panduan
-                </VixText>
-              </PressableScale>
+              <CardActionButton
+                icon="pencil"
+                label="Ubah panduan"
+                onPress={() => openEdit(r)}
+                additionalStyle={styles.actionButton}
+              />
               {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
-              <PressableScale
-                style={styles.shareRow}
+              <CardActionButton
+                icon="square.and.arrow.up"
+                label="Share PDF"
+                variant="filled"
                 onPress={() => handleShare(r)}
-                disabled={sharingKind !== null}>
-                {sharingKind === r.kind ? (
-                  <ActivityIndicator color={Color.TEXT_REVERSE} />
-                ) : (
-                  <>
-                    <IconSymbol
-                      name="square.and.arrow.up"
-                      size={16}
-                      color={Color.TEXT_REVERSE}
-                    />
-                    <VixText heading="bold" additionalStyle={styles.shareText}>
-                      Share PDF
-                    </VixText>
-                  </>
-                )}
-              </PressableScale>
+                busy={sharingKind === r.kind}
+                disabled={sharingKind !== null}
+                additionalStyle={styles.actionButton}
+              />
             </View>
           </View>
         )}
@@ -374,7 +365,7 @@ export default function CoreRulesScreen() {
           📜 Isi panduan
         </VixText>
         <VixText heading="label" additionalStyle={styles.hint}>
-          Tempel apa adanya. Baris berawalan * atau - jadi butir, ⚠️ jadi kotak
+          Catatan: Baris berawalan * atau - jadi butir, ⚠️ jadi kotak
           penting, dan baris ━━━ jadi garis pemisah.
         </VixText>
         <FormInput
@@ -434,30 +425,7 @@ const styles = StyleSheet.create({
   },
   // Dua tombol sejajar di kaki kartu: ubah (garis putus) & share PDF (isi).
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  editRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Color.MAIN_LIGHT,
-  },
-  editText: { color: Color.MAIN },
-  shareRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: Color.MAIN,
-  },
-  shareText: { color: Color.TEXT_REVERSE },
+  actionButton: { flex: 1 },
   // Ikon (sempit) + judul (melebar) sebaris.
   titleRow: { flexDirection: 'row', gap: 10 },
   iconInput: { width: 64, textAlign: 'center' },
