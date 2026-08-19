@@ -32,16 +32,23 @@ export function formatShortDayDate(d: Date): string {
 }
 
 /**
- * Sab, 16 Agu 26, Pk. 02.15 — "ddd, dd mmm yy, Pk. jj.mm".
- * Cap waktu paling ringkas: semuanya dipendekkan (hari & bulan 3 huruf, tahun
- * 2 digit) supaya muat satu baris di kolom sempit, mis. "Update terakhir" di
- * tab System.
+ * Sab, 16 Agu 26 — "ddd, dd mmm yy". Tanggal paling ringkas: hari & bulan
+ * 3 huruf, tanggal 2 digit, tahun 2 digit. Untuk kartu sempit yang tanggalnya
+ * tidak boleh sampai membungkus ke baris berikutnya.
  */
-export function formatShortDayDateTime(d: Date): string {
+export function formatCompactDate(d: Date): string {
   const day = String(d.getDate()).padStart(2, '0');
   const month = MONTH_NAMES[d.getMonth()].slice(0, 3);
   const year = String(d.getFullYear()).slice(-2);
-  return `${dayShort(d)}, ${day} ${month} ${year}, Pk. ${formatTime(d)}`;
+  return `${dayShort(d)}, ${day} ${month} ${year}`;
+}
+
+/**
+ * Sab, 16 Agu 26, Pk. 02.15 — "ddd, dd mmm yy, Pk. jj.mm".
+ * Cap waktu paling ringkas, mis. "Update terakhir" di tab System.
+ */
+export function formatShortDayDateTime(d: Date): string {
+  return `${formatCompactDate(d)}, Pk. ${formatTime(d)}`;
 }
 
 /** Rabu, 12 Agu 26 — "dddd, dd mmm yy" untuk baris sapaan (<GreetingHeader/>). */

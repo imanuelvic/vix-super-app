@@ -339,7 +339,7 @@ export function VisitationTab({
           menyala hijau pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk acara
           besar); badge di Home & Dashboard tetap yang menagih. */}
       <EmojiButton
-        emoji="📤"
+        icon="square.and.arrow.up"
         active={perluKirim}
         onPress={() => handleShare(v)}
         busy={sharingId === v.id}

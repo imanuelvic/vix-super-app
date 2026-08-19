@@ -28,7 +28,7 @@ import {
   saveMonthlyMeeting,
   type MonthlyMeeting,
 } from '@/lib/core';
-import { formatFullDate, formatTime, MONTH_NAMES } from '@/lib/format';
+import { formatCompactDate, formatTime, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
 
@@ -188,7 +188,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             menggulung notulen yang panjang dulu untuk bisa mengubah atau
             mengirimnya. Tombolnya sengaja jadi SAUDARA dari area ketuk, bukan
             anaknya: Pressable bersarang di iOS bikin ketukan tombolnya ikut
-            membuka/menutup kartu. */}
+            membuka/menutup kartu.
+            Panah buka/tutup tidak dipakai lagi — seluruh blok judul memang
+            sudah jadi sakelarnya, jadi panahnya cuma memakan tempat. */}
         <View style={styles.cardHeader}>
           <PressableScale
             style={styles.cardMain}
@@ -197,7 +199,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               🗒️ {m.title}
             </VixText>
             <VixText heading="label" additionalStyle={styles.cardDate}>
-              📆 {formatFullDate(m.date.toDate())} · 🕒{' '}
+              📆 {formatCompactDate(m.date.toDate())} · 🕒{' '}
               {formatTime(m.date.toDate())}
             </VixText>
             {m.place ? (
@@ -212,24 +214,18 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               </VixText>
             ) : null}
           </PressableScale>
-          <EmojiButton emoji="✏️" onPress={() => openEdit(m)} />
+          <EmojiButton
+            icon="pencil"
+            iconColor={Color.ACCENT_DARK}
+            onPress={() => openEdit(m)}
+          />
           {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
           <EmojiButton
-            emoji="📤"
+            icon="square.and.arrow.up"
             onPress={() => handleShare(m)}
             busy={sharingId === m.id}
             disabled={sharingId !== null}
           />
-          <PressableScale
-            style={styles.chevronTap}
-            hitSlop={8}
-            onPress={() => setOpenId(expanded ? null : m.id)}>
-            <IconSymbol
-              name={expanded ? 'chevron.up' : 'chevron.down'}
-              size={18}
-              color={Color.TEXT_LABEL}
-            />
-          </PressableScale>
         </View>
 
         {expanded && (
@@ -476,9 +472,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardMain: { flex: 1, gap: 2 },
-  // Panah buka/tutup disamakan tingginya dengan tombol emoji di sebelahnya
-  // supaya ketiganya sejajar rapi, bukan menggantung di ujung atas.
-  chevronTap: { height: 42, justifyContent: 'center' },
   cardTitle: { color: Color.TEXT_TITLE },
   cardDate: { color: Color.TEXT_LABEL },
   cardBody: {

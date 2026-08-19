@@ -172,6 +172,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
           label="Catat Pengeluaran"
           icon="plus"
           onPress={openAdd}
+          additionalStyle={styles.addButton}
         />
 
         {items.length === 0 && (
@@ -205,7 +206,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
                 </VixText>
                 {item.fromFinance && (
                   <VixText heading="label" additionalStyle={styles.fromFinance}>
-                    💰 dari Finance — ubah/hapusnya di sana
+                    💰 Data dari Finance
                   </VixText>
                 )}
                 {subParts.length > 0 && (
@@ -332,6 +333,9 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 10,
   },
+  // Jarak ke catatan pertama — tanpa ini tombolnya menempel mepet ke kartu
+  // di bawahnya (kartunya cuma punya marginBottom, tidak punya marginTop).
+  addButton: { marginBottom: 10 },
   fromFinance: { color: Color.MAIN },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
