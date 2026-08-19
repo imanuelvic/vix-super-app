@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/auth';
 import {
   birthdayGroupText,
   birthdayPersonalText,
+  followupMessage,
   isCurrentMonthPrayers,
   isPrayerFollowupDay,
   markBirthdayGreeted,
@@ -745,10 +746,7 @@ export function FollowupTab({
             <PressableScale
               style={styles.modalWaButton}
               onPress={() => {
-                openWhatsApp(
-                  followupModal.phone!,
-                  `Shalom! 🙏\n\n${fmTopic.question}`,
-                );
+                openWhatsApp(followupModal.phone!, followupMessage(fmTopic));
                 setFollowupModal(null);
               }}>
               <VixText heading="bold" additionalStyle={styles.modalWaText}>

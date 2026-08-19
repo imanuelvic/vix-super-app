@@ -27,9 +27,8 @@ import {
   skillOfWeek,
   stepsDone,
   topicGroupMeta,
-  topicOfWeek,
+  topicsOfWeek,
   weekComplete,
-  WEEK_MINUTES,
   type LearningStep,
   type LearningWeek,
   type SkillsDone,
@@ -69,9 +68,7 @@ export function WeekTab({
   const doneCount = stepsDone(week.steps);
   const complete = weekComplete(week.steps);
   const due = dueStep(week.steps, now);
-  const topic = topicOfWeek(now);
-  const topicGroup = topicGroupMeta(topic.group);
-  const topicChecked = !!topicsDone[topic.key];
+  const topics = topicsOfWeek(now);
 
   async function toggleStep(step: LearningStep) {
     if (!user) return;
@@ -111,10 +108,10 @@ export function WeekTab({
     }
   }
 
-  async function toggleTopic() {
+  async function toggleTopic(key: string, checked: boolean) {
     if (!user) return;
     try {
-      await setTopicDone(user.uid, topic.key, !topicChecked);
+      await setTopicDone(user.uid, key, !checked);
     } catch {
       setError(SAVE_ERROR);
     }
@@ -255,47 +252,47 @@ export function WeekTab({
           );
         })}
 
-        {/* ===== Topik obrolan minggu ini ===== */}
+        {/* ===== Bahan diskusi minggu ini ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Bahan ngobrol minggu ini
+          Bahan diskusi minggu ini
         </VixText>
-        <PressableScale
-          style={[styles.topicCard, topicChecked && styles.topicCardDone]}
-          onPress={toggleTopic}
-          haptic={topicChecked ? 'light' : 'success'}>
-          <CheckCircle checked={topicChecked} />
-          <View style={styles.stepMain}>
-            <VixText heading="bold">
-              {topicGroup.emoji} {topic.label}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.stepHow}>
-              {topicGroup.hint}
-            </VixText>
-          </View>
-        </PressableScale>
 
-        {/* ===== Kenapa jadwalnya begini ===== */}
-        <View style={styles.whyCard}>
-          <VixText heading="bold" additionalStyle={styles.whyTitle}>
-            💡 Kenapa jadwalnya Senin · Rabu · Jumat · Minggu?
+        {/* Bahan utama = ilmu minggu ini. Sengaja TANPA checkbox: "sudah
+            diceritakan atau belum" sudah dicatat langkah Minggu (Ceritakan)
+            di atas — dua kotak untuk satu hal yang sama cuma bikin bingung. */}
+        <View style={styles.mainTopicCard}>
+          <VixText heading="bold" additionalStyle={styles.mainTopicTitle}>
+            {area.emoji} {skill.title}
           </VixText>
-          <VixText heading="label" additionalStyle={styles.whyText}>
-            • Selasa & Kamis sudah kepakai Doa Rantai CL, Sabtu penuh gereja —
-            jadi belajarnya ditaruh di hari yang memang lowong.
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.whyText}>
-            • Jeda 2 hari antar langkah itu disengaja. Otak lebih kuat mengingat
-            kalau diulang BERJARAK, bukan dihabiskan sekali duduk.
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.whyText}>
-            • Waktu terbaik: JAM MAKAN SIANG. Pagimu sudah 20 kebiasaan, dan
-            malam ada Phone Away 21.30 + tidur 22.00 — dua-duanya jangan diganggu.
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.whyText}>
-            • Total cuma {WEEK_MINUTES} menit seminggu. Kecil, tapi setahun jadi
-            52 ilmu baru.
+          <VixText heading="label" additionalStyle={styles.mainTopicHint}>
+            Ilmu minggu ini — ceritakan pakai bahasamu sendiri, jangan baca
+            catatan.
           </VixText>
         </View>
+
+        {/* Tiga topik obrolan giliran minggu ini — pemantik kalau obrolannya
+            masih mau lanjut. Dicentang setelah benar-benar diobrolkan. */}
+        {topics.map((t) => {
+          const meta = topicGroupMeta(t.group);
+          const checked = !!topicsDone[t.key];
+          return (
+            <PressableScale
+              key={t.key}
+              style={[styles.topicCard, checked && styles.topicCardDone]}
+              onPress={() => toggleTopic(t.key, checked)}
+              haptic={checked ? 'light' : 'success'}>
+              <CheckCircle checked={checked} />
+              <View style={styles.stepMain}>
+                <VixText heading="bold">
+                  {meta.emoji} {t.label}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.stepHow}>
+                  {meta.hint}
+                </VixText>
+              </View>
+            </PressableScale>
+          );
+        })}
 
         {error && (
           <VixText heading="label" additionalStyle={styles.error}>
@@ -436,6 +433,20 @@ const styles = StyleSheet.create({
     marginTop: -2,
     marginBottom: 8,
   },
+  // Bahan diskusi utama — warna Learning supaya beda dari topik pemantik di
+  // bawahnya, dan langsung kebaca "ini ilmu yang lagi kupelajari".
+  mainTopicCard: {
+    backgroundColor: Color.LEARNING,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.LEARNING_DARK,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+    gap: 2,
+  },
+  mainTopicTitle: { color: Color.LEARNING_DARK },
+  mainTopicHint: { color: Color.LEARNING_DARK },
   topicCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -452,15 +463,5 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
   },
-  whyCard: {
-    backgroundColor: Color.ACCENT,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.ACCENT_DARK,
-    padding: 14,
-    gap: 4,
-  },
-  whyTitle: { color: Color.ACCENT_DARK },
-  whyText: { color: Color.ACCENT_DARK },
   error: { color: Color.DANGER, marginTop: 10 },
 });

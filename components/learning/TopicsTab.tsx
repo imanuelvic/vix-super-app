@@ -13,7 +13,7 @@ import {
   setTopicDone,
   TOPIC_GROUPS,
   TOPICS,
-  topicOfWeek,
+  topicsOfWeek,
   type TopicsDone,
 } from '@/lib/learning';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -21,16 +21,17 @@ import { SAVE_ERROR } from '@/lib/messages';
 // Sub-tab 💬 Obrolan — 62 bahan percakapan dari daftarmu, dikelompokkan jadi 6.
 //
 // Gunanya bukan sekadar checklist: ilmu baru benar-benar melekat kalau
-// DIUCAPKAN, bukan cuma dibaca. Tiap minggu langkah ke-4 ("Ceritakan") memakai
-// satu topik dari sini, dan sisanya bisa dipakai kapan saja — ngobrol dengan
-// pasangan, teman CORE, atau keluarga.
+// DIUCAPKAN, bukan cuma dibaca. Tiap minggu TIGA topik dari sini jadi pemantik
+// langkah ke-4 ("Ceritakan"), dan sisanya bisa dipakai kapan saja — ngobrol
+// dengan pasangan, teman CORE, atau keluarga.
 export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
   const { user } = useAuth();
 
   const [group, setGroup] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const weekly = topicOfWeek(new Date());
+  // Ketiga topik giliran minggu ini — ditandai di daftar panjang ini juga.
+  const weeklyKeys = new Set(topicsOfWeek(new Date()).map((t) => t.key));
   const doneCount = TOPICS.filter((t) => topicsDone[t.key]).length;
   const shown = group ? TOPICS.filter((t) => t.group === group) : TOPICS;
 
@@ -81,7 +82,7 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
         {shown.map((t) => {
           const checked = !!topicsDone[t.key];
           const meta = TOPIC_GROUPS.find((g) => g.key === t.group);
-          const isWeekly = t.key === weekly.key;
+          const isWeekly = weeklyKeys.has(t.key);
           return (
             <PressableScale
               key={t.key}

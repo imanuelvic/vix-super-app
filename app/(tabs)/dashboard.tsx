@@ -753,7 +753,7 @@ export default function DashboardScreen() {
               {urgentPriority.length > 0 && (
                 <View style={styles.prioritySection}>
                   <VixText heading="bold" additionalStyle={styles.priorityHead}>
-                    📌 Prioritas
+                    📌 Reminder Prioritas
                   </VixText>
                   {urgentPriority.map((t) => {
                     const days = otherTaskDaysUntil(t, now)!;
@@ -804,7 +804,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FINANCE_SAVING}
               fg={Color.ACCENT_DARK}
-              title="🎂 Ulang Tahun Keluarga"
+              title="🎂 Reminder Family Birthday"
               texts={famBirthdays}
               // Tap satu nama → buka Family & pusatkan pohon ke orang itu.
               onItemPress={(id) =>
@@ -893,7 +893,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.SPIRITUAL}
               fg={Color.SPIRITUAL_DARK}
-              title={`🍽️ Sedang Puasa — hari ke-${fastingDayNumber(
+              title={`🍽️ Reminder Puasa — hari ke-${fastingDayNumber(
                 fastingNow,
                 todayId,
               )} dari ${fastingProgress(fastingNow).total}`}
@@ -928,7 +928,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.SPIRITUAL}
               fg={Color.SPIRITUAL_DARK}
-              title={`📅 Pokok Doa Bulanan — ${prayerMonthTitle}`}
+              title={`📅 Reminder Pokok Doa Bulanan — ${prayerMonthTitle}`}
               onPress={() => router.push('/monthly-prayers')}>
               <VixText heading="label" additionalStyle={styles.prayerText}>
                 Awal bulan! Follow up tiap CORE Leader & tanyakan pokok doa mereka
@@ -943,7 +943,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FINANCE_INVESTMENT}
               fg={Color.FINANCE_INVESTMENT_DARK}
-              title="🔗 Doa Rantai"
+              title="🔗 Reminder Doa Rantai"
               onPress={() =>
                 router.push({ pathname: '/core', params: { tab: 'followup' } })
               }>
@@ -986,7 +986,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FITNESS}
               fg={Color.FITNESS_DARK}
-              title={`${fitSession.emoji} ${fitSession.title}`}
+              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
               texts={[
                 `${fitWindowLabel(now)} · bebas pagi atau sore · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
                 fitQuote(todayId),
@@ -1000,7 +1000,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FITNESS}
               fg={Color.FITNESS_DARK}
-              title={`${fitSession.emoji} ${fitSession.title}`}
+              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
               texts={FIT_RECOVERY}
               onPress={() => router.push('/fitness')}
             />
@@ -1011,7 +1011,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.SPIRITUAL}
               fg={Color.SPIRITUAL_DARK}
-              title="🙏 Renungkan Khotbah Minggu"
+              title="🙏 Reminder Renungkan Khotbah Minggu"
               onPress={() =>
                 router.push({ pathname: '/spiritual', params: { tab: 'sermon' } })
               }>
@@ -1034,7 +1034,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.WHEEL}
               fg={Color.WHEEL_DARK}
-              title={`🎡 Kuartal Baru — ${wheelQLabel}`}
+              title={`🎡 Reminder Kuartal Baru — ${wheelQLabel}`}
               onPress={() => router.push('/wheel')}>
               <VixText heading="label" additionalStyle={styles.wheelText}>
                 Yuk isi Wheel of Life kuartal ini — nilai 8 area hidupmu biar tahu
@@ -1047,7 +1047,7 @@ export default function DashboardScreen() {
           {wheelFocusDue && (
             <View style={styles.wheelCard}>
               <VixText heading="bold" additionalStyle={styles.wheelTitle}>
-                🎡 Fokus Wheel of Life · {wheelQLabel}
+                🎡 Reminder Wheel of Life · {wheelQLabel}
               </VixText>
               {wheelFocusRows.map((r) => (
                 <PressableScale
@@ -1069,7 +1069,7 @@ export default function DashboardScreen() {
           {careerReminders.length > 0 && (
             <View style={styles.careerCard}>
               <VixText heading="bold" additionalStyle={styles.careerTitle}>
-                💼 Deadline Kerja
+                💼 Reminder Deadline Kerja
               </VixText>
               {careerReminders.map((r) => (
                 <PressableScale
@@ -1095,7 +1095,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.LEARNING}
               fg={Color.LEARNING_DARK}
-              title={`🎓 Learning — ${learningDue.emoji} ${learningDue.label} (${learningDue.minutes} mnt)`}
+              title={`🎓 Reminder Learning — ${learningDue.emoji} ${learningDue.label} (${learningDue.minutes} mnt)`}
               onPress={() => router.push('/learning')}>
               <VixText heading="label" additionalStyle={styles.learningText}>
                 {learningSkill.title}
@@ -1156,7 +1156,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FUN}
               fg={Color.FUN_DARK}
-              title="🎉 Waktunya Refreshing"
+              title="🎉 Reminder Fun"
               onPress={() => router.push('/fun')}>
               <VixText heading="label" additionalStyle={styles.funSub}>
                 {funGap === null

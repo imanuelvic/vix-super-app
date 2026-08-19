@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AddButton } from '@/components/common/AddButton';
 import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
@@ -320,16 +321,7 @@ export default function FundScreen() {
             returnKeyType="done"
             editable={!saving}
           />
-          <PressableScale
-            style={[styles.addButton, saving && styles.disabled]}
-            onPress={handleAdd}
-            disabled={saving}>
-            {saving ? (
-              <ActivityIndicator color={Color.TEXT_REVERSE} />
-            ) : (
-              <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
-            )}
-          </PressableScale>
+          <AddButton busy={saving} onPress={handleAdd} />
         </View>
 
         <FormError message={error} gap="top" />
@@ -568,14 +560,6 @@ const styles = StyleSheet.create({
   inputGap: { marginTop: 8 },
   inputRow: { flexDirection: 'row', gap: 10 },
   flexInput: { flex: 1 },
-  addButton: {
-    width: 48,
-    borderRadius: 12,
-    backgroundColor: Color.MAIN,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabled: { opacity: 0.6 },
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
   // Mode cari 🔍 — bentuknya sama dengan tab Transaksi Finance.
   searchTitle: { marginBottom: 8 },

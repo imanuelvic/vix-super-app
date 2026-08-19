@@ -10,11 +10,13 @@ import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScroll
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
+import { ScoreMeter } from '@/components/wheel/ScoreMeter';
 import { useAuth } from '@/contexts/auth';
 import { formatDecimal, formatFullDateTime } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -36,11 +38,19 @@ import {
 
 type Mode = 'overview' | 'assess' | 'focus';
 
-/** Warna skor: ≥8 sehat, 5–7 perlu perhatian, <5 darurat. */
+/**
+ * Nada skor: ≥8 sehat, 5–7 perlu naik, <5 darurat. Satu skor memberi tiga hal
+ * sekaligus — warna bar, latar pil, & warna angkanya — supaya tingkat "sehat"
+ * kebaca dari bentuk, bukan cuma dari angka.
+ */
 function scoreTone(score: number) {
-  if (score >= 8) return styles.toneOk;
-  if (score >= 5) return styles.toneWarn;
-  return styles.toneDanger;
+  if (score >= 8) {
+    return { color: Color.MAIN, pill: styles.pillOk, text: styles.toneOk };
+  }
+  if (score >= 5) {
+    return { color: Color.WARNING, pill: styles.pillWarn, text: styles.toneWarn };
+  }
+  return { color: Color.DANGER, pill: styles.pillDanger, text: styles.toneDanger };
 }
 
 // Wheel of Life 🎡 — nilai 8 area hidup per kuartal, lihat bentuk "roda"-mu
@@ -99,6 +109,17 @@ export default function WheelScreen() {
     data !== null && WHEEL_AREAS.every((a) => (data.scores[a.key] ?? 0) > 0);
   const values = WHEEL_AREAS.map((a) => data?.scores[a.key] ?? 0);
   const avg = values.reduce((s, v) => s + v, 0) / WHEEL_AREAS.length;
+
+  // Sebaran nada skor — ringkasan sekilas di atas daftar "Skor per Area".
+  const okCount = values.filter((v) => v >= 8).length;
+  const warnCount = values.filter((v) => v >= 5 && v < 8).length;
+  const dangerCount = values.filter((v) => v < 5).length;
+
+  // Total poin yang masih harus dikejar dari semua area fokus.
+  const focusGap = (data?.focus ?? []).reduce(
+    (s, f) => s + Math.max(0, f.targetScore - (data?.scores[f.area] ?? 0)),
+    0,
+  );
 
   // Poligon target: skor target untuk area fokus, skor sekarang untuk sisanya.
   const targetValues =
@@ -433,8 +454,21 @@ export default function WheelScreen() {
 
               {/* Fokus kuartal */}
               <View style={styles.sectionHeader}>
-                <VixText heading="title">🎯 Fokus Kuartal</VixText>
-                <PressableScale onPress={startFocus} hitSlop={10}>
+                <View style={styles.sectionHeadMain}>
+                  <VixText heading="title">🎯 Fokus Kuartal</VixText>
+                  {data.focus.length > 0 && (
+                    <VixText heading="label">
+                      {data.focus.length} area ·{' '}
+                      {focusGap > 0
+                        ? `kurang ${focusGap} poin lagi`
+                        : 'semua target tercapai 🎉'}
+                    </VixText>
+                  )}
+                </View>
+                <PressableScale
+                  style={styles.editButton}
+                  onPress={startFocus}
+                  hitSlop={10}>
                   <VixText heading="bold" additionalStyle={styles.editText}>
                     {data.focus.length > 0 ? 'Ubah' : 'Pilih'}
                   </VixText>
@@ -449,26 +483,61 @@ export default function WheelScreen() {
                 data.focus.map((f) => {
                   const meta = WHEEL_AREAS.find((a) => a.key === f.area)!;
                   const current = data.scores[f.area] ?? 0;
+                  const tone = scoreTone(current);
+                  const gap = Math.max(0, f.targetScore - current);
                   return (
                     // Tekan kartu → modal tips menaikkan skor area ini.
                     <PressableScale
                       key={f.area}
                       style={styles.focusCard}
                       onPress={() => setTipArea(f.area)}>
+                      {/* Emoji besar + nama + pil sisa poin */}
                       <View style={styles.focusRow}>
-                        <VixText
-                          heading="bold"
-                          additionalStyle={styles.focusCardTitle}>
-                          {meta.icon} {meta.label}
-                        </VixText>
-                        <VixText heading="bold" additionalStyle={scoreTone(current)}>
-                          {current} → {f.targetScore}
-                        </VixText>
+                        <View style={styles.focusEmojiBox}>
+                          <VixText additionalStyle={styles.focusEmoji}>
+                            {meta.icon}
+                          </VixText>
+                        </View>
+                        <View style={styles.focusHeadMain}>
+                          <VixText
+                            heading="bold"
+                            additionalStyle={styles.focusCardTitle}>
+                            {meta.label}
+                          </VixText>
+                          <VixText heading="label">
+                            sekarang {current} · target {f.targetScore}
+                          </VixText>
+                        </View>
+                        <View
+                          style={[
+                            styles.deltaPill,
+                            gap === 0 ? styles.pillOk : styles.pillGap,
+                          ]}>
+                          <VixText
+                            heading="bold"
+                            additionalStyle={
+                              gap === 0 ? styles.toneOk : styles.deltaText
+                            }>
+                            {gap === 0 ? '✓ tercapai' : `+${gap}`}
+                          </VixText>
+                        </View>
                       </View>
+
+                      {/* Satu bar, dua angka: mint = target, warna = sekarang */}
+                      <ScoreMeter
+                        value={current}
+                        target={f.targetScore}
+                        color={tone.color}
+                      />
+
                       {f.plan ? (
-                        <VixText heading="paragraph" additionalStyle={styles.planText}>
-                          {f.plan}
-                        </VixText>
+                        <View style={styles.planBox}>
+                          <VixText
+                            heading="paragraph"
+                            additionalStyle={styles.planText}>
+                            {f.plan}
+                          </VixText>
+                        </View>
                       ) : null}
                       <View style={styles.tipsHintRow}>
                         <VixText heading="label" additionalStyle={styles.tipsHint}>
@@ -497,29 +566,80 @@ export default function WheelScreen() {
               <VixText heading="title" additionalStyle={styles.sectionTitle}>
                 📋 Skor per Area
               </VixText>
+              {/* Sebaran nada — sekaligus keterangan arti warnanya */}
+              <View style={styles.legendRow}>
+                <View style={[styles.legendPill, styles.pillOk]}>
+                  <VixText heading="label" additionalStyle={styles.toneOk}>
+                    {okCount} sehat
+                  </VixText>
+                </View>
+                <View style={[styles.legendPill, styles.pillWarn]}>
+                  <VixText heading="label" additionalStyle={styles.toneWarn}>
+                    {warnCount} perlu naik
+                  </VixText>
+                </View>
+                <View style={[styles.legendPill, styles.pillDanger]}>
+                  <VixText heading="label" additionalStyle={styles.toneDanger}>
+                    {dangerCount} darurat
+                  </VixText>
+                </View>
+              </View>
               {WHEEL_AREAS.map((a) => {
                 const score = data.scores[a.key] ?? 0;
                 const note = data.notes[a.key];
+                const tone = scoreTone(score);
+                const isFocus = data.focus.some((f) => f.area === a.key);
                 return (
-                  <View key={a.key} style={styles.areaRow}>
-                    <View style={styles.areaLeft}>
-                      <VixText heading="bold" additionalStyle={styles.areaLabel}>
+                  // Tiap area bisa ditekan untuk lihat tips menaikkan skornya —
+                  // dulu tips hanya bisa dibuka dari kartu area fokus.
+                  <PressableScale
+                    key={a.key}
+                    style={styles.areaRow}
+                    onPress={() => setTipArea(a.key)}>
+                    <View style={styles.areaTop}>
+                      <VixText
+                        heading="bold"
+                        additionalStyle={styles.areaLabel}
+                        numberOfLines={1}>
                         {a.icon} {a.label}
                       </VixText>
-                      {note ? (
-                        <VixText heading="label" numberOfLines={2}>
-                          {note}
+                      {isFocus && (
+                        <View style={styles.focusBadge}>
+                          <VixText
+                            heading="label"
+                            additionalStyle={styles.focusBadgeText}>
+                            🎯 fokus
+                          </VixText>
+                        </View>
+                      )}
+                      <View style={[styles.scorePill, tone.pill]}>
+                        <VixText heading="bold" additionalStyle={tone.text}>
+                          {score}
                         </VixText>
-                      ) : null}
+                        <VixText heading="label" additionalStyle={tone.text}>
+                          /10
+                        </VixText>
+                      </View>
                     </View>
-                    <VixText heading="subheader" additionalStyle={scoreTone(score)}>
-                      {score}
-                    </VixText>
-                  </View>
+                    <ProgressBar
+                      value={score}
+                      total={10}
+                      color={tone.color}
+                      height={7}
+                    />
+                    {note ? (
+                      <VixText heading="label" numberOfLines={2}>
+                        {note}
+                      </VixText>
+                    ) : null}
+                  </PressableScale>
                 );
               })}
 
-              <PressableScale onPress={startAssess} disabled={busy}>
+              <PressableScale
+                style={styles.retakeButton}
+                onPress={startAssess}
+                disabled={busy}>
                 <VixText heading="bold" additionalStyle={styles.retakeText}>
                   🔄 Ulangi Assessment
                 </VixText>
@@ -639,9 +759,37 @@ const styles = StyleSheet.create({
   focusCardTitle: { color: Color.TEXT_TITLE },
   focusRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+  },
+  // Emoji area dalam kotak merah muda — warna fitur Wheel, jadi kartu fokus
+  // langsung terbaca "ini punya Wheel of Life".
+  focusEmojiBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Color.WHEEL,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  focusEmoji: { fontSize: 22, lineHeight: 28 },
+  focusHeadMain: { flex: 1, gap: 1 },
+  // Pil sisa poin di kanan: "+2" (masih dikejar) atau "✓ tercapai".
+  deltaPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pillGap: { backgroundColor: Color.WHEEL },
+  deltaText: { color: Color.WHEEL_DARK },
+  // Action plan — dikutip dengan garis aksen kiri biar beda dari teks biasa.
+  planBox: {
+    backgroundColor: Color.BACKGROUND,
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: Color.MAIN,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   planText: { color: Color.TEXT_PARAGRAPH },
   tipsHintRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
@@ -702,29 +850,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
     marginBottom: 10,
+  },
+  sectionHeadMain: { flex: 1, gap: 1 },
+  // "Ubah / Pilih" jadi pil bergaris — lebih kelihatan bisa ditekan
+  // daripada teks polos.
+  editButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Color.MAIN,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
   editText: { color: Color.MAIN },
   emptyFocus: { marginBottom: 10 },
   updatedLabel: { color: Color.TEXT_LABEL, marginTop: 2, marginBottom: 4 },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
+  // Sebaran nada skor di atas daftar area.
+  legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  legendPill: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   areaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: Color.BORDER,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginBottom: 8,
   },
-  areaLeft: { flex: 1, gap: 1 },
-  areaLabel: { color: Color.TEXT_TITLE },
+  areaTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  areaLabel: { color: Color.TEXT_TITLE, flexShrink: 1 },
+  // Penanda area yang sedang jadi fokus kuartal ini.
+  focusBadge: {
+    borderRadius: 999,
+    backgroundColor: Color.WHEEL,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  focusBadgeText: { color: Color.WHEEL_DARK },
+  // Angka skor + "/10" dalam pil berwarna nada — didorong ke kanan.
+  scorePill: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 1,
+    marginLeft: 'auto',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pillOk: { backgroundColor: Color.MAIN_TRANSPARENT },
+  pillWarn: { backgroundColor: Color.WARNING_TRANSPARENT },
+  pillDanger: { backgroundColor: Color.DANGER_TRANSPARENT },
   toneOk: { color: Color.SUCCESS },
   toneWarn: { color: Color.WARNING },
   toneDanger: { color: Color.DANGER },
-  retakeText: { color: Color.MAIN, textAlign: 'center', marginTop: 12 },
+  retakeButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.CONTAINER,
+    marginTop: 12,
+  },
+  retakeText: { color: Color.MAIN },
 });

@@ -13,6 +13,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
+import { AddButton } from '@/components/common/AddButton';
 import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
@@ -584,16 +585,7 @@ export function TransactionsTab({
                   editable={!saving}
                 />
               )}
-              <PressableScale
-                style={[styles.addButton, saving && styles.disabled]}
-                onPress={handleAdd}
-                disabled={saving}>
-                {saving ? (
-                  <ActivityIndicator color={Color.TEXT_REVERSE} />
-                ) : (
-                  <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
-                )}
-              </PressableScale>
+              <AddButton busy={saving} onPress={handleAdd} />
             </View>
           </>
         )}
@@ -1029,14 +1021,6 @@ const styles = StyleSheet.create({
   // Kolom Liter di samping Nominal (hanya saat mencatat bensin).
   literInput: { width: 84 },
   fuelHint: { color: Color.TEXT_LABEL, marginTop: 8 },
-  addButton: {
-    width: 48,
-    borderRadius: 12,
-    backgroundColor: Color.MAIN,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabled: { opacity: 0.6 },
   // Tombol deeplink ke app tujuan — warna latar diisi warna brand app-nya.
   payButton: {
     flexDirection: 'row',

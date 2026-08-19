@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AddButton } from '@/components/common/AddButton';
 import {
   BottomTabs,
   withBadge,
@@ -525,20 +526,23 @@ export default function DebtsScreen() {
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
             Tanggal bayar
           </VixText>
-          <View style={styles.formGap}>
-            <DateField
-              key={paying?.id ?? 'pay'}
-              value={pDate}
-              onChange={setPDate}
+          {/* Tanggal + tombol ➕ "catat pembayaran" di kanannya — bentuk yang
+              sama dengan Nominal + ➕ di tab Transaksi Finance. */}
+          <View style={[styles.payRowInput, styles.formGap]}>
+            <View style={styles.flexInput}>
+              <DateField
+                key={paying?.id ?? 'pay'}
+                value={pDate}
+                onChange={setPDate}
+              />
+            </View>
+            <AddButton
+              busy={pBusy}
+              onPress={handlePay}
+              additionalStyle={styles.payAddButton}
             />
           </View>
           <ScreenError message={pError} />
-          <PrimaryButton
-            label="Catat Pembayaran"
-            busy={pBusy}
-            onPress={handlePay}
-            additionalStyle={styles.formGap}
-          />
 
           {/* Riwayat pembayaran */}
           {payingLive && payingLive.payments.length > 0 && (
@@ -638,6 +642,14 @@ const styles = StyleSheet.create({
   formScroll: { flexShrink: 1 },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
+  // Baris "Tanggal bayar + tombol ➕" — jarak 10 sama seperti di tab Transaksi.
+  // alignItems flex-start (bukan stretch bawaan): DateField merender spinner
+  // tanggalnya sebagai saudara kandung di kolom yang sama, jadi kalau tombolnya
+  // ikut meregang ia jadi batang hijau setinggi spinner saat picker dibuka.
+  payRowInput: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  flexInput: { flex: 1 },
+  // 48×48, setinggi kotak tanggal di sebelahnya (padding 12+12, teks 22.5, border 2).
+  payAddButton: { aspectRatio: 1 },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   chipFlex: { flex: 1 },
   historyTitle: { marginTop: 6, marginBottom: 8 },

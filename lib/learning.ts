@@ -445,9 +445,21 @@ export function skillOfWeek(now = new Date()): Skill {
   return SKILLS[weekNumber(now) % SKILLS.length];
 }
 
-/** Topik obrolan giliran minggu ini. */
-export function topicOfWeek(now = new Date()): Topic {
-  return TOPICS[weekNumber(now) % TOPICS.length];
+/** Berapa topik obrolan yang digilirkan tiap minggu. */
+export const TOPICS_PER_WEEK = 3;
+
+/**
+ * Topik obrolan giliran minggu ini — tiga sekaligus, diambil berurutan lalu
+ * digeser 3 tiap minggu. Tiga selalu berbeda (daftarnya jauh lebih panjang),
+ * dan karena 3 tidak habis membagi jumlah topik, putarannya tetap kebagian
+ * semua sebelum mengulang.
+ */
+export function topicsOfWeek(now = new Date()): Topic[] {
+  const start = (weekNumber(now) * TOPICS_PER_WEEK) % TOPICS.length;
+  return Array.from(
+    { length: TOPICS_PER_WEEK },
+    (_, i) => TOPICS[(start + i) % TOPICS.length],
+  );
 }
 
 /**

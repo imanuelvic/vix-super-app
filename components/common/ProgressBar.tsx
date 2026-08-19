@@ -19,11 +19,14 @@ export function ProgressBar({
   total,
   color = Color.MAIN,
   height = 8,
+  track = Color.BORDER,
 }: {
   value: number;
   total: number;
   color?: string;
   height?: number;
+  /** Warna alur di belakang isian. 'transparent' untuk bar yang ditumpuk. */
+  track?: string;
 }) {
   const pct = total > 0 ? Math.min(1, Math.max(0, value / total)) : 0;
   const radius = height / 2;
@@ -41,7 +44,11 @@ export function ProgressBar({
   }));
 
   return (
-    <View style={[styles.track, { height, borderRadius: radius }]}>
+    <View
+      style={[
+        styles.track,
+        { height, borderRadius: radius, backgroundColor: track },
+      ]}>
       <Animated.View
         style={[
           { height: '100%', backgroundColor: color, borderRadius: radius },
@@ -53,5 +60,5 @@ export function ProgressBar({
 }
 
 const styles = StyleSheet.create({
-  track: { width: '100%', backgroundColor: Color.BORDER, overflow: 'hidden' },
+  track: { width: '100%', overflow: 'hidden' },
 });

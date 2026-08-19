@@ -666,6 +666,15 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Gimana saat teduhmu minggu ini?',
       'Ada firman yang lagi ngena banget buat kamu?',
       'Lagi belajar percaya Tuhan di hal apa akhir-akhir ini?',
+      'Doa apa yang lagi kamu bawa terus?',
+      'Terakhir ngerasa Tuhan deket itu kapan?',
+      'Lagu worship yang lagi kamu ulang-ulang apa? 🎧',
+      'Ada hal yang bikin kamu ragu sama Tuhan nggak?',
+      'Ibadah minggu kemarin gimana, ada yang nempel?',
+      'Kamu lebih gampang doa pagi atau malam?',
+      'Ada yang belum bisa kamu ampuni?',
+      'Satu hal yang kamu syukurin hari ini apa?',
+      'Bacaan Alkitabmu lagi di kitab apa?',
     ],
   },
   {
@@ -676,6 +685,15 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Gimana kondisi badanmu akhir-akhir ini? Tidurnya cukup?',
       'Lagi rutin olahraga nggak? 😄',
       'Makannya gimana — sehat kan?',
+      'Tidur jam berapa biasanya? 😴',
+      'Sehari minum air berapa gelas?',
+      'Ada kebiasaan yang pengen kamu stop?',
+      'Badanmu yang capek atau pikiranmu?',
+      'Kapan terakhir kamu bener-bener istirahat?',
+      'Screen time-mu parah nggak? 📱',
+      'Olahraga favoritmu apa?',
+      'Kamu tipe sarapan atau skip?',
+      'Kesehatan mentalmu gimana akhir-akhir ini?',
     ],
   },
   {
@@ -686,6 +704,15 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Gimana kabar keluargamu?',
       'Ada yang bisa didoakan buat keluargamu?',
       'Hubungan sama orang tua / saudara lagi gimana?',
+      'Terakhir ngobrol lama sama ortu kapan?',
+      'Di rumah kamu paling deket sama siapa?',
+      'Ada hal yang belum bisa kamu omongin ke keluarga?',
+      'Kamu anak ke berapa? 😄',
+      'Kalau kumpul keluarga biasanya ngapain?',
+      'Ada yang lagi sakit di keluarga?',
+      'Harapanmu buat keluargamu apa?',
+      'Kamu ngerasa dimengerti nggak di rumah?',
+      'Kebiasaan keluarga yang kamu kangenin apa?',
     ],
   },
   {
@@ -696,6 +723,15 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Gimana kondisi keuanganmu bulan ini, aman?',
       'Ada beban finansial yang bisa kita doakan bareng?',
       'Lagi nabung buat sesuatu nggak?',
+      'Pengeluaran terbesarmu bulan ini apa?',
+      'Kamu tipe nabung dulu atau jajan dulu? 😅',
+      'Lagi ada cicilan yang bikin pusing?',
+      'Target finansialmu tahun ini apa?',
+      'Pernah nyoba investasi belum?',
+      'Kamu nyatet pengeluaran nggak?',
+      'Kalau dapet rezeki nomplok, buat apa dulu?',
+      'Perpuluhan / persembahan gimana, lancar?',
+      'Ada yang lagi kamu tahan beli karena mahal?',
     ],
   },
   {
@@ -706,6 +742,15 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Gimana pelayananmu, ada kendala?',
       'Gimana kabar CORE member-mu?',
       'Ada member yang lagi perlu perhatian khusus?',
+      'Lagi capek pelayanan nggak? Jujur aja 😌',
+      'Bagian pelayanan yang paling kamu nikmatin apa?',
+      'Ada member yang susah dihubungi?',
+      'Kamu butuh dibantu apa di CORE-mu?',
+      'Terakhir ngerasa dipakai Tuhan itu kapan?',
+      'Ada yang ngeganjel di tim?',
+      'Kamu lagi mentoring siapa sekarang?',
+      'Target CORE-mu bulan ini apa?',
+      'Kamu ngerasa bertumbuh lewat pelayanan nggak?',
     ],
   },
   {
@@ -716,6 +761,15 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Gimana kerjaan / kuliahmu minggu ini?',
       'Ada tantangan di tempat kerja yang bisa didoakan?',
       'Masih enjoy sama yang kamu kerjakan sekarang?',
+      'Bagian kerjaan yang paling bikin semangat apa?',
+      'Bos / dosenmu gimana orangnya? 😆',
+      'Ada rencana pindah kerja atau jurusan?',
+      'Skill apa yang lagi kamu pelajarin?',
+      'Kamu ngerasa burnout nggak?',
+      'Mimpi kariermu 5 tahun lagi apa?',
+      'Kerja remote atau ngantor? 💻',
+      'Ada side hustle nggak?',
+      'Hal paling susah dari kerjaanmu apa?',
     ],
   },
   {
@@ -726,6 +780,15 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Gimana hubunganmu sama temen-temen dekat?',
       'Ada relasi yang lagi ngeganjel yang mau kamu ceritain?',
       'Gimana kabar orang spesialmu? 😆',
+      'Kamu lagi deket sama siapa? 👀',
+      'Temen yang paling ngerti kamu siapa?',
+      'Kamu gampang percaya orang nggak?',
+      'Ada yang bikin kamu kecewa akhir-akhir ini?',
+      'Kamu tipe sendirian atau rame-rame?',
+      'Terakhir nongkrong sama temen kapan?',
+      'Ada hubungan yang pengen kamu perbaiki?',
+      'Kamu gampang minta maaf nggak?',
+      'Kriteria pasangan idealmu apa? 😏',
     ],
   },
   {
@@ -736,8 +799,87 @@ const CORE_CATEGORIES: CoreCategory[] = [
       'Lagi stres nggak akhir-akhir ini? Cerita dong',
       'Weekend kemarin ngapain aja?',
       'Butuh waktu hangout bareng nggak? 😄',
+      'Lagi nonton series apa? 🍿',
+      'Playlist-mu isinya lagu apa aja? 🎶',
+      'Kalau bete, kamu ngapain?',
+      'Hobi baru yang mau kamu coba apa?',
+      'Tempat healing favoritmu di mana?',
+      'Terakhir ketawa ngakak gara-gara apa? 😂',
+      'Kamu tipe rencana atau spontan?',
+      'Comfort food kamu apa? 🍜',
+      'Bucket list-mu tahun ini apa?',
     ],
   },
+];
+
+/** Label kategori pertanyaan random — sekaligus pembuka pesan WA-nya. */
+export const RANDOM_QUESTION_LABEL = 'Random Question';
+
+// Pertanyaan ringan pembuka obrolan (this-or-that / random / seru-seruan).
+const OPEN_QUESTIONS: string[] = [
+  'Kopi atau teh? ☕🍵',
+  'Kalau bisa liburan sekarang: Thailand atau Singapura? ✈️',
+  'Pagi atau malam orangnya? 🌅🌙',
+  'Gunung atau pantai? ⛰️🏖️',
+  'Manis atau pedas? 🍫🌶️',
+  'Nonton film atau baca buku? 🎬📖',
+  'Kucing atau anjing? 🐱🐶',
+  'Weekend: rebahan atau jalan-jalan? 🛋️🚶',
+  'Masak sendiri atau jajan di luar? 🍳🍜',
+  'Kalau ada waktu luang, paling suka ngapain? 😄',
+  'Kopi susu atau matcha? 🧋',
+  'Chat atau telepon? 📞',
+  'Introvert atau ekstrovert? 🙃',
+  'iOS atau Android? 📱',
+  'Hari ini mager atau produktif? 😴',
+  'Nasi padang atau mie ayam? 🍛',
+  'Konser atau bioskop? 🎤🎬',
+  'Bangun subuh atau begadang? 🌚',
+  'Belanja online atau ke mall? 🛍️',
+  'Kalau jadi hewan, mau jadi apa? 🐼',
+  'Superpower yang kamu mau apa? 🦸',
+  'Skincare-an atau cuci muka doang? 🧴',
+  'Traveling sendiri atau rame-rame? 🎒',
+  'Pedes level berapa? 🌶️',
+  'Motor atau mobil? 🛵🚗',
+  'Drakor atau Marvel? 🍿',
+  'Kalau libur seminggu, ke mana? 🗺️',
+  'Lagu yang kamu ulang terus apa? 🔁',
+  'Duit banyak atau waktu banyak? ⏳',
+  'Sore di kafe atau malem di rooftop? ☕🌃',
+  'Kalau hidupmu ada soundtrack-nya, lagunya apa? 🎵',
+  'Skill random yang kamu punya apa? 🤯',
+  'Kalau boleh makan 1 menu seumur hidup, apa? 🍽️',
+  'Mandi pagi atau mandi malam? 🚿',
+  'Barang termahal yang pernah kamu beli apa?',
+  'Kalau ketemu kamu yang umur 10 tahun, mau bilang apa?',
+  'Hal paling nekat yang pernah kamu lakuin apa? 😳',
+  'Kalau menang undian, beli apa duluan?',
+  'Nama panggilanmu waktu kecil apa? 😆',
+  'Kamu percaya hantu nggak? 👻',
+  'Film yang bikin kamu nangis apa? 😭',
+  'Kalau boleh pindah ke satu kota, ke mana?',
+  'Bakat terpendammu apa?',
+  'Hal kecil yang bikin kamu happy seharian apa?',
+  'Emoji yang paling sering kamu pakai apa?',
+  'Kalau bisa balik ke satu hari, hari apa?',
+  'Makanan yang kamu nggak sanggup makan apa? 🤢',
+  'Kalau jadi karakter film, mau jadi siapa? 🎬',
+  'Kamu ngerjain tugas mepet deadline atau jauh hari? ⏰',
+  'Aplikasi yang paling sering kamu buka apa? 📲',
+  'Kalau boleh punya hewan aneh, mau apa? 🦥',
+  'Hal random yang bikin kamu kesel apa? 😤',
+  'Kamu bisa masak apa? 🍳',
+  'Tempat paling jauh yang pernah kamu datengin? 🌍',
+  'Kalau dikasih libur sebulan tetap digaji, ngapain?',
+  'Kebiasaan anehmu apa? 👀',
+  'Lagu masa kecil yang masih kamu hafal apa? 🎤',
+  'Lebih takut ketinggian atau kegelapan?',
+  'Kalau punya toko sendiri, jualan apa? 🏪',
+  'Chat-mu tipe panjang atau singkat? 💬',
+  'Kamu tim rebahan atau tim jalan kaki? 🛋️',
+  'Hal yang kamu pengen banget waktu kecil apa?',
+  'Kalau bisa jago satu hal instan, apa? ✨',
 ];
 
 /** Hash sederhana → angka stabil (untuk "acak" yang sama sepanjang hari). */
@@ -793,20 +935,6 @@ export function weeklyLeaders<T>(
   return out;
 }
 
-// Pertanyaan ringan pembuka obrolan (this-or-that / random).
-const OPEN_QUESTIONS: string[] = [
-  'Kopi atau teh? ☕🍵',
-  'Kalau bisa liburan sekarang: Thailand atau Singapura? ✈️',
-  'Pagi atau malam orangnya? 🌅🌙',
-  'Gunung atau pantai? ⛰️🏖️',
-  'Manis atau pedas? 🍫🌶️',
-  'Nonton film atau baca buku? 🎬📖',
-  'Kucing atau anjing? 🐱🐶',
-  'Weekend: rebahan atau jalan-jalan? 🛋️🚶',
-  'Masak sendiri atau jajan di luar? 🍳🍜',
-  'Kalau ada waktu luang, paling suka ngapain? 😄',
-];
-
 // Pertanyaan penggali kepribadian — dipakai kalau datanya belum diisi.
 const PERSONALITY_QUESTIONS: {
   field: 'disc' | 'mbti' | 'loveLanguage';
@@ -840,7 +968,7 @@ const PERSONALITY_QUESTIONS: {
 export type FollowupTopic = { icon: string; label: string; question: string };
 
 /**
- * Pertanyaan follow up acak untuk satu CL: dari 8 aspek hidup + obrolan ringan
+ * Pertanyaan follow up acak untuk satu CL: dari 8 aspek hidup + random question
  * + penggali kepribadian (HANYA yang datanya belum ada). `seed` opsional untuk
  * "ganti pertanyaan". (Pokok doa dipindah ke Pokok Doa Bulanan.)
  */
@@ -861,7 +989,7 @@ export function weeklyFollowupTopic(
     }
   }
   for (const q of OPEN_QUESTIONS) {
-    pool.push({ icon: '🎲', label: 'Obrolan Ringan', question: q });
+    pool.push({ icon: '🎲', label: RANDOM_QUESTION_LABEL, question: q });
   }
   for (const p of PERSONALITY_QUESTIONS) {
     if (!person[p.field]) {
@@ -871,6 +999,17 @@ export function weeklyFollowupTopic(
   const idx =
     (seed !== undefined ? seed : hashString(dayId + personId)) % pool.length;
   return pool[idx];
+}
+
+/**
+ * Teks WA untuk follow up mingguan: satu baris pembuka, baris kosong, lalu
+ * pertanyaannya. Pertanyaan random dibuka "Random Question" supaya CL langsung
+ * paham ini obrolan seru-seruan, bukan follow up serius.
+ */
+export function followupMessage(topic: FollowupTopic): string {
+  const opener =
+    topic.label === RANDOM_QUESTION_LABEL ? RANDOM_QUESTION_LABEL : 'Shalom! 🙏';
+  return `${opener}\n\n${topic.question}`;
 }
 
 // ==================== Pokok Doa Bulanan 🙏 ====================

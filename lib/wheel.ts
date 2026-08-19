@@ -58,7 +58,7 @@ export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
     '🏃 Olahraga 3–4x seminggu (min. jalan 30 menit).',
     '💧 Minum ±2L air, kurangi gula & gorengan.',
     '🥗 Ada sayur/buah tiap hari.',
-    '🩺 Cek rutin tensi & gula darah (fitur Health).',
+    '🩺 Cek rutin tensi & gula darah.',
   ],
   family: [
     '📞 Kabari / telepon orang tua tiap minggu.',

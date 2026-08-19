@@ -193,7 +193,7 @@ export const ACHIEVEMENT_CATEGORIES: {
   desc: string;
 }[] = [
   { key: 'login', icon: '🙏', label: 'Doa Pagi', desc: 'Streak doa pagi di gerbang pagi' },
-  { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit di fitur Health' },
+  { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit setiap hari' },
   { key: 'bibleMorning', icon: '🌅', label: 'Alkitab Pagi', desc: 'Streak baca Alkitab pagi' },
   { key: 'bibleNight', icon: '🌙', label: 'Alkitab Malam', desc: 'Streak baca Alkitab malam' },
   { key: 'fitness', icon: '🏋️', label: 'Gym Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
