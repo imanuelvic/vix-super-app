@@ -26,16 +26,29 @@ Karena Engkaulah yang empunya Kerajaan dan kuasa dan kemuliaan sampai selama-lam
 // Lock screen doa pagi — muncul sekali/hari (batas jam 4 pagi) DI MANA PUN
 // posisi kamu di app. Tidak bisa dilewati; harus Revive + doa Bapa Kami, dan
 // kalau hari ini jadwal Doa Rantai, follow up-nya jadi langkah ke-3.
+/** Satu CORE Leader giliran Doa Rantai hari ini, lengkap dengan pokok doanya. */
+export type ChainLeader = {
+  id: string;
+  heart: string;
+  name: string;
+  phone: string | null;
+  points: string[];
+  done: boolean;
+};
+
 export function MorningPrayerGate({
   streakCount,
   reviveDone,
   chainDue,
   chainLeft,
+  chainQuota,
+  chainDoneCount,
+  chainLeaders,
   topic,
   minutesLeft,
   onConfirm,
   onOpenRevive,
-  onOpenChain,
+  onPrayLeader,
   onSkip,
 }: {
   streakCount: number;
@@ -43,8 +56,14 @@ export function MorningPrayerGate({
   reviveDone: boolean;
   // True kalau HARI INI jadwal Doa Rantai (Sel/Kam/Sab) & ada CL-nya.
   chainDue: boolean;
-  // Berapa CORE Leader yang belum di-follow up hari ini (0 = beres).
+  // Berapa CORE Leader LAGI yang perlu didoakan pagi ini (0 = kuota beres).
   chainLeft: number;
+  // Berapa yang wajib pagi ini (sisanya sengaja ditinggal untuk malam).
+  chainQuota: number;
+  // Berapa yang sudah didoakan hari ini.
+  chainDoneCount: number;
+  // Pokok doa tiap CL giliran hari ini — ditampilkan LANGSUNG di sini.
+  chainLeaders: ChainLeader[];
   // Pokok doa syafaat hari ini (Senin Keluarga·Kesehatan, dst).
   topic: IntercessionTopic;
   // Sisa menit sampai jendela doa pagi tutup (jam 09.00). Dipakai untuk
@@ -52,7 +71,8 @@ export function MorningPrayerGate({
   minutesLeft: number;
   onConfirm: () => Promise<void>;
   onOpenRevive: () => void;
-  onOpenChain: () => void;
+  // Buka WhatsApp berisi pokok doa CL itu, lalu tandai sudah didoakan.
+  onPrayLeader: (leader: ChainLeader) => void;
   // Lewati doa pagi (keadaan mendesak): relakan streak hangus, langsung ke Home.
   onSkip: () => void;
 }) {
@@ -160,21 +180,59 @@ export function MorningPrayerGate({
               {chainIsToday ? ` — syafaat hari ini ${topic.emoji}` : ''}
             </VixText>
             <VixText heading="label" additionalStyle={styles.stepHint}>
-              Hari ini jadwalnya: doakan & tanyakan perkembangan pergumulan
-              CORE Leader giliran hari ini.
+              Giliran hari ini {chainLeaders.length} CORE Leader. Pagi ini cukup{' '}
+              {chainQuota} dulu — sisanya didoakan malam nanti 🌙
             </VixText>
-            <PressableScale style={styles.openRevive} onPress={onOpenChain}>
-              <VixText heading="bold" additionalStyle={styles.openReviveText}>
-                🔗 Buka Doa Rantai →
-              </VixText>
-            </PressableScale>
+
+            {/* Pokok doanya ditaruh LANGSUNG di sini, tidak lagi lewat tombol
+                ke fitur CORE — supaya doa pagi tidak berubah jadi pintu masuk
+                ke sub-tab lain yang bikin teralih. */}
+            {chainLeaders.map((l) => (
+              <View key={l.id} style={styles.chainCard}>
+                <VixText heading="bold" additionalStyle={styles.chainName}>
+                  {l.heart} {l.name}
+                </VixText>
+                {l.points.length > 0 ? (
+                  l.points.map((p, i) => (
+                    <VixText
+                      key={`${i}-${p}`}
+                      heading="paragraph"
+                      additionalStyle={styles.pointText}>
+                      🙏 {p}
+                    </VixText>
+                  ))
+                ) : (
+                  <VixText heading="label" additionalStyle={styles.chainHint}>
+                    Belum ada pokok doa bulan ini.
+                  </VixText>
+                )}
+                {l.done ? (
+                  <VixText heading="label" additionalStyle={styles.chainDone}>
+                    ✅ Sudah didoakan hari ini
+                  </VixText>
+                ) : l.phone ? (
+                  <PressableScale
+                    style={styles.waButton}
+                    onPress={() => onPrayLeader(l)}>
+                    <VixText heading="bold" additionalStyle={styles.waText}>
+                      💬 Doakan lewat WhatsApp
+                    </VixText>
+                  </PressableScale>
+                ) : (
+                  <VixText heading="label" additionalStyle={styles.chainHint}>
+                    📱 Isi nomor HP-nya dulu di CORE → Leaders.
+                  </VixText>
+                )}
+              </View>
+            ))}
+
             {/* Centang otomatis begitu semua CL giliran hari ini ditandai selesai. */}
             <View style={styles.checkRow}>
               <CheckCircle checked={chainLeft === 0} locked />
               <VixText heading="bold" additionalStyle={styles.checkText}>
                 {chainLeft === 0
-                  ? 'Semua CORE Leader hari ini sudah di-follow up'
-                  : `Sisa ${chainLeft} CORE Leader untuk di-follow up`}
+                  ? `Kuota pagi beres — ${chainDoneCount}/${chainLeaders.length} CORE Leader sudah didoakan`
+                  : `Doakan ${chainLeft} CORE Leader lagi pagi ini (${chainDoneCount}/${chainQuota})`}
               </VixText>
             </View>
           </Animated.View>
@@ -329,6 +387,25 @@ const styles = StyleSheet.create({
   prayerText: { color: Color.TEXT_TITLE, lineHeight: 24 },
   // Butir pokok doa syafaat — sedikit lebih rapat dari teks Bapa Kami.
   pointText: { color: Color.TEXT_TITLE, lineHeight: 22 },
+  // Kartu pokok doa 1 CORE Leader di dalam langkah Doa Rantai.
+  chainCard: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 14,
+    padding: 14,
+    gap: 6,
+  },
+  chainName: { color: Color.SPIRITUAL_DARK },
+  chainHint: { color: Color.TEXT_LABEL },
+  chainDone: { color: Color.SUCCESS },
+  waButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Color.WHATSAPP,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginTop: 2,
+  },
+  waText: { color: Color.TEXT_REVERSE },
   openRevive: {
     alignSelf: 'flex-start',
     backgroundColor: Color.SPIRITUAL,

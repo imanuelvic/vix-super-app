@@ -43,16 +43,20 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Hari yang sesi ini-nya terisi (days sudah urut terbaru → terlama).
-  const list = days.filter((d) => !!d[session]);
+  // Hari yang sesi ini-nya benar-benar DIBACA (days sudah urut terbaru →
+  // terlama). Hari yang sengaja dilewati tidak ditampilkan sama sekali: ini
+  // arsip bacaan, bukan daftar absen — barisnya cuma jadi lubang kosong.
+  // Penandanya sendiri tetap tersimpan, jadi kartu di Home & badge Habits
+  // tetap tahu hari itu sudah diurus dan berhenti menagih.
+  const list = days.filter((d) => !!d[session] && !isBibleSkipped(d[session]));
   const meta = bibleSessionMeta(session);
   const todayId = dayDocId(new Date());
 
   function openEdit(d: BibleReadingDay) {
     setEditing(d);
-    // Hari yang dilewati tidak punya acuan → kotaknya dibiarkan kosong,
-    // penanda "__skip__" jangan sampai ikut terbaca sebagai bacaan.
-    setText(isBibleSkipped(d[session]) ? '' : d[session]);
+    // Yang dilewati tidak pernah masuk daftar, jadi isinya pasti acuan asli —
+    // penanda "__skip__" tak mungkin nyasar ke kotak teks ini.
+    setText(d[session]);
     setFormError(null);
   }
 
@@ -112,7 +116,6 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
 
         {list.map((d) => {
           const editable = d.id === todayId;
-          const wasSkipped = isBibleSkipped(d[session]);
           return (
             <View key={d.id} style={styles.card}>
               <View style={styles.cardTop}>
@@ -128,10 +131,8 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
                   </PressableScale>
                 )}
               </View>
-              <VixText
-                heading="paragraph"
-                additionalStyle={wasSkipped ? styles.cardSkipped : styles.cardText}>
-                {wasSkipped ? '⏭️ Dilewati hari itu' : d[session]}
+              <VixText heading="paragraph" additionalStyle={styles.cardText}>
+                {d[session]}
               </VixText>
             </View>
           );
@@ -201,7 +202,6 @@ const styles = StyleSheet.create({
   cardDate: { color: Color.SPIRITUAL_DARK },
   editText: { color: Color.MAIN },
   cardText: { color: Color.TEXT_TITLE },
-  cardSkipped: { color: Color.TEXT_PLACEHOLDER },
   fieldLabel: { marginBottom: 6 },
   input: { minHeight: 88, textAlignVertical: 'top' },
 });

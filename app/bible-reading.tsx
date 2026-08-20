@@ -11,6 +11,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
+import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
 import { dayDocId } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -18,6 +19,7 @@ import {
   BIBLE_SKIPPED,
   bibleSessionMeta,
   bumpBibleStreaks,
+  dailyReminder,
   EMPTY_BIBLE_STREAKS,
   isBibleSkipped,
   saveBibleReading,
@@ -127,6 +129,11 @@ export default function BibleReadingScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Reminder hari ini + pintasan NDC Ministry — bentuk & isinya sama
+            dengan Tulis Revive. Undiannya diberi garam berbeda per sesi, jadi
+            pagi, malam, & Revive tidak menampilkan kalimat yang sama persis. */}
+        <SpiritualIntro reminder={dailyReminder(dayId, `baca-${session}`)} />
+
         {refs.map((ref, i) => (
           <View key={i} style={styles.refCard}>
             <View style={styles.refTop}>

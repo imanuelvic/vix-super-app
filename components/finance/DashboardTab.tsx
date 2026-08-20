@@ -5,7 +5,7 @@ import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { TypeChips } from '@/components/finance/TypeChips';
-import type { BudgetMap } from '@/lib/budgets';
+import { totalBudgetOf, type BudgetMap } from '@/lib/budgets';
 import {
   categoryOf,
   FINANCE_TYPE_LABEL,
@@ -127,17 +127,16 @@ export function DashboardTab({
   const win = summary.expense <= summary.income;
 
   // ===== Budget vs realisasi per jenis (expense / saving / investment) =====
-  // Budget diambil dari alokasi yang dibuat di sub-tab Budgeting; key-nya
-  // berformat "jenis:kategori", jadi cukup dijumlah per awalan jenis.
+  // Budget diambil dari alokasi yang dibuat di sub-tab Budgeting, lewat rumus
+  // bersama `totalBudgetOf` — dulu di sini dijumlah sendiri dengan menyapu
+  // semua key ber-awalan jenisnya, sehingga key SUB-budget ikut terhitung
+  // padahal nominalnya sudah termasuk di budget kategorinya. Akibatnya angka
+  // Dashboard lebih besar daripada angka di layar Budgeting.
   const plan = useMemo(() => {
     const rows = PLAN_TYPES.map((p) => {
       let actual = 0;
       for (const t of items) if (t.type === p.key) actual += t.amount;
-      let planned = 0;
-      for (const [key, value] of Object.entries(budget)) {
-        if (key.startsWith(`${p.key}:`)) planned += value;
-      }
-      return { ...p, actual, planned };
+      return { ...p, actual, planned: totalBudgetOf(budget, p.key) };
     });
     return {
       rows,

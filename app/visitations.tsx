@@ -1,30 +1,25 @@
-import { Timestamp } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { CheckCircle } from '@/components/common/CheckCircle';
-import { Chip } from '@/components/common/Chip';
-import { DateField } from '@/components/common/DateField';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
+import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
-  isMultiLeaderKind,
   MEETING_KINDS,
   meetingKindLabels,
   meetingLeaderNames,
@@ -37,7 +32,7 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { deadlineLabel, deadlineTone } from '@/lib/deadline';
-import { daysBetween, formatFullDate } from '@/lib/format';
+import { formatFullDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Riwayat Pertemuan 🕘 — seluruh jadwal dari dulu sampai mendatang.
@@ -50,15 +45,10 @@ export default function VisitationsScreen() {
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Form edit lewat bottom sheet.
+  // Form edit lewat bottom sheet — isian & aturannya dipakai bersama sub-tab
+  // Pertemuan di CORE (lihat hooks/useVisitationForm.ts).
   const [editing, setEditing] = useState<Visitation | null>(null);
-  const [fKind, setFKind] = useState<MeetingKind>('visitasi');
-  const [fLeaderIds, setFLeaderIds] = useState<string[]>([]);
-  const [fThanksgiving, setFThanksgiving] = useState(false);
-  const [fDate, setFDate] = useState(new Date());
-  const [fAgenda, setFAgenda] = useState('');
-  const [fNote, setFNote] = useState('');
-  const [fDone, setFDone] = useState(false);
+  const form = useVisitationForm();
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -88,11 +78,6 @@ export default function VisitationsScreen() {
     ? history.filter((v) => matchKind(v, filterKind))
     : history;
 
-  // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
-  // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
-  const futureDate = daysBetween(today, fDate) > 0;
-  // Acara gabungan → CORE-nya boleh dicentang lebih dari satu.
-  const multiLeader = isMultiLeaderKind(fKind);
   const sorted = [...shown].sort(
     (a, b) => b.date.toMillis() - a.date.toMillis(),
   );
@@ -100,32 +85,13 @@ export default function VisitationsScreen() {
 
   function openEdit(v: Visitation) {
     setEditing(v);
-    setFKind(v.kind);
-    setFLeaderIds(v.leaderIds);
-    setFThanksgiving(v.thanksgiving);
-    setFDate(v.date.toDate());
-    setFAgenda(v.agenda);
-    setFNote(v.note);
-    setFDone(v.done);
+    form.fill(v);
     setFormError(null);
-  }
-
-  /** Pindah ke jenis biasa → sisakan satu CORE saja (pemilihnya tunggal lagi). */
-  function changeKind(k: MeetingKind) {
-    setFKind(k);
-    if (!isMultiLeaderKind(k)) setFLeaderIds((ids) => ids.slice(0, 1));
-  }
-
-  /** Centang / hapus centang satu CORE Leader (mode gabungan). */
-  function toggleLeader(id: string) {
-    setFLeaderIds((ids) =>
-      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
-    );
   }
 
   async function handleSave() {
     if (!user || !editing || busy) return;
-    if (fLeaderIds.length === 0) {
+    if (form.leaderIds.length === 0) {
       setFormError('Pilih CORE Leader-nya dulu.');
       return;
     }
@@ -133,15 +99,7 @@ export default function VisitationsScreen() {
     setFormError(null);
     const data: Visitation = {
       id: editing.id,
-      kind: fKind,
-      leaderIds: fLeaderIds,
-      // Kalau jenisnya memang Thanksgiving, penanda tambahannya tak perlu.
-      thanksgiving: fKind === 'thanksgiving' ? false : fThanksgiving,
-      date: Timestamp.fromDate(fDate),
-      agenda: fAgenda.trim(),
-      note: fNote.trim(),
-      // Jadwal masa depan dipaksa belum divisit — toggle-nya juga disembunyikan.
-      done: futureDate ? false : fDone,
+      ...form.payload(),
       // Catatan kirim PDF milik jadwalnya, bukan formnya — dipertahankan.
       pdfSentDayId: editing.pdfSentDayId,
     };
@@ -260,105 +218,13 @@ export default function VisitationsScreen() {
         visible={!!editing}
         title="Edit Pertemuan"
         onClose={() => setEditing(null)}>
-        {/* Picker — sama seperti di tab Pertemuan (CORE). */}
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Jenis pertemuan
-        </VixText>
-        <View style={styles.formGap}>
-          <SelectField
-            value={fKind}
-            options={MEETING_KINDS.map((k) => ({
-              key: k.key,
-              label: `${k.icon} ${k.label}`,
-            }))}
-            onChange={(k) => k && changeKind(k)}
-            placeholder="Pilih jenis pertemuan…"
-          />
-        </View>
-
-        {/* Penanda TAMBAHAN — acara apa pun bisa sekalian jadi Thanksgiving */}
-        {fKind !== 'thanksgiving' && (
-          <PressableScale
-            style={styles.doneRow}
-            onPress={() => setFThanksgiving((t) => !t)}>
-            <CheckCircle checked={fThanksgiving} />
-            <VixText heading="paragraph" additionalStyle={styles.doneText}>
-              🎉 Sekalian Thanksgiving
-            </VixText>
-          </PressableScale>
-        )}
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          {multiLeader ? 'CORE mana saja yang gabung?' : 'CORE-nya siapa?'}
-        </VixText>
-        {multiLeader ? (
-          // Acara gabungan → centang sebanyak-banyaknya.
-          <View style={styles.leaderWrap}>
-            {leaders.map((l) => (
-              <Chip
-                key={l.id}
-                label={`${l.heart} ${l.name}`}
-                active={fLeaderIds.includes(l.id)}
-                onPress={() => toggleLeader(l.id)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.formGap}>
-            <SelectField
-              value={fLeaderIds[0] ?? ''}
-              options={leaders.map((l) => ({
-                key: l.id,
-                label: `${l.heart} ${l.name}`,
-              }))}
-              onChange={(id) => id && setFLeaderIds([id])}
-              placeholder="Pilih CORE Leader…"
-            />
-          </View>
-        )}
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal pertemuan
-        </VixText>
-        <View style={styles.formGap}>
-          {/* key = id supaya state picker internal reset tiap ganti jadwal */}
-          <DateField key={editing?.id} value={fDate} onChange={setFDate} />
-        </View>
-
-        {/* Urutan & label SAMA PERSIS dengan tab Pertemuan — datanya memang
-            satu, cuma ditampilkan dari dua layar. */}
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏷️ Judul Pertemuan
-        </VixText>
-        <FormInput
-          style={styles.formGap}
-          placeholder="Judul singkat"
-          value={fNote}
-          onChangeText={setFNote}
-          editable={!busy}
+        <VisitationFormFields
+          form={form}
+          leaders={leaders}
+          busy={busy}
+          dateKey={editing?.id}
+          agendaPlaceholder="Apa yang akan dibahas ke mereka…"
         />
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🗒️ Agenda pertemuan
-        </VixText>
-        <FormInput
-          style={[styles.textArea, styles.formGap]}
-          placeholder="Apa yang akan dibahas ke mereka…"
-          value={fAgenda}
-          onChangeText={setFAgenda}
-          editable={!busy}
-          multiline
-        />
-
-        {/* Toggle sudah selesai / belum — hanya kalau tanggalnya sudah tiba */}
-        {!futureDate && (
-          <PressableScale style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
-            <CheckCircle checked={fDone} />
-            <VixText heading="paragraph" additionalStyle={styles.doneText}>
-              Sudah selesai ✅
-            </VixText>
-          </PressableScale>
-        )}
 
         <FormError message={formError} />
         <EditDelete
@@ -400,21 +266,4 @@ const styles = StyleSheet.create({
   cardTitle: { flex: 1, color: Color.TEXT_TITLE },
   kindLine: { color: Color.MAIN },
   statusDone: { color: Color.SUCCESS },
-  fieldLabel: { marginBottom: 6 },
-  leaderWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
-  },
-  formGap: { marginBottom: 10 },
-  textArea: { minHeight: 96, paddingTop: 12, textAlignVertical: 'top' },
-  doneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 6,
-    marginBottom: 4,
-  },
-  doneText: { color: Color.TEXT_TITLE },
 });

@@ -79,6 +79,13 @@ import {
   type HabitDay,
 } from '@/lib/health';
 import {
+  habitNoteDone,
+  isNoteDrivenHabit,
+  rhemaWindowNow,
+  subscribeHabitSchedule,
+  type ScheduledHabit,
+} from '@/lib/habits';
+import {
   intercessionNightWindow,
   intercessionToday,
   isChainTopic,
@@ -89,6 +96,7 @@ import {
   type ChoreStatusMap,
 } from '@/lib/residence';
 import {
+  activeNudge,
   bibleSessionMeta,
   bibleSessionNow,
   reviveHandledToday,
@@ -143,7 +151,7 @@ const FEATURES: {
   { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
 
   { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.FINANCE_INCOME_DARK },
-  { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
+  { key: 'learning', label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
   { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
   { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
 
@@ -155,7 +163,7 @@ const FEATURES: {
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
   { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
   { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
-  { key: 'learning', label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
+  { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
 
   { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
 ];
@@ -170,6 +178,8 @@ export default function HomeScreen() {
   // Data untuk badge tugas harian per fitur + air putih di kartu sapaan.
   const [tasks, setTasks] = useState<Task[]>([]);
   const [day, setDay] = useState<HabitDay | null>(null);
+  // Daftar kebiasaan — dipakai untuk menemukan baris Rhema & catatannya.
+  const [habits, setHabits] = useState<ScheduledHabit[]>([]);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [revive, setRevive] = useState<ReviveStreak | null | undefined>(
@@ -195,6 +205,8 @@ export default function HomeScreen() {
   const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
   // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
   const [intercessionOpen, setIntercessionOpen] = useState(false);
+  // Kalimat penyegar yang barusan diketuk "sudah dibaca" (null = belum ada).
+  const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
   // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
@@ -212,6 +224,7 @@ export default function HomeScreen() {
       subscribeChoreStatus(user.uid, setResidenceChores),
       subscribeTasks(user.uid, setTasks),
       subscribeHabitDay(user.uid, todayId, setDay),
+      subscribeHabitSchedule(user.uid, setHabits),
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeVisitations(user.uid, setVisitations),
       subscribeReviveStreak(user.uid, setRevive),
@@ -267,6 +280,19 @@ export default function HomeScreen() {
     intercessionOpen && !intercessionChain
       ? intercession.points.map((p) => `• ${p}`)
       : [intercessionSummary];
+
+  // Rhema pagi ✍️ — firman yang kamu tulis di kebiasaan "1 Rhema before
+  // Activities". Ditampilkan ULANG di sini pada jam 12–13, 17–18, & 21–22
+  // supaya tidak berhenti di kolom catatan; kalau belum ditulis, tidak muncul.
+  const rhemaHabit = habits.find(isNoteDrivenHabit);
+  const rhemaText = rhemaHabit ? (day?.notes[rhemaHabit.id] ?? '') : '';
+  const showRhema = habitNoteDone(rhemaText) && rhemaWindowNow(now);
+
+  // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
+  // Kalau sudah diketuk, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
+  // beda, jadi cukup dibandingkan teksnya — tak perlu menyimpan jam).
+  const nudge = activeNudge(now, todayId);
+  const showNudge = nudge !== null && nudge !== nudgeSeen;
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -429,6 +455,25 @@ export default function HomeScreen() {
             )}
           </Animated.View>
 
+          {/* Penyegar 🕊️ — muncul 3× sehari pada jam yang DIUNDI (lihat
+              nudgeSchedule di lib/spiritual.ts), tiap kali dengan kalimat yang
+              berbeda, lalu hilang sendiri sesudah satu jam. Sengaja di ATAS
+              Doa Syafaat: syafaat wajib tiap hari, yang ini kejutan kecil.
+              Diketuk = "sudah dibaca" → hilang sampai giliran berikutnya. */}
+          {showNudge && (
+            <Animated.View
+              entering={FadeInDown.duration(350)}
+              style={styles.nudgeCard}>
+              <ReminderCard
+                bg={Color.MAIN_LIGHT}
+                fg={Color.MAIN_DARK}
+                title="🕊️ Reminder"
+                texts={[nudge]}
+                onPress={() => setNudgeSeen(nudge)}
+              />
+            </Animated.View>
+          )}
+
           {/* Doa Syafaat 🙏 — pokok doa tetap sesuai hari dalam seminggu.
               Hari Doa Rantai CL (Selasa & Kamis) kartunya menuju CORE Follow
               Up; hari lain diketuk untuk membuka/menutup pokok doanya. */}
@@ -452,6 +497,23 @@ export default function HomeScreen() {
               }
             />
           </Animated.View>
+
+          {/* Rhema Pagi Hari ✍️ — firman yang kamu tulis tadi pagi, dibaca
+              ulang siang (12–13), sore (17–18), & malam (21–22). Muncul hanya
+              kalau rhema-nya memang sudah ditulis. Ketuk → tab Habits. */}
+          {showRhema && (
+            <Animated.View
+              entering={FadeInDown.delay(50).duration(350)}
+              style={styles.rhemaCard}>
+              <ReminderCard
+                bg={Color.SPIRITUAL}
+                fg={Color.SPIRITUAL_DARK}
+                title="✍️ Rhema Pagi Hari"
+                texts={[rhemaText]}
+                onPress={() => router.push('/habits')}
+              />
+            </Animated.View>
+          )}
 
           {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00.
               Hanya muncul di dalam jendela jamnya & selama sesi itu belum
@@ -552,7 +614,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   // Kartu Doa Syafaat — tepat di bawah kartu sapaan, di atas Baca Alkitab.
+  // Penyegar acak — jaraknya sama dengan kartu Doa Syafaat di bawahnya.
+  nudgeCard: { marginBottom: 10 },
   intercessionCard: { marginBottom: 10 },
+  // Rhema pagi — jaraknya sama dengan kartu reminder lain di kolom ini.
+  rhemaCard: { marginBottom: 10 },
   welcomeTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -1268,7 +1268,10 @@ const styles = StyleSheet.create({
     backgroundColor: Color.ACCENT_DARK,
     opacity: 0.4,
   },
-  streakIcon: { fontSize: 22, lineHeight: 26 },
+  // lineHeight = fontSize × 1.5, aturan yang sama dipakai VixText. Dulu 26
+  // (cuma 1,18×): glyph emoji di iOS lebih tinggi daripada angka fontSize-nya,
+  // jadi 📖 & ✅ kepotong di ujung atas.
+  streakIcon: { fontSize: 22, lineHeight: 33 },
   streakNum: { color: Color.ACCENT_DARK },
   streakLabel: { color: Color.ACCENT_DARK, fontWeight: '600' },
   streakBest: { color: Color.ACCENT_DARK, opacity: 0.8 },

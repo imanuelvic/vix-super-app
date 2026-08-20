@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -7,6 +7,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { VixText } from '@/components/common/VixText';
+import { openExternalUrl } from '@/lib/linking';
 import {
   fetchNews,
   newsAge,
@@ -90,7 +91,7 @@ export function NewsTab() {
             <PressableScale
               key={n.id}
               style={styles.card}
-              onPress={() => Linking.openURL(n.link)}>
+              onPress={() => openExternalUrl(n.link)}>
               <VixText heading="bold" additionalStyle={styles.cardTitle}>
                 {n.title}
               </VixText>

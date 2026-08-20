@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -11,6 +11,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { openExternalUrl } from '@/lib/linking';
 import {
   BOOKS,
   setChapterRead,
@@ -60,7 +61,7 @@ export default function BookDetailScreen() {
   }
 
   function openSource() {
-    if (book) Linking.openURL(book.url).catch(() => {});
+    if (book) openExternalUrl(book.url);
   }
 
   return (

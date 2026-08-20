@@ -1,7 +1,7 @@
-import { Linking } from 'react-native';
 
 import { MarketTab, useMarket } from '@/components/investment/MarketTab';
 import { groupDigits } from '@/lib/format';
+import { openExternalUrl } from '@/lib/linking';
 import { loadGold } from '@/lib/market';
 import { formatRupiah } from '@/lib/transactions';
 
@@ -18,9 +18,9 @@ export function GoldTab() {
   );
 
   function openLogamMulia() {
-    Linking.openURL(LOGAM_MULIA_URL).catch(() =>
-      setError('Gagal membuka tautan.'),
-    );
+    openExternalUrl(LOGAM_MULIA_URL, {
+      onError: () => setError('Gagal membuka tautan.'),
+    });
   }
 
   const srcText = data

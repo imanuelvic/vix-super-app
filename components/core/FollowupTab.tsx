@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -23,18 +23,17 @@ import {
   isCurrentMonthPrayers,
   isPrayerFollowupDay,
   markBirthdayGreeted,
+  markPrayerFollowed,
   subscribeBirthdayGreets,
-  monthDocId,
   monthlyPointsFor,
   monthlyPrayersFilled,
   newCoreIdeaId,
   nextBirthday,
   personalityTips,
+  prayerChainMessage,
   prayerFollowupLeaders,
   saveCoreIdeas,
   saveCoreLeaders,
-  saveMonthlyPrayers,
-  waLink,
   weekIndex,
   WEEKLY_FOCUS_COUNT,
   weeklyFollowupTopic,
@@ -49,7 +48,11 @@ import {
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
-import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
+import {
+  openWhatsAppChat,
+  shareTextToWhatsApp,
+  WHATSAPP_ERROR,
+} from '@/lib/whatsapp';
 
 // Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
 // membangun hubungan — Senin pertanyaan doa wajib, hari lain pertanyaan acak
@@ -255,26 +258,19 @@ export function FollowupTab({
   const prayerLeadersToday = prayerFollowupLeaders(leaders, monthPoints, nowDate);
 
   // Tandai satu CL sudah difollowup pokok doanya pada sesi hari ini.
+  // Aturannya (termasuk reset saat ganti bulan) ada di lib/core.ts, dipakai
+  // bersama dengan gerbang doa pagi.
   async function handlePrayerDone(leaderId: string) {
     if (!user) return;
     setError(null);
-    const monthId = monthDocId(nowDate);
-    // Bulan baru → reset penanda follow-up, TAPI poin & tanggal update pokok doa
-    // tidak dihapus (tetap tersimpan; saveMonthlyPrayers menulis ulang dokumen).
-    const base = isCurrentMonthPrayers(monthlyPrayers, nowDate)
-      ? monthlyPrayers
-      : {
-          points: monthlyPrayers.points,
-          followedDayId: {} as Record<string, string>,
-          updatedAt: monthlyPrayers.updatedAt,
-        };
     try {
-      await saveMonthlyPrayers(user.uid, {
-        monthId,
-        points: base.points,
-        followedDayId: { ...base.followedDayId, [leaderId]: dayId },
-        updatedAt: base.updatedAt,
-      });
+      await markPrayerFollowed(
+        user.uid,
+        monthlyPrayers,
+        leaderId,
+        nowDate,
+        dayId,
+      );
     } catch {
       setError(SAVE_ERROR);
     }
@@ -289,9 +285,7 @@ export function FollowupTab({
 
   // Buka chat WhatsApp dengan pesan yang sudah terisi — tinggal kirim.
   function openWhatsApp(phone: string, text: string) {
-    Linking.openURL(waLink(phone, text)).catch(() =>
-      setError('Gagal membuka WhatsApp.'),
-    );
+    openWhatsAppChat(phone, text, () => setError('Gagal membuka WhatsApp.'));
   }
 
   /** Tandai sudah diucapkan hari ini → kartunya hilang dari daftar. */
@@ -668,7 +662,7 @@ export function FollowupTab({
               onPress={() => {
                 openWhatsApp(
                   prayerModal.phone!,
-                  `Shalom ${prayerModal.name}! 🙏\n\nAku lagi mendoakan kamu bulan ini. Gimana kabar & perkembangan pergumulanmu?`,
+                  prayerChainMessage(prayerModal.name, pmPts),
                 );
                 if (!pmDone) handlePrayerDone(prayerModal.id);
                 setPrayerModal(null);

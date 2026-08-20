@@ -16,7 +16,8 @@ import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { dayIdToDate } from './format';
 import { yesterdayId } from './health';
-import { pickOfDay } from './core';
+import { hashString, pickOfDay } from './core';
+import { openExternalUrl } from './linking';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Spiritual ✝️ — Revive harian (mengikuti struktur renungan NDC:
@@ -378,11 +379,143 @@ const REMINDERS: string[] = [
   '📵 Stop scrolling, start building. Pray hard, work hard.',
   '🌱 Yang tumbuh cepat gampang tumbang. Biarkan Tuhan membangun akarmu dulu.',
   '🔨 Tuhan lebih peduli siapa kamu jadinya daripada seberapa cepat kamu sampai.',
+  // --- Kata-kata yang menyegarkan: bukan menyuruh, tapi menenangkan ---
+  '🫂 Kamu tidak sedang tertinggal. Tuhan tidak pernah telat, cuma jarang buru-buru.',
+  '☕ Tarik napas. Hari ini tidak harus sempurna — cukup dijalani bersama Tuhan.',
+  '🌤️ Badai tidak dikirim untuk menenggelamkanmu, tapi untuk mengajarmu berlayar.',
+  '🪶 Letakkan yang tidak bisa kamu kendalikan. Itu memang bukan bagianmu.',
+  '🌊 Damai sejahtera bukan berarti tidak ada masalah — tapi Tuhan ada di dalamnya.',
+  '🕯️ Lelah itu manusiawi. Datang pada-Nya, Dia yang memberi kelegaan (Mat 11:28).',
+  '🌻 Kamu berharga bukan karena pencapaianmu, tapi karena Dia menebusmu.',
+  '🍞 Cukup untuk hari ini saja. Besok punya anugerahnya sendiri.',
+  '🎈 Berhenti membandingkan. Tuhan menulis ceritamu dengan kecepatan yang berbeda.',
+  '🌈 Yang kamu doakan diam-diam, Tuhan kerjakan diam-diam juga.',
+  '🛶 Kalau hari ini cuma bisa bertahan, itu pun sudah kemenangan. Lanjut besok.',
+  '💐 Syukuri satu hal kecil sekarang juga — hati yang bersyukur susah jadi pahit.',
+  '🌙 Tidurlah tenang. Dunia tetap berputar tanpa kamu yang menahannya.',
+  '🔥 Semangatmu boleh naik-turun; kesetiaan Tuhan tidak pernah.',
+  '🧭 Tidak tahu arah? Itu bukan gagal — itu undangan untuk bertanya pada-Nya.',
 ];
 
-/** Reminder hari ini — sama sepanjang hari, ganti otomatis tiap hari. */
-export function dailyReminder(todayId: string): string {
-  return pickOfDay(REMINDERS, todayId, 'revive');
+/**
+ * Reminder untuk satu hari — sama sepanjang hari, ganti otomatis tiap hari.
+ * `salt` memisahkan undiannya supaya dua layar yang menampilkannya pada hari
+ * yang sama tidak kebetulan menampilkan kalimat yang persis sama.
+ */
+export function dailyReminder(todayId: string, salt = 'revive'): string {
+  return pickOfDay(REMINDERS, todayId, salt);
+}
+
+// ===================== Penyegar acak di Home 🌤️ =====================
+// Kalimat yang sama juga muncul SENDIRI di Home beberapa kali sehari, di atas
+// kartu Doa Syafaat.
+//
+// Bedanya dengan Doa Syafaat: syafaat WAJIB muncul tiap hari sepanjang hari,
+// sedangkan penyegar ini datang tak terduga — jam munculnya & kalimatnya
+// sama-sama diundi.
+//
+// Undiannya deterministik per hari, BUKAN Math.random: jadwal & kalimat hari
+// ini sudah "ditentukan" sejak lewat tengah malam, jadi kartunya tidak
+// berkedip muncul-hilang tiap layar digambar ulang, dan tidak berubah walau
+// app ditutup lalu dibuka lagi. Besok undiannya beda sendiri karena benihnya
+// ikut tanggal.
+
+/** Berapa kali penyegar muncul dalam sehari. */
+const NUDGE_COUNT = 3;
+/** Jendela jamnya: paling pagi & paling malam. */
+const NUDGE_FROM_HOUR = 6;
+const NUDGE_TO_HOUR = 22;
+/** Sekali muncul, kartunya bertahan selama ini lalu hilang sendiri. */
+const NUDGE_SHOW_MINUTES = 60;
+/** Jeda minimal sesudah satu kartu hilang sebelum yang berikutnya muncul. */
+const NUDGE_GAP_MINUTES = 60;
+
+/** Satu kemunculan penyegar: `from`/`to` = menit sejak tengah malam. */
+export type Nudge = { from: number; to: number; text: string };
+
+/**
+ * Angka 0–1 yang terasa acak, tapi selalu sama untuk kombinasi hari + kunci
+ * yang sama.
+ *
+ * Hasil `hashString` HARUS diaduk dulu, tidak boleh dipakai mentah: rumusnya
+ * `h * 31 + kode-karakter`, jadi dua benih yang cuma beda karakter TERAKHIR
+ * ("…|jam0" vs "…|jam1") menghasilkan angka yang selisihnya persis 1. Tanpa
+ * pengadukan, keempat bobot celah jadi nyaris kembar → pembagiannya selalu
+ * rata → jam munculnya sama persis tiap hari (sempat terbukti begitu: setahun
+ * cuma memakai 3 jam yang itu-itu saja).
+ *
+ * Pengaduknya fmix32 milik MurmurHash3 — beda 1 bit di masukan membalik
+ * kira-kira separuh bit keluaran, jadi "…jam0" dan "…jam1" jatuh ke angka yang
+ * benar-benar berjauhan.
+ */
+function seededUnit(dayId: string, key: string): number {
+  let x = (hashString(`${dayId}|${key}`) + 0x9e3779b9) | 0;
+  x = Math.imul(x ^ (x >>> 16), 0x85ebca6b);
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+  x ^= x >>> 16;
+  return (x >>> 0) / 4_294_967_296;
+}
+
+/**
+ * Jadwal penyegar hari ini — 3 kemunculan, jamnya diundi tapi dijamin tidak
+ * saling menempel: sisa waktu di dalam jendela dibagi acak ke celah-celahnya,
+ * sedangkan durasi tampil & jeda minimalnya sudah dipesan lebih dulu.
+ * Kalimat tiap kemunculan dijamin BERBEDA satu sama lain.
+ */
+export function nudgeSchedule(dayId: string): Nudge[] {
+  const windowStart = NUDGE_FROM_HOUR * 60;
+  const windowEnd = NUDGE_TO_HOUR * 60;
+  const dipesan =
+    NUDGE_COUNT * NUDGE_SHOW_MINUTES + (NUDGE_COUNT - 1) * NUDGE_GAP_MINUTES;
+  const sisa = Math.max(0, windowEnd - windowStart - dipesan);
+
+  // Sisa waktu dibagi ke (NUDGE_COUNT + 1) celah: sebelum yang pertama, di
+  // antara tiap kemunculan, dan sesudah yang terakhir. Ditambah 0.05 supaya
+  // tidak ada celah yang bobotnya nol persis.
+  const bobot = Array.from(
+    { length: NUDGE_COUNT + 1 },
+    (_, i) => seededUnit(dayId, `jam${i}`) + 0.05,
+  );
+  const totalBobot = bobot.reduce((s, x) => s + x, 0);
+
+  const terpakai = new Set<number>();
+  const out: Nudge[] = [];
+  let cursor = windowStart;
+  for (let i = 0; i < NUDGE_COUNT; i++) {
+    cursor += Math.round((bobot[i] / totalBobot) * sisa);
+    // Kalau undiannya kebetulan jatuh ke kalimat yang sudah dipakai hari ini,
+    // geser ke kalimat berikutnya — sehari tidak pernah mengulang kata.
+    let idx = Math.floor(seededUnit(dayId, `kata${i}`) * REMINDERS.length);
+    while (terpakai.has(idx)) idx = (idx + 1) % REMINDERS.length;
+    terpakai.add(idx);
+    out.push({
+      from: cursor,
+      to: cursor + NUDGE_SHOW_MINUTES,
+      text: REMINDERS[idx],
+    });
+    cursor += NUDGE_SHOW_MINUTES + NUDGE_GAP_MINUTES;
+  }
+  return out;
+}
+
+/** Penyegar yang sedang tampil sekarang — null kalau bukan jamnya. */
+export function activeNudge(now: Date, dayId: string): string | null {
+  const menit = now.getHours() * 60 + now.getMinutes();
+  return (
+    nudgeSchedule(dayId).find((n) => menit >= n.from && menit < n.to)?.text ??
+    null
+  );
+}
+
+// ===================== Aplikasi NDC Ministry 📱 =====================
+// Dibuka lewat deep link resmi app NDC Ministry. Kalau app-nya belum terpasang
+// / skemanya tak dikenali, jatuh ke halaman App Store supaya bisa dipasang.
+
+const NDC_DEEPLINK = 'ndc://';
+const NDC_APP_STORE = 'https://apps.apple.com/id/app/ndc-ministry/id1452468715';
+
+export function openNdcMinistry() {
+  return openExternalUrl(NDC_DEEPLINK, { fallback: NDC_APP_STORE });
 }
 
 // ===================== Pertanyaan pemantik ✨ =====================

@@ -6,7 +6,7 @@ import {
   type FirestoreError,
 } from 'firebase/firestore';
 
-import type { FinanceType } from './categories';
+import { FINANCE_CATEGORIES, type FinanceType } from './categories';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
@@ -36,6 +36,31 @@ export function subBudgetKey(
   subKey: string,
 ): string {
   return `${type}:${categoryKey}:${subKey}`;
+}
+
+/**
+ * Total budget SATU jenis (Expense / Saving / Investment) dari map alokasi.
+ *
+ * Ini satu-satunya rumus total budget di app — Dashboard & Budgeting sama-sama
+ * memakainya supaya angkanya mustahil berbeda.
+ *
+ * Dua hal SENGAJA tidak ikut dijumlah:
+ *  • Key sub-budget ("jenis:kategori:sub". Nominal sub sudah termasuk di budget
+ *    kategorinya — begitu ada sub yang diisi, budget kategori = total semua
+ *    sub-nya (lihat BudgetingTab). Menjumlah keduanya bikin angkanya DOBEL.
+ *  • Alokasi milik kategori yang sudah tidak ada di FINANCE_CATEGORIES. Sisa
+ *    data seperti itu tidak tampil & tidak bisa diubah di layar Budgeting,
+ *    jadi tidak boleh diam-diam menambah angka di Dashboard.
+ */
+export function totalBudgetOf(
+  allocations: BudgetMap,
+  type: FinanceType,
+): number {
+  let total = 0;
+  for (const c of FINANCE_CATEGORIES[type]) {
+    total += allocations[budgetKey(type, c.key)] ?? 0;
+  }
+  return total;
 }
 
 /** "2026-07" — id dokumen budget per bulan. `month` 0–11 seperti Date JS. */

@@ -1,4 +1,4 @@
-import { Linking } from 'react-native';
+import { openExternalUrl } from './linking';
 
 // Deeplink ke aplikasi bank / dompet / investasi per kategori transaksi.
 // Alur: buka vix → isi transaksi → tekan tombol ini → lompat ke app tujuan.
@@ -125,13 +125,10 @@ export function payAppForCategory(categoryKey: string): PayApp | null {
  * Buka app tujuan lewat deeplink. Kalau gagal (app belum terpasang / skema
  * salah), jatuh ke pencarian App Store supaya tombol tetap berguna.
  */
-export async function openPayApp(app: PayApp) {
-  try {
-    await Linking.openURL(app.scheme);
-  } catch {
-    const store = `https://apps.apple.com/id/search?term=${encodeURIComponent(
+export function openPayApp(app: PayApp) {
+  return openExternalUrl(app.scheme, {
+    fallback: `https://apps.apple.com/id/search?term=${encodeURIComponent(
       app.label,
-    )}`;
-    Linking.openURL(store).catch(() => {});
-  }
+    )}`,
+  });
 }

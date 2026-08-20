@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Linking,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -41,6 +40,7 @@ import {
   type FitWeights,
 } from '@/lib/fitness';
 import { type LoginStreak } from '@/lib/achievements';
+import { openExternalUrl } from '@/lib/linking';
 
 // Tab Exercise 💪 — deretan hari (ala BetterMe) + sesi hari yang dipilih.
 // Hanya sesi HARI INI yang bisa dicentang; hari lain tampil sebagai pratinjau
@@ -373,7 +373,7 @@ export function ExerciseTab({
                       {ex.video ? (
                         <PressableScale
                           style={styles.videoChip}
-                          onPress={() => Linking.openURL(ex.video!)}
+                          onPress={() => openExternalUrl(ex.video!)}
                           hitSlop={6}>
                           <VixText heading="label" additionalStyle={styles.videoText}>
                             ▶️ Cara gerakan

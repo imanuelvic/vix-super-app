@@ -139,11 +139,8 @@ export function normalizePhone(raw: string): string | null {
   return d.length >= 8 ? d : null; // terlalu pendek = anggap belum diisi
 }
 
-/** Link chat WhatsApp (wa.me), dengan pesan awal opsional. */
-export function waLink(phone: string, text?: string): string {
-  const base = `https://wa.me/62${phone}`;
-  return text ? `${base}?text=${encodeURIComponent(text)}` : base;
-}
+// (Penyusun tautan WhatsApp-nya sendiri pindah ke lib/whatsapp.ts — tempatnya
+// memang di sana, bukan di modul fitur CORE.)
 
 // ==================== Ucapan ulang tahun 🎂 ====================
 // Tiga templat: satu untuk dilempar ke GRUP, dua untuk chat PRIBADI
@@ -155,9 +152,18 @@ function birthdayPrayer(name: string): string {
   return `🙏 Doaku buat ${name}:
 Kiranya semua yang kamu kerjakan berkenan & menyenangkan hati Tuhan.
 Kiranya kamu makin mengenal dan makin mengasihi Dia setiap hari.
+Kiranya Tuhan kasih hikmat & perbesar kapasitasmu, biar makin jadi berkat buat orang-orang di sekitarmu.
 Bukan kehendak kita, tapi kehendak-Nya yang jadi.
 Dan Tuhan kirimkan orang-orang baik di sekelilingmu — yang mendukung, yang mendoakan, yang menemani.`;
 }
+
+/**
+ * Ajakan penutup di tiap ucapan. Ulang tahun itu pintu masuk penggembalaan:
+ * yang berulang tahun sering justru sedang ingin didengar, jadi ucapannya
+ * ditutup dengan undangan bercerita — bukan berhenti di selamat saja.
+ */
+const BIRTHDAY_INVITE =
+  'Kalau ada yang mau didoakan atau mau cerita-cerita, silakan yaa 🤗';
 
 /**
  * Ucapan untuk GRUP. Sengaja dibuka tanpa nomor tujuan: WhatsApp akan
@@ -166,7 +172,9 @@ Dan Tuhan kirimkan orang-orang baik di sekelilingmu — yang mendukung, yang men
 export function birthdayGroupText(name: string): string {
   return `Selamatt ulang tahun ${name} 🔥💪 semakin dewasa rohani dan karakter, makin bijak, makin jadi berkat buat keluarga & teman2. Enjoy your special dayy! God bless you alwaysss 💛💜💚🤍💙🧡🩵🖤
 
-${birthdayPrayer(name)}`;
+${birthdayPrayer(name)}
+
+${BIRTHDAY_INVITE}`;
 }
 
 /**
@@ -187,7 +195,9 @@ export function birthdayPersonalText(
       : `${name}, Happy birthdayy! bersyukur bisa kenal ${name}, gk kebetulan kita bisa bertemu di CORE ini, ada tujuan dari Tuhan✨ Senang bisa melayani bareng, semoga umur baru ini bawa banyak kemajuan di kerjaan, pelayanan, dan kehidupan pribadi! Tuhan sertaii selalu 🙏💛💜💚🤍💙🧡🩵🖤`;
   return `${body}
 
-${birthdayPrayer(name)}`;
+${birthdayPrayer(name)}
+
+${BIRTHDAY_INVITE}`;
 }
 
 // ==================== Kepribadian 🧠 (DISC · MBTI · Love Language) ====================
@@ -1213,6 +1223,70 @@ export function saveMonthlyPrayers(uid: string, data: MonthlyPrayers) {
   return setDoc(doc(db, 'users', uid, 'core', 'monthlyPrayers'), data);
 }
 
+/**
+ * Tandai satu CORE Leader sudah didoakan & difollowup pokok doanya hari ini.
+ *
+ * Dipakai dari DUA tempat (gerbang doa pagi & tab Follow Up), jadi aturannya
+ * ditaruh di sini: kalau dokumennya masih milik bulan lalu, penanda follow-up
+ * direset — tapi poin pokok doa & tanggal pembaruannya TIDAK dihapus.
+ */
+export function markPrayerFollowed(
+  uid: string,
+  data: MonthlyPrayers,
+  leaderId: string,
+  now: Date,
+  dayId: string,
+) {
+  const base = isCurrentMonthPrayers(data, now)
+    ? data
+    : { ...data, followedDayId: {} as Record<string, string> };
+  return saveMonthlyPrayers(uid, {
+    monthId: monthDocId(now),
+    points: base.points,
+    followedDayId: { ...base.followedDayId, [leaderId]: dayId },
+    updatedAt: base.updatedAt,
+  });
+}
+
+/**
+ * Turunkan huruf depan supaya poin pokok doa menyambung mulus sesudah
+ * "Gw doakan …". Kata yang memang HURUF BESAR SEMUA (CORE, NDC, PA)
+ * dibiarkan apa adanya.
+ */
+function sambungKalimat(s: string): string {
+  const kataPertama = s.split(/\s+/)[0] ?? '';
+  if (kataPertama.length > 1 && kataPertama === kataPertama.toUpperCase()) {
+    return s;
+  }
+  return s.charAt(0).toLowerCase() + s.slice(1);
+}
+
+/**
+ * Pesan WhatsApp untuk mendoakan pokok doa bulanan satu CORE Leader.
+ *
+ * Poinnya diambil APA ADANYA dari yang kamu tulis sendiri di Doa Rantai, lalu
+ * tiap poin jadi satu kalimat "Gw doakan …". App ini tidak menulis ulang atau
+ * memparafrase kalimatmu — tidak ada AI di dalamnya. WhatsApp terbuka dengan
+ * teks yang masih bisa kamu sunting dulu sebelum dikirim.
+ */
+export function prayerChainMessage(name: string, points: string[]): string {
+  const bersih = points.map((p) => p.trim()).filter(Boolean);
+  const isi = bersih
+    .map(
+      (p, i) =>
+        `${i === 0 ? 'Gw doakan' : 'Gw doakan jg'} ${sambungKalimat(p)}`,
+    )
+    .join('\n\n');
+  return [
+    `Shalom ${name}! 🙏`,
+    'Gw lagi mendoakan lu utk pokok doa bulan ini. Gimana kabar & perkembangan pergumulanmu?',
+    isi,
+    'Tuhan yang kuatkan & cukupkan di setiap musim hidup lu. Semangat, finish strong! 🙌',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 // ==================== Ucapan ulang tahun 🎂 ====================
 // users/{uid}/core/birthdayGreets — { greeted: { [personId]: dayId } }.
 // Begitu ucapan dikirim, kartu ulang tahun hari itu hilang biar tidak
@@ -1279,7 +1353,16 @@ export function monthlyPrayersFilled(data: MonthlyPrayers, now: Date): boolean {
 
 // Follow up pokok doa berkala: Selasa (2), Kamis (4), Sabtu (6).
 const PRAYER_FOLLOWUP_DAYS = [2, 4, 6];
-const PRAYER_FOLLOWUP_COUNT = 3; // CL yang difokuskan tiap sesi (bergilir)
+const PRAYER_FOLLOWUP_COUNT = 4; // CL yang difokuskan tiap sesi (bergilir)
+
+/**
+ * Berapa CORE Leader yang WAJIB didoakan di gerbang doa PAGI supaya langkah
+ * Doa Rantai tercentang. Sisanya sengaja ditinggalkan untuk malam hari —
+ * ritmenya sama dengan Baca Alkitab: ada porsi pagi, ada porsi malam, jadi
+ * sepanjang hari selalu ada yang didoakan. Sisanya diselesaikan lewat kartu
+ * Doa Syafaat di Home (yang malam hari mengarah ke CORE › Follow Up).
+ */
+export const PRAYER_MORNING_QUOTA = 2;
 
 /** Hari ini jadwal follow up pokok doa? (Selasa/Kamis/Sabtu) */
 export function isPrayerFollowupDay(d: Date): boolean {

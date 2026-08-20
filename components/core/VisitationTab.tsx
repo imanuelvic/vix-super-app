@@ -1,29 +1,25 @@
-import { Timestamp } from 'firebase/firestore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
-import { DateField } from '@/components/common/DateField';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
-import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
+import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
-  isMultiLeaderKind,
   markVisitationPdfSent,
   MEETING_KINDS,
   meetingKindLabels,
@@ -40,7 +36,7 @@ import {
 } from '@/lib/core';
 import { subscribeCoreRules, type CoreRule } from '@/lib/coreRules';
 import { deadlineLabel, deadlineTone } from '@/lib/deadline';
-import { daysBetween, formatFullDate } from '@/lib/format';
+import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { shareVisitationPdf } from '@/lib/visitationPdf';
@@ -65,15 +61,10 @@ export function VisitationTab({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Form tambah/edit. 'new' = sedang menambah baru.
+  // Form tambah/edit ('new' = sedang menambah baru). Isian & aturannya dipakai
+  // bersama layar Riwayat Pertemuan (lihat hooks/useVisitationForm.ts).
   const [editing, setEditing] = useState<Visitation | 'new' | null>(null);
-  const [fKind, setFKind] = useState<MeetingKind>('visitasi');
-  const [fLeaderIds, setFLeaderIds] = useState<string[]>([]);
-  const [fThanksgiving, setFThanksgiving] = useState(false);
-  const [fDate, setFDate] = useState(new Date());
-  const [fAgenda, setFAgenda] = useState('');
-  const [fNote, setFNote] = useState('');
-  const [fDone, setFDone] = useState(false);
+  const form = useVisitationForm();
   const [formError, setFormError] = useState<string | null>(null);
   // Modal tips + filter jadwal (default tanpa filter → tampil semua).
   const [tipsModal, setTipsModal] = useState(false);
@@ -96,13 +87,6 @@ export function VisitationTab({
 
   const today = new Date();
   const todayId = dayDocId(today);
-
-  // Tanggal visit yang dipilih sesudah hari ini → toggle "Sudah divisit"
-  // disembunyikan (tidak mungkin sudah divisit kalau jadwalnya masa depan).
-  const futureDate = daysBetween(today, fDate) > 0;
-
-  // Acara gabungan → CORE-nya boleh dicentang lebih dari satu.
-  const multiLeader = isMultiLeaderKind(fKind);
 
   // Mendatang (belum done, belum lewat) urut terdekat; sisanya jadi riwayat.
   const upcoming = visitations
@@ -148,44 +132,21 @@ export function VisitationTab({
 
   function openAdd() {
     setEditing('new');
-    setFKind('visitasi');
-    setFLeaderIds(leaders[0] ? [leaders[0].id] : []);
-    setFThanksgiving(false);
-    setFDate(new Date());
-    setFAgenda('');
-    setFNote('');
-    setFDone(false);
+    form.reset(leaders[0]?.id);
     setFormError(null);
   }
 
-  const openEdit = useCallback((v: Visitation) => {
-    setEditing(v);
-    setFKind(v.kind);
-    setFLeaderIds(v.leaderIds);
-    setFThanksgiving(v.thanksgiving);
-    setFDate(v.date.toDate());
-    setFAgenda(v.agenda);
-    setFNote(v.note);
-    setFDone(v.done);
-    setFormError(null);
-  }, []);
-
-  /**
-   * Ganti jenis acara. Kalau pindah dari jenis gabungan ke jenis biasa, sisakan
-   * SATU CORE saja — kalau tidak, pilihan ganda ikut tersimpan diam-diam
-   * padahal pemilihnya sudah kembali jadi tunggal.
-   */
-  function changeKind(k: MeetingKind) {
-    setFKind(k);
-    if (!isMultiLeaderKind(k)) setFLeaderIds((ids) => ids.slice(0, 1));
-  }
-
-  /** Centang / hapus centang satu CORE Leader (mode gabungan). */
-  function toggleLeader(id: string) {
-    setFLeaderIds((ids) =>
-      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
-    );
-  }
+  const openEdit = useCallback(
+    (v: Visitation) => {
+      setEditing(v);
+      form.fill(v);
+      setFormError(null);
+    },
+    // form berisi setState yang identitasnya stabil; sengaja tidak jadi
+    // dependency supaya openEdit tidak dibuat ulang tiap ketikan di form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   // Auto-buka modal saat dibuka dari reminder Dashboard (?edit=<id>). Setelah
   // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
@@ -204,7 +165,7 @@ export function VisitationTab({
 
   async function handleSave() {
     if (!user || !editing || busy) return;
-    if (fLeaderIds.length === 0) {
+    if (form.leaderIds.length === 0) {
       setFormError('Pilih CORE Leader-nya dulu.');
       return;
     }
@@ -212,15 +173,7 @@ export function VisitationTab({
     setFormError(null);
     const data: Visitation = {
       id: editing === 'new' ? newVisitationId() : editing.id,
-      kind: fKind,
-      leaderIds: fLeaderIds,
-      // Kalau jenisnya memang Thanksgiving, penanda tambahannya tak perlu.
-      thanksgiving: fKind === 'thanksgiving' ? false : fThanksgiving,
-      date: Timestamp.fromDate(fDate),
-      agenda: fAgenda.trim(),
-      note: fNote.trim(),
-      // Jadwal masa depan dipaksa belum divisit — toggle-nya juga disembunyikan.
-      done: futureDate ? false : fDone,
+      ...form.payload(),
       // Catatan kirim PDF milik jadwalnya, bukan formnya — dipertahankan.
       pdfSentDayId: editing === 'new' ? null : editing.pdfSentDayId,
     };
@@ -473,110 +426,13 @@ export function VisitationTab({
         visible={!!editing}
         title={editing === 'new' ? 'Jadwalkan Pertemuan' : 'Edit Pertemuan'}
         onClose={() => setEditing(null)}>
-        {/* Picker: daftar pilihan baru muncul saat baris ini ditekan, jadi
-            modal tidak langsung penuh oleh semua jenis & nama CORE. */}
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Jenis pertemuan
-        </VixText>
-        <View style={styles.formGap}>
-          <SelectField
-            value={fKind}
-            options={MEETING_KINDS.map((k) => ({
-              key: k.key,
-              label: `${k.icon} ${k.label}`,
-            }))}
-            onChange={(k) => k && changeKind(k)}
-            placeholder="Pilih jenis pertemuan…"
-          />
-        </View>
-
-        {/* Thanksgiving itu penanda TAMBAHAN — acara apa pun bisa sekalian
-            jadi Thanksgiving. Disembunyikan kalau jenisnya memang Thanksgiving
-            supaya tidak menanyakan hal yang sama dua kali. */}
-        {fKind !== 'thanksgiving' && (
-          <PressableScale
-            style={styles.doneRow}
-            onPress={() => setFThanksgiving((t) => !t)}>
-            <CheckCircle checked={fThanksgiving} />
-            <VixText heading="paragraph" additionalStyle={styles.doneText}>
-              🎉 Sekalian Thanksgiving
-            </VixText>
-          </PressableScale>
-        )}
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          {multiLeader ? 'CORE mana saja yang gabung?' : 'CORE-nya siapa?'}
-        </VixText>
-        {multiLeader ? (
-          // Acara gabungan → centang sebanyak-banyaknya.
-          <View style={styles.leaderWrap}>
-            {leaders.map((l) => (
-              <Chip
-                key={l.id}
-                label={`${l.heart} ${l.name}`}
-                active={fLeaderIds.includes(l.id)}
-                onPress={() => toggleLeader(l.id)}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.formGap}>
-            <SelectField
-              value={fLeaderIds[0] ?? ''}
-              options={leaders.map((l) => ({
-                key: l.id,
-                label: `${l.heart} ${l.name}`,
-              }))}
-              onChange={(id) => id && setFLeaderIds([id])}
-              placeholder="Pilih CORE Leader…"
-            />
-          </View>
-        )}
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal pertemuan
-        </VixText>
-        <View style={styles.formGap}>
-          {/* key = id supaya state picker internal reset tiap ganti jadwal */}
-          <DateField
-            key={editing === 'new' ? 'new' : editing?.id}
-            value={fDate}
-            onChange={setFDate}
-          />
-        </View>
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏷️ Judul Pertemuan
-        </VixText>
-        <FormInput
-          style={styles.formGap}
-          placeholder="Judul singkat"
-          value={fNote}
-          onChangeText={setFNote}
-          editable={!busy}
+        <VisitationFormFields
+          form={form}
+          leaders={leaders}
+          busy={busy}
+          dateKey={editing === 'new' ? 'new' : editing?.id}
+          agendaPlaceholder="Agenda pertemuan"
         />
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🗒️ Agenda pertemuan
-        </VixText>
-        <FormInput
-          style={[styles.textArea, styles.formGap]}
-          placeholder="Agenda pertemuan"
-          value={fAgenda}
-          onChangeText={setFAgenda}
-          editable={!busy}
-          multiline
-        />
-
-        {/* Tandai selesai setelah visit — hanya kalau tanggalnya sudah tiba */}
-        {!futureDate && (
-          <PressableScale style={styles.doneRow} onPress={() => setFDone((d) => !d)}>
-            <CheckCircle checked={fDone} />
-            <VixText heading="paragraph" additionalStyle={styles.doneText}>
-              Sudah selesai ✅
-            </VixText>
-          </PressableScale>
-        )}
 
         <FormError message={formError} />
         <EditDelete
@@ -758,14 +614,4 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  formGap: { marginBottom: 10 },
-  textArea: { minHeight: 96, paddingTop: 12, textAlignVertical: 'top' },
-  doneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 6,
-    marginBottom: 4,
-  },
-  doneText: { color: Color.TEXT_TITLE },
 });

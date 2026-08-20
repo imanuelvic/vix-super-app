@@ -111,6 +111,13 @@ const WALK_SUN: FitSession = {
 };
 
 // ===================== BLOK A =====================
+//
+// ALAT YANG DIPAKAI: hanya DUMBBELL & BARBEL (plus bangku datar/miring dan
+// lantai). Tidak ada mesin, kabel/rope, maupun palang pull-up — gerakan yang
+// dulu butuh itu (Machine Fly, Cable Lat Pulldown, Seated Cable Row, Face
+// Pull, Tricep Pushdown, Leg Press, Pull-Up, Hanging Knee Raise, Ab Wheel,
+// Leg Curl) sudah diganti gerakan setara yang bisa dikerjakan dengan alat di
+// atas. Kalau nanti punya alat baru, tinggal ganti barisnya di sini.
 
 const BLOCK_A: FitSession[] = [
   {
@@ -123,10 +130,10 @@ const BLOCK_A: FitSession[] = [
     exercises: [
       { id: 'flatbench', emoji: '🏋️', name: 'Flat Bench Press', sets: 4, reps: '8–12', weight: 20 },
       { id: 'inclinepress', emoji: '💪', name: 'Incline Dumbbell Press', sets: 3, reps: '10–12', weight: 10 },
-      { id: 'machinefly', emoji: '🔥', name: 'Machine Fly', sets: 3, reps: '12–15', weight: 8, video: 'https://youtu.be/bonJdLvpS2w' },
+      { id: 'dbfly', emoji: '🔥', name: 'Dumbbell Fly', sets: 3, reps: '12–15', weight: 8 },
       { id: 'shoulderpress', emoji: '⚡', name: 'Dumbbell Shoulder Press', sets: 3, reps: '10–12', weight: 14, video: 'https://youtu.be/qEwKCR5JCog' },
       { id: 'lateralraise', emoji: '🏋️', name: 'Lateral Raises', sets: 3, reps: '12–15', weight: 5 },
-      { id: 'triceppushdown', emoji: '💥', name: 'Tricep Pushdown', sets: 3, reps: '12–15', weight: 10 },
+      { id: 'skullcrusher', emoji: '💥', name: 'Skull Crusher (Barbel)', sets: 3, reps: '10–12', weight: 15 },
       { id: 'crunches', emoji: '🚀', name: 'Crunches', sets: 3, reps: '20', weight: null, video: 'https://youtu.be/5ER5Of4MOPI', core: true },
     ],
   },
@@ -154,13 +161,13 @@ const BLOCK_A: FitSession[] = [
     focus: 'Lats (pelebar punggung), bisep, perut bawah',
     minutes: 50,
     exercises: [
-      { id: 'pullup', emoji: '💪', name: 'Pull-Ups', sets: 3, reps: '6–10', weight: null, video: 'https://youtu.be/eGo4IYlbE5g' },
-      { id: 'latpulldown', emoji: '🏋️', name: 'Cable Lat Pulldown', sets: 4, reps: '8–12', weight: 8, video: 'https://youtu.be/CAwf7n6Luuc' },
-      { id: 'seatedrow', emoji: '🔥', name: 'Seated Cable Row', sets: 3, reps: '10–12', weight: 15 },
+      { id: 'barbellrow', emoji: '💪', name: 'Barbell Row (bungkuk)', sets: 4, reps: '8–10', weight: 20 },
+      { id: 'dbpullover', emoji: '🏋️', name: 'Dumbbell Pullover', sets: 3, reps: '12', weight: 10 },
+      { id: 'chestrow', emoji: '🔥', name: 'Chest-Supported Dumbbell Row', sets: 3, reps: '10–12', weight: 10 },
       { id: 'dbrow', emoji: '⚡', name: 'Single-Arm Dumbbell Row', sets: 3, reps: '12 / lengan', weight: 8, video: 'https://youtu.be/6KNmHxw-SpE' },
-      { id: 'facepull', emoji: '💥', name: 'Face Pulls', sets: 3, reps: '15', weight: 10 },
+      { id: 'reardeltrow', emoji: '💥', name: 'Rear-Delt Row (Dumbbell)', sets: 3, reps: '15', weight: 6 },
       { id: 'barbellcurl', emoji: '💪', name: 'Barbell Curl', sets: 3, reps: '10–12', weight: 15 },
-      { id: 'hangkneeraise', emoji: '😥', name: 'Hanging Knee Raise', sets: 3, reps: '12–15', weight: null, video: 'https://youtu.be/Pr1ieGZ5atk', core: true },
+      { id: 'reversecrunch', emoji: '😥', name: 'Reverse Crunch', sets: 3, reps: '15', weight: null, core: true },
     ],
   },
   {
@@ -188,7 +195,7 @@ const BLOCK_A: FitSession[] = [
     exercises: [
       { id: 'gobletsquat', emoji: '🦵', name: 'Goblet Squat', sets: 4, reps: '12', weight: 14, video: 'https://youtu.be/42bFodPahBU' },
       { id: 'rdl', emoji: '🏋️', name: 'Romanian Deadlift', sets: 3, reps: '10–12', weight: 12, video: 'https://youtu.be/eDFAAb6vJH4' },
-      { id: 'legpress', emoji: '💪', name: 'Leg Press', sets: 3, reps: '12–15', weight: 13, video: 'https://youtu.be/IZxyjW7MPJQ' },
+      { id: 'dbstepup', emoji: '💪', name: 'Dumbbell Step-Up (naik bangku)', sets: 3, reps: '12 / kaki', weight: 10 },
       { id: 'lunges', emoji: '🔥', name: 'Walking Lunges', sets: 3, reps: '10 / kaki', weight: 8, video: 'https://youtu.be/1J8mVmtyYpk' },
       { id: 'calfraise', emoji: '⚡', name: 'Calf Raises', sets: 3, reps: '15–20', weight: 10, video: 'https://youtu.be/GQa_N7wft7M' },
       { id: 'hammercurl', emoji: '💥', name: 'Hammer Curls', sets: 3, reps: '12', weight: 10, video: 'https://youtu.be/L1bDrPlfu1Q' },
@@ -211,11 +218,11 @@ const BLOCK_B: FitSession[] = [
     exercises: [
       { id: 'dbbench', emoji: '💪', name: 'Dumbbell Bench Press', sets: 4, reps: '10–12', weight: 12 },
       { id: 'inclinebarbell', emoji: '🏋️', name: 'Incline Barbell Press', sets: 3, reps: '8–10', weight: 18 },
-      { id: 'cablefly', emoji: '🔥', name: 'Cable Crossover', sets: 3, reps: '12–15', weight: 6 },
+      { id: 'inclinedbfly', emoji: '🔥', name: 'Incline Dumbbell Fly', sets: 3, reps: '12–15', weight: 7 },
       { id: 'arnoldpress', emoji: '⚡', name: 'Arnold Press', sets: 3, reps: '10', weight: 10 },
-      { id: 'cablelateral', emoji: '🏋️', name: 'Cable Lateral Raise', sets: 3, reps: '15', weight: 4 },
+      { id: 'leaninglateral', emoji: '🏋️', name: 'Leaning Lateral Raise (1 lengan)', sets: 3, reps: '15', weight: 5 },
       { id: 'overheadext', emoji: '💥', name: 'Overhead Triceps Extension', sets: 3, reps: '10–12', weight: 8 },
-      { id: 'cablecrunch', emoji: '😥', name: 'Cable Crunch', sets: 3, reps: '15', weight: 10, core: true },
+      { id: 'weightedcrunch', emoji: '😥', name: 'Weighted Crunch (peluk dumbbell)', sets: 3, reps: '15', weight: 5, core: true },
     ],
   },
   {
@@ -242,13 +249,13 @@ const BLOCK_B: FitSession[] = [
     focus: 'Lats (pelebar punggung), bisep, perut bawah',
     minutes: 50,
     exercises: [
-      { id: 'chinup', emoji: '💪', name: 'Chin-Ups (telapak menghadap badan)', sets: 3, reps: '8', weight: null },
-      { id: 'tbarrow', emoji: '🏋️', name: 'T-Bar / Barbell Row', sets: 4, reps: '8–10', weight: 20 },
+      { id: 'underhandrow', emoji: '💪', name: 'Barbell Row Genggaman Terbalik', sets: 4, reps: '8–10', weight: 20 },
+      { id: 'dbrowtwo', emoji: '🏋️', name: 'Bent-Over Dumbbell Row (2 tangan)', sets: 3, reps: '10–12', weight: 12 },
       { id: 'pullover', emoji: '🔥', name: 'Dumbbell Pullover', sets: 3, reps: '12', weight: 10 },
-      { id: 'straightarmpulldown', emoji: '⚡', name: 'Straight-Arm Pulldown', sets: 3, reps: '12–15', weight: 8 },
+      { id: 'shrug', emoji: '⚡', name: 'Barbell Shrug', sets: 3, reps: '12–15', weight: 25 },
       { id: 'reversefly', emoji: '💥', name: 'Reverse Fly', sets: 3, reps: '15', weight: 5 },
       { id: 'preachercurl', emoji: '💪', name: 'Incline Bench Preacher Curls', sets: 3, reps: '12', weight: 12, video: 'https://youtu.be/7v7uldi1eLU' },
-      { id: 'abwheel', emoji: '🚀', name: 'Ab Wheel Rollout', sets: 3, reps: '10–12', weight: null, core: true },
+      { id: 'weightedsitup', emoji: '🚀', name: 'Weighted Sit-Up (peluk dumbbell)', sets: 3, reps: '15', weight: 5, core: true },
     ],
   },
   {
@@ -275,7 +282,7 @@ const BLOCK_B: FitSession[] = [
     minutes: 50,
     exercises: [
       { id: 'barbellsquat', emoji: '🦵', name: 'Barbell Squat', sets: 4, reps: '8–12', weight: 20 },
-      { id: 'hamcurl', emoji: '⚡', name: 'Leg Curls', sets: 3, reps: '12', weight: 3, video: 'https://youtu.be/NIZeAGZ_YJw' },
+      { id: 'singlelegrdl', emoji: '⚡', name: 'Single-Leg RDL (Dumbbell)', sets: 3, reps: '12 / kaki', weight: 8 },
       { id: 'bulgarian', emoji: '🔥', name: 'Bulgarian Split Squat', sets: 3, reps: '10 / kaki', weight: 8 },
       { id: 'hipthrust', emoji: '🏋️', name: 'Hip Thrust', sets: 3, reps: '12', weight: 20 },
       { id: 'calfraise', emoji: '💥', name: 'Calf Raises', sets: 4, reps: '20', weight: 10, video: 'https://youtu.be/GQa_N7wft7M' },

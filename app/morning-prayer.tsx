@@ -1,7 +1,10 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { MorningPrayerGate } from '@/components/spiritual/MorningPrayerGate';
+import {
+  MorningPrayerGate,
+  type ChainLeader,
+} from '@/components/spiritual/MorningPrayerGate';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import {
@@ -16,8 +19,11 @@ import {
 import {
   EMPTY_MONTHLY_PRAYERS,
   isPrayerFollowupDay,
+  markPrayerFollowed,
   monthlyPointsFor,
+  prayerChainMessage,
   prayerFollowupLeaders,
+  PRAYER_MORNING_QUOTA,
   subscribeCoreLeaders,
   subscribeMonthlyPrayers,
   type CoreLeader,
@@ -25,6 +31,7 @@ import {
 } from '@/lib/core';
 import { intercessionToday } from '@/lib/intercession';
 import { reviveHandledToday, subscribeReviveStreak } from '@/lib/spiritual';
+import { openWhatsAppChat } from '@/lib/whatsapp';
 
 // Lock screen doa pagi — halaman PENUH di root stack (di luar tab), jadi
 // menutupi seluruh layar termasuk tab bar. Yang mengarahkan ke sini adalah
@@ -62,16 +69,41 @@ export default function MorningPrayerScreen() {
 
   // Doa Rantai: hanya di hari jadwalnya (Sel/Kam/Sab) & kalau memang ada CL
   // giliran hari ini. Sumber hitungannya SAMA dengan kartu Dashboard.
-  const chainLeaders = prayerFollowupLeaders(
-    leaders,
-    monthlyPointsFor(monthlyPrayers, now),
-    now,
-  );
+  const points = monthlyPointsFor(monthlyPrayers, now);
+  const chainLeaders = prayerFollowupLeaders(leaders, points, now);
   const chainDue = isPrayerFollowupDay(now) && chainLeaders.length > 0;
-  const chainLeft = chainDue
-    ? chainLeaders.filter((l) => monthlyPrayers.followedDayId[l.id] !== todayId)
-        .length
-    : 0;
+  // Pokok doa tiap CL giliran hari ini, siap ditampilkan LANGSUNG di gerbang.
+  const chainRows: ChainLeader[] = chainLeaders.map((l) => ({
+    id: l.id,
+    heart: l.heart,
+    name: l.name,
+    phone: l.phone,
+    points: points[l.id] ?? [],
+    done: monthlyPrayers.followedDayId[l.id] === todayId,
+  }));
+  // Pagi cukup memenuhi KUOTA (2), bukan semuanya — sisanya untuk malam nanti.
+  // Kalau CL giliran hari ini kebetulan kurang dari kuota, kuotanya menyesuaikan
+  // supaya gerbangnya tidak pernah mustahil dicentang.
+  const chainQuota = Math.min(PRAYER_MORNING_QUOTA, chainRows.length);
+  const chainDoneCount = chainRows.filter((l) => l.done).length;
+  const chainLeft = chainDue ? Math.max(0, chainQuota - chainDoneCount) : 0;
+
+  /**
+   * Buka WhatsApp berisi pokok doa CL itu, lalu catat sudah didoakan hari ini.
+   * Dicatat SESUDAH WhatsApp terbuka; kalau pencatatannya gagal, pesannya
+   * terlanjur terkirim — jadi kegagalannya cukup diabaikan.
+   */
+  function handlePrayLeader(leader: ChainLeader) {
+    if (!leader.phone) return;
+    openWhatsAppChat(
+      leader.phone,
+      prayerChainMessage(leader.name, leader.points),
+    );
+    if (user && !leader.done) {
+      markPrayerFollowed(user.uid, monthlyPrayers, leader.id, now, todayId)
+        .catch(() => {});
+    }
+  }
 
   async function handleConfirm() {
     // Tandai LOKAL dulu, sebelum pindah halaman. Inilah yang menghilangkan bug
@@ -111,13 +143,14 @@ export default function MorningPrayerScreen() {
       reviveDone={reviveDone}
       chainDue={chainDue}
       chainLeft={chainLeft}
+      chainQuota={chainQuota}
+      chainDoneCount={chainDoneCount}
+      chainLeaders={chainRows}
       topic={intercessionToday(now)}
       minutesLeft={prayerMinutesLeft(now)}
       onConfirm={handleConfirm}
       onOpenRevive={() => router.push('/revive')}
-      onOpenChain={() =>
-        router.push({ pathname: '/core', params: { tab: 'followup' } })
-      }
+      onPrayLeader={handlePrayLeader}
       onSkip={handleSkip}
     />
   );

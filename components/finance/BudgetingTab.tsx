@@ -23,6 +23,7 @@ import {
   saveSubcategories,
   subBudgetKey,
   subsOf,
+  totalBudgetOf,
   type BudgetMap,
   type SubcategoryMap,
 } from '@/lib/budgets';
@@ -128,7 +129,10 @@ export function BudgetingTab({
       .filter((r) => r.category.active || r.allocated > 0 || r.realized > 0);
   }, [type, budget, realization, subcats]) as BudgetRow[];
 
-  const totalAllocated = rows.reduce((sum, r) => sum + r.allocated, 0);
+  // Rumus bersama dengan Dashboard (lihat lib/budgets.ts) — hasilnya sama
+  // persis dengan menjumlah kolom `allocated` semua baris di bawah, tapi
+  // dengan begitu kedua layar mustahil menampilkan angka yang berbeda.
+  const totalAllocated = totalBudgetOf(budget, type);
   const totalRealized = rows.reduce((sum, r) => sum + r.realized, 0);
   const totalPercent =
     totalAllocated > 0 ? (totalRealized / totalAllocated) * 100 : 0;

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View, type ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
@@ -33,7 +33,11 @@ import {
   HABIT_SLOTS,
   HABIT_TIERS,
   habitArea,
+  HABIT_NOTE_MIN,
   habitLink,
+  habitNoteDone,
+  isFixedHabit,
+  isNoteDrivenHabit,
   habitsBySlot,
   habitTier,
   newHabitId,
@@ -59,6 +63,7 @@ import {
   type Streak,
   type WeightTarget,
 } from '@/lib/health';
+import { openExternalUrl } from '@/lib/linking';
 import { SAVE_ERROR } from '@/lib/messages';
 
 // Tab Habits: kebiasaan harian (sama tiap hari) dibagi 3 sesi
@@ -100,6 +105,13 @@ export function HabitsTab({
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayId]);
+
+  // Loncat ke baris pertama yang belum dicentang saat tab sesi ditekan LAGI.
+  // Posisi tiap baris dicatat lewat onLayout (relatif ke blok daftarnya), jadi
+  // tidak perlu mengukur ulang apa pun saat tombolnya ditekan.
+  const scrollRef = useRef<ScrollView>(null);
+  const rowY = useRef<Record<string, number>>({});
+  const blockY = useRef(0);
 
   // Modal tambah/edit kebiasaan.
   const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);
@@ -198,9 +210,7 @@ export function HabitsTab({
       return;
     }
     if (!link.external) return;
-    Linking.openURL(link.external.scheme).catch(() =>
-      Linking.openURL(link.external!.web).catch(() => undefined),
-    );
+    openExternalUrl(link.external.scheme, { fallback: link.external.web });
   }
 
   async function handleToggle(habit: ScheduledHabit) {
@@ -251,14 +261,52 @@ export function HabitsTab({
     }
   }
 
-  /** Simpan catatan singkat (refleksi / syukur / rhema) kebiasaan hari ini. */
+  /**
+   * Simpan catatan singkat (refleksi / syukur / rhema) kebiasaan hari ini.
+   *
+   * Untuk kebiasaan yang centangnya ditentukan catatan (Rhema), centangnya
+   * ikut disetel di sini: terisi begitu tulisannya cukup panjang, dan lepas
+   * lagi kalau dikosongkan. `day.done` tetap satu-satunya sumber angka, jadi
+   * hitungan sesi & area tidak mungkin berbeda dari tampilannya.
+   */
   async function handleNote(habit: ScheduledHabit, text: string) {
     if (!user) return;
     try {
       await setHabitNote(user.uid, dayId, habit.id, text);
+      if (isNoteDrivenHabit(habit)) {
+        const selesai = habitNoteDone(text);
+        if (selesai !== !!day.done[habit.id]) {
+          await setHabitDone(user.uid, dayId, habit.id, selesai);
+          if (selesai && coreDone(counted, { ...day.done, [habit.id]: true })) {
+            await bumpStreak(user.uid, streak, dayId);
+          }
+        }
+      }
     } catch {
       setError('Gagal menyimpan catatan. Coba lagi.');
     }
+  }
+
+  /**
+   * Tab sesi ditekan. Menekan sesi LAIN cuma berpindah seperti biasa; menekan
+   * sesi yang SUDAH aktif (jadi tekanan kedua) melompat ke baris pertama yang
+   * belum dicentang & belum dilewati — tak perlu menggulung sendiri mencari
+   * sisa pekerjaan di daftar yang panjang.
+   */
+  function handleSlotPress(next: HabitSlot) {
+    if (next !== activeSlot) {
+      setActiveSlot(next);
+      return;
+    }
+    const target = activeList.find(
+      (h) => !day.done[h.id] && !day.skipped[h.id],
+    );
+    const y = target ? rowY.current[target.id] : undefined;
+    // Semua beres (atau posisinya belum sempat terukur) → kembali ke atas saja.
+    scrollRef.current?.scrollTo({
+      y: y === undefined ? 0 : Math.max(0, blockY.current + y - 8),
+      animated: true,
+    });
   }
 
   function openAdd(slot: HabitSlot) {
@@ -506,13 +554,19 @@ export function HabitsTab({
             };
           })}
           value={activeSlot}
-          onChange={setActiveSlot}
+          onChange={handleSlotPress}
         />
       </View>
 
       {/* Kebiasaan sesi yang aktif — bagian yang bisa di-scroll */}
-      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-        <View style={styles.slotBlock}>
+      <KeyboardAwareScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}>
+        <View
+          style={styles.slotBlock}
+          onLayout={(e) => {
+            blockY.current = e.nativeEvent.layout.y;
+          }}>
           {activeList.map((habit, index) => {
             // ✗ menang atas centang: baris yang dilewati tidak pernah tampil
             // tercentang (tanda done-nya memang ikut dilepas saat di-skip).
@@ -525,12 +579,18 @@ export function HabitsTab({
             // Baris cermin (olahraga): centangnya datang dari fitur Fitness,
             // jadi di sini ia cuma penunjuk keadaan + pintasan ke sana.
             const fromFitness = link?.mirror === true;
+            // Baris bercatatan (Rhema): centangnya ditentukan tulisannya, jadi
+            // lingkarannya dikunci — mencentang tanpa menulis itu bohong.
+            const fromNote = isNoteDrivenHabit(habit);
             return (
               // Berganti sesi (Pagi→Siang→Malam) = daftar baru masuk berurutan
               // dari bawah, bukan berkedip sekaligus. Jedanya dibatasi 8 baris
               // pertama supaya daftar panjang tidak terasa lambat.
               <Animated.View
                 key={habit.id}
+                onLayout={(e) => {
+                  rowY.current[habit.id] = e.nativeEvent.layout.y;
+                }}
                 entering={FadeInDown.delay(Math.min(index, 8) * 30).duration(
                   260,
                 )}>
@@ -549,13 +609,13 @@ export function HabitsTab({
                     onPress={() =>
                       fromFitness ? openHabitLink(link!) : handleToggle(habit)
                     }
-                    disabled={skipped && !fromFitness}
+                    disabled={fromNote || (skipped && !fromFitness)}
                     hitSlop={8}
                     haptic={checked || fromFitness ? 'light' : 'success'}>
                     <CheckCircle
                       checked={checked}
                       skipped={skipped}
-                      locked={fromFitness}
+                      locked={fromFitness || fromNote}
                     />
                   </PressableScale>
                   {/* Nama kebiasaan tidak bisa ditekan — ubah/urutkan/hapus
@@ -624,6 +684,14 @@ export function HabitsTab({
                     value={day.notes[habit.id] ?? ''}
                     onSave={(t) => handleNote(habit, t)}
                   />
+                )}
+                {/* Beri tahu syaratnya, jangan biarkan centangnya terasa
+                    mogok padahal cuma tulisannya yang belum cukup. */}
+                {fromNote && !skipped && !checked && (
+                  <VixText heading="label" additionalStyle={styles.noteHint}>
+                    ✍️ Tulis minimal {HABIT_NOTE_MIN} huruf — centangnya terisi
+                    sendiri.
+                  </VixText>
                 )}
               </Animated.View>
             );
@@ -755,12 +823,22 @@ export function HabitsTab({
           </View>
         )}
 
-        <EditDelete
-          editing={editing}
-          label="Hapus kebiasaan ini"
-          busy={busy}
-          onDelete={handleDeleteHabit}
-        />
+        {/* Kebiasaan berpintasan (Fitness, Diet, Baca Alkitab) itu WAJIB —
+            tidak ada tombol hapusnya, cuma bisa diurutkan naik/turun. Kalau
+            dihapus, daftarnya berhenti cocok dengan isi app. */}
+        {editing !== 'new' && editing && isFixedHabit(editing) ? (
+          <VixText heading="label" additionalStyle={styles.fixedNote}>
+            🔒 Kebiasaan wajib — tidak bisa dihapus, tapi urutannya bebas kamu
+            atur.
+          </VixText>
+        ) : (
+          <EditDelete
+            editing={editing}
+            label="Hapus kebiasaan ini"
+            busy={busy}
+            onDelete={handleDeleteHabit}
+          />
+        )}
 
         <DualButtons
           confirmLabel="Simpan"
@@ -934,6 +1012,8 @@ const styles = StyleSheet.create({
     marginTop: -2,
     marginBottom: 8,
   },
+  // Syarat panjang catatan untuk kebiasaan yang centangnya dari tulisan.
+  noteHint: { color: Color.TEXT_PLACEHOLDER, marginTop: -4, marginBottom: 8 },
   // Pilihan tingkat & area di modal ubah kebiasaan.
   fieldLabel: { marginTop: 14, marginBottom: 6 },
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -962,6 +1042,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   fixedNameText: { color: Color.TEXT_TITLE },
+  // Keterangan pengganti tombol hapus untuk kebiasaan wajib.
+  fixedNote: { color: Color.TEXT_LABEL, marginTop: 14 },
   // Keterangan baris olahraga: centangnya datang dari fitur Fitness.
   linkHint: { color: Color.FITNESS_DARK, marginTop: 1 },
   addRow: {

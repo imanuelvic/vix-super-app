@@ -79,6 +79,53 @@ export type ScheduledHabit = {
   notePrompt?: string;
 };
 
+// ===================== Ganti nama kebiasaan =====================
+// Daftar kebiasaan tersimpan di Firestore & namanya sengaja TIDAK bisa diubah
+// dari dalam app (sheet-nya cuma menampilkan). Jadi penggantian nama dilakukan
+// di sini, saat daftarnya DIBACA — datanya sendiri tidak ditulis ulang, dan
+// centang harian tetap aman karena kuncinya id, bukan nama.
+
+const HABIT_RENAMES: { match: RegExp; label: string }[] = [
+  { match: /1 kalimat rhema/i, label: '✍️ 1 Rhema before Activities' },
+];
+
+function renamedHabit(h: ScheduledHabit): ScheduledHabit {
+  const ganti = HABIT_RENAMES.find((r) => r.match.test(h.label));
+  return ganti ? { ...h, label: ganti.label } : h;
+}
+
+// ===================== Kebiasaan yang centangnya dari catatan =====================
+// Sebagian kebiasaan buktinya BUKAN ketukan, melainkan tulisannya. Rhema
+// contohnya: mencentang tanpa menulis apa pun cuma bikin angkanya bohong.
+// Jadi centangnya dikunci & ditentukan oleh panjang catatannya.
+
+/** Panjang minimal catatan supaya kebiasaan bercatatan dianggap selesai. */
+export const HABIT_NOTE_MIN = 10;
+
+/** Catatan ini sudah cukup panjang untuk dihitung selesai? */
+export function habitNoteDone(text: string): boolean {
+  return text.trim().length >= HABIT_NOTE_MIN;
+}
+
+/** Centangnya ditentukan catatan, bukan ketukan (sekarang: Rhema). */
+export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
+  return /rhema/i.test(h.label);
+}
+
+// Rhema pagi ditampilkan ULANG di Home pada jam-jam ini, biar firman paginya
+// tidak berhenti di kolom catatan — dibaca lagi saat siang, sore, & malam.
+const RHEMA_WINDOWS: [number, number][] = [
+  [12, 13],
+  [17, 18],
+  [21, 22],
+];
+
+/** Sekarang jam tayang kartu "Rhema Pagi Hari" di Home? */
+export function rhemaWindowNow(now: Date): boolean {
+  const h = now.getHours();
+  return RHEMA_WINDOWS.some(([dari, sampai]) => h >= dari && h < sampai);
+}
+
 export function habitArea(h: ScheduledHabit): HabitArea {
   return h.area ?? 'body';
 }
@@ -306,7 +353,7 @@ export type HabitLink = {
    * typed routes expo-router ikut memeriksa rutenya memang ada.
    */
   route?: {
-    pathname: '/fitness' | '/spiritual' | '/health';
+    pathname: '/fitness' | '/spiritual' | '/health' | '/bible-reading';
     params?: Record<string, string>;
   };
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
@@ -346,7 +393,31 @@ export const HABIT_LINKS: HabitLink[] = [
     color: Color.DANGER,
     route: { pathname: '/health', params: { tab: 'diet' } },
   },
+  // Baca Alkitab pagi & malam — tujuannya layar yang sama dengan kartu di
+  // Home, jadi ketukan dari mana pun mendarat di tempat yang sama.
+  {
+    match: /morning bible reading/i,
+    note: 'Buka Baca Alkitab › Pagi',
+    color: Color.SPIRITUAL_DARK,
+    route: { pathname: '/bible-reading', params: { session: 'morning' } },
+  },
+  {
+    match: /night bible reading/i,
+    note: 'Buka Baca Alkitab › Malam',
+    color: Color.SPIRITUAL_DARK,
+    route: { pathname: '/bible-reading', params: { session: 'night' } },
+  },
 ];
+
+/**
+ * Kebiasaan berpintasan itu WAJIB: ia mencerminkan sesuatu yang dikerjakan di
+ * layar lain (Fitness, Diet, Baca Alkitab), jadi menghapusnya cuma bikin
+ * daftarnya tidak lagi cocok dengan isi app. Boleh diurutkan naik/turun, boleh
+ * dilewati sehari (✗), tapi tombol hapusnya sengaja tidak ada.
+ */
+export function isFixedHabit(h: ScheduledHabit): boolean {
+  return habitLink(h) !== null;
+}
 
 /** Pintasan untuk satu kebiasaan (null = kebiasaan biasa). */
 export function habitLink(h: ScheduledHabit): HabitLink | null {
@@ -370,7 +441,9 @@ export function subscribeHabitSchedule(
   return liveDoc(
     scheduleRef(uid),
     (snapshot) =>
-      onChange((snapshot.data()?.habits as ScheduledHabit[]) ?? []),
+      onChange(
+        ((snapshot.data()?.habits as ScheduledHabit[]) ?? []).map(renamedHabit),
+      ),
     onError,
   );
 }

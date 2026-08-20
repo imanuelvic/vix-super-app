@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { InfoRow } from '@/components/common/InfoRow';
 import { VixText } from '@/components/common/VixText';
 import { RESIDENCE_INFO } from '@/lib/residence';
 
@@ -63,17 +64,6 @@ export function InfoTab() {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <VixText heading="label">{label}</VixText>
-      <VixText heading="bold" additionalStyle={styles.infoValue}>
-        {value}
-      </VixText>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   heroCard: {
@@ -107,14 +97,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginBottom: 14,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 9,
-  },
-  infoValue: { color: Color.TEXT_TITLE, flexShrink: 1, textAlign: 'right' },
   sectionTitle: { marginBottom: 10 },
   tipsCard: {
     backgroundColor: Color.CONTAINER,

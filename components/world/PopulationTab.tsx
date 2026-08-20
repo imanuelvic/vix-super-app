@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Pagination } from '@/components/common/Pagination';
@@ -7,6 +7,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatShortDayDate } from '@/lib/format';
+import { openExternalUrl } from '@/lib/linking';
 import {
   allPopulationPoints,
   estimatePopulation,
@@ -71,7 +72,7 @@ export function PopulationTab({ saved }: { saved: PopulationSaved }) {
           bukan sensus real-time). Tiap tanggal {RECORD_DAY} catatan bulan baru
           ditambahkan otomatis saat kamu membuka layar ini.
         </VixText>
-        <PressableScale onPress={() => Linking.openURL(POPULATION_SOURCE)}>
+        <PressableScale onPress={() => openExternalUrl(POPULATION_SOURCE)}>
           <VixText heading="bold" additionalStyle={styles.sourceLink}>
             🔗 Buka worldometers.info
           </VixText>

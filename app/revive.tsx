@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -20,7 +19,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { formatFullDate } from '@/lib/format';
@@ -38,21 +37,6 @@ import {
   type ReviveEntry,
 } from '@/lib/spiritual';
 import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
-
-// Buka aplikasi Revive lewat deep link resmi 'ndcministry://' (app NDC Ministry).
-// Kalau app-nya belum terpasang / skema tak dikenali, jatuh ke halaman App Store
-// supaya bisa dipasang dulu.
-const NDC_DEEPLINK = 'ndc://';
-const NDC_APP_STORE =
-  'https://apps.apple.com/id/app/ndc-ministry/id1452468715';
-
-async function openReviveApp() {
-  try {
-    await Linking.openURL(NDC_DEEPLINK);
-  } catch {
-    Linking.openURL(NDC_APP_STORE).catch(() => {});
-  }
-}
 
 // Tulis/edit Revive ✍️ — halaman sendiri (bukan mode di dalam
 // layar Spiritual) dengan KeyboardAvoidingView supaya kolom Application
@@ -202,27 +186,9 @@ export default function ReviveEditorScreen() {
           <ScrollView
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled">
-            {/* Reminder hari ini — dibaca dulu, baru menulis renungan */}
-            <View style={styles.reminderCard}>
-              <VixText heading="label" additionalStyle={styles.reminderLabel}>
-                🕊️ Reminder
-              </VixText>
-              <VixText heading="paragraph" additionalStyle={styles.reminderText}>
-                {reminder}
-              </VixText>
-            </View>
-            <PressableScale style={styles.appButton} onPress={openReviveApp}>
-              <View style={styles.appButtonMain}>
-                <VixText heading="bold" additionalStyle={styles.appButtonText}>
-                  📱 Buka NDC Ministry
-                </VixText>
-              </View>
-              <IconSymbol
-                name="chevron.right"
-                size={20}
-                color={Color.TEXT_REVERSE}
-              />
-            </PressableScale>
+            {/* Reminder hari ini + pintasan NDC Ministry — dibaca dulu, baru
+                menulis renungan. Bentuknya dipakai bersama layar Baca Alkitab. */}
+            <SpiritualIntro reminder={reminder} />
             <FormInput
               style={styles.formGap}
               placeholder="Judul Revive"
@@ -300,32 +266,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  reminderCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    borderLeftWidth: 3,
-    borderLeftColor: Color.SPIRITUAL_DARK,
-    padding: 14,
-    gap: 4,
-    marginBottom: 14,
-  },
-  reminderLabel: { color: Color.SPIRITUAL_DARK },
-  reminderText: { color: Color.TEXT_TITLE },
-  appButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    backgroundColor: Color.SPIRITUAL_DARK,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 14,
-  },
-  appButtonMain: { flex: 1, gap: 1 },
-  appButtonText: { color: Color.TEXT_REVERSE },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   bigInput: {
