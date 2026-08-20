@@ -88,7 +88,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   function openAdd() {
     const now = new Date();
     setEditing('new');
-    setFTitle(`Mentoring ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`);
+    setFTitle(`00. Meeting MCL CL - ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`);
     setFDate(now);
     setFPlace('');
     setFPoints(emptyMonthlyPoints());
