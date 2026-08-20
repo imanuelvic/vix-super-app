@@ -135,7 +135,7 @@ const FEATURES: {
     | 'house.fill'
     | 'briefcase.fill'
     | 'person.3.fill'
-    | 'mountain.2.fill'
+    | 'party.popper.fill'
     | 'dumbbell.fill'
     | 'globe'
     | 'bird.fill'
@@ -157,7 +157,7 @@ const FEATURES: {
 
   { key: 'investment', label: 'Invest', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
   { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
-  { key: 'fun', label: 'Fun', icon: 'mountain.2.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
+  { key: 'fun', label: 'Fun', icon: 'party.popper.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
   { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
 
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },

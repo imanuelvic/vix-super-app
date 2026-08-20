@@ -70,6 +70,9 @@ const MAPPING = {
   'line.3.horizontal': 'drag-handle',
   'flag.fill': 'flag',
   'mountain.2.fill': 'terrain',
+  // Tile Fun 🎉 di Home — petasan/party popper, sama seperti judul fiturnya.
+  // ('mountain.2.fill' tetap dipakai sub-tab Summit di dalam fitur Fun.)
+  'party.popper.fill': 'celebration',
   'figure.run': 'directions-run',
   'figure.mind.and.body': 'self-improvement',
   'beach.umbrella.fill': 'beach-access',
