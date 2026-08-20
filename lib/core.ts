@@ -254,7 +254,7 @@ export const MBTI_TIP: Record<string, string> = {
   INTP: 'Pemikir logis. Ajak eksplorasi konsep, beri ruang berpikir, jangan paksa basa-basi.',
   ENTJ: 'Pemimpin natural. Bicara target & solusi, libatkan dalam mengambil keputusan.',
   ENTP: 'Suka ide baru & debat sehat. Ajak brainstorming seru, tantang dengan pertanyaan.',
-  INFJ: 'Idealis & dalam. Obrolan makna & hati, dengarkan sungguh, jaga privasinya.',
+  INFJ: 'Idealis & dalam. Diskusi makna & hati, dengarkan sungguh, jaga privasinya.',
   INFP: 'Lembut & bernilai. Hargai perasaannya, beri afirmasi, ciptakan ruang aman untuk terbuka.',
   ENFJ: 'Peduli orang. Ajak melayani bareng, apresiasi kepeduliannya, ngobrol dari hati.',
   ENFP: 'Ceria & penuh ide. Ajak kegiatan seru & spontan, dukung mimpi-mimpinya.',
@@ -969,7 +969,7 @@ const CORE_CATEGORIES: CoreCategory[] = [
 /** Label kategori pertanyaan random — sekaligus pembuka pesan WA-nya. */
 export const RANDOM_QUESTION_LABEL = 'Random Question';
 
-// Pertanyaan ringan pembuka obrolan (this-or-that / random / seru-seruan).
+// Pertanyaan ringan pembuka diskusi (this-or-that / random / seru-seruan).
 const OPEN_QUESTIONS: string[] = [
   'Kopi atau teh? ☕🍵',
   'Kalau bisa liburan sekarang: Thailand atau Singapura? ✈️',
@@ -1158,7 +1158,7 @@ export function weeklyFollowupTopic(
 /**
  * Teks WA untuk follow up mingguan: satu baris pembuka, baris kosong, lalu
  * pertanyaannya. Pertanyaan random dibuka "Random Question" supaya CL langsung
- * paham ini obrolan seru-seruan, bukan follow up serius.
+ * paham ini diskusi seru-seruan, bukan follow up serius.
  */
 export function followupMessage(topic: FollowupTopic): string {
   const opener =

@@ -201,13 +201,6 @@ export function DashboardTab({
         )}
       </View>
 
-      {/* ===== 3 angka utama ===== */}
-      <View style={styles.statRow}>
-        <StatTile label="💰 Income" value={formatShortRupiah(summary.income)} />
-        <StatTile label="💸 Expense" value={formatShortRupiah(summary.expense)} />
-        <StatTile label="🏦 Saving" value={formatShortRupiah(summary.saved)} />
-      </View>
-
       {/* ===== Budget vs realisasi: pembagian expense / saving / investment ===== */}
       <View style={styles.card}>
         <VixText heading="title" additionalStyle={styles.cardTitle}>
@@ -221,16 +214,6 @@ export function DashboardTab({
           </VixText>
         ) : (
           <>
-            {/* Dua batang bertumpuk: komposisi rencana vs kenyataan */}
-            <CompositionBar
-              label="Budget"
-              total={plan.plannedTotal}
-              parts={plan.rows.map((r) => ({
-                key: r.key,
-                value: r.planned,
-                color: r.color,
-              }))}
-            />
             <CompositionBar
               label="Realisasi"
               total={plan.actualTotal}
@@ -273,8 +256,25 @@ export function DashboardTab({
                 </View>
               );
             })}
+
+            <CompositionBar
+              label="Budget"
+              total={plan.plannedTotal}
+              parts={plan.rows.map((r) => ({
+                key: r.key,
+                value: r.planned,
+                color: r.color,
+              }))}
+            />
           </>
         )}
+      </View>
+
+      {/* ===== 3 angka utama ===== */}
+      <View style={styles.statRow}>
+        <StatTile label="💰 Income" value={formatShortRupiah(summary.income)} />
+        <StatTile label="💸 Expense" value={formatShortRupiah(summary.expense)} />
+        <StatTile label="🏦 Saving" value={formatShortRupiah(summary.saved)} />
       </View>
 
       {/* ===== Laju pengeluaran harian + grafik batang ===== */}

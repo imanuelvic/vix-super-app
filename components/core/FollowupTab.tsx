@@ -56,7 +56,7 @@ import {
 
 // Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
 // membangun hubungan — Senin pertanyaan doa wajib, hari lain pertanyaan acak
-// (8 aspek hidup / obrolan ringan / penggali kepribadian). Plus pengingat
+// (8 aspek hidup / diskusi ringan / penggali kepribadian). Plus pengingat
 // ulang tahun & Idea For CORE.
 export function FollowupTab({
   leaders,

@@ -22,10 +22,10 @@ import {
   setSkillDone,
   setTopicDone,
   setWeekSkill,
-  SKILLS,
   skillAreaMeta,
   skillOf,
   skillOfWeek,
+  SKILLS,
   stepsDone,
   topicGroupMeta,
   topicsOfWeek,
@@ -202,7 +202,7 @@ export function WeekTab({
 
         {/* ===== 4 langkah ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Langkah minggu ini
+          Target Minggu Ini
         </VixText>
 
         {LEARNING_STEPS.map((s) => {
@@ -254,7 +254,7 @@ export function WeekTab({
 
         {/* ===== Bahan diskusi minggu ini ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Bahan diskusi minggu ini
+          Diskusi minggu ini
         </VixText>
 
         {/* Bahan utama = ilmu minggu ini. Sengaja TANPA checkbox: "sudah
@@ -270,7 +270,7 @@ export function WeekTab({
           </VixText>
         </View>
 
-        {/* Tiga topik obrolan giliran minggu ini — pemantik kalau obrolannya
+        {/* Tiga topik diskusi giliran minggu ini — pemantik kalau diskusinya
             masih mau lanjut. Dicentang setelah benar-benar diobrolkan. */}
         {topics.map((t) => {
           const meta = topicGroupMeta(t.group);

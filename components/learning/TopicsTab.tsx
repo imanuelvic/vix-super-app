@@ -19,7 +19,7 @@ import {
 } from '@/lib/learning';
 import { SAVE_ERROR } from '@/lib/messages';
 
-// Sub-tab 💬 Obrolan — 62 bahan percakapan dari daftarmu, dikelompokkan jadi 6.
+// Sub-tab 💬 Diskusi — 62 bahan percakapan dari daftarmu, dikelompokkan jadi 6.
 //
 // Gunanya bukan sekadar checklist: ilmu baru benar-benar melekat kalau
 // DIUCAPKAN, bukan cuma dibaca. Tiap minggu TIGA topik dari sini jadi pemantik

@@ -29,11 +29,11 @@ type LearningTabKey = 'week' | 'skills' | 'topics';
 // Fitur Learning 🎓 — satu ilmu baru tiap minggu.
 //   🎯 Minggu Ini — topik giliran minggu ini + 4 langkah kecilnya
 //   🧠 Skills     — 22 topik dari daftarmu, per bidang
-//   💬 Obrolan    — 62 bahan percakapan, supaya ilmunya keluar jadi omongan
+//   💬 Diskusi    — 62 bahan percakapan, supaya ilmunya keluar jadi omongan
 const TABS: BottomTab<LearningTabKey>[] = [
-  { key: 'week', label: 'Minggu Ini', icon: 'target' },
+  { key: 'week', label: 'Target', icon: 'target' },
   { key: 'skills', label: 'Skills', icon: 'graduationcap.fill' },
-  { key: 'topics', label: 'Obrolan', icon: 'bubble.left.fill' },
+  { key: 'topics', label: 'Diskusi', icon: 'bubble.left.fill' },
 ];
 
 export default function LearningScreen() {

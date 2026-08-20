@@ -19,7 +19,7 @@ import { weekStart } from './usage';
 // dicicil 4 kali @ 5–15 menit itu total cuma ±45 menit seminggu — kecil, tapi
 // dalam setahun jadi 52 ilmu baru.
 //
-// Daftar skill & topik obrolan STATIK di sini (tidak masuk Firestore) supaya
+// Daftar skill & topik diskusi STATIK di sini (tidak masuk Firestore) supaya
 // ringan & gratis. Yang disimpan hanya kemajuanmu:
 //   users/{uid}/learning/{weekId}  → { skillKey, steps, note }   (per minggu)
 //   users/{uid}/learning/skills    → { done: { [skillKey]: weekId } }
@@ -230,7 +230,7 @@ export function skillOf(key: string): Skill | null {
   return SKILLS.find((s) => s.key === key) ?? null;
 }
 
-// ===================== Topik obrolan =====================
+// ===================== Topik diskusi =====================
 // Bahan ngobrol supaya ilmunya keluar jadi percakapan, bukan cuma tersimpan di
 // kepala. Dipakai di langkah ke-4 tiap minggu ("Ceritakan").
 
@@ -246,13 +246,13 @@ export const TOPIC_GROUPS: TopicGroup[] = [
     key: 'marriage',
     label: 'Marriage & Parenting',
     emoji: '💍',
-    hint: 'Bahan obrolan serius dengan calon/pasangan',
+    hint: 'Bahan diskusi serius dengan calon/pasangan',
   },
   {
     key: 'entertainment',
     label: 'Entertainment',
     emoji: '🎢',
-    hint: 'Obrolan ringan biar akrab dengan siapa saja',
+    hint: 'Diskusi ringan biar akrab dengan siapa saja',
   },
   {
     key: 'job',
@@ -414,7 +414,7 @@ export const LEARNING_STEPS: {
     emoji: '💬',
     label: 'Ceritakan',
     minutes: 5,
-    how: 'Ceritakan ke 1 orang, pakai topik obrolan di bawah. Kalau bisa menjelaskan, berarti kamu memang paham.',
+    how: 'Ceritakan ke 1 orang, pakai topik diskusi di bawah. Kalau bisa menjelaskan, berarti kamu memang paham.',
   },
 ];
 
@@ -442,11 +442,11 @@ export function skillOfWeek(now = new Date()): Skill {
   return SKILLS[weekNumber(now) % SKILLS.length];
 }
 
-/** Berapa topik obrolan yang digilirkan tiap minggu. */
+/** Berapa topik diskusi yang digilirkan tiap minggu. */
 export const TOPICS_PER_WEEK = 3;
 
 /**
- * Topik obrolan giliran minggu ini — tiga sekaligus, diambil berurutan lalu
+ * Topik diskusi giliran minggu ini — tiga sekaligus, diambil berurutan lalu
  * digeser 3 tiap minggu. Tiga selalu berbeda (daftarnya jauh lebih panjang),
  * dan karena 3 tidak habis membagi jumlah topik, putarannya tetap kebagian
  * semua sebelum mengulang.
@@ -498,12 +498,12 @@ export function pendingSteps(
   return overdueSteps(steps, now).length;
 }
 
-/** Berapa dari 4 langkah minggu ini yang sudah beres. */
+/** Berapa dari 4 target minggu ini yang sudah beres. */
 export function stepsDone(steps: Record<string, boolean>): number {
   return LEARNING_STEPS.filter((s) => steps[s.key]).length;
 }
 
-/** Semua langkah minggu ini beres? → skill-nya boleh ditandai selesai. */
+/** Semua target minggu ini beres? → skill-nya boleh ditandai selesai. */
 export function weekComplete(steps: Record<string, boolean>): boolean {
   return stepsDone(steps) === LEARNING_STEPS.length;
 }
@@ -543,7 +543,7 @@ export function subscribeLearningWeek(
   );
 }
 
-/** Centang / lepas satu langkah minggu ini. */
+/** Centang / lepas satu target minggu ini. */
 export function setLearningStep(
   uid: string,
   weekId: string,
@@ -596,7 +596,7 @@ export function setSkillDone(uid: string, skillKey: string, weekId: string | nul
   );
 }
 
-// ---- Topik obrolan yang sudah dibahas: { done: { [topicKey]: true } } ----
+// ---- Topik diskusi yang sudah dibahas: { done: { [topicKey]: true } } ----
 
 export type TopicsDone = Record<string, boolean>;
 
