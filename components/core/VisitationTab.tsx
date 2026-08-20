@@ -13,6 +13,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -343,72 +344,80 @@ export function VisitationTab({
           )}
         </ScrollView>
       ) : (
-        // key = halaman → balik ke atas tiap ganti halaman (pola yang sama
-        // dipakai Riwayat Pertemuan & daftar panjang lainnya).
-        <ScrollView key={currentPage} contentContainerStyle={styles.content}>
-          <PrimaryButton
-            label="Jadwalkan Pertemuan"
-            icon="plus"
-            onPress={openAdd}
-            additionalStyle={styles.addButton}
-          />
+        <>
+          {/* Dipatok di atas: tombol jadwalkan selalu terjangkau, tidak ikut
+              hilang ke atas saat daftar jadwalnya digulung ke bawah. */}
+          <StickyTop>
+            <PrimaryButton
+              label="Jadwalkan Pertemuan"
+              icon="plus"
+              onPress={openAdd}
+              additionalStyle={styles.addButton}
+            />
+          </StickyTop>
 
-          <FormError message={error} />
+          {/* key = halaman → balik ke atas tiap ganti halaman (pola yang sama
+              dipakai Riwayat Pertemuan & daftar panjang lainnya). */}
+          <ScrollView
+            key={currentPage}
+            contentContainerStyle={[styles.content, styles.contentPinned]}>
+            <FormError message={error} />
 
-          {/* ===== Jadwal mendatang ===== */}
-          <View style={styles.sectionRow}>
-            <VixText heading="title" additionalStyle={styles.sectionTitleFlex}>
-              📅 Jadwal Mendatang
-            </VixText>
-            <View style={styles.sectionActions}>
-              {/* Tips pertemuan (buka modal) */}
-              <EmojiButton emoji="💡" onPress={() => setTipsModal(true)} />
-              {/* Filter jadwal (per CL / jenis) — menyala kalau ada filter aktif */}
-              <EmojiButton
-                emoji="🎚️"
-                active={hasFilter}
-                onPress={() => setFilterModal(true)}
-              />
-            </View>
-          </View>
-
-          {/* Chip filter yang sedang aktif — ketuk untuk menghapusnya */}
-          {hasFilter && (
-            <View style={styles.activeFilterRow}>
-              {filterLeaderId && (
-                <Chip
-                  label={`${activeLeader ? `${activeLeader.heart} ${activeLeader.name}` : 'CL'} ✕`}
-                  active
-                  onPress={() => setFilterLeaderId(null)}
+            {/* ===== Jadwal mendatang ===== */}
+            <View style={styles.sectionRow}>
+              <VixText heading="title" additionalStyle={styles.sectionTitleFlex}>
+                📅 Jadwal Mendatang
+              </VixText>
+              <View style={styles.sectionActions}>
+                {/* Tips pertemuan (buka modal) */}
+                <EmojiButton emoji="💡" onPress={() => setTipsModal(true)} />
+                {/* Filter jadwal (per CL / jenis) — nyala kalau ada filter aktif */}
+                <EmojiButton
+                  emoji="🎚️"
+                  active={hasFilter}
+                  onPress={() => setFilterModal(true)}
                 />
-              )}
-              {filterKind && (
-                <Chip
-                  label={`${meetingKindMeta(filterKind).icon} ${meetingKindMeta(filterKind).label} ✕`}
-                  active
-                  onPress={() => setFilterKind(null)}
-                />
-              )}
+              </View>
             </View>
-          )}
 
-          {filtered.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
-              {hasFilter
-                ? 'Tidak ada jadwal yang cocok dengan filter ini.'
-                : 'Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉'}
-            </VixText>
-          ) : (
-            <>
-              {pageItems.map(renderCard)}
-              <Pagination
-                page={currentPage}
-                pageCount={pageCount}
-                onChange={setPage}
-              />
-            </>
-          )}
-        </ScrollView>
+            {/* Chip filter yang sedang aktif — ketuk untuk menghapusnya */}
+            {hasFilter && (
+              <View style={styles.activeFilterRow}>
+                {filterLeaderId && (
+                  <Chip
+                    label={`${activeLeader ? `${activeLeader.heart} ${activeLeader.name}` : 'CL'} ✕`}
+                    active
+                    onPress={() => setFilterLeaderId(null)}
+                  />
+                )}
+                {filterKind && (
+                  <Chip
+                    label={`${meetingKindMeta(filterKind).icon} ${meetingKindMeta(filterKind).label} ✕`}
+                    active
+                    onPress={() => setFilterKind(null)}
+                  />
+                )}
+              </View>
+            )}
+
+            {filtered.length === 0 ? (
+              <VixText heading="label" additionalStyle={styles.empty}>
+                {hasFilter
+                  ? 'Tidak ada jadwal yang cocok dengan filter ini.'
+                  : 'Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉'}
+              </VixText>
+            ) : (
+              <>
+                {pageItems.map(renderCard)}
+                <Pagination
+                  page={currentPage}
+                  pageCount={pageCount}
+                  onChange={setPage}
+                />
+              </>
+            )}
+          </ScrollView>
+        </>
       )}
 
       {/* FAB mengambang (sama seperti Transaksi di Finance): buka & tutup
@@ -529,6 +538,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   // paddingBottom disisakan lega supaya kartu terakhir tidak tertutup FAB.
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
+  // Daftar jadwal: jarak atasnya sudah dipegang StickyTop (tombol Jadwalkan).
+  // Mode cari 🔍 tidak pakai ini — di sana kolom carinya yang butuh jarak atas.
+  contentPinned: { paddingTop: 0 },
   // Mode cari 🔍
   searchWrap: { marginBottom: 10 },
   searchCount: { color: Color.TEXT_LABEL, marginBottom: 8 },

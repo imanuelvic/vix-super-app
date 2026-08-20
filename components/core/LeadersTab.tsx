@@ -12,6 +12,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -291,8 +292,9 @@ export function LeadersTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Dua tombol tambah sebelahan: CL (warna utama) & MT (accent) */}
+      {/* Dua tombol tambah sebelahan: CL (warna utama) & MT (accent). Dipatok
+          di atas supaya tetap terjangkau walau daftar orangnya dibuka semua. */}
+      <StickyTop>
         <View style={styles.addRow}>
           <PrimaryButton
             label="CORE Leader"
@@ -309,7 +311,9 @@ export function LeadersTab({
             additionalStyle={styles.addFlex}
           />
         </View>
+      </StickyTop>
 
+      <ScrollView contentContainerStyle={styles.content}>
         <VixText heading="label" additionalStyle={styles.countLine}>
           {leaders.length} CORE Leader · {mainTeam.length} Main Team
         </VixText>
@@ -884,7 +888,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   pBadgeText: { color: Color.MAIN_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  // paddingTop 0 — jarak atasnya sudah dipegang StickyTop (tombol tambah).
+  content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 },
   addRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   addFlex: { flex: 1 },
   countLine: { textAlign: 'center', marginBottom: 12 },

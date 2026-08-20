@@ -13,6 +13,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
+import { StickyTop } from '@/components/common/StickyTop';
 import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -262,13 +263,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
 
   return (
     <View style={styles.flex}>
-      {/* key = halaman → balik ke atas tiap ganti halaman. Saat mode cari
-          sengaja dipatok tetap, supaya SearchBar tidak ter-mount ulang &
-          kehilangan fokus di tengah pengetikan. */}
-      <ScrollView
-        key={searchMode ? 'search' : currentPage}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled">
+      {/* Dipatok di atas: tombol buat rapat (atau kolom cari) selalu terjangkau,
+          tidak ikut hilang ke atas saat notulen digulung ke bawah. */}
+      <StickyTop>
         {searchMode ? (
           <View style={styles.searchWrap}>
             <SearchBar
@@ -286,7 +283,15 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             additionalStyle={styles.addButton}
           />
         )}
+      </StickyTop>
 
+      {/* key = halaman → balik ke atas tiap ganti halaman; ganti mode cari juga
+          mengosongkan daftarnya. SearchBar sendiri sudah aman dari mount ulang
+          karena sekarang ada di luar ScrollView ini. */}
+      <ScrollView
+        key={searchMode ? 'search' : currentPage}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled">
         <FormError message={error} />
 
         {shown.length === 0 ? (
@@ -320,7 +325,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
       <SheetModal
         visible={!!editing}
         title={editing === 'new' ? 'Catat Rapat Bulanan' : 'Ubah Notulen'}
-        subtitle="Isi 5 poin agendanya — boleh dikosongkan kalau tidak dibahas"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🏷️ Judul rapat
@@ -449,8 +453,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  // paddingTop 0 — jarak atasnya sudah dipegang StickyTop di atas daftar ini.
   // paddingBottom lega supaya kartu terakhir tidak tertutup FAB.
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
+  content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 90 },
   addButton: { marginBottom: 12 },
   searchWrap: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 10 },
