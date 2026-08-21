@@ -120,7 +120,7 @@ const RHEMA_WINDOWS: [number, number][] = [
   [21, 22],
 ];
 
-/** Sekarang jam tayang kartu "Rhema Pagi Hari" di Home? */
+/** Sekarang jam tayang kartu "Rhema Pagi Ini" di Home? */
 export function rhemaWindowNow(now: Date): boolean {
   const h = now.getHours();
   return RHEMA_WINDOWS.some(([dari, sampai]) => h >= dari && h < sampai);

@@ -10,6 +10,7 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   setTopicDone,
   TOPIC_GROUPS,
@@ -31,6 +32,9 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
   const [group, setGroup] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Tekan chip kelompok yang sedang aktif LAGI → daftar balik ke paling atas.
+  const { ref: scrollRef, toTop } = useScrollTop();
+
   // Ketiga topik giliran minggu ini — ditandai di daftar panjang ini juga.
   const weeklyKeys = new Set(topicsOfWeek(new Date()).map((t) => t.key));
   const doneCount = TOPICS.filter((t) => topicsDone[t.key]).length;
@@ -48,7 +52,7 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <SummaryCard
           label="Sudah dibahas"
           value={`${doneCount}/${TOPICS.length} topik 💬`}
@@ -66,6 +70,7 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
           }))}
           value={group}
           onChange={setGroup}
+          onRepress={toTop}
         />
 
         {/* Keterangan kelompok yang sedang dipilih */}

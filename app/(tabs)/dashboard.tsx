@@ -19,6 +19,7 @@ import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { type LoginStreak } from '@/lib/achievements';
 import {
   carAttentionList,
@@ -185,6 +186,9 @@ import {
 export default function DashboardScreen() {
   const router = useRouter();
   const { user } = useAuth();
+
+  // Tekan tab Dashboard lagi saat halamannya sedang dibuka → balik ke atas.
+  const { ref: scrollRef } = useScrollTop();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [otherTasks, setOtherTasks] = useState<OtherTask[]>([]);
@@ -661,7 +665,7 @@ export default function DashboardScreen() {
         </VixText>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
           <PressableScale
             style={styles.streakCard}

@@ -20,6 +20,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   ageAtYear,
   historyCategoryMeta,
@@ -50,6 +51,9 @@ export default function HistoryScreen() {
   const [category, setCategory] = useState<HistoryCategoryKey | null>(null);
   const [newestFirst, setNewestFirst] = useState(true);
   const [query, setQuery] = useState('');
+
+  // Tekan chip kategori yang sedang aktif LAGI → daftar balik ke paling atas.
+  const { ref: scrollRef, toTop } = useScrollTop();
 
   // Form tambah/edit.
   const [editing, setEditing] = useState<HistoryItem | 'new' | null>(null);
@@ -219,7 +223,7 @@ export default function HistoryScreen() {
           </View>
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
           {/* Ringkasan perjalanan */}
           <SummaryCard style={styles.heroCard}>
             <VixText heading="label" additionalStyle={summaryText.label}>
@@ -255,6 +259,7 @@ export default function HistoryScreen() {
             }))}
             value={category}
             onChange={setCategory}
+            onRepress={toTop}
           />
 
           <View style={styles.sortRow}>

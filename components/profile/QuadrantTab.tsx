@@ -9,6 +9,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { SAVE_ERROR } from '@/lib/messages';
 import { saveSelfKnowledge, type SelfKnowledge } from '@/lib/selfKnowledge';
 
@@ -44,6 +45,8 @@ export function QuadrantTab<K extends string>({
   footerHint?: string;
 }) {
   const { user } = useAuth();
+  // Tekan tab Profile lagi saat sub-tab ini terbuka → balik ke paling atas.
+  const { ref: scrollRef } = useScrollTop();
 
   // Kolom yang sedang diedit (null = modal tertutup).
   const [editing, setEditing] = useState<{ key: string; title: string; hint: string } | null>(null);
@@ -77,7 +80,7 @@ export function QuadrantTab<K extends string>({
   const filled = quadrants.filter((q) => (values[q.key] ?? '').trim()).length;
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
       <View style={styles.introCard}>
         <VixText heading="label" additionalStyle={styles.introText}>
           {intro}

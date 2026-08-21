@@ -18,6 +18,7 @@ import { VixText } from '@/components/common/VixText';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
   MEETING_KINDS,
@@ -83,6 +84,9 @@ export default function VisitationsScreen() {
   );
   const { setPage, currentPage, pageCount, pageItems } = usePagination(sorted);
 
+  // Tekan chip jenis yang sedang aktif LAGI → daftarnya balik ke paling atas.
+  const { ref: scrollRef, toTop } = useScrollTop();
+
   function openEdit(v: Visitation) {
     setEditing(v);
     form.fill(v);
@@ -144,7 +148,10 @@ export default function VisitationsScreen() {
       {visitations === null ? (
         <LoadingCenter />
       ) : (
-        <ScrollView key={currentPage} contentContainerStyle={styles.content}>
+        <ScrollView
+          key={currentPage}
+          ref={scrollRef}
+          contentContainerStyle={styles.content}>
           <FilterChips
             options={MEETING_KINDS.map((k) => ({
               key: k.key,
@@ -153,6 +160,7 @@ export default function VisitationsScreen() {
             }))}
             value={filterKind}
             onChange={setFilterKind}
+            onRepress={toTop}
           />
 
           {sorted.length === 0 && (

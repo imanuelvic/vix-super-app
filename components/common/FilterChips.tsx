@@ -17,11 +17,18 @@ export function FilterChips<T extends string>({
   value,
   onChange,
   allLabel = 'ALL',
+  onRepress,
 }: {
   options: FilterOption<T>[];
   value: T | null; // null = tanpa filter
   onChange: (key: T | null) => void;
   allLabel?: string;
+  /**
+   * Dipanggil saat chip yang SEDANG aktif ditekan lagi (tekanan kedua) —
+   * dipakai untuk menggulung daftarnya balik ke paling atas. Filternya sendiri
+   * tetap berperilaku seperti biasa (tekanan kedua = lepas filter).
+   */
+  onRepress?: () => void;
 }) {
   return (
     <ScrollView
@@ -31,14 +38,20 @@ export function FilterChips<T extends string>({
       <Chip
         label={allLabel}
         active={value === null}
-        onPress={() => onChange(null)}
+        onPress={() => {
+          if (value === null) onRepress?.();
+          onChange(null);
+        }}
       />
       {options.map((o) => (
         <Chip
           key={o.key}
           label={o.count ? `${o.label} (${o.count})` : o.label}
           active={value === o.key}
-          onPress={() => onChange(value === o.key ? null : o.key)}
+          onPress={() => {
+            if (value === o.key) onRepress?.();
+            onChange(value === o.key ? null : o.key);
+          }}
         />
       ))}
     </ScrollView>

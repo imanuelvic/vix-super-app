@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, type ScrollView } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
@@ -21,6 +21,7 @@ import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
   areaMeta,
@@ -109,7 +110,9 @@ export function HabitsTab({
   // Loncat ke baris pertama yang belum dicentang saat tab sesi ditekan LAGI.
   // Posisi tiap baris dicatat lewat onLayout (relatif ke blok daftarnya), jadi
   // tidak perlu mengukur ulang apa pun saat tombolnya ditekan.
-  const scrollRef = useRef<ScrollView>(null);
+  // Ref yang sama juga dipakai tab Habits di bawah: menekan tab-nya lagi saat
+  // halaman ini sedang dibuka → balik ke paling atas (lihat hooks/useScrollTop).
+  const { ref: scrollRef } = useScrollTop();
   const rowY = useRef<Record<string, number>>({});
   const blockY = useRef(0);
 
@@ -685,14 +688,6 @@ export function HabitsTab({
                     onSave={(t) => handleNote(habit, t)}
                   />
                 )}
-                {/* Beri tahu syaratnya, jangan biarkan centangnya terasa
-                    mogok padahal cuma tulisannya yang belum cukup. */}
-                {fromNote && !skipped && !checked && (
-                  <VixText heading="label" additionalStyle={styles.noteHint}>
-                    ✍️ Tulis minimal {HABIT_NOTE_MIN} huruf — centangnya terisi
-                    sendiri.
-                  </VixText>
-                )}
               </Animated.View>
             );
           })}
@@ -1012,8 +1007,6 @@ const styles = StyleSheet.create({
     marginTop: -2,
     marginBottom: 8,
   },
-  // Syarat panjang catatan untuk kebiasaan yang centangnya dari tulisan.
-  noteHint: { color: Color.TEXT_PLACEHOLDER, marginTop: -4, marginBottom: 8 },
   // Pilihan tingkat & area di modal ubah kebiasaan.
   fieldLabel: { marginTop: 14, marginBottom: 6 },
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

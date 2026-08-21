@@ -24,6 +24,7 @@ import { BodyCard } from '@/components/health/BodyCard';
 import { PersonalityTab } from '@/components/profile/PersonalityTab';
 import { QuadrantTab, type Quadrant } from '@/components/profile/QuadrantTab';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { pickCompressedPhoto } from '@/lib/family';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
 import {
@@ -141,6 +142,12 @@ const SWOT: Quadrant<'strengths' | 'weaknesses' | 'opportunities' | 'threats'>[]
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
+
+  // Tekan tab Profile lagi saat halamannya sedang dibuka → balik ke atas.
+  // Dua sub-tab punya daftar sendiri di file ini (Profile & Data Tubuh), jadi
+  // masing-masing dapat ref-nya sendiri; sub-tab lain mengurus punyanya sendiri.
+  const { ref: mainScroll } = useScrollTop();
+  const { ref: bodyScroll } = useScrollTop();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   // Data tubuh 🧍 — dipindah ke sini dari Health (data diri, bukan aktivitas).
@@ -272,7 +279,7 @@ export default function ProfileScreen() {
       <View style={styles.body} key={scrollKey}>
         {tab === 'body' ? (
           // Data Tubuh punya sub-tab sendiri 🧍 — dulu menumpang di Profile.
-          <ScrollView contentContainerStyle={styles.content}>
+          <ScrollView ref={bodyScroll} contentContainerStyle={styles.content}>
             {body ? <BodyCard profile={body} /> : <LoadingCenter />}
           </ScrollView>
         ) : tab === 'personality' ? (
@@ -305,7 +312,7 @@ export default function ProfileScreen() {
   function ProfileContent() {
     if (!profile) return null; // sudah dijaga di atas; ini untuk TypeScript
     return (
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={mainScroll} contentContainerStyle={styles.content}>
         {/* Hero: foto + nama + kewarganegaraan */}
         <View style={styles.hero}>
           <View style={styles.avatar}>

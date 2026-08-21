@@ -17,6 +17,7 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import { bumpWeekGym } from '@/lib/health';
 import {
@@ -70,6 +71,9 @@ export function ExerciseTab({
 
   const [weekday, setWeekday] = useState(todayWeekday);
   const [busy, setBusy] = useState(false);
+
+  // Tekan pil hari yang sedang dibuka LAGI → isi sesinya balik ke paling atas.
+  const { ref: scrollRef, toTop } = useScrollTop();
 
   // Modal ubah beban satu gerakan.
   const [editing, setEditing] = useState<Exercise | null>(null);
@@ -210,7 +214,8 @@ export function ExerciseTab({
           oneRow && styles.dayPillFill,
           active && styles.dayPillActive,
         ]}
-        onPress={() => setWeekday(wd)}>
+        // Tekanan kedua (hari yang sedang dibuka) = balik ke paling atas.
+        onPress={() => (active ? toTop() : setWeekday(wd))}>
         {/* Hari jalan pagi diredupkan — tetap ada isinya, tapi bukan hari inti */}
         <VixText
           additionalStyle={[
@@ -245,7 +250,7 @@ export function ExerciseTab({
         )}
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         {/* Hero sesi — warna oranye Fitness sesuai grid Home */}
         <View style={styles.hero}>
               <View style={styles.heroMain}>

@@ -36,6 +36,7 @@ import { VixText } from '@/components/common/VixText';
 import { PriorityTab } from '@/components/tasks/PriorityTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -101,6 +102,9 @@ export default function TasksScreen() {
     validCategory ?? 'personal',
   );
   const [error, setError] = useState<string | null>(null);
+
+  // Tekan chip kategori yang sedang dibuka LAGI → daftar hari balik ke atas.
+  const { ref: scrollRef, toTop } = useScrollTop();
 
   // Tab utama: planner harian atau catatan prioritas (Other).
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
@@ -560,7 +564,11 @@ export default function TasksScreen() {
                   <Chip
                     label={`${c.icon} ${c.label}`}
                     active={category === c.key}
-                    onPress={() => setCategory(c.key)}
+                    // Tekanan kedua (kategori yang sedang dibuka) = balik ke
+                    // paling atas, tanpa perlu menggulung sendiri.
+                    onPress={() =>
+                      category === c.key ? toTop() : setCategory(c.key)
+                    }
                   />
                   {count > 0 && (
                     <View style={styles.chipBadge}>
@@ -598,6 +606,7 @@ export default function TasksScreen() {
           ) : (
             // Scroll dimatikan saat menyeret biar posisi target stabil.
             <ScrollView
+              ref={scrollRef}
               style={styles.listScroll}
               scrollEnabled={dragTask === null}
               contentContainerStyle={styles.listContent}>

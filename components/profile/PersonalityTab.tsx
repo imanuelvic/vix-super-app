@@ -11,6 +11,7 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   DISC_OPTIONS,
   LOVE_LANG_OPTIONS,
@@ -36,6 +37,8 @@ import { otherTaskDaysUntil, subscribeOtherTasks, type OtherTask } from '@/lib/t
 // prioritas yang menyebut tes itu ikut ditarik ke sini biar sinkron.
 export function PersonalityTab({ data }: { data: Personality }) {
   const { user } = useAuth();
+  // Tekan tab Profile lagi saat sub-tab ini terbuka → balik ke paling atas.
+  const { ref: scrollRef } = useScrollTop();
   const now = new Date();
   const todayId = dayDocId(now);
 
@@ -105,7 +108,7 @@ export function PersonalityTab({ data }: { data: Personality }) {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
       {/* Hero MBTI — huruf besar ala kartu hasil tes */}
       <PressableScale style={styles.hero} onPress={openEdit}>
         <VixText heading="label" additionalStyle={styles.heroLabel}>

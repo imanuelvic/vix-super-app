@@ -9,6 +9,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   dayIdToDate,
   formatFullDate,
@@ -37,6 +38,9 @@ export default function VersionScreen() {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
+
+  // Tekan tab System lagi saat halamannya sedang dibuka → balik ke paling atas.
+  const { ref: scrollRef } = useScrollTop();
 
   // ===== Laporan pemakaian fitur 📊 (MINGGUAN, Senin–Minggu) =====
   const todayId = dayDocId(new Date());
@@ -106,7 +110,7 @@ export default function VersionScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <VixText heading="header" additionalStyle={styles.title}>
           System ⚙️
         </VixText>

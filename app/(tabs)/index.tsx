@@ -70,6 +70,7 @@ import {
 } from '@/lib/learning';
 import { formatShortDayDate } from '@/lib/format';
 import { useNow } from '@/hooks/useNow';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   bumpWaterStreak,
   setWater,
@@ -171,6 +172,9 @@ const FEATURES: {
 export default function HomeScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+
+  // Tekan tombol Home lagi saat halamannya sedang dibuka → balik ke atas.
+  const { ref: scrollRef } = useScrollTop();
 
   // Daily login streak 🔥 — undefined = belum termuat.
   const [login, setLogin] = useState<LoginStreak | null | undefined>(undefined);
@@ -410,7 +414,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         {/* Kolom dibatasi lebarnya & ditengahkan — di iPad/layar lebar tidak
             melebar penuh, tetap rapi di tengah seperti di HP. */}
         <View style={styles.contentInner}>
@@ -498,7 +502,7 @@ export default function HomeScreen() {
             />
           </Animated.View>
 
-          {/* Rhema Pagi Hari ✍️ — firman yang kamu tulis tadi pagi, dibaca
+          {/* Rhema Pagi Ini ✍️ — firman yang kamu tulis tadi pagi, dibaca
               ulang siang (12–13), sore (17–18), & malam (21–22). Muncul hanya
               kalau rhema-nya memang sudah ditulis. Ketuk → tab Habits. */}
           {showRhema && (
@@ -508,7 +512,7 @@ export default function HomeScreen() {
               <ReminderCard
                 bg={Color.SPIRITUAL}
                 fg={Color.SPIRITUAL_DARK}
-                title="✍️ Rhema Pagi Hari"
+                title="✍️ Rhema Pagi Ini"
                 texts={[rhemaText]}
                 onPress={() => router.push('/habits')}
               />

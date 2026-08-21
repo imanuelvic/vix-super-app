@@ -16,6 +16,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import { daysBetween, formatDate } from '@/lib/format';
 import { FilterChips } from '@/components/common/FilterChips';
 import { SelectField } from '@/components/common/SelectField';
@@ -52,6 +53,9 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Tekan chip kategori yang sedang aktif LAGI → daftar balik ke paling atas.
+  const { ref: scrollRef, toTop } = useScrollTop();
 
   const [editing, setEditing] = useState<OtherTask | 'new' | null>(null);
   const [fTitle, setFTitle] = useState('');
@@ -159,7 +163,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <SummaryCard style={styles.heroCard}>
           <VixText heading="label" additionalStyle={summaryText.label}>
             📌 Reminder Prioritas
@@ -190,6 +194,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
           }))}
           value={filterCat}
           onChange={setFilterCat}
+          onRepress={toTop}
         />
 
         <FormError message={error} />
