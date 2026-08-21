@@ -34,7 +34,6 @@ import {
   HABIT_SLOTS,
   HABIT_TIERS,
   habitArea,
-  HABIT_NOTE_MIN,
   habitLink,
   habitNoteDone,
   isFixedHabit,

@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
-import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
+import { deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { EmojiButton } from '@/components/common/EmojiButton';
@@ -12,9 +12,11 @@ import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
+import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
+import { VisitationCardBody } from '@/components/core/VisitationCardBody';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -36,22 +38,29 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { subscribeCoreRules, type CoreRule } from '@/lib/coreRules';
-import { deadlineLabel, deadlineTone } from '@/lib/deadline';
+import { deadlineTone } from '@/lib/deadline';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { shareVisitationPdf } from '@/lib/visitationPdf';
 
-// Tab Pertemuan 📅: jadwal MCL bertemu CORE para CL (Visitasi / Fellowship) —
+// Tab Visitation 📅: jadwal MCL bertemu CORE para CL (Visitasi / Fellowship) —
 // diisi manual, reminder H-3 & hari-H muncul otomatis di Home.
 export function VisitationTab({
   visitations,
   leaders,
+  pastLeaders,
   editId,
   onEditConsumed,
 }: {
   visitations: Visitation[];
   leaders: CoreLeader[];
+  /**
+   * Ex CORE Leader — HANYA untuk membaca nama di visitasi lama & pencarian.
+   * Sengaja dipisah dari `leaders`: mereka tidak boleh muncul di pemilih saat
+   * menjadwalkan visitasi baru maupun di filter jadwal mendatang.
+   */
+  pastLeaders: CoreLeader[];
   // Kalau di-set (dari reminder Dashboard), langsung buka modal pertemuan ini.
   editId?: string;
   // Dipanggil setelah editId dipakai — induk membersihkan param dari URL.
@@ -63,7 +72,7 @@ export function VisitationTab({
   const [busy, setBusy] = useState(false);
 
   // Form tambah/edit ('new' = sedang menambah baru). Isian & aturannya dipakai
-  // bersama layar Riwayat Pertemuan (lihat hooks/useVisitationForm.ts).
+  // bersama layar Riwayat Visitasi (lihat hooks/useVisitationForm.ts).
   const [editing, setEditing] = useState<Visitation | 'new' | null>(null);
   const form = useVisitationForm();
   const [formError, setFormError] = useState<string | null>(null);
@@ -72,12 +81,12 @@ export function VisitationTab({
   const [filterModal, setFilterModal] = useState(false);
   const [filterLeaderId, setFilterLeaderId] = useState<string | null>(null);
   const [filterKind, setFilterKind] = useState<MeetingKind | null>(null);
-  // Mode cari (dibuka dari FAB 🔍) — mencari di SELURUH pertemuan, termasuk
+  // Mode cari (dibuka dari FAB 🔍) — mencari di SELURUH visitasi, termasuk
   // yang sudah lewat & selesai, karena yang biasanya dicari justru arsipnya.
   const [searchMode, setSearchMode] = useState(false);
   const [query, setQuery] = useState('');
 
-  // Panduan acara ikut ditempel ke notulen pertemuan PDF, jadi didengarkan di sini.
+  // Panduan acara ikut ditempel ke notulen visitasi PDF, jadi didengarkan di sini.
   const [rules, setRules] = useState<CoreRule[]>([]);
   const [sharingId, setSharingId] = useState<string | null>(null);
 
@@ -94,7 +103,7 @@ export function VisitationTab({
     .filter((v) => !v.done && visitDaysUntil(v, today) >= 0)
     .sort((a, b) => a.date.toMillis() - b.date.toMillis());
 
-  // Filter opsional: per CORE Leader dan/atau per jenis pertemuan. Filter
+  // Filter opsional: per CORE Leader dan/atau per jenis visitasi. Filter
   // Thanksgiving ikut menangkap acara yang cuma "sekalian" Thanksgiving.
   const hasFilter = filterLeaderId !== null || filterKind !== null;
   const filtered = upcoming.filter(
@@ -110,8 +119,15 @@ export function VisitationTab({
   const { currentPage, pageCount, pageItems, setPage } = usePagination(filtered);
 
   // Hasil pencarian: cocok kalau SETIAP kata yang kamu ketik muncul di judul,
-  // agenda, catatan, atau nama CL-nya. Jadi "rules reyki" tetap ketemu walau
-  // urutan katanya beda dari yang tertulis. Terbaru di atas.
+  // agenda, nama CL-nya, jenis acaranya, ATAU tanggalnya. Jadi "rules reyki"
+  // tetap ketemu walau urutan katanya beda dari yang tertulis. Terbaru di atas.
+  //
+  // Dua hal yang dulu bikin hasilnya "hilang" padahal ada di daftar:
+  // 1. Nama CL yang sudah diarsipkan tak bisa dibaca (namanya cuma ada di
+  //    daftar Ex CORE Leader) → sekarang `namaLeaders` memuat keduanya.
+  // 2. Tanggal tampil di kartu tapi tidak ikut dicari → sekarang ikut, jadi
+  //    "agustus", "21 agustus", bahkan "jumat" pun bisa dipakai mencari.
+  const namaLeaders = [...leaders, ...pastLeaders];
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const results =
     words.length === 0
@@ -120,8 +136,10 @@ export function VisitationTab({
           .filter((v) => {
             const hay = `${v.note} ${v.agenda} ${meetingLeaderNames(
               v,
-              leaders,
-            )} ${meetingKindLabels(v)}`.toLowerCase();
+              namaLeaders,
+            )} ${meetingKindLabels(v)} ${formatFullDate(
+              v.date.toDate(),
+            )}`.toLowerCase();
             return words.every((w) => hay.includes(w));
           })
           .sort((a, b) => b.date.toMillis() - a.date.toMillis());
@@ -193,7 +211,7 @@ export function VisitationTab({
   }
 
   /**
-   * Cetak pertemuan + panduan acaranya jadi PDF, buka share sheet, lalu catat
+   * Cetak visitasi + panduan acaranya jadi PDF, buka share sheet, lalu catat
    * bahwa hari ini sudah dikirim supaya badge remindernya padam.
    */
   async function handleShare(v: Visitation) {
@@ -203,7 +221,8 @@ export function VisitationTab({
     try {
       await shareVisitationPdf(
         v,
-        leaders,
+        // Ikut ex-CL: PDF visitasi lama tetap menyebut namanya, bukan "CORE".
+        namaLeaders,
         rules.find((r) => r.kind === v.kind),
       );
       // Dicatat SESUDAH share sheet terbuka. Kalau pencatatannya gagal, PDF
@@ -215,7 +234,7 @@ export function VisitationTab({
         );
       }
     } catch {
-      setError('Gagal membuat notulen pertemuan. Coba lagi.');
+      setError('Gagal membuat notulen visitasi. Coba lagi.');
     } finally {
       setSharingId(null);
     }
@@ -251,44 +270,15 @@ export function VisitationTab({
           jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin ketukan
           tombolnya ikut membuka modal edit. */}
       <PressableScale style={styles.cardTapArea} onPress={() => openEdit(v)}>
-        <View style={styles.cardTop}>
-          <VixText heading="bold" additionalStyle={styles.cardTitle}>
-            {meetingLeaderNames(v, leaders)}
-          </VixText>
-          {v.done ? (
-            <VixText heading="label" additionalStyle={styles.statusDone}>
-              ✅ Selesai
-            </VixText>
-          ) : (
-            <DeadlineTag tone={tone} label={deadlineLabel(days)} />
-          )}
-        </View>
-        <VixText heading="label" additionalStyle={styles.kindLine}>
-          {meetingKindLabels(v)}
-        </VixText>
-        {/* Acara gabungan: perjelas berapa CORE yang ikut */}
-        {v.leaderIds.length > 1 ? (
-          <VixText heading="label" additionalStyle={styles.kindLine}>
-            🤝 {v.leaderIds.length} CORE gabung
-          </VixText>
-        ) : null}
-        <VixText heading="label">📆 {formatFullDate(v.date.toDate())}</VixText>
-        {v.note ? (
-          <VixText heading="label">🏷️ Judul: {v.note}</VixText>
-        ) : null}
-        {/* Agenda bisa panjang & berbaris-baris → labelnya di baris sendiri,
-            isinya turun ke bawah supaya tetap terbaca rapi. */}
-        {v.agenda ? (
-          <View>
-            <VixText heading="label">🗒️ Agenda:</VixText>
-            <VixText heading="label" additionalStyle={styles.blockText}>
-              {v.agenda}
-            </VixText>
-          </View>
-        ) : null}
+        <VisitationCardBody
+          visitation={v}
+          leaders={namaLeaders}
+          tone={tone}
+          days={days}
+        />
       </PressableScale>
 
-      {/* Kirim pertemuan + panduan acaranya ke CORE Leader lewat WhatsApp.
+      {/* Kirim visitasi + panduan acaranya ke CORE Leader lewat WhatsApp.
           Cuma emoji di pojok kanan atas supaya tidak makan tempat. Latarnya
           menyala hijau pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk acara
           besar); badge di Home & Dashboard tetap yang menagih. */}
@@ -320,7 +310,7 @@ export function VisitationTab({
             <SearchBar
               value={query}
               onChangeText={setQuery}
-              placeholder="Cari judul atau agenda rapat…"
+              placeholder="Cari nama, judul, agenda, atau tanggal…"
               autoFocus
             />
           </View>
@@ -332,12 +322,12 @@ export function VisitationTab({
             </VixText>
           ) : results.length === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Tidak ada pertemuan yang cocok dengan “{query.trim()}”.
+              Tidak ada visitasi yang cocok dengan “{query.trim()}”.
             </VixText>
           ) : (
             <>
               <VixText heading="label" additionalStyle={styles.searchCount}>
-                {results.length} pertemuan ditemukan
+                {results.length} visitasi ditemukan
               </VixText>
               {results.map(renderCard)}
             </>
@@ -349,7 +339,7 @@ export function VisitationTab({
               hilang ke atas saat daftar jadwalnya digulung ke bawah. */}
           <StickyTop>
             <PrimaryButton
-              label="Jadwalkan Pertemuan"
+              label="Jadwalkan Visitasi"
               icon="plus"
               onPress={openAdd}
               additionalStyle={styles.addButton}
@@ -357,7 +347,7 @@ export function VisitationTab({
           </StickyTop>
 
           {/* key = halaman → balik ke atas tiap ganti halaman (pola yang sama
-              dipakai Riwayat Pertemuan & daftar panjang lainnya). */}
+              dipakai Riwayat Visitasi & daftar panjang lainnya). */}
           <ScrollView
             key={currentPage}
             contentContainerStyle={[styles.content, styles.contentPinned]}>
@@ -369,7 +359,7 @@ export function VisitationTab({
                 📅 Jadwal Mendatang
               </VixText>
               <View style={styles.sectionActions}>
-                {/* Tips pertemuan (buka modal) */}
+                {/* Tips visitasi (buka modal) */}
                 <EmojiButton emoji="💡" onPress={() => setTipsModal(true)} />
                 {/* Filter jadwal (per CL / jenis) — nyala kalau ada filter aktif */}
                 <EmojiButton
@@ -433,14 +423,14 @@ export function VisitationTab({
       {/* Bottom sheet tambah/edit jadwal */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Jadwalkan Pertemuan' : 'Edit Pertemuan'}
+        title={editing === 'new' ? 'Jadwalkan Visitasi' : 'Edit Visitasi'}
         onClose={() => setEditing(null)}>
         <VisitationFormFields
           form={form}
           leaders={leaders}
           busy={busy}
           dateKey={editing === 'new' ? 'new' : editing?.id}
-          agendaPlaceholder="Agenda pertemuan"
+          agendaPlaceholder="Agenda visitasi"
         />
 
         <FormError message={formError} />
@@ -458,11 +448,11 @@ export function VisitationTab({
         />
       </SheetModal>
 
-      {/* Modal tips pertemuan */}
+      {/* Modal tips visitasi */}
       <SheetModal
         visible={tipsModal}
-        title="💡 Tips Pertemuan"
-        subtitle="Biar pertemuanmu makin berdampak"
+        title="💡 Tips Visitasi"
+        subtitle="Biar visitasimu makin berdampak"
         onClose={() => setTipsModal(false)}>
         {VISIT_TIPS.map((tip) => (
           <VixText key={tip} heading="paragraph" additionalStyle={styles.tip}>
@@ -471,7 +461,7 @@ export function VisitationTab({
         ))}
       </SheetModal>
 
-      {/* Modal filter jadwal — per CORE Leader dan/atau jenis pertemuan */}
+      {/* Modal filter jadwal — per CORE Leader dan/atau jenis visitasi */}
       <SheetModal
         visible={filterModal}
         title="🎚️ Filter Jadwal"
@@ -498,36 +488,40 @@ export function VisitationTab({
             </PressableScale>
           </View>
         }>
+        {/* Picker, bukan deretan chip: 10 CORE + 9 jenis visitasi bikin modal
+            langsung penuh. Bentuknya sama persis dengan modal "Jadwalkan
+            Visitasi" — daftarnya baru terbentang saat kolomnya ditekan.
+            `clearable` = pilih ulang yang sedang aktif → filternya lepas. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🫶 Per CORE Leader
         </VixText>
-        <View style={styles.leaderWrap}>
-          {leaders.map((l) => (
-            <Chip
-              key={l.id}
-              label={`${l.heart} ${l.name}`}
-              active={filterLeaderId === l.id}
-              onPress={() =>
-                setFilterLeaderId((cur) => (cur === l.id ? null : l.id))
-              }
-            />
-          ))}
+        <View style={styles.filterField}>
+          <SelectField
+            value={filterLeaderId}
+            options={leaders.map((l) => ({
+              key: l.id,
+              label: `${l.heart} ${l.name}`,
+            }))}
+            onChange={setFilterLeaderId}
+            placeholder="Semua CORE Leader"
+            clearable
+          />
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏸 Per Jenis Pertemuan
+          🏸 Per Jenis Visitasi
         </VixText>
-        <View style={styles.leaderWrap}>
-          {MEETING_KINDS.map((k) => (
-            <Chip
-              key={k.key}
-              label={`${k.icon} ${k.label}`}
-              active={filterKind === k.key}
-              onPress={() =>
-                setFilterKind((cur) => (cur === k.key ? null : k.key))
-              }
-            />
-          ))}
+        <View style={styles.filterField}>
+          <SelectField
+            value={filterKind}
+            options={MEETING_KINDS.map((k) => ({
+              key: k.key,
+              label: `${k.icon} ${k.label}`,
+            }))}
+            onChange={setFilterKind}
+            placeholder="Semua jenis visitasi"
+            clearable
+          />
         </View>
       </SheetModal>
     </View>
@@ -587,17 +581,6 @@ const styles = StyleSheet.create({
   // memanjang karena agenda yang berbaris-baris.
   cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   cardTapArea: { flex: 1 },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardTitle: { flex: 1, color: Color.TEXT_TITLE },
-  kindLine: { color: Color.MAIN },
-  // Isi kolom panjang (agenda/catatan) — sedikit menjorok dari labelnya.
-  blockText: { color: Color.TEXT_PARAGRAPH, paddingLeft: 2 },
-  statusDone: { color: Color.SUCCESS },
   tip: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
   // Footer modal filter: dua tombol (Bersihkan / Selesai).
   filterFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },
@@ -620,10 +603,7 @@ const styles = StyleSheet.create({
   },
   doneBtnText: { color: Color.TEXT_REVERSE },
   fieldLabel: { marginBottom: 6 },
-  leaderWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
-  },
+  // Jarak bawah tiap picker filter — sama dengan jarak antar-kolom di modal
+  // "Jadwalkan Visitasi" (formGap), jadi kedua modal terasa satu keluarga.
+  filterField: { marginBottom: 10 },
 });

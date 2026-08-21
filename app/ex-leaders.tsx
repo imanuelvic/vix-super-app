@@ -3,7 +3,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { InlineDelete } from '@/components/common/InlineDelete';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -31,6 +32,8 @@ export default function ExLeadersScreen() {
   const [exLeaders, setExLeaders] = useState<ExLeader[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Ex CL yang tombol ✕-nya ditekan — dialog konfirmasi hapus permanen.
+  const [confirmDelete, setConfirmDelete] = useState<ExLeader | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -63,12 +66,18 @@ export default function ExLeadersScreen() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!user || !exLeaders) return;
+  // Hapus PERMANEN dari arsip — dokumennya benar-benar hilang dari Firestore,
+  // makanya harus lewat dialog konfirmasi dulu.
+  async function handleDelete() {
+    if (!user || !exLeaders || !confirmDelete || busyId) return;
+    setBusyId(confirmDelete.id);
     try {
-      await deleteExLeader(user.uid, exLeaders, id);
+      await deleteExLeader(user.uid, exLeaders, confirmDelete.id);
     } catch {
       setError(DELETE_ERROR);
+    } finally {
+      setConfirmDelete(null);
+      setBusyId(null);
     }
   }
 
@@ -121,6 +130,19 @@ export default function ExLeadersScreen() {
                       🗓️ Dilepas {formatShortDate(dayIdToDate(ex.exDayId))}
                     </VixText>
                   </View>
+                  {/* Hapus permanen ✕ — dipindah ke pojok kanan atas supaya
+                      tidak memakan satu baris sendiri di bawah, dan tidak
+                      bersaing dengan tombol kembalikan. Ditempel ke ATAS
+                      (alignSelf) walau nama & tanggalnya jadi beberapa baris. */}
+                  <View style={styles.deleteCorner}>
+                    <EmojiButton
+                      icon="xmark"
+                      iconColor={Color.DANGER}
+                      onPress={() => setConfirmDelete(ex)}
+                      busy={busyId === ex.id}
+                      disabled={busyId !== null}
+                    />
+                  </View>
                 </View>
 
                 <View style={styles.reasonBox}>
@@ -137,21 +159,26 @@ export default function ExLeadersScreen() {
                   disabled={busyId === ex.id}
                   onPress={() => handleRestore(ex.id)}>
                   <VixText heading="bold" additionalStyle={styles.restoreText}>
-                    ↩️ Pegang lagi (kembalikan jadi CORE Leader)
+                    ↩️ Kembalikan jadi CORE Leader
                   </VixText>
                 </PressableScale>
-
-                <InlineDelete
-                  key={ex.id}
-                  label="Hapus permanen dari arsip"
-                  busy={busyId === ex.id}
-                  onDelete={() => handleDelete(ex.id)}
-                />
               </View>
             ))
           )}
         </ScrollView>
       )}
+
+      {/* Konfirmasi hapus permanen — layar ini bukan modal, jadi dialog
+          tengah aman dipakai (tidak ada modal bertumpuk). */}
+      <ConfirmDialog
+        visible={confirmDelete !== null}
+        title="Hapus permanen dari arsip?"
+        detail={`${confirmDelete?.name ?? ''} akan hilang selamanya — catatan alasan & tanggal dilepasnya ikut terhapus dan tidak bisa dikembalikan.`}
+        confirmLabel="Hapus permanen"
+        busy={busyId !== null && busyId === confirmDelete?.id}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={handleDelete}
+      />
     </SafeAreaView>
   );
 }
@@ -171,24 +198,28 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 52, lineHeight: 64 },
   emptyTitle: { textAlign: 'center' },
   emptyText: { textAlign: 'center', color: Color.TEXT_LABEL },
+  // Kartu ex CL. Padding & jarak dilonggarkan (16→18 / 12→14) supaya kotak
+  // "Alasan" di dalamnya tidak terasa menempel ke tepi kartu.
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Color.BORDER,
-    padding: 16,
-    gap: 12,
-    marginBottom: 12,
+    padding: 18,
+    gap: 14,
+    marginBottom: 14,
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   heart: { fontSize: 30, lineHeight: 36 },
   info: { flex: 1, gap: 1 },
   name: { color: Color.TEXT_TITLE },
   metaLine: { color: Color.TEXT_LABEL },
+  // Tombol ✕ menempel ke ATAS baris, bukan ikut ketengah bersama hati & nama.
+  deleteCorner: { alignSelf: 'flex-start' },
   reasonBox: {
     backgroundColor: Color.BACKGROUND,
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     gap: 2,
   },
   reasonLabel: { color: Color.TEXT_LABEL },

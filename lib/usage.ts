@@ -95,10 +95,14 @@ export async function fetchUsageDays(
   });
 }
 
-// ===== Minggu berjalan (Senin–Minggu) =====
-// Laporan pemakaian bersifat MINGGUAN: hanya menampilkan minggu ini. Saat masuk
-// Senin baru, data minggu-minggu sebelumnya DIHAPUS permanen (resetPastWeeks)
-// supaya mulai dari nol lagi — hemat & selalu fokus ke minggu berjalan.
+// ===== Bulan & minggu berjalan =====
+// Laporan pemakaian punya DUA lapis: ringkasan BULAN berjalan (tanggal 1 s/d
+// hari ini) dan rincian MINGGU berjalan (Senin s/d hari ini). Keduanya dihitung
+// dari deret hari yang SAMA — sekali ambil, dipakai dua-duanya.
+//
+// Yang disimpan cuma bulan berjalan: begitu masuk tanggal 1 baru, catatan
+// bulan-bulan sebelumnya DIHAPUS permanen (resetPastMonths). Jadi paling banyak
+// 31 dokumen kecil per orang — hemat, dan angkanya selalu soal "sekarang".
 
 /** Tanggal Senin 00:00 dari minggu yang memuat `now` (waktu lokal). */
 export function weekStart(now = new Date()): Date {
@@ -131,16 +135,36 @@ export function formatWeekRange(now = new Date()): string {
     : `${start.getDate()} ${sm} – ${end.getDate()} ${em}`;
 }
 
+/** Tanggal 1 bulan ini, 00:00 (waktu lokal). */
+export function monthStart(now = new Date()): Date {
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+/** dayId tanggal 1 s/d HARI INI (kronologis) untuk bulan berjalan. */
+export function monthDayIds(now = new Date()): string[] {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const ids: string[] = [];
+  for (let d = monthStart(now); d <= today; d.setDate(d.getDate() + 1)) {
+    ids.push(dayDocId(d));
+  }
+  return ids;
+}
+
+/** Rentang bulan yang SUDAH berjalan, mis. "1–21 Agustus" (bukan 1–31). */
+export function formatMonthRange(now = new Date()): string {
+  return `1–${now.getDate()} ${MONTH_NAMES[now.getMonth()]}`;
+}
+
 /**
- * Hapus PERMANEN semua dokumen pemakaian sebelum Senin minggu ini (reset
- * mingguan). Dipanggil saat membuka tab System; umumnya tak ada yang terhapus
- * (1 query murah), tapi begitu masuk Senin baru, data minggu lalu ikut hilang.
+ * Hapus PERMANEN semua dokumen pemakaian sebelum tanggal 1 bulan ini (reset
+ * bulanan). Dipanggil saat membuka tab System; umumnya tak ada yang terhapus
+ * (1 query murah), tapi begitu masuk bulan baru, data bulan lalu ikut hilang.
  */
-export async function resetPastWeeks(
+export async function resetPastMonths(
   uid: string,
   now = new Date(),
 ): Promise<void> {
-  const boundary = dayDocId(weekStart(now)); // Senin minggu ini (batas simpan)
+  const boundary = dayDocId(monthStart(now)); // tanggal 1 bulan ini (batas simpan)
   const col = collection(db, 'users', uid, 'usage');
   const snap = await getDocs(query(col, where('dayId', '<', boundary)));
   if (snap.empty) return;

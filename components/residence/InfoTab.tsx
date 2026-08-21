@@ -2,7 +2,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { InfoRow } from '@/components/common/InfoRow';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { openExternalUrl } from '@/lib/linking';
 import { RESIDENCE_INFO } from '@/lib/residence';
 
 // Tips ringan biar rumah kontrakan awet & nyaman.
@@ -16,6 +18,10 @@ const TIPS: string[] = [
 
 // Tab Info: identitas rumah kontrakan + kontrak + tips.
 export function InfoTab() {
+  function openMaps() {
+    openExternalUrl(RESIDENCE_INFO.mapsUrl);
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {/* Kartu identitas rumah */}
@@ -29,15 +35,21 @@ export function InfoTab() {
         </VixText>
       </View>
 
-      {/* Alamat */}
-      <View style={styles.addressCard}>
+      {/* Alamat — seluruh kartunya bisa ditekan untuk membuka titik rumah di
+          Google Maps (buka aplikasi Maps kalau terpasang, kalau tidak lewat
+          browser — diurus openExternalUrl). */}
+      <PressableScale style={styles.addressCard} onPress={openMaps}>
         <VixText heading="bold" additionalStyle={styles.addressTitle}>
           📍 Alamat
         </VixText>
         <VixText heading="label" additionalStyle={styles.addressText}>
           {RESIDENCE_INFO.address}
         </VixText>
-      </View>
+        {/* Penanda bahwa kartu ini bisa ditekan — tanpa ini orang tidak tahu */}
+        <VixText heading="bold" additionalStyle={styles.addressLink}>
+          🗺️ Buka di Google Maps →
+        </VixText>
+      </PressableScale>
 
       {/* Detail rumah */}
       <View style={styles.detailCard}>
@@ -46,7 +58,6 @@ export function InfoTab() {
         <InfoRow label="Air" value={RESIDENCE_INFO.water} />
         <InfoRow label="Mulai sewa" value={RESIDENCE_INFO.rentalDate} />
         <InfoRow label="Iuran lingkungan" value={RESIDENCE_INFO.managementFeePeriod} />
-        <InfoRow label="Water heater" value={RESIDENCE_INFO.waterHeater} />
       </View>
 
       {/* Tips */}
@@ -88,6 +99,8 @@ const styles = StyleSheet.create({
   },
   addressTitle: { color: Color.TEXT_TITLE },
   addressText: { color: Color.TEXT_PARAGRAPH },
+  // Baris ajakan buka Maps — warna utama biar jelas ini yang bisa ditekan.
+  addressLink: { color: Color.MAIN, marginTop: 2 },
   detailCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

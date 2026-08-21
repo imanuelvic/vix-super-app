@@ -1,19 +1,6 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-
-import { Color } from '@/assets/style/color';
-import { CenterDialog } from '@/components/common/CenterDialog';
-import { DateField } from '@/components/common/DateField';
-import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
-import { DualButtons } from '@/components/common/DualButtons';
-import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
-import { PressableScale } from '@/components/common/PressableScale';
-import { SummaryCard } from '@/components/common/SummaryCard';
-import { VixText } from '@/components/common/VixText';
+import { UpkeepList, type UpkeepGroup } from '@/components/common/UpkeepList';
 import { useAuth } from '@/contexts/auth';
 import { formatDate } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
 import {
   choreCondition,
   choreIntervalLabel,
@@ -22,7 +9,6 @@ import {
   setChoreDate,
   type ChoreStatusMap,
   type ChoreTone,
-  type ResidenceChore,
 } from '@/lib/residence';
 
 const TONE_LABEL: Record<ChoreTone, string> = {
@@ -32,17 +18,14 @@ const TONE_LABEL: Record<ChoreTone, string> = {
   unknown: '❓ Belum dicatat',
 };
 
-// Tab Perawatan: checklist bersih-bersih rumah berkala per kategori frekuensi
+// Tab Maintenance: checklist bersih-bersih rumah berkala per kategori frekuensi
 // (mingguan → kuartalan). Tandai kapan terakhir dikerjakan, app hitung kapan
-// waktunya lagi. Mirip Sparepart di Car.
+// waktunya lagi.
+//
+// Tampilan & dialognya milik bersama <UpkeepList> — persis yang dipakai Car →
+// Parts; di sini tinggal merakit barisnya dari data rumah.
 export function ChoreTab({ status }: { status: ChoreStatusMap }) {
   const { user } = useAuth();
-
-  const [editing, setEditing] = useState<ResidenceChore | null>(null);
-  const [fDate, setFDate] = useState(new Date());
-  const [fNote, setFNote] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const now = new Date();
 
@@ -50,140 +33,50 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
   const needsAttention = countResidenceAttention(status, now);
   const unknownCount = allChores.filter((p) => !status[p.key]).length;
 
-  function openEdit(chore: ResidenceChore) {
-    setEditing(chore);
-    setFDate(new Date());
-    // Catatan terakhir untuk item ini muncul lagi — biar tak lupa.
-    setFNote(status[chore.key]?.note ?? '');
-    setError(null);
-  }
-
-  async function handleSave() {
-    if (!user || !editing || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await setChoreDate(user.uid, editing.key, fDate, fNote.trim());
-      setEditing(null);
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const groups: UpkeepGroup[] = CHORE_GROUPS.map((group) => ({
+    key: group.key,
+    label: group.label,
+    rows: group.parts.map((chore) => {
+      const { tone, dueDate } = choreCondition(
+        status[chore.key]?.last,
+        chore.intervalDays,
+        now,
+      );
+      const last = status[chore.key]?.last;
+      return {
+        key: chore.key,
+        label: chore.label,
+        tip: chore.tip,
+        tone,
+        toneLabel: TONE_LABEL[tone],
+        dateLine: last
+          ? `Terakhir: ${formatDate(last.toDate())} · berikutnya ±${dueDate ? formatDate(dueDate) : '-'}`
+          : `Interval: tiap ${choreIntervalLabel(chore.intervalDays)}`,
+      };
+    }),
+  }));
 
   return (
-    <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Ringkasan kondisi kebersihan */}
-        <SummaryCard
-          label="Kebersihan rumah"
-          value={
-            needsAttention === 0
-              ? 'Semua bersih 🙌'
-              : `${needsAttention} perlu dibersihkan ⚠️`
-          }
-          sub={
-            unknownCount > 0
-              ? `${unknownCount} item belum pernah dicatat — tap untuk mengisi.`
-              : 'Tap item mana pun untuk memperbarui tanggalnya.'
-          }
-        />
-
-        {CHORE_GROUPS.map((group) => (
-          <View key={group.key}>
-            <VixText heading="title" additionalStyle={styles.groupTitle}>
-              {group.label}
-            </VixText>
-            {group.parts.map((chore) => {
-              const { tone, dueDate } = choreCondition(
-                status[chore.key]?.last,
-                chore.intervalDays,
-                now,
-              );
-              const last = status[chore.key]?.last;
-              return (
-                // Tap = tandai baru dibersihkan hari ini (atau pilih tanggal).
-                <PressableScale
-                  key={chore.key}
-                  style={[styles.row, deadlineBorder(tone)]}
-                  onPress={() => openEdit(chore)}>
-                  <View style={styles.rowTop}>
-                    <VixText
-                      heading="bold"
-                      numberOfLines={1}
-                      additionalStyle={styles.rowLabel}>
-                      {chore.label}
-                    </VixText>
-                    <DeadlineTag tone={tone} label={TONE_LABEL[tone]} />
-                  </View>
-                  <VixText heading="label">{chore.tip}</VixText>
-                  <VixText heading="label" additionalStyle={styles.dateLine}>
-                    {last
-                      ? `Terakhir: ${formatDate(last.toDate())} · berikutnya ±${dueDate ? formatDate(dueDate) : '-'}`
-                      : `Interval: tiap ${choreIntervalLabel(chore.intervalDays)}`}
-                  </VixText>
-                </PressableScale>
-              );
-            })}
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Dialog tandai tanggal terakhir dibersihkan */}
-      <CenterDialog visible={!!editing} onClose={() => setEditing(null)}>
-        <VixText heading="title" additionalStyle={styles.modalTitle}>
-          {editing?.label}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.modalHint}>
-          Kapan terakhir dibersihkan / dikerjakan?
-        </VixText>
-        {/* key = chore supaya state picker internal reset tiap ganti item */}
-        <DateField key={editing?.key} value={fDate} onChange={setFDate} />
-        {/* Catatan pribadi — hanya terlihat di modal ini, tidak di daftar. */}
-        <FormInput
-          placeholder="Catatan"
-          value={fNote}
-          onChangeText={setFNote}
-          editable={!busy}
-          multiline
-          style={styles.noteInput}
-        />
-        <FormError message={error} gap="top" />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
-          onCancel={() => setEditing(null)}
-          onConfirm={handleSave}
-        />
-      </CenterDialog>
-    </View>
+    <UpkeepList
+      summary={{
+        label: 'Kebersihan rumah',
+        value:
+          needsAttention === 0
+            ? 'Semua bersih 🙌'
+            : `${needsAttention} perlu dibersihkan ⚠️`,
+        sub:
+          unknownCount > 0
+            ? `${unknownCount} item belum pernah dicatat — tap untuk mengisi.`
+            : 'Tap item mana pun untuk memperbarui tanggalnya.',
+      }}
+      groups={groups}
+      dialogHint="Kapan terakhir dibersihkan / dikerjakan?"
+      noteOf={(key) => status[key]?.note ?? ''}
+      // `user` selalu ada di sini (layar Residence cuma terbuka setelah login).
+      onSave={async (key, date, note) => {
+        if (!user) return;
+        await setChoreDate(user.uid, key, date, note);
+      }}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  groupTitle: { marginTop: 14, marginBottom: 8 },
-  row: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
-    gap: 4,
-  },
-  rowTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  rowLabel: { flex: 1, color: Color.TEXT_TITLE },
-  dateLine: { color: Color.TEXT_PLACEHOLDER },
-  modalTitle: { marginBottom: 2 },
-  modalHint: { marginBottom: 10 },
-  noteInput: { marginTop: 10, minHeight: 76, textAlignVertical: 'top' },
-});

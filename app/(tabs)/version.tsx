@@ -15,14 +15,17 @@ import {
   formatFullDate,
   formatShortDayDate,
   formatShortDayDateTime,
+  monthLabel,
 } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import {
   aggregateDays,
   dayTotal,
   fetchUsageDays,
+  formatMonthRange,
   formatWeekRange,
-  resetPastWeeks,
+  monthDayIds,
+  resetPastMonths,
   subscribeUsageDay,
   topFeatures,
   weekDayIds,
@@ -42,28 +45,42 @@ export default function VersionScreen() {
   // Tekan tab System lagi saat halamannya sedang dibuka → balik ke paling atas.
   const { ref: scrollRef } = useScrollTop();
 
-  // ===== Laporan pemakaian fitur 📊 (MINGGUAN, Senin–Minggu) =====
+  // ===== Laporan pemakaian fitur 📊 =====
+  // Dua lapis: ringkasan BULAN berjalan + rincian MINGGU berjalan. Yang diambil
+  // dari Firestore CUMA satu deret — hari-hari bulan ini (paling banyak 31
+  // dokumen kecil, sekali baca saat tab dibuka). Minggu ini tinggal disaring
+  // dari deret yang sama, jadi tidak ada pembacaan tambahan.
   const todayId = dayDocId(new Date());
+  const thisMonth = monthLabel();
+  const monthRangeLabel = formatMonthRange();
   const weekRangeLabel = formatWeekRange();
   const [today, setToday] = useState<UsageDay | null>(null);
-  const [week, setWeek] = useState<UsageDay[]>([]);
+  const [month, setMonth] = useState<UsageDay[]>([]);
 
   useEffect(() => {
     if (!user) return;
     const unsub = subscribeUsageDay(user.uid, todayId, setToday);
-    // Reset mingguan: hapus data minggu-minggu lalu (tak berpengaruh ke fetch).
-    resetPastWeeks(user.uid).catch(() => {});
-    fetchUsageDays(user.uid, weekDayIds())
-      .then(setWeek)
+    // Reset bulanan: hapus data bulan-bulan lalu (tak berpengaruh ke fetch).
+    resetPastMonths(user.uid).catch(() => {});
+    fetchUsageDays(user.uid, monthDayIds())
+      .then(setMonth)
       .catch(() => {});
     return unsub;
   }, [user, todayId]);
 
-  // Gabung hari ini yang LIVE ke deret minggu (hero & daftar ikut ter-update).
-  const weekMerged = week.map((d) =>
+  // Gabung hari ini yang LIVE ke deret bulan (semua angka ikut ter-update).
+  const monthMerged = month.map((d) =>
     today && d.dayId === todayId ? today : d,
   );
+  // Minggu berjalan = bagian ekor deret bulan (Senin s/d hari ini). Awal bulan
+  // yang jatuh di tengah minggu tetap benar: yang dipakai daftar hari Senin-nya,
+  // bukan tanggalnya.
+  const weekIds = weekDayIds();
+  const weekMerged = monthMerged.filter((d) => weekIds.includes(d.dayId));
+
   const todayTop = today ? topFeatures(today, 5) : [];
+  const monthTop = topFeatures(aggregateDays(monthMerged), 1)[0] ?? null;
+  const monthTotal = monthMerged.reduce((sum, d) => sum + dayTotal(d), 0);
   const weekTop = topFeatures(aggregateDays(weekMerged), 1)[0] ?? null;
   const weekTotal = weekMerged.reduce((sum, d) => sum + dayTotal(d), 0);
 
@@ -115,7 +132,25 @@ export default function VersionScreen() {
           System ⚙️
         </VixText>
 
-        {/* ===== Laporan pemakaian fitur (mingguan) ===== */}
+        {/* ===== Ringkasan pemakaian bulan berjalan ===== */}
+        <View style={styles.usageHero}>
+          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+            📊 Pemakaian bulan {thisMonth}
+          </VixText>
+          <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
+            {monthTop ? `${monthTop.label}` : 'Belum ada data'}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+            {monthTop
+              ? `${monthTop.count}× · total ${monthTotal} kali buka fitur`
+              : 'Buka fitur dari grid Home untuk mulai tercatat 📈'}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+            🗓️ {monthRangeLabel} · reset tiap tanggal 1
+          </VixText>
+        </View>
+
+        {/* ===== Rincian minggu berjalan (di dalam bulan yang sama) ===== */}
         <View style={styles.usageHero}>
           <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
             📊 Fitur paling sering · minggu ini
@@ -129,7 +164,7 @@ export default function VersionScreen() {
               : 'Buka fitur dari grid Home untuk mulai tercatat 📈'}
           </VixText>
           <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            🗓️ {weekRangeLabel} (Sen–Min) · reset tiap Senin
+            🗓️ {weekRangeLabel} (Sen–Min)
           </VixText>
         </View>
 

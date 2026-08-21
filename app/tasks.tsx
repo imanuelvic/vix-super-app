@@ -75,8 +75,8 @@ const DROP_DY = GHOST_HEIGHT / 2; // jarak dari jari ke tengah kotak (titik jatu
 
 // Tab bar bawah layar Task — Harian (planner) & Prioritas (catatan penting).
 const MAIN_TABS: BottomTab<MainTab>[] = [
-  { key: 'daily', label: 'Harian', icon: 'calendar' },
-  { key: 'priority', label: 'Prioritas', icon: 'flag.fill' },
+  { key: 'daily', label: 'Daily', icon: 'calendar' },
+  { key: 'priority', label: 'Priority', icon: 'flag.fill' },
 ];
 
 // Task ✅ — planner harian: semua tanggal sebulan tampil berurutan,

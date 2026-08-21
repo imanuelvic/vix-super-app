@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -19,11 +19,13 @@ import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { formatDecimal, parseDecimal } from '@/lib/format';
-import { bumpWeekGym } from '@/lib/health';
+import { bumpWeekGym, weekDayIds } from '@/lib/health';
 import {
   breakFitStreak,
   bumpFitStreak,
+  fetchFitDays,
   fitBlockOf,
+  fitDayComplete,
   fitQuote,
   fitSessionMinutes,
   fitSessionOfWeekday,
@@ -71,6 +73,30 @@ export function ExerciseTab({
 
   const [weekday, setWeekday] = useState(todayWeekday);
   const [busy, setBusy] = useState(false);
+
+  // Status tiap hari MINGGU INI (Senin→Minggu) — supaya hari yang sesinya sudah
+  // beres tetap bertanda ✓ di deretan hari, tidak hilang lewat tengah malam.
+  // Yang "kereset" cuma pergantian minggu: begitu Senin baru, deret tanggalnya
+  // ikut berganti sehingga tandanya mulai kosong lagi dengan sendirinya.
+  const weekIds = weekDayIds(today); // Senin di indeks 0 … Minggu di indeks 6
+  const weekIdOf = (wd: number) => weekIds[(wd + 6) % 7];
+  const [weekDays, setWeekDays] = useState<Record<string, FitDay>>({});
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    // Hari depan mustahil sudah beres → tidak ikut dibaca (hemat baca
+    // Firestore: paling banyak 7 dokumen kecil, sekali saat tab dibuka).
+    const sudahLewat = weekDayIds(new Date()).filter((id) => id <= dayId);
+    fetchFitDays(user.uid, sudahLewat)
+      .then((d) => {
+        if (alive) setWeekDays(d);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [user, dayId]);
 
   // Tekan pil hari yang sedang dibuka LAGI → isi sesinya balik ke paling atas.
   const { ref: scrollRef, toTop } = useScrollTop();
@@ -206,6 +232,13 @@ export function ExerciseTab({
   const dayPills = [1, 2, 3, 4, 5, 6, 0].map((wd) => {
     const s = fitSessionOfWeekday(wd, block);
     const active = wd === weekday;
+    // Sudah beres hari itu? Hari ini dibaca LANGSUNG dari `day` yang live, hari
+    // lain dari hasil ambilan seminggu — jadi centang terakhir hari ini
+    // langsung memunculkan ✅-nya tanpa menunggu apa pun.
+    const selesai =
+      wd === todayWeekday
+        ? fitDayComplete(day, wd, block)
+        : fitDayComplete(weekDays[weekIdOf(wd)], wd, block);
     return (
       <PressableScale
         key={wd}
@@ -213,6 +246,7 @@ export function ExerciseTab({
           styles.dayPill,
           oneRow && styles.dayPillFill,
           active && styles.dayPillActive,
+          selesai && !active && styles.dayPillDone,
         ]}
         // Tekanan kedua (hari yang sedang dibuka) = balik ke paling atas.
         onPress={() => (active ? toTop() : setWeekday(wd))}>
@@ -230,6 +264,13 @@ export function ExerciseTab({
           {FIT_DAY_SHORT[wd]}
         </VixText>
         {wd === todayWeekday && <View style={styles.todayDot} />}
+        {/* Tanda sesi hari itu sudah beres — bertahan sampai Senin berikutnya,
+            karena yang dibaca memang hari-hari minggu berjalan. */}
+        {selesai && (
+          <View style={styles.dayDoneBadge}>
+            <VixText additionalStyle={styles.dayDoneMark}>✓</VixText>
+          </View>
+        )}
       </PressableScale>
     );
   });
@@ -480,6 +521,24 @@ const styles = StyleSheet.create({
     borderColor: Color.FITNESS_DARK,
     backgroundColor: Color.FITNESS,
   },
+  // Hari yang sesinya sudah beres — garis tepi hijau tipis + centang di pojok.
+  // Sengaja lebih kalem daripada hari yang sedang dibuka (dayPillActive), jadi
+  // yang paling menonjol tetap hari yang sedang kamu lihat.
+  dayPillDone: { borderColor: Color.SUCCESS },
+  // Ditaruh DI DALAM batas pil (bukan menggantung keluar): pil-nya ada di dalam
+  // ScrollView mendatar yang bisa memotong apa pun yang melewati tepinya.
+  dayDoneBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Color.SUCCESS,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayDoneMark: { color: Color.TEXT_REVERSE, fontSize: 10, lineHeight: 14 },
   dayEmoji: { fontSize: 20, lineHeight: 26 },
   dayEmojiRest: { opacity: 0.5 },
   dayLabel: { color: Color.TEXT_LABEL },

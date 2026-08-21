@@ -25,7 +25,6 @@ import {
   stepsInDays,
   stepsToKm,
   strideMeters,
-  STEP_TIERS,
   weekDayIds,
   type HealthProfile,
   type StepDaysMap,
@@ -122,11 +121,24 @@ export function StepsTab({
     <ScrollView contentContainerStyle={styles.content}>
       <GreetingHeader />
 
-      {/* ===== Hari ini ===== */}
+      {/* ===== Hari ini =====
+          Angkanya memang datang dari Apple Health, jadi tombol muat-ulangnya
+          menempel di sini — kartu Apple Health tersendiri tidak ada lagi. */}
       <SummaryCard style={styles.heroCard}>
-        <VixText heading="label" additionalStyle={summaryText.label}>
-          👣 Langkah hari ini
-        </VixText>
+        <View style={styles.heroTop}>
+          <VixText heading="label" additionalStyle={summaryText.label}>
+            👣 Langkah hari ini
+          </VixText>
+          {hkStatus === 'ok' && (
+            <PressableScale onPress={loadHk} hitSlop={10} disabled={hkBusy}>
+              <IconSymbol
+                name="arrow.triangle.2.circlepath"
+                size={20}
+                color={hkBusy ? Color.TEXT_PLACEHOLDER : Color.MAIN}
+              />
+            </PressableScale>
+          )}
+        </View>
         <VixText heading="header" additionalStyle={summaryText.value}>
           {groupDigits(String(todaySteps))}
         </VixText>
@@ -208,51 +220,6 @@ export function StepsTab({
         </VixText>
       </View>
 
-      {/* ===== Apple Health ===== */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <VixText heading="title">🍎 Apple Health</VixText>
-          {hkStatus === 'ok' && (
-            <PressableScale onPress={loadHk} hitSlop={10} disabled={hkBusy}>
-              <IconSymbol
-                name="arrow.triangle.2.circlepath"
-                size={20}
-                color={hkBusy ? Color.TEXT_PLACEHOLDER : Color.MAIN}
-              />
-            </PressableScale>
-          )}
-        </View>
-
-        {hkStatus === 'unsupported-platform' && (
-          <VixText heading="label">
-            Apple Health hanya tersedia di iPhone.
-          </VixText>
-        )}
-        {hkStatus === 'needs-build' && (
-          <VixText heading="label">
-            Koneksi Apple Health aktif setelah app di-build lewat EAS (tidak
-            tersedia di Expo Go).
-          </VixText>
-        )}
-        {hkStatus === 'ok' && (
-          <View style={styles.statRow}>
-            <StatTile
-              value={hk?.steps != null ? groupDigits(String(hk.steps)) : '–'}
-              label="👣 Langkah"
-            />
-            <StatTile
-              value={
-                hk?.activeKcal != null ? groupDigits(String(hk.activeKcal)) : '–'
-              }
-              label="🔥 kkal Aktif"
-            />
-          </View>
-        )}
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Rekor harian ≥ {groupDigits(String(STEP_TIERS[0]))} langkah ada di
-          tombol 👣 kanan atas.
-        </VixText>
-      </View>
     </ScrollView>
   );
 }
@@ -344,22 +311,17 @@ function GoalRow({
   );
 }
 
-// Kotak kecil satu angka statistik Apple Health.
-function StatTile({ value, label }: { value: string; label: string }) {
-  return (
-    <View style={styles.statTile}>
-      <VixText heading="bold" additionalStyle={styles.statValue}>
-        {value}
-      </VixText>
-      <VixText heading="label">{label}</VixText>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
   heroCard: { gap: 2, marginBottom: 14 },
+  // Judul kartu + tombol muat-ulang Apple Health di ujung kanannya.
+  heroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -408,15 +370,5 @@ const styles = StyleSheet.create({
   msLabelOn: { color: Color.TEXT_TITLE },
   msValue: { color: Color.TEXT_PLACEHOLDER },
   msValueOn: { color: Color.SUCCESS },
-  statRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  statTile: {
-    flex: 1,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    gap: 2,
-  },
-  statValue: { color: Color.TEXT_TITLE },
   hint: { marginTop: 8 },
 });

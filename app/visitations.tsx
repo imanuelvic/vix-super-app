@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
+import { deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FilterChips } from '@/components/common/FilterChips';
@@ -15,6 +15,7 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { VisitationCardBody } from '@/components/core/VisitationCardBody';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
@@ -22,21 +23,19 @@ import { useScrollTop } from '@/hooks/useScrollTop';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
   MEETING_KINDS,
-  meetingKindLabels,
-  meetingLeaderNames,
   saveVisitations,
   subscribeCoreLeaders,
+  subscribeExLeaders,
   subscribeVisitations,
   visitDaysUntil,
   type CoreLeader,
   type MeetingKind,
   type Visitation,
 } from '@/lib/core';
-import { deadlineLabel, deadlineTone } from '@/lib/deadline';
-import { formatFullDate } from '@/lib/format';
+import { deadlineTone } from '@/lib/deadline';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
-// Riwayat Pertemuan 🕘 — seluruh jadwal dari dulu sampai mendatang.
+// Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
 // Tap kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
 // hapus PERMANEN dari Firestore (benar-benar hilang, bukan nonaktif).
 export default function VisitationsScreen() {
@@ -44,10 +43,13 @@ export default function VisitationsScreen() {
 
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
+  // Ex CORE Leader ikut dibaca — riwayat justru tempat mereka paling sering
+  // muncul. Tanpa ini kartunya cuma tertulis "(CL tidak ditemukan)".
+  const [exLeaders, setExLeaders] = useState<CoreLeader[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Form edit lewat bottom sheet — isian & aturannya dipakai bersama sub-tab
-  // Pertemuan di CORE (lihat hooks/useVisitationForm.ts).
+  // Visitation di CORE (lihat hooks/useVisitationForm.ts).
   const [editing, setEditing] = useState<Visitation | null>(null);
   const form = useVisitationForm();
   const [formError, setFormError] = useState<string | null>(null);
@@ -59,6 +61,7 @@ export default function VisitationsScreen() {
     const unsubs = [
       subscribeVisitations(user.uid, setVisitations, fail),
       subscribeCoreLeaders(user.uid, setLeaders, fail),
+      subscribeExLeaders(user.uid, setExLeaders, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -70,7 +73,7 @@ export default function VisitationsScreen() {
   // Jadwal mendatang tidak ikut — tempatnya di CORE → tab Visitasi.
   const history = all.filter((v) => v.done || visitDaysUntil(v, today) < 0);
 
-  // Filter jenis pertemuan — sama seperti di tab Pertemuan (null = semua).
+  // Filter jenis visitasi — sama seperti di tab Visitation (null = semua).
   // Filter Thanksgiving ikut menangkap acara yang cuma "sekalian" Thanksgiving.
   const [filterKind, setFilterKind] = useState<MeetingKind | null>(null);
   const matchKind = (v: Visitation, k: MeetingKind) =>
@@ -139,7 +142,7 @@ export default function VisitationsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Riwayat Pertemuan 🕘"
+        title="Riwayat Visitasi 🕘"
         subtitle={`${sorted.length} riwayat`}
       />
 
@@ -165,7 +168,7 @@ export default function VisitationsScreen() {
 
           {sorted.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Belum ada riwayat — pertemuan yang sudah selesai atau terlewat
+              Belum ada riwayat — visitasi yang sudah selesai atau terlewat
               akan muncul di sini 📅
             </VixText>
           )}
@@ -179,36 +182,12 @@ export default function VisitationsScreen() {
                 key={v.id}
                 style={[styles.card, deadlineBorder(tone)]}
                 onPress={() => openEdit(v)}>
-                <View style={styles.cardTop}>
-                  <VixText heading="bold" additionalStyle={styles.cardTitle}>
-                    {meetingLeaderNames(v, leaders)}
-                  </VixText>
-                  {v.done ? (
-                    <VixText heading="label" additionalStyle={styles.statusDone}>
-                      ✅ Selesai
-                    </VixText>
-                  ) : (
-                    <DeadlineTag tone={tone} label={deadlineLabel(days)} />
-                  )}
-                </View>
-                <VixText heading="label" additionalStyle={styles.kindLine}>
-                  {meetingKindLabels(v)}
-                </VixText>
-                {/* Acara gabungan: perjelas berapa CORE yang ikut */}
-                {v.leaderIds.length > 1 ? (
-                  <VixText heading="label" additionalStyle={styles.kindLine}>
-                    🤝 {v.leaderIds.length} CORE gabung
-                  </VixText>
-                ) : null}
-                <VixText heading="label">
-                  📆 {formatFullDate(v.date.toDate())}
-                </VixText>
-                {/* Agenda sengaja TIDAK ditampilkan di sini — datanya sama
-                    dengan tab Pertemuan, dan di riwayat yang penting hasilnya,
-                    bukan rencananya. Tetap bisa dibaca & diubah di modal. */}
-                {v.note ? (
-                  <VixText heading="label">🏷️ Judul: {v.note}</VixText>
-                ) : null}
+                <VisitationCardBody
+                  visitation={v}
+                  leaders={[...leaders, ...exLeaders]}
+                  tone={tone}
+                  days={days}
+                />
               </PressableScale>
             );
           })}
@@ -224,7 +203,7 @@ export default function VisitationsScreen() {
       {/* Bottom sheet edit visitasi */}
       <SheetModal
         visible={!!editing}
-        title="Edit Pertemuan"
+        title="Edit Visitasi"
         onClose={() => setEditing(null)}>
         <VisitationFormFields
           form={form}
@@ -265,13 +244,4 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 3,
   },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardTitle: { flex: 1, color: Color.TEXT_TITLE },
-  kindLine: { color: Color.MAIN },
-  statusDone: { color: Color.SUCCESS },
 });

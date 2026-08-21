@@ -15,8 +15,8 @@ type InvestmentTab = 'crypto' | 'emas' | 'saham' | 'forex';
 // Emas jadi default — fokus utama saat ini.
 const TABS: BottomTab<InvestmentTab>[] = [
   { key: 'crypto', label: 'Crypto', icon: 'bitcoinsign.circle.fill' },
-  { key: 'emas', label: 'Emas', icon: 'dollarsign.circle.fill' },
-  { key: 'saham', label: 'Saham', icon: 'chart.bar.fill' },
+  { key: 'emas', label: 'Gold', icon: 'dollarsign.circle.fill' },
+  { key: 'saham', label: 'Stocks', icon: 'chart.bar.fill' },
   { key: 'forex', label: 'Forex', icon: 'arrow.left.arrow.right' },
 ];
 

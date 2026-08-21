@@ -33,7 +33,7 @@ type LearningTabKey = 'week' | 'skills' | 'topics';
 const TABS: BottomTab<LearningTabKey>[] = [
   { key: 'week', label: 'Target', icon: 'target' },
   { key: 'skills', label: 'Skills', icon: 'graduationcap.fill' },
-  { key: 'topics', label: 'Diskusi', icon: 'bubble.left.fill' },
+  { key: 'topics', label: 'Discussion', icon: 'bubble.left.fill' },
 ];
 
 export default function LearningScreen() {

@@ -13,6 +13,7 @@ import {
   type FirestoreError,
 } from 'firebase/firestore';
 
+import { type DeadlineTone } from './deadline';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { daysBetween } from './format';
@@ -256,7 +257,12 @@ export function setPartDate(
   );
 }
 
-export type PartTone = 'ok' | 'warn' | 'over' | 'unknown';
+/**
+ * Nada tenggat sparepart = aturan tenggat BERSAMA (lib/deadline.ts). Dulu
+ * daftar nilainya ditulis ulang di sini, jadi kalau suatu saat aturan bersama
+ * bertambah nada baru, yang ini diam-diam ketinggalan.
+ */
+export type PartTone = DeadlineTone;
 
 /** Kondisi part: aman / segera (≤30 hari) / lewat jadwal / belum dicatat. */
 export function partCondition(

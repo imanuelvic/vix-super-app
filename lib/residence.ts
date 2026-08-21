@@ -14,6 +14,7 @@ import {
   type FirestoreError,
 } from 'firebase/firestore';
 
+import { type DeadlineTone } from './deadline';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { daysBetween } from './format';
@@ -31,13 +32,13 @@ export const RESIDENCE_INFO = {
   owner: 'Dewi Sintia', // pemilik rumah
   address:
     'Jl. Casa Cluster Gladiola Blok G5 No.6, RT.1/RW.4, Kedaung Kali Angke, Cengkareng, Jakarta Barat, 11710',
+  /** Titik rumah di Google Maps — kartu Alamat di tab Info membukanya. */
+  mapsUrl: 'https://maps.app.goo.gl/MgQ9DhWZw4bU2SrH7',
   wide: '135 m²',
   electricity: '5.500 watt',
   water: 'PAM',
-  rentalDate: '1 November 2025', // mulai sewa
-  // Iuran lingkungan dibayar per tahun (Jan–Des 2026).
+  rentalDate: '1 November 2025',
   managementFeePeriod: 'Jan–Des 2026',
-  waterHeater: 'Rinnai REU-5CFM',
 } as const;
 
 // ===================== Log pengeluaran rumah =====================
@@ -212,7 +213,8 @@ export const CHORE_GROUPS: ChoreGroup[] = [
   },
 ];
 
-export type ChoreTone = 'ok' | 'warn' | 'over' | 'unknown';
+/** Nada tenggat perawatan rumah = aturan tenggat bersama (lib/deadline.ts). */
+export type ChoreTone = DeadlineTone;
 
 /** Tanggal terakhir tiap chore dikerjakan: users/{uid}/house/chores. */
 // `note` = catatan pribadi (mis. pakai cairan apa, tukang siapa). Sengaja

@@ -49,8 +49,8 @@ import { formatRupiah } from '@/lib/transactions';
 const FUN_TABS: BottomTab<FunCategory>[] = [
   { key: 'summit', label: 'Summit', icon: 'mountain.2.fill' },
   { key: 'race', label: 'Race', icon: 'figure.run' },
-  { key: 'reflection', label: 'Refleksi', icon: 'figure.mind.and.body' },
-  { key: 'recreation', label: 'Rekreasi', icon: 'beach.umbrella.fill' },
+  { key: 'reflection', label: 'Reflection', icon: 'figure.mind.and.body' },
+  { key: 'recreation', label: 'Recreation', icon: 'beach.umbrella.fill' },
 ];
 
 /** Format waktu tempuh race: "1j 5m" kalau ≥ 60 menit, selain itu "X menit". */

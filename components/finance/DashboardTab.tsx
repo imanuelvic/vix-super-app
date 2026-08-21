@@ -455,11 +455,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   cardTitle: { marginBottom: 2 },
   toneOk: { color: Color.SUCCESS },
   toneWarn: { color: Color.WARNING },

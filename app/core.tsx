@@ -25,6 +25,7 @@ import {
     EMPTY_MONTHLY_PRAYERS,
     subscribeCoreIdeas,
     subscribeCoreLeaders,
+    subscribeExLeaders,
     subscribeMainTeam,
     subscribeMonthlyMeetings,
     subscribeMonthlyPrayers,
@@ -34,6 +35,7 @@ import {
     weeklyLeaders,
     type CoreIdeasData,
     type CoreLeader,
+    type ExLeader,
     type MainTeamMember,
     type MonthlyMeeting,
     type MonthlyPrayers,
@@ -51,7 +53,7 @@ type CoreTab =
 
 // Tab bar bawah di dalam layar CORE.
 const TABS: BottomTab<CoreTab>[] = [
-  { key: 'visitation', label: 'Pertemuan', icon: 'calendar' },
+  { key: 'visitation', label: 'Visitation', icon: 'calendar' },
   { key: 'monthly', label: 'Monthly', icon: 'list.bullet' },
   { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
   { key: 'leaders', label: 'Leaders', icon: 'person.2.fill' },
@@ -70,14 +72,14 @@ export default function CoreScreen() {
 
   // Default masuk ke Follow Up: itu tugas harianmu. Bisa dioverride lewat
   // param ?tab=… (mis. kartu reminder visitasi di Dashboard), plus ?edit=<id>
-  // untuk otomatis membuka modal pertemuan yang ditekan.
+  // untuk otomatis membuka modal visitasi yang ditekan.
   const { tab: tabParam, edit: editParam } = useLocalSearchParams<{
     tab?: string;
     edit?: string;
   }>();
 
   // Setelah ?edit=… dipakai (modal terbuka), bersihkan param dari URL. Tanpa
-  // ini modal auto-terbuka lagi tiap balik ke subtab Pertemuan (konten
+  // ini modal auto-terbuka lagi tiap balik ke subtab Visitation (konten
   // di-mount ulang oleh key={scrollKey}). Dipanggil tab lewat onEditConsumed
   // SETELAH modal dibuka — jadi param tak keburu hilang sebelum data termuat.
   const clearEditParam = useCallback(() => {
@@ -93,6 +95,10 @@ export default function CoreScreen() {
     if (next) setTab(next);
   }, [tabParam, setTab]);
   const [leaders, setLeaders] = useState<CoreLeader[] | null>(null);
+  // Ex CORE Leader ikut didengarkan — BUKAN untuk dijadwalkan lagi, tapi supaya
+  // visitasi lama dengan mereka tetap bisa menampilkan namanya & ikut ketemu
+  // saat dicari. Tanpa ini kartunya cuma tertulis "(CL tidak ditemukan)".
+  const [exLeaders, setExLeaders] = useState<ExLeader[]>([]);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[] | null>(null);
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
   const [ideas, setIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
@@ -116,6 +122,7 @@ export default function CoreScreen() {
         },
         fail,
       ),
+      subscribeExLeaders(user.uid, setExLeaders, fail),
       subscribeMainTeam(user.uid, setMainTeam, fail),
       subscribeVisitations(user.uid, setVisitations, fail),
       subscribeCoreIdeas(user.uid, setIdeas, fail),
@@ -132,7 +139,7 @@ export default function CoreScreen() {
         title="CORE 🙏"
         subtitle="Gembalakan & muridkan CORE Leader-mu"
         // Tombol kanan atas menyesuaikan tab yang aktif:
-        // Pertemuan → 📜 Rules & Suggestions + 🕘 riwayat pertemuan ·
+        // Visitation → 📜 Rules & Suggestions + 🕘 riwayat visitasi ·
         // Follow Up → 🙏 pokok doa bulanan ·
         // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang).
         // Monthly & Multiplication belum punya halaman pendamping.
@@ -168,6 +175,7 @@ export default function CoreScreen() {
           <VisitationTab
             visitations={visitations}
             leaders={leaders}
+            pastLeaders={exLeaders}
             editId={editParam}
             onEditConsumed={clearEditParam}
           />

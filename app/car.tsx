@@ -31,7 +31,7 @@ type CarTab = 'log' | 'parts' | 'info';
 // Tab bar bawah di dalam layar Car.
 const TABS: BottomTab<CarTab>[] = [
   { key: 'log', label: 'Log', icon: 'list.bullet' },
-  { key: 'parts', label: 'Sparepart', icon: 'wrench.and.screwdriver.fill' },
+  { key: 'parts', label: 'Parts', icon: 'wrench.and.screwdriver.fill' },
   { key: 'info', label: 'Info', icon: 'info.circle.fill' },
 ];
 

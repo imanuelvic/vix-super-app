@@ -11,10 +11,10 @@ import { VixText } from '@/components/common/VixText';
 import { type VisitationForm } from '@/hooks/useVisitationForm';
 import { MEETING_KINDS, type CoreLeader } from '@/lib/core';
 
-// Isi bottom sheet "Pertemuan": jenis acara → penanda Thanksgiving → CORE-nya
+// Isi bottom sheet "Visitasi": jenis acara → penanda Thanksgiving → CORE-nya
 // siapa → tanggal → judul → agenda → sudah selesai.
 //
-// Dipakai bersama sub-tab Pertemuan (CORE) & Riwayat Pertemuan 🕘 — dulu blok
+// Dipakai bersama sub-tab Visitation (CORE) & Riwayat Visitasi 🕘 — dulu blok
 // ini disalin utuh di dua layar, jadi menambah satu kolom berarti mengubah dua
 // tempat dan gampang jadi beda sendiri. Tombol simpan/hapus TIDAK di sini:
 // keduanya memang berbeda per layar.
@@ -38,7 +38,7 @@ export function VisitationFormFields({
       {/* Picker: daftar pilihan baru muncul saat baris ini ditekan, jadi
           modal tidak langsung penuh oleh semua jenis & nama CORE. */}
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        Jenis pertemuan
+        Jenis visitasi
       </VixText>
       <View style={styles.formGap}>
         <SelectField
@@ -48,7 +48,7 @@ export function VisitationFormFields({
             label: `${k.icon} ${k.label}`,
           }))}
           onChange={(k) => k && form.changeKind(k)}
-          placeholder="Pilih jenis pertemuan…"
+          placeholder="Pilih jenis visitasi…"
         />
       </View>
 
@@ -96,14 +96,14 @@ export function VisitationFormFields({
       )}
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        Tanggal pertemuan
+        Tanggal visitasi
       </VixText>
       <View style={styles.formGap}>
         <DateField key={dateKey} value={form.date} onChange={form.setDate} />
       </View>
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        🏷️ Judul Pertemuan
+        🏷️ Judul Visitasi
       </VixText>
       <FormInput
         style={styles.formGap}
@@ -114,7 +114,7 @@ export function VisitationFormFields({
       />
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        🗒️ Agenda pertemuan
+        🗒️ Agenda visitasi
       </VixText>
       <FormInput
         style={[styles.textArea, styles.formGap]}

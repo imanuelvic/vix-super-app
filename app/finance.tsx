@@ -40,7 +40,7 @@ const FINANCE_PIN = '9811';
 // Sub-menu Finance — tab bar DI BAWAH (pakai komponen BottomTabs bersama).
 const SEGMENTS: { key: FinanceTab; label: string; icon: IconName }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'chart.pie.fill' },
-  { key: 'transactions', label: 'Transaksi', icon: 'list.bullet' },
+  { key: 'transactions', label: 'Transactions', icon: 'list.bullet' },
   { key: 'budgeting', label: 'Budgeting', icon: 'chart.bar.fill' },
 ];
 

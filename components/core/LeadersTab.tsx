@@ -485,19 +485,13 @@ export function LeadersTab({
         }>
         <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
           {archiving && editing !== 'new' && editing !== null ? (
-            // ===== Form alasan sebelum diarsipkan =====
             <>
-              <VixText heading="label" additionalStyle={styles.archiveIntro}>
-                🗂️ {editing.name} akan dipindah ke arsip Ex CORE Leader — tidak
-                lagi muncul di follow up & reminder, tapi riwayatnya tetap
-                tersimpan dan bisa dikembalikan kapan saja.
-              </VixText>
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
                 Alasan sudah tidak dipegang
               </VixText>
               <FormInput
                 style={styles.archiveInput}
-                placeholder="mis. Pindah kota · naik jadi MCL · gabung CORE lain…"
+                placeholder="mis. Mundur jadi CL · naik jadi MCL"
                 value={archiveReason}
                 onChangeText={setArchiveReason}
                 editable={!busy}
@@ -721,9 +715,6 @@ function GenderField({
           />
         ))}
       </View>
-      <VixText heading="label" additionalStyle={styles.genderHint}>
-        Menentukan ucapan ulang tahun mana yang dipakai saat chat pribadi.
-      </VixText>
     </>
   );
 }
@@ -944,7 +935,6 @@ const styles = StyleSheet.create({
   // Cowok / cewek — dua chip selebar setengah baris.
   genderRow: { flexDirection: 'row', gap: 8 },
   genderChip: { flex: 1 },
-  genderHint: { marginTop: 6, marginBottom: 10 },
   heartWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -972,8 +962,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  // Lepas CL → arsip Ex CORE Leader.
-  archiveIntro: { color: Color.TEXT_PARAGRAPH, marginBottom: 14 },
   archiveInput: { minHeight: 100, textAlignVertical: 'top', marginBottom: 10 },
   archiveButton: {
     marginTop: 8,

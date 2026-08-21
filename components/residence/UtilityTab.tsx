@@ -5,13 +5,9 @@ import { Color } from '@/assets/style/color';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { categoryOf } from '@/lib/categories';
-import { formatShortDayDate } from '@/lib/format';
+import { formatShortDayDate, monthLabel } from '@/lib/format';
 import { formatRupiah, type Transaction } from '@/lib/transactions';
 
-// Tab Air-Listrik 💧⚡ — REKAP READ-ONLY. Datanya tidak diinput manual lagi;
-// otomatis dibaca dari transaksi Finance berkategori Electricity & Water.
-// Baris list murni tampilan (tidak bisa dipencet). Untuk menambah/mengubah,
-// lakukan di fitur Finance.
 export function UtilityTab({
   transactions,
 }: {
@@ -44,10 +40,9 @@ export function UtilityTab({
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Ringkasan pemakaian bulan ini per jenis */}
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>
-            Pemakaian bulan ini
+            Pemakaian bulan {monthLabel(now)}
           </VixText>
           <View style={styles.utilRow}>
             <VixText heading="bold" additionalStyle={summaryText.value}>
@@ -82,11 +77,6 @@ export function UtilityTab({
               : 'belum tercatat'}
           </VixText>
         </View>
-
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Otomatis dari transaksi Finance kategori ⚡ Electricity & 💧 Water.
-          Untuk menambah, catat di fitur Finance.
-        </VixText>
 
         {transactions.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
@@ -132,7 +122,6 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 10,
   },
-  hint: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     flexDirection: 'row',

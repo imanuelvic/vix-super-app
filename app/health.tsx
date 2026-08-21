@@ -15,21 +15,14 @@ import { DietTab } from '@/components/health/DietTab';
 import { StepsTab } from '@/components/health/StepsTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
-import { type LoginStreak } from '@/lib/achievements';
 import { EMPTY_DIET_DAY, subscribeDietDay, type DietDay } from '@/lib/diet';
 import {
-  bumpWaterStreak,
-  setWater,
   subscribeCheckups,
-  subscribeHabitDay,
   subscribeHealthProfile,
   subscribeStepDays,
-  subscribeWaterStreak,
   subscribeWeekStats,
   subscribeWeightTarget,
-  WATER_GOAL,
   type Checkup,
-  type HabitDay,
   type HealthProfile,
   type StepDaysMap,
   type WeekStatsMap,
@@ -70,10 +63,6 @@ export default function HealthScreen() {
   // Target berat (dipasang di tab Habits) — dipakai Diet untuk menentukan
   // defisit/surplus kalorinya, biar satu tujuan dengan tab Habits.
   const [target, setTarget] = useState<WeightTarget | null>(null);
-  // Air putih hari ini — dokumen yang SAMA dengan kartu sapaan di Home,
-  // jadi angkanya tidak mungkin beda antara dua layar.
-  const [day, setDay] = useState<HabitDay | null>(null);
-  const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Lewat tengah malam id harinya ikut berganti sendiri — catatan makan hari
@@ -97,26 +86,12 @@ export default function HealthScreen() {
       subscribeWeekStats(user.uid, setWeeks, fail),
       subscribeDietDay(user.uid, dayId, setDiet, fail),
       subscribeWeightTarget(user.uid, setTarget, fail),
-      subscribeHabitDay(user.uid, dayId, setDay, fail),
-      subscribeWaterStreak(user.uid, setWaterStreak, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, dayId]);
 
-  // Air putih 💧 — logikanya persis seperti di Home supaya rentetan "cukup 8
-  // gelas" tetap satu hitungan, dari layar mana pun ditambahnya.
-  async function changeWater(delta: number) {
-    if (!user || !day) return;
-    const next = day.water + delta;
-    try {
-      await setWater(user.uid, dayId, next);
-      if (next >= WATER_GOAL) {
-        await bumpWaterStreak(user.uid, waterStreak, dayId);
-      }
-    } catch {
-      // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
-    }
-  }
+  // Air putih 💧 tidak diurus dari layar ini lagi — pencatatannya cuma di
+  // kartu sapaan Home (satu tombol, satu angka, satu rentetan).
 
   const loading = !profile || !checkups;
 
@@ -148,14 +123,7 @@ export default function HealthScreen() {
         ) : tab === 'steps' ? (
           <StepsTab profile={profile} stepDays={stepDays} weeks={weeks} />
         ) : tab === 'diet' ? (
-          <DietTab
-            day={diet}
-            dayId={dayId}
-            profile={profile}
-            target={target}
-            water={day?.water ?? 0}
-            onChangeWater={changeWater}
-          />
+          <DietTab day={diet} dayId={dayId} profile={profile} target={target} />
         ) : (
           <CheckupTab checkups={checkups} />
         )}

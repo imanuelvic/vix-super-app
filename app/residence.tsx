@@ -37,8 +37,8 @@ type ResidenceTab = 'utility' | 'log' | 'chores' | 'info';
 // Log · Air-Listrik (default) · Perawatan · Info.
 const TABS: BottomTab<ResidenceTab>[] = [
   { key: 'log', label: 'Log', icon: 'list.bullet' },
-  { key: 'utility', label: 'Air-Listrik', icon: 'bolt.fill' },
-  { key: 'chores', label: 'Perawatan', icon: 'wrench.and.screwdriver.fill' },
+  { key: 'utility', label: 'Utility', icon: 'bolt.fill' },
+  { key: 'chores', label: 'Maintenance', icon: 'wrench.and.screwdriver.fill' },
   { key: 'info', label: 'Info', icon: 'info.circle.fill' },
 ];
 

@@ -68,7 +68,7 @@ export function visitationPdfName(
     .filter(Boolean)
     .join(', ');
   const jenis = meetingKindMeta(v.kind).label;
-  return pdfFileName(nama ? `${jenis} - ${nama}` : jenis, 'Pertemuan CORE');
+  return pdfFileName(nama ? `${jenis} - ${nama}` : jenis, 'Visitasi CORE');
 }
 
 function buildHtml(
@@ -81,7 +81,7 @@ function buildHtml(
 
   const acara = `
     <section class="acara">
-      <h2>🗒️ ${escapeHtml(v.note.trim() || 'Agenda Pertemuan')}</h2>
+      <h2>🗒️ ${escapeHtml(v.note.trim() || 'Agenda Visitasi')}</h2>
       <div class="kotak">${htmlParagraphs(v.agenda)}</div>
     </section>`;
 

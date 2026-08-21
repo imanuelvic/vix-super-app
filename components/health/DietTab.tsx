@@ -43,7 +43,6 @@ import {
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
   ageFromBirthYear,
-  WATER_GOAL,
   type HealthProfile,
   type WeightTarget,
 } from '@/lib/health';
@@ -53,23 +52,20 @@ import { SAVE_ERROR } from '@/lib/messages';
 // Susunannya dari atas ke bawah = urutan yang paling sering dilihat:
 //   1. Ring kalori + target yang sudah disesuaikan dengan target berat
 //   2. Tiga takaran penting: protein (dikejar), gula & lemak (dibatasi)
-//   3. Air putih — angka yang sama dengan yang di Home
-//   4. Daftar makan per waktu makan + paket sarapan sekali ketuk
-//   5. Panduan singkat
+//   3. Daftar makan per waktu makan + paket sarapan sekali ketuk
+//   4. Panduan singkat
+//
+// Air putih 💧 TIDAK diurus di sini — tempatnya cuma di kartu sapaan Home.
 export function DietTab({
   day,
   dayId,
   profile,
   target,
-  water,
-  onChangeWater,
 }: {
   day: DietDay;
   dayId: string;
   profile: HealthProfile;
   target: WeightTarget | null;
-  water: number;
-  onChangeWater: (delta: number) => void;
 }) {
   const { user } = useAuth();
 
@@ -244,30 +240,11 @@ export function DietTab({
           hint="±30% dari kebutuhan kalori"
         />
 
-        {/* ===== 3. Air putih — sumber angkanya sama dengan di Home ===== */}
-        <View style={styles.waterCard}>
-          <VixText heading="bold" additionalStyle={styles.waterLabel}>
-            💧 Air putih {water}/{WATER_GOAL} gelas
-          </VixText>
-          <View style={styles.waterButtons}>
-            <PressableScale
-              style={styles.waterButton}
-              onPress={() => onChangeWater(-1)}
-              hitSlop={6}>
-              <VixText heading="bold" additionalStyle={styles.waterButtonText}>
-                −
-              </VixText>
-            </PressableScale>
-            <PressableScale
-              style={[styles.waterButton, styles.waterButtonPlus]}
-              onPress={() => onChangeWater(1)}
-              hitSlop={6}>
-              <IconSymbol name="plus" size={16} color={Color.MAIN_DARK} />
-            </PressableScale>
-          </View>
-        </View>
+        {/* Air putih 💧 sengaja TIDAK di sini — satu-satunya tempat mencatat &
+            melihatnya cuma kartu sapaan di Home, biar tidak ada dua tombol
+            untuk angka yang sama. */}
 
-        {/* ===== 4. Daftar makan per waktu makan ===== */}
+        {/* ===== 3. Daftar makan per waktu makan ===== */}
         {MEAL_SLOTS.map((slot) => {
           const list = grouped[slot.key];
           const slotKcal = list.reduce((s, m) => s + m.kcal, 0);
@@ -632,30 +609,6 @@ const styles = StyleSheet.create({
   limitOver: { color: Color.DANGER },
   goalReached: { color: Color.MAIN_DARK },
   limitHint: { color: Color.TEXT_LABEL },
-  // Air putih — bentuknya disamakan dengan baris air di kartu sapaan Home.
-  waterCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  waterLabel: { color: Color.MAIN_LIGHT, flexShrink: 1 },
-  waterButtons: { flexDirection: 'row', gap: 8 },
-  waterButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Color.MAIN_LIGHT,
-  },
-  waterButtonPlus: { backgroundColor: Color.ACCENT },
-  waterButtonText: { color: Color.MAIN_DARK, fontSize: 18, lineHeight: 22 },
   slotCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

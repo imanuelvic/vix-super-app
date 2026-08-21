@@ -59,8 +59,8 @@ import { formatRupiah } from '@/lib/transactions';
 type Tab = DebtDirection;
 
 const TABS: BottomTab<Tab>[] = [
-  { key: 'theirs', label: 'Pinjaman Orang', icon: 'arrow.down.circle.fill' },
-  { key: 'mine', label: 'Pinjaman Saya', icon: 'arrow.up.circle.fill' },
+  { key: 'theirs', label: 'Lent Out', icon: 'arrow.down.circle.fill' },
+  { key: 'mine', label: 'My Debt', icon: 'arrow.up.circle.fill' },
 ];
 
 const PERIODS: DebtPeriod[] = ['once', 'weekly', 'monthly'];

@@ -1,5 +1,6 @@
 import {
   doc,
+  getDoc,
   setDoc,
   Timestamp,
   type FirestoreError,
@@ -530,6 +531,45 @@ export function subscribeFitDay(
       }),
     onError,
   );
+}
+
+/**
+ * Ambil beberapa hari latihan sekaligus (sekali baca) — untuk menandai hari
+ * mana saja di deretan Sen–Min yang sesinya SUDAH beres.
+ *
+ * Yang diminta cuma hari-hari minggu berjalan sampai hari ini (paling banyak 7
+ * dokumen kecil, sekali saat tab dibuka). Hari yang belum ada dokumennya
+ * dianggap kosong — bukan error.
+ */
+export async function fetchFitDays(
+  uid: string,
+  dayIds: string[],
+): Promise<Record<string, FitDay>> {
+  const snaps = await Promise.all(
+    dayIds.map((id) => getDoc(doc(db, 'users', uid, 'fitnessDays', id))),
+  );
+  const out: Record<string, FitDay> = {};
+  snaps.forEach((snap, i) => {
+    out[dayIds[i]] = {
+      done: (snap.data()?.done as FitDayDone) ?? {},
+      skipped: snap.data()?.skipped === true,
+    };
+  });
+  return out;
+}
+
+/**
+ * Sesi satu hari SUDAH beres? Yaitu semua gerakannya tercentang & harinya tidak
+ * dilewati ✕. Dipakai tanda ✅ di deretan hari.
+ */
+export function fitDayComplete(
+  day: FitDay | undefined,
+  weekday: number,
+  block: FitBlock,
+): boolean {
+  if (!day || day.skipped) return false;
+  const list = fitSessionOfWeekday(weekday, block).exercises;
+  return list.length > 0 && list.every((e) => day.done[e.id]);
 }
 
 /**

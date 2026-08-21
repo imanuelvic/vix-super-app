@@ -5,6 +5,15 @@ export const MONTH_NAMES = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
 
+/**
+ * Nama bulan dari sebuah tanggal, mis. "Agustus". Dipakai judul yang menyebut
+ * bulan berjalan ("Pemakaian bulan Agustus") — supaya angka bulanan jelas
+ * bulan apa, bukan cuma "bulan ini".
+ */
+export function monthLabel(d = new Date()): string {
+  return MONTH_NAMES[d.getMonth()];
+}
+
 const DAY_NAMES = [
   'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu',
 ];
