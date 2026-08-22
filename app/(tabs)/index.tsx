@@ -8,8 +8,8 @@
 // Kalau di-rename (mis. "home.tsx"), rutenya berubah jadi "/home" dan routing
 // harus di-rewire. Jadi biarkan namanya "index.tsx"; anggap ini "Home".
 // ============================================================================
-import { Redirect, useRouter, type Href } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Redirect, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -91,6 +91,19 @@ import {
   intercessionToday,
   isChainTopic,
 } from '@/lib/intercession';
+import { HOME_FEATURES } from '@/lib/homeGrid';
+import {
+  EMPTY_PRIORITY,
+  priorityPending,
+  subscribePriorityDay,
+  type PriorityItem,
+} from '@/lib/priority';
+import {
+  refreshPrayerNews,
+  subscribePrayerNews,
+  withWeeklyNews,
+  type PrayerNews,
+} from '@/lib/prayerNews';
 import {
   countResidenceAttention,
   subscribeChoreStatus,
@@ -117,57 +130,10 @@ import { logFeatureUse } from '@/lib/usage';
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
-
-// Daftar fitur di Home. Tambah fitur baru = tambah 1 baris di sini.
-// Tiap fitur punya warna sendiri (bg + fg) biar gampang dikenali sekilas.
-const FEATURES: {
-  key: string;
-  label: string;
-  icon:
-    | 'checklist'
-    | 'banknote'
-    | 'heart.fill'
-    | 'person.2.fill'
-    | 'chart.line.uptrend.xyaxis'
-    | 'car.fill'
-    | 'target'
-    | 'book.closed.fill'
-    | 'books.vertical.fill'
-    | 'house.fill'
-    | 'briefcase.fill'
-    | 'person.3.fill'
-    | 'party.popper.fill'
-    | 'dumbbell.fill'
-    | 'globe'
-    | 'bird.fill'
-    | 'trophy.fill'
-    | 'graduationcap.fill';
-  route: Href;
-  bg: string;
-  fg: string;
-}[] = [
-  { key: 'tasks', label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK },
-  { key: 'spiritual', label: 'Spiritual', icon: 'bird.fill', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK },
-  { key: 'health', label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.FINANCE_EXPENSE, fg: Color.DANGER },
-  { key: 'core', label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.FINANCE_INVESTMENT, fg: Color.TEXT_TITLE },
-
-  { key: 'finance', label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE_INCOME, fg: Color.FINANCE_INCOME_DARK },
-  { key: 'learning', label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
-  { key: 'fitness', label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK },
-  { key: 'family', label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FINANCE_SAVING, fg: Color.ACCENT_DARK },
-
-  { key: 'investment', label: 'Invest', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.CAREER_DARK, fg: Color.TEXT_LABEL },
-  { key: 'career', label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.ACCENT_DARK },
-  { key: 'fun', label: 'Fun', icon: 'party.popper.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK },
-  { key: 'wheel', label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK },
-
-  { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
-  { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
-  { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
-  { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
-
-  { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
-];
+//
+// Daftar fitur gridnya sendiri pindah ke lib/homeGrid.ts: layar Achievement
+// ikut memakainya untuk mengurutkan kategori pencapaian, jadi urutannya harus
+// punya SATU sumber. Tambah fitur baru = tambah 1 baris di sana.
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -207,6 +173,15 @@ export default function HomeScreen() {
     useState<BibleReadingSessions | null>(null);
   // Rentetan hari "cukup 8 gelas" — dicatat saat gelas ke-8 hari ini tercapai.
   const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
+  // Tiga prioritas hari ini 💡 — untuk angka di tombol header. Dokumennya per
+  // tanggal, jadi ganti hari = daftar kosong lagi tanpa perlu direset.
+  const [priorities, setPriorities] = useState<PriorityItem[]>(EMPTY_PRIORITY);
+  // Kliping berita mingguan untuk syafaat Gereja & Negara.
+  // undefined = dokumennya belum terbaca (jangan ambil berita dulu),
+  // null = memang belum pernah ada catatannya.
+  const [prayerNews, setPrayerNews] = useState<PrayerNews | null | undefined>(
+    undefined,
+  );
   // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
   const [intercessionOpen, setIntercessionOpen] = useState(false);
   // Kalimat penyegar yang barusan diketuk "sudah dibaca" (null = belum ada).
@@ -240,9 +215,26 @@ export default function HomeScreen() {
       subscribeWaterStreak(user.uid, setWaterStreak),
       subscribeFitDay(user.uid, todayId, setFitDay),
       subscribeDebts(user.uid, setDebts),
+      subscribePrayerNews(user.uid, setPrayerNews),
+      subscribePriorityDay(user.uid, todayId, setPriorities),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId, weekId]);
+
+  // "Cron" kliping doa syafaat 📰🙏 — app ini tidak punya server maupun tugas
+  // latar, jadi penjadwalnya ya Home: sekali seminggu, saat pertama dibuka.
+  // `refreshPrayerNews` sendiri yang memutuskan perlu-tidaknya (bandingkan
+  // weekId), jadi buka-tutup Home berkali-kali tidak menambah biaya apa pun.
+  // Ref = pengaman supaya satu sesi app paling banyak sekali mencoba.
+  const newsTried = useRef(false);
+  useEffect(() => {
+    if (!user || prayerNews === undefined || newsTried.current) return;
+    newsTried.current = true;
+    refreshPrayerNews(user.uid, prayerNews, new Date()).catch(() => {
+      // Gagal ambil (offline / RSS bermasalah) → biarkan, dicoba lagi nanti.
+      newsTried.current = false;
+    });
+  }, [user, prayerNews]);
 
   // Doa pagi TERLEWAT OTOMATIS: sudah lewat jam 09.00 & belum dikonfirmasi
   // hari ini. Saat itu terjadi streak doa dihanguskan (sekali saja), lalu Home
@@ -273,13 +265,19 @@ export default function HomeScreen() {
   // sepanjang hari, dan mulai jam 18.00 berubah jadi ajakan mendoakan lagi.
   // Ditampilkan RINGKAS (1 baris) supaya grid fitur tetap muat sekali layar —
   // pokok doanya baru terbuka saat kartunya diketuk.
-  const intercession = intercessionToday(now);
+  // Hari Gereja ⛪ (Sabtu) & Negara 🇮🇩 (Minggu) pokok doanya ditambah kliping
+  // berita sepekan terakhir — biar yang didoakan ikut yang sedang terjadi,
+  // bukan cuma daftar tetap. Hari lain tidak berubah sama sekali.
+  const intercession = withWeeklyNews(
+    intercessionToday(now),
+    prayerNews ?? null,
+  );
   const intercessionChain = isChainTopic(intercession);
   const intercessionSummary = intercessionChain
     ? 'Doakan & follow up pokok doa CORE Leader giliran hari ini'
     : intercessionNightWindow(now)
       ? '🌙 Doakan sekali lagi sebelum tidur — ketuk untuk pokok doanya'
-      : `${intercession.points.length} pokok doa — ketuk untuk melihatnya`;
+      : `${intercession.points.length} pokok doa`;
   const intercessionTexts =
     intercessionOpen && !intercessionChain
       ? intercession.points.map((p) => `• ${p}`)
@@ -396,6 +394,16 @@ export default function HomeScreen() {
           vix <VixText heading="label">Super App</VixText>
         </VixText>
         <View style={styles.brandRight}>
+          {/* Daily Priority 💡 — tiga hal terpenting hari ini. Angkanya =
+              berapa yang belum beres (3 kalau belum diisi sama sekali), jadi
+              mengisinya di pagi hari ikut tertagih. */}
+          <PressableScale
+            style={styles.priorityPill}
+            onPress={() => router.push('/daily-priority')}>
+            <VixText heading="bold" additionalStyle={styles.priorityPillText}>
+              💡 {priorityPending(priorities)}
+            </VixText>
+          </PressableScale>
           {/* Tombol streak login 🔥 → halaman achievement */}
           <PressableScale
             style={styles.streakPill}
@@ -541,7 +549,7 @@ export default function HomeScreen() {
           )}
 
           <View style={styles.grid}>
-            {FEATURES.map((feature, index) => {
+            {HOME_FEATURES.map((feature, index) => {
               const badge = badges[feature.key] ?? 0;
               return (
                 // Tiap tile muncul berurutan (stagger) saat Home dibuka.
@@ -663,6 +671,17 @@ const styles = StyleSheet.create({
     borderColor: Color.ACCENT_DARK,
   },
   streakPillText: { color: Color.ACCENT_DARK },
+  // Daily Priority 💡 — bentuknya sama dengan pil 🏆, warnanya beda supaya
+  // dua tombol bersebelahan itu tidak terbaca sebagai satu tombol panjang.
+  priorityPill: {
+    backgroundColor: Color.MAIN_LIGHT,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderWidth: 0.5,
+    borderColor: Color.MAIN_DARK,
+  },
+  priorityPillText: { color: Color.MAIN_DARK },
   // Kartu Baca Alkitab di bawah kartu sapaan (tema spiritual/ungu).
   readingCard: {
     flexDirection: 'row',

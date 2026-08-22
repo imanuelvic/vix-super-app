@@ -13,11 +13,16 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
+import { formatMinutesLeft } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
   BIBLE_SKIPPED,
+  bibleDayComplete,
+  bibleMinutesLeft,
   bibleSessionMeta,
+  bibleSessionOf,
   bumpBibleStreaks,
   dailyReminder,
   EMPTY_BIBLE_STREAKS,
@@ -26,7 +31,6 @@ import {
   subscribeBibleReadingToday,
   subscribeBibleStreaks,
   type BibleReadingSessions,
-  type BibleSession,
   type BibleStreaks,
 } from '@/lib/spiritual';
 
@@ -38,8 +42,11 @@ export default function BibleReadingScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { session: sessionParam } = useLocalSearchParams<{ session?: string }>();
-  const session: BibleSession = sessionParam === 'night' ? 'night' : 'morning';
+  const session = bibleSessionOf(sessionParam);
   const meta = bibleSessionMeta(session);
+
+  // Jam BERJALAN (di-segarkan tiap menit) — untuk hitung mundur jendela baca.
+  const { now } = useNow();
 
   // Beberapa acuan sekaligus — kalau hari itu baca lebih dari satu kitab.
   const [refs, setRefs] = useState<string[]>(['']);
@@ -71,6 +78,10 @@ export default function BibleReadingScreen() {
 
   const filled = refs.map((r) => r.trim()).filter(Boolean);
 
+  // Sisa waktu jendela sesi ini. ≤ 0 = sudah lewat; ≤ 30 menit = aba-aba merah.
+  const minutesLeft = bibleMinutesLeft(session, now);
+  const closingSoon = minutesLeft <= 30;
+
   function setRefAt(index: number, ref: string) {
     setRefs((list) => list.map((r, i) => (i === index ? ref : r)));
   }
@@ -85,9 +96,14 @@ export default function BibleReadingScreen() {
     setError(null);
     try {
       await saveBibleReading(user.uid, dayId, session, filled.join(', '));
-      // "Lengkap" = pagi & malam hari ini dua-duanya terisi setelah simpan ini.
-      const other = session === 'morning' ? 'night' : 'morning';
-      await bumpBibleStreaks(user.uid, streaks, dayId, session, !!today[other]);
+      // "Lengkap" = KETIGA sesi hari ini terisi setelah simpan ini.
+      await bumpBibleStreaks(
+        user.uid,
+        streaks,
+        dayId,
+        session,
+        bibleDayComplete(today, session),
+      );
       router.back();
     } catch {
       setError(SAVE_ERROR);
@@ -129,6 +145,31 @@ export default function BibleReadingScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Hitung mundur jendela baca — supaya jelas "sampai jam berapa ini
+            masih terhitung tepat waktu", bukan menebak-nebak. Hanya muncul
+            selagi sesi ini belum diisi & belum dilewati (kalau sudah, kotak
+            ringkasan / pemberitahuan "dilewati" yang bicara). Merah di 30
+            menit terakhir — aba-aba yang sama seperti gerbang doa pagi. */}
+        {!existing && (
+          <View
+            style={[styles.countdown, closingSoon && styles.countdownSoon]}>
+            <VixText
+              heading="bold"
+              additionalStyle={
+                closingSoon ? styles.countdownSoonText : styles.countdownText
+              }>
+              {minutesLeft > 0
+                ? `⏳ Tinggal ${formatMinutesLeft(minutesLeft)}`
+                : `⌛ Jendela ${meta.label.toLowerCase()} sudah lewat`}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.countdownSub}>
+              {minutesLeft > 0
+                ? `Jendela ${meta.emoji} ${meta.label} tutup jam ${meta.toHour}.00. Lewat itu kartunya hilang dari Home & hari ini terlewat.`
+                : `Jam ${meta.fromHour}.00–${meta.toHour}.00 sudah habis. Masih boleh dicatat sekarang — yang hilang cuma kartunya di Home.`}
+            </VixText>
+          </View>
+        )}
+
         {/* Reminder hari ini + pintasan NDC Ministry — bentuk & isinya sama
             dengan Tulis Revive. Undiannya diberi garam berbeda per sesi, jadi
             pagi, malam, & Revive tidak menampilkan kalimat yang sama persis. */}
@@ -216,6 +257,20 @@ export default function BibleReadingScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
+  // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.
+  countdown: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 2,
+    marginBottom: 10,
+  },
+  countdownSoon: { backgroundColor: Color.DANGER_TRANSPARENT },
+  countdownText: { color: Color.ACCENT_DARK },
+  countdownSoonText: { color: Color.DANGER },
+  countdownSub: { color: Color.TEXT_LABEL },
   refCard: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 18,

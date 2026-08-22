@@ -812,11 +812,10 @@ export default function DashboardScreen() {
                           additionalStyle={
                             days < 0 ? styles.priorityLate : styles.priorityDue
                           }>
-                          {days === 0
-                            ? 'HARI INI'
-                            : days < 0
-                              ? `lewat ${-days}h`
-                              : `${days}h lagi`}
+                          {/* "5 hari lagi", bukan "5h lagi" — singkatannya
+                              sempat terbaca sebagai JAM. Teksnya milik bersama
+                              (whenLabel), sama dengan tenggat di layar lain. */}
+                          {whenLabel(days)}
                         </VixText>
                       </PressableScale>
                     );
@@ -999,7 +998,7 @@ export default function DashboardScreen() {
             </ReminderCard>
           )}
 
-          {/* Doa Rantai — follow up pokok doa bergilir (Sel/Kam/Sab).
+          {/* Doa Rantai — follow up pokok doa bergilir (Selasa & Kamis).
               Warnanya ikut grid CORE (biru), sama seperti kartu Pertemuan CORE. */}
           {prayerFollowupDue && (
             <ReminderCard

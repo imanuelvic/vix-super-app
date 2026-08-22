@@ -15,8 +15,10 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { BOOKS } from '@/lib/books';
 import {
+  bumpLearningStreak,
   dueStep,
   LEARNING_STEPS,
+  learningStreakAlive,
   setLearningNote,
   setLearningStep,
   setSkillDone,
@@ -34,6 +36,7 @@ import {
   type LearningWeek,
   type SkillsDone,
   type TopicsDone,
+  type WeekStreak,
 } from '@/lib/learning';
 import { SAVE_ERROR } from '@/lib/messages';
 import { formatWeekRange } from '@/lib/usage';
@@ -48,12 +51,15 @@ export function WeekTab({
   now,
   skillsDone,
   topicsDone,
+  streak,
 }: {
   week: LearningWeek;
   weekId: string;
   now: Date;
   skillsDone: SkillsDone;
   topicsDone: TopicsDone;
+  /** Rentetan minggu tuntas berturut-turut (lastDayId = weekId). */
+  streak: WeekStreak;
 }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -70,6 +76,10 @@ export function WeekTab({
   const complete = weekComplete(week.steps);
   const due = dueStep(week.steps, now);
   const topics = topicsOfWeek(now);
+  // Rentetan yang MASIH hidup: tercatat minggu ini, atau minggu lalu (belum
+  // tuntas minggu ini, tapi belum putus juga). Lebih lama dari itu = sudah
+  // bolong, jadi angkanya tidak lagi ditampilkan seolah masih berjalan.
+  const runningStreak = learningStreakAlive(streak, weekId) ? streak.count : 0;
 
   async function toggleStep(step: LearningStep) {
     if (!user) return;
@@ -84,6 +94,13 @@ export function WeekTab({
       const nowComplete = weekComplete(next);
       if (nowComplete !== wasComplete) {
         await setSkillDone(user.uid, skill.key, nowComplete ? weekId : null);
+      }
+      // Rentetan mingguan 🔥 naik saat minggu ini TUNTAS — dasar achievement
+      // Learning. Sengaja tidak diturunkan lagi kalau centangnya dilepas:
+      // minggu itu memang pernah kamu tuntaskan. Naiknya juga maksimal sekali
+      // per minggu (dijaga `bumpLearningStreak`).
+      if (nowComplete) {
+        await bumpLearningStreak(user.uid, streak, weekId);
       }
     } catch {
       setError(SAVE_ERROR);
@@ -127,10 +144,20 @@ export function WeekTab({
             <VixText heading="label" additionalStyle={styles.heroWeek}>
               📅 {formatWeekRange(now)}
             </VixText>
-            <View style={styles.heroCount}>
-              <VixText heading="bold" additionalStyle={styles.heroCountText}>
-                {doneCount}/{LEARNING_STEPS.length}
-              </VixText>
+            <View style={styles.heroRight}>
+              {/* Rentetan minggu tuntas berturut-turut — angka yang sama
+                  dipakai achievement 🎓 Learning. Disembunyikan saat masih 0
+                  supaya tidak jadi pengingat kegagalan. */}
+              {runningStreak > 0 && (
+                <VixText heading="bold" additionalStyle={styles.heroStreak}>
+                  🔥 {runningStreak} minggu
+                </VixText>
+              )}
+              <View style={styles.heroCount}>
+                <VixText heading="bold" additionalStyle={styles.heroCountText}>
+                  {doneCount}/{LEARNING_STEPS.length}
+                </VixText>
+              </View>
             </View>
           </View>
 
@@ -360,6 +387,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   heroWeek: { color: Color.LEARNING_DARK },
+  // Rentetan 🔥 + hitungan langkah, berdampingan di ujung kanan hero.
+  heroRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroStreak: { color: Color.LEARNING_DARK },
   heroCount: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 999,

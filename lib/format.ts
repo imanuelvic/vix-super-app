@@ -122,6 +122,19 @@ export function whenLabel(days: number): string {
   return days > 0 ? `${days} hari lagi` : `lewat ${-days} hari`;
 }
 
+/**
+ * Sisa waktu yang enak dibaca: 95 → "1 jam 35 menit", 120 → "2 jam",
+ * 40 → "40 menit". Angka negatif dianggap habis ("0 menit").
+ * Dipakai hitung mundur jendela baca Alkitab 📖.
+ */
+export function formatMinutesLeft(mins: number): string {
+  const total = Math.max(0, Math.round(mins));
+  const hours = Math.floor(total / 60);
+  const rest = total % 60;
+  if (hours === 0) return `${rest} menit`;
+  return rest === 0 ? `${hours} jam` : `${hours} jam ${rest} menit`;
+}
+
 export function daysBetween(from: Date, to: Date): number {
   return Math.round(
     (startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000,

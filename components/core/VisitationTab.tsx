@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -16,10 +16,14 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
-import { VisitationCardBody } from '@/components/core/VisitationCardBody';
+import {
+  VisitationCardBody,
+  VisitationStatus,
+} from '@/components/core/VisitationCardBody';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useEditParam } from '@/hooks/useEditParam';
 import { usePagination } from '@/hooks/usePagination';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
@@ -120,7 +124,7 @@ export function VisitationTab({
 
   // Hasil pencarian: cocok kalau SETIAP kata yang kamu ketik muncul di judul,
   // agenda, nama CL-nya, jenis acaranya, ATAU tanggalnya. Jadi "rules reyki"
-  // tetap ketemu walau urutan katanya beda dari yang tertulis. Terbaru di atas.
+  // tetap ketemu walau urutan katanya beda dari yang tertulis.
   //
   // Dua hal yang dulu bikin hasilnya "hilang" padahal ada di daftar:
   // 1. Nama CL yang sudah diarsipkan tak bisa dibaca (namanya cuma ada di
@@ -142,7 +146,18 @@ export function VisitationTab({
             )}`.toLowerCase();
             return words.every((w) => hay.includes(w));
           })
-          .sort((a, b) => b.date.toMillis() - a.date.toMillis());
+          // Urutan: yang tanggalnya PALING DEKAT dengan hari ini di atas —
+          // dua arah, jadi visitasi minggu depan menang atas yang tahun depan,
+          // dan yang baru lewat kemarin menang atas yang lewat setahun lalu.
+          // (Dulu murni tanggal terbesar dulu, jadi jadwal paling jauh justru
+          // nangkring di atas — persis yang bikin bingung saat mencari.)
+          .sort((a, b) => {
+            const da = visitDaysUntil(a, today);
+            const db = visitDaysUntil(b, today);
+            const jarak = Math.abs(da) - Math.abs(db);
+            // Sama-sama berjarak N hari → yang MENDATANG didahulukan.
+            return jarak !== 0 ? jarak : db - da;
+          });
 
   function toggleSearch() {
     setSearchMode((on) => !on);
@@ -167,20 +182,9 @@ export function VisitationTab({
     [],
   );
 
-  // Auto-buka modal saat dibuka dari reminder Dashboard (?edit=<id>). Setelah
-  // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
-  // auto-terbuka lagi saat balik ke subtab ini (yang me-mount ulang tab).
-  // consumedRef = guard tambahan agar tak dobel dalam satu mount.
-  const consumedRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    if (!editId || consumedRef.current === editId) return;
-    const visit = visitations.find((v) => v.id === editId);
-    if (visit) {
-      consumedRef.current = editId;
-      openEdit(visit);
-      onEditConsumed?.();
-    }
-  }, [editId, visitations, openEdit, onEditConsumed]);
+  // Auto-buka modal saat dibuka dari reminder Dashboard (?edit=<id>).
+  // Aturannya milik bersama — lihat hooks/useEditParam.ts.
+  useEditParam(visitations, openEdit, editId, onEditConsumed);
 
   async function handleSave() {
     if (!user || !editing || busy) return;
@@ -270,25 +274,26 @@ export function VisitationTab({
           jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin ketukan
           tombolnya ikut membuka modal edit. */}
       <PressableScale style={styles.cardTapArea} onPress={() => openEdit(v)}>
-        <VisitationCardBody
-          visitation={v}
-          leaders={namaLeaders}
-          tone={tone}
-          days={days}
-        />
+        <VisitationCardBody visitation={v} leaders={namaLeaders} />
       </PressableScale>
 
-      {/* Kirim visitasi + panduan acaranya ke CORE Leader lewat WhatsApp.
-          Cuma emoji di pojok kanan atas supaya tidak makan tempat. Latarnya
-          menyala hijau pada hari pengingat (H-3, atau H-14/7/3/2/1 untuk acara
-          besar); badge di Home & Dashboard tetap yang menagih. */}
-      <EmojiButton
-        icon="square.and.arrow.up"
-        active={perluKirim}
-        onPress={() => handleShare(v)}
-        busy={sharingId === v.id}
-        disabled={sharingId !== null}
-      />
+      {/* Kolom kanan: tombol share di atas, hitung mundurnya TEPAT DI BAWAHNYA.
+          Dulu tenggatnya sebaris dengan nama CORE — nama yang panjang jadi
+          terjepit, dan mata harus melompat kiri-kanan untuk membacanya. */}
+      <View style={styles.cardSide}>
+        {/* Kirim visitasi + panduan acaranya ke CORE Leader lewat WhatsApp.
+            Cuma emoji supaya tidak makan tempat. Latarnya menyala hijau pada
+            hari pengingat (H-3, atau H-14/7/3/2/1 untuk acara besar); badge di
+            Home & Dashboard tetap yang menagih. */}
+        <EmojiButton
+          icon="square.and.arrow.up"
+          active={perluKirim}
+          onPress={() => handleShare(v)}
+          busy={sharingId === v.id}
+          disabled={sharingId !== null}
+        />
+        <VisitationStatus visitation={v} tone={tone} days={days} />
+      </View>
       </View>
       </View>
     );
@@ -581,6 +586,9 @@ const styles = StyleSheet.create({
   // memanjang karena agenda yang berbaris-baris.
   cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   cardTapArea: { flex: 1 },
+  // Kolom kanan: tombol share, lalu tenggatnya di bawahnya. Rata kanan supaya
+  // tulisan sepanjang apa pun tetap sejajar dengan tombolnya.
+  cardSide: { alignItems: 'flex-end', gap: 6 },
   tip: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
   // Footer modal filter: dua tombol (Bersihkan / Selesai).
   filterFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },

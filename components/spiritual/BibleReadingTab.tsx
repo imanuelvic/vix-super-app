@@ -16,6 +16,7 @@ import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   BIBLE_SESSIONS,
+  bibleHasOther,
   bibleSessionMeta,
   bibleSessionNow,
   deleteBibleReading,
@@ -81,11 +82,16 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
 
   async function handleDelete() {
     if (!user || !editing || busy) return;
-    const other = session === 'morning' ? 'night' : 'morning';
     setBusy(true);
     setFormError(null);
     try {
-      await deleteBibleReading(user.uid, editing.id, session, !!editing[other]);
+      // Dokumen harinya cuma dihapus kalau tidak ada sesi lain yang terisi.
+      await deleteBibleReading(
+        user.uid,
+        editing.id,
+        session,
+        bibleHasOther(editing, session),
+      );
       setEditing(null);
     } catch {
       setFormError(DELETE_ERROR);

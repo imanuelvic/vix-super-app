@@ -37,17 +37,16 @@ export function InfoTab() {
 
       {/* Alamat — seluruh kartunya bisa ditekan untuk membuka titik rumah di
           Google Maps (buka aplikasi Maps kalau terpasang, kalau tidak lewat
-          browser — diurus openExternalUrl). */}
+          browser — diurus openExternalUrl).
+          Penandanya GARIS TEPI berwarna tile Residence di Home, bukan baris
+          ajakan "buka di Google Maps": warnanya sudah cukup membedakan kartu
+          ini dari kartu lain yang cuma dibaca, tanpa menambah satu baris teks. */}
       <PressableScale style={styles.addressCard} onPress={openMaps}>
         <VixText heading="bold" additionalStyle={styles.addressTitle}>
           📍 Alamat
         </VixText>
         <VixText heading="label" additionalStyle={styles.addressText}>
           {RESIDENCE_INFO.address}
-        </VixText>
-        {/* Penanda bahwa kartu ini bisa ditekan — tanpa ini orang tidak tahu */}
-        <VixText heading="bold" additionalStyle={styles.addressLink}>
-          🗺️ Buka di Google Maps →
         </VixText>
       </PressableScale>
 
@@ -91,16 +90,16 @@ const styles = StyleSheet.create({
   addressCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    // Warna tile Residence 🏠 di grid Home — inilah penanda "kartu ini bisa
+    // ditekan"; kartu lain di layar ini tetap bergaris tepi BORDER polos.
+    borderWidth: 1.5,
+    borderColor: Color.HOUSE_DARK,
     padding: 14,
     gap: 4,
     marginBottom: 10,
   },
   addressTitle: { color: Color.TEXT_TITLE },
   addressText: { color: Color.TEXT_PARAGRAPH },
-  // Baris ajakan buka Maps — warna utama biar jelas ini yang bisa ditekan.
-  addressLink: { color: Color.MAIN, marginTop: 2 },
   detailCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

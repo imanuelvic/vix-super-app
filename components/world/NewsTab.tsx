@@ -7,7 +7,9 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { VixText } from '@/components/common/VixText';
+import { useAuth } from '@/contexts/auth';
 import { openExternalUrl } from '@/lib/linking';
+import { subscribePrayerNews, type PrayerNews } from '@/lib/prayerNews';
 import {
   fetchNews,
   newsAge,
@@ -21,10 +23,19 @@ import {
 // Hanya JUDUL + TAUTAN yang ditampilkan; isi artikel dibuka di browser lewat
 // tautan aslinya karena itu milik penerbitnya.
 export function NewsTab() {
+  const { user } = useAuth();
   const [source, setSource] = useState<NewsSource>('bloomberg');
   const [items, setItems] = useState<NewsItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Kliping doa syafaat minggu ini — dibaca saja; yang menyegarkannya Home
+  // (sekali seminggu, lihat lib/prayerNews.ts).
+  const [prayerNews, setPrayerNews] = useState<PrayerNews | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribePrayerNews(user.uid, setPrayerNews);
+  }, [user]);
 
   const load = useCallback(async (key: NewsSource) => {
     setBusy(true);
@@ -44,6 +55,11 @@ export function NewsTab() {
   }, [source, load]);
 
   const now = new Date();
+  // Gereja dulu, baru negara — urutan yang sama dengan jadwal syafaatnya
+  // (Sabtu ⛪, lalu Minggu 🇮🇩).
+  const prayerPoints = prayerNews
+    ? [...prayerNews.points.church, ...prayerNews.points.nation]
+    : [];
 
   return (
     <View style={styles.flex}>
@@ -52,7 +68,7 @@ export function NewsTab() {
           tabs={NEWS_SOURCES.map((s) => ({
             key: s.key,
             label: `${s.emoji} ${s.label}`,
-            sub: s.key === 'bloomberg' ? 'bisnis & pasar' : 'berita umum',
+            sub: s.sub,
           }))}
           value={source}
           onChange={setSource}
@@ -82,6 +98,31 @@ export function NewsTab() {
               tintColor={Color.WORLD_DARK}
             />
           }>
+          {/* Kliping doa syafaat minggu ini 🙏 — hanya di tab Indonesia, karena
+              isinya memang berita gereja & dalam negeri. Judul yang sama ini
+              muncul lagi sebagai pokok doa tambahan di kartu Doa Syafaat
+              (Sabtu ⛪ Gereja & Minggu 🇮🇩 Negara). Diperbarui sekali seminggu,
+              tiap Senin. */}
+          {source === 'indonesia' && prayerPoints.length > 0 && (
+            <View style={styles.prayerCard}>
+              <VixText heading="bold" additionalStyle={styles.prayerTitle}>
+                🙏 Doa Syafaat Minggu Ini
+              </VixText>
+              {prayerPoints.map((p) => (
+                <VixText
+                  key={p}
+                  heading="label"
+                  additionalStyle={styles.prayerPoint}>
+                  • {p}
+                </VixText>
+              ))}
+              <VixText heading="label" additionalStyle={styles.prayerFoot}>
+                Muncul juga di kartu Doa Syafaat — Sabtu ⛪ Gereja & Minggu 🇮🇩
+                Negara.
+              </VixText>
+            </View>
+          )}
+
           {(items ?? []).length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
               Belum ada berita yang masuk. Tarik ke bawah untuk muat ulang 📰
@@ -144,4 +185,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   source: { color: Color.WORLD_DARK, flexShrink: 1 },
+  // Kliping doa syafaat — sengaja berwarna Spiritual (ungu), bukan World,
+  // supaya langsung terbaca "ini bagian doa", bukan sekadar berita lain.
+  prayerCard: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+    gap: 4,
+  },
+  prayerTitle: { color: Color.SPIRITUAL_DARK },
+  prayerPoint: { color: Color.SPIRITUAL_DARK },
+  prayerFoot: { color: Color.SPIRITUAL_DARK, marginTop: 4, opacity: 0.8 },
 });

@@ -30,6 +30,11 @@ import {
   type MonthlyPrayers,
 } from '@/lib/core';
 import { intercessionToday } from '@/lib/intercession';
+import {
+  subscribePrayerNews,
+  withWeeklyNews,
+  type PrayerNews,
+} from '@/lib/prayerNews';
 import { reviveHandledToday, subscribeReviveStreak } from '@/lib/spiritual';
 import { openWhatsAppChat } from '@/lib/whatsapp';
 
@@ -45,6 +50,9 @@ export default function MorningPrayerScreen() {
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
   );
+  // Kliping berita mingguan — hanya DIBACA di sini (yang menyegarkannya Home),
+  // supaya syafaat Gereja/Negara pagi hari ikut menyebut kejadian minggu ini.
+  const [prayerNews, setPrayerNews] = useState<PrayerNews | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -53,6 +61,7 @@ export default function MorningPrayerScreen() {
       subscribeReviveStreak(user.uid, setReviveStreak),
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
+      subscribePrayerNews(user.uid, setPrayerNews),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -67,7 +76,7 @@ export default function MorningPrayerScreen() {
   // melewati Revive akan mengunci gerbang doa pagi sampai jam 09.00.
   const reviveDone = reviveHandledToday(reviveStreak, todayId);
 
-  // Doa Rantai: hanya di hari jadwalnya (Sel/Kam/Sab) & kalau memang ada CL
+  // Doa Rantai: hanya di hari jadwalnya (Selasa & Kamis) & kalau memang ada CL
   // giliran hari ini. Sumber hitungannya SAMA dengan kartu Dashboard.
   const points = monthlyPointsFor(monthlyPrayers, now);
   const chainLeaders = prayerFollowupLeaders(leaders, points, now);
@@ -146,7 +155,7 @@ export default function MorningPrayerScreen() {
       chainQuota={chainQuota}
       chainDoneCount={chainDoneCount}
       chainLeaders={chainRows}
-      topic={intercessionToday(now)}
+      topic={withWeeklyNews(intercessionToday(now), prayerNews)}
       minutesLeft={prayerMinutesLeft(now)}
       onConfirm={handleConfirm}
       onOpenRevive={() => router.push('/revive')}

@@ -87,6 +87,8 @@ export type ScheduledHabit = {
 
 const HABIT_RENAMES: { match: RegExp; label: string }[] = [
   { match: /1 kalimat rhema/i, label: '✍️ 1 Rhema before Activities' },
+  // 📝 → 💡 supaya emojinya sama dengan tombol & layar Daily Priority 💡.
+  { match: /top 3 priorit/i, label: '💡 Top 3 Priorities' },
 ];
 
 function renamedHabit(h: ScheduledHabit): ScheduledHabit {
@@ -353,7 +355,12 @@ export type HabitLink = {
    * typed routes expo-router ikut memeriksa rutenya memang ada.
    */
   route?: {
-    pathname: '/fitness' | '/spiritual' | '/health' | '/bible-reading';
+    pathname:
+      | '/fitness'
+      | '/spiritual'
+      | '/health'
+      | '/bible-reading'
+      | '/daily-priority';
     params?: Record<string, string>;
   };
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
@@ -393,13 +400,29 @@ export const HABIT_LINKS: HabitLink[] = [
     color: Color.DANGER,
     route: { pathname: '/health', params: { tab: 'diet' } },
   },
-  // Baca Alkitab pagi & malam — tujuannya layar yang sama dengan kartu di
-  // Home, jadi ketukan dari mana pun mendarat di tempat yang sama.
+  // Top 3 Priorities — sekarang punya layarnya sendiri (Daily Priority 💡),
+  // jadi barisnya tidak lagi cuma centang tanpa isi.
+  {
+    match: /top 3 priorit/i,
+    note: 'Buka Daily Priority 💡',
+    color: Color.MAIN_DARK,
+    route: { pathname: '/daily-priority' },
+  },
+  // Baca Alkitab pagi, siang & malam — tujuannya layar yang sama dengan kartu
+  // di Home, jadi ketukan dari mana pun mendarat di tempat yang sama.
   {
     match: /morning bible reading/i,
     note: 'Buka Baca Alkitab › Pagi',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/bible-reading', params: { session: 'morning' } },
+  },
+  // Belum ada kebiasaan bernama ini di daftarmu — pintasannya disiapkan supaya
+  // begitu kamu menambahkannya, ketukannya langsung mendarat di sesi Siang.
+  {
+    match: /midday bible reading/i,
+    note: 'Buka Baca Alkitab › Siang',
+    color: Color.SPIRITUAL_DARK,
+    route: { pathname: '/bible-reading', params: { session: 'daytime' } },
   },
   {
     match: /night bible reading/i,

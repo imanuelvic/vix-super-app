@@ -286,11 +286,17 @@ export function pointGrowth(
 // Yang diambil hanya JUDUL + TAUTAN (bukan isi artikel) — isi artikel milik
 // penerbitnya, dibuka di browser lewat tautan aslinya.
 
-export type NewsSource = 'bloomberg' | 'world';
+export type NewsSource = 'bloomberg' | 'world' | 'indonesia';
 
-export const NEWS_SOURCES: { key: NewsSource; label: string; emoji: string }[] = [
-  { key: 'bloomberg', label: 'Bloomberg', emoji: '📈' },
-  { key: 'world', label: 'Dunia', emoji: '🌏' },
+export const NEWS_SOURCES: {
+  key: NewsSource;
+  label: string;
+  emoji: string;
+  sub: string;
+}[] = [
+  { key: 'bloomberg', label: 'Bloomberg', emoji: '📈', sub: 'bisnis & pasar' },
+  { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },
+  { key: 'indonesia', label: 'Indonesia', emoji: '🇮🇩', sub: 'dalam negeri' },
 ];
 
 const NEWS_FEEDS: Record<NewsSource, string> = {
@@ -298,6 +304,9 @@ const NEWS_FEEDS: Record<NewsSource, string> = {
     'https://news.google.com/rss/search?q=site:bloomberg.com+when:7d&hl=en-US&gl=US&ceid=US:en',
   world:
     'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en',
+  // hl/gl/ceid Indonesia → judulnya berbahasa Indonesia, medianya media lokal.
+  indonesia:
+    'https://news.google.com/rss/headlines/section/topic/NATION?hl=id&gl=ID&ceid=ID:id',
 };
 
 export type NewsItem = {
@@ -335,22 +344,25 @@ function tagValue(block: string, tag: string): string {
 }
 
 /**
- * Ambil judul berita terbaru. Judul Google News berformat
+ * Ambil judul berita terbaru dari SATU alamat RSS. Judul Google News berformat
  * "Judul berita - Nama Media" → bagian medianya dipisah supaya rapi.
+ *
+ * Dipakai bersama: tab News (lewat `fetchNews`) & rangkuman doa syafaat
+ * mingguan (lib/prayerNews.ts) — satu pembaca RSS, bukan dua salinan.
  */
-export async function fetchNews(source: NewsSource): Promise<NewsItem[]> {
+export async function fetchRss(url: string, tag: string): Promise<NewsItem[]> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
   let res: Response;
   try {
-    res = await fetch(NEWS_FEEDS[source], {
+    res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'application/rss+xml' },
       signal: controller.signal,
     });
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) throw new Error(`RSS ${source}: HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`RSS ${tag}: HTTP ${res.status}`);
 
   const xml = await res.text();
   const blocks = xml.match(/<item>[\s\S]*?<\/item>/g) ?? [];
@@ -363,7 +375,7 @@ export async function fetchNews(source: NewsSource): Promise<NewsItem[]> {
     const pubDate = tagValue(block, 'pubDate');
     const parsed = pubDate ? new Date(pubDate) : null;
     return {
-      id: `${source}-${i}-${tagValue(block, 'guid') || rawTitle.slice(0, 40)}`,
+      id: `${tag}-${i}-${tagValue(block, 'guid') || rawTitle.slice(0, 40)}`,
       title: hasTail ? rawTitle.slice(0, cut) : rawTitle,
       link: tagValue(block, 'link'),
       source:
@@ -371,6 +383,11 @@ export async function fetchNews(source: NewsSource): Promise<NewsItem[]> {
       publishedAt: parsed && !isNaN(parsed.getTime()) ? parsed : null,
     };
   });
+}
+
+/** Judul berita terbaru untuk satu sumber di tab News. */
+export function fetchNews(source: NewsSource): Promise<NewsItem[]> {
+  return fetchRss(NEWS_FEEDS[source], source);
 }
 
 /** "3 jam lalu" / "2 hari lalu" — umur berita, ringkas. */

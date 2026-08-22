@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -18,6 +18,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useEditParam } from '@/hooks/useEditParam';
 import {
   deadlineDaysUntil,
   invoiceTotal,
@@ -104,20 +105,9 @@ export function FreelanceTab({
     setFormError(null);
   }, []);
 
-  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>). Setelah
-  // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
-  // auto-terbuka lagi saat balik ke subtab ini (yang me-mount ulang tab).
-  // consumedRef = guard tambahan agar tak dobel dalam satu mount.
-  const consumedRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    if (!editId || consumedRef.current === editId) return;
-    const proj = projects.find((p) => p.id === editId);
-    if (proj) {
-      consumedRef.current = editId;
-      openEdit(proj);
-      onEditConsumed?.();
-    }
-  }, [editId, projects, openEdit, onEditConsumed]);
+  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>).
+  // Aturannya milik bersama — lihat hooks/useEditParam.ts.
+  useEditParam(projects, openEdit, editId, onEditConsumed);
 
   // ===== Rincian biaya (invoice) =====
   function addPresetItem(desc: string) {

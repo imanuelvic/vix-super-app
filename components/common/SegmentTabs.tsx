@@ -71,9 +71,13 @@ function Segment<T extends string>({
 
   return (
     <PressableScale style={[styles.tab, skin]} onPress={onPress}>
+      {/* Label panjang ("🇮🇩 Indonesia" di News) mengecil sendiri agar tetap
+          satu baris — tanpa ini ia terpotong. Label pendek tak terpengaruh.
+          Cara yang sama dipakai tab bar bawah (components/common/BottomTabs). */}
       <VixText
         heading="bold"
         numberOfLines={1}
+        adjustsFontSizeToFit
         additionalStyle={[styles.label, active && styles.labelActive]}>
         {tab.label}
       </VixText>

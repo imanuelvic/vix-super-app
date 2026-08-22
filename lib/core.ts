@@ -1168,7 +1168,7 @@ export function followupMessage(topic: FollowupTopic): string {
 
 // ==================== Pokok Doa Bulanan 🙏 ====================
 // Tiap awal bulan, MCL menanyakan pokok doa/pergumulan tiap CORE Leader untuk
-// bulan ini. Pokok doa inilah yang menentukan follow up berkala Sel/Kam/Sab.
+// bulan ini. Pokok doa inilah yang menentukan follow up berkala Selasa & Kamis.
 // Poin TIDAK dihapus saat bulan berganti — tetap tersimpan (layar Pokok Doa
 // menampilkannya untuk ditinjau). Untuk follow-up, monthlyPointsFor menganggap
 // perlu diperbarui (kosong) sampai disimpan ulang di bulan berjalan. Satu dokumen
@@ -1351,8 +1351,14 @@ export function monthlyPrayersFilled(data: MonthlyPrayers, now: Date): boolean {
   return Object.values(pts).some((arr) => (arr?.length ?? 0) > 0);
 }
 
-// Follow up pokok doa berkala: Selasa (2), Kamis (4), Sabtu (6).
-const PRAYER_FOLLOWUP_DAYS = [2, 4, 6];
+// Follow up pokok doa berkala: Selasa (2) & Kamis (4).
+//
+// Jadwalnya SENGAJA dikunci sama dengan Doa Syafaat (lib/intercession.ts):
+// Selasa & Kamis di sana memang bertopik "🔗 Doa Rantai CL". Dulu Sabtu ikut,
+// padahal syafaat Sabtu bertopik ⛪ Gereja — akibatnya gerbang doa pagi Sabtu
+// punya 4 langkah sementara hari lain 3. Sekarang selalu 3: Revive → (Doa
+// Rantai ATAU Doa Syafaat) → Bapa Kami.
+const PRAYER_FOLLOWUP_DAYS = [2, 4];
 const PRAYER_FOLLOWUP_COUNT = 4; // CL yang difokuskan tiap sesi (bergilir)
 
 /**
@@ -1364,7 +1370,7 @@ const PRAYER_FOLLOWUP_COUNT = 4; // CL yang difokuskan tiap sesi (bergilir)
  */
 export const PRAYER_MORNING_QUOTA = 2;
 
-/** Hari ini jadwal follow up pokok doa? (Selasa/Kamis/Sabtu) */
+/** Hari ini jadwal follow up pokok doa? (Selasa & Kamis) */
 export function isPrayerFollowupDay(d: Date): boolean {
   return PRAYER_FOLLOWUP_DAYS.includes(d.getDay());
 }

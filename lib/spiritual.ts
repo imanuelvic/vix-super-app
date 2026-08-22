@@ -159,34 +159,54 @@ export function bumpReviveStreak(
   });
 }
 
-// ===================== Bacaan Alkitab 📖 (Pagi & Malam) =====================
-// DUA sesi baca per hari, masing-masing punya jendela jam sendiri:
-//   🌅 Pagi  05.00–09.59   ·   🌙 Malam 21.00–23.59
+// ================ Bacaan Alkitab 📖 (Pagi, Siang & Malam) ================
+// TIGA sesi baca per hari, masing-masing punya jendela jam sendiri:
+//   🌅 Pagi 05.00–09.59 · ☀️ Siang 12.00–13.59 · 🌙 Malam 21.00–23.59
 // Kartu reminder di Home hanya muncul di dalam jendela itu & selama sesi hari
 // itu belum diisi. Isinya string bebas: kitab/pasal yang dibaca.
 //
 // Satu dokumen kecil per hari: users/{uid}/bibleRead/{YYYY-MM-DD}
-//   { morning: string, night: string, date: Timestamp }
+//   { morning: string, daytime: string, night: string, date: Timestamp }
 // Sesi bernilai "" = belum diisi hari itu.
 // CATATAN: nama koleksi tetap `bibleRead` (bukan `bibleReading`) — mengubahnya
-// akan memutus semua catatan bacaan yang sudah tersimpan di Firestore.
+// akan memutus semua catatan bacaan yang sudah tersimpan di Firestore. Nama
+// kolom `daytime` mengikuti sesi Siang di Habits (lib/habits.ts) supaya satu
+// istilah dipakai di seluruh app.
 
-export type BibleSession = 'morning' | 'night';
+export type BibleSession = 'morning' | 'daytime' | 'night';
 
 export const BIBLE_SESSIONS: {
   key: BibleSession;
-  label: string; // "Pagi" / "Malam" — untuk tab riwayat
+  label: string; // "Pagi" / "Siang" / "Malam" — untuk tab riwayat
   title: string; // judul kartu di Home & layar catat bacaan
   emoji: string;
   fromHour: number; // jendela mulai (inklusif)
   toHour: number; // jendela selesai (eksklusif)
 }[] = [
   { key: 'morning', label: 'Pagi', title: 'Morning Bible Reading', emoji: '🌅', fromHour: 5, toHour: 10 },
+  // Siang sengaja SEMPIT (2 jam, jam makan siang) — jendela lebar bikin
+  // "nanti saja" berulang sampai jamnya habis sendiri.
+  { key: 'daytime', label: 'Siang', title: 'Midday Bible Reading', emoji: '☀️', fromHour: 12, toHour: 14 },
   { key: 'night', label: 'Malam', title: 'Night Bible Reading', emoji: '🌙', fromHour: 21, toHour: 24 },
 ];
 
 export function bibleSessionMeta(session: BibleSession) {
   return BIBLE_SESSIONS.find((s) => s.key === session)!;
+}
+
+/** Sesi dari parameter URL — apa pun selain nama sesi yang sah jatuh ke Pagi. */
+export function bibleSessionOf(raw: string | undefined): BibleSession {
+  return BIBLE_SESSIONS.find((s) => s.key === raw)?.key ?? 'morning';
+}
+
+/**
+ * Sisa MENIT sampai jendela sesi ini tutup. ≤ 0 = jendelanya sudah lewat.
+ * Bentuknya sama dengan `prayerMinutesLeft` (lib/achievements.ts) — sama-sama
+ * hitung mundur "sampai jam berapa ini masih dianggap tepat waktu".
+ */
+export function bibleMinutesLeft(session: BibleSession, now: Date): number {
+  const meta = bibleSessionMeta(session);
+  return meta.toHour * 60 - (now.getHours() * 60 + now.getMinutes());
 }
 
 /**
@@ -200,8 +220,39 @@ export function isBibleSkipped(passage: string): boolean {
   return passage === BIBLE_SKIPPED;
 }
 
-/** Isi kedua sesi dalam satu hari ("" = belum diisi). */
-export type BibleReadingSessions = { morning: string; night: string };
+/** Isi ketiga sesi dalam satu hari ("" = belum diisi). */
+export type BibleReadingSessions = Record<BibleSession, string>;
+
+/** Berapa sesi LAIN di hari itu yang sudah terisi. */
+function otherFilled(
+  sessions: BibleReadingSessions,
+  session: BibleSession,
+): number {
+  return BIBLE_SESSIONS.filter((s) => s.key !== session && !!sessions[s.key])
+    .length;
+}
+
+/**
+ * Hari itu jadi LENGKAP kalau `session` ikut terisi? (dasar rentetan "lengkap")
+ * Dulu cukup pagi + malam; sekarang ketiga sesi.
+ */
+export function bibleDayComplete(
+  sessions: BibleReadingSessions,
+  session: BibleSession,
+): boolean {
+  return otherFilled(sessions, session) === BIBLE_SESSIONS.length - 1;
+}
+
+/**
+ * Masih ada catatan sesi lain di hari itu? Dipakai saat menghapus: kalau tidak
+ * ada, dokumen harinya ikut dihapus supaya tak menyisakan data kosong.
+ */
+export function bibleHasOther(
+  sessions: BibleReadingSessions,
+  session: BibleSession,
+): boolean {
+  return otherFilled(sessions, session) > 0;
+}
 
 export type BibleReadingDay = BibleReadingSessions & {
   id: string; // "YYYY-MM-DD"
@@ -219,6 +270,7 @@ export function bibleSessionNow(now: Date): BibleSession | null {
 function readSessions(data?: Record<string, unknown>): BibleReadingSessions {
   return {
     morning: (data?.morning as string) ?? '',
+    daytime: (data?.daytime as string) ?? '',
     night: (data?.night as string) ?? '',
   };
 }
@@ -294,18 +346,15 @@ export function deleteBibleReading(
 }
 
 // ===== Streak baca Alkitab 🔥 — SATU dokumen: users/{uid}/app/bibleStreak =====
-// Tiga rentetan sekaligus supaya cukup 1 read: pagi, malam, dan "lengkap"
-// (hari yang pagi & malamnya sama-sama terisi). Bentuk tiap rentetan sama
+// Empat rentetan sekaligus supaya cukup 1 read: pagi, siang, malam, dan
+// "lengkap" (hari yang KETIGA sesinya terisi). Bentuk tiap rentetan sama
 // dengan streak doa/Revive: { count, lastDayId, best, total }.
 
-export type BibleStreaks = {
-  morning: DayStreak;
-  night: DayStreak;
-  both: DayStreak;
-};
+export type BibleStreaks = Record<BibleSession | 'both', DayStreak>;
 
 export const EMPTY_BIBLE_STREAKS: BibleStreaks = {
   morning: EMPTY_DAY_STREAK,
+  daytime: EMPTY_DAY_STREAK,
   night: EMPTY_DAY_STREAK,
   both: EMPTY_DAY_STREAK,
 };
@@ -321,6 +370,7 @@ export function subscribeBibleStreaks(
       const d = snapshot.data();
       onChange({
         morning: (d?.morning as DayStreak) ?? EMPTY_DAY_STREAK,
+        daytime: (d?.daytime as DayStreak) ?? EMPTY_DAY_STREAK,
         night: (d?.night as DayStreak) ?? EMPTY_DAY_STREAK,
         both: (d?.both as DayStreak) ?? EMPTY_DAY_STREAK,
       });
@@ -336,24 +386,20 @@ function bumpDayStreak(current: DayStreak, todayId: string): DayStreak {
 }
 
 /**
- * Catat streak SESUDAH bacaan tersimpan. `bothFilled` = pagi & malam hari ini
- * dua-duanya sudah terisi → rentetan "lengkap" ikut naik.
+ * Catat streak SESUDAH bacaan tersimpan. `allFilled` = ketiga sesi hari ini
+ * sudah terisi → rentetan "lengkap" ikut naik.
  */
 export function bumpBibleStreaks(
   uid: string,
   current: BibleStreaks,
   todayId: string,
   session: BibleSession,
-  bothFilled: boolean,
+  allFilled: boolean,
 ) {
   const next: BibleStreaks = {
-    morning:
-      session === 'morning'
-        ? bumpDayStreak(current.morning, todayId)
-        : current.morning,
-    night:
-      session === 'night' ? bumpDayStreak(current.night, todayId) : current.night,
-    both: bothFilled ? bumpDayStreak(current.both, todayId) : current.both,
+    ...current,
+    [session]: bumpDayStreak(current[session], todayId),
+    both: allFilled ? bumpDayStreak(current.both, todayId) : current.both,
   };
   return setDoc(doc(db, 'users', uid, 'app', 'bibleStreak'), next);
 }

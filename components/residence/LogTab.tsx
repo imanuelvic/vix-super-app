@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
+import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
-import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
@@ -150,24 +149,17 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
         {logs.map((item) => {
           const meta = TYPE_META[item.type];
           return (
-            <PressableScale
+            <ExpenseRow
               key={item.id}
-              style={styles.row}
+              title={`${meta.icon} ${item.title}`}
+              cost={item.cost}
               onPress={() => openEdit(item)}>
-              <View style={styles.rowLeft}>
-                <VixText heading="bold" additionalStyle={styles.rowTitle}>
-                  {meta.icon} {item.title}
-                </VixText>
-                <VixText heading="label">
-                  {meta.label}
-                  {item.note ? ` · ${item.note}` : ''}
-                </VixText>
-                <VixText heading="label">{formatDate(item.date.toDate())}</VixText>
-              </View>
-              <VixText heading="bold" additionalStyle={styles.rowCost}>
-                {formatRupiah(item.cost)}
+              <VixText heading="label">
+                {meta.label}
+                {item.note ? ` · ${item.note}` : ''}
               </VixText>
-            </PressableScale>
+              <VixText heading="label">{formatDate(item.date.toDate())}</VixText>
+            </ExpenseRow>
           );
         })}
       </ScrollView>
@@ -237,22 +229,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  rowLeft: { flex: 1, gap: 2 },
-  rowTitle: { color: Color.TEXT_TITLE },
-  rowCost: { color: Color.MAIN_DARK },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

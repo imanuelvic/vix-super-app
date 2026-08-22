@@ -43,7 +43,9 @@ import {
   type Streak,
   type WeekStatsMap,
 } from '@/lib/health';
+import { subscribeLearningStreak, type WeekStreak } from '@/lib/learning';
 import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import { EMPTY_DAY_STREAK as EMPTY_WEEK_STREAK } from '@/lib/streak';
 import {
   EMPTY_BIBLE_STREAKS,
   subscribeBibleStreaks,
@@ -67,6 +69,8 @@ export default function AchievementsScreen() {
   // Tinggi badan dipakai mengubah langkah → kilometer (patokan pelari).
   const [body, setBody] = useState<HealthProfile | null>(null);
   const [weeks, setWeeks] = useState<WeekStatsMap>({});
+  // Rentetan MINGGUAN Learning 🎓 — satu dokumen kecil, sama seperti yang lain.
+  const [learning, setLearning] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +107,7 @@ export default function AchievementsScreen() {
       subscribeStepDays(user.uid, setStepDays, fail),
       subscribeHealthProfile(user.uid, setBody, fail),
       subscribeWeekStats(user.uid, setWeeks, fail),
+      subscribeLearningStreak(user.uid, setLearning, fail),
       subscribeSelfRewardBalance(user.uid, setBalance, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
@@ -116,7 +121,9 @@ export default function AchievementsScreen() {
     loginBest: login?.best ?? 0,
     habitStreak: activeStreak(habit, dayDocId(new Date())),
     bibleMorningBest: bible.morning.best,
+    bibleDaytimeBest: bible.daytime.best,
     bibleNightBest: bible.night.best,
+    learningWeekBest: learning.best,
     fitTotal: fit?.total ?? 0,
     fitBest: fit?.best ?? 0,
     bestSteps: stepAch.best?.steps ?? 0,

@@ -12,14 +12,25 @@ import { useCallback, useState } from 'react';
 // Karena dipakai sebagai `key` pembungkus konten, konten otomatis re-mount →
 // selalu mulai dari paling atas. Satu mekanisme, tanpa ref di tiap tab, dan
 // tanpa tambahan baca Firestore (data tetap dilangganani di level layar).
+//
+// `repress` = tekanan barusan mengenai tab yang SUDAH aktif (jadi tekanan
+// kedua). Tab yang daftarnya bertenggat memakainya untuk langsung melompat ke
+// baris yang jatuh tempo — pola yang sama dengan tab sesi di Habits. Karena
+// kontennya memang re-mount tiap tekan, nilai ini terbaca saat mount: tidak
+// perlu isyarat tambahan.
 export function useTabScroll<T extends string>(initial: T) {
   const [tab, setTab] = useState<T>(initial);
   const [scrollKey, setScrollKey] = useState(0);
+  const [repress, setRepress] = useState(false);
 
-  const onTabPress = useCallback((next: T) => {
-    setTab(next);
-    setScrollKey((n) => n + 1); // naikkan tiap ditekan → konten re-mount ke atas
-  }, []);
+  const onTabPress = useCallback(
+    (next: T) => {
+      setRepress(next === tab);
+      setTab(next);
+      setScrollKey((n) => n + 1); // naikkan tiap ditekan → konten re-mount ke atas
+    },
+    [tab],
+  );
 
-  return { tab, setTab, scrollKey, onTabPress };
+  return { tab, setTab, scrollKey, repress, onTabPress };
 }

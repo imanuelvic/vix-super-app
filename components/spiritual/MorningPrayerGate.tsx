@@ -54,7 +54,7 @@ export function MorningPrayerGate({
   streakCount: number;
   // True kalau Revive hari ini sudah diisi → langkah Revive auto-centang.
   reviveDone: boolean;
-  // True kalau HARI INI jadwal Doa Rantai (Sel/Kam/Sab) & ada CL-nya.
+  // True kalau HARI INI jadwal Doa Rantai (Selasa & Kamis) & ada CL-nya.
   chainDue: boolean;
   // Berapa CORE Leader LAGI yang perlu didoakan pagi ini (0 = kuota beres).
   chainLeft: number;
@@ -78,6 +78,9 @@ export function MorningPrayerGate({
 }) {
   const [prayed, setPrayed] = useState(false);
   const [interceded, setInterceded] = useState(false);
+  // CL mana yang pokok doanya sedang dibuka (null = semua tertutup). Satu saja
+  // pada satu waktu — supaya gerbangnya tetap pendek & fokus.
+  const [openChain, setOpenChain] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [skipConfirm, setSkipConfirm] = useState(false);
   // Langkah Revive & Doa Rantai HANYA tercentang otomatis dari datanya.
@@ -170,7 +173,7 @@ export function MorningPrayerGate({
           </View>
         </Animated.View>
 
-        {/* Langkah 2: Doa Rantai — hanya di hari jadwalnya (Sel/Kam/Sab) */}
+        {/* Langkah 2: Doa Rantai — hanya di hari jadwalnya (Selasa & Kamis) */}
         {chainDue && (
           <Animated.View
             entering={FadeInDown.delay(270).duration(350)}
@@ -186,45 +189,71 @@ export function MorningPrayerGate({
 
             {/* Pokok doanya ditaruh LANGSUNG di sini, tidak lagi lewat tombol
                 ke fitur CORE — supaya doa pagi tidak berubah jadi pintu masuk
-                ke sub-tab lain yang bikin teralih. */}
-            {chainLeaders.map((l) => (
-              <View key={l.id} style={styles.chainCard}>
-                <VixText heading="bold" additionalStyle={styles.chainName}>
-                  {l.heart} {l.name}
-                </VixText>
-                {l.points.length > 0 ? (
-                  l.points.map((p, i) => (
-                    <VixText
-                      key={`${i}-${p}`}
-                      heading="paragraph"
-                      additionalStyle={styles.pointText}>
-                      🙏 {p}
-                    </VixText>
-                  ))
-                ) : (
-                  <VixText heading="label" additionalStyle={styles.chainHint}>
-                    Belum ada pokok doa bulan ini.
-                  </VixText>
-                )}
-                {l.done ? (
-                  <VixText heading="label" additionalStyle={styles.chainDone}>
-                    ✅ Sudah didoakan hari ini
-                  </VixText>
-                ) : l.phone ? (
+                ke sub-tab lain yang bikin teralih.
+                Tapi TERTUTUP dulu (dropdown): 4 CL × 3 pokok doa membuat
+                gerbangnya jadi berlembar-lembar, dan yang panjang itu justru
+                jadi dibaca sambil lalu. Ketuk nama untuk membukanya — satu
+                per satu, persis seperti daftar CL di CORE › Follow Up. */}
+            {chainLeaders.map((l) => {
+              const open = openChain === l.id;
+              return (
+                <View key={l.id} style={styles.chainCard}>
                   <PressableScale
-                    style={styles.waButton}
-                    onPress={() => onPrayLeader(l)}>
-                    <VixText heading="bold" additionalStyle={styles.waText}>
-                      💬 Doakan lewat WhatsApp
+                    style={styles.chainTop}
+                    onPress={() => setOpenChain(open ? null : l.id)}>
+                    <VixText heading="bold" additionalStyle={styles.chainName}>
+                      {l.heart} {l.name}
+                    </VixText>
+                    <VixText heading="label" additionalStyle={styles.chainMeta}>
+                      {l.done ? '✅ ' : ''}
+                      {l.points.length} poin {open ? '▴' : '▾'}
                     </VixText>
                   </PressableScale>
-                ) : (
-                  <VixText heading="label" additionalStyle={styles.chainHint}>
-                    📱 Isi nomor HP-nya dulu di CORE → Leaders.
-                  </VixText>
-                )}
-              </View>
-            ))}
+
+                  {open && (
+                    <>
+                      {l.points.length > 0 ? (
+                        l.points.map((p, i) => (
+                          <VixText
+                            key={`${i}-${p}`}
+                            heading="paragraph"
+                            additionalStyle={styles.pointText}>
+                            🙏 {p}
+                          </VixText>
+                        ))
+                      ) : (
+                        <VixText
+                          heading="label"
+                          additionalStyle={styles.chainHint}>
+                          Belum ada pokok doa bulan ini.
+                        </VixText>
+                      )}
+                      {l.done ? (
+                        <VixText
+                          heading="label"
+                          additionalStyle={styles.chainDone}>
+                          ✅ Sudah didoakan hari ini
+                        </VixText>
+                      ) : l.phone ? (
+                        <PressableScale
+                          style={styles.waButton}
+                          onPress={() => onPrayLeader(l)}>
+                          <VixText heading="bold" additionalStyle={styles.waText}>
+                            💬 Doakan lewat WhatsApp
+                          </VixText>
+                        </PressableScale>
+                      ) : (
+                        <VixText
+                          heading="label"
+                          additionalStyle={styles.chainHint}>
+                          📱 Isi nomor HP-nya dulu di CORE → Leaders.
+                        </VixText>
+                      )}
+                    </>
+                  )}
+                </View>
+              );
+            })}
 
             {/* Centang otomatis begitu semua CL giliran hari ini ditandai selesai. */}
             <View style={styles.checkRow}>
@@ -394,7 +423,15 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 6,
   },
-  chainName: { color: Color.SPIRITUAL_DARK },
+  // Baris kepala kartu CL = sakelar buka/tutup pokok doanya.
+  chainTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  chainName: { color: Color.SPIRITUAL_DARK, flex: 1 },
+  chainMeta: { color: Color.SPIRITUAL_DARK },
   chainHint: { color: Color.TEXT_LABEL },
   chainDone: { color: Color.SUCCESS },
   waButton: {

@@ -200,6 +200,15 @@ export function createTournament(
   return t;
 }
 
+/**
+ * Ubah nama & tanggal turnamen yang sudah jalan. Bracket, peserta, dan hasil
+ * laganya sengaja TIDAK disentuh — ini cuma membetulkan keterangannya (mis.
+ * tanggalnya keliru saat dibuat), bukan mengulang turnamennya.
+ */
+export function withDetails(t: Tournament, name: string, date: Date): Tournament {
+  return { ...t, name, date: date.getTime(), updatedAt: Date.now() };
+}
+
 /** Undi ulang babak pertama (hanya boleh sebelum ada laga diputuskan). */
 export function reshuffle(t: Tournament): Tournament {
   const participants = shuffle(t.participants);

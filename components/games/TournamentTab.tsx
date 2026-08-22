@@ -29,6 +29,7 @@ import {
   saveTournament,
   subscribeTournaments,
   tournamentDate,
+  withDetails,
   type BracketSize,
   type Match,
   type Tournament,
@@ -64,6 +65,12 @@ export function TournamentTab() {
   const [cNames, setCNames] = useState<string[]>(() => Array(8).fill(''));
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Form ubah keterangan turnamen yang sudah jalan (nama & tanggal saja).
+  const [editOpen, setEditOpen] = useState(false);
+  const [eName, setEName] = useState('');
+  const [eDate, setEDate] = useState(() => new Date());
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -133,6 +140,37 @@ export function TournamentTab() {
     }
   }
 
+  function openEdit() {
+    if (!selected) return;
+    setEName(selected.name);
+    setEDate(tournamentDate(selected));
+    setEditError(null);
+    setEditOpen(true);
+  }
+
+  /**
+   * Simpan nama & tanggal yang dibetulkan. Bracket-nya tidak ikut berubah —
+   * ini jalan satu-satunya membetulkan tanggal tanpa menghapus turnamennya
+   * (dulu tanggal hanya bisa diisi sekali, saat turnamennya dibuat).
+   */
+  async function handleEdit() {
+    if (!user || !selected || busy) return;
+    if (!eName.trim()) {
+      setEditError('Nama turnamen wajib diisi.');
+      return;
+    }
+    setBusy(true);
+    setEditError(null);
+    try {
+      await saveTournament(user.uid, withDetails(selected, eName.trim(), eDate));
+      setEditOpen(false);
+    } catch {
+      setEditError(SAVE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Pilih pemenang satu laga → otomatis maju ke babak berikutnya.
   function pick(m: Match, side: 'a' | 'b') {
     if (!user || !selected) return;
@@ -190,9 +228,15 @@ export function TournamentTab() {
             <VixText heading="subheader" additionalStyle={styles.heroName}>
               {selected.name}
             </VixText>
-            <VixText heading="label" additionalStyle={styles.heroDate}>
-              📆 {formatFullDate(tournamentDate(selected))}
-            </VixText>
+            {/* Ketuk barisnya untuk membetulkan nama & tanggal. Dulu tanggal
+                cuma bisa diisi sekali saat turnamen dibuat — kalau salah,
+                satu-satunya jalan adalah menghapus turnamennya (dan bracket
+                yang sudah jalan ikut hilang). */}
+            <PressableScale style={styles.heroDateBtn} onPress={openEdit}>
+              <VixText heading="label" additionalStyle={styles.heroDate}>
+                📆 {formatFullDate(tournamentDate(selected))} ✏️
+              </VixText>
+            </PressableScale>
             <ProgressBar {...progressOf(selected)} />
           </Animated.View>
 
@@ -366,6 +410,44 @@ export function TournamentTab() {
         <VixText heading="label" additionalStyle={styles.hint}>
           Masih bisa “acak ulang” selama belum ada laga yang diputuskan.
         </VixText>
+      </SheetModal>
+
+      {/* ============ Modal ubah keterangan turnamen ============
+          Sengaja hanya nama & tanggal: peserta dan hasil laganya tidak boleh
+          bergeser diam-diam dari sini. */}
+      <SheetModal
+        visible={editOpen}
+        title="Ubah Turnamen"
+        subtitle="Bracket & hasil laganya tidak berubah 🏆"
+        onClose={() => setEditOpen(false)}>
+        <FormInput
+          style={styles.formGap}
+          placeholder="Nama turnamen"
+          value={eName}
+          onChangeText={setEName}
+          editable={!busy}
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          📆 Tanggal turnamen
+        </VixText>
+        <View style={styles.formGap}>
+          {/* key = sesi buka modal → picker selalu mulai dari tanggal yang
+              tersimpan, bukan sisa pilihan sebelumnya. */}
+          <DateField
+            key={editOpen ? 'edit-open' : 'edit-closed'}
+            value={eDate}
+            onChange={setEDate}
+          />
+        </View>
+
+        <FormError message={editError} />
+        <PrimaryButton
+          label="Simpan"
+          onPress={handleEdit}
+          busy={busy}
+          additionalStyle={styles.createBtn}
+        />
       </SheetModal>
     </View>
   );
@@ -590,6 +672,8 @@ const styles = StyleSheet.create({
   heroKicker: { color: Color.TOURNAMENT, letterSpacing: 1 },
   heroName: { color: Color.TEXT_REVERSE },
   heroDate: { color: Color.TEXT_ON_DARK_MUTED, marginTop: 2 },
+  // Area ketuk sebesar tulisannya saja — tanpa padding, jadi tinggi hero tetap.
+  heroDateBtn: { alignSelf: 'flex-start' },
   progressWrap: { gap: 4, marginTop: 8 },
   progressTrack: {
     height: 8,

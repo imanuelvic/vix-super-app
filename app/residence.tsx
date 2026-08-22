@@ -50,7 +50,10 @@ export default function ResidenceScreen() {
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. Default di
   // tengah (Air-Listrik).
   // Masuk langsung ke Perawatan — sub-tab yang paling sering perlu dicek.
-  const { tab, scrollKey, onTabPress } = useTabScroll<ResidenceTab>('chores');
+  // `repress` = tombol Maintenance ditekan lagi saat sudah aktif → daftarnya
+  // langsung melompat ke yang harus dibersihkan sekarang (isi badge merahnya).
+  const { tab, scrollKey, repress, onTabPress } =
+    useTabScroll<ResidenceTab>('chores');
   const [logs, setLogs] = useState<ResidenceLog[] | null>(null);
   const [utilityTx, setUtilityTx] = useState<Transaction[] | null>(null);
   const [chores, setChores] = useState<ChoreStatusMap | null>(null);
@@ -113,7 +116,7 @@ export default function ResidenceScreen() {
           chores === null ? (
             <LoadingCenter />
           ) : (
-            <ChoreTab status={chores} />
+            <ChoreTab status={chores} focusDue={repress} />
           )
         ) : (
           <InfoTab />

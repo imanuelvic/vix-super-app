@@ -42,7 +42,9 @@ export default function CarScreen() {
 
   // Default masuk ke Sparepart — kondisi mobil yang paling penting dilihat.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
-  const { tab, scrollKey, onTabPress } = useTabScroll<CarTab>('parts');
+  // `repress` = tombol Parts ditekan lagi saat sudah aktif → daftarnya langsung
+  // melompat ke bagian yang jatuh tempo (angka merah di badge-nya).
+  const { tab, scrollKey, repress, onTabPress } = useTabScroll<CarTab>('parts');
   const [logs, setLogs] = useState<CarLog[] | null>(null);
   const [parts, setParts] = useState<PartStatusMap | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export default function CarScreen() {
         ) : tab === 'log' ? (
           <LogTab items={logs} />
         ) : tab === 'parts' ? (
-          <PartsTab status={parts} />
+          <PartsTab status={parts} focusDue={repress} />
         ) : (
           <InfoTab />
         )}

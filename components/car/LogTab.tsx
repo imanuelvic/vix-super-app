@@ -7,9 +7,9 @@ import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
+import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
-import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
@@ -195,36 +195,30 @@ export function LogTab({ items }: { items: CarLog[] }) {
             // Garis tepi HIJAU = baris ini bisa ditekan. Garis tepi krem biasa
             // = datang dari Finance, jadi memang tidak menanggapi ketukan —
             // supaya tidak ada baris yang kelihatan bisa ditekan tapi diam.
-            <PressableScale
+            <ExpenseRow
               key={item.id}
-              style={[styles.row, !item.fromFinance && styles.rowEditable]}
+              title={`${meta.icon} ${item.title}`}
+              cost={item.cost}
+              active={!item.fromFinance}
               disabled={item.fromFinance}
               onPress={() => openEdit(item)}>
-              <View style={styles.rowLeft}>
-                <VixText heading="bold" additionalStyle={styles.rowTitle}>
-                  {meta.icon} {item.title}
+              {item.fromFinance && (
+                <VixText heading="label" additionalStyle={styles.fromFinance}>
+                  💰 Data dari Finance
                 </VixText>
-                {item.fromFinance && (
-                  <VixText heading="label" additionalStyle={styles.fromFinance}>
-                    💰 Data dari Finance
-                  </VixText>
-                )}
-                {subParts.length > 0 && (
-                  <VixText heading="label" numberOfLines={1}>
-                    {subParts.join(' · ')}
-                  </VixText>
-                )}
-                <VixText heading="label">
-                  {formatDate(item.date.toDate())}
-                  {item.liters
-                    ? ` · ${formatDecimal(item.liters)} L${perLiter ? ` · ${formatRupiah(perLiter)}/L` : ''}`
-                    : ''}
+              )}
+              {subParts.length > 0 && (
+                <VixText heading="label" numberOfLines={1}>
+                  {subParts.join(' · ')}
                 </VixText>
-              </View>
-              <VixText heading="bold" additionalStyle={styles.rowCost}>
-                {formatRupiah(item.cost)}
+              )}
+              <VixText heading="label">
+                {formatDate(item.date.toDate())}
+                {item.liters
+                  ? ` · ${formatDecimal(item.liters)} L${perLiter ? ` · ${formatRupiah(perLiter)}/L` : ''}`
+                  : ''}
               </VixText>
-            </PressableScale>
+            </ExpenseRow>
           );
         })}
       </ScrollView>
@@ -338,25 +332,6 @@ const styles = StyleSheet.create({
   addButton: { marginBottom: 10 },
   fromFinance: { color: Color.MAIN },
   empty: { textAlign: 'center', marginVertical: 10 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  // Hijau = bisa ditekan untuk diubah/dihapus. Baris dari Finance memakai
-  // garis tepi krem bawaan `row` karena memang tidak bisa disentuh di sini.
-  rowEditable: { borderColor: Color.MAIN },
-  rowLeft: { flex: 1, gap: 2 },
-  rowTitle: { color: Color.TEXT_TITLE },
-  rowCost: { color: Color.MAIN_DARK },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

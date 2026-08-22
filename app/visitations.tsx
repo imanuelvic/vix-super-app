@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -15,7 +15,10 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { VisitationCardBody } from '@/components/core/VisitationCardBody';
+import {
+  VisitationCardBody,
+  VisitationStatus,
+} from '@/components/core/VisitationCardBody';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
@@ -182,12 +185,16 @@ export default function VisitationsScreen() {
                 key={v.id}
                 style={[styles.card, deadlineBorder(tone)]}
                 onPress={() => openEdit(v)}>
-                <VisitationCardBody
-                  visitation={v}
-                  leaders={[...leaders, ...exLeaders]}
-                  tone={tone}
-                  days={days}
-                />
+                {/* Bentuk kartunya sama dengan tab Visitation: isinya di kiri,
+                    keadaannya di kolom kanan. Di sini kolom kanan cuma berisi
+                    status — layar ini memang tidak punya tombol share. */}
+                <View style={styles.cardMain}>
+                  <VisitationCardBody
+                    visitation={v}
+                    leaders={[...leaders, ...exLeaders]}
+                  />
+                </View>
+                <VisitationStatus visitation={v} tone={tone} days={days} />
               </PressableScale>
             );
           })}
@@ -242,6 +249,11 @@ const styles = StyleSheet.create({
     borderColor: Color.BORDER,
     padding: 14,
     marginBottom: 10,
-    gap: 3,
+    // Isi kartu di kiri, status di kanan — jarak antar-barisnya pindah ke
+    // `cardMain` supaya angkanya tetap 3 seperti sebelumnya.
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
   },
+  cardMain: { flex: 1, gap: 3 },
 });

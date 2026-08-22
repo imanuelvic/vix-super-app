@@ -237,7 +237,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 20,
-    paddingBottom: 4,
+    // Beri nafas ke daftar di bawahnya — dengan 4 kartu transaksi teratas
+    // terasa menempel persis di bawah nama bulan.
+    paddingBottom: 12,
     gap: 10,
   },
   monthRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

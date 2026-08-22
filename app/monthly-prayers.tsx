@@ -29,7 +29,7 @@ import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Pokok Doa Bulanan 🙏 — kumpulkan pergumulan tiap CORE Leader untuk bulan ini.
-// Pokok doa inilah yang menentukan follow up berkala (Sel/Kam/Sab). Poin TIDAK
+// Pokok doa inilah yang menentukan follow up berkala (Selasa & Kamis). Poin TIDAK
 // dihapus otomatis saat bulan berganti — tetap tersimpan & tampil untuk ditinjau;
 // saat bulan baru muncul pengingat memperbaruinya. Tiap kartu bisa dibuka/tutup
 // (default tertutup kalau sudah ada poin).

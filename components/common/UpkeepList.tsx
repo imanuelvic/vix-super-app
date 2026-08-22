@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -11,7 +11,8 @@ import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { type DeadlineTone } from '@/lib/deadline';
+import { useDueJump } from '@/hooks/useDueJump';
+import { deadlineDue, type DeadlineTone } from '@/lib/deadline';
 import { SAVE_ERROR } from '@/lib/messages';
 
 // Daftar perawatan berkala: barang dikelompokkan, tiap baris punya tenggat
@@ -47,6 +48,7 @@ export function UpkeepList({
   dialogHint,
   noteOf,
   onSave,
+  focusDue = false,
 }: {
   /** Kartu ringkasan paling atas. */
   summary: { label: string; value: string; sub: string };
@@ -56,12 +58,28 @@ export function UpkeepList({
   /** Catatan tersimpan untuk baris ini — muncul lagi saat dialog dibuka. */
   noteOf: (key: string) => string;
   onSave: (key: string, date: Date, note: string) => Promise<void>;
+  /**
+   * Langsung gulung ke baris jatuh tempo pertama begitu daftarnya tergambar.
+   * Diisi dari `repress` useTabScroll = sub-tab-nya ditekan untuk kedua kali.
+   * Kalau tidak ada yang jatuh tempo (badge-nya kosong), daftarnya tetap di
+   * paling atas seperti biasa.
+   */
+  focusDue?: boolean;
 }) {
   const [editing, setEditing] = useState<UpkeepRow | null>(null);
   const [fDate, setFDate] = useState(new Date());
   const [fNote, setFNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Baris jatuh tempo PERTAMA menurut urutan tampilnya — sama isinya dengan
+  // yang dihitung badge tab (🔴 sekarang / 🟡 besok).
+  const firstDue =
+    groups.flatMap((g) => g.rows).find((r) => deadlineDue(r.tone)) ?? null;
+  const { ref, setRowY, onContentSizeChange } = useDueJump(
+    firstDue?.key ?? null,
+    focusDue,
+  );
 
   function openEdit(row: UpkeepRow) {
     setEditing(row);
@@ -86,15 +104,23 @@ export function UpkeepList({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={ref}
+        contentContainerStyle={styles.content}
+        onContentSizeChange={onContentSizeChange}>
         <SummaryCard
           label={summary.label}
           value={summary.value}
           sub={summary.sub}
         />
 
+        {/* Judul kelompok & barisnya sengaja jadi SAUDARA (Fragment, bukan View
+            pembungkus): posisi onLayout tiap baris jadi langsung relatif ke isi
+            ScrollView, sehingga lompatan ke baris jatuh tempo tidak perlu
+            menjumlah offset kelompok. Tata letaknya sama persis — View
+            pembungkusnya memang tanpa gaya. */}
         {groups.map((group) => (
-          <View key={group.key}>
+          <Fragment key={group.key}>
             <VixText heading="title" additionalStyle={styles.groupTitle}>
               {group.label}
             </VixText>
@@ -103,6 +129,7 @@ export function UpkeepList({
               <PressableScale
                 key={row.key}
                 style={[styles.row, deadlineBorder(row.tone)]}
+                onLayout={(e) => setRowY(row.key, e.nativeEvent.layout.y)}
                 onPress={() => openEdit(row)}>
                 <View style={styles.rowTop}>
                   <VixText
@@ -119,7 +146,7 @@ export function UpkeepList({
                 </VixText>
               </PressableScale>
             ))}
-          </View>
+          </Fragment>
         ))}
       </ScrollView>
 

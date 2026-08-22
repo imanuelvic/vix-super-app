@@ -9,6 +9,7 @@ import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { dayIdToDate, formatShortDayDate } from './format';
 import { dayDocId } from './health';
+import { homeFeatureIndex } from './homeGrid';
 import { alreadyCounted, nextStreak } from './streak';
 
 // Streak DOA HARIAN 🔥 (ala Duolingo) + achievements 🏆.
@@ -157,7 +158,9 @@ export type AchievementStats = {
   loginBest: number; // rekor streak doa pagi
   habitStreak: number; // streak kebiasaan Health 🔥
   bibleMorningBest: number; // streak terbaik baca pagi 🌅
+  bibleDaytimeBest: number; // streak terbaik baca siang ☀️
   bibleNightBest: number; // streak terbaik baca malam 🌙
+  learningWeekBest: number; // rekor MINGGU beruntun target Learning tuntas 🎓
   fitTotal: number; // total sesi gym selesai
   fitBest: number; // rekor sesi gym beruntun (5 sesi = 1 minggu penuh)
   bestSteps: number; // rekor langkah terbanyak dalam sehari
@@ -179,29 +182,48 @@ export type AchievementCategoryKey =
   | 'login'
   | 'health'
   | 'bibleMorning'
+  | 'bibleDaytime'
   | 'bibleNight'
   | 'fitness'
   | 'steps'
   | 'run'
   | 'week'
-  | 'water';
+  | 'water'
+  | 'learning';
 
-export const ACHIEVEMENT_CATEGORIES: {
+// URUTANNYA MENGIKUTI GRID HOME (lihat `sorted` di bawah): kategori milik
+// fitur yang tile-nya lebih atas di Home tampil lebih dulu. Jadi Spiritual
+// (tile ke-2) selalu di atas Fitness (tile ke-7), tanpa perlu diurutkan
+// tangan tiap ada kategori baru. `feature` = kunci tile-nya di lib/homeGrid.
+const CATEGORIES: {
   key: AchievementCategoryKey;
+  /** Kunci fitur di grid Home — penentu urutan tampilnya. */
+  feature: string;
   icon: string;
   label: string;
   desc: string;
 }[] = [
-  { key: 'login', icon: '🙏', label: 'Doa Pagi', desc: 'Streak doa pagi di gerbang pagi' },
-  { key: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit setiap hari' },
-  { key: 'bibleMorning', icon: '🌅', label: 'Alkitab Pagi', desc: 'Streak baca Alkitab pagi' },
-  { key: 'bibleNight', icon: '🌙', label: 'Alkitab Malam', desc: 'Streak baca Alkitab malam' },
-  { key: 'fitness', icon: '🏋️', label: 'Gym Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
-  { key: 'steps', icon: '👣', label: 'Langkah Harian', desc: 'Rekor jumlah langkah dalam sehari' },
-  { key: 'run', icon: '🏃', label: 'Jarak Tempuh', desc: 'Patokan pelari — harian, mingguan & bulanan' },
-  { key: 'week', icon: '📅', label: 'Target Mingguan', desc: 'Aerobik + strength training 2 hari/minggu' },
-  { key: 'water', icon: '💧', label: 'Air Putih', desc: 'Cukup 8 gelas air setiap hari' },
+  { key: 'login', feature: 'spiritual', icon: '🙏', label: 'Doa Pagi', desc: 'Streak doa pagi di gerbang pagi' },
+  { key: 'bibleMorning', feature: 'spiritual', icon: '🌅', label: 'Alkitab Pagi', desc: 'Streak baca Alkitab pagi' },
+  { key: 'bibleDaytime', feature: 'spiritual', icon: '☀️', label: 'Alkitab Siang', desc: 'Streak baca Alkitab siang' },
+  { key: 'bibleNight', feature: 'spiritual', icon: '🌙', label: 'Alkitab Malam', desc: 'Streak baca Alkitab malam' },
+  { key: 'health', feature: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit setiap hari' },
+  { key: 'steps', feature: 'health', icon: '👣', label: 'Langkah Harian', desc: 'Rekor jumlah langkah dalam sehari' },
+  { key: 'run', feature: 'health', icon: '🏃', label: 'Jarak Tempuh', desc: 'Patokan pelari — harian, mingguan & bulanan' },
+  { key: 'week', feature: 'health', icon: '📅', label: 'Target Mingguan', desc: 'Aerobik + strength training 2 hari/minggu' },
+  { key: 'water', feature: 'health', icon: '💧', label: 'Air Putih', desc: 'Cukup 8 gelas air setiap hari' },
+  { key: 'learning', feature: 'learning', icon: '🎓', label: 'Learning', desc: 'Minggu beruntun 4 langkah belajar tuntas' },
+  { key: 'fitness', feature: 'fitness', icon: '🏋️', label: 'Gym Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
 ];
+
+/**
+ * Kategori siap tampil — sudah diurutkan mengikuti grid Home. Kategori dengan
+ * fitur yang sama tetap berurutan seperti ditulis di atas (Array.sort di JS
+ * stabil), jadi Alkitab Pagi → Siang → Malam tidak pernah tertukar.
+ */
+export const ACHIEVEMENT_CATEGORIES = [...CATEGORIES].sort(
+  (a, b) => homeFeatureIndex(a.feature) - homeFeatureIndex(b.feature),
+);
 
 /** Detail "terakhir tercapai kapan" untuk achievement langkah (null bila belum). */
 function stepDetail(s: AchievementStats, tier: number): string | null {
@@ -241,6 +263,18 @@ const STREAK_LEVELS: { days: number; icon: string; title: string }[] = [
   { days: 365, icon: '🏆', title: 'Setahun Penuh' },
 ];
 
+// Tangga level rentetan MINGGUAN — khusus Learning 🎓, yang targetnya memang
+// per minggu. Berhenti di 52 = setahun penuh tanpa satu minggu pun bolong.
+const LEARNING_WEEK_LEVELS: { weeks: number; icon: string; title: string }[] = [
+  { weeks: 1, icon: '🐣', title: 'Minggu Pertama' },
+  { weeks: 2, icon: '✨', title: 'Dua Minggu Beruntun' },
+  { weeks: 4, icon: '🔥', title: 'Sebulan Beruntun' },
+  { weeks: 8, icon: '⚡', title: 'Dua Bulan Beruntun' },
+  { weeks: 12, icon: '🏅', title: 'Sekuartal Beruntun' },
+  { weeks: 26, icon: '💎', title: 'Setengah Tahun' },
+  { weeks: 52, icon: '🏆', title: 'Setahun Penuh' },
+];
+
 /** Bangun satu tangga level lengkap untuk sebuah rentetan harian. */
 function streakLadder(
   category: AchievementCategoryKey,
@@ -271,7 +305,23 @@ export const ACHIEVEMENTS: Achievement[] = [
   // menghasilkan dua pencapaian. Streak Revive 🔥 sendiri tetap ada & tetap
   // tampil di fitur Revive; yang dibuang cuma lencananya.
   ...streakLadder('bibleMorning', 'bibleMorning', 'Baca Alkitab pagi', (s) => s.bibleMorningBest),
+  ...streakLadder('bibleDaytime', 'bibleDaytime', 'Baca Alkitab siang', (s) => s.bibleDaytimeBest),
   ...streakLadder('bibleNight', 'bibleNight', 'Baca Alkitab malam', (s) => s.bibleNightBest),
+  // Learning 🎓 dihitung per MINGGU, bukan per hari — targetnya sendiri memang
+  // mingguan (4 langkah kecil Senin/Rabu/Jumat/Minggu). Angkanya = berapa
+  // minggu BERTURUT-TURUT keempat langkah itu tuntas.
+  ...LEARNING_WEEK_LEVELS.map((l) => ({
+    id: `learn${l.weeks}`,
+    category: 'learning' as const,
+    icon: l.icon,
+    title: l.title,
+    desc:
+      l.weeks === 1
+        ? 'Tuntaskan 4 langkah dalam satu minggu'
+        : `${l.weeks} minggu beruntun target Learning tuntas`,
+    target: l.weeks,
+    of: (s: AchievementStats) => s.learningWeekBest,
+  })),
   { id: 'fit1', category: 'fitness', icon: '🐣', title: 'Sesi Pertama', desc: 'Selesaikan satu sesi gym penuh', target: 1, of: (s) => s.fitTotal },
   { id: 'fitWeek1', category: 'fitness', icon: '✨', title: 'Seminggu Penuh', desc: '5 sesi beruntun tanpa bolos', target: 5, of: (s) => s.fitBest },
   { id: 'fit10', category: 'fitness', icon: '💪', title: '10 Sesi', desc: 'Total 10 sesi gym selesai', target: 10, of: (s) => s.fitTotal },
@@ -361,6 +411,7 @@ const ACHIEVEMENT_DOCS: [collection: string, id: string][] = [
   ['app', 'login'], // streak doa pagi 🙏
   ['app', 'revive'], // streak Revive 📖 (bukan achievement lagi, tetap direset)
   ['app', 'bibleStreak'], // streak baca Alkitab 📚
+  ['app', 'learningStreak'], // rentetan MINGGUAN Learning 🎓
   ['app', 'fitnessStreak'], // streak gym 🏋️
   ['app', 'waterStreak'], // streak air putih 💧
   ['health', 'streak'], // streak kebiasaan harian ✅

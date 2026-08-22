@@ -15,6 +15,7 @@ import { useNow } from '@/hooks/useNow';
 import {
   dueStep,
   EMPTY_WEEK,
+  subscribeLearningStreak,
   subscribeLearningWeek,
   subscribeSkillsDone,
   subscribeTopicsDone,
@@ -22,7 +23,9 @@ import {
   type LearningWeek,
   type SkillsDone,
   type TopicsDone,
+  type WeekStreak,
 } from '@/lib/learning';
+import { EMPTY_DAY_STREAK as EMPTY_WEEK_STREAK } from '@/lib/streak';
 
 type LearningTabKey = 'week' | 'skills' | 'topics';
 
@@ -47,6 +50,8 @@ export default function LearningScreen() {
   const [week, setWeek] = useState<LearningWeek | null>(null);
   const [skillsDone, setSkillsDone] = useState<SkillsDone>({});
   const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
+  // Rentetan minggu tuntas berturut-turut 🔥 — dasar achievement 🎓 Learning.
+  const [streak, setStreak] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
 
   useEffect(() => {
     if (!user) return;
@@ -54,6 +59,7 @@ export default function LearningScreen() {
       subscribeLearningWeek(user.uid, weekId, setWeek),
       subscribeSkillsDone(user.uid, setSkillsDone),
       subscribeTopicsDone(user.uid, setTopicsDone),
+      subscribeLearningStreak(user.uid, setStreak),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, weekId]);
@@ -81,6 +87,7 @@ export default function LearningScreen() {
             now={now}
             skillsDone={skillsDone}
             topicsDone={topicsDone}
+            streak={streak}
           />
         ) : tab === 'skills' ? (
           <SkillsTab

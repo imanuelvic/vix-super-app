@@ -253,7 +253,7 @@ export function FollowupTab({
   const monthTitle = `${MONTH_NAMES[nowDate.getMonth()]} ${nowDate.getFullYear()}`;
   const monthPoints = monthlyPointsFor(monthlyPrayers, nowDate);
   const monthNeedsFill = !monthlyPrayersFilled(monthlyPrayers, nowDate);
-  // Sel/Kam/Sab → follow up pokok doa (bergilir beberapa CL per sesi).
+  // Selasa & Kamis → follow up pokok doa (bergilir beberapa CL per sesi).
   const isPrayerDay = isPrayerFollowupDay(nowDate);
   const prayerLeadersToday = prayerFollowupLeaders(leaders, monthPoints, nowDate);
 
@@ -344,8 +344,12 @@ export function FollowupTab({
     );
   }
 
-  // Baris ringkas 1 CL untuk follow up pokok doa (Sel/Kam/Sab). Diketuk →
+  // Kartu ringkas 1 CL untuk follow up pokok doa (Selasa & Kamis). Diketuk →
   // modal tengah berisi seluruh pokok doa + tombol WA.
+  //
+  // Bentuknya DUA KOLOM (lihat `prayerGrid`): satu baris per CL bikin blok Doa
+  // Rantai memanjang ke bawah dan mendorong Follow Up Mingguan keluar layar.
+  // Isinya cuma nama + jumlah poin, jadi separuh lebar sudah lega.
   function renderPrayerCard(leader: CoreLeader) {
     const pts = monthPoints[leader.id] ?? [];
     const done =
@@ -354,9 +358,12 @@ export function FollowupTab({
     return (
       <PressableScale
         key={leader.id}
-        style={[styles.prayerRow, done && styles.prayerRowDone]}
+        style={[styles.prayerCell, done && styles.prayerRowDone]}
         onPress={() => setPrayerModal(leader)}>
-        <VixText heading="bold" additionalStyle={styles.prayerRowName}>
+        <VixText
+          heading="bold"
+          numberOfLines={1}
+          additionalStyle={styles.prayerRowName}>
           {leader.heart} {leader.name}
         </VixText>
         <VixText heading="label" additionalStyle={styles.prayerRowMeta}>
@@ -465,7 +472,7 @@ export function FollowupTab({
         </View>
       )}
 
-      {/* ===== Doa Rantai: isi pokok doa (awal bulan) / follow up (Sel/Kam/Sab) ===== */}
+      {/* ===== Doa Rantai: isi pokok doa (awal bulan) / follow up (Selasa & Kamis) ===== */}
       {monthNeedsFill ? (
         <PressableScale
           style={styles.prayerFillCard}
@@ -475,7 +482,7 @@ export function FollowupTab({
           </VixText>
           <VixText heading="label" additionalStyle={styles.prayerFillText}>
             Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader dulu — ini yang
-            jadi dasar follow up Selasa/Kamis/Sabtu 🙏
+            jadi dasar follow up Selasa & Kamis 🙏
           </VixText>
           <View style={styles.prayerFillButton}>
             <VixText heading="bold" additionalStyle={styles.prayerFillButtonText}>
@@ -492,7 +499,9 @@ export function FollowupTab({
               </VixText>
             </View>
           </View>
-          {prayerLeadersToday.map((l) => renderPrayerCard(l))}
+          <View style={styles.prayerGrid}>
+            {prayerLeadersToday.map((l) => renderPrayerCard(l))}
+          </View>
         </>
       ) : null}
 
@@ -821,7 +830,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   prayerFillButtonText: { color: Color.TEXT_REVERSE },
-  // Kartu header "Doa Rantai" (follow up pokok doa bergilir Sel/Kam/Sab) —
+  // Kartu header "Doa Rantai" (follow up pokok doa bergilir Selasa & Kamis) —
   // gaya kartu hijau tua yang menonjol, senada dengan kartu Follow Up Mingguan.
   doaRantaiCard: {
     backgroundColor: Color.MAIN_DARK,
@@ -889,7 +898,28 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
   },
-  prayerRowName: { flex: 1, color: Color.TEXT_TITLE },
+  // Doa Rantai → dua kolom. `flexBasis` 47% + `flexGrow` bikin sisa satu kartu
+  // (jumlah CL ganjil) melebar penuh, bukan menggantung setengah kosong.
+  prayerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 10,
+  },
+  prayerCell: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Color.WHATSAPP,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 2,
+  },
+  // Tanpa flex: di dalam kartu 2 kolom (arah kolom) flex justru memanjangkan
+  // barisnya ke bawah, bukan melebarkannya.
+  prayerRowName: { color: Color.TEXT_TITLE },
   prayerRowMeta: { color: Color.TEXT_LABEL },
   followMain: { flex: 1, gap: 1 },
   smallDoneButton: {

@@ -28,7 +28,8 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
-import { deadlineLabel } from '@/lib/deadline';
+import { useDueJump } from '@/hooks/useDueJump';
+import { deadlineDue, deadlineLabel } from '@/lib/deadline';
 import {
   addDebtPayment,
   debtDaysUntil,
@@ -70,8 +71,9 @@ const PERIODS: DebtPeriod[] = ['once', 'weekly', 'monthly'];
 export default function DebtsScreen() {
   const { user } = useAuth();
 
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
-  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('theirs');
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. `repress` =
+  // tab yang sama ditekan lagi → lompat ke pinjaman yang jatuh tempo.
+  const { tab, scrollKey, repress, onTabPress } = useTabScroll<Tab>('theirs');
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,6 +119,15 @@ export default function DebtsScreen() {
       return a.dueDate.toMillis() - b.dueDate.toMillis();
     });
   const totalRemaining = list.reduce((sum, d) => sum + debtRemaining(d), 0);
+
+  // Pinjaman jatuh tempo pertama di daftar ini — tujuan lompatan saat sub-tab
+  // ditekan untuk kedua kali (isi badge merahnya).
+  const firstDue =
+    list.find((d) => !d.done && deadlineDue(debtTone(d, today))) ?? null;
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    firstDue?.id ?? null,
+    repress,
+  );
 
   const isMine = tab === 'mine';
   const personLabel = isMine ? 'Saya meminjam dari' : 'Yang meminjam dari saya';
@@ -267,7 +278,11 @@ export default function DebtsScreen() {
         <LoadingCenter />
       ) : (
         // key=scrollKey → ScrollView re-mount tiap tab ditekan (scroll ke atas)
-        <ScrollView key={scrollKey} contentContainerStyle={styles.content}>
+        <ScrollView
+          key={scrollKey}
+          ref={listRef}
+          contentContainerStyle={styles.content}
+          onContentSizeChange={onContentSizeChange}>
           {/* Ringkasan total sisa arah ini */}
           <SummaryCard
             label={isMine ? '💸 Total pinjaman saya' : '💰 Total ditagih ke orang'}
@@ -310,6 +325,7 @@ export default function DebtsScreen() {
                   deadlineBorder(tone),
                   d.done && styles.cardDone,
                 ]}
+                onLayout={(e) => setRowY(d.id, e.nativeEvent.layout.y)}
                 onPress={() => openEdit(d)}>
                 <View style={styles.cardTop}>
                   <VixText heading="bold" additionalStyle={styles.cardPerson}>

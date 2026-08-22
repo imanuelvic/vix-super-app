@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -17,6 +17,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useEditParam } from '@/hooks/useEditParam';
 import {
   CAREER_REMINDER_DAYS,
   effectiveRoadmap,
@@ -147,20 +148,9 @@ export function FulltimeTab({
     setFormError(null);
   }, []);
 
-  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>). Setelah
-  // dipakai, minta induk membersihkan param (onEditConsumed) supaya modal TIDAK
-  // auto-terbuka lagi saat balik ke subtab ini (yang me-mount ulang tab).
-  // consumedRef = guard tambahan agar tak dobel dalam satu mount.
-  const consumedRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    if (!editId || consumedRef.current === editId) return;
-    const item = items.find((i) => i.id === editId);
-    if (item) {
-      consumedRef.current = editId;
-      openEdit(item);
-      onEditConsumed?.();
-    }
-  }, [editId, items, openEdit, onEditConsumed]);
+  // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>).
+  // Aturannya milik bersama — lihat hooks/useEditParam.ts.
+  useEditParam(items, openEdit, editId, onEditConsumed);
 
   async function handleSave() {
     if (!user || !editing || busy) return;
