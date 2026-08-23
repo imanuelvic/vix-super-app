@@ -153,7 +153,7 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
       <SheetModal
         visible={!!editing}
         title={editing === 'new' ? 'Tambah Catatan' : 'Ubah Catatan'}
-        subtitle="Tempel tautannya, nanti tinggal diketuk"
+        subtitle="Isi link"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🏷️ Judul

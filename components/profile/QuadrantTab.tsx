@@ -117,7 +117,7 @@ export function QuadrantTab<K extends string>({
             {footerTitle}
           </VixText>
           <VixText heading="title" additionalStyle={styles.footerText}>
-            {(values[footerKey] ?? '').trim() || footerHint || 'Ketuk untuk isi'}
+            {(values[footerKey] ?? '').trim() || footerHint || 'Isi'}
           </VixText>
         </PressableScale>
       )}

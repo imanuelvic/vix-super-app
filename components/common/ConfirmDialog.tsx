@@ -5,11 +5,16 @@ import { DualButtons } from '@/components/common/DualButtons';
 import { VixText } from '@/components/common/VixText';
 
 // Dialog konfirmasi aksi destruktif (hapus) — Batal / tombol merah.
+//
+// `danger={false}` untuk aksi yang cuma perlu dipastikan tapi TIDAK merusak
+// (mis. "kembalikan jadi CORE Leader"): tombolnya jadi warna utama, bukan
+// merah — merah untuk semua hal bikin peringatannya jadi tak berarti.
 export function ConfirmDialog({
   visible,
   title,
   detail,
   confirmLabel = 'Hapus',
+  danger = true,
   busy = false,
   onCancel,
   onConfirm,
@@ -18,6 +23,7 @@ export function ConfirmDialog({
   title: string;
   detail?: string;
   confirmLabel?: string;
+  danger?: boolean;
   busy?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -30,7 +36,7 @@ export function ConfirmDialog({
       {detail ? <VixText heading="label">{detail}</VixText> : null}
       <DualButtons
         confirmLabel={confirmLabel}
-        danger
+        danger={danger}
         busy={busy}
         onCancel={onCancel}
         onConfirm={onConfirm}

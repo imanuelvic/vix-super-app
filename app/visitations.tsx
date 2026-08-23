@@ -73,7 +73,7 @@ export default function VisitationsScreen() {
   const all = visitations ?? [];
 
   // Riwayat = yang SUDAH divisit atau tanggalnya SUDAH lewat.
-  // Jadwal mendatang tidak ikut — tempatnya di CORE → tab Visitasi.
+  // Jadwal visitasi tidak ikut — tempatnya di CORE → tab Visitasi.
   const history = all.filter((v) => v.done || visitDaysUntil(v, today) < 0);
 
   // Filter jenis visitasi — sama seperti di tab Visitation (null = semua).

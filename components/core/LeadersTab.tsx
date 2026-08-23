@@ -63,6 +63,17 @@ type Viewing = {
   person: CoreLeader | MainTeamMember;
 };
 
+/**
+ * Anak ScrollView yang DIPATOK di atas saat digulung: judul "🫶 CORE Leader"
+ * (1) & "👥 Main Team" (3).
+ *
+ * Urutan anaknya: 0 FormError · 1 judul CL · 2 daftar CL · 3 judul MT ·
+ * 4 daftar MT. Kelima-limanya SELALU dirender (daftarnya dibungkus <View>
+ * yang isinya saja yang kosong saat tertutup), jadi nomornya tidak pernah
+ * bergeser. Ditaruh di luar komponen supaya bukan array baru tiap render.
+ */
+const STICKY_HEADERS = [1, 3];
+
 // Tab CORE Leader: data semua CL + Main Team yang membantu mereka —
 // nama, warna hati CORE, tanggal lahir, umur, nomor WA, dan hitung
 // mundur ulang tahun.
@@ -350,13 +361,19 @@ export function LeadersTab({
         </View>
       </StickyTop>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <VixText heading="label" additionalStyle={styles.countLine}>
-          {leaders.length} CORE Leader · {mainTeam.length} Main Team
-        </VixText>
+      {/* Judul "🫶 CORE Leader" & "👥 Main Team" DIPATOK di atas selama
+          daftarnya digulung — jadi tombol tutupnya selalu terjangkau, tak perlu
+          menggulung balik ke atas melewati sembilan kartu dulu.
 
+          `stickyHeaderIndices` menghitung ANAK LANGSUNG ScrollView, jadi
+          jumlahnya tidak boleh berubah-ubah. Karena itu kedua daftarnya
+          dibungkus <View> yang SELALU ada (isinya yang kosong saat tertutup) —
+          kalau ditulis `{clOpen && …}` telanjang, saat tertutup anaknya hilang
+          dan nomor patokannya meleset ke elemen lain. */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        stickyHeaderIndices={STICKY_HEADERS}>
         <FormError message={error} />
-
         {/* Dropdown CORE Leader (default tertutup) */}
         <PressableScale
           style={styles.toggleHeader}
@@ -374,6 +391,7 @@ export function LeadersTab({
           </View>
         </PressableScale>
 
+        <View>
         {clOpen && leaders.map((l) => {
           const { daysUntil } = nextBirthday(l, today);
           const soon = daysUntil <= 30;
@@ -437,6 +455,7 @@ export function LeadersTab({
             </View>
           );
         })}
+        </View>
 
         {/* ===== Main Team (dropdown, default tertutup) ===== */}
         <PressableScale
@@ -454,6 +473,7 @@ export function LeadersTab({
             />
           </View>
         </PressableScale>
+        <View>
         {mtOpen && (
           <>
         {sortedMT.length === 0 && (
@@ -515,6 +535,7 @@ export function LeadersTab({
         })}
           </>
         )}
+        </View>
       </ScrollView>
 
       {/* Modal BACA-SAJA — muncul saat barisnya diketuk. Tidak ada satu pun
@@ -990,6 +1011,10 @@ function PersonView({
 
   return (
     <View style={styles.viewList}>
+      {/* Garis pemisah judul & isi — memisahkan "siapa"-nya (nama + peran di
+          kepala modal) dari "datanya". Dipakai CL maupun Main Team, karena
+          modalnya memang satu. */}
+      <View style={styles.viewDivider} />
       <InfoRow
         label="🎂 Tanggal lahir"
         value={`${person.birthDay} ${MONTH_NAMES[person.birthMonth]} ${person.birthYear} · ${currentAge(person, today)} th`}
@@ -1136,13 +1161,18 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 },
   addRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   addFlex: { flex: 1 },
-  countLine: { textAlign: 'center', marginBottom: 12 },
   toggleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 10,
+    // Jaraknya dulu margin, sekarang padding + latar sewarna halaman. Sebabnya
+    // judul ini DIPATOK: margin itu ruang KOSONG di luar kotaknya, jadi saat
+    // dipatok kartu-kartu terlihat menyelinap lewat celah 10px di bawah judul.
+    // Sebagai padding, celah itu ikut kena latar. Jarak yang terlihat sama
+    // persis seperti sebelumnya.
+    paddingTop: 4,
+    paddingBottom: 10,
+    backgroundColor: Color.BACKGROUND,
   },
   toggleRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   emptyText: { textAlign: 'center', marginBottom: 12 },
@@ -1171,6 +1201,15 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: 'row', gap: 8 },
   // Modal baca-saja
   viewList: { gap: 12, paddingBottom: 4 },
+  // Garis rambut pemisah kepala modal dari daftar datanya. Lebarnya ditarik
+  // keluar padding sheet (-20 kiri-kanan) supaya membentang penuh seperti
+  // garis footer modal, bukan mengambang di tengah.
+  viewDivider: {
+    height: 1,
+    backgroundColor: Color.BORDER,
+    marginHorizontal: -20,
+    marginBottom: 2,
+  },
   viewRow: { gap: 2 },
   viewValue: { color: Color.TEXT_TITLE },
   closeButton: {
@@ -1202,8 +1241,10 @@ const styles = StyleSheet.create({
   },
   phonePrefixText: { color: Color.TEXT_PARAGRAPH },
   phoneInput: { flex: 1 },
-  // Cowok / cewek — dua chip selebar setengah baris.
-  genderRow: { flexDirection: 'row', gap: 8 },
+  // Cowok / cewek — dua chip selebar setengah baris. marginBottom 10 = jarak
+  // yang sama dengan `formGap` di semua kolom lain; tanpa itu label berikutnya
+  // ("🎓 Pendidikan") menempel ke chip-nya, sendirian beda dari yang lain.
+  genderRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   genderChip: { flex: 1 },
   heartWrap: {
     flexDirection: 'row',

@@ -322,7 +322,7 @@ export function TournamentTab() {
                 Belum ada turnamen
               </VixText>
               <VixText heading="label" additionalStyle={styles.emptyText}>
-                Ketuk “Buat Turnamen” untuk mulai. Peserta diundi acak, lalu
+                Buat Turnamen untuk mulai. Peserta diundi acak, lalu
                 pemenang tiap laga otomatis maju ke babak berikutnya.
               </VixText>
             </View>

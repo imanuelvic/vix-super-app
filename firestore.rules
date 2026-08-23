@@ -1,8 +1,33 @@
 rules_version = '2';
 
 // Security Rules untuk vix-super-app (personal app — SATU pemilik).
-// Prinsip: HANYA akun dengan email pemilik yang boleh baca/tulis,
-// dan hanya di dalam data miliknya sendiri (users/{uid}/...).
+//
+// ============================ MODEL ANCAMAN ============================
+// Repo ini PUBLIK di GitHub. Yang ikut terbaca semua orang: struktur data,
+// nama koleksi, email pemilik, dan Firebase Web API Key (dari .env yang
+// ter-bundle ke aplikasi). Itu semua BUKAN rahasia — API Key Firebase memang
+// pengenal proyek, bukan kunci akses. Yang menentukan aman atau tidak adalah
+// berkas ini.
+//
+// Pertahanan berlapis di bawah, dari yang paling menentukan:
+//
+//  1. `request.auth.uid == userId` — INI kunci utamanya. Tiap akun HANYA bisa
+//     menyentuh cabangnya sendiri (users/<uid-nya-sendiri>). Seandainya ada
+//     orang berhasil membuat akun, dia cuma dapat cabang KOSONG miliknya
+//     sendiri — data pemilik ada di cabang uid lain dan tetap tak tersentuh.
+//     Jangan pernah melonggarkan baris ini.
+//
+//  2. `isOwner()` — email harus email pemilik. Ini lapisan kedua: mencegah
+//     akun asing memakai database ini sebagai penyimpanan gratis (yang jadi
+//     tagihan pemilik), sekaligus menutup pembuatan akun iseng.
+//
+//  3. Tolak semuanya di luar users/{uid} — tidak ada satu pun bagian app yang
+//     menulis di luar sana (sudah diperiksa: SEMUA jalur Firestore di app
+//     berawalan `users/`).
+//
+// Yang TIDAK bisa diurus dari berkas ini — kerjakan di Console (lihat
+// SECURITY.md): matikan pendaftaran akun baru, batasi API key ke bundle id
+// iOS, nyalakan 2FA GitHub & Expo, dan pasang alarm anggaran.
 //
 // Cara pasang: Firebase Console > Firestore Database > tab "Rules" >
 // paste isi file ini > Publish.
@@ -16,6 +41,9 @@ service cloud.firestore {
     }
 
     // Semua data pribadi: tasks, catatan, dan modul lain menyusul.
+    //
+    // `request.auth.uid == userId` WAJIB tetap ada — itu yang membuat satu akun
+    // tidak bisa mengintip cabang akun lain.
     match /users/{userId}/{document=**} {
       allow read, write: if isOwner() && request.auth.uid == userId;
     }

@@ -60,6 +60,21 @@ export function formatShortDayDateTime(d: Date): string {
   return `${formatCompactDate(d)}, Pk. ${formatTime(d)}`;
 }
 
+/**
+ * Sel, 03 Mar 26 · 🕒 19.30 — tanggal ringkas + jam, berikut lambang jamnya.
+ *
+ * SATU bentuk untuk semua kartu jadwal: rapat bulanan CORE (sub-tab Monthly)
+ * DAN jadwal visitasi (sub-tab Visitation + layar Riwayat Visitasi). Dulu
+ * keduanya menyusun sendiri-sendiri dengan lambang & letak koma yang berbeda,
+ * jadi dua daftar sejenis terlihat tidak sekeluarga.
+ *
+ * Lambang 🕒 sengaja ikut di dalam sini, bukan ditulis di layarnya: itulah yang
+ * membuat kedua kartu mustahil berbeda.
+ */
+export function formatCompactDateTime(d: Date): string {
+  return `${formatCompactDate(d)} · 🕒 ${formatTime(d)}`;
+}
+
 /** Rabu, 12 Agu 26 — "dddd, dd mmm yy" untuk baris sapaan (<GreetingHeader/>). */
 export function formatGreetingDate(d: Date): string {
   const day = String(d.getDate()).padStart(2, '0');

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -37,6 +38,7 @@ import {
   type WheelData,
   type WheelFocus,
 } from '@/lib/wheel';
+import { shareWheelPdf } from '@/lib/wheelPdf';
 
 type Mode = 'overview' | 'assess' | 'focus';
 
@@ -105,6 +107,9 @@ export default function WheelScreen() {
 
   // Modal tips: area yang sedang dilihat tips-nya (null = tertutup).
   const [tipArea, setTipArea] = useState<WheelAreaKey | null>(null);
+
+  // Sedang mencetak PDF (bisa beberapa detik untuk radar + semua areanya).
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -176,7 +181,16 @@ export default function WheelScreen() {
     if (!user || busy) return;
     setBusy(true);
     try {
-      await saveWheelScores(user.uid, qid, draftScores, draftNotes, owner);
+      // `data?.createdAt` dioper apa adanya: kalau kuartal ini sudah pernah
+      // diisi, tanggal lahirnya dipertahankan — bukan ditimpa hari ini.
+      await saveWheelScores(
+        user.uid,
+        qid,
+        draftScores,
+        draftNotes,
+        owner,
+        data?.createdAt,
+      );
       setMode('overview');
     } catch {
       setAssessError(SAVE_ERROR);
@@ -233,12 +247,30 @@ export default function WheelScreen() {
     setBusy(true);
     setFocusError(null);
     try {
-      await saveWheelFocus(user.uid, qid, focus, owner);
+      await saveWheelFocus(user.uid, qid, focus, owner, data.createdAt);
       setMode('overview');
     } catch {
       setFocusError(SAVE_ERROR);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleShare() {
+    if (!data || sharing) return;
+    setSharing(true);
+    setError(null);
+    try {
+      await shareWheelPdf(
+        data,
+        year,
+        q,
+        owner ? { name: orang, heart: params.heart ?? '🎡' } : null,
+      );
+    } catch {
+      setError('Gagal membuat PDF Wheel of Life. Coba lagi.');
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -254,6 +286,19 @@ export default function WheelScreen() {
         title={owner ? `Wheel ${params.heart ?? '🎡'} ${orang}` : 'Wheel of Life 🎡'}
         subtitle={
           owner ? `8 area hidup ${orang} per kuartal` : '8 area hidupmu per kuartal'
+        }
+        // Cetak SELURUH isi kuartal ini jadi PDF lalu buka share sheet
+        // (WhatsApp ada di situ). Baru menyala setelah ada yang dinilai —
+        // membagikan roda kosong tidak ada gunanya.
+        right={
+          mode === 'overview' && hasScores ? (
+            <EmojiButton
+              icon="square.and.arrow.up"
+              onPress={handleShare}
+              busy={sharing}
+              disabled={sharing}
+            />
+          ) : undefined
         }>
         {mode === 'overview' && (
           <View style={styles.quarterRow}>
@@ -444,13 +489,8 @@ export default function WheelScreen() {
               <VixText additionalStyle={styles.introEmoji}>🎡</VixText>
               <VixText heading="title" additionalStyle={styles.introTitle}>
                 {owner
-                  ? `Bagaimana bentuk hidup ${orang} kuartal ini?`
-                  : 'Bagaimana bentuk hidupmu kuartal ini?'}
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.introText}>
-                {owner
-                  ? `Isi bareng ${orang} saat visitasi: nilai 8 area hidupnya (1–10), lihat bentuk “roda”-nya di radar chart, lalu pilih minimal ${MIN_FOCUS} area untuk dikembangkan.`
-                  : `Nilai 8 area hidupmu (1–10), lihat bentuk “roda”-mu di radar chart, lalu pilih minimal ${MIN_FOCUS} area untuk dikembangkan.`}
+                  ? `Bagaimana Wheel Of Life ${orang} di kuartal ini?`
+                  : 'Bagaimana Wheel Of Lifemu di kuartal ini?'}
               </VixText>
               <PrimaryButton
                 label="Mulai Assessment"
@@ -581,12 +621,22 @@ export default function WheelScreen() {
                 })
               )}
 
-              {/* Tanggal & jam terakhir data kuartal ini diubah */}
-              {data.updatedAt && (
-                <VixText heading="label" additionalStyle={styles.updatedLabel}>
-                  🕒 Terakhir diubah:{' '}
-                  {formatFullDateTime(data.updatedAt.toDate())}
-                </VixText>
+              {/* Kapan kuartal ini mulai diisi & terakhir disentuh. Keduanya
+                  ikut tercetak di PDF-nya juga. */}
+              {(data.createdAt || data.updatedAt) && (
+                <View style={styles.stampBox}>
+                  {data.createdAt && (
+                    <VixText heading="label" additionalStyle={styles.updatedLabel}>
+                      🆕 Dibuat: {formatFullDateTime(data.createdAt.toDate())}
+                    </VixText>
+                  )}
+                  {data.updatedAt && (
+                    <VixText heading="label" additionalStyle={styles.updatedLabel}>
+                      🕒 Terakhir diubah:{' '}
+                      {formatFullDateTime(data.updatedAt.toDate())}
+                    </VixText>
+                  )}
+                </View>
               )}
 
               {/* Skor per area */}
@@ -860,7 +910,6 @@ const styles = StyleSheet.create({
   },
   introEmoji: { fontSize: 52, lineHeight: 64 },
   introTitle: { textAlign: 'center' },
-  introText: { textAlign: 'center' },
   introButton: { alignSelf: 'stretch', marginTop: 8 },
   chartCard: {
     alignItems: 'center',
@@ -892,7 +941,9 @@ const styles = StyleSheet.create({
   },
   editText: { color: Color.MAIN },
   emptyFocus: { marginBottom: 10 },
-  updatedLabel: { color: Color.TEXT_LABEL, marginTop: 2, marginBottom: 4 },
+  // Dua baris cap waktu (dibuat & terakhir diubah) dirapatkan jadi satu blok.
+  stampBox: { marginTop: 2, marginBottom: 4, gap: 1 },
+  updatedLabel: { color: Color.TEXT_LABEL },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
   // Sebaran nada skor di atas daftar area.
   legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },

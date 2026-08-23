@@ -30,7 +30,7 @@ import {
   saveMonthlyMeeting,
   type MonthlyMeeting,
 } from '@/lib/core';
-import { formatCompactDate, formatTime, MONTH_NAMES } from '@/lib/format';
+import { formatCompactDateTime, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
 
@@ -200,9 +200,10 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             <VixText heading="bold" additionalStyle={styles.cardTitle}>
               🗒️ {m.title}
             </VixText>
+            {/* Bentuk tanggal+jam ini dipakai bersama kartu jadwal visitasi —
+                lihat formatCompactDateTime di lib/format. */}
             <VixText heading="label" additionalStyle={styles.cardDate}>
-              📆 {formatCompactDate(m.date.toDate())} · 🕒{' '}
-              {formatTime(m.date.toDate())}
+              📆 {formatCompactDateTime(m.date.toDate())}
             </VixText>
             {m.place ? (
               <VixText heading="label" additionalStyle={styles.cardDate}>

@@ -12,8 +12,9 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { dayIdToDate } from './format';
+import { dayIdToDate, formatFullDate } from './format';
 import { dayDocId } from './health';
+import { liveDoc } from './liveDoc';
 
 // Catatan Khotbah ⛪ — catatan dari khotbah ibadah Minggu di NDC.
 // SATU catatan per hari Minggu: id dokumen = dayId Minggunya, jadi tidak
@@ -27,7 +28,16 @@ export type SermonNote = {
   preacher: string; // pendeta yang khotbah
   serviceTime: string; // ibadah jam berapa
   quote: string; // hikmat / quote dari khotbah
-  reflection: string; // perenungan yang saya dapat
+  /**
+   * Catatan khotbah utuh — poin-poin yang dicatat selama ibadah. Ini yang
+   * paling panjang (bisa puluhan baris), makanya mengisinya di layar sendiri,
+   * bukan modal.
+   *
+   * Opsional di tipe karena catatan LAMA (dibuat sebelum kolom ini ada) tidak
+   * punya field-nya di Firestore — dibaca jadi undefined, bukan error.
+   */
+  note?: string;
+  reflection: string; // aplikasi: apa yang mau diterapkan
   date: Timestamp;
 };
 
@@ -55,6 +65,25 @@ export function subscribeSermons(
   );
 }
 
+/** Dengarkan SATU catatan khotbah — untuk layar bacanya (1 dokumen kecil). */
+export function subscribeSermon(
+  uid: string,
+  sundayId: string,
+  onChange: (note: SermonNote | null) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    doc(db, 'users', uid, 'sermons', sundayId),
+    (snapshot) => {
+      const data = snapshot.data();
+      onChange(
+        data ? ({ id: sundayId, ...data } as SermonNote) : null,
+      );
+    },
+    onError,
+  );
+}
+
 export function saveSermon(
   uid: string,
   sundayId: string,
@@ -63,6 +92,7 @@ export function saveSermon(
     preacher: string;
     serviceTime: string;
     quote: string;
+    note: string;
     reflection: string;
     date: Date;
   },
@@ -75,6 +105,32 @@ export function saveSermon(
 
 export function deleteSermon(uid: string, id: string) {
   return deleteDoc(doc(db, 'users', uid, 'sermons', id));
+}
+
+/**
+ * Teks siap kirim ke WhatsApp. Bagian yang kosong dilewati, jadi catatan yang
+ * cuma diisi sebagian tidak terkirim dengan judul menggantung.
+ *
+ * Pindah ke sini (dulu di dalam SermonTab) karena layar bacanya juga memakai —
+ * kalau disalin, dua tempat itu suatu saat pasti jadi berbeda isi.
+ */
+export function sermonShareText(s: SermonNote): string {
+  const meta = [
+    s.preacher ? `🎤 ${s.preacher}` : '',
+    s.serviceTime ? `🕙 ${s.serviceTime}` : '',
+  ]
+    .filter(Boolean)
+    .join('  ·  ');
+  const lines = [
+    'Catatan Khotbah 🙏',
+    s.title,
+    `🗓️ ${formatFullDate(dayIdToDate(s.id))}`,
+  ];
+  if (meta) lines.push(meta);
+  if (s.quote) lines.push('', `💡 "${s.quote}"`);
+  if (s.note) lines.push('', '📝 Catatan Khotbah:', s.note);
+  if (s.reflection) lines.push('', `🏃 Aplikasi:`, s.reflection);
+  return lines.join('\n');
 }
 
 // ===================== Helper hari & reminder =====================

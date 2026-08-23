@@ -299,7 +299,7 @@ export default function HomeScreen() {
   const intercessionSummary = intercessionChain
     ? 'Doakan & follow up pokok doa CORE Leader giliran hari ini'
     : intercessionNightWindow(now)
-      ? '🌙 Doakan sekali lagi sebelum tidur — ketuk untuk pokok doanya'
+      ? '🌙 Doakan sekali lagi sebelum tidur'
       : `${intercession.points.length} pokok doa`;
   const intercessionTexts =
     intercessionOpen && !intercessionChain

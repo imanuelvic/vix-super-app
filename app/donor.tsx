@@ -93,7 +93,7 @@ export default function DonorScreen() {
   const nextDate = nextEligibleDate(d);
   const canDonate = eligibleDays === null || eligibleDays <= 0;
 
-  // Jadwal mendatang (belum lewat & belum selesai) urut terdekat.
+  // Jadwal visitasi (belum lewat & belum selesai) urut terdekat.
   const upcoming = [...d.schedules]
     .filter((s) => !s.done && scheduleDaysUntil(s, today) >= 0)
     .sort((a, b) => a.date.toMillis() - b.date.toMillis());
@@ -292,7 +292,7 @@ export default function DonorScreen() {
           <View style={styles.sectionHeader}>
             <VixText heading="title">📅 Jadwal Donor</VixText>
             {/* Lambang saja — ✅ syarat & 💡 tips donor. Bentuknya sama dengan
-                pasangan tombol 💡🎚️ di sebelah judul "Jadwal Mendatang" di
+                pasangan tombol 💡🎚️ di sebelah judul "Jadwal Visitasi" di
                 CORE, jadi terasa satu keluarga. */}
             <View style={styles.sectionActions}>
               <EmojiButton emoji="✅" onPress={() => setInfo('syarat')} />

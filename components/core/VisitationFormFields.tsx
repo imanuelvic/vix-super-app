@@ -105,9 +105,8 @@ export function VisitationFormFields({
 
       {/* Jam pertemuan — menempel di objek Date yang SAMA dengan tanggal di
           atas (DateField mengubah tanggalnya, TimeField jamnya), jadi keduanya
-          tersimpan sebagai satu kolom. Jamnya sengaja hanya ada di sini &
-          di PDF-nya ("Mulai: 15.00 WIB"); di daftar depan tidak ditampilkan
-          supaya kartunya tetap ringkas. */}
+          tersimpan sebagai satu kolom. Jamnya ikut tampil di kartu daftar
+          ("Sen, 31 Agu, 26 Pk. 19.00") dan di PDF-nya ("Mulai: 15.00 WIB"). */}
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
         🕒 Jam pertemuan
       </VixText>

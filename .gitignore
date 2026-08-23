@@ -31,8 +31,10 @@ yarn-error.*
 *.pem
 
 # local env files
-.env
-.env*.local
+# `.env*` (BUKAN cuma `.env`) — dulu `.env.production` / `.env.preview` lolos
+# dan bisa ikut ter-commit ke repo PUBLIK tanpa disadari.
+.env*
+!.env.example
 
 # Firebase / secrets — JANGAN pernah commit file ini
 serviceAccountKey.json

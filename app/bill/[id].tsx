@@ -323,7 +323,6 @@ export default function BillScreen() {
       <ScreenError message={error} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Ringkasan — ketuk untuk mengubah judul, tempat, pajak, dll. */}
         <PressableScale style={styles.hero} onPress={openInfo}>
           <VixText heading="label" additionalStyle={styles.heroLabel}>
             📆 {formatCompactDate(b.date.toDate())}
@@ -338,7 +337,7 @@ export default function BillScreen() {
             {b.discount > 0 ? ` − diskon ${formatRupiah(b.discount)}` : ''}
           </VixText>
           <VixText heading="label" additionalStyle={styles.heroHint}>
-            Ketuk untuk ubah keterangan ✏️
+            Ubah keterangan ✏️
           </VixText>
         </PressableScale>
 
@@ -405,7 +404,7 @@ export default function BillScreen() {
         </View>
         {b.people.length > 0 && (
           <VixText heading="label" additionalStyle={styles.hint}>
-            Ketuk nama untuk menghapusnya dari patungan ini.
+            Hapus dari patungan ini.
           </VixText>
         )}
 
@@ -492,7 +491,7 @@ export default function BillScreen() {
         )}
         {shares.length > 0 && (
           <VixText heading="label" additionalStyle={styles.hint}>
-            Ketuk lingkarannya kalau orang itu sudah setor. Jumlah tiap orang
+            Jumlah tiap orang
             dibulatkan ke rupiah, jadi totalnya bisa meleset satu-dua rupiah dari
             nota — itu memang tak terhindarkan saat satu angka dibagi beberapa.
           </VixText>

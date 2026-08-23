@@ -34,9 +34,9 @@ export const WHEEL_AREAS: {
   { key: 'health', label: 'Health', icon: '🍎', question: 'Apakah kamu peduli terhadap kesehatanmu?' },
   { key: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦', question: 'Seberapa penting keluarga bagimu?' },
   { key: 'finance', label: 'Finance', icon: '💵', question: 'Seberapa baik kamu mengelola keuanganmu?' },
-  { key: 'ministry', label: 'Ministry', icon: '🙏', question: 'Apakah kamu melayani? Bagaimana kamu menilai pelayananmu?' },
+  { key: 'ministry', label: 'Ministry', icon: '🙏', question: 'Bagaimana kamu menilai pelayananmu?' },
   { key: 'career', label: 'Career', icon: '💼', question: 'Seberapa baik kamu dalam dunia kerja?' },
-  { key: 'relationship', label: 'Relationship', icon: '🤝', question: 'Bagaimana hubunganmu dengan orang-orang di sekitarmu?' },
+  { key: 'relationship', label: 'Relationship', icon: '🤝', question: 'Bagaimana hubunganmu dengan orang di sekitarmu?' },
   { key: 'fun', label: 'Fun Recreation', icon: '🎢', question: 'Apakah kamu menikmati hidup? Atau waktumu habis untuk hal yang kurang menyenangkan?' },
 ];
 
@@ -114,8 +114,51 @@ export type WheelData = {
   scores: Partial<Record<WheelAreaKey, number>>; // 1–10 per area
   notes: Partial<Record<WheelAreaKey, string>>; // alasan penilaian
   focus: WheelFocus[];
+  /** Kapan kuartal ini PERTAMA kali diisi. Ditulis sekali, lalu tak berubah. */
+  createdAt?: Timestamp;
   updatedAt?: Timestamp; // kapan terakhir diubah (assessment / fokus)
 };
+
+// ===================== Bentuk radar (dipakai layar & PDF) =====================
+
+/**
+ * Hitungan letak titik radar chart — SATU sumber untuk dua penggambar:
+ * <RadarChart/> di layar (react-native-svg) dan SVG mentah di dalam PDF.
+ *
+ * Dulu rumusnya cuma ada di komponennya. Begitu PDF ikut menggambar roda yang
+ * sama, rumus itu harus disalin — dan salinan berarti suatu saat grafik di PDF
+ * bisa berbeda bentuk dari yang kamu lihat di layar tanpa ada yang sadar.
+ */
+export function radarGeometry(size: number, axes: number) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 26; // sisakan ruang untuk label emoji
+  const angle = (i: number) => ((-90 + (360 / axes) * i) * Math.PI) / 180;
+  const at = (i: number, radius: number) => ({
+    x: cx + radius * Math.cos(angle(i)),
+    y: cy + radius * Math.sin(angle(i)),
+  });
+  const point = (i: number, radius: number) => {
+    const p = at(i, radius);
+    return `${p.x},${p.y}`;
+  };
+  return {
+    cx,
+    cy,
+    r,
+    point,
+    /** Cincin grid pada pecahan jari-jari (0–1). */
+    ring: (frac: number) =>
+      Array.from({ length: axes }, (_, i) => point(i, r * frac)).join(' '),
+    /** Poligon dari skor 0–10 (di luar rentang itu dijepit). */
+    polygon: (values: number[]) =>
+      values
+        .map((v, i) => point(i, (r * Math.max(0, Math.min(v, 10))) / 10))
+        .join(' '),
+    /** Letak label emoji, sedikit di luar cincin terluar. */
+    labelPos: (i: number) => at(i, r + 15),
+  };
+}
 
 // ===================== Kuartal =====================
 
@@ -178,11 +221,25 @@ export function subscribeWheel(
         scores: (data?.scores as WheelData['scores']) ?? {},
         notes: (data?.notes as WheelData['notes']) ?? {},
         focus: (data?.focus as WheelFocus[]) ?? [],
+        createdAt: (data?.createdAt as Timestamp) ?? undefined,
         updatedAt: (data?.updatedAt as Timestamp) ?? undefined,
       });
     },
     onError,
   );
+}
+
+/**
+ * Cap waktu tiap penyimpanan.
+ *
+ * `createdAt` ditulis SEKALI lalu tak pernah berubah: pemanggil mengoper yang
+ * sudah ada (dari data yang sedang tampil di layar). Kalau belum ada, saat
+ * inilah tanggal lahir kuartal ini. Sengaja tidak memakai transaksi — app ini
+ * satu pemilik di satu layar, tidak ada dua penulis berebut.
+ */
+function stamps(existingCreatedAt?: Timestamp) {
+  const now = Timestamp.now();
+  return { createdAt: existingCreatedAt ?? now, updatedAt: now };
 }
 
 /** Simpan hasil assessment (skor + alasan). merge: fokus tidak tersentuh. */
@@ -192,9 +249,10 @@ export function saveWheelScores(
   scores: WheelData['scores'],
   notes: WheelData['notes'],
   owner?: WheelOwner,
+  createdAt?: Timestamp,
 ) {
   const ref = wheelRef(uid, qid, owner);
-  return setDoc(ref, { scores, notes, updatedAt: Timestamp.now() }, { merge: true });
+  return setDoc(ref, { scores, notes, ...stamps(createdAt) }, { merge: true });
 }
 
 /** Simpan area fokus kuartal. merge: skor tidak tersentuh. */
@@ -203,9 +261,10 @@ export function saveWheelFocus(
   qid: string,
   focus: WheelFocus[],
   owner?: WheelOwner,
+  createdAt?: Timestamp,
 ) {
   const ref = wheelRef(uid, qid, owner);
-  return setDoc(ref, { focus, updatedAt: Timestamp.now() }, { merge: true });
+  return setDoc(ref, { focus, ...stamps(createdAt) }, { merge: true });
 }
 
 // ===================== Reminder Home =====================

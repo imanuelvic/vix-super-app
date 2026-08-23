@@ -62,7 +62,7 @@ export function VisitationTab({
   /**
    * Ex CORE Leader — HANYA untuk membaca nama di visitasi lama & pencarian.
    * Sengaja dipisah dari `leaders`: mereka tidak boleh muncul di pemilih saat
-   * menjadwalkan visitasi baru maupun di filter jadwal mendatang.
+   * menjadwalkan visitasi baru maupun di filter jadwal visitasi.
    */
   pastLeaders: CoreLeader[];
   // Kalau di-set (dari reminder Dashboard), langsung buka modal pertemuan ini.
@@ -119,7 +119,7 @@ export function VisitationTab({
   );
   const activeLeader = leaders.find((l) => l.id === filterLeaderId);
 
-  // Halaman jadwal mendatang — sama seperti daftar panjang lain di app ini.
+  // Halaman jadwal visitasi — sama seperti daftar panjang lain di app ini.
   const { currentPage, pageCount, pageItems, setPage } = usePagination(filtered);
 
   // Hasil pencarian: cocok kalau SETIAP kata yang kamu ketik muncul di judul,
@@ -359,10 +359,10 @@ export function VisitationTab({
             contentContainerStyle={[styles.content, styles.contentPinned]}>
             <FormError message={error} />
 
-            {/* ===== Jadwal mendatang ===== */}
+            {/* ===== Jadwal visitasi ===== */}
             <View style={styles.sectionRow}>
               <VixText heading="title" additionalStyle={styles.sectionTitleFlex}>
-                📅 Jadwal Mendatang
+                📅 Jadwal Visitasi
               </VixText>
               <View style={styles.sectionActions}>
                 {/* Tips visitasi (buka modal) */}
@@ -376,7 +376,6 @@ export function VisitationTab({
               </View>
             </View>
 
-            {/* Chip filter yang sedang aktif — ketuk untuk menghapusnya */}
             {hasFilter && (
               <View style={styles.activeFilterRow}>
                 {filterLeaderId && (

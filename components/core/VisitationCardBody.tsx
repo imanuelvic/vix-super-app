@@ -10,7 +10,7 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { deadlineLabel, type DeadlineTone } from '@/lib/deadline';
-import { formatFullDate } from '@/lib/format';
+import { formatCompactDateTime } from '@/lib/format';
 
 // Isi kartu satu visitasi: nama CORE → jenis acara → penanda acara gabungan →
 // tanggal → judul.
@@ -51,7 +51,10 @@ export function VisitationCardBody({
           🤝 {v.leaderIds.length} CORE gabung
         </VixText>
       ) : null}
-      <VixText heading="label">📆 {formatFullDate(v.date.toDate())}</VixText>
+      {/* Tanggal + jam pertemuan, bentuknya SAMA PERSIS dengan kartu rapat
+          bulanan: "📆 Sen, 31 Agu 26 · 🕒 19.00". Jamnya dulu cuma ada di modal
+          & PDF — padahal justru itu yang dicari saat melihat daftar. */}
+      <VixText heading="label">📆 {formatCompactDateTime(v.date.toDate())}</VixText>
       {v.note ? <VixText heading="label">🏷️ Judul: {v.note}</VixText> : null}
     </>
   );

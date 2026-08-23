@@ -2,11 +2,16 @@ import { View } from 'react-native';
 import Svg, { Line, Polygon, Text as SvgText } from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
+import { radarGeometry } from '@/lib/wheel';
 
 /**
  * Radar chart (jaring laba-laba) berbasis SVG — pengganti chart.js Radar
  * dari website lama. `values` = skor 0–10 per sumbu; `secondary` opsional
  * (mis. target) digambar sebagai garis putus-putus.
+ *
+ * Letak titiknya dihitung `radarGeometry` di lib/wheel — rumus yang SAMA
+ * dipakai PDF Wheel of Life, jadi roda di kertas tak mungkin beda bentuk dari
+ * roda di layar.
  */
 export function RadarChart({
   size = 300,
@@ -19,20 +24,9 @@ export function RadarChart({
   secondary?: number[];
   labels: string[]; // emoji per sumbu
 }) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const R = size / 2 - 26; // sisakan ruang untuk label emoji
-  const N = labels.length;
-
-  const angle = (i: number) => ((-90 + (360 / N) * i) * Math.PI) / 180;
-  const point = (i: number, r: number) =>
-    `${cx + r * Math.cos(angle(i))},${cy + r * Math.sin(angle(i))}`;
-  const ring = (frac: number) =>
-    labels.map((_, i) => point(i, R * frac)).join(' ');
-  const dataPoints = (vals: number[]) =>
-    vals
-      .map((v, i) => point(i, (R * Math.max(0, Math.min(v, 10))) / 10))
-      .join(' ');
+  const g = radarGeometry(size, labels.length);
+  const { cx, cy, r: R, point, ring } = g;
+  const dataPoints = g.polygon;
 
   return (
     <View style={{ width: size, height: size }}>
@@ -82,9 +76,7 @@ export function RadarChart({
         />
         {/* Label emoji di ujung tiap sumbu */}
         {labels.map((label, i) => {
-          const r = R + 15;
-          const x = cx + r * Math.cos(angle(i));
-          const y = cy + r * Math.sin(angle(i));
+          const { x, y } = g.labelPos(i);
           return (
             <SvgText
               key={i}

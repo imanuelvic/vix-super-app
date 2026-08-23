@@ -34,6 +34,10 @@ export default function ExLeadersScreen() {
   const [busyId, setBusyId] = useState<string | null>(null);
   // Ex CL yang tombol ✕-nya ditekan — dialog konfirmasi hapus permanen.
   const [confirmDelete, setConfirmDelete] = useState<ExLeader | null>(null);
+  // Konfirmasi kembalikan jadi CL. Bukan aksi merusak, tapi sekali ditekan
+  // orangnya langsung masuk lagi ke daftar gembalaan & jadwal follow up
+  // mingguan — jadi jangan sampai kepencet tanpa sengaja.
+  const [confirmRestore, setConfirmRestore] = useState<ExLeader | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -54,14 +58,15 @@ export default function ExLeadersScreen() {
 
   const today = new Date();
 
-  async function handleRestore(id: string) {
-    if (!user || !leaders || !exLeaders || busyId) return;
-    setBusyId(id);
+  async function handleRestore() {
+    if (!user || !leaders || !exLeaders || !confirmRestore || busyId) return;
+    setBusyId(confirmRestore.id);
     try {
-      await restoreCoreLeader(user.uid, leaders, exLeaders, id);
+      await restoreCoreLeader(user.uid, leaders, exLeaders, confirmRestore.id);
     } catch {
       setError(SAVE_ERROR);
     } finally {
+      setConfirmRestore(null);
       setBusyId(null);
     }
   }
@@ -157,9 +162,9 @@ export default function ExLeadersScreen() {
                 <PressableScale
                   style={[styles.restoreBtn, busyId === ex.id && styles.busy]}
                   disabled={busyId === ex.id}
-                  onPress={() => handleRestore(ex.id)}>
+                  onPress={() => setConfirmRestore(ex)}>
                   <VixText heading="bold" additionalStyle={styles.restoreText}>
-                    ↩️ Kembalikan jadi CORE Leader
+                    ↩️ Kembali jadi CORE Leader
                   </VixText>
                 </PressableScale>
               </View>
@@ -170,6 +175,20 @@ export default function ExLeadersScreen() {
 
       {/* Konfirmasi hapus permanen — layar ini bukan modal, jadi dialog
           tengah aman dipakai (tidak ada modal bertumpuk). */}
+      {/* Konfirmasi kembalikan jadi CL — bukan aksi merusak, jadi tombolnya
+          bukan merah. Yang dicegah: kepencet tanpa sengaja lalu orangnya
+          mendadak muncul lagi di jadwal follow up mingguan. */}
+      <ConfirmDialog
+        visible={confirmRestore !== null}
+        title={`Kembalikan ${confirmRestore?.name ?? ''} jadi CORE Leader?`}
+        detail={`${confirmRestore?.name ?? 'Dia'} akan masuk lagi ke daftar CORE Leader dan ikut giliran follow up mingguan. Catatan alasan & tanggal dilepasnya akan dihapus dari arsip.`}
+        confirmLabel="Ya, kembalikan"
+        danger={false}
+        busy={busyId !== null && busyId === confirmRestore?.id}
+        onCancel={() => setConfirmRestore(null)}
+        onConfirm={handleRestore}
+      />
+
       <ConfirmDialog
         visible={confirmDelete !== null}
         title="Hapus permanen dari arsip?"
