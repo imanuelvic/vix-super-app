@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +7,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useHealthToday } from '@/hooks/useHealthToday';
 import { dayIdToDate, formatShortDayDate, groupDigits } from '@/lib/format';
 import {
   recordStepDays,
@@ -16,12 +17,7 @@ import {
   subscribeStepDays,
   type StepDaysMap,
 } from '@/lib/health';
-import {
-  healthKitStatus,
-  readRecentDailySteps,
-  readTodaySummary,
-  type DailyHealthSummary,
-} from '@/lib/healthkit';
+import { readRecentDailySteps } from '@/lib/healthkit';
 
 // Label/rentang tiap tier langkah (selaras STEP_TIERS di lib/health).
 const STEP_TIER_META: Record<
@@ -40,22 +36,12 @@ const STEP_TIER_META: Record<
 export default function StepsScreen() {
   const { user } = useAuth();
 
-  const [hkStatus] = useState(() => healthKitStatus());
-  const [hk, setHk] = useState<DailyHealthSummary | null>(null);
+  // Langkah hari ini dari Apple Health — hook bersama dengan tab Steps 👣.
+  // Galatnya didiamkan di dalam hook: HK opsional, rekor tetap tampil dari
+  // data tersimpan.
+  const { status: hkStatus, today: hk } = useHealthToday();
   const [stepDays, setStepDays] = useState<StepDaysMap>({});
   const [expandedTier, setExpandedTier] = useState<number | null>(null);
-
-  const loadHk = useCallback(async () => {
-    try {
-      setHk(await readTodaySummary());
-    } catch {
-      // Diamkan — HK opsional; rekor tetap tampil dari data tersimpan.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (hkStatus === 'ok') loadHk();
-  }, [hkStatus, loadHk]);
 
   // Dengarkan rekor langkah tersimpan (dokumen kecil, 1 listener).
   useEffect(() => {

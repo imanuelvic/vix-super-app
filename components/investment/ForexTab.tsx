@@ -1,4 +1,5 @@
-import { MarketTab, useMarket } from '@/components/investment/MarketTab';
+import { MarketTab } from '@/components/investment/MarketTab';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { loadForex } from '@/lib/market';
 
 const FOREX_GREEN = '#2E7D32'; // hijau "uang" untuk grafik
@@ -9,7 +10,7 @@ const FOREX_ERROR =
 // berapa Rupiah untuk 1 USD sekarang, grafik tren harian ~6 bulan, & statistik.
 // Nilainya sudah dalam Rupiah → pakai format Rupiah bawaan MarketTab.
 export function ForexTab() {
-  const { data, loading, error, reload } = useMarket(loadForex, FOREX_ERROR);
+  const { data, loading, error, reload } = useAsyncData(loadForex, FOREX_ERROR);
 
   return (
     <MarketTab

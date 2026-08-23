@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -8,6 +8,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useHealthToday } from '@/hooks/useHealthToday';
 import { formatDecimal, groupDigits, MONTH_NAMES } from '@/lib/format';
 import {
   dayDocId,
@@ -29,12 +30,7 @@ import {
   type HealthProfile,
   type StepDaysMap,
 } from '@/lib/health';
-import {
-  healthKitStatus,
-  readRecentDailySteps,
-  readTodaySummary,
-  type DailyHealthSummary,
-} from '@/lib/healthkit';
+import { readRecentDailySteps } from '@/lib/healthkit';
 
 // Tab Steps 👣 — langkah hari ini dari Apple Health, plus akumulasi MINGGUAN
 // (Senin–Minggu, reset sendiri tiap Senin karena hanya menjumlah 7 dayId
@@ -51,24 +47,15 @@ export function StepsTab({
 }) {
   const { user } = useAuth();
 
-  // Status tidak berubah selama app hidup, cukup dihitung sekali.
-  const [hkStatus] = useState(() => healthKitStatus());
-  const [hk, setHk] = useState<DailyHealthSummary | null>(null);
-  const [hkBusy, setHkBusy] = useState(false);
-
-  const loadHk = useCallback(async () => {
-    setHkBusy(true);
-    try {
-      setHk(await readTodaySummary());
-    } finally {
-      setHkBusy(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Kalau izin sudah pernah diberikan, data langsung tampil tanpa tombol.
-    if (hkStatus === 'ok') loadHk();
-  }, [hkStatus, loadHk]);
+  // Langkah hari ini dari Apple Health — hook bersama dengan layar Rekor
+  // Langkah 🏆. Kalau izin sudah pernah diberikan, datanya langsung diambil
+  // tanpa perlu menekan tombol.
+  const {
+    status: hkStatus,
+    today: hk,
+    busy: hkBusy,
+    reload: loadHk,
+  } = useHealthToday();
 
   // Isi riwayat langkah dari Apple Health — sekali per buka, 1 tulis (merge).
   // Tanpa ini akumulasi mingguan/bulanan cuma punya data hari ini.

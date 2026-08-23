@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -20,39 +20,8 @@ export type MarketView = {
   updatedAt: number; // epoch ms saat diambil
 };
 
-/**
- * State loader pasar (fetch + error) yang dipakai bersama Emas & Crypto.
- * `loader` = loadGold / loadBtc; `errorText` = pesan bila gagal mengambil.
- */
-export function useMarket<T>(
-  loader: (force?: boolean) => Promise<T>,
-  errorText: string,
-) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const reload = useCallback(
-    async (force = false) => {
-      setLoading(true);
-      setError(null);
-      try {
-        setData(await loader(force));
-      } catch {
-        setError(errorText);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [loader, errorText],
-  );
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
-
-  return { data, loading, error, reload, setError };
-}
+// Pengambilan datanya (fetch + loading + error) ditangani hook bersama
+// `useAsyncData` — dipakai Emas, Crypto, Saham, Forex, dan tab News.
 
 type Props = {
   heroTitle: string;

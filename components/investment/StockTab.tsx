@@ -1,4 +1,5 @@
-import { MarketTab, useMarket } from '@/components/investment/MarketTab';
+import { MarketTab } from '@/components/investment/MarketTab';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { groupDigits } from '@/lib/format';
 import { loadIhsg } from '@/lib/market';
 
@@ -12,7 +13,7 @@ const points = (n: number) => groupDigits(String(Math.round(n)));
 // Tab Saham 📊 — IHSG (Indeks Harga Saham Gabungan) LIVE dari Yahoo Finance
 // (^JKSE): poin sekarang, grafik tren harian ~6 bulan, & statistik.
 export function StockTab() {
-  const { data, loading, error, reload } = useMarket(loadIhsg, IHSG_ERROR);
+  const { data, loading, error, reload } = useAsyncData(loadIhsg, IHSG_ERROR);
 
   return (
     <MarketTab

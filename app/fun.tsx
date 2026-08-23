@@ -24,6 +24,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatShortDayDate, groupDigits, parseAmount } from '@/lib/format';
 import {
   EMPTY_FUN,
@@ -68,8 +69,14 @@ export default function FunScreen() {
 
   // Hook bersama: ganti kategori + scroll ke atas tiap tab ditekan.
   const { tab: category, scrollKey, onTabPress } = useTabScroll<FunCategory>('summit');
-  const [data, setData] = useState<FunData>(EMPTY_FUN);
-  const [loading, setLoading] = useState(true);
+  // Arsipnya dikunci ke pemiliknya: ganti akun → kosong lagi (loading), tak ada
+  // sekejap pun data pemilik lama yang ikut terlihat.
+  const { data: loaded, set: setData } = useKeyedData<
+    string | undefined,
+    FunData
+  >(user?.uid);
+  const data = loaded ?? EMPTY_FUN;
+  const loading = loaded === null;
   const [error, setError] = useState<string | null>(null);
 
   // Form tambah/edit — editingId null = mode tambah.
@@ -99,21 +106,19 @@ export default function FunScreen() {
 
   useEffect(() => {
     if (!user) return;
-    setLoading(true);
-    const unsubscribe = subscribeFun(
+    return subscribeFun(
       user.uid,
       (next) => {
         setData(next);
         setError(null);
-        setLoading(false);
       },
       () => {
+        // Gagal memuat → berhenti loading dengan arsip kosong + pesan galat.
+        setData(EMPTY_FUN);
         setError(LOAD_ERROR);
-        setLoading(false);
       },
     );
-    return unsubscribe;
-  }, [user]);
+  }, [user, setData]);
 
   const meta = funCategoryMeta(category);
 

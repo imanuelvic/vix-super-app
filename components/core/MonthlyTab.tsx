@@ -198,7 +198,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             style={styles.cardMain}
             onPress={() => setOpenId(expanded ? null : m.id)}>
             <VixText heading="bold" additionalStyle={styles.cardTitle}>
-              🗒️ {m.title}
+              {m.title}
             </VixText>
             {/* Bentuk tanggal+jam ini dipakai bersama kartu jadwal visitasi —
                 lihat formatCompactDateTime di lib/format. */}

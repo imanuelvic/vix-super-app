@@ -24,6 +24,7 @@ import {
   type BudgetMap,
   type SubcategoryMap,
 } from '@/lib/budgets';
+import { useKeyedData } from '@/hooks/useKeyedData';
 import { useNow } from '@/hooks/useNow';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { MONTH_NAMES } from '@/lib/format';
@@ -57,8 +58,14 @@ export default function FinanceScreen() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth()); // 0–11
 
-  const [items, setItems] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Transaksi dikunci ke bulan yang dilihat: begitu bulannya digeser, daftarnya
+  // kosong lagi (loading) di render yang sama — tak ada sekejap pun angka bulan
+  // lama muncul di bawah judul bulan baru.
+  const { data: loaded, set: setItems } = useKeyedData<string, Transaction[]>(
+    `${year}-${month}`,
+  );
+  const items = loaded ?? [];
+  const loading = loaded === null;
   const [error, setError] = useState<string | null>(null);
 
   // Budget bulan ini — satu langganan dipakai bersama sub-menu Transaksi
@@ -86,25 +93,23 @@ export default function FinanceScreen() {
 
   useEffect(() => {
     if (!user || !unlocked) return;
-    setLoading(true);
     // Real-time, hanya untuk bulan yang dipilih.
     // Urutan dari Firestore: date DESC — tanggal terkini selalu paling atas.
-    const unsubscribe = subscribeTransactionsByMonth(
+    return subscribeTransactionsByMonth(
       user.uid,
       year,
       month,
       (next) => {
         setItems(next);
         setError(null);
-        setLoading(false);
       },
       () => {
+        // Gagal memuat → berhenti loading dengan daftar kosong + pesan galat.
+        setItems([]);
         setError(LOAD_ERROR);
-        setLoading(false);
       },
     );
-    return unsubscribe;
-  }, [user, year, month, unlocked]);
+  }, [user, year, month, unlocked, setItems]);
 
   // Langganan budget bulan ini (1 dokumen kecil). Error diabaikan diam-diam —
   // pewarnaan budget hanya pelengkap, tak boleh mengganggu daftar transaksi.

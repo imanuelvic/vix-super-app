@@ -101,7 +101,7 @@ function buildHtml(
   return pdfShellHtml({
     eyebrow: `Meeting ${meta.label}`,
     title: meetingLeaderNames(v, leaders, { fallback: 'CORE' }),
-    subtitle: v.thanksgiving && v.kind !== 'thanksgiving' ? '🎉 Sekalian Thanksgiving' : undefined,
+    subtitle: v.thanksgiving && v.kind !== 'thanksgiving' ? '🎉 Thanksgiving' : undefined,
     chips: [
       { label: 'Jenis acara', value: `${meta.icon} ${meta.label}` },
       { label: 'Tanggal', value: formatFullDate(d) },

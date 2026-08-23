@@ -1,5 +1,7 @@
+import { useState } from 'react';
 
-import { MarketTab, useMarket } from '@/components/investment/MarketTab';
+import { MarketTab } from '@/components/investment/MarketTab';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { groupDigits } from '@/lib/format';
 import { openExternalUrl } from '@/lib/linking';
 import { loadGold } from '@/lib/market';
@@ -12,14 +14,16 @@ const GOLD_ERROR =
 // Tab Emas 🏅 — harga emas 1 gr LIVE dari Yahoo Finance (COMEX GC=F × kurs
 // USD→IDR ÷ 31,1035): angka utama, grafik tren harian ~6 bulan, & statistik.
 export function GoldTab() {
-  const { data, loading, error, reload, setError } = useMarket(
-    loadGold,
-    GOLD_ERROR,
-  );
+  const { data, loading, error, reload } = useAsyncData(loadGold, GOLD_ERROR);
+
+  // Gagal membuka tautan Logam Mulia bukan urusan pengambilan harga, jadi
+  // pesannya disimpan sendiri — tapi tampil di tempat yang sama, dan ikut
+  // hilang begitu 🔄 ditekan (persis seperti sebelumnya).
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   function openLogamMulia() {
     openExternalUrl(LOGAM_MULIA_URL, {
-      onError: () => setError('Gagal membuka tautan.'),
+      onError: () => setLinkError('Gagal membuka tautan.'),
     });
   }
 
@@ -36,9 +40,12 @@ export function GoldTab() {
       srcText={srcText}
       noteText="⚠️ Ini harga emas internasional (spot/futures). Harga beli Antam biasanya lebih tinggi karena ada premium & pajak."
       loading={loading}
-      error={error}
+      error={linkError ?? error}
       data={data}
-      onReload={() => reload(true)}
+      onReload={() => {
+        setLinkError(null);
+        reload(true);
+      }}
     />
   );
 }

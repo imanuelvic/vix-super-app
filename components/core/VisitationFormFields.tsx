@@ -62,7 +62,7 @@ export function VisitationFormFields({
           onPress={() => form.setThanksgiving(!form.thanksgiving)}>
           <CheckCircle checked={form.thanksgiving} />
           <VixText heading="paragraph" additionalStyle={styles.doneText}>
-            🎉 Sekalian Thanksgiving
+            🎉 Thanksgiving
           </VixText>
         </PressableScale>
       )}

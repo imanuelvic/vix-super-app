@@ -8,6 +8,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { openExternalUrl } from '@/lib/linking';
 import { subscribePrayerNews, type PrayerNews } from '@/lib/prayerNews';
 import {
@@ -15,7 +16,6 @@ import {
   newsAge,
   NEWS_ERROR,
   NEWS_SOURCES,
-  type NewsItem,
   type NewsSource,
 } from '@/lib/world';
 
@@ -25,9 +25,6 @@ import {
 export function NewsTab() {
   const { user } = useAuth();
   const [source, setSource] = useState<NewsSource>('bloomberg');
-  const [items, setItems] = useState<NewsItem[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   // Kliping doa syafaat minggu ini — dibaca saja; yang menyegarkannya Home
   // (sekali seminggu, lihat lib/prayerNews.ts).
   const [prayerNews, setPrayerNews] = useState<PrayerNews | null>(null);
@@ -37,22 +34,15 @@ export function NewsTab() {
     return subscribePrayerNews(user.uid, setPrayerNews);
   }, [user]);
 
-  const load = useCallback(async (key: NewsSource) => {
-    setBusy(true);
-    setError(null);
-    try {
-      setItems(await fetchNews(key));
-    } catch {
-      setItems(null);
-      setError(NEWS_ERROR);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(source);
-  }, [source, load]);
+  // Ganti sumber = permintaan baru (fungsinya ikut berganti). Gagal ambil →
+  // daftarnya ikut dikosongkan, biar "Coba lagi" mulai dari layar bersih.
+  const load = useCallback(() => fetchNews(source), [source]);
+  const {
+    data: items,
+    loading: busy,
+    error,
+    reload,
+  } = useAsyncData(load, NEWS_ERROR, false);
 
   const now = new Date();
   // Gereja dulu, baru negara — urutan yang sama dengan jadwal syafaatnya
@@ -85,7 +75,7 @@ export function NewsTab() {
           <PrimaryButton
             label="Coba lagi"
             icon="arrow.triangle.2.circlepath"
-            onPress={() => load(source)}
+            onPress={() => reload()}
           />
         </View>
       ) : (
@@ -94,7 +84,7 @@ export function NewsTab() {
           refreshControl={
             <RefreshControl
               refreshing={busy}
-              onRefresh={() => load(source)}
+              onRefresh={() => reload()}
               tintColor={Color.WORLD_DARK}
             />
           }>

@@ -1,4 +1,5 @@
-import { MarketTab, useMarket } from '@/components/investment/MarketTab';
+import { MarketTab } from '@/components/investment/MarketTab';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { groupDigits } from '@/lib/format';
 import { loadBtc } from '@/lib/market';
 import { formatRupiah } from '@/lib/transactions';
@@ -10,7 +11,7 @@ const BTC_ERROR =
 // Tab Crypto ₿ — harga Bitcoin LIVE dari Yahoo Finance (BTC-USD × kurs USD→IDR):
 // angka utama dalam Rupiah, grafik tren harian ~6 bulan, & statistik.
 export function CryptoTab() {
-  const { data, loading, error, reload } = useMarket(loadBtc, BTC_ERROR);
+  const { data, loading, error, reload } = useAsyncData(loadBtc, BTC_ERROR);
 
   const srcText = data
     ? `1 BTC = $${groupDigits(String(Math.round(data.usd)))} · Kurs ${formatRupiah(Math.round(data.usdIdr))}/USD`
