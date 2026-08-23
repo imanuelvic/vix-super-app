@@ -256,6 +256,14 @@ export function WeekTab({
                     {s.emoji} {s.day} — {s.label}
                     <VixText heading="label"> · {s.minutes} mnt</VixText>
                   </VixText>
+                  {/* Jendela jam mengerjakannya (Senin/Rabu/Jumat). Langkah
+                      "Ceritakan" tidak punya jam — ia ikut kapan kamu ketemu
+                      orangnya, jadi barisnya memang tidak muncul di situ. */}
+                  {s.time ? (
+                    <VixText heading="label" additionalStyle={styles.stepTime}>
+                      {s.time}
+                    </VixText>
+                  ) : null}
                   <VixText heading="label" additionalStyle={styles.stepHow}>
                     {s.how}
                   </VixText>
@@ -298,7 +306,11 @@ export function WeekTab({
         </View>
 
         {/* Tiga topik diskusi giliran minggu ini — pemantik kalau diskusinya
-            masih mau lanjut. Dicentang setelah benar-benar diobrolkan. */}
+            masih mau lanjut. Dicentang setelah benar-benar diobrolkan.
+            Keterangan kelompoknya sengaja TIDAK ditulis di tiap baris: ketiga
+            topik biasanya sekelompok, jadi kalimatnya cuma terulang tiga kali
+            dan menutupi judul topiknya sendiri. Keterangan itu tetap ada di
+            sub-tab Discussion, satu kali di atas daftarnya. */}
         {topics.map((t) => {
           const meta = topicGroupMeta(t.group);
           const checked = !!topicsDone[t.key];
@@ -312,9 +324,6 @@ export function WeekTab({
               <View style={styles.stepMain}>
                 <VixText heading="bold">
                   {meta.emoji} {t.label}
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.stepHow}>
-                  {meta.hint}
                 </VixText>
               </View>
             </PressableScale>
@@ -452,6 +461,9 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   stepHow: { color: Color.TEXT_LABEL },
+  // Jendela jam belajar — sewarna Learning biar kebaca sebagai aturan jadwal,
+  // bukan sekadar keterangan tambahan.
+  stepTime: { color: Color.LEARNING_DARK },
   stepDue: { color: Color.LEARNING_DARK },
   noteInput: {
     minHeight: 88,
@@ -475,7 +487,10 @@ const styles = StyleSheet.create({
   mainTopicHint: { color: Color.LEARNING_DARK },
   topicCard: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    // Isinya tinggal SATU baris (keterangan kelompoknya dibuang), jadi
+    // lingkaran centangnya disejajarkan ke tengah — 'flex-start' bikin
+    // lingkaran 26 px itu terlihat menggantung di atas judulnya.
+    alignItems: 'center',
     gap: 12,
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

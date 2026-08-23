@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     backgroundColor: Color.DANGER,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,

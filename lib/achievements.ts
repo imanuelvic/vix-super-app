@@ -369,15 +369,9 @@ export const ACHIEVEMENTS: Achievement[] = [
 
 // ============================ Self-Reward 🏆 ============================
 // Hadiah untuk diri sendiri — dananya dari Saku "Self-Reward".
-
-export const REWARDS: { icon: string; label: string; price: number }[] = [
-  { icon: '☕', label: 'Kopi favorit', price: 50_000 },
-  { icon: '🍔', label: 'Makan enak', price: 150_000 },
-  { icon: '🎬', label: 'Nonton + jajan', price: 250_000 },
-  { icon: '👕', label: 'Baju / jersey baru', price: 500_000 },
-  { icon: '👟', label: 'Sepatu incaran', price: 1_500_000 },
-  { icon: '🎮', label: 'Gadget / hobi', price: 3_000_000 },
-];
+//
+// Daftar hadiahnya sendiri sekarang milikmu & tersimpan di Firestore, lihat
+// lib/selfReward.ts. Yang tinggal di sini cuma saldo sakunya.
 
 /** Dengarkan saldo Saku Self-Reward (1 dokumen, bukan seluruh funds). */
 export function subscribeSelfRewardBalance(

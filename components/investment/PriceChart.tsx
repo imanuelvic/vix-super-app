@@ -6,11 +6,20 @@ import { formatShortRupiah } from '@/lib/format';
 import type { MarketPoint } from '@/lib/market';
 
 const GOLD = '#C9A227'; // warna default garis & titik (emas)
-const H = 210;
+// Tinggi total & ruang kosong di tiap sisi. PAD_B sengaja lebar: di bawah garis
+// terendah ada DUA baris tulisan bertumpuk — label harga terendah lalu label
+// bulan. Dulu PAD_B cuma 26 sehingga keduanya saling menimpa di iPhone
+// ("Rp1 M" nabrak "Feb '26"). Tingginya ikut naik sebanyak tambahan PAD_B-nya,
+// jadi bidang gambar garisnya tetap 162 px — bentuk grafiknya tidak berubah,
+// yang bertambah hanya ruang napas di bawah.
+const H = 224;
 const PAD_L = 10;
 const PAD_R = 10;
 const PAD_T = 22;
-const PAD_B = 26;
+const PAD_B = 40;
+// Jarak baseline tiap baris tulisan bawah dari garis terendah / dasar grafik.
+const LOW_LABEL_DY = 13; // label harga terendah, di bawah garis putus-putus
+const AXIS_LABEL_DY = 8; // label bulan, menempel di dasar
 
 // Bulan singkat + 2 digit tahun dari "YYYY-MM-DD" → mis. "Sep '24".
 const M3 = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -80,7 +89,11 @@ export function PriceChart({
         <SvgText x={PAD_L} y={y(max) - 5} fontSize={10} fill={Color.TEXT_LABEL}>
           {format(max)}
         </SvgText>
-        <SvgText x={PAD_L} y={y(min) + 13} fontSize={10} fill={Color.TEXT_LABEL}>
+        <SvgText
+          x={PAD_L}
+          y={y(min) + LOW_LABEL_DY}
+          fontSize={10}
+          fill={Color.TEXT_LABEL}>
           {format(min)}
         </SvgText>
         {/* Label harga terakhir (dekat titik terakhir) */}
@@ -93,13 +106,18 @@ export function PriceChart({
           textAnchor="end">
           {format(last.price)}
         </SvgText>
-        {/* Label bulan pertama & terakhir (sumbu X) */}
-        <SvgText x={PAD_L} y={H - 8} fontSize={10} fill={Color.TEXT_LABEL}>
+        {/* Label bulan pertama & terakhir (sumbu X) — satu baris penuh di bawah
+            label harga terendah, tidak lagi berdesakan dengannya. */}
+        <SvgText
+          x={PAD_L}
+          y={H - AXIS_LABEL_DY}
+          fontSize={10}
+          fill={Color.TEXT_LABEL}>
           {shortMonth(series[0].date)}
         </SvgText>
         <SvgText
           x={width - PAD_R}
-          y={H - 8}
+          y={H - AXIS_LABEL_DY}
           fontSize={10}
           fill={Color.TEXT_LABEL}
           textAnchor="end">

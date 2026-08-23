@@ -1,4 +1,4 @@
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop } from "expo-router/react-navigation";
 import { useCallback, useRef, type RefObject } from 'react';
 import { type ScrollView } from 'react-native';
 

@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN_DARK,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,

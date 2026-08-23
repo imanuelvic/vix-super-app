@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   circleLocked: { borderColor: Color.TEXT_PLACEHOLDER },
   circleSkipped: { borderColor: Color.DANGER },
   mark: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

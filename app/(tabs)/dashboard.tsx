@@ -120,11 +120,15 @@ import {
 import {
   dueStep,
   EMPTY_WEEK,
+  pendingTopicsOfWeek,
   skillOf,
   skillOfWeek,
   subscribeLearningWeek,
+  subscribeTopicsDone,
+  topicGroupMeta,
   weekDocId,
   type LearningWeek,
+  type TopicsDone,
 } from '@/lib/learning';
 import { useNow } from '@/hooks/useNow';
 import {
@@ -225,6 +229,8 @@ export default function DashboardScreen() {
   // Periode puasa 🍽️ — untuk kartu "sedang berpuasa" + pokok doa hari ini.
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
   const [learningWeek, setLearningWeek] = useState<LearningWeek>(EMPTY_WEEK);
+  // Topik diskusi yang sudah diobrolkan — untuk kartu "Yuk diskusi minggu ini".
+  const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk reminder yang
   // bergantung waktu. Lihat hooks/useNow.ts.
@@ -239,6 +245,7 @@ export default function DashboardScreen() {
     const wheelQid = quarterDocId(nowQ.year, nowQ.q);
     const unsubs = [
       subscribeLearningWeek(user.uid, weekId, setLearningWeek),
+      subscribeTopicsDone(user.uid, setTopicsDone),
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
       subscribeFitDay(user.uid, todayId, setFitDay),
@@ -278,6 +285,10 @@ export default function DashboardScreen() {
     (learningWeek.skillKey ? skillOf(learningWeek.skillKey) : null) ??
     skillOfWeek(now);
   const learningDue = dueStep(learningWeek.steps, now);
+  // Topik diskusi giliran minggu ini yang belum diobrolkan. Tidak dipatok hari
+  // — ngobrol terjadi saat kebetulan ketemu orangnya, jadi tagihannya berlaku
+  // sepanjang minggu lalu berganti sendiri tiap Senin.
+  const learningTopics = pendingTopicsOfWeek(topicsDone, now);
 
   // Task hari ini — HANYA yang belum selesai.
   const catIcon = (key: string) =>
@@ -1162,6 +1173,25 @@ export default function DashboardScreen() {
                 {learningSkill.title}
               </VixText>
             </ReminderCard>
+          )}
+
+          {/* Reminder diskusi 💬 — topik giliran minggu ini yang belum
+              diobrolkan. Sengaja kartu SENDIRI, bukan digabung ke kartu
+              Learning di atas: yang satu soal belajarnya (ada hari & jamnya),
+              yang ini soal ketemu orang — dan itu yang paling gampang lupa
+              kalau tidak pernah ditagih. Hilang sendiri begitu ketiganya
+              dicentang, dan berganti topik tiap Senin. */}
+          {learningTopics.length > 0 && (
+            <ReminderCard
+              bg={Color.LEARNING}
+              fg={Color.LEARNING_DARK}
+              title="💬 Yuk diskusi minggu ini dengan teman"
+              texts={learningTopics.map((t) => ({
+                id: t.key,
+                text: `${topicGroupMeta(t.group).emoji} ${t.label}`,
+              }))}
+              onPress={() => router.push('/learning')}
+            />
           )}
 
           {/* Reminder Residence 🏠 — perawatan/kebersihan rumah yang perlu

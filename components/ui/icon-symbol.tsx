@@ -1,11 +1,11 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
+import { SymbolWeight, type SFSymbol } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
+type IconMapping = Record<SFSymbol, ComponentProps<typeof MaterialIcons>['name']>;
 type IconSymbolName = keyof typeof MAPPING;
 
 /**
@@ -90,6 +90,19 @@ const MAPPING = {
   // Tombol kendali Tetris: putar balok & jatuhkan langsung ke dasar.
   'arrow.clockwise': 'rotate-right',
   'arrow.down.to.line': 'vertical-align-bottom',
+  // Tile Married 💍 di Home — berlian cincin (Material Icons tidak punya ikon
+  // cincin; "diamond" yang paling mendekati).
+  'diamond.fill': 'diamond',
+  // Sub-tab Affiliate 🤝 di Career — toa/pengeras suara (content creator).
+  'megaphone.fill': 'campaign',
+  // Sub-tab Notes 📝 di Fitness — kumpulan tautan & catatan latihan.
+  'note.text': 'sticky-note-2',
+  // Sub-tab Token ⚡ di Residence — listrik prabayar.
+  'bolt.circle.fill': 'offline-bolt',
+  // Fitur Social 🥂 — tile Home + kedua sub-tabnya (Split Bill & Places).
+  'wineglass.fill': 'local-bar',
+  'receipt.fill': 'receipt-long',
+  'cup.and.saucer.fill': 'local-cafe',
 } as IconMapping;
 
 /**

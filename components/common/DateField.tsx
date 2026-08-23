@@ -1,19 +1,14 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
-import {
-  closePickers,
-  nextPickerId,
-  openPicker,
-  subscribePicker,
-} from '@/components/common/pickerBus';
+import { closePickers } from '@/components/common/pickerBus';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { usePickerSlot } from '@/hooks/usePickerSlot';
 import { formatFullDate, mergeDate } from '@/lib/format';
 
 // Field tanggal: tekan untuk buka date picker. Jam-menit asli dipertahankan
@@ -28,36 +23,16 @@ export function DateField({
   value: Date;
   onChange: (date: Date) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const idRef = useRef<number | null>(null);
-  if (idRef.current === null) idRef.current = nextPickerId();
-  const myId = idRef.current;
-
-  // Tutup diri kalau ada picker LAIN yang dibuka (atau semua ditutup).
-  useEffect(
-    () => subscribePicker((openId) => setOpen(openId === myId)),
-    [myId],
-  );
-
-  function toggle() {
-    if (open) {
-      setOpen(false);
-      closePickers();
-    } else {
-      // Tutup keyboard teks dulu supaya spinner tidak menumpuk dengan keyboard.
-      Keyboard.dismiss();
-      // openPicker akan menutup picker lain lewat subscriber, lalu buka ini.
-      setOpen(true);
-      openPicker(myId);
-    }
-  }
+  // Id, "tutup diri kalau picker lain dibuka", & sakelar buka/tutup diurus
+  // hooks/usePickerSlot — blok yang sama persis dulu disalin di <TimeField>.
+  const { open, toggle } = usePickerSlot();
 
   function handlePick(event: DateTimePickerEvent, selected?: Date) {
     // Android: dialog menutup sendiri; iOS: spinner tetap tampil.
-    if (Platform.OS === 'android') {
-      setOpen(false);
-      closePickers();
-    }
+    // closePickers() sekalian menutup yang ini — subscriber-nya (di
+    // usePickerSlot) menerima null lalu mematikan `open`. Jadi setOpen(false)
+    // yang dulu ditulis di sini memang sudah tidak diperlukan.
+    if (Platform.OS === 'android') closePickers();
     if (event.type !== 'dismissed' && selected) {
       onChange(mergeDate(value, selected));
     }

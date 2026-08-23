@@ -222,9 +222,13 @@ export const PART_GROUPS: PartGroup[] = [
 /** Tanggal terakhir tiap part dicek/diganti: users/{uid}/car/parts. */
 // `note` = catatan pribadi (mis. bengkel mana, merek oli, harga). Sengaja
 // TIDAK ditampilkan di daftar — hanya muncul lagi saat modal part ini dibuka.
+// `last` = kapan terakhir diganti/dicek. `dueNow` = ditandai HARUS diservis
+// sekarang tanpa tahu tanggal terakhirnya — mobil bekas, warisan, atau memang
+// lupa. Selama dueNow menyala, part itu dianggap lewat jadwal apa pun isi
+// `last`-nya, dan padam sendiri begitu tanggal betulan dicatat.
 export type PartStatusMap = Record<
   string,
-  { last: Timestamp; note?: string }
+  { last?: Timestamp; note?: string; dueNow?: boolean }
 >;
 
 export function subscribePartStatus(
@@ -250,11 +254,27 @@ export function setPartDate(
 ) {
   const ref = doc(db, 'users', uid, 'car', 'parts');
   // merge: hanya part ini yang berubah, status part lain tetap.
+  // dueNow dipadamkan: sekarang sudah ada tanggal betulan, jadi tenggatnya
+  // kembali dihitung dari situ.
   return setDoc(
     ref,
-    { status: { [partKey]: { last: Timestamp.fromDate(date), note } } },
+    {
+      status: {
+        [partKey]: { last: Timestamp.fromDate(date), note, dueNow: false },
+      },
+    },
     { merge: true },
   );
+}
+
+/**
+ * Tandai part HARUS diservis sekarang tanpa tanggal terakhir. Dipakai saat kamu
+ * tahu sesuatu sudah waktunya diganti tapi tidak tahu kapan terakhir dikerjakan
+ * — memaksa mengarang tanggal cuma bikin jadwal berikutnya ikut salah.
+ */
+export function setPartDueNow(uid: string, partKey: string, dueNow: boolean) {
+  const ref = doc(db, 'users', uid, 'car', 'parts');
+  return setDoc(ref, { status: { [partKey]: { dueNow } } }, { merge: true });
 }
 
 /**
@@ -269,7 +289,12 @@ export function partCondition(
   last: Timestamp | undefined,
   intervalMonths: number,
   now: Date,
+  /** Ditandai manual "harus servis sekarang" — menang atas hitungan tanggal. */
+  dueNow = false,
 ): { tone: PartTone; dueDate: Date | null } {
+  // Tanda manual menang: tanggalnya memang tidak diketahui, jadi tidak ada yang
+  // bisa dihitung — tenggatnya hari ini.
+  if (dueNow) return { tone: 'over', dueDate: now };
   if (!last) return { tone: 'unknown', dueDate: null };
   const due = last.toDate();
   due.setMonth(due.getMonth() + intervalMonths);
@@ -303,6 +328,7 @@ export function carAttentionList(
       status[p.key]?.last,
       p.intervalMonths,
       now,
+      status[p.key]?.dueNow,
     );
     if ((tone === 'warn' || tone === 'over') && dueDate) {
       out.push({ key: p.key, label: p.label, tone, dueDate });

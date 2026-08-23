@@ -230,7 +230,15 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
         </View>
 
         {expanded && (
-          <View style={styles.cardBody}>
+          // Isi notulennya sendiri jadi sakelar TUTUP. Notulen yang panjang
+          // membuat judulnya (sakelar buka/tutup) tergulung jauh ke atas —
+          // tanpa ini harus scroll balik ke atas dulu cuma untuk menutupnya.
+          // Mengecilnya dibuat samar (0.99): yang ditekan sebidang kartu, bukan
+          // tombol kecil.
+          <PressableScale
+            style={styles.cardBody}
+            scaleTo={0.99}
+            onPress={() => setOpenId(null)}>
             {/* Dokumentasi rapat — bukti fotonya, sama yang ikut ke PDF */}
             {m.photos.map((photo, i) => (
               <Image
@@ -255,7 +263,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
                 </View>
               );
             })}
-          </View>
+          </PressableScale>
         )}
       </View>
     );

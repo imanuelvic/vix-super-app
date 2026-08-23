@@ -5,6 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
+import { EmojiButton } from '@/components/common/EmojiButton';
+import { FormError } from '@/components/common/FormError';
+import { FormInput } from '@/components/common/FormInput';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -16,7 +22,6 @@ import { useAuth } from '@/contexts/auth';
 import {
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORIES,
-  REWARDS,
   resetAchievements,
   subscribeLoginStreak,
   subscribeSelfRewardBalance,
@@ -24,8 +29,8 @@ import {
   type AchievementStats,
   type LoginStreak,
 } from '@/lib/achievements';
-import { subscribeFitStreak } from '@/lib/fitness';
-import { formatShortRupiah } from '@/lib/format';
+import { settleFitDays, subscribeFitStreak } from '@/lib/fitness';
+import { formatShortRupiah, groupDigits, parseAmount } from '@/lib/format';
 import {
   activeStreak,
   dayDocId,
@@ -44,7 +49,16 @@ import {
   type WeekStatsMap,
 } from '@/lib/health';
 import { subscribeLearningStreak, type WeekStreak } from '@/lib/learning';
-import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import {
+  claimSelfReward,
+  newRewardId,
+  saveSelfRewards,
+  subscribeClaimedRewards,
+  subscribeSelfRewards,
+  type ClaimedReward,
+  type SelfReward,
+} from '@/lib/selfReward';
 import { EMPTY_DAY_STREAK as EMPTY_WEEK_STREAK } from '@/lib/streak';
 import {
   EMPTY_BIBLE_STREAKS,
@@ -74,12 +88,103 @@ export default function AchievementsScreen() {
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // Daftar hadiah incaran + riwayat klaimnya (dua dokumen array kecil).
+  const [rewards, setRewards] = useState<SelfReward[]>([]);
+  const [claimed, setClaimed] = useState<ClaimedReward[]>([]);
+
   // Kategori yang sedang dibuka di modal (null = tertutup).
   const [openCat, setOpenCat] = useState<AchievementCategoryKey | null>(null);
+
+  // Sheet tambah/ubah hadiah + isiannya.
+  const [editing, setEditing] = useState<SelfReward | 'new' | null>(null);
+  const [fIcon, setFIcon] = useState('');
+  const [fLabel, setFLabel] = useState('');
+  const [fPrice, setFPrice] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // Hadiah yang sedang menunggu validasi klaim (null = tidak ada).
+  const [claiming, setClaiming] = useState<SelfReward | null>(null);
 
   // Konfirmasi reset semua pencapaian (permanen).
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+
+  function openAddReward() {
+    setEditing('new');
+    setFIcon('');
+    setFLabel('');
+    setFPrice('');
+    setFormError(null);
+  }
+
+  function openEditReward(r: SelfReward) {
+    setEditing(r);
+    setFIcon(r.icon);
+    setFLabel(r.label);
+    setFPrice(r.price > 0 ? groupDigits(String(r.price)) : '');
+    setFormError(null);
+  }
+
+  async function handleSaveReward() {
+    if (!user || !editing || busy) return;
+    if (!fLabel.trim()) {
+      setFormError('Nama hadiahnya diisi dulu ya.');
+      return;
+    }
+    const price = parseAmount(fPrice);
+    if (price <= 0) {
+      setFormError('Harganya diisi dulu — itu yang jadi patokan bisa diklaim.');
+      return;
+    }
+    setBusy(true);
+    setFormError(null);
+    const data = { icon: fIcon.trim(), label: fLabel.trim(), price };
+    try {
+      await saveSelfRewards(
+        user.uid,
+        editing === 'new'
+          ? [...rewards, { id: newRewardId(), ...data }]
+          : rewards.map((r) => (r.id === editing.id ? { ...r, ...data } : r)),
+      );
+      setEditing(null);
+    } catch {
+      setFormError(SAVE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Hapus hadiah dari daftar incaran — permanen. Riwayat klaim tidak ikut. */
+  async function handleDeleteReward() {
+    if (!user || !editing || editing === 'new' || busy) return;
+    setBusy(true);
+    try {
+      await saveSelfRewards(
+        user.uid,
+        rewards.filter((r) => r.id !== editing.id),
+      );
+      setEditing(null);
+    } catch {
+      setError(DELETE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Klaim: saldo Saku berkurang & satu baris masuk ke Archive 🗄️. */
+  async function handleClaim() {
+    if (!user || !claiming || busy) return;
+    setBusy(true);
+    try {
+      await claimSelfReward(user.uid, claimed, claiming);
+      setClaiming(null);
+    } catch {
+      setError(SAVE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleReset() {
     if (!user || resetting) return;
@@ -109,8 +214,22 @@ export default function AchievementsScreen() {
       subscribeWeekStats(user.uid, setWeeks, fail),
       subscribeLearningStreak(user.uid, setLearning, fail),
       subscribeSelfRewardBalance(user.uid, setBalance, fail),
+      subscribeSelfRewards(user.uid, setRewards, fail),
+      subscribeClaimedRewards(user.uid, setClaimed, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
+  }, [user]);
+
+  // Tutup buku sesi gym yang harinya sudah habis 🔥 — sama seperti yang
+  // dijalankan layar Fitness. Diulang di sini karena halaman INI yang
+  // menampilkan angkanya: kalau Achievement dibuka lebih dulu, sesi kemarin
+  // harus sudah ikut terhitung, bukan menunggu Fitness dibuka.
+  //
+  // Murah: kalau tidak ada hari yang perlu ditutup, cuma 1 baca dokumen kecil
+  // lalu berhenti. Aman diulang — `lastDayId` yang menjaga tidak dobel hitung.
+  useEffect(() => {
+    if (!user) return;
+    settleFitDays(user.uid, new Date()).catch(() => {});
   }, [user]);
 
   const stepAch = stepAchievements(stepDays);
@@ -158,20 +277,31 @@ export default function AchievementsScreen() {
         backLabel="Home"
         title="Achievement 🏆"
         subtitle="Streak, pencapaian & self-reward"
+        // Pintasan ke riwayat klaim, sama pola dengan tombol 🕘 di CORE.
+        right={
+          <EmojiButton
+            emoji="🗄️"
+            onPress={() => router.push('/reward-archive')}
+          />
+        }
       />
 
       <ScreenError message={error} />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Hero: ringkasan streak */}
+        {/* Hero: ringkasan streak. Pialanya di KIRI (dulu di atas, di tengah) —
+            sebaris dengan angkanya, kartunya jadi jauh lebih pendek tanpa
+            kehilangan apa pun. */}
         <View style={styles.heroCard}>
           <VixText additionalStyle={styles.heroEmoji}>🏆</VixText>
-          <VixText heading="subheader" additionalStyle={styles.heroValue}>
-            {unlocked}{' '}
-            <VixText heading="label" additionalStyle={styles.heroLabel}>
-              dari {ACHIEVEMENTS.length} achievement
+          <View style={styles.heroMain}>
+            <VixText heading="subheader" additionalStyle={styles.heroValue}>
+              {unlocked}{' '}
+              <VixText heading="label" additionalStyle={styles.heroLabel}>
+                dari {ACHIEVEMENTS.length} achievement
+              </VixText>
             </VixText>
-          </VixText>
+          </View>
         </View>
 
         {/* ===== Kategori pencapaian (tekan → modal) ===== */}
@@ -232,29 +362,54 @@ export default function AchievementsScreen() {
           </VixText>
         </View>
 
-        {REWARDS.map((r) => {
+        {rewards.length === 0 && (
+          <VixText heading="label" additionalStyle={styles.empty}>
+            Belum ada hadiah. Tulis sendiri apa saja yang ingin kamu klaim
+            kalau sakunya sudah cukup 🎁
+          </VixText>
+        )}
+
+        {/* Tombol Klaim & area ubah sengaja jadi SAUDARA, bukan bersarang:
+            Pressable di dalam Pressable tidak andal di iOS. */}
+        {rewards.map((r) => {
           const affordable = balance >= r.price;
           return (
             <View
-              key={r.label}
+              key={r.id}
               style={[styles.row, !affordable && styles.rowLocked]}>
-              <VixText additionalStyle={styles.rowIcon}>{r.icon}</VixText>
-              <View style={styles.rowMain}>
+              <VixText additionalStyle={styles.rowIcon}>{r.icon || '🎁'}</VixText>
+              <PressableScale
+                style={styles.rowMain}
+                onPress={() => openEditReward(r)}>
                 <VixText heading="bold" additionalStyle={styles.rowTitle}>
                   {r.label}
                 </VixText>
                 <VixText heading="label">{formatRupiah(r.price)}</VixText>
-              </View>
-              <VixText
-                heading="bold"
-                additionalStyle={affordable ? styles.doneText : styles.lockText}>
-                {affordable
-                  ? '✅ Bisa diklaim!'
-                  : `kurang ${formatShortRupiah(r.price - balance)}`}
-              </VixText>
+              </PressableScale>
+              {affordable ? (
+                <PressableScale
+                  style={styles.claimButton}
+                  onPress={() => setClaiming(r)}
+                  disabled={busy}>
+                  <VixText heading="bold" additionalStyle={styles.claimText}>
+                    ✅ Klaim
+                  </VixText>
+                </PressableScale>
+              ) : (
+                <VixText heading="bold" additionalStyle={styles.lockText}>
+                  kurang {formatShortRupiah(r.price - balance)}
+                </VixText>
+              )}
             </View>
           );
         })}
+
+        <PrimaryButton
+          label="Tambah Self-Reward"
+          icon="plus"
+          onPress={openAddReward}
+          additionalStyle={styles.manageButton}
+        />
 
         <PrimaryButton
           label="Kelola Saku Self-Reward 🏆"
@@ -326,6 +481,78 @@ export default function AchievementsScreen() {
         </ScrollView>
       </SheetModal>
 
+      {/* Sheet tambah / ubah hadiah incaran */}
+      <SheetModal
+        visible={!!editing}
+        title={editing === 'new' ? 'Tambah Self-Reward' : 'Ubah Self-Reward'}
+        subtitle="Hadiahnya bebas — yang penting kamu sendiri yang mau"
+        onClose={() => setEditing(null)}>
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🎁 Emoji (opsional)
+        </VixText>
+        <FormInput
+          style={styles.formGap}
+          placeholder="mis. ☕"
+          value={fIcon}
+          onChangeText={setFIcon}
+          maxLength={4}
+          editable={!busy}
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🏷️ Nama hadiah
+        </VixText>
+        <FormInput
+          style={styles.formGap}
+          placeholder="mis. Kopi favorit"
+          value={fLabel}
+          onChangeText={setFLabel}
+          editable={!busy}
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          💰 Harga — batas saldo sebelum bisa diklaim
+        </VixText>
+        <MoneyInput
+          style={styles.formGap}
+          placeholder="Nominal"
+          value={fPrice}
+          onChangeText={(t) => setFPrice(groupDigits(t))}
+          editable={!busy}
+        />
+
+        <FormError message={formError} />
+        <EditDelete
+          editing={editing}
+          label="Hapus hadiah ini"
+          busy={busy}
+          onDelete={handleDeleteReward}
+        />
+        <DualButtons
+          confirmLabel="Simpan"
+          busy={busy}
+          onCancel={() => setEditing(null)}
+          onConfirm={handleSaveReward}
+        />
+      </SheetModal>
+
+      {/* Validasi klaim — uangnya benar-benar berkurang, jadi wajib ditanya
+          dulu. Sesudah ini hadiahnya TETAP ada di daftar (boleh diklaim lagi
+          kapan-kapan); yang bertambah adalah satu baris di Archive 🗄️. */}
+      <ConfirmDialog
+        visible={claiming !== null}
+        title={`Klaim ${claiming?.icon ?? ''} ${claiming?.label ?? ''}?`.trim()}
+        detail={
+          claiming
+            ? `Kamu menyatakan self-reward ini SUDAH benar-benar kamu ambil.\n\n💸 Saku Self-Reward berkurang ${formatRupiah(claiming.price)} → sisa ${formatRupiah(balance - claiming.price)}.\n🗄️ Satu baris masuk ke Archive lengkap dengan tanggal hari ini.\n\nJangan dicatat lagi sebagai mutasi keluar di Saku yang sama — nanti terpotong dua kali.`
+            : ''
+        }
+        confirmLabel="Ya, Sudah Kuklaim"
+        busy={busy}
+        onCancel={() => setClaiming(null)}
+        onConfirm={handleClaim}
+      />
+
       <ConfirmDialog
         visible={confirmReset}
         title="Reset semua achievement?"
@@ -342,17 +569,20 @@ export default function AchievementsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  // Piala di KIRI, angkanya di sebelahnya — kartunya jadi satu baris pendek.
   heroCard: {
+    flexDirection: 'row',
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
-    gap: 4,
+    gap: 14,
     marginBottom: 6,
   },
-  heroEmoji: { fontSize: 44, lineHeight: 54 },
+  heroEmoji: { fontSize: 40, lineHeight: 50 },
+  heroMain: { flex: 1 },
   heroValue: { color: Color.TEXT_REVERSE },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
+  heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   sectionTitle: { marginTop: 14, marginBottom: 10 },
   // Kartu kategori di halaman utama (tekan → modal).
   catCard: {
@@ -418,7 +648,19 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { color: Color.ACCENT_DARK },
   balanceValue: { color: Color.ACCENT_DARK },
+  empty: { textAlign: 'center', marginVertical: 10 },
+  // Tombol Klaim — hijau penuh, dibedakan tegas dari baris yang belum cukup
+  // saldonya (yang cuma menampilkan tulisan "kurang …").
+  claimButton: {
+    backgroundColor: Color.MAIN,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  claimText: { color: Color.TEXT_REVERSE },
   manageButton: { marginTop: 6, marginBottom: 4 },
   resetLink: { color: Color.DANGER, textAlign: 'center', paddingVertical: 12 },
   modalList: { maxHeight: 460 },
+  fieldLabel: { marginBottom: 6 },
+  formGap: { marginBottom: 10 },
 });

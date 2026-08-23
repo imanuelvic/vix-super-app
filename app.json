@@ -3,12 +3,11 @@
     "name": "vix",
     "slug": "vix-super-app",
     "owner": "imanuelvic",
-    "version": "1.2.1",
+    "version": "1.3.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "vixsuperapp",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.imanuelvic.vixsuperapp",
@@ -23,7 +22,6 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -48,7 +46,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "vix mengakses galeri untuk memilih foto anggota keluarga di Family Tree."
+          "photosPermission": "vix mengakses galeri untuk memilih foto anggota keluarga di Family Tree, dokumentasi rapat CORE, dan foto nota di Split Bill.",
+          "cameraPermission": "vix memakai kamera untuk memotret nota, lalu isinya dibaca langsung di HP-mu untuk dibagi di Split Bill."
         }
       ],
       [
@@ -58,7 +57,10 @@
           "NSHealthUpdateUsageDescription": false,
           "background": false
         }
-      ]
+      ],
+      "expo-font",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

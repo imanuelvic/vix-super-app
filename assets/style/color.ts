@@ -86,6 +86,17 @@ export const Color = {
   TOURNAMENT: '#FFD24C',
   TOURNAMENT_DARK: '#7A5300',
 
+  // Social 🥂 — persik hangat. Suasana kumpul-kumpul, dan cukup jauh dari
+  // ACCENT (krem tile Car) maupun FITNESS (oranye) supaya tidak tertukar.
+  SOCIAL: '#FFD9C0',
+  SOCIAL_DARK: '#A8501E',
+
+  // Married 💍 — mawar lembut. Sengaja beda dari WHEEL (merah muda) & dari
+  // FINANCE_EXPENSE (merah muda pucat milik tile Health) supaya tiga tile
+  // "kemerahan" ini tidak tertukar sekilas pandang.
+  MARRIED: '#F6C9D4',
+  MARRIED_DARK: '#8E3B57',
+
   // Merek luar (tombol chat WhatsApp di fitur CORE, pintasan IG di Habits)
   WHATSAPP: '#25D366',
   INSTAGRAM: '#E1306C',

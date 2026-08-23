@@ -371,10 +371,17 @@ export const TOPICS: Topic[] = [
 //            kuat mengingat kalau diulang berjarak (spaced repetition).
 //   Jumat  — menutup minggu kerja dengan merangkum.
 //   Minggu — Sabtu sudah penuh (gereja), jadi "ceritakan" ditaruh Minggu.
-// Waktu terbaik mengerjakannya: JAM MAKAN SIANG. Paginya sudah 20 kebiasaan,
-// malamnya sudah ada Phone Away 21.30 + tidur 22.00 — dua-duanya jangan diganggu.
+//
+// JAM BELAJARNYA (Senin, Rabu, Jumat): pagi 08.00–09.00 atau malam 20.00–22.00
+// — pilih salah satu, tidak dua-duanya. Dua jendela ini yang memang lowong:
+// paginya kebiasaan sudah beres, malamnya masih sebelum Phone Away 21.30 &
+// tidur 22.00. Langkah "Ceritakan" tidak dipatok jam: ia menempel pada kapan
+// kamu bertemu orangnya.
 
 export type LearningStep = 'discover' | 'dig' | 'summarize' | 'share';
+
+/** Jendela belajar Senin/Rabu/Jumat — ditulis sekali, dipakai ketiganya. */
+export const LEARNING_TIME_LABEL = '🕗 08.00–09.00 pagi atau 20.00–22.00 malam';
 
 export const LEARNING_STEPS: {
   key: LearningStep;
@@ -385,6 +392,8 @@ export const LEARNING_STEPS: {
   label: string;
   minutes: number;
   how: string;
+  /** Jendela jam mengerjakannya. Kosong = tidak dipatok jam. */
+  time: string;
 }[] = [
   {
     key: 'discover',
@@ -394,6 +403,7 @@ export const LEARNING_STEPS: {
     label: 'Kenali',
     minutes: 15,
     how: 'Cari gambaran besarnya dulu. Cukup sampai bisa menjawab "ini apa, dan kenapa penting buatku?"',
+    time: LEARNING_TIME_LABEL,
   },
   {
     key: 'dig',
@@ -403,6 +413,7 @@ export const LEARNING_STEPS: {
     label: 'Gali',
     minutes: 15,
     how: 'SATU sumber saja: 1 bab buku, 1 artikel, atau 1 video. Banyak sumber malah bikin tidak ada yang masuk.',
+    time: LEARNING_TIME_LABEL,
   },
   {
     key: 'summarize',
@@ -412,6 +423,7 @@ export const LEARNING_STEPS: {
     label: 'Rangkum',
     minutes: 10,
     how: 'Tulis 3 poin pakai bahasamu sendiri di kotak bawah. Inilah langkah yang bikin ilmunya benar-benar nempel.',
+    time: LEARNING_TIME_LABEL,
   },
   {
     key: 'share',
@@ -421,6 +433,7 @@ export const LEARNING_STEPS: {
     label: 'Ceritakan',
     minutes: 5,
     how: 'Ceritakan ke 1 orang, pakai topik diskusi di bawah. Kalau bisa menjelaskan, berarti kamu memang paham.',
+    time: '',
   },
 ];
 
@@ -466,6 +479,21 @@ export function topicsOfWeek(now = new Date()): Topic[] {
 }
 
 /**
+ * Topik diskusi giliran minggu ini yang BELUM diobrolkan.
+ *
+ * Beda dari langkah mingguan yang punya hari sendiri: ngobrol tidak bisa
+ * dijadwalkan: ia terjadi saat kebetulan ketemu orangnya. Jadi tagihannya
+ * berlaku SEPANJANG minggu, dan hilang sendiri tiap Senin karena topiknya
+ * memang berganti.
+ */
+export function pendingTopicsOfWeek(
+  done: TopicsDone,
+  now = new Date(),
+): Topic[] {
+  return topicsOfWeek(now).filter((t) => !done[t.key]);
+}
+
+/**
  * Langkah yang HARINYA SUDAH TIBA tapi belum dikerjakan.
  *
  * Satu-satunya aturan penagihan Learning — kartu reminder Dashboard & badge
@@ -502,6 +530,20 @@ export function pendingSteps(
   now = new Date(),
 ): number {
   return overdueSteps(steps, now).length;
+}
+
+/**
+ * Angka badge tile Learning 🎓 di Home: langkah yang jatuh tempo DITAMBAH topik
+ * diskusi minggu ini yang belum diobrolkan. Keduanya sama-sama "PR minggu ini",
+ * jadi dihitung dalam satu angka — kalau dipisah, diskusinya gampang terlupa
+ * karena tidak pernah punya penagih sendiri.
+ */
+export function learningPending(
+  steps: Record<string, boolean>,
+  topicsDone: TopicsDone,
+  now = new Date(),
+): number {
+  return pendingSteps(steps, now) + pendingTopicsOfWeek(topicsDone, now).length;
 }
 
 /** Berapa dari 4 target minggu ini yang sudah beres. */

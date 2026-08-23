@@ -38,7 +38,7 @@ Warna, teks, logika, tata letak, gambar — tanpa menyentuh yang di atas.
 Perintah:
 
 ```bash
-eas update --branch preview --message "deskripsi singkat"
+eas update --branch preview --environment preview --message "deskripsi singkat"
 ```
 
 **JANGAN naikkan `version`** untuk OTA — biar runtimeVersion tetap cocok dengan
@@ -77,7 +77,7 @@ Node diatur lewat **fnm** (auto-switch per folder, baca `.node-version`).
 Panduan lengkap setup + workflow 2 project (vix & NDC) ada di
 **`PEDOMAN-VERSI.md`**.
 
-**Toolchain vix (SDK 54):** Node **20.19.4** · yarn **1.22.19** · eas-cli **≥ 21**.
+**Toolchain vix (SDK 57):** Node **20.19.4** · yarn **1.22.19** · eas-cli **≥ 22.2**.
 Dipatok lewat `.nvmrc` / `.node-version` (dibaca fnm) + `cli.version` di
 `eas.json`. (Sengaja TIDAK pakai `engines` di `package.json` — pin `yarn` yang
 persis bisa bikin `yarn install` gagal di server EAS yang yarn-nya beda versi.)

@@ -1,19 +1,14 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { useEffect, useRef, useState } from 'react';
-import { Keyboard, Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
-import {
-  closePickers,
-  nextPickerId,
-  openPicker,
-  subscribePicker,
-} from '@/components/common/pickerBus';
+import { closePickers } from '@/components/common/pickerBus';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { usePickerSlot } from '@/hooks/usePickerSlot';
 import { formatTime } from '@/lib/format';
 
 // Field JAM — kembaran <DateField/> tapi memilih jam-menit, bukan tanggal.
@@ -28,32 +23,13 @@ export function TimeField({
   label?: string;
   onChange: (date: Date) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const idRef = useRef<number | null>(null);
-  if (idRef.current === null) idRef.current = nextPickerId();
-  const myId = idRef.current;
-
-  useEffect(
-    () => subscribePicker((openId) => setOpen(openId === myId)),
-    [myId],
-  );
-
-  function toggle() {
-    if (open) {
-      setOpen(false);
-      closePickers();
-    } else {
-      Keyboard.dismiss();
-      setOpen(true);
-      openPicker(myId);
-    }
-  }
+  // Sama persis dengan <DateField> — lihat hooks/usePickerSlot.
+  const { open, toggle } = usePickerSlot();
 
   function handlePick(event: DateTimePickerEvent, selected?: Date) {
-    if (Platform.OS === 'android') {
-      setOpen(false);
-      closePickers();
-    }
+    // Android menutup dialognya sendiri; closePickers() mematikan `open`
+    // lewat subscriber usePickerSlot.
+    if (Platform.OS === 'android') closePickers();
     if (event.type !== 'dismissed' && selected) onChange(selected);
   }
 

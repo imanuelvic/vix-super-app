@@ -48,6 +48,8 @@ export function UpkeepList({
   dialogHint,
   noteOf,
   onSave,
+  dueNowOf,
+  onDueNow,
   focusDue = false,
 }: {
   /** Kartu ringkasan paling atas. */
@@ -58,6 +60,14 @@ export function UpkeepList({
   /** Catatan tersimpan untuk baris ini — muncul lagi saat dialog dibuka. */
   noteOf: (key: string) => string;
   onSave: (key: string, date: Date, note: string) => Promise<void>;
+  /** Baris ini sedang bertanda "harus dikerjakan sekarang"? */
+  dueNowOf: (key: string) => boolean;
+  /**
+   * Pasang / lepas tanda "harus dikerjakan sekarang" — jalan pintas untuk
+   * barang yang jelas sudah waktunya tapi tanggal terakhirnya tidak diketahui.
+   * Mengarang tanggal cuma bikin jadwal berikutnya ikut salah.
+   */
+  onDueNow: (key: string, dueNow: boolean) => Promise<void>;
   /**
    * Langsung gulung ke baris jatuh tempo pertama begitu daftarnya tergambar.
    * Diisi dari `repress` useTabScroll = sub-tab-nya ditekan untuk kedua kali.
@@ -94,6 +104,21 @@ export function UpkeepList({
     setError(null);
     try {
       await onSave(editing.key, fDate, fNote.trim());
+      setEditing(null);
+    } catch {
+      setError(SAVE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Pasang / lepas tanda "sekarang" lalu tutup dialognya. */
+  async function handleDueNow() {
+    if (!editing || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onDueNow(editing.key, !dueNowOf(editing.key));
       setEditing(null);
     } catch {
       setError(SAVE_ERROR);
@@ -152,9 +177,29 @@ export function UpkeepList({
 
       {/* Dialog tandai tanggal terakhir dikerjakan */}
       <CenterDialog visible={!!editing} onClose={() => setEditing(null)}>
-        <VixText heading="title" additionalStyle={styles.modalTitle}>
-          {editing?.label}
-        </VixText>
+        {/* Judul di kiri, jalan pintas "🔴 Sekarang" di KANAN ATAS. Tombol itu
+            untuk barang yang jelas sudah waktunya tapi tanggal terakhirnya
+            tidak diketahui — barisnya langsung merah tanpa tulisan "Terakhir:"
+            sama sekali. Tekan lagi untuk melepas tandanya. */}
+        <View style={styles.modalHead}>
+          <VixText heading="title" additionalStyle={styles.modalTitle}>
+            {editing?.label}
+          </VixText>
+          <PressableScale
+            style={[
+              styles.dueNowChip,
+              editing && dueNowOf(editing.key) && styles.dueNowChipOn,
+            ]}
+            disabled={busy}
+            haptic="warning"
+            onPress={handleDueNow}>
+            <VixText heading="label" additionalStyle={styles.dueNowText}>
+              {editing && dueNowOf(editing.key)
+                ? '↩️ Batalkan'
+                : '🔴 Sekarang'}
+            </VixText>
+          </PressableScale>
+        </View>
         <VixText heading="label" additionalStyle={styles.modalHint}>
           {dialogHint}
         </VixText>
@@ -203,7 +248,30 @@ const styles = StyleSheet.create({
   },
   rowLabel: { flex: 1, color: Color.TEXT_TITLE },
   dateLine: { color: Color.TEXT_PLACEHOLDER },
-  modalTitle: { marginBottom: 2 },
+  // Judul + tombol "sekarang" sebaris; judul boleh memanjang, tombol tetap
+  // menempel di kanan atas.
+  modalHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  modalTitle: { flex: 1, marginBottom: 2 },
+  dueNowChip: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  // Sedang bertanda → chip-nya ikut merah samar, jadi keadaannya kebaca
+  // sebelum tombolnya dibaca.
+  dueNowChipOn: {
+    backgroundColor: Color.DANGER_TRANSPARENT,
+    borderColor: Color.DANGER,
+  },
+  dueNowText: { color: Color.TEXT_TITLE },
   modalHint: { marginBottom: 10 },
   noteInput: { marginTop: 10, minHeight: 76, textAlignVertical: 'top' },
 });

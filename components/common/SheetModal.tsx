@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, justifyContent: 'flex-end' },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: Color.OVERLAY,
   },
   sheet: {

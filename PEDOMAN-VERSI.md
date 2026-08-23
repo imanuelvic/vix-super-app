@@ -6,7 +6,7 @@ Node-nya salah, `yarn install` / `eas update` / `eas build` bisa gagal atau app
 
 | Project | Expo SDK | Node | eas-cli | yarn |
 | --- | --- | --- | --- | --- |
-| **vix-super-app** | 54 | **20.19.4** | 21+ (terbaru) | 1.22.19 |
+| **vix-super-app** | 57 | **20.19.4** | 22.2+ (terbaru) | 1.22.19 |
 | **ndc-ministry-mobile-application** | 48 | **18.20.4** | 5.9.3 | 1.22.19 |
 
 Alatnya: **fnm** — otomatis ganti Node begitu kamu masuk folder project (baca
@@ -86,12 +86,12 @@ cd C:\Users\ASUS\Downloads\ndc-ministry-mobile-application   # otomatis Node 18 
 Cek cepat kamu di versi yang benar:
 ```powershell
 node -v        # vix → v20.x  |  NDC → v18.x
-eas --version  # vix → 21.x   |  NDC → 5.9.3
+eas --version  # vix → 22.x   |  NDC → 5.9.3
 ```
 
 Lalu jalankan seperti biasa, mis. di vix:
 ```powershell
-eas update --branch preview -m "deskripsi"                 # OTA (JS saja)
+eas update --branch preview --environment preview -m "deskripsi"  # OTA (JS saja)
 eas build --profile preview --platform ios                 # binary baru (native)
 ```
 
@@ -118,7 +118,7 @@ eas build --profile preview --platform ios                 # binary baru (native
 
 ## Kenapa harus begini (ringkas)
 
-- **vix pakai SDK 54 → wajib Node ≥ 20.19.4.** Di Node 18, `yarn install` gagal
+- **vix pakai SDK 57 (RN 0.86) → wajib Node ≥ 20.19.4.** Di Node 18, `yarn install` gagal
   karena `@react-native/dev-middleware` menolak (`Expected ">= 20.19.4"`).
 - **NDC pakai SDK 48 (RN 0.71) → cocoknya Node 18.** Menaikkan Node bisa bikin
   tooling lama (Metro/Expo SDK 48) rewel.

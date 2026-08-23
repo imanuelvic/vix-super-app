@@ -26,6 +26,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useKeyedData } from '@/hooks/useKeyedData';
 import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
 import { openPayApp, payAppForFund } from '@/lib/payapps';
 import {
@@ -41,6 +42,11 @@ import {
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
+// Daftar kosong TETAP (bukan `[]` baru tiap render). Dipakai selagi mutasinya
+// belum termuat: kalau tiap render membuat array baru, dua useMemo di bawah
+// ikut menghitung ulang terus padahal isinya sama-sama kosong.
+const NO_ENTRIES: FundEntry[] = [];
+
 // Halaman mutasi satu Saku — seperti sheet Pocket di spreadsheet:
 // Date · Transaction · Catatan · Debit (masuk) · Credit (keluar).
 export default function FundScreen() {
@@ -50,8 +56,11 @@ export default function FundScreen() {
   // Bank saku ini (kalau ada) — untuk tombol pintasan di kartu saldo.
   const bank = payAppForFund(fund.key);
 
-  const [entries, setEntries] = useState<FundEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Mutasi dompet ini. null = belum termuat → kosong sendiri tiap ganti dompet
+  // (lihat hooks/useKeyedData), jadi mutasi dompet lama tidak sempat terlihat
+  // di bawah judul dompet baru.
+  const { data: loaded, set: setEntries } = useKeyedData<string, FundEntry[]>(key);
+  const entries = loaded ?? NO_ENTRIES;
   const [error, setError] = useState<string | null>(null);
 
   // Mode cari (dibuka via FAB 🔍) — sama persis dengan tab Transaksi Finance:
@@ -110,24 +119,22 @@ export default function FundScreen() {
   const [confirmDelete, setConfirmDelete] = useState<FundEntry | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
+  // Spinner selama datanya belum tiba. Diturunkan, bukan diatur lewat efek —
+  // begitu dompetnya berganti, `loaded` otomatis null lagi di render yang sama.
+  const loading = loaded === null && error === null;
+
   useEffect(() => {
     if (!user || !key) return;
-    setLoading(true);
-    const unsubscribe = subscribeFundEntries(
+    return subscribeFundEntries(
       user.uid,
       key,
       (next) => {
         setEntries(next);
         setError(null);
-        setLoading(false);
       },
-      () => {
-        setError('Gagal memuat mutasi. Cek koneksi internet.');
-        setLoading(false);
-      },
+      () => setError('Gagal memuat mutasi. Cek koneksi internet.'),
     );
-    return unsubscribe;
-  }, [user, key]);
+  }, [user, key, setEntries]);
 
   // TOTAL seperti di spreadsheet: debit (masuk), credit (keluar), saldo.
   const totals = useMemo(() => {
@@ -142,10 +149,13 @@ export default function FundScreen() {
 
   // Selaraskan saldo tersimpan di dokumen dompet (untuk daftar Saku)
   // dengan saldo hasil hitung — menulis hanya kalau berbeda.
+  // Penjaganya `loaded !== null`, bukan `!loading`. Bedanya penting: saat
+  // pemuatan GAGAL, `loading` ikut mati padahal daftarnya masih kosong — dan
+  // dulu itu membuat saldo dompet ditimpa 0 hanya gara-gara internet putus.
   useEffect(() => {
-    if (!user || !key || loading) return;
+    if (!user || !key || loaded === null) return;
     reconcileFundBalance(user.uid, key, totals.balance).catch(() => {});
-  }, [user, key, loading, totals.balance]);
+  }, [user, key, loaded, totals.balance]);
 
   function validate(t: string, c: string, value: number): string | null {
     if (!value) return 'Isi nominalnya dulu.';

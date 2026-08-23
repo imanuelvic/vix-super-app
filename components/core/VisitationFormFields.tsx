@@ -7,6 +7,7 @@ import { DateField } from '@/components/common/DateField';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SelectField } from '@/components/common/SelectField';
+import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
 import { type VisitationForm } from '@/hooks/useVisitationForm';
 import { MEETING_KINDS, type CoreLeader } from '@/lib/core';
@@ -100,6 +101,22 @@ export function VisitationFormFields({
       </VixText>
       <View style={styles.formGap}>
         <DateField key={dateKey} value={form.date} onChange={form.setDate} />
+      </View>
+
+      {/* Jam pertemuan — menempel di objek Date yang SAMA dengan tanggal di
+          atas (DateField mengubah tanggalnya, TimeField jamnya), jadi keduanya
+          tersimpan sebagai satu kolom. Jamnya sengaja hanya ada di sini &
+          di PDF-nya ("Mulai: 15.00 WIB"); di daftar depan tidak ditampilkan
+          supaya kartunya tetap ringkas. */}
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        🕒 Jam pertemuan
+      </VixText>
+      <View style={styles.formGap}>
+        <TimeField
+          key={`t-${dateKey}`}
+          value={form.date}
+          onChange={form.setDate}
+        />
       </View>
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>

@@ -14,6 +14,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { ChoreTab } from '@/components/residence/ChoreTab';
 import { LogTab } from '@/components/residence/LogTab';
+import { TokenTab } from '@/components/residence/TokenTab';
 import { UtilityTab } from '@/components/residence/UtilityTab';
 import { InfoTab } from '@/components/residence/InfoTab';
 import { useAuth } from '@/contexts/auth';
@@ -28,16 +29,24 @@ import {
 } from '@/lib/residence';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
+  readingDue,
+  subscribeMeterReadings,
+  subscribeTokenPurchases,
+  type MeterReading,
+  type TokenPurchase,
+} from '@/lib/token';
+import {
   subscribeUtilityTransactions,
   type Transaction,
 } from '@/lib/transactions';
 
-type ResidenceTab = 'utility' | 'log' | 'chores' | 'info';
+type ResidenceTab = 'utility' | 'token' | 'log' | 'chores' | 'info';
 
-// Log · Air-Listrik (default) · Perawatan · Info.
+// Log · Air-Listrik · Token · Perawatan (default) · Info.
 const TABS: BottomTab<ResidenceTab>[] = [
   { key: 'log', label: 'Log', icon: 'list.bullet' },
   { key: 'utility', label: 'Utility', icon: 'bolt.fill' },
+  { key: 'token', label: 'Token', icon: 'bolt.circle.fill' },
   { key: 'chores', label: 'Maintenance', icon: 'wrench.and.screwdriver.fill' },
   { key: 'info', label: 'Info', icon: 'info.circle.fill' },
 ];
@@ -57,6 +66,9 @@ export default function ResidenceScreen() {
   const [logs, setLogs] = useState<ResidenceLog[] | null>(null);
   const [utilityTx, setUtilityTx] = useState<Transaction[] | null>(null);
   const [chores, setChores] = useState<ChoreStatusMap | null>(null);
+  // Token listrik ⚡ — pembelian & catatan meteran pagi/malam.
+  const [purchases, setPurchases] = useState<TokenPurchase[] | null>(null);
+  const [readings, setReadings] = useState<MeterReading[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +85,8 @@ export default function ResidenceScreen() {
       ),
       subscribeUtilityTransactions(user.uid, setUtilityTx, fail),
       subscribeChoreStatus(user.uid, setChores, fail),
+      subscribeTokenPurchases(user.uid, setPurchases, fail),
+      subscribeMeterReadings(user.uid, setReadings, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -112,6 +126,12 @@ export default function ResidenceScreen() {
           ) : (
             <LogTab items={logs} />
           )
+        ) : tab === 'token' ? (
+          purchases === null || readings === null ? (
+            <LoadingCenter />
+          ) : (
+            <TokenTab purchases={purchases} readings={readings} />
+          )
         ) : tab === 'chores' ? (
           chores === null ? (
             <LoadingCenter />
@@ -123,10 +143,14 @@ export default function ResidenceScreen() {
         )}
       </View>
 
-      {/* Badge Perawatan = angka yang sama dengan badge tile Residence di Home */}
+      {/* Badge Perawatan = angka yang sama dengan badge tile Residence di Home.
+          Badge Token = pengingat mencatat meteran: menyala selama hari ini
+          belum tercatat dua kali (pagi & malam). App ini tidak punya notifikasi
+          maupun penjadwal, jadi badge inilah penagihnya. */}
       <BottomTabs
         tabs={withBadge(TABS, {
           chores: countResidenceAttention(chores ?? {}, new Date()),
+          token: readingDue(readings ?? [], new Date()) ? 1 : 0,
         })}
         value={tab}
         onChange={onTabPress}

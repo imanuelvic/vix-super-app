@@ -480,6 +480,10 @@ export function TransactionsTab({
                 additionalStyle={styles.summaryRemaining}>
                 {displayAmount(remaining)}
               </VixText>
+              {/* Keempat jenisnya lengkap, dua baris @2 kolom. Sebelumnya cuma
+                  Income & Expense — padahal Saving & Investment juga ikut
+                  mengurangi "Sisa bulan ini", jadi angkanya tampak tidak cocok
+                  dengan dua kolom di bawahnya. */}
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
                   <VixText heading="label" additionalStyle={styles.summaryLabel}>
@@ -495,6 +499,24 @@ export function TransactionsTab({
                   </VixText>
                   <VixText heading="bold" additionalStyle={styles.summaryValue}>
                     {displayAmount(totals.expense)}
+                  </VixText>
+                </View>
+              </View>
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryItem}>
+                  <VixText heading="label" additionalStyle={styles.summaryLabel}>
+                    Saving
+                  </VixText>
+                  <VixText heading="bold" additionalStyle={styles.summaryValue}>
+                    {displayAmount(totals.saving)}
+                  </VixText>
+                </View>
+                <View style={styles.summaryItem}>
+                  <VixText heading="label" additionalStyle={styles.summaryLabel}>
+                    Investment
+                  </VixText>
+                  <VixText heading="bold" additionalStyle={styles.summaryValue}>
+                    {displayAmount(totals.investment)}
                   </VixText>
                 </View>
               </View>

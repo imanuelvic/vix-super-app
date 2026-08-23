@@ -15,7 +15,6 @@ import {
 } from '@/lib/habits';
 import { subscribeHabitDay, type HabitDay } from '@/lib/health';
 
-// Home tetap tab pembuka meski Dashboard dideklarasikan lebih dulu (paling kiri).
 export const unstable_settings = {
   initialRouteName: 'index',
 };
@@ -23,13 +22,9 @@ export const unstable_settings = {
 export default function TabLayout() {
   const { user } = useAuth();
 
-  // Badge merah di tab Habits: kebiasaan yang sesinya sudah tiba tapi belum
-  // dicentang. Dulu angka ini nempel di tile Health; sekarang kebiasaannya
-  // pindah ke tab ini, jadi badge-nya ikut pindah ke sini.
   const [schedule, setSchedule] = useState<ScheduledHabit[]>([]);
   const [day, setDay] = useState<HabitDay | null>(null);
 
-  // Lewat tengah malam badge ikut kereset sendiri (lihat hooks/useNow.ts).
   const { now, todayId } = useNow();
 
   useEffect(() => {
@@ -41,7 +36,6 @@ export default function TabLayout() {
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, todayId]);
 
-  // Yang ditandai ✗ (dilewati) tidak ikut dihitung — badge-nya ikut hilang.
   const habitsLeft = day
     ? pendingHabits(countedHabits(schedule, day.skipped), day.done, now).length
     : 0;
@@ -57,22 +51,12 @@ export default function TabLayout() {
         },
         headerShown: false,
         tabBarButton: HapticTab,
-        // Tab yang tidak sedang dilihat DIBEKUKAN (react-native-screens).
-        // Sekali dibuka, sebuah tab tetap terpasang selamanya — tanpa ini
-        // Dashboard, Habits, Home, Profile & System sama-sama ikut me-render
-        // ulang tiap menit (useNow) walau tak terlihat. Dibekukan = render
-        // berhenti, memori & baterai turun; datanya TIDAK ikut dilepas jadi
-        // tak ada baca Firestore tambahan saat kembali.
         freezeOnBlur: true,
       }}>
-      {/* Urutan tab: Dashboard · Habits · Home · Profile · System.
-          Tournament 🏆 pindah ke grid Home; tempatnya di sini diisi Habits
-          (kebiasaan harian Pagi/Siang/Malam) yang memang dibuka tiap hari. */}
       <Tabs.Screen
         name="dashboard"
         options={{
           title: 'Dashboard',
-          // Ikon kisi (bukan lonceng) — lonceng dipakai fitur Reminder.
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="square.grid.2x2.fill" color={color} />
           ),
@@ -93,8 +77,6 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          // Tombol Home menonjol/mengambang di tengah — render sendiri ikon +
-          // labelnya, jadi tabBarIcon default tidak dipakai.
           tabBarButton: (props) => <RaisedHomeTab {...props} />,
         }}
       />

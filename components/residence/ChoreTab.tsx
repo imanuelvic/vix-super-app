@@ -7,6 +7,7 @@ import {
   CHORE_GROUPS,
   countResidenceAttention,
   setChoreDate,
+  setChoreDueNow,
   type ChoreStatusMap,
   type ChoreTone,
 } from '@/lib/residence';
@@ -44,10 +45,12 @@ export function ChoreTab({
     key: group.key,
     label: group.label,
     rows: group.parts.map((chore) => {
+      const dueNow = status[chore.key]?.dueNow === true;
       const { tone, dueDate } = choreCondition(
         status[chore.key]?.last,
         chore.intervalDays,
         now,
+        dueNow,
       );
       const last = status[chore.key]?.last;
       return {
@@ -56,9 +59,12 @@ export function ChoreTab({
         tip: chore.tip,
         tone,
         toneLabel: TONE_LABEL[tone],
-        dateLine: last
-          ? `Terakhir: ${formatDate(last.toDate())} · berikutnya ±${dueDate ? formatDate(dueDate) : '-'}`
-          : `Interval: tiap ${choreIntervalLabel(chore.intervalDays)}`,
+        // Ditandai manual → tanpa tulisan "Terakhir: …" (lihat PartsTab).
+        dateLine: dueNow
+          ? `Ditandai harus dikerjakan · biasanya tiap ${choreIntervalLabel(chore.intervalDays)}`
+          : last
+            ? `Terakhir: ${formatDate(last.toDate())} · berikutnya ±${dueDate ? formatDate(dueDate) : '-'}`
+            : `Interval: tiap ${choreIntervalLabel(chore.intervalDays)}`,
       };
     }),
   }));
@@ -73,17 +79,22 @@ export function ChoreTab({
             : `${needsAttention} perlu dibersihkan ⚠️`,
         sub:
           unknownCount > 0
-            ? `${unknownCount} item belum pernah dicatat — tap untuk mengisi.`
+            ? `${unknownCount} item belum pernah dicatat.`
             : 'Tap item mana pun untuk memperbarui tanggalnya.',
       }}
       groups={groups}
       dialogHint="Kapan terakhir dibersihkan / dikerjakan?"
       focusDue={focusDue}
       noteOf={(key) => status[key]?.note ?? ''}
+      dueNowOf={(key) => status[key]?.dueNow === true}
       // `user` selalu ada di sini (layar Residence cuma terbuka setelah login).
       onSave={async (key, date, note) => {
         if (!user) return;
         await setChoreDate(user.uid, key, date, note);
+      }}
+      onDueNow={async (key, dueNow) => {
+        if (!user) return;
+        await setChoreDueNow(user.uid, key, dueNow);
       }}
     />
   );

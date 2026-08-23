@@ -4,7 +4,7 @@ Personal super app — semua kebutuhan pribadi dalam satu aplikasi (tasks,
 catatan, pelayanan, personal management), tersinkron di semua perangkat lewat
 Firebase.
 
-**Stack:** Expo SDK 54 · expo-router · Firebase JS SDK (Auth + Firestore)
+**Stack:** Expo SDK 57 · expo-router · Firebase JS SDK (Auth + Firestore)
 
 ## Menjalankan
 

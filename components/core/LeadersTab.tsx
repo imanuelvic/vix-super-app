@@ -20,6 +20,7 @@ import {
   archiveCoreLeader,
   currentAge,
   DISC_OPTIONS,
+  EMPTY_STUDY_WORK,
   GENDER_OPTIONS,
   HEARTS,
   LOVE_LANG_OPTIONS,
@@ -31,9 +32,14 @@ import {
   normalizePhone,
   saveCoreLeaders,
   saveMainTeam,
+  studyLine,
+  studyWorkOf,
+  studyWorkPayload,
+  workLine,
   type CoreLeader,
   type Gender,
   type MainTeamMember,
+  type StudyWork,
 } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
@@ -68,6 +74,8 @@ export function LeadersTab({
   const [fDisc, setFDisc] = useState<string | null>(null);
   const [fMbti, setFMbti] = useState<string | null>(null);
   const [fLove, setFLove] = useState<string | null>(null);
+  // Pendidikan & pekerjaan — satu objek, bukan 4 state terpisah.
+  const [fStudy, setFStudy] = useState<StudyWork>(EMPTY_STUDY_WORK);
   const [formError, setFormError] = useState<string | null>(null);
   // Mode "lepas CL": ganti isi modal edit jadi form alasan sebelum diarsipkan.
   const [archiving, setArchiving] = useState(false);
@@ -83,6 +91,7 @@ export function LeadersTab({
   const [mtDisc, setMtDisc] = useState<string | null>(null);
   const [mtMbti, setMtMbti] = useState<string | null>(null);
   const [mtLove, setMtLove] = useState<string | null>(null);
+  const [mtStudy, setMtStudy] = useState<StudyWork>(EMPTY_STUDY_WORK);
   const [mtFormError, setMtFormError] = useState<string | null>(null);
 
   const today = new Date();
@@ -111,6 +120,7 @@ export function LeadersTab({
     setFDisc(null);
     setFMbti(null);
     setFLove(null);
+    setFStudy(EMPTY_STUDY_WORK);
     setFormError(null);
     setArchiving(false);
     setArchiveReason('');
@@ -126,6 +136,7 @@ export function LeadersTab({
     setFDisc(l.disc ?? null);
     setFMbti(l.mbti ?? null);
     setFLove(l.loveLanguage ?? null);
+    setFStudy(studyWorkOf(l));
     setFormError(null);
     setArchiving(false);
     setArchiveReason('');
@@ -152,6 +163,7 @@ export function LeadersTab({
       disc: fDisc,
       mbti: fMbti,
       loveLanguage: fLove,
+      ...studyWorkPayload(fStudy),
     };
     const next =
       editing === 'new'
@@ -218,6 +230,7 @@ export function LeadersTab({
     setMtDisc(null);
     setMtMbti(null);
     setMtLove(null);
+    setMtStudy(EMPTY_STUDY_WORK);
     setMtFormError(null);
   }
 
@@ -231,6 +244,7 @@ export function LeadersTab({
     setMtDisc(m.disc ?? null);
     setMtMbti(m.mbti ?? null);
     setMtLove(m.loveLanguage ?? null);
+    setMtStudy(studyWorkOf(m));
     setMtFormError(null);
   }
 
@@ -259,6 +273,7 @@ export function LeadersTab({
       disc: mtDisc,
       mbti: mtMbti,
       loveLanguage: mtLove,
+      ...studyWorkPayload(mtStudy),
     };
     const next =
       editingMT === 'new'
@@ -356,6 +371,7 @@ export function LeadersTab({
                   <VixText heading="label" additionalStyle={styles.followupLine}>
                     📱 {l.phone ? `+62${l.phone}` : 'belum ada nomor'}
                   </VixText>
+                  <StudyWorkLines person={l} />
                   <PersonalityBadges person={l} />
                 </View>
               </View>
@@ -427,6 +443,7 @@ export function LeadersTab({
                   <VixText heading="label" additionalStyle={styles.followupLine}>
                     📱 {m.phone ? `+62${m.phone}` : 'belum ada nomor'}
                   </VixText>
+                  <StudyWorkLines person={m} />
                   <PersonalityBadges person={m} />
                 </View>
               </View>
@@ -559,6 +576,13 @@ export function LeadersTab({
 
               <GenderField value={fGender} onChange={setFGender} />
 
+              {/* Pendidikan & pekerjaan — bahan obrolan visitasi & doa */}
+              <StudyWorkFields
+                value={fStudy}
+                onChange={setFStudy}
+                busy={busy}
+              />
+
               {/* Kepribadian — bantu cara pendekatan & ide chat */}
               <PersonalityFields
                 disc={fDisc}
@@ -658,6 +682,9 @@ export function LeadersTab({
         </View>
 
         <GenderField value={mtGender} onChange={setMtGender} />
+
+        {/* Pendidikan & pekerjaan Main Team — kolom yang sama persis dengan CL */}
+        <StudyWorkFields value={mtStudy} onChange={setMtStudy} busy={busy} />
 
         {/* Kepribadian Main Team */}
         <PersonalityFields
@@ -802,6 +829,91 @@ function PersonalityFields({
           clearable
         />
       </View>
+    </>
+  );
+}
+
+// Isian pendidikan & pekerjaan — dipakai form CL DAN form Main Team, jadi
+// keduanya mustahil berbeda. Semuanya opsional: yang belum tahu ya dikosongkan
+// dulu, tidak ada yang wajib diisi.
+function StudyWorkFields({
+  value,
+  onChange,
+  busy,
+}: {
+  value: StudyWork;
+  onChange: (next: StudyWork) => void;
+  busy: boolean;
+}) {
+  const set = (k: keyof StudyWork) => (t: string) => onChange({ ...value, [k]: t });
+  return (
+    <>
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        🎓 Pendidikan
+      </VixText>
+      <FormInput
+        style={styles.formGap}
+        placeholder="Kuliah / sekolah di mana"
+        value={value.school}
+        onChangeText={set('school')}
+        editable={!busy}
+      />
+      <FormInput
+        style={styles.formGap}
+        placeholder="Jurusan"
+        value={value.major}
+        onChangeText={set('major')}
+        editable={!busy}
+      />
+
+      <VixText heading="label" additionalStyle={styles.fieldLabel}>
+        💼 Pekerjaan sekarang
+      </VixText>
+      <FormInput
+        style={styles.formGap}
+        placeholder="Profesi, mis. Guru / Barista / Mahasiswa"
+        value={value.job}
+        onChangeText={set('job')}
+        editable={!busy}
+      />
+      <FormInput
+        style={styles.formGap}
+        placeholder="Tempat kerja"
+        value={value.workplace}
+        onChangeText={set('workplace')}
+        editable={!busy}
+      />
+    </>
+  );
+}
+
+// Dua baris pendidikan & pekerjaan di kartu daftar. Tidak menampilkan apa pun
+// selama datanya belum diisi — kartu yang kosong tidak perlu baris kosong.
+function StudyWorkLines({
+  person,
+}: {
+  person: {
+    school?: string | null;
+    major?: string | null;
+    job?: string | null;
+    workplace?: string | null;
+  };
+}) {
+  const belajar = studyLine(person);
+  const kerja = workLine(person);
+  if (!belajar && !kerja) return null;
+  return (
+    <>
+      {belajar ? (
+        <VixText heading="label" additionalStyle={styles.followupLine}>
+          {belajar}
+        </VixText>
+      ) : null}
+      {kerja ? (
+        <VixText heading="label" additionalStyle={styles.followupLine}>
+          {kerja}
+        </VixText>
+      ) : null}
     </>
   );
 }

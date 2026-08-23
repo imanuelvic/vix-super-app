@@ -5,7 +5,7 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { type LoginStreak } from '@/lib/achievements';
-import { fitTargets, FIT_PREP } from '@/lib/fitness';
+import { fitTargets } from '@/lib/fitness';
 import { formatDecimal } from '@/lib/format';
 import {
   bmiCategory,
@@ -64,9 +64,7 @@ export function ProgressTab({
           <VixText heading="label">Rekor beruntun</VixText>
         </View>
       </View>
-
-      {/* Data Tubuh — dibaca langsung dari fitur Profile, tidak diisi dua kali.
-          Ketuk untuk langsung membuka Profile → 🧍 Data Tubuh. */}
+      
       {profile && (
         <PressableScale
           style={styles.bodyCard}
@@ -124,23 +122,6 @@ export function ProgressTab({
           </View>
         </View>
       ))}
-
-      <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        🎒 Siapkan sebelum berangkat
-      </VixText>
-      {FIT_PREP.map((p) => (
-        <View key={p} style={styles.prepRow}>
-          <VixText heading="label" additionalStyle={styles.prepText}>
-            {p}
-          </VixText>
-        </View>
-      ))}
-
-      <VixText heading="label" additionalStyle={styles.disclaimer}>
-        ⚠️ Ini panduan latihan umum, bukan nasihat medis. Kalau ada keluhan
-        sendi, jantung, atau bekas cedera — konsultasi ke dokter/pelatih dulu.
-        Berhenti kalau nyeri tajam, bukan sekadar pegal.
-      </VixText>
     </ScrollView>
   );
 }
@@ -207,13 +188,4 @@ const styles = StyleSheet.create({
   cardIcon: { fontSize: 24, lineHeight: 30 },
   cardMain: { flex: 1, gap: 2 },
   cardTitle: { color: Color.TEXT_TITLE },
-  prepRow: {
-    backgroundColor: Color.FITNESS,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    marginBottom: 8,
-  },
-  prepText: { color: Color.FITNESS_DARK },
-  disclaimer: { color: Color.TEXT_LABEL, marginTop: 10 },
 });

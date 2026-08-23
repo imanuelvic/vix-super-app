@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -76,6 +76,8 @@ export function HabitsTab({
   profile,
   target,
   streak,
+  focusRhema = false,
+  onFocusDone,
 }: {
   habits: ScheduledHabit[];
   day: HabitDay;
@@ -83,6 +85,14 @@ export function HabitsTab({
   profile: HealthProfile;
   target: WeightTarget | null;
   streak: Streak | null;
+  /**
+   * Datang dari kartu "✍️ Rhema Pagi Ini" di Home: buka sesi tempat baris
+   * Rhema berada lalu gulung tepat ke barisnya, supaya tulisan paginya bisa
+   * langsung dibaca ulang tanpa mencari sendiri di daftar yang panjang.
+   */
+  focusRhema?: boolean;
+  /** Dipanggil setelah lompatannya jalan — induk membersihkan param dari URL. */
+  onFocusDone?: () => void;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -114,6 +124,41 @@ export function HabitsTab({
   const { ref: scrollRef } = useScrollTop();
   const rowY = useRef<Record<string, number>>({});
   const blockY = useRef(0);
+
+  // ===== Lompatan dari kartu "✍️ Rhema Pagi Ini" di Home =====
+  // Baris Rhema dikenali dari sifatnya (centangnya ditentukan tulisan), bukan
+  // dari id yang ditulis tangan — jadi tetap ketemu walau namanya diganti.
+  const rhema = habits.find(isNoteDrivenHabit);
+  // Dipisah jadi nilai primitif: `habits` datang dari Firestore dan objeknya
+  // baru tiap snapshot, jadi memakai objeknya sebagai dependency akan memicu
+  // efek di bawah berulang kali.
+  const rhemaId = rhema?.id ?? null;
+  const rhemaSlot = rhema?.slot ?? null;
+  const rhemaJumped = useRef(false);
+
+  // Pindah dulu ke sesi tempat baris Rhema berada (biasanya Pagi). Saringan
+  // areanya ikut dilepas — kalau tidak, barisnya bisa saja sedang tersembunyi.
+  useEffect(() => {
+    if (!focusRhema || !rhemaSlot) return;
+    setActiveSlot(rhemaSlot);
+    setAreaFilter(null);
+    rhemaJumped.current = false;
+  }, [focusRhema, rhemaSlot]);
+
+  // Baru menggulung SESUDAH daftarnya benar-benar tergambar — ukuran isi
+  // ScrollView adalah tanda paling andal untuk itu (pola yang sama dipakai
+  // hooks/useDueJump.ts).
+  const handleContentSize = useCallback(() => {
+    if (!focusRhema || rhemaJumped.current || !rhemaId) return;
+    const y = rowY.current[rhemaId];
+    if (y === undefined) return;
+    rhemaJumped.current = true;
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, blockY.current + y - 8),
+      animated: true,
+    });
+    onFocusDone?.();
+  }, [focusRhema, rhemaId, onFocusDone, scrollRef]);
 
   // Modal tambah/edit kebiasaan.
   const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);
@@ -563,7 +608,8 @@ export function HabitsTab({
       {/* Kebiasaan sesi yang aktif — bagian yang bisa di-scroll */}
       <KeyboardAwareScrollView
         ref={scrollRef}
-        contentContainerStyle={styles.content}>
+        contentContainerStyle={styles.content}
+        onContentSizeChange={handleContentSize}>
         <View
           style={styles.slotBlock}
           onLayout={(e) => {

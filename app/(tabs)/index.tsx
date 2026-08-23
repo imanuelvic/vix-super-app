@@ -11,7 +11,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -63,13 +63,16 @@ import {
 } from '@/lib/fitness';
 import {
   EMPTY_WEEK,
-  pendingSteps,
+  learningPending,
   subscribeLearningWeek,
+  subscribeTopicsDone,
   weekDocId,
   type LearningWeek,
+  type TopicsDone,
 } from '@/lib/learning';
 import { formatShortDayDate } from '@/lib/format';
 import { useNow } from '@/hooks/useNow';
+import { useReadyGate } from '@/hooks/useReadyGate';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   bumpWaterStreak,
@@ -109,6 +112,7 @@ import {
   subscribeChoreStatus,
   type ChoreStatusMap,
 } from '@/lib/residence';
+import { billUnsettled, subscribeBills, type Bill } from '@/lib/social';
 import {
   activeNudge,
   bibleSessionMeta,
@@ -127,6 +131,12 @@ import {
   type Task,
 } from '@/lib/tasks';
 import { logFeatureUse } from '@/lib/usage';
+
+// Berapa langganan Firestore yang isinya dipakai BADGE tile. Angkanya dipakai
+// useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
+// sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
+// akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
+const BADGE_SOURCES = 14;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -162,6 +172,10 @@ export default function HomeScreen() {
   const [fitDay, setFitDay] = useState<FitDay>(EMPTY_FIT_DAY);
   // Langkah belajar minggu ini — untuk badge tile Learning 🎓.
   const [learningWeek, setLearningWeek] = useState<LearningWeek>(EMPTY_WEEK);
+  // Topik diskusi yang sudah diobrolkan — ikut menghitung badge Learning.
+  const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
+  // Patungan Split Bill — untuk badge tile Social 🥂.
+  const [bills, setBills] = useState<Bill[]>([]);
   // Pinjaman 🤝 — untuk badge tile Finance saat ada yang sudah H-1.
   const [debts, setDebts] = useState<Debt[]>([]);
   // Prioritas P1 — untuk badge Career (Fulltime + Freelance) & Reminder.
@@ -195,31 +209,40 @@ export default function HomeScreen() {
   // langganan Learning di bawah tidak ikut dipasang ulang tiap menit.
   const weekId = weekDocId(now);
 
+  // Badge tile baru digambar SETELAH keempat belas sumbernya tiba, supaya
+  // angkanya muncul serentak — bukan menetes satu per satu selama beberapa
+  // detik seperti sebelumnya. Grid & sapaan tetap tampil seketika.
+  const { ready: badgesReady, mark } = useReadyGate(BADGE_SOURCES);
+
   useEffect(() => {
     if (!user) return;
     const unsubs = [
-      subscribeLearningWeek(user.uid, weekId, setLearningWeek),
+      // --- Sumber badge (ikut ditunggu useReadyGate) ---
+      subscribeLearningWeek(user.uid, weekId, mark('learningWeek', setLearningWeek)),
+      subscribeTopicsDone(user.uid, mark('topicsDone', setTopicsDone)),
+      subscribeBills(user.uid, mark('bills', setBills)),
+      subscribeChoreStatus(user.uid, mark('chores', setResidenceChores)),
+      subscribeTasks(user.uid, mark('tasks', setTasks)),
+      subscribeCoreLeaders(user.uid, mark('leaders', setLeaders)),
+      subscribeVisitations(user.uid, mark('visitations', setVisitations)),
+      subscribeReviveStreak(user.uid, mark('revive', setRevive)),
+      subscribePartStatus(user.uid, mark('carParts', setCarParts)),
+      subscribeRoadmap(user.uid, mark('roadmap', setRoadmap)),
+      subscribeFreelance(user.uid, mark('freelance', setFreelance)),
+      subscribeOtherTasks(user.uid, mark('otherTasks', setOtherTasks)),
+      subscribeFitDay(user.uid, todayId, mark('fitDay', setFitDay)),
+      subscribeDebts(user.uid, mark('debts', setDebts)),
+      // --- Sisanya mengisi kartu & sapaan, bukan badge ---
       subscribeLoginStreak(user.uid, setLogin),
-      subscribeChoreStatus(user.uid, setResidenceChores),
-      subscribeTasks(user.uid, setTasks),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeHabitSchedule(user.uid, setHabits),
-      subscribeCoreLeaders(user.uid, setLeaders),
-      subscribeVisitations(user.uid, setVisitations),
-      subscribeReviveStreak(user.uid, setRevive),
-      subscribePartStatus(user.uid, setCarParts),
-      subscribeRoadmap(user.uid, setRoadmap),
-      subscribeFreelance(user.uid, setFreelance),
-      subscribeOtherTasks(user.uid, setOtherTasks),
       subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
       subscribeWaterStreak(user.uid, setWaterStreak),
-      subscribeFitDay(user.uid, todayId, setFitDay),
-      subscribeDebts(user.uid, setDebts),
       subscribePrayerNews(user.uid, setPrayerNews),
       subscribePriorityDay(user.uid, todayId, setPriorities),
     ];
     return () => unsubs.forEach((unsub) => unsub());
-  }, [user, todayId, weekId]);
+  }, [user, todayId, weekId, mark]);
 
   // "Cron" kliping doa syafaat 📰🙏 — app ini tidak punya server maupun tugas
   // latar, jadi penjadwalnya ya Home: sekali seminggu, saat pertama dibuka.
@@ -336,12 +359,16 @@ export default function HomeScreen() {
     // tidak memunculkan badge sama sekali.
     fitness: fitPendingToday(fitDay, now),
     // Langkah belajar minggu ini yang harinya sudah tiba tapi belum
-    // dikerjakan (Sen/Rab/Jum/Min) — aturan yang sama persis dengan kartu
-    // reminder Learning di Dashboard.
-    learning: pendingSteps(learningWeek.steps, now),
+    // dikerjakan (Sen/Rab/Jum/Min) DITAMBAH topik diskusi minggu ini yang
+    // belum diobrolkan — aturan yang sama persis dengan kedua kartu reminder
+    // Learning di Dashboard.
+    learning: learningPending(learningWeek.steps, topicsDone, now),
     // Pinjaman yang jatuh temponya sudah H-1 (termasuk hari ini & yang
     // kelewat). Angkanya sama dengan badge tombol 🤝 di header Finance.
     finance: debtUrgentCount(debts, now),
+    // Patungan yang masih ada orang belum setor — angka yang sama dipakai
+    // badge sub-tab Split Bill di dalam fitur Social.
+    social: bills.filter(billUnsettled).length,
   };
 
   // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).
@@ -512,7 +539,8 @@ export default function HomeScreen() {
 
           {/* Rhema Pagi Ini ✍️ — firman yang kamu tulis tadi pagi, dibaca
               ulang siang (12–13), sore (17–18), & malam (21–22). Muncul hanya
-              kalau rhema-nya memang sudah ditulis. Ketuk → tab Habits. */}
+              kalau rhema-nya memang sudah ditulis. Ketuk → tab Habits, sesi
+              baris Rhema-nya, langsung tergulung ke barisnya (?focus=rhema). */}
           {showRhema && (
             <Animated.View
               entering={FadeInDown.delay(50).duration(350)}
@@ -521,8 +549,22 @@ export default function HomeScreen() {
                 bg={Color.SPIRITUAL}
                 fg={Color.SPIRITUAL_DARK}
                 title="✍️ Rhema Pagi Ini"
-                texts={[rhemaText]}
-                onPress={() => router.push('/habits')}
+                // Mode per-baris: rhema-nya ke Habits, tombol Story ke layar
+                // rancangannya. Dipakai supaya keduanya jadi tombol SENDIRI —
+                // kartunya tidak lagi jadi satu Pressable besar, jadi tak ada
+                // Pressable bersarang (yang tidak andal di iOS).
+                texts={[
+                  { id: 'rhema', text: rhemaText },
+                  { id: 'story', text: '📤 Bagikan ke Instagram Story' },
+                ]}
+                onItemPress={(id) =>
+                  id === 'story'
+                    ? router.push('/rhema-story')
+                    : router.push({
+                        pathname: '/habits',
+                        params: { focus: 'rhema' },
+                      })
+                }
               />
             </Animated.View>
           )}
@@ -566,13 +608,18 @@ export default function HomeScreen() {
                     }}>
                     <IconSymbol name={feature.icon} size={30} color={feature.fg} />
                   </PressableScale>
-                  {/* Badge merah: tugas harian fitur ini yang belum selesai */}
-                  {badge > 0 && (
-                    <View style={styles.badge}>
+                  {/* Badge merah: tugas harian fitur ini yang belum selesai.
+                      Baru digambar setelah SEMUA sumbernya tiba (badgesReady),
+                      lalu seluruh badge memudar masuk bersamaan — bukan
+                      bermunculan satu per satu sambil data menetes. */}
+                  {badgesReady && badge > 0 && (
+                    <Animated.View
+                      entering={FadeIn.duration(260)}
+                      style={styles.badge}>
                       <VixText heading="label" additionalStyle={styles.badgeText}>
                         {badge > 9 ? '9+' : badge}
                       </VixText>
-                    </View>
+                    </Animated.View>
                   )}
                   {/* Judul berlatar pil sewarna tile-nya: separuh atas menyatu
                       dengan tile, separuh bawah menggantung di latar krem —

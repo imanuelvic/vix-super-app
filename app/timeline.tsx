@@ -19,6 +19,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useKeyedData } from '@/hooks/useKeyedData';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
@@ -41,7 +42,8 @@ export default function TimelineScreen() {
 
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
-  const [items, setItems] = useState<TimelineItem[] | null>(null);
+  // items = null → loading. Kosong sendiri tiap ganti tahun (lihat useKeyedData).
+  const { data: items, set: setItems } = useKeyedData<number, TimelineItem[]>(year);
   const [error, setError] = useState<string | null>(null);
 
   // Form tambah/edit. 'new' = sedang menambah baru.
@@ -54,8 +56,7 @@ export default function TimelineScreen() {
 
   useEffect(() => {
     if (!user) return;
-    setItems(null); // tampilkan loading saat ganti tahun
-    const unsubscribe = subscribeTimelineYear(
+    return subscribeTimelineYear(
       user.uid,
       year,
       (next) => {
@@ -64,8 +65,7 @@ export default function TimelineScreen() {
       },
       () => setError(LOAD_ERROR),
     );
-    return unsubscribe;
-  }, [user, year]);
+  }, [user, year, setItems]);
 
   const age = year - BIRTH_YEAR; // ulang tahun 1 Januari → pas per tahun
   const doneCount = items?.filter((i) => i.done).length ?? 0;

@@ -6,6 +6,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Animated, {
+  type AnimatedStyle,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -38,7 +39,7 @@ export function PressableScale({
   ...rest
 }: Omit<PressableProps, 'style' | 'children'> & {
   children: ReactNode;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<AnimatedStyle<ViewStyle>>;
   scaleTo?: number;
   /** Jenis getaran saat disentuh. `false` = diam. */
   haptic?: HapticKind | false;

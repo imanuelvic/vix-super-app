@@ -5,6 +5,7 @@ import {
   PART_GROUPS,
   partCondition,
   setPartDate,
+  setPartDueNow,
   type PartStatusMap,
   type PartTone,
 } from '@/lib/car';
@@ -45,10 +46,12 @@ export function PartsTab({
     key: group.key,
     label: group.label,
     rows: group.parts.map((part) => {
+      const dueNow = status[part.key]?.dueNow === true;
       const { tone, dueDate } = partCondition(
         status[part.key]?.last,
         part.intervalMonths,
         now,
+        dueNow,
       );
       const last = status[part.key]?.last;
       return {
@@ -57,9 +60,13 @@ export function PartsTab({
         tip: part.tip,
         tone,
         toneLabel: TONE_LABEL[tone],
-        dateLine: last
-          ? `Terakhir: ${formatDate(last.toDate())} · berikutnya ±${dueDate ? formatDate(dueDate) : '-'}`
-          : `Interval: tiap ${part.intervalMonths} bulan`,
+        // Ditandai manual → TIDAK ada tulisan "Terakhir: …" sama sekali;
+        // tanggalnya memang tidak diketahui, dan menuliskannya cuma bohong.
+        dateLine: dueNow
+          ? `Ditandai harus diservis · biasanya tiap ${part.intervalMonths} bulan`
+          : last
+            ? `Terakhir: ${formatDate(last.toDate())} · berikutnya ±${dueDate ? formatDate(dueDate) : '-'}`
+            : `Interval: tiap ${part.intervalMonths} bulan`,
       };
     }),
   }));
@@ -74,18 +81,23 @@ export function PartsTab({
             : `${needsAttention} bagian perlu perhatian ⚠️`,
         sub:
           unknownCount > 0
-            ? `${unknownCount} bagian belum pernah dicatat — tap untuk mengisi.`
+            ? `${unknownCount} bagian belum pernah dicatat.`
             : 'Tap bagian mana pun untuk memperbarui tanggalnya.',
       }}
       groups={groups}
       dialogHint="Kapan terakhir diganti / dicek?"
       focusDue={focusDue}
       noteOf={(key) => status[key]?.note ?? ''}
+      dueNowOf={(key) => status[key]?.dueNow === true}
       // `user` selalu ada di sini (layar Car cuma terbuka setelah login);
       // penjagaan ini cuma supaya tidak pernah menulis tanpa pemilik.
       onSave={async (key, date, note) => {
         if (!user) return;
         await setPartDate(user.uid, key, date, note);
+      }}
+      onDueNow={async (key, dueNow) => {
+        if (!user) return;
+        await setPartDueNow(user.uid, key, dueNow);
       }}
     />
   );

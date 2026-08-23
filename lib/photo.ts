@@ -44,3 +44,43 @@ export async function pickCompressedImage({
   );
   return small.base64 ?? null;
 }
+
+/**
+ * Foto yang perlu DIBACA MESIN (nota Split Bill), bukan sekadar disimpan.
+ *
+ * Mengembalikan DUA hal dari satu jepretan, dan itu memang disengaja:
+ * - `scanUri` — salinan lebar 1600 px untuk OCR. Foto asli iPhone (±4000 px)
+ *   bisa dibaca juga tapi jauh lebih lambat, sedangkan versi simpan 640 px
+ *   terlalu kasar: huruf struk thermal-nya hancur dan hasilnya ngawur.
+ * - `base64`  — versi kecil 640 px yang benar-benar disimpan ke Firestore,
+ *   sama ukurannya dengan foto dokumentasi lain di app ini.
+ *
+ * `scanUri` cuma berkas sementara di HP — tidak ikut tersimpan ke mana pun.
+ */
+export async function pickPhotoToRead({
+  fromCamera,
+}: {
+  /** true = buka kamera (motret nota), false = ambil dari galeri. */
+  fromCamera: boolean;
+}): Promise<{ scanUri: string; base64: string | null } | null> {
+  const res = fromCamera
+    ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 })
+    : await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 1,
+      });
+  if (res.canceled || !res.assets[0]) return null;
+  const asli = res.assets[0].uri;
+
+  const untukBaca = await ImageManipulator.manipulateAsync(
+    asli,
+    [{ resize: { width: 1600 } }],
+    { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG },
+  );
+  const untukSimpan = await ImageManipulator.manipulateAsync(
+    asli,
+    [{ resize: { width: 640 } }],
+    { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+  );
+  return { scanUri: untukBaca.uri, base64: untukSimpan.base64 ?? null };
+}

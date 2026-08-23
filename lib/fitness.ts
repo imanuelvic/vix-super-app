@@ -10,11 +10,12 @@ import { type LoginStreak as DayStreak } from './achievements';
 import { pickOfDay, weekIndex } from './core';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
-import { formatDecimal } from './format';
+import { dayIdToDate, formatDecimal } from './format';
 import { FITNESS_HABIT_ID } from './habits';
 import {
   bmiCategory,
   bmiValue,
+  bumpWeekGym,
   dayDocId,
   idealWeightRange,
   setHabitDone,
@@ -22,7 +23,7 @@ import {
   type HealthProfile,
   type WeightTarget,
 } from './health';
-import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
+import { EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Fitness 💪 — program LEAN-ATLETIS: menaikkan otot dada, lengan & perut
 // sambil menjaga lemak tetap rendah, supaya proporsinya bagus (bukan besar
@@ -454,17 +455,6 @@ export function fitTargets(
   ];
 }
 
-export const FIT_PREP: string[] = [
-  '👕 Baju ganti & sepatu olahraga sudah di tas sejak malam sebelumnya',
-  '🍌 Makan ringan 45 menit sebelum: pisang / roti / oat',
-  '💧 Botol air minimal 600 ml (hari lari: 750 ml)',
-  '🧤 Sarung tangan atau strap (bantu pull-up & row)',
-  '👟 Hari lari: sepatu lari, bukan sepatu angkat beban',
-  '🎧 Earphone + playlist yang bikin semangat',
-  '📱 Buka app ini, centang tiap gerakan selesai',
-  '🥛 Protein dalam 1–2 jam setelah latihan',
-];
-
 export const FIT_RECOVERY: string[] = [
   '😴 Tidur 7–8 jam — ini saat otot benar-benar dibangun',
   '🧘 Stretching ringan 10 menit biar tidak kaku',
@@ -691,14 +681,78 @@ function prevWorkoutDayId(d: Date): string {
   return '';
 }
 
-/** Panggil saat SEMUA gerakan hari ini selesai — naik maksimal 1×/hari. */
-export function bumpFitStreak(uid: string, current: DayStreak | null, d: Date) {
-  const todayId = dayDocId(d);
-  if (alreadyCounted(current, todayId)) return Promise.resolve();
-  return setDoc(
-    doc(db, 'users', uid, 'app', 'fitnessStreak'),
-    nextStreak(current, todayId, prevWorkoutDayId(d)),
-  );
+// ---- Tutup buku lewat tengah malam ⏰ ----
+//
+// Rentetan & achievement TIDAK lagi naik saat gerakan terakhir dicentang.
+// Alasannya sederhana: sepanjang hari centangnya masih boleh dilepas lagi, jadi
+// "sudah beres" di jam 3 sore belum tentu benar jam 11 malam. Yang dihitung
+// adalah keadaan hari itu SETELAH harinya habis (lewat jam 00.00).
+//
+// Pemeriksaannya dijalankan saat tab Exercise dibuka: hari-hari yang sudah
+// lewat & belum pernah ditutup dibaca sekali, lalu yang memang tuntas dicatat.
+// Tanpa server/background task — app ini memang tidak punya keduanya.
+
+/** Paling jauh berapa hari ke belakang ikut diperiksa saat tutup buku. */
+export const FIT_SETTLE_DAYS = 14;
+
+/**
+ * dayId yang perlu diperiksa: dari sesudah hari terakhir yang sudah tercatat
+ * sampai KEMARIN (hari ini tidak ikut — bukunya belum tutup), maksimal
+ * {@link FIT_SETTLE_DAYS} hari ke belakang. Urut naik.
+ */
+export function fitSettleDayIds(now: Date, lastDayId: string): string[] {
+  const ids: string[] = [];
+  for (let i = FIT_SETTLE_DAYS; i >= 1; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const id = dayDocId(d);
+    if (id > lastDayId) ids.push(id);
+  }
+  return ids;
+}
+
+/**
+ * Tutup buku hari-hari yang sudah lewat: yang sesinya tuntas dicatat sebagai
+ * rentetan 🔥 (+ hari angkat beban ikut menambah rekap mingguan Health), yang
+ * tidak tuntas dilewati begitu saja.
+ *
+ * Rentetannya dibaca LANGSUNG dari Firestore di sini, bukan dikirim dari layar.
+ * Itu disengaja: kalau memakai salinan yang masih dimuat di layar, pembukuan
+ * bisa jalan sebelum data aslinya sampai dan satu hari terhitung dua kali.
+ *
+ * Aman dipanggil berkali-kali: `lastDayId` di dokumen rentetan jadi penandanya
+ * sampai di mana buku sudah ditutup — termasuk untuk hitungan gym mingguan,
+ * yang dulu bisa naik berulang tiap centang terakhir dilepas & dipasang lagi di
+ * hari yang sama.
+ *
+ * Hemat baca: dokumen harian yang diambil hanya hari yang memang belum ditutup
+ * (biasanya 0–2 dokumen), paling banyak {@link FIT_SETTLE_DAYS}.
+ *
+ * Mengembalikan berapa hari yang baru saja tercatat.
+ */
+export async function settleFitDays(uid: string, now: Date): Promise<number> {
+  const ref = doc(db, 'users', uid, 'app', 'fitnessStreak');
+  const snap = await getDoc(ref);
+  let streak = (snap.data() as DayStreak | undefined) ?? EMPTY_DAY_STREAK;
+
+  const ids = fitSettleDayIds(now, streak.lastDayId);
+  if (ids.length === 0) return 0;
+
+  const days = await fetchFitDays(uid, ids);
+  let counted = 0;
+  for (const id of ids) {
+    const d = dayIdToDate(id);
+    // Jalan pagi Rabu & Minggu memang tidak pernah dihitung sebagai sesi.
+    if (isFitWalkDay(d)) continue;
+    if (!fitDayComplete(days[id], d.getDay(), fitBlockOf(d))) continue;
+    streak = nextStreak(streak, id, prevWorkoutDayId(d));
+    counted += 1;
+    // Rekap mingguan Health cuma menghitung hari ANGKAT BEBAN (anjuran:
+    // strength training minimal 2 hari/minggu) — hari lari tidak ikut.
+    if (fitSessionFor(d).kind === 'strength') await bumpWeekGym(uid, d);
+  }
+  if (counted > 0) await setDoc(ref, streak);
+  return counted;
 }
 
 /**
@@ -708,14 +762,19 @@ export function bumpFitStreak(uid: string, current: DayStreak | null, d: Date) {
  * sesi sengaja DIPERTAHANKAN: itu catatan sejarah yang benar-benar pernah kamu
  * capai, dan achievement "10/50/100 sesi" dihitung dari sana.
  *
- * `lastDayId` dikosongkan supaya hitungannya benar-benar mulai dari awal:
- * sesi berikutnya (termasuk kalau tanda lewatinya dibatalkan lagi hari ini)
- * kembali dihitung sebagai rentetan ke-1.
+ * `lastDayId` diisi HARI INI (bukan dikosongkan): dengan count = 0, sesi
+ * berikutnya tetap dihitung sebagai rentetan ke-1 — nyambung atau tidak,
+ * `nextStreak` sama-sama menghasilkan 1. Sekaligus menandai hari ini sudah
+ * ditutup bukunya, jadi `settleFitDays` tidak mengulang hari-hari sebelumnya.
  */
-export function breakFitStreak(uid: string, current: DayStreak | null) {
+export function breakFitStreak(
+  uid: string,
+  current: DayStreak | null,
+  d: Date,
+) {
   return setDoc(doc(db, 'users', uid, 'app', 'fitnessStreak'), {
     ...(current ?? EMPTY_DAY_STREAK),
     count: 0,
-    lastDayId: '',
+    lastDayId: dayDocId(d),
   });
 }

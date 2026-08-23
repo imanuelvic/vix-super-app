@@ -18,6 +18,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
 import { ScoreMeter } from '@/components/wheel/ScoreMeter';
 import { useAuth } from '@/contexts/auth';
+import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatDecimal, formatFullDateTime } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
@@ -63,7 +64,8 @@ export default function WheelScreen() {
   const [q, setQ] = useState(nowQ.q);
   const qid = quarterDocId(year, q);
 
-  const [data, setData] = useState<WheelData | null>(null);
+  // data = null → loading. Kosong sendiri tiap ganti kuartal (useKeyedData).
+  const { data, set: setData } = useKeyedData<string, WheelData>(qid);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('overview');
   const [busy, setBusy] = useState(false);
@@ -85,8 +87,7 @@ export default function WheelScreen() {
 
   useEffect(() => {
     if (!user) return;
-    setData(null);
-    const unsubscribe = subscribeWheel(
+    return subscribeWheel(
       user.uid,
       qid,
       (next) => {
@@ -95,8 +96,7 @@ export default function WheelScreen() {
       },
       () => setError(LOAD_ERROR),
     );
-    return unsubscribe;
-  }, [user, qid]);
+  }, [user, qid, setData]);
 
   function shift(delta: number) {
     const next = shiftQuarter(year, q, delta);

@@ -5,7 +5,8 @@
 // Diet 🥗 TIDAK di sini — itu soal tubuh, jadi tinggal di fitur Health
 // bersama Steps & Check-up (app/health.tsx).
 // ============================================================================
-import { useEffect, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -44,6 +45,17 @@ import { LOAD_ERROR } from '@/lib/messages';
 
 export default function HabitsScreen() {
   const { user } = useAuth();
+  const router = useRouter();
+
+  // Kartu "✍️ Rhema Pagi Ini" di Home mengarah ke sini dengan ?focus=rhema —
+  // artinya: buka sesi baris Rhema lalu gulung tepat ke barisnya.
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
+  // Param dibersihkan SESUDAH lompatannya jalan. Habits ini layar tab: tanpa
+  // dibersihkan, param-nya menempel dan tiap balik ke tab ini layarnya
+  // melompat sendiri lagi.
+  const clearFocus = useCallback(() => {
+    if (focus) router.setParams({ focus: '' });
+  }, [focus, router]);
 
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
@@ -124,6 +136,8 @@ export default function HabitsScreen() {
             profile={profile}
             target={target ?? null}
             streak={streak ?? null}
+            focusRhema={focus === 'rhema'}
+            onFocusDone={clearFocus}
           />
         )}
       </View>

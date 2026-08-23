@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AffiliateTab } from '@/components/career/AffiliateTab';
 import { BusinessTab } from '@/components/career/BusinessTab';
 import { FreelanceTab } from '@/components/career/FreelanceTab';
 import { FulltimeTab } from '@/components/career/FulltimeTab';
@@ -19,6 +20,11 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useAuth } from '@/contexts/auth';
 import {
+  pendingIdeas,
+  subscribeAffiliateIdeas,
+  type ContentIdea,
+} from '@/lib/affiliate';
+import {
   effectiveRoadmap,
   freelanceReminderWindow,
   subscribeFreelance,
@@ -30,18 +36,24 @@ import {
 } from '@/lib/career';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type CareerTab = 'fulltime' | 'freelance' | 'insurance' | 'business';
+type CareerTab =
+  | 'fulltime'
+  | 'freelance'
+  | 'affiliate'
+  | 'insurance'
+  | 'business';
 
 // Tab bar bawah di dalam layar Career.
 const TABS: BottomTab<CareerTab>[] = [
   { key: 'fulltime', label: 'Fulltime', icon: 'laptopcomputer' },
   { key: 'freelance', label: 'Freelance', icon: 'globe' },
+  { key: 'affiliate', label: 'Affiliate', icon: 'megaphone.fill' },
   { key: 'insurance', label: 'Insurance', icon: 'shield.fill' },
   { key: 'business', label: 'Business', icon: 'cart.fill' },
 ];
 
-// Career 💼 — empat topi pekerjaan: engineer NDC, freelancer,
-// agent Manulife, dan (nanti) bisnis kuliner Manado.
+// Career 💼 — lima topi pekerjaan: engineer NDC, freelancer, content creator /
+// affiliate, agent Manulife, dan (nanti) bisnis kuliner Manado.
 export default function CareerScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -63,6 +75,7 @@ export default function CareerScreen() {
   const isCareerTab = (t?: string): t is CareerTab =>
     t === 'fulltime' ||
     t === 'freelance' ||
+    t === 'affiliate' ||
     t === 'insurance' ||
     t === 'business';
 
@@ -77,6 +90,7 @@ export default function CareerScreen() {
   const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
   const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);
   const [insurance, setInsurance] = useState<InsuranceMonths | null>(null);
+  const [ideas, setIdeas] = useState<ContentIdea[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -93,6 +107,7 @@ export default function CareerScreen() {
       ),
       subscribeFreelance(user.uid, setFreelance, fail),
       subscribeInsurance(user.uid, setInsurance, fail),
+      subscribeAffiliateIdeas(user.uid, setIdeas, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -108,7 +123,10 @@ export default function CareerScreen() {
       <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
-        {roadmap === null || freelance === null || insurance === null ? (
+        {roadmap === null ||
+        freelance === null ||
+        insurance === null ||
+        ideas === null ? (
           <LoadingCenter />
         ) : tab === 'fulltime' ? (
           <FulltimeTab
@@ -122,6 +140,8 @@ export default function CareerScreen() {
             editId={editParam}
             onEditConsumed={clearEditParam}
           />
+        ) : tab === 'affiliate' ? (
+          <AffiliateTab ideas={ideas} />
         ) : tab === 'insurance' ? (
           <InsuranceTab months={insurance} />
         ) : (
@@ -141,6 +161,10 @@ export default function CareerScreen() {
           freelance: (freelance ?? []).filter((p) =>
             freelanceReminderWindow(p, new Date()),
           ).length,
+          // Ide konten yang belum tayang — sengaja TIDAK ikut ke badge tile
+          // Career di Home: ide yang menunggu itu antrean kreatif, bukan
+          // tagihan harian, dan tidak boleh ikut membuat Home terlihat penuh.
+          affiliate: pendingIdeas(ideas ?? []),
         })}
         value={tab}
         onChange={onTabPress}

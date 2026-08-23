@@ -19,10 +19,10 @@ import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { formatDecimal, parseDecimal } from '@/lib/format';
-import { bumpWeekGym, weekDayIds } from '@/lib/health';
+import { weekDayIds } from '@/lib/health';
 import {
   breakFitStreak,
-  bumpFitStreak,
+  EMPTY_FIT_DAY,
   fetchFitDays,
   fitBlockOf,
   fitDayComplete,
@@ -108,19 +108,31 @@ export function ExerciseTab({
   // rentetan 🔥 yang hilang tidak bisa dikembalikan.
   const [confirmSkip, setConfirmSkip] = useState(false);
 
-  const { done, skipped } = day;
+  const { skipped } = day;
   const session = fitSessionOfWeekday(weekday, block);
   const isToday = weekday === todayWeekday;
   // Hari jalan pagi = pemulihan: boleh dicentang sebagai bonus, tapi tidak
   // pernah menaikkan maupun memutus rentetan 🔥.
   const isWalkDay = session.kind === 'walk';
+
+  // Catatan hari YANG SEDANG DILIHAT: hari ini dari `day` yang live, hari lain
+  // dari ambilan minggu berjalan. Dengan ini hari yang sudah beres tampil
+  // lengkap dengan centangnya — dulu hari lain selalu terlihat kosong walau
+  // pil harinya sudah bertanda ✓, seolah catatannya hilang.
+  const viewDay: FitDay = isToday
+    ? day
+    : (weekDays[weekIdOf(weekday)] ?? EMPTY_FIT_DAY);
+  const done = viewDay.done;
   // Hari yang dilewati ✕ dianggap tidak ada centangnya sama sekali.
-  const doneCount =
-    isToday && skipped
-      ? 0
-      : session.exercises.filter((e) => done[e.id]).length;
+  const daySkipped = viewDay.skipped;
+  const doneCount = daySkipped
+    ? 0
+    : session.exercises.filter((e) => done[e.id]).length;
   const total = session.exercises.length;
   const allDone = total > 0 && doneCount === total;
+  // Hari yang sudah LEWAT (termasuk hari ini) — catatannya ada & terkunci.
+  // Hari depan belum ada catatannya sama sekali, jadi cuma pratinjau.
+  const sudahLewat = isToday || weekIdOf(weekday) <= dayId;
   // Tombol lewati hanya untuk HARI INI, dan hanya selama sesinya belum beres —
   // sesi yang sudah selesai tidak bisa "dilewati" (kalau bisa, rentetan yang
   // baru saja naik malah ikut hangus).
@@ -140,19 +152,11 @@ export function ExerciseTab({
         dayId,
         session.exercises.every((e) => after[e.id]),
       );
-      // Centang terakhir yang melengkapi sesi → streak naik 🔥. Hari jalan pagi
-      // dikecualikan: itu pemulihan, bukan sesi latihan.
-      if (next && !isWalkDay) {
-        if (session.exercises.every((e) => after[e.id])) {
-          await bumpFitStreak(user.uid, streak, today);
-          // Rekap mingguan Health hanya menghitung hari ANGKAT BEBAN (target
-          // anjuran: strength training minimal 2 hari/minggu) — hari lari tidak
-          // ikut, supaya angkanya tetap jujur.
-          if (session.kind === 'strength') {
-            await bumpWeekGym(user.uid, today);
-          }
-        }
-      }
+      // Rentetan 🔥 & rekap mingguan SENGAJA tidak disentuh di sini. Keduanya
+      // baru dihitung setelah harinya habis (lewat jam 00.00) oleh
+      // `settleFitDays` di app/fitness.tsx — sepanjang hari centangnya masih
+      // boleh dilepas lagi, jadi "beres" jam 3 sore belum tentu benar jam 11
+      // malam.
     } catch {
       // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
     } finally {
@@ -173,7 +177,7 @@ export function ExerciseTab({
       // menggantung sebagai kebiasaan yang belum dikerjakan.
       await syncFitnessHabitSkipped(user.uid, dayId, true);
       // Jalan pagi tidak pernah menyentuh rentetan — melewatinya pun tidak.
-      if (!isWalkDay) await breakFitStreak(user.uid, streak);
+      if (!isWalkDay) await breakFitStreak(user.uid, streak, today);
     } catch {
       // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
     } finally {
@@ -306,7 +310,7 @@ export function ExerciseTab({
                   {session.focus}
                 </VixText>
               </View>
-              {isToday && (
+              {sudahLewat && (
                 <DonutChart
                   size={72}
                   thickness={10}
@@ -346,7 +350,14 @@ export function ExerciseTab({
             ) : (
               <View style={styles.previewCard}>
                 <VixText heading="label" additionalStyle={styles.previewText}>
-                  👀 Pratinjau — yang bisa dicentang hanya latihan hari ini.
+                  {/* Hari yang sudah lewat BUKAN pratinjau — catatannya nyata,
+                      cuma sudah terkunci. Deretan harinya ikut berganti sendiri
+                      tiap Senin, jadi tandanya mulai kosong lagi tiap pekan. */}
+                  {!sudahLewat
+                    ? '👀 Pratinjau — yang bisa dicentang hanya latihan hari ini.'
+                    : daySkipped
+                      ? '✕ Hari itu dilewati — tercatat apa adanya, tidak bisa diubah lagi.'
+                      : '🔒 Sudah berlalu — centangnya terkunci. Deretan hari ini kereset tiap Senin.'}
                 </VixText>
               </View>
             )}
@@ -354,8 +365,8 @@ export function ExerciseTab({
             {session.exercises.map((ex) => {
               // ✕ menang atas centang: hari yang dilewati tidak pernah tampil
               // tercentang, walau centangnya tersimpan sebelum ditandai lewati.
-              const exSkipped = isToday && skipped;
-              const checked = isToday && !exSkipped && !!done[ex.id];
+              const exSkipped = daySkipped;
+              const checked = !exSkipped && !!done[ex.id];
               const kg = weightOf(ex, weights);
               return (
                 <View

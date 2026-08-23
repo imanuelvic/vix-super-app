@@ -93,7 +93,14 @@ export default function DailyPriorityScreen() {
     list,
     stored,
   });
-  latest.current = { list, stored };
+  // Ref-nya diperbarui di dalam efek, BUKAN saat render. Menulis ref saat
+  // render terlarang di React Compiler (yang menyala di app ini): render boleh
+  // diulang atau dibuang, jadi tulisannya bisa terjadi dua kali atau hilang.
+  // Efek tanpa dependency ini jalan sesudah SETIAP render, jadi isinya tetap
+  // selalu yang terbaru saat layarnya ditutup.
+  useEffect(() => {
+    latest.current = { list, stored };
+  });
   useEffect(() => {
     return () => {
       const { list: end, stored: saved } = latest.current;

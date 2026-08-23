@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,14 +12,17 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ExerciseTab } from '@/components/fitness/ExerciseTab';
+import { NotesTab } from '@/components/fitness/NotesTab';
 import { ProgramTab } from '@/components/fitness/ProgramTab';
 import { ProgressTab } from '@/components/fitness/ProgressTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import { type LoginStreak } from '@/lib/achievements';
+import { subscribeFitNotes, type FitNote } from '@/lib/fitNotes';
 import {
   EMPTY_FIT_DAY,
   fitPendingToday,
+  settleFitDays,
   subscribeFitDay,
   subscribeFitStreak,
   subscribeFitWeights,
@@ -34,12 +37,13 @@ import {
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type Tab = 'program' | 'exercise' | 'progress';
+type Tab = 'program' | 'exercise' | 'progress' | 'notes';
 
 const TABS: BottomTab<Tab>[] = [
   { key: 'program', label: 'Program', icon: 'calendar' },
   { key: 'exercise', label: 'Exercise', icon: 'dumbbell.fill' },
   { key: 'progress', label: 'Progress', icon: 'chart.line.uptrend.xyaxis' },
+  { key: 'notes', label: 'Notes', icon: 'note.text' },
 ];
 
 // Fitness 💪 — program lean-atletis: 3 hari angkat beban (Sen/Kam/Sab), 2 hari
@@ -59,6 +63,8 @@ export default function FitnessScreen() {
   const [streak, setStreak] = useState<LoginStreak | null>(null);
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [target, setTarget] = useState<WeightTarget | null>(null);
+  // Catatan & tautan latihan — isi sub-tab Notes 📝.
+  const [notes, setNotes] = useState<FitNote[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Jam berjalan — badge Exercise baru menyala jam 16.00 dan ikut kereset
@@ -74,8 +80,24 @@ export default function FitnessScreen() {
       subscribeFitStreak(user.uid, setStreak, fail),
       subscribeHealthProfile(user.uid, setProfile, fail),
       subscribeWeightTarget(user.uid, setTarget, fail),
+      subscribeFitNotes(user.uid, setNotes, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
+  }, [user, dayId]);
+
+  // Tutup buku hari-hari yang sudah lewat 🔥 — rentetan & achievement baru
+  // dihitung SETELAH harinya habis (jam 00.00), bukan saat gerakan terakhir
+  // dicentang: sepanjang hari centangnya masih bisa dilepas lagi.
+  //
+  // Dijalankan sekali tiap hari, di sini (bukan di dalam tab) supaya pindah
+  // tab tidak memicunya berulang kali.
+  const settledDay = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user || settledDay.current === dayId) return;
+    settledDay.current = dayId;
+    // Gagal diam-diam: pembukuan bisa dicoba lagi besok, dan kegagalannya tidak
+    // boleh menutupi layar latihan dengan pesan error.
+    settleFitDays(user.uid, new Date()).catch(() => {});
   }, [user, dayId]);
 
   return (
@@ -99,8 +121,10 @@ export default function FitnessScreen() {
             streak={streak}
             bodyWeightKg={profile?.weightKg ?? null}
           />
-        ) : (
+        ) : tab === 'progress' ? (
           <ProgressTab streak={streak} profile={profile} target={target} />
+        ) : (
+          <NotesTab notes={notes} />
         )}
       </View>
 

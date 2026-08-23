@@ -219,9 +219,13 @@ export type ChoreTone = DeadlineTone;
 /** Tanggal terakhir tiap chore dikerjakan: users/{uid}/house/chores. */
 // `note` = catatan pribadi (mis. pakai cairan apa, tukang siapa). Sengaja
 // TIDAK ditampilkan di daftar — hanya muncul lagi saat modalnya dibuka.
+// `last` = kapan terakhir dikerjakan. `dueNow` = ditandai HARUS dikerjakan
+// sekarang tanpa tahu tanggal terakhirnya. Bentuk & aturannya sama persis
+// dengan sparepart mobil (lihat PartStatusMap di lib/car.ts) — dua layar ini
+// memang kembar.
 export type ChoreStatusMap = Record<
   string,
-  { last: Timestamp; note?: string }
+  { last?: Timestamp; note?: string; dueNow?: boolean }
 >;
 
 export function subscribeChoreStatus(
@@ -247,11 +251,22 @@ export function setChoreDate(
 ) {
   const ref = doc(db, 'users', uid, 'house', 'chores');
   // merge: hanya chore ini yang berubah, status lain tetap.
+  // dueNow dipadamkan: sudah ada tanggal betulan untuk dihitung.
   return setDoc(
     ref,
-    { status: { [key]: { last: Timestamp.fromDate(date), note } } },
+    {
+      status: {
+        [key]: { last: Timestamp.fromDate(date), note, dueNow: false },
+      },
+    },
     { merge: true },
   );
+}
+
+/** Tandai harus dikerjakan sekarang tanpa tanggal terakhir (lihat lib/car.ts). */
+export function setChoreDueNow(uid: string, key: string, dueNow: boolean) {
+  const ref = doc(db, 'users', uid, 'house', 'chores');
+  return setDoc(ref, { status: { [key]: { dueNow } } }, { merge: true });
 }
 
 /** Label interval enak dibaca: "minggu" / "2 minggu" / "3 bulan". */
@@ -266,7 +281,10 @@ export function choreCondition(
   last: Timestamp | undefined,
   intervalDays: number,
   now: Date,
+  /** Ditandai manual "harus dikerjakan sekarang" — menang atas hitungan. */
+  dueNow = false,
 ): { tone: ChoreTone; dueDate: Date | null } {
+  if (dueNow) return { tone: 'over', dueDate: now };
   if (!last) return { tone: 'unknown', dueDate: null };
   const due = new Date(last.toDate().getTime() + intervalDays * 86_400_000);
   // Rumah TIDAK punya peringatan H-1 — langsung "Sekarang" di hari-H saja.
@@ -297,6 +315,7 @@ export function residenceAttentionList(
       status[p.key]?.last,
       p.intervalDays,
       now,
+      status[p.key]?.dueNow,
     );
     if ((tone === 'warn' || tone === 'over') && dueDate) {
       out.push({ key: p.key, label: p.label, tone, dueDate });

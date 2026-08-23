@@ -48,7 +48,74 @@ export type CoreLeader = {
   disc?: string | null; // 'D' | 'I' | 'S' | 'C'
   mbti?: string | null; // mis. 'INFJ'
   loveLanguage?: string | null; // key dari LOVE_LANG_OPTIONS
+  // Pendidikan & pekerjaan sekarang (opsional) — bahan obrolan visitasi, doa
+  // yang tepat sasaran, & tahu kapan mereka sibuk (skripsi, lembur, ujian).
+  school?: string | null; // kampus / sekolah
+  major?: string | null; // jurusan
+  job?: string | null; // profesi
+  workplace?: string | null; // tempat kerja
 };
+
+// ============ Pendidikan & pekerjaan (CL maupun Main Team) ============
+// Empat kolom yang SEMUANYA opsional. Ditulis sebagai satu bagian tersendiri
+// supaya form CL & form Main Team memakai aturan yang sama persis — dulu tiap
+// kolom baru harus disalin ke dua tempat dan gampang jadi beda sendiri.
+
+/** Isian form pendidikan & pekerjaan (selalu string, tak pernah null). */
+export type StudyWork = {
+  school: string;
+  major: string;
+  job: string;
+  workplace: string;
+};
+
+export const EMPTY_STUDY_WORK: StudyWork = {
+  school: '',
+  major: '',
+  job: '',
+  workplace: '',
+};
+
+/** Bagian pendidikan/pekerjaan dari data tersimpan — untuk mengisi form. */
+export function studyWorkOf(p: Partial<StudyWorkFields>): StudyWork {
+  return {
+    school: p.school ?? '',
+    major: p.major ?? '',
+    job: p.job ?? '',
+    workplace: p.workplace ?? '',
+  };
+}
+
+/** Bentuk simpannya: spasi dirapikan, yang kosong jadi null (bukan ""). */
+export function studyWorkPayload(s: StudyWork): StudyWorkFields {
+  const bersih = (t: string) => t.trim() || null;
+  return {
+    school: bersih(s.school),
+    major: bersih(s.major),
+    job: bersih(s.job),
+    workplace: bersih(s.workplace),
+  };
+}
+
+type StudyWorkFields = {
+  school: string | null;
+  major: string | null;
+  job: string | null;
+  workplace: string | null;
+};
+
+/** "🎓 Universitas Ciputra · Informatika" — null kalau dua-duanya kosong. */
+export function studyLine(p: Partial<StudyWorkFields>): string | null {
+  const isi = [p.school, p.major].filter(Boolean);
+  return isi.length ? `🎓 ${isi.join(' · ')}` : null;
+}
+
+/** "💼 Software Engineer di NDC" — null kalau dua-duanya kosong. */
+export function workLine(p: Partial<StudyWorkFields>): string | null {
+  if (p.job && p.workplace) return `💼 ${p.job} di ${p.workplace}`;
+  const satu = p.job || p.workplace;
+  return satu ? `💼 ${satu}` : null;
+}
 
 // Data awal para CL — tampil sebelum dokumen pernah disimpan.
 const DEFAULT_LEADERS: CoreLeader[] = [
@@ -83,6 +150,11 @@ export type MainTeamMember = {
   disc?: string | null;
   mbti?: string | null;
   loveLanguage?: string | null;
+  // Pendidikan & pekerjaan sekarang (opsional) — sama seperti CoreLeader.
+  school?: string | null;
+  major?: string | null;
+  job?: string | null;
+  workplace?: string | null;
 };
 
 export function subscribeMainTeam(

@@ -34,7 +34,9 @@ export type HomeFeature = {
     | 'globe'
     | 'bird.fill'
     | 'trophy.fill'
-    | 'graduationcap.fill';
+    | 'graduationcap.fill'
+    | 'diamond.fill'
+    | 'wineglass.fill';
   route: Href;
   /** Warna tile + warna ikon/tulisannya. */
   bg: string;
@@ -63,6 +65,11 @@ export const HOME_FEATURES: HomeFeature[] = [
   { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
 
   { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
+  // Social 🥂 — patungan (Split Bill) & tempat nongkrong bareng teman.
+  { key: 'social', label: 'Social', icon: 'wineglass.fill', route: '/social', bg: Color.SOCIAL, fg: Color.SOCIAL_DARK },
+  // Married 💍 — masih Coming Soon. Ditaruh paling belakang supaya urutan tile
+  // yang sudah kamu hafal tidak bergeser sama sekali.
+  { key: 'married', label: 'Married', icon: 'diamond.fill', route: '/married', bg: Color.MARRIED, fg: Color.MARRIED_DARK },
 ];
 
 /**
