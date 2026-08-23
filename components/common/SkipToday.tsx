@@ -8,7 +8,7 @@ import { VixText } from '@/components/common/VixText';
 // Baca Alkitab 📖, Revive ✝️, dan sesi latihan Fitness 💪.
 //
 // Artinya SAMA di ketiganya — "hari ini sengaja tidak dikerjakan, dicatat
-// jujur, rentetan 🔥 tidak bertambah" — jadi tampilannya harus sama juga.
+// jujur, streak 🔥 tidak bertambah" — jadi tampilannya harus sama juga.
 // Sebelum ini bloknya disalin apa adanya di tiap layar dan sempat melenceng
 // beberapa piksel satu sama lain.
 //
@@ -56,7 +56,7 @@ export function SkipButton({
   additionalStyle?: StyleProp<ViewStyle>;
 }) {
   return (
-    // Getaran "warning": ini jalur yang mengorbankan rentetan, bukan ketukan
+    // Getaran "warning": ini jalur yang mengorbankan streak, bukan ketukan
     // biasa — sama seperti tombol ✗ di Habits.
     <PressableScale
       style={[styles.button, additionalStyle]}

@@ -1,6 +1,6 @@
 import { type LoginStreak as DayStreak } from './achievements';
 
-// Rentetan harian 🔥 — aturannya SAMA untuk semua fitur yang punya streak
+// Streak harian 🔥 — aturannya SAMA untuk semua fitur yang punya streak
 // (doa pagi, Revive, baca Alkitab pagi/malam, sesi gym):
 //   { count, lastDayId, best, total }
 // Yang berbeda cuma "hari sebelumnya yang dianggap menyambung":
@@ -26,9 +26,9 @@ export function alreadyCounted(
 }
 
 /**
- * Nilai rentetan SESUDAH hari ini dicatat. `prevDayId` = id hari sebelumnya;
- * kalau sama dengan `lastDayId` berarti rentetan bersambung, kalau tidak
- * rentetan mulai lagi dari 1. `best` & `total` tidak pernah turun.
+ * Nilai streak SESUDAH hari ini dicatat. `prevDayId` = id hari sebelumnya;
+ * kalau sama dengan `lastDayId` berarti streak bersambung, kalau tidak
+ * streak mulai lagi dari 1. `best` & `total` tidak pernah turun.
  *
  * Pemanggil wajib mengecek `alreadyCounted` dulu supaya tidak dobel hitung.
  */

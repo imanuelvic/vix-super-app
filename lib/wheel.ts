@@ -143,13 +143,33 @@ export function shiftQuarter(
 
 // ===================== Firestore =====================
 
+/**
+ * Roda ini punya SIAPA.
+ *
+ * `null`/tak diisi = punyaku sendiri (users/{uid}/wheel/{qid}) — persis seperti
+ * sebelumnya, jadi data lama tetap di tempatnya.
+ *
+ * Diisi id CORE Leader = roda milik CL itu, disimpan terpisah di
+ * users/{uid}/coreWheel/{leaderId}/quarters/{qid}. Tetap di dalam data pemilik
+ * app (aturan Firestore `users/{uid}/**` sudah menutupinya), tapi satu CL satu
+ * cabang sendiri — jadi tidak mungkin tercampur dengan skorku.
+ */
+export type WheelOwner = string | null | undefined;
+
+function wheelRef(uid: string, qid: string, owner: WheelOwner) {
+  return owner
+    ? doc(db, 'users', uid, 'coreWheel', owner, 'quarters', qid)
+    : doc(db, 'users', uid, 'wheel', qid);
+}
+
 export function subscribeWheel(
   uid: string,
   qid: string,
   onChange: (data: WheelData) => void,
   onError?: (error: FirestoreError) => void,
+  owner?: WheelOwner,
 ) {
-  const ref = doc(db, 'users', uid, 'wheel', qid);
+  const ref = wheelRef(uid, qid, owner);
   return liveDoc(
     ref,
     (snapshot) => {
@@ -171,14 +191,20 @@ export function saveWheelScores(
   qid: string,
   scores: WheelData['scores'],
   notes: WheelData['notes'],
+  owner?: WheelOwner,
 ) {
-  const ref = doc(db, 'users', uid, 'wheel', qid);
+  const ref = wheelRef(uid, qid, owner);
   return setDoc(ref, { scores, notes, updatedAt: Timestamp.now() }, { merge: true });
 }
 
 /** Simpan area fokus kuartal. merge: skor tidak tersentuh. */
-export function saveWheelFocus(uid: string, qid: string, focus: WheelFocus[]) {
-  const ref = doc(db, 'users', uid, 'wheel', qid);
+export function saveWheelFocus(
+  uid: string,
+  qid: string,
+  focus: WheelFocus[],
+  owner?: WheelOwner,
+) {
+  const ref = wheelRef(uid, qid, owner);
   return setDoc(ref, { focus, updatedAt: Timestamp.now() }, { merge: true });
 }
 

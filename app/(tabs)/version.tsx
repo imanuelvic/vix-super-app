@@ -132,40 +132,48 @@ export default function VersionScreen() {
           System ⚙️
         </VixText>
 
-        {/* ===== Ringkasan pemakaian bulan berjalan ===== */}
-        <View style={styles.usageHero}>
-          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            📊 Pemakaian bulan {thisMonth}
-          </VixText>
-          <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
-            {monthTop ? `${monthTop.label}` : 'Belum ada data'}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            {monthTop
-              ? `${monthTop.count}× · total ${monthTotal} kali buka fitur`
-              : 'Buka fitur dari grid Home untuk mulai tercatat 📈'}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            🗓️ {monthRangeLabel} · reset tiap tanggal 1
-          </VixText>
-        </View>
+        {/* ===== Fitur paling sering: minggu ini (kiri) & bulan ini (kanan) =====
+            Sebelahan, bukan bertumpuk — keduanya menjawab pertanyaan yang sama
+            ("fitur apa yang paling sering kubuka?") untuk dua rentang waktu,
+            jadi memang untuk DIBANDINGKAN. Ditumpuk ke bawah, mata harus
+            mengingat angka kartu atas sambil membaca kartu bawah.
+            Kata-katanya ikut dipendekkan supaya muat di setengah lebar. */}
+        <View style={styles.usageRowHero}>
+          <View style={styles.usageHero}>
+            <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+              📊 Minggu ini
+            </VixText>
+            <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
+              {weekTop ? `${weekTop.label}` : '—'}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+              {weekTop ? `${weekTop.count}× · ${weekTotal} total` : 'Belum ada data'}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+              🗓️ {weekRangeLabel}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.usageHeroFoot}>
+              Sen–Min
+            </VixText>
+          </View>
 
-        {/* ===== Rincian minggu berjalan (di dalam bulan yang sama) ===== */}
-        <View style={styles.usageHero}>
-          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            📊 Fitur paling sering · minggu ini
-          </VixText>
-          <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
-            {weekTop ? `${weekTop.label}` : 'Belum ada data'}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            {weekTop
-              ? `${weekTop.count}× · total ${weekTotal} kali buka fitur`
-              : 'Buka fitur dari grid Home untuk mulai tercatat 📈'}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
-            🗓️ {weekRangeLabel} (Sen–Min)
-          </VixText>
+          <View style={styles.usageHero}>
+            <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+              📊 Bulan {thisMonth}
+            </VixText>
+            <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
+              {monthTop ? `${monthTop.label}` : '—'}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+              {monthTop ? `${monthTop.count}× · ${monthTotal} total` : 'Belum ada data'}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
+              🗓️ {monthRangeLabel}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.usageHeroFoot}>
+              reset tiap tanggal 1
+            </VixText>
+          </View>
         </View>
 
         {/* Hari ini */}
@@ -310,15 +318,23 @@ const styles = StyleSheet.create({
   title: { color: Color.MAIN, marginBottom: 16 },
   sectionTitle: { marginTop: 6, marginBottom: 10 },
   // Laporan pemakaian 📊
+  // Dua kartu sebelahan; `alignItems: 'stretch'` (bawaan) menyamakan tingginya
+  // walau nama fiturnya beda panjang, jadi tak ada yang menggantung.
+  usageRowHero: { flexDirection: 'row', gap: 10, marginBottom: 6 },
   usageHero: {
+    flex: 1,
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
-    padding: 20,
+    // Padding dikecilkan dari 20 → 16: di setengah lebar, 20 di kiri-kanan
+    // memakan terlalu banyak ruang teks.
+    padding: 16,
     gap: 4,
-    marginBottom: 6,
   },
   usageHeroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   usageHeroValue: { color: Color.TEXT_REVERSE },
+  // Baris terakhir (keterangan rentang) didorong ke DASAR kartu, jadi kedua
+  // kartu punya garis bawah yang sejajar walau isinya beda tinggi.
+  usageHeroFoot: { color: Color.TEXT_ON_DARK_MUTED, marginTop: 'auto' },
   usageCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

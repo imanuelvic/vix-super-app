@@ -514,7 +514,7 @@ export default function MultiplicationDetailScreen() {
         />
         <FormInput
           style={[styles.formGap, styles.notesInput]}
-          placeholder={'Butir catatan — satu per baris\nmis. Bubar WAG CORE …'}
+          placeholder={'Catatan'}
           value={sNotes}
           onChangeText={setSNotes}
           editable={!busy}
@@ -567,7 +567,7 @@ export default function MultiplicationDetailScreen() {
         />
         <FormInput
           style={styles.formGap}
-          placeholder="Alasan (mis. Main Team, lebih dekat dengan …)"
+          placeholder="Alasan ditempatkan)"
           value={mReason}
           onChangeText={setMReason}
           editable={!busy}

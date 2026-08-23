@@ -18,7 +18,7 @@ import { VixText } from '@/components/common/VixText';
 // header layar (mis. tab Habits). Satu tampilan, satu tempat ubah.
 //
 // Saat angkanya NAIK, pil ini meletup sekali — hadiah kecil yang langsung
-// terlihat begitu rentetan hari bertambah.
+// terlihat begitu streak hari bertambah.
 export function StreakPill({ streak }: { streak: string | number }) {
   const router = useRouter();
 

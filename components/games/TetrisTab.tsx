@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -7,13 +6,15 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useHighScore } from '@/hooks/useHighScore';
 
 // Tetris 🧱 — versi sederhana. Balok jatuh sendiri tiap tick; digeser,
 // diputar, atau dijatuhkan langsung. Satu baris penuh = baris itu hilang &
 // yang di atasnya turun. Balok mentok sampai atas = selesai.
 //
 // Sama seperti Snake: MURNI di HP, tidak menyentuh Firestore sama sekali.
-// Rekor cukup disimpan lokal (AsyncStorage) — gratis & instan.
+// Rekor cukup disimpan lokal — gratis & instan. Aturan simpannya pun dipakai
+// bersama Snake: lihat hooks/useHighScore.ts.
 
 const COLS = 10;
 const ROWS = 18;
@@ -155,20 +156,14 @@ function newGame(): Game {
 
 export function TetrisTab() {
   const [game, setGame] = useState<Game>(newGame);
-  const [best, setBest] = useState(0);
+  // Rekor 🏅 — baca/simpan di HP, aturannya sama dengan Snake (hooks/useHighScore).
+  const best = useHighScore(BEST_KEY, game.score, game.status === 'over');
   // Papan mengambil SISA ruang di antara skor & tombol kendali, lalu ukuran
   // kotaknya dipilih dari sisi yang paling sempit — supaya tombol di bawah
   // tidak pernah tertutup tab bar, di layar tinggi maupun pendek.
   const [cell, setCell] = useState(0);
 
   const level = Math.floor(game.lines / LINES_PER_LEVEL) + 1;
-
-  // Rekor tersimpan di HP saja (bukan Firestore) — gratis & instan.
-  useEffect(() => {
-    AsyncStorage.getItem(BEST_KEY).then((v) => {
-      if (v != null) setBest(Number(v) || 0);
-    });
-  }, []);
 
   const tickMs = Math.max(MIN_TICK_MS, START_TICK_MS - (level - 1) * SPEED_STEP_MS);
 
@@ -177,13 +172,6 @@ export function TetrisTab() {
     const t = setInterval(() => setGame(drop), tickMs);
     return () => clearInterval(t);
   }, [game.status, tickMs]);
-
-  // Selesai → simpan rekor baru kalau memang lebih tinggi.
-  useEffect(() => {
-    if (game.status !== 'over' || game.score <= best) return;
-    setBest(game.score);
-    AsyncStorage.setItem(BEST_KEY, String(game.score)).catch(() => {});
-  }, [game.status, game.score, best]);
 
   /** Geser kiri/kanan — diabaikan kalau mentok. */
   function move(dx: number) {

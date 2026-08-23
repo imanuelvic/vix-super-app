@@ -13,7 +13,7 @@ import { dayDocId } from './health';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 import { weekStart } from './usage';
 
-/** Rentetan MINGGUAN — bentuknya sama dengan rentetan harian, isi lastDayId = weekId. */
+/** Streak MINGGUAN — bentuknya sama dengan streak harian, isi lastDayId = weekId. */
 export type { LoginStreak as WeekStreak } from './achievements';
 
 // Learning 🎓 — SATU ilmu baru tiap minggu, supaya tidak ketinggalan soal
@@ -532,12 +532,6 @@ export function pendingSteps(
   return overdueSteps(steps, now).length;
 }
 
-/**
- * Angka badge tile Learning 🎓 di Home: langkah yang jatuh tempo DITAMBAH topik
- * diskusi minggu ini yang belum diobrolkan. Keduanya sama-sama "PR minggu ini",
- * jadi dihitung dalam satu angka — kalau dipisah, diskusinya gampang terlupa
- * karena tidak pernah punya penagih sendiri.
- */
 export function learningPending(
   steps: Record<string, boolean>,
   topicsDone: TopicsDone,
@@ -672,15 +666,15 @@ export function setTopicDone(uid: string, topicKey: string, done: boolean) {
   );
 }
 
-// ===== Rentetan MINGGUAN 🔥 — SATU dokumen: users/{uid}/app/learningStreak =====
-// Bentuknya sama persis dengan rentetan harian lain di app ini
+// ===== Streak MINGGUAN 🔥 — SATU dokumen: users/{uid}/app/learningStreak =====
+// Bentuknya sama persis dengan streak harian lain di app ini
 // ({ count, lastDayId, best, total }) — bedanya `lastDayId` diisi weekId
 // (tanggal Senin), dan "hari sebelumnya" berarti MINGGU sebelumnya. Itu
 // sebabnya perhitungannya bisa memakai fungsi murni yang sama (lib/streak.ts).
 //
 // Naik SEKALI saat langkah ke-4 minggu itu dicentang. Kalau centangnya dilepas
 // lagi lalu dicentang ulang di minggu yang sama, `alreadyCounted` menahannya
-// supaya tidak dihitung dua kali. Melepas centang TIDAK menurunkan rentetan —
+// supaya tidak dihitung dua kali. Melepas centang TIDAK menurunkan streak —
 // minggu itu memang pernah kamu tuntaskan, dan itu tetap benar.
 
 function learningStreakRef(uid: string) {
@@ -706,7 +700,7 @@ function prevWeekId(weekId: string): string {
 }
 
 /**
- * Rentetan mingguannya masih HIDUP? Yaitu tercatat minggu ini, atau minggu
+ * Streak mingguannya masih HIDUP? Yaitu tercatat minggu ini, atau minggu
  * lalu (minggu ini belum tuntas, tapi belum putus juga). Lebih lama dari itu
  * berarti sudah bolong — angkanya tidak boleh tampil seolah masih berjalan.
  * (Pasangan mingguan dari `activeStreak` milik kebiasaan harian.)
@@ -720,7 +714,7 @@ export function learningStreakAlive(
   );
 }
 
-/** Naikkan rentetan mingguan Learning — maksimal 1× per minggu. */
+/** Naikkan streak mingguan Learning — maksimal 1× per minggu. */
 export function bumpLearningStreak(
   uid: string,
   current: WeekStreak,

@@ -277,9 +277,10 @@ export function VisitationTab({
         <VisitationCardBody visitation={v} leaders={namaLeaders} />
       </PressableScale>
 
-      {/* Kolom kanan: tombol share di atas, hitung mundurnya TEPAT DI BAWAHNYA.
-          Dulu tenggatnya sebaris dengan nama CORE — nama yang panjang jadi
-          terjepit, dan mata harus melompat kiri-kanan untuk membacanya. */}
+      {/* Kolom kanan: tombol share di pojok kanan ATAS, hitung mundurnya jatuh
+          ke pojok kanan BAWAH kartu. Dulu tenggatnya sebaris dengan nama CORE —
+          nama yang panjang jadi terjepit; lalu sempat menggantung persis di
+          bawah tombol share, jadi mengambang di tengah kartu yang tinggi. */}
       <View style={styles.cardSide}>
         {/* Kirim visitasi + panduan acaranya ke CORE Leader lewat WhatsApp.
             Cuma emoji supaya tidak makan tempat. Latarnya menyala hijau pada
@@ -584,11 +585,16 @@ const styles = StyleSheet.create({
   // Isi kartu (area ketuk) + tombol kirim PDF di kanan ATAS-nya.
   // 'flex-start' menahan tombolnya tetap di ujung atas walau kartunya
   // memanjang karena agenda yang berbaris-baris.
-  cardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  // 'stretch' → kolom kanan setinggi kartunya, jadi isinya bisa dipisah:
+  // tombol share menempel di ATAS, hitung mundurnya di BAWAH.
+  cardRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
   cardTapArea: { flex: 1 },
-  // Kolom kanan: tombol share, lalu tenggatnya di bawahnya. Rata kanan supaya
-  // tulisan sepanjang apa pun tetap sejajar dengan tombolnya.
-  cardSide: { alignItems: 'flex-end', gap: 6 },
+  // Kolom kanan: tombol share di pojok kanan ATAS, tenggatnya turun ke pojok
+  // kanan BAWAH kartu — bukan menggantung persis di bawah tombolnya. Dulu
+  // keduanya menempel di atas, jadi tulisan "8 hari lagi" mengambang di tengah
+  // kartu yang tinggi. Rata kanan supaya tulisan sepanjang apa pun tetap
+  // sejajar dengan tombolnya.
+  cardSide: { alignItems: 'flex-end', justifyContent: 'space-between', gap: 6 },
   tip: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
   // Footer modal filter: dua tombol (Bersihkan / Selesai).
   filterFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },

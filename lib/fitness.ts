@@ -53,7 +53,7 @@ import { EMPTY_DAY_STREAK, nextStreak } from './streak';
 export type FitBlock = 'A' | 'B';
 
 /**
- * Jenis sesi — menentukan perlakuan rentetan 🔥:
+ * Jenis sesi — menentukan perlakuan streak 🔥:
  * - `strength` & `run` = hari INTI. Selesai → streak naik; bolos → streak putus.
  * - `walk`             = pemulihan. Boleh dicentang (bonus), tapi tidak pernah
  *                        menaikkan maupun memutus streak.
@@ -337,7 +337,7 @@ export function fitSessionFor(d: Date): FitSession {
   return fitSessionOfWeekday(d.getDay(), fitBlockOf(d));
 }
 
-/** Hari jalan pagi (Rabu & Minggu) — tidak pernah memutus rentetan 🔥. */
+/** Hari jalan pagi (Rabu & Minggu) — tidak pernah memutus streak 🔥. */
 function isFitWalkDay(d: Date): boolean {
   return fitSessionFor(d).kind === 'walk';
 }
@@ -656,7 +656,7 @@ export function syncFitnessHabitSkipped(
 
 // ===================== Streak sesi 🔥 =====================
 // users/{uid}/app/fitnessStreak — bentuknya sama dengan streak lain.
-// Rentetan dihitung antar HARI INTI (beban & lari): jalan pagi Rabu & Minggu
+// Streak dihitung antar HARI INTI (beban & lari): jalan pagi Rabu & Minggu
 // tidak memutus streak (Selasa → Kamis tetap nyambung).
 
 export function subscribeFitStreak(
@@ -683,7 +683,7 @@ function prevWorkoutDayId(d: Date): string {
 
 // ---- Tutup buku lewat tengah malam ⏰ ----
 //
-// Rentetan & achievement TIDAK lagi naik saat gerakan terakhir dicentang.
+// Streak & achievement TIDAK lagi naik saat gerakan terakhir dicentang.
 // Alasannya sederhana: sepanjang hari centangnya masih boleh dilepas lagi, jadi
 // "sudah beres" di jam 3 sore belum tentu benar jam 11 malam. Yang dihitung
 // adalah keadaan hari itu SETELAH harinya habis (lewat jam 00.00).
@@ -713,14 +713,14 @@ export function fitSettleDayIds(now: Date, lastDayId: string): string[] {
 
 /**
  * Tutup buku hari-hari yang sudah lewat: yang sesinya tuntas dicatat sebagai
- * rentetan 🔥 (+ hari angkat beban ikut menambah rekap mingguan Health), yang
+ * streak 🔥 (+ hari angkat beban ikut menambah rekap mingguan Health), yang
  * tidak tuntas dilewati begitu saja.
  *
- * Rentetannya dibaca LANGSUNG dari Firestore di sini, bukan dikirim dari layar.
+ * Streaknya dibaca LANGSUNG dari Firestore di sini, bukan dikirim dari layar.
  * Itu disengaja: kalau memakai salinan yang masih dimuat di layar, pembukuan
  * bisa jalan sebelum data aslinya sampai dan satu hari terhitung dua kali.
  *
- * Aman dipanggil berkali-kali: `lastDayId` di dokumen rentetan jadi penandanya
+ * Aman dipanggil berkali-kali: `lastDayId` di dokumen streak jadi penandanya
  * sampai di mana buku sudah ditutup — termasuk untuk hitungan gym mingguan,
  * yang dulu bisa naik berulang tiap centang terakhir dilepas & dipasang lagi di
  * hari yang sama.
@@ -756,14 +756,14 @@ export async function settleFitDays(uid: string, now: Date): Promise<number> {
 }
 
 /**
- * Putus rentetan 🔥 — dipakai saat hari INTI sengaja DILEWATI.
+ * Putus streak 🔥 — dipakai saat hari INTI sengaja DILEWATI.
  *
- * Yang hilang cuma rentetan berjalannya (`count` → 0). Rekor terbaik & total
+ * Yang hilang cuma streak berjalannya (`count` → 0). Rekor terbaik & total
  * sesi sengaja DIPERTAHANKAN: itu catatan sejarah yang benar-benar pernah kamu
  * capai, dan achievement "10/50/100 sesi" dihitung dari sana.
  *
  * `lastDayId` diisi HARI INI (bukan dikosongkan): dengan count = 0, sesi
- * berikutnya tetap dihitung sebagai rentetan ke-1 — nyambung atau tidak,
+ * berikutnya tetap dihitung sebagai streak ke-1 — nyambung atau tidak,
  * `nextStreak` sama-sama menghasilkan 1. Sekaligus menandai hari ini sudah
  * ditutup bukunya, jadi `settleFitDays` tidak mengulang hari-hari sebelumnya.
  */

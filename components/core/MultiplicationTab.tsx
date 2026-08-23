@@ -7,6 +7,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
+import { EditButton } from '@/components/common/EditButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -225,12 +226,7 @@ export function MultiplicationTab() {
                           {multiStatusLabel(status)}
                         </VixText>
                       </PressableScale>
-                      <PressableScale
-                        style={styles.editButton}
-                        onPress={() => openEdit(m)}
-                        hitSlop={8}>
-                        <VixText heading="label">✏️</VixText>
-                      </PressableScale>
+                      <EditButton onPress={() => openEdit(m)} />
                     </View>
                   </View>
                 </Animated.View>
@@ -357,14 +353,6 @@ const styles = StyleSheet.create({
   bar: { marginTop: 4, marginBottom: 2 },
   status: { color: Color.TEXT_LABEL },
   statusDone: { color: Color.SUCCESS },
-  editButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Color.CONTRAST_CONTAINER,
-  },
   // Form
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },

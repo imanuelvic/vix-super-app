@@ -58,7 +58,7 @@ export function WeekTab({
   now: Date;
   skillsDone: SkillsDone;
   topicsDone: TopicsDone;
-  /** Rentetan minggu tuntas berturut-turut (lastDayId = weekId). */
+  /** Streak minggu tuntas berturut-turut (lastDayId = weekId). */
   streak: WeekStreak;
 }) {
   const router = useRouter();
@@ -76,7 +76,7 @@ export function WeekTab({
   const complete = weekComplete(week.steps);
   const due = dueStep(week.steps, now);
   const topics = topicsOfWeek(now);
-  // Rentetan yang MASIH hidup: tercatat minggu ini, atau minggu lalu (belum
+  // Streak yang MASIH hidup: tercatat minggu ini, atau minggu lalu (belum
   // tuntas minggu ini, tapi belum putus juga). Lebih lama dari itu = sudah
   // bolong, jadi angkanya tidak lagi ditampilkan seolah masih berjalan.
   const runningStreak = learningStreakAlive(streak, weekId) ? streak.count : 0;
@@ -95,7 +95,7 @@ export function WeekTab({
       if (nowComplete !== wasComplete) {
         await setSkillDone(user.uid, skill.key, nowComplete ? weekId : null);
       }
-      // Rentetan mingguan 🔥 naik saat minggu ini TUNTAS — dasar achievement
+      // Streak mingguan 🔥 naik saat minggu ini TUNTAS — dasar achievement
       // Learning. Sengaja tidak diturunkan lagi kalau centangnya dilepas:
       // minggu itu memang pernah kamu tuntaskan. Naiknya juga maksimal sekali
       // per minggu (dijaga `bumpLearningStreak`).
@@ -145,7 +145,7 @@ export function WeekTab({
               📅 {formatWeekRange(now)}
             </VixText>
             <View style={styles.heroRight}>
-              {/* Rentetan minggu tuntas berturut-turut — angka yang sama
+              {/* Streak minggu tuntas berturut-turut — angka yang sama
                   dipakai achievement 🎓 Learning. Disembunyikan saat masih 0
                   supaya tidak jadi pengingat kegagalan. */}
               {runningStreak > 0 && (
@@ -289,7 +289,7 @@ export function WeekTab({
 
         {/* ===== Bahan diskusi minggu ini ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Diskusi minggu ini
+          Diskusi Dalam Minggu Ini
         </VixText>
 
         {/* Bahan utama = ilmu minggu ini. Sengaja TANPA checkbox: "sudah
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   heroWeek: { color: Color.LEARNING_DARK },
-  // Rentetan 🔥 + hitungan langkah, berdampingan di ujung kanan hero.
+  // Streak 🔥 + hitungan langkah, berdampingan di ujung kanan hero.
   heroRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroStreak: { color: Color.LEARNING_DARK },
   heroCount: {

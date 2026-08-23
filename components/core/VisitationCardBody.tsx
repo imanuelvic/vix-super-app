@@ -25,7 +25,7 @@ import { formatFullDate } from '@/lib/format';
 // milik masing-masing layar.
 //
 // Status/hitung mundurnya juga BUKAN di sini — lihat <VisitationStatus> di
-// bawah: tempatnya di kolom kanan kartu, di bawah tombol share.
+// bawah: tempatnya di kolom kanan kartu, memojok ke kanan bawah.
 //
 // Agenda sengaja tidak ikut ditampilkan — isinya bisa belasan baris dan satu
 // jadwal saja bisa memenuhi layar. Tetap utuh di modal & PDF-nya.
@@ -61,8 +61,8 @@ export function VisitationCardBody({
  * Keadaan satu visitasi: ✅ Selesai, atau hitung mundur bertenggat
  * (🔴 hari ini · 🟡 besok · 🟢 sekian hari lagi · ⚠️ sudah lewat).
  *
- * Berdiri sendiri karena tempatnya di KOLOM KANAN kartu — di bawah tombol
- * share, bukan lagi sebaris dengan nama CORE-nya.
+ * Berdiri sendiri karena tempatnya di KOLOM KANAN kartu — memojok ke kanan
+ * bawah, bukan sebaris dengan nama CORE-nya.
  */
 export function VisitationStatus({
   visitation: v,

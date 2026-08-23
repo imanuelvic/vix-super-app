@@ -7,6 +7,7 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditButton } from '@/components/common/EditButton';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -168,9 +169,7 @@ export default function TimelineScreen() {
             {meta.icon} {item.title}
           </VixText>
         </PressableScale>
-        <PressableScale onPress={() => openEdit(item)} hitSlop={10}>
-          <IconSymbol name="pencil" size={16} color={Color.TEXT_PLACEHOLDER} />
-        </PressableScale>
+        <EditButton onPress={() => openEdit(item)} />
       </View>
     );
   }

@@ -83,7 +83,7 @@ export default function AchievementsScreen() {
   // Tinggi badan dipakai mengubah langkah → kilometer (patokan pelari).
   const [body, setBody] = useState<HealthProfile | null>(null);
   const [weeks, setWeeks] = useState<WeekStatsMap>({});
-  // Rentetan MINGGUAN Learning 🎓 — satu dokumen kecil, sama seperti yang lain.
+  // Streak MINGGUAN Learning 🎓 — satu dokumen kecil, sama seperti yang lain.
   const [learning, setLearning] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);

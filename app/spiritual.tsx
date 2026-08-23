@@ -168,12 +168,10 @@ export default function SpiritualScreen() {
                 ) : null}
               </PressableScale>
             ) : skippedToday ? (
-              // Sudah ditandai dilewati — badge hilang, tombol jadi pembatal.
               <SkipNotice
                 title="⏭️ Revive hari ini dilewati"
                 detail={
-                  'Rentetan 🔥 tidak bertambah hari ini. Masih bisa ' +
-                  'dibatalkan — atau langsung tulis Revive-nya.'
+                  '🔥 Streak tidak bertambah hari ini. Masih bisa '
                 }
                 additionalStyle={styles.skippedGap}
               />

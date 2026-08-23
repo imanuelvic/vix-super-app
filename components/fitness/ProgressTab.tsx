@@ -14,7 +14,7 @@ import {
   type WeightTarget,
 } from '@/lib/health';
 
-// Tab Progress 📈 — rentetan sesi, Data Tubuh (dibaca dari fitur Profile),
+// Tab Progress 📈 — streak sesi, Data Tubuh (dibaca dari fitur Profile),
 // target yang dikejar, dan daftar persiapan sebelum berangkat gym.
 export function ProgressTab({
   streak,

@@ -140,7 +140,7 @@ export default function CoreScreen() {
         subtitle="Gembalakan & muridkan CORE Leader-mu"
         // Tombol kanan atas menyesuaikan tab yang aktif:
         // Visitation → 📜 Rules & Suggestions + 🕘 riwayat visitasi ·
-        // Follow Up → 🙏 pokok doa bulanan ·
+        // Follow Up → 💬 template chat + 🙏 pokok doa bulanan ·
         // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang).
         // Monthly & Multiplication belum punya halaman pendamping.
         right={
@@ -156,10 +156,18 @@ export default function CoreScreen() {
               />
             </View>
           ) : tab === 'followup' ? (
-            <EmojiButton
-              emoji="🙏"
-              onPress={() => router.push('/monthly-prayers')}
-            />
+            <View style={styles.headerButtons}>
+              {/* Template chat 💬 — kata-kata siap kirim (kedukaan, get well,
+                  wisuda, motivasi harian) untuk CL maupun grup CORE. */}
+              <EmojiButton
+                emoji="💬"
+                onPress={() => router.push('/chat-templates')}
+              />
+              <EmojiButton
+                emoji="🙏"
+                onPress={() => router.push('/monthly-prayers')}
+              />
+            </View>
           ) : tab === 'leaders' ? (
             <EmojiButton emoji="🗂️" onPress={() => router.push('/ex-leaders')} />
           ) : undefined

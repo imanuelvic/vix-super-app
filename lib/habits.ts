@@ -224,7 +224,7 @@ function allHabitsDone(
 
 // ===================== Skor & streak =====================
 // Streak TIDAK lagi menuntut seluruh kebiasaan tercentang (dengan 39 kebiasaan
-// itu praktis mustahil, dan rentetannya jadi selalu 0). Yang menentukan cuma
+// itu praktis mustahil, dan streaknya jadi selalu 0). Yang menentukan cuma
 // kebiasaan 🟢 Inti; pendukung & opsional murni bonus.
 
 function coreHabits(habits: ScheduledHabit[]): ScheduledHabit[] {

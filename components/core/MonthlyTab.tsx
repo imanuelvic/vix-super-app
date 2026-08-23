@@ -4,6 +4,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-na
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditButton } from '@/components/common/EditButton';
 import { EditDelete } from '@/components/common/EditDelete';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
@@ -215,11 +216,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               </VixText>
             ) : null}
           </PressableScale>
-          <EmojiButton
-            icon="pencil"
-            iconColor={Color.ACCENT_DARK}
-            onPress={() => openEdit(m)}
-          />
+          <EditButton onPress={() => openEdit(m)} />
           {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
           <EmojiButton
             icon="square.and.arrow.up"

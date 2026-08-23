@@ -224,8 +224,7 @@ export default function BibleReadingScreen() {
           <SkipNotice
             title="⏭️ Dilewati hari ini"
             detail={
-              'Rentetan 🔥 tidak bertambah. Masih bisa dibatalkan — atau ' +
-              'langsung isi bacaannya lalu tekan “Sudah baca”.'
+              '🔥 Streak tidak bertambah'
             }
             additionalStyle={styles.skippedGap}
           />

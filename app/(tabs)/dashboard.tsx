@@ -229,7 +229,6 @@ export default function DashboardScreen() {
   // Periode puasa 🍽️ — untuk kartu "sedang berpuasa" + pokok doa hari ini.
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
   const [learningWeek, setLearningWeek] = useState<LearningWeek>(EMPTY_WEEK);
-  // Topik diskusi yang sudah diobrolkan — untuk kartu "Yuk diskusi minggu ini".
   const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk reminder yang
@@ -689,8 +688,13 @@ export default function DashboardScreen() {
               <VixText heading="label" additionalStyle={styles.streakLabel}>
                 Revive
               </VixText>
+              {/* Angka besar di atas = streak yang SEDANG berjalan, sama
+                  seperti kolom Habits di sebelahnya — jadi keterangannya pun
+                  harus sama. Dulu tertulis "rekor N hari" (angka lain: rekor
+                  sepanjang masa), padahal yang ditampilkan di atasnya bukan
+                  rekor — dua angka berbeda arti dalam satu kolom. */}
               <VixText heading="label" additionalStyle={styles.streakBest}>
-                rekor {revive?.best ?? 0} hari
+                hari beruntun
               </VixText>
             </View>
             <View style={styles.streakDivider} />
@@ -1185,7 +1189,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.LEARNING}
               fg={Color.LEARNING_DARK}
-              title="💬 Yuk diskusi minggu ini dengan teman"
+              title="💬 Reminder Diskusi Dalam Minggu Ini"
               texts={learningTopics.map((t) => ({
                 id: t.key,
                 text: `${topicGroupMeta(t.group).emoji} ${t.label}`,

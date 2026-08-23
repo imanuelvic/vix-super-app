@@ -397,7 +397,7 @@ export function setWater(uid: string, dayId: string, count: number) {
 
 // ===== Streak air putih 💧 — SATU dokumen: users/{uid}/app/waterStreak =====
 // Jumlah gelas HARI INI tersimpan di habitDays/{dayId} (otomatis 0 tiap ganti
-// hari). Yang disimpan di sini cuma rentetannya: naik SEKALI per hari, tepat
+// hari). Yang disimpan di sini cuma streaknya: naik SEKALI per hari, tepat
 // saat gelas ke-8 (WATER_GOAL) tercapai.
 
 export function subscribeWaterStreak(

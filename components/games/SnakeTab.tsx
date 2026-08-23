@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -7,6 +6,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useHighScore } from '@/hooks/useHighScore';
 
 // Snake 🐍 — versi sederhana ala HP Nokia lama.
 // Papan kotak GRID×GRID, ular jalan sendiri tiap tick, dikendalikan 4 tombol
@@ -14,7 +14,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 // jalannya makin cepat. Nabrak dinding atau badan sendiri = selesai.
 //
 // Semua murni di HP: tidak menyentuh Firestore sama sekali. Rekor skor cukup
-// disimpan lokal (AsyncStorage) — tidak perlu biaya baca/tulis database.
+// disimpan lokal — tidak perlu biaya baca/tulis database. Aturan simpannya
+// dipakai bersama Tetris: lihat hooks/useHighScore.ts.
 
 const GRID = 15; // papan 15×15 kotak
 const START_TICK_MS = 200; // kecepatan awal (makin kecil = makin cepat)
@@ -102,7 +103,8 @@ function step(g: Game, wanted: Dir): Game {
 
 export function SnakeTab() {
   const [game, setGame] = useState<Game>(newGame);
-  const [best, setBest] = useState(0);
+  // Rekor 🏅 — baca/simpan di HP, aturannya sama dengan Tetris (hooks/useHighScore).
+  const best = useHighScore(BEST_KEY, game.score, game.status === 'over');
   // Arah yang ditekan pemain — dibaca saat tick berikutnya supaya menekan dua
   // tombol dalam satu tick tidak membuat ular menembus badannya sendiri.
   const wantedDir = useRef<Dir>('right');
@@ -112,13 +114,6 @@ export function SnakeTab() {
   const [boardSize, setBoardSize] = useState(0);
   const cell = boardSize / GRID;
 
-  // Rekor tersimpan di HP saja (bukan Firestore) — gratis & instan.
-  useEffect(() => {
-    AsyncStorage.getItem(BEST_KEY).then((v) => {
-      if (v != null) setBest(Number(v) || 0);
-    });
-  }, []);
-
   // Makin panjang ularnya, makin cepat jalannya (ala Nokia).
   const tickMs = Math.max(MIN_TICK_MS, START_TICK_MS - game.score * SPEED_STEP_MS);
 
@@ -127,13 +122,6 @@ export function SnakeTab() {
     const t = setInterval(() => setGame((g) => step(g, wantedDir.current)), tickMs);
     return () => clearInterval(t);
   }, [game.status, tickMs]);
-
-  // Selesai → simpan rekor baru kalau memang lebih tinggi.
-  useEffect(() => {
-    if (game.status !== 'over' || game.score <= best) return;
-    setBest(game.score);
-    AsyncStorage.setItem(BEST_KEY, String(game.score)).catch(() => {});
-  }, [game.status, game.score, best]);
 
   function start() {
     wantedDir.current = 'right';

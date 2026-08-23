@@ -50,7 +50,7 @@ export default function LearningScreen() {
   const [week, setWeek] = useState<LearningWeek | null>(null);
   const [skillsDone, setSkillsDone] = useState<SkillsDone>({});
   const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
-  // Rentetan minggu tuntas berturut-turut 🔥 — dasar achievement 🎓 Learning.
+  // Streak minggu tuntas berturut-turut 🔥 — dasar achievement 🎓 Learning.
   const [streak, setStreak] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
 
   useEffect(() => {

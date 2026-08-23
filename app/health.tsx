@@ -91,7 +91,7 @@ export default function HealthScreen() {
   }, [user, dayId]);
 
   // Air putih 💧 tidak diurus dari layar ini lagi — pencatatannya cuma di
-  // kartu sapaan Home (satu tombol, satu angka, satu rentetan).
+  // kartu sapaan Home (satu tombol, satu angka, satu streak).
 
   const loading = !profile || !checkups;
 

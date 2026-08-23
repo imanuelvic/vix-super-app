@@ -85,7 +85,7 @@ export default function FitnessScreen() {
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, dayId]);
 
-  // Tutup buku hari-hari yang sudah lewat 🔥 — rentetan & achievement baru
+  // Tutup buku hari-hari yang sudah lewat 🔥 — streak & achievement baru
   // dihitung SETELAH harinya habis (jam 00.00), bukan saat gerakan terakhir
   // dicentang: sepanjang hari centangnya masih bisa dilepas lagi.
   //

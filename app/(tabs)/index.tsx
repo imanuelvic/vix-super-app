@@ -185,7 +185,7 @@ export default function HomeScreen() {
   // Bacaan Alkitab hari ini — null = belum termuat.
   const [bibleReading, setBibleReading] =
     useState<BibleReadingSessions | null>(null);
-  // Rentetan hari "cukup 8 gelas" — dicatat saat gelas ke-8 hari ini tercapai.
+  // Streak hari "cukup 8 gelas" — dicatat saat gelas ke-8 hari ini tercapai.
   const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
   // Tiga prioritas hari ini 💡 — untuk angka di tombol header. Dokumennya per
   // tanggal, jadi ganti hari = daftar kosong lagi tanpa perlu direset.
@@ -359,7 +359,7 @@ export default function HomeScreen() {
     // tidak memunculkan badge sama sekali.
     fitness: fitPendingToday(fitDay, now),
     // Langkah belajar minggu ini yang harinya sudah tiba tapi belum
-    // dikerjakan (Sen/Rab/Jum/Min) DITAMBAH topik diskusi minggu ini yang
+    // dikerjakan (Sen/Rab/Jum/Min) DITAMBAH topik diskusi dalam minggu ini yang
     // belum diobrolkan — aturan yang sama persis dengan kedua kartu reminder
     // Learning di Dashboard.
     learning: learningPending(learningWeek.steps, topicsDone, now),
@@ -377,7 +377,7 @@ export default function HomeScreen() {
     const next = day.water + delta;
     try {
       await setWater(user.uid, todayId, next);
-      // Rentetan naik SEKALI per hari, tepat saat target tercapai. Turun lagi
+      // Streak naik SEKALI per hari, tepat saat target tercapai. Turun lagi
       // ke bawah target tidak membatalkan — harinya memang sudah tercapai.
       if (next >= WATER_GOAL) {
         await bumpWaterStreak(user.uid, waterStreak, todayId);
@@ -431,12 +431,16 @@ export default function HomeScreen() {
               💡 {priorityPending(priorities)}
             </VixText>
           </PressableScale>
-          {/* Tombol streak login 🔥 → halaman achievement */}
+          {/* Pintasan ke halaman Achievement 🏆 — lambang saja, tanpa angka.
+              Dulu angkanya streak doa pagi, tapi tempatnya di pil bertrofi:
+              seolah "sekian achievement", padahal di dalamnya ada banyak
+              kategori (Revive, kebiasaan, gym, langkah, Learning, …). Satu
+              angka dari satu kategori justru menyesatkan. */}
           <PressableScale
             style={styles.streakPill}
             onPress={() => router.push('/achievements')}>
             <VixText heading="bold" additionalStyle={styles.streakPillText}>
-              🏆🔥 {login?.count ?? 0}
+              🏆🔥
             </VixText>
           </PressableScale>
           <PressableScale onPress={logout} hitSlop={10}>

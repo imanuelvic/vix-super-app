@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditButton } from '@/components/common/EditButton';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -10,7 +11,6 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   newFitNoteId,
@@ -144,16 +144,7 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
                 ) : null}
               </PressableScale>
 
-              <PressableScale
-                style={styles.editButton}
-                onPress={() => openEdit(n)}
-                hitSlop={6}>
-                <IconSymbol
-                  name="pencil"
-                  size={18}
-                  color={Color.TEXT_PLACEHOLDER}
-                />
-              </PressableScale>
+              <EditButton onPress={() => openEdit(n)} />
             </View>
           );
         })}
@@ -240,7 +231,6 @@ const styles = StyleSheet.create({
   cardTitle: { color: Color.TEXT_TITLE },
   cardHost: { color: Color.FITNESS_DARK },
   cardNoLink: { color: Color.TEXT_PLACEHOLDER },
-  editButton: { padding: 4 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   textArea: { minHeight: 76, paddingTop: 12, textAlignVertical: 'top' },

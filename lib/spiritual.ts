@@ -129,8 +129,8 @@ export function reviveHandledToday(
 /**
  * Tandai Revive hari ini DILEWATI (atau batalkan lagi).
  *
- * Rentetan 🔥 tidak diubah di sini — dan memang tidak perlu: hari yang
- * dilewati tidak pernah tercatat, jadi rentetannya putus dengan sendirinya
+ * Streak 🔥 tidak diubah di sini — dan memang tidak perlu: hari yang
+ * dilewati tidak pernah tercatat, jadi streaknya putus dengan sendirinya
  * saat kamu menulis Revive lagi nanti.
  */
 export function setReviveSkipped(
@@ -212,7 +212,7 @@ export function bibleMinutesLeft(session: BibleSession, now: Date): number {
 /**
  * Penanda "hari ini dilewati" — disimpan di kolom yang sama dengan bacaannya.
  * Gunanya: kartu reminder di Home berhenti menagih untuk hari itu, TAPI
- * rentetan 🔥 sengaja TIDAK naik — dilewati ya dilewati, tidak dihitung baca.
+ * streak 🔥 sengaja TIDAK naik — dilewati ya dilewati, tidak dihitung baca.
  */
 export const BIBLE_SKIPPED = '__skip__';
 
@@ -233,7 +233,7 @@ function otherFilled(
 }
 
 /**
- * Hari itu jadi LENGKAP kalau `session` ikut terisi? (dasar rentetan "lengkap")
+ * Hari itu jadi LENGKAP kalau `session` ikut terisi? (dasar streak "lengkap")
  * Dulu cukup pagi + malam; sekarang ketiga sesi.
  */
 export function bibleDayComplete(
@@ -346,8 +346,8 @@ export function deleteBibleReading(
 }
 
 // ===== Streak baca Alkitab 🔥 — SATU dokumen: users/{uid}/app/bibleStreak =====
-// Empat rentetan sekaligus supaya cukup 1 read: pagi, siang, malam, dan
-// "lengkap" (hari yang KETIGA sesinya terisi). Bentuk tiap rentetan sama
+// Empat streak sekaligus supaya cukup 1 read: pagi, siang, malam, dan
+// "lengkap" (hari yang KETIGA sesinya terisi). Bentuk tiap streak sama
 // dengan streak doa/Revive: { count, lastDayId, best, total }.
 
 export type BibleStreaks = Record<BibleSession | 'both', DayStreak>;
@@ -379,7 +379,7 @@ export function subscribeBibleStreaks(
   );
 }
 
-/** Naikkan satu rentetan — maks 1×/hari, putus kalau kemarin bolong. */
+/** Naikkan satu streak — maks 1×/hari, putus kalau kemarin bolong. */
 function bumpDayStreak(current: DayStreak, todayId: string): DayStreak {
   if (alreadyCounted(current, todayId)) return current;
   return nextStreak(current, todayId, yesterdayId());
@@ -387,7 +387,7 @@ function bumpDayStreak(current: DayStreak, todayId: string): DayStreak {
 
 /**
  * Catat streak SESUDAH bacaan tersimpan. `allFilled` = ketiga sesi hari ini
- * sudah terisi → rentetan "lengkap" ikut naik.
+ * sudah terisi → streak "lengkap" ikut naik.
  */
 export function bumpBibleStreaks(
   uid: string,

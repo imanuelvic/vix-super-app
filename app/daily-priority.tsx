@@ -142,7 +142,7 @@ export default function DailyPriorityScreen() {
             <VixText heading="subheader" additionalStyle={styles.heroValue}>
               {doneCount}/{filled || PRIORITY_COUNT}{' '}
               <VixText heading="label" additionalStyle={styles.heroSub}>
-                prioritas beres
+                prioritas
               </VixText>
             </VixText>
             <ProgressBar
@@ -151,13 +151,6 @@ export default function DailyPriorityScreen() {
               color={allDone ? Color.MAIN_LIGHT : Color.ACCENT}
               track={Color.MAIN}
             />
-            <VixText heading="label" additionalStyle={styles.heroSub}>
-              {filled === 0
-                ? 'Isi pagi ini — pilih yang benar-benar penting, bukan yang paling gampang.'
-                : allDone
-                  ? '🎉 Semuanya beres. Sisa harimu bonus.'
-                  : '🌙 Kosong lagi sendiri lewat tengah malam.'}
-            </VixText>
           </Animated.View>
 
           <FormError message={error} />
@@ -182,7 +175,7 @@ export default function DailyPriorityScreen() {
                   </VixText>
                   <FormInput
                     style={[styles.input, item.done && styles.inputDone]}
-                    placeholder="Apa yang harus beres hari ini?"
+                    placeholder="Apa prioritas hari ini?"
                     value={drafts[i] ?? ''}
                     onChangeText={(text) =>
                       setDrafts((prev) =>
@@ -196,11 +189,6 @@ export default function DailyPriorityScreen() {
               </Animated.View>
             );
           })}
-
-          <VixText heading="label" additionalStyle={styles.footNote}>
-            💡 Tiga saja — kalau semuanya prioritas, berarti tidak ada yang
-            prioritas. Yang tidak muat ke sini tempatnya di Reminder 🔔.
-          </VixText>
         </KeyboardAwareScrollView>
       )}
     </SafeAreaView>
@@ -243,5 +231,4 @@ const styles = StyleSheet.create({
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
   },
-  footNote: { color: Color.TEXT_LABEL, marginTop: 4 },
 });

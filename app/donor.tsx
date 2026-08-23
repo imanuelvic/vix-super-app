@@ -9,6 +9,7 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -62,9 +63,12 @@ export default function DonorScreen() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [fNotes, setFNotes] = useState('');
 
-  // Dropdown info (default tertutup).
-  const [reqOpen, setReqOpen] = useState(false);
-  const [tipsOpen, setTipsOpen] = useState(false);
+  // Info donor yang sedang dibuka (null = tertutup). Dulu dua dropdown yang
+  // menumpuk di KAKI layar — harus digulung melewati seluruh riwayat dulu.
+  // Sekarang dua tombol lambang di sebelah judul "Jadwal Donor", isinya muncul
+  // sebagai modal. Satu state untuk keduanya: yang satu terbuka, yang lain
+  // otomatis tertutup.
+  const [info, setInfo] = useState<'syarat' | 'tips' | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -272,8 +276,12 @@ export default function DonorScreen() {
                 </VixText>
               </View>
             </View>
+            {/* Tombol berlabel (bukan ikon polos seperti di daftar), jadi
+                bentuknya pil — tapi ikon pensilnya sama, dan sekarang punya
+                LATAR: dulu cuma ikon + teks kalem melayang di kartu gelap,
+                jadi tak terbaca sebagai tombol sama sekali. */}
             <PressableScale style={styles.heroEdit} onPress={openLast}>
-              <IconSymbol name="pencil" size={14} color={Color.TEXT_ON_DARK_MUTED} />
+              <IconSymbol name="pencil" size={14} color={Color.TEXT_REVERSE} />
               <VixText heading="label" additionalStyle={styles.heroEditText}>
                 Ubah tanggal donor terakhir
               </VixText>
@@ -283,6 +291,13 @@ export default function DonorScreen() {
           {/* ===== Jadwal donor ===== */}
           <View style={styles.sectionHeader}>
             <VixText heading="title">📅 Jadwal Donor</VixText>
+            {/* Lambang saja — ✅ syarat & 💡 tips donor. Bentuknya sama dengan
+                pasangan tombol 💡🎚️ di sebelah judul "Jadwal Mendatang" di
+                CORE, jadi terasa satu keluarga. */}
+            <View style={styles.sectionActions}>
+              <EmojiButton emoji="✅" onPress={() => setInfo('syarat')} />
+              <EmojiButton emoji="💡" onPress={() => setInfo('tips')} />
+            </View>
           </View>
           <PrimaryButton
             label="Tambah Jadwal"
@@ -324,49 +339,26 @@ export default function DonorScreen() {
             </VixText>
           </PressableScale>
 
-          {/* ===== Syarat donor (dropdown) ===== */}
-          <PressableScale
-            style={styles.infoHeader}
-            onPress={() => setReqOpen((o) => !o)}>
-            <VixText heading="title">✅ Syarat Donor</VixText>
-            <IconSymbol
-              name={reqOpen ? 'chevron.up' : 'chevron.down'}
-              size={18}
-              color={Color.TEXT_LABEL}
-            />
-          </PressableScale>
-          {reqOpen && (
-            <View style={styles.infoCard}>
-              {DONOR_REQUIREMENTS.map((r) => (
-                <VixText key={r} heading="paragraph" additionalStyle={styles.infoItem}>
-                  • {r}
-                </VixText>
-              ))}
-            </View>
-          )}
-
-          {/* ===== Tips donor (dropdown) ===== */}
-          <PressableScale
-            style={styles.infoHeader}
-            onPress={() => setTipsOpen((o) => !o)}>
-            <VixText heading="title">💡 Tips Donor</VixText>
-            <IconSymbol
-              name={tipsOpen ? 'chevron.up' : 'chevron.down'}
-              size={18}
-              color={Color.TEXT_LABEL}
-            />
-          </PressableScale>
-          {tipsOpen && (
-            <View style={styles.infoCard}>
-              {DONOR_TIPS.map((t) => (
-                <VixText key={t} heading="paragraph" additionalStyle={styles.infoItem}>
-                  {t}
-                </VixText>
-              ))}
-            </View>
-          )}
         </ScrollView>
       )}
+
+      {/* Syarat & tips donor — dibuka dari dua tombol lambang di sebelah judul
+          "Jadwal Donor". Satu modal untuk keduanya; isinya yang berganti. */}
+      <SheetModal
+        visible={info !== null}
+        title={info === 'tips' ? '💡 Tips Donor' : '✅ Syarat Donor'}
+        subtitle={
+          info === 'tips'
+            ? 'Biar donormu lancar & badan cepat pulih'
+            : 'Cek dulu sebelum berangkat'
+        }
+        onClose={() => setInfo(null)}>
+        {(info === 'tips' ? DONOR_TIPS : DONOR_REQUIREMENTS).map((t) => (
+          <VixText key={t} heading="paragraph" additionalStyle={styles.infoItem}>
+            {info === 'tips' ? t : `• ${t}`}
+          </VixText>
+        ))}
+      </SheetModal>
 
       {/* Sheet tambah/edit jadwal */}
       <SheetModal
@@ -490,15 +482,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: Color.MAIN,
   },
-  heroEditText: { color: Color.TEXT_ON_DARK_MUTED },
+  heroEditText: { color: Color.TEXT_REVERSE },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
     marginTop: 6,
     marginBottom: 10,
   },
+  // Dua tombol lambang (✅ syarat · 💡 tips) di ujung kanan judul.
+  sectionActions: { flexDirection: 'row', gap: 8 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginBottom: 8 },
   historyLabel: { marginTop: 6, marginBottom: 8, color: Color.TEXT_LABEL },
@@ -536,23 +535,9 @@ const styles = StyleSheet.create({
   },
   notesText: { color: Color.TEXT_PARAGRAPH },
   notesEmpty: { color: Color.TEXT_PLACEHOLDER },
-  infoHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 10,
-  },
-  infoCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    padding: 14,
-    gap: 8,
-    marginBottom: 6,
-  },
-  infoItem: { color: Color.TEXT_PARAGRAPH },
+  // Butir syarat/tips di dalam modal — jaraknya dipegang tiap butir sendiri
+  // (dulu oleh `gap` kartu dropdown yang sudah tidak ada lagi).
+  infoItem: { color: Color.TEXT_PARAGRAPH, marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   doneRow: {

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditButton } from '@/components/common/EditButton';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormInput } from '@/components/common/FormInput';
@@ -307,11 +308,12 @@ export default function HistoryScreen() {
                   {yearItems.map((item) => {
                     const meta = historyCategoryMeta(item.category);
                     return (
-                      <PressableScale
-                        key={item.id}
-                        style={styles.row}
-                        onPress={() => openEdit(item)}>
-                        <View style={styles.rowMain}>
+                      // Tombol ✏️ jadi SAUDARA area ketuk, bukan anaknya —
+                      // Pressable bersarang tidak andal di iOS.
+                      <View key={item.id} style={styles.row}>
+                        <PressableScale
+                          style={styles.rowMain}
+                          onPress={() => openEdit(item)}>
                           <VixText heading="bold" additionalStyle={styles.rowTitle}>
                             {meta.icon} {item.title}
                           </VixText>
@@ -326,13 +328,9 @@ export default function HistoryScreen() {
                               {item.detail}
                             </VixText>
                           ) : null}
-                        </View>
-                        <IconSymbol
-                          name="pencil"
-                          size={16}
-                          color={Color.TEXT_PLACEHOLDER}
-                        />
-                      </PressableScale>
+                        </PressableScale>
+                        <EditButton onPress={() => openEdit(item)} />
+                      </View>
                     );
                   })}
                 </Animated.View>

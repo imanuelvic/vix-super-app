@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -56,8 +57,24 @@ function scoreTone(score: number) {
 
 // Wheel of Life 🎡 — nilai 8 area hidup per kuartal, lihat bentuk "roda"-mu
 // di radar chart, lalu fokus perbaiki minimal 3 area.
+//
+// SATU layar untuk dua pemakaian:
+//   · tanpa param            → roda milikku sendiri (dari Home).
+//   · ?leaderId=…&name=…     → roda salah satu CORE Leader (tombol 🎡 di daftar
+//                              CL). Isian, kuartal, radar, fokus, tips — semua
+//                              persis sama; yang beda hanya data siapa yang
+//                              dibaca/ditulis (lihat WheelOwner di lib/wheel).
 export default function WheelScreen() {
   const { user } = useAuth();
+
+  // Roda siapa yang sedang dibuka.
+  const params = useLocalSearchParams<{
+    leaderId?: string;
+    name?: string;
+    heart?: string;
+  }>();
+  const owner = params.leaderId || null;
+  const orang = params.name?.trim() || 'CORE Leader';
 
   const nowQ = quarterOf(new Date());
   const [year, setYear] = useState(nowQ.year);
@@ -65,7 +82,11 @@ export default function WheelScreen() {
   const qid = quarterDocId(year, q);
 
   // data = null → loading. Kosong sendiri tiap ganti kuartal (useKeyedData).
-  const { data, set: setData } = useKeyedData<string, WheelData>(qid);
+  // Kuncinya ikut memuat pemiliknya, jadi skor CL A mustahil sempat terlihat
+  // di layar CL B walau layarnya kebetulan dipakai ulang.
+  const { data, set: setData } = useKeyedData<string, WheelData>(
+    `${owner ?? 'me'}/${qid}`,
+  );
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('overview');
   const [busy, setBusy] = useState(false);
@@ -95,8 +116,9 @@ export default function WheelScreen() {
         setError(null);
       },
       () => setError(LOAD_ERROR),
+      owner,
     );
-  }, [user, qid, setData]);
+  }, [user, qid, owner, setData]);
 
   function shift(delta: number) {
     const next = shiftQuarter(year, q, delta);
@@ -154,7 +176,7 @@ export default function WheelScreen() {
     if (!user || busy) return;
     setBusy(true);
     try {
-      await saveWheelScores(user.uid, qid, draftScores, draftNotes);
+      await saveWheelScores(user.uid, qid, draftScores, draftNotes, owner);
       setMode('overview');
     } catch {
       setAssessError(SAVE_ERROR);
@@ -211,7 +233,7 @@ export default function WheelScreen() {
     setBusy(true);
     setFocusError(null);
     try {
-      await saveWheelFocus(user.uid, qid, focus);
+      await saveWheelFocus(user.uid, qid, focus, owner);
       setMode('overview');
     } catch {
       setFocusError(SAVE_ERROR);
@@ -228,9 +250,11 @@ export default function WheelScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
-        backLabel="Home"
-        title="Wheel of Life 🎡"
-        subtitle="8 area hidupmu per kuartal">
+        backLabel={owner ? 'CORE' : 'Home'}
+        title={owner ? `Wheel ${params.heart ?? '🎡'} ${orang}` : 'Wheel of Life 🎡'}
+        subtitle={
+          owner ? `8 area hidup ${orang} per kuartal` : '8 area hidupmu per kuartal'
+        }>
         {mode === 'overview' && (
           <View style={styles.quarterRow}>
             <PressableScale onPress={() => shift(-1)} hitSlop={10}>
@@ -419,11 +443,14 @@ export default function WheelScreen() {
             <View style={styles.introCard}>
               <VixText additionalStyle={styles.introEmoji}>🎡</VixText>
               <VixText heading="title" additionalStyle={styles.introTitle}>
-                Bagaimana bentuk hidupmu kuartal ini?
+                {owner
+                  ? `Bagaimana bentuk hidup ${orang} kuartal ini?`
+                  : 'Bagaimana bentuk hidupmu kuartal ini?'}
               </VixText>
               <VixText heading="label" additionalStyle={styles.introText}>
-                Nilai 8 area hidupmu (1–10), lihat bentuk “roda”-mu di radar
-                chart, lalu pilih minimal {MIN_FOCUS} area untuk dikembangkan.
+                {owner
+                  ? `Isi bareng ${orang} saat visitasi: nilai 8 area hidupnya (1–10), lihat bentuk “roda”-nya di radar chart, lalu pilih minimal ${MIN_FOCUS} area untuk dikembangkan.`
+                  : `Nilai 8 area hidupmu (1–10), lihat bentuk “roda”-mu di radar chart, lalu pilih minimal ${MIN_FOCUS} area untuk dikembangkan.`}
               </VixText>
               <PrimaryButton
                 label="Mulai Assessment"

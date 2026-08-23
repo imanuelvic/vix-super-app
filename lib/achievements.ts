@@ -102,7 +102,7 @@ export function prayerGateDue(streak: LoginStreak | null, now: Date): boolean {
 
 /**
  * Hanguskan streak doa (count → 0) karena melewatkan jendela pagi. Rekor
- * (best) & total hari tetap disimpan — yang hilang hanya rentetan berjalan.
+ * (best) & total hari tetap disimpan — yang hilang hanya streak berjalan.
  */
 export function resetPrayerStreak(uid: string, current: LoginStreak) {
   if (current.count === 0) return Promise.resolve(); // sudah 0, tak perlu tulis
@@ -152,7 +152,7 @@ export function skipDailyPrayer(
 // ============================ Achievements ============================
 
 // Sengaja TIDAK menyimpan "total seumur hidup" untuk doa & baca Alkitab —
-// yang memotivasi adalah rentetannya, bukan angka berapa kali pernah berdoa.
+// yang memotivasi adalah streaknya, bukan angka berapa kali pernah berdoa.
 export type AchievementStats = {
   loginCount: number; // streak doa pagi berjalan
   loginBest: number; // rekor streak doa pagi
@@ -249,7 +249,7 @@ function km(n: number): string {
   return (s.endsWith('.0') ? s.slice(0, -2) : s).replace('.', ',');
 }
 
-// Tangga level rentetan harian — dipakai bersama oleh doa pagi 🙏, Alkitab
+// Tangga level streak harian — dipakai bersama oleh doa pagi 🙏, Alkitab
 // pagi 🌅 & Alkitab malam 🌙 supaya perayaannya seragam sampai SETAHUN penuh.
 const STREAK_LEVELS: { days: number; icon: string; title: string }[] = [
   { days: 1, icon: '🐣', title: 'Langkah Pertama' },
@@ -263,7 +263,7 @@ const STREAK_LEVELS: { days: number; icon: string; title: string }[] = [
   { days: 365, icon: '🏆', title: 'Setahun Penuh' },
 ];
 
-// Tangga level rentetan MINGGUAN — khusus Learning 🎓, yang targetnya memang
+// Tangga level streak MINGGUAN — khusus Learning 🎓, yang targetnya memang
 // per minggu. Berhenti di 52 = setahun penuh tanpa satu minggu pun bolong.
 const LEARNING_WEEK_LEVELS: { weeks: number; icon: string; title: string }[] = [
   { weeks: 1, icon: '🐣', title: 'Minggu Pertama' },
@@ -275,7 +275,7 @@ const LEARNING_WEEK_LEVELS: { weeks: number; icon: string; title: string }[] = [
   { weeks: 52, icon: '🏆', title: 'Setahun Penuh' },
 ];
 
-/** Bangun satu tangga level lengkap untuk sebuah rentetan harian. */
+/** Bangun satu tangga level lengkap untuk sebuah streak harian. */
 function streakLadder(
   category: AchievementCategoryKey,
   prefix: string,
@@ -399,13 +399,13 @@ export function subscribeSelfRewardBalance(
 //   hitungan streak-nya saja, isinya tetap aman.
 //
 // app/revive TETAP ikut dihapus walau kategori "Revive Rohani" sudah dibuang:
-// rentetan Revive 🔥 masih tampil di fitur Revive, dan tombol ini menjanjikan
+// streak Revive 🔥 masih tampil di fitur Revive, dan tombol ini menjanjikan
 // "semua streak kembali ke 0" — jadi ia harus benar-benar ikut nol.
 const ACHIEVEMENT_DOCS: [collection: string, id: string][] = [
   ['app', 'login'], // streak doa pagi 🙏
   ['app', 'revive'], // streak Revive 📖 (bukan achievement lagi, tetap direset)
   ['app', 'bibleStreak'], // streak baca Alkitab 📚
-  ['app', 'learningStreak'], // rentetan MINGGUAN Learning 🎓
+  ['app', 'learningStreak'], // streak MINGGUAN Learning 🎓
   ['app', 'fitnessStreak'], // streak gym 🏋️
   ['app', 'waterStreak'], // streak air putih 💧
   ['health', 'streak'], // streak kebiasaan harian ✅

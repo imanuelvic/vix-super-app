@@ -8,6 +8,7 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditButton } from '@/components/common/EditButton';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -199,9 +200,9 @@ export function HabitsTab({
   const keptCount = areas.filter((a) => a.kept).length;
   const coreAllDone = coreDone(counted, day.done);
 
-  // Rentetan 🔥 bisa jadi lengkap dari LUAR layar ini: olahraga dicentang di
+  // Streak 🔥 bisa jadi lengkap dari LUAR layar ini: olahraga dicentang di
   // fitur Fitness, lalu baris cerminnya di sini ikut tercentang tanpa ada
-  // tombol yang ditekan di layar ini. Kalau rentetan cuma dinaikkan di dalam
+  // tombol yang ditekan di layar ini. Kalau streak cuma dinaikkan di dalam
   // handleToggle, hari yang ditutup oleh olahraga tidak pernah terhitung.
   // `bumpStreak` sendiri menolak menghitung dua kali sehari → aman berulang.
   useEffect(() => {
@@ -291,7 +292,7 @@ export function HabitsTab({
     try {
       await setHabitSkipped(user.uid, dayId, habit.id, nextSkipped);
       // Kalau yang dilewati ini kebiasaan 🟢 Inti terakhir yang menggantung,
-      // sisa yang berlaku hari ini jadi beres semua → rentetan 🔥 ikut naik,
+      // sisa yang berlaku hari ini jadi beres semua → streak 🔥 ikut naik,
       // supaya skor 10/10 tidak pernah tampil tanpa streaknya.
       if (nextSkipped) {
         const rest = countedHabits(habits, {
@@ -699,28 +700,20 @@ export function HabitsTab({
                         beda antara dua layar. */}
                     {!fromFitness && (
                       <PressableScale
-                        style={[styles.editButton, skipped && styles.skipButtonOn]}
+                        style={[styles.skipButton, skipped && styles.skipButtonOn]}
                         onPress={() => handleSkip(habit)}
                         hitSlop={8}
                         haptic="warning">
                         <IconSymbol
                           name="xmark"
-                          size={16}
+                          size={19}
                           color={skipped ? Color.DANGER : Color.TEXT_LABEL}
                         />
                       </PressableScale>
                     )}
-                    {/* Tombol edit → buka modal ubah / urutkan / hapus */}
-                    <PressableScale
-                      style={styles.editButton}
-                      onPress={() => openEdit(habit)}
-                      hitSlop={8}>
-                      <IconSymbol
-                        name="pencil"
-                        size={18}
-                        color={Color.TEXT_LABEL}
-                      />
-                    </PressableScale>
+                    {/* Tombol edit → buka modal ubah / urutkan / hapus.
+                        Rupanya sama dengan tombol ✏️ di seluruh app. */}
+                    <EditButton onPress={() => openEdit(habit)} />
                   </View>
                 </View>
                 {/* Kebiasaan yang minta catatan (refleksi, syukur, rhema).
@@ -1042,7 +1035,10 @@ const styles = StyleSheet.create({
     backgroundColor: Color.DANGER_TRANSPARENT,
     borderColor: Color.DANGER,
   },
-  skipButtonOn: { backgroundColor: Color.FINANCE_EXPENSE },
+  skipButtonOn: {
+    backgroundColor: Color.FINANCE_EXPENSE,
+    borderColor: Color.DANGER,
+  },
   // ⚪ Opsional — bonus, jadi tampilannya sengaja lebih kalem.
   rowOptional: { opacity: 0.7 },
   // Catatan singkat di bawah kebiasaan refleksi/syukur/rhema.
@@ -1058,13 +1054,17 @@ const styles = StyleSheet.create({
   pickChip: { flex: 1 },
   rowMain: { flex: 1 },
   rowActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  editButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  // ✗ lewati hari ini — ukuran & bentuknya disamakan persis dengan tombol ✏️
+  // di sebelahnya (EmojiButton 42×42), jadi pasangannya tidak timpang.
+  skipButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1.5,
+    borderColor: Color.ACCENT,
+    backgroundColor: Color.ACCENT,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Color.CONTRAST_CONTAINER,
   },
   habitText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   habitTextDone: {

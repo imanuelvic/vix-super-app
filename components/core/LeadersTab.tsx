@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -5,7 +6,9 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditButton } from '@/components/common/EditButton';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -45,6 +48,21 @@ import { MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
+/**
+ * Yang sedang DILIHAT (bukan diubah) di modal baca-saja.
+ *
+ * Dulu menekan barisnya langsung membuka form edit — sekali salah pencet saat
+ * cuma ingin mengintip nomor WA-nya, satu ketukan lagi sudah bisa mengubah
+ * data. Sekarang ketukan baris = lihat saja; mengubah harus lewat tombol ✏️.
+ */
+type Viewing = {
+  emoji: string;
+  kind: string;
+  /** Baris kecil di bawah judul — Main Team menyebut CL yang dibantunya. */
+  sub: string | null;
+  person: CoreLeader | MainTeamMember;
+};
+
 // Tab CORE Leader: data semua CL + Main Team yang membantu mereka —
 // nama, warna hati CORE, tanggal lahir, umur, nomor WA, dan hitung
 // mundur ulang tahun.
@@ -56,6 +74,10 @@ export function LeadersTab({
   mainTeam: MainTeamMember[];
 }) {
   const { user } = useAuth();
+  const router = useRouter();
+
+  // Modal baca-saja (dibuka dengan menekan barisnya).
+  const [viewing, setViewing] = useState<Viewing | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -356,9 +378,21 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(l, today);
           const soon = daysUntil <= 30;
           return (
-            // Tekan untuk edit data CL.
-            <PressableScale key={l.id} style={styles.card} onPress={() => openEdit(l)}>
-              <View style={styles.cardLeft}>
+            // Tombol 🎡 & ✏️ jadi SAUDARA area ketuk, bukan anaknya —
+            // Pressable bersarang di iOS bikin ketukan tombolnya ikut
+            // membuka modal barisnya.
+            <View key={l.id} style={styles.card}>
+              {/* Ketuk baris = LIHAT data CL (baca-saja), bukan mengubahnya. */}
+              <PressableScale
+                style={styles.cardLeft}
+                onPress={() =>
+                  setViewing({
+                    emoji: l.heart,
+                    kind: 'CORE Leader',
+                    sub: null,
+                    person: l,
+                  })
+                }>
                 <VixText additionalStyle={styles.heart}>{l.heart}</VixText>
                 <View style={styles.cardInfo}>
                   <VixText heading="bold" additionalStyle={styles.name}>
@@ -374,8 +408,24 @@ export function LeadersTab({
                   <StudyWorkLines person={l} />
                   <PersonalityBadges person={l} />
                 </View>
-              </View>
+              </PressableScale>
               <View style={styles.cardRight}>
+                {/* Dua tombol di pojok kanan ATAS kartu:
+                    🎡 = Wheel of Life CL ini (layar yang sama persis dengan
+                         roda milikku, cuma datanya per CL — lihat app/wheel).
+                    ✏️ = ubah datanya. */}
+                <View style={styles.cardActions}>
+                  <EmojiButton
+                    emoji="🎡"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/wheel',
+                        params: { leaderId: l.id, name: l.name, heart: l.heart },
+                      })
+                    }
+                  />
+                  <EditButton onPress={() => openEdit(l)} />
+                </View>
                 {soon && (
                   <View style={styles.birthdayChip}>
                     <VixText heading="label" additionalStyle={styles.birthdayChipText}>
@@ -383,13 +433,8 @@ export function LeadersTab({
                     </VixText>
                   </View>
                 )}
-                <IconSymbol
-                  name="pencil"
-                  size={16}
-                  color={Color.TEXT_PLACEHOLDER}
-                />
               </View>
-            </PressableScale>
+            </View>
           );
         })}
 
@@ -422,12 +467,18 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(m, today);
           const soon = daysUntil <= 30;
           return (
-            // Tekan untuk edit data Main Team.
-            <PressableScale
-              key={m.id}
-              style={styles.card}
-              onPress={() => openEditMT(m)}>
-              <View style={styles.cardLeft}>
+            // Sama seperti kartu CL: ketuk baris = lihat, ✏️ = ubah.
+            <View key={m.id} style={styles.card}>
+              <PressableScale
+                style={styles.cardLeft}
+                onPress={() =>
+                  setViewing({
+                    emoji: '👤',
+                    kind: 'Main Team',
+                    sub: cl ? `Membantu ${cl.heart} ${cl.name}` : null,
+                    person: m,
+                  })
+                }>
                 <VixText additionalStyle={styles.heart}>👤</VixText>
                 <View style={styles.cardInfo}>
                   <VixText heading="bold" additionalStyle={styles.name}>
@@ -446,8 +497,11 @@ export function LeadersTab({
                   <StudyWorkLines person={m} />
                   <PersonalityBadges person={m} />
                 </View>
-              </View>
+              </PressableScale>
               <View style={styles.cardRight}>
+                <View style={styles.cardActions}>
+                  <EditButton onPress={() => openEditMT(m)} />
+                </View>
                 {soon && (
                   <View style={styles.birthdayChip}>
                     <VixText heading="label" additionalStyle={styles.birthdayChipText}>
@@ -455,18 +509,38 @@ export function LeadersTab({
                     </VixText>
                   </View>
                 )}
-                <IconSymbol
-                  name="pencil"
-                  size={16}
-                  color={Color.TEXT_PLACEHOLDER}
-                />
               </View>
-            </PressableScale>
+            </View>
           );
         })}
           </>
         )}
       </ScrollView>
+
+      {/* Modal BACA-SAJA — muncul saat barisnya diketuk. Tidak ada satu pun
+          kolom yang bisa diubah di sini; mengubah lewat tombol ✏️ di kartunya. */}
+      <SheetModal
+        visible={viewing !== null}
+        title={viewing ? `${viewing.emoji} ${viewing.person.name}` : ''}
+        subtitle={
+          viewing
+            ? viewing.sub
+              ? `${viewing.kind} · ${viewing.sub}`
+              : viewing.kind
+            : undefined
+        }
+        onClose={() => setViewing(null)}
+        footer={
+          <PressableScale
+            style={styles.closeButton}
+            onPress={() => setViewing(null)}>
+            <VixText heading="bold" additionalStyle={styles.closeButtonText}>
+              Tutup
+            </VixText>
+          </PressableScale>
+        }>
+        {viewing ? <PersonView person={viewing.person} today={today} /> : null}
+      </SheetModal>
 
       {/* Bottom sheet tambah/edit CL */}
       <SheetModal
@@ -887,6 +961,73 @@ function StudyWorkFields({
   );
 }
 
+/**
+ * Isi modal baca-saja: seluruh data satu orang, tanpa satu pun kolom isian.
+ *
+ * Dipakai CL maupun Main Team — kolomnya memang sama persis (lihat CoreLeader &
+ * MainTeamMember di lib/core), jadi tidak ada gunanya dua tampilan berbeda.
+ * Baris yang datanya belum diisi sengaja TIDAK ditampilkan: lebih baik pendek
+ * daripada penuh baris "—".
+ */
+function PersonView({
+  person,
+  today,
+}: {
+  person: CoreLeader | MainTeamMember;
+  today: Date;
+}) {
+  const { daysUntil, turningAge } = nextBirthday(person, today);
+  const belajar = studyLine(person);
+  const kerja = workLine(person);
+  const jenis = GENDER_OPTIONS.find((g) => g.key === person.gender)?.label;
+  const disc = person.disc
+    ? person.disc
+        .split('')
+        .map((k) => DISC_OPTIONS.find((d) => d.key === k)?.label ?? k)
+        .join(' · ')
+    : null;
+  const love = loveLangLabel(person.loveLanguage);
+
+  return (
+    <View style={styles.viewList}>
+      <InfoRow
+        label="🎂 Tanggal lahir"
+        value={`${person.birthDay} ${MONTH_NAMES[person.birthMonth]} ${person.birthYear} · ${currentAge(person, today)} th`}
+      />
+      <InfoRow
+        label="🎈 Ulang tahun"
+        value={
+          daysUntil === 0
+            ? `Hari ini! 🎉 genap ${turningAge} th`
+            : `${daysUntil} hari lagi · genap ${turningAge} th`
+        }
+      />
+      <InfoRow
+        label="📱 No. HP"
+        value={person.phone ? `+62${person.phone}` : 'Belum ada nomor'}
+      />
+      {jenis ? <InfoRow label="🚻 Cowok / Cewek" value={jenis} /> : null}
+      {belajar ? <InfoRow label="🎓 Pendidikan" value={belajar.slice(2)} /> : null}
+      {kerja ? <InfoRow label="💼 Pekerjaan" value={kerja.slice(2)} /> : null}
+      {disc ? <InfoRow label="🎨 DISC" value={disc} /> : null}
+      {person.mbti ? <InfoRow label="🧩 MBTI" value={person.mbti} /> : null}
+      {love ? <InfoRow label="💞 Love Language" value={love} /> : null}
+    </View>
+  );
+}
+
+// Satu baris data di modal baca-saja: keterangan kecil di atas, isinya di bawah.
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.viewRow}>
+      <VixText heading="label">{label}</VixText>
+      <VixText heading="paragraph" additionalStyle={styles.viewValue}>
+        {value}
+      </VixText>
+    </View>
+  );
+}
+
 // Dua baris pendidikan & pekerjaan di kartu daftar. Tidak menampilkan apa pun
 // selama datanya belum diisi — kartu yang kosong tidak perlu baris kosong.
 function StudyWorkLines({
@@ -1007,7 +1148,10 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', marginBottom: 12 },
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // 'flex-start': tombol 🎡 & ✏️ menempel di pojok kanan ATAS kartu, tidak
+    // ikut turun ke tengah saat datanya panjang (pendidikan + pekerjaan +
+    // badge kepribadian bisa membuat kartunya tinggi).
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 10,
     backgroundColor: Color.CONTAINER,
@@ -1024,6 +1168,20 @@ const styles = StyleSheet.create({
   name: { color: Color.TEXT_TITLE },
   followupLine: { color: Color.TEXT_PLACEHOLDER },
   cardRight: { alignItems: 'flex-end', gap: 6 },
+  cardActions: { flexDirection: 'row', gap: 8 },
+  // Modal baca-saja
+  viewList: { gap: 12, paddingBottom: 4 },
+  viewRow: { gap: 2 },
+  viewValue: { color: Color.TEXT_TITLE },
+  closeButton: {
+    marginTop: 16,
+    marginBottom: 4,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: Color.MAIN,
+  },
+  closeButtonText: { color: Color.TEXT_REVERSE },
   birthdayChip: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,

@@ -50,7 +50,7 @@ import { openExternalUrl } from '@/lib/linking';
 // biar kamu tahu besok latihan apa dan bisa siap-siap.
 //
 // Tiap hari SELALU ada sesinya: beban, lari, atau jalan pagi. Yang membedakan
-// hari jalan pagi cuma perlakuan rentetan 🔥 — lihat `isWalkDay` di bawah.
+// hari jalan pagi cuma perlakuan streak 🔥 — lihat `isWalkDay` di bawah.
 export function ExerciseTab({
   weights,
   day,
@@ -105,14 +105,14 @@ export function ExerciseTab({
   const [editing, setEditing] = useState<Exercise | null>(null);
   const [fWeight, setFWeight] = useState('');
   // Modal konfirmasi "lewati hari ini" — sengaja pakai konfirmasi karena
-  // rentetan 🔥 yang hilang tidak bisa dikembalikan.
+  // streak 🔥 yang hilang tidak bisa dikembalikan.
   const [confirmSkip, setConfirmSkip] = useState(false);
 
   const { skipped } = day;
   const session = fitSessionOfWeekday(weekday, block);
   const isToday = weekday === todayWeekday;
   // Hari jalan pagi = pemulihan: boleh dicentang sebagai bonus, tapi tidak
-  // pernah menaikkan maupun memutus rentetan 🔥.
+  // pernah menaikkan maupun memutus streak 🔥.
   const isWalkDay = session.kind === 'walk';
 
   // Catatan hari YANG SEDANG DILIHAT: hari ini dari `day` yang live, hari lain
@@ -134,7 +134,7 @@ export function ExerciseTab({
   // Hari depan belum ada catatannya sama sekali, jadi cuma pratinjau.
   const sudahLewat = isToday || weekIdOf(weekday) <= dayId;
   // Tombol lewati hanya untuk HARI INI, dan hanya selama sesinya belum beres —
-  // sesi yang sudah selesai tidak bisa "dilewati" (kalau bisa, rentetan yang
+  // sesi yang sudah selesai tidak bisa "dilewati" (kalau bisa, streak yang
   // baru saja naik malah ikut hangus).
   const canSkip = isToday && (skipped || !allDone);
 
@@ -152,7 +152,7 @@ export function ExerciseTab({
         dayId,
         session.exercises.every((e) => after[e.id]),
       );
-      // Rentetan 🔥 & rekap mingguan SENGAJA tidak disentuh di sini. Keduanya
+      // 🔥 Streak & rekap mingguan SENGAJA tidak disentuh di sini. Keduanya
       // baru dihitung setelah harinya habis (lewat jam 00.00) oleh
       // `settleFitDays` di app/fitness.tsx — sepanjang hari centangnya masih
       // boleh dilepas lagi, jadi "beres" jam 3 sore belum tentu benar jam 11
@@ -166,7 +166,7 @@ export function ExerciseTab({
 
   /**
    * Lewati latihan HARI INI. Semua gerakan langsung bertanda ✕, badge Exercise
-   * & kartu reminder Dashboard ikut hilang, dan rentetan 🔥 diputus ke 0.
+   * & kartu reminder Dashboard ikut hilang, dan streak 🔥 diputus ke 0.
    */
   async function handleSkip() {
     if (!user || busy) return;
@@ -176,7 +176,7 @@ export function ExerciseTab({
       // Baris di Habits ikut bertanda ✕ — keluar dari skor harian, bukan
       // menggantung sebagai kebiasaan yang belum dikerjakan.
       await syncFitnessHabitSkipped(user.uid, dayId, true);
-      // Jalan pagi tidak pernah menyentuh rentetan — melewatinya pun tidak.
+      // Jalan pagi tidak pernah menyentuh streak — melewatinya pun tidak.
       if (!isWalkDay) await breakFitStreak(user.uid, streak, today);
     } catch {
       // Diamkan — snapshot Firestore akan mengoreksi tampilan otomatis.
@@ -187,9 +187,9 @@ export function ExerciseTab({
   }
 
   /**
-   * Batalkan tanda lewati — centangnya bisa dipakai lagi. Rentetan 🔥 yang
+   * Batalkan tanda lewati — centangnya bisa dipakai lagi. Streak 🔥 yang
    * sudah telanjur hilang TIDAK ikut kembali; sesi hari ini dihitung sebagai
-   * rentetan ke-1 lagi.
+   * streak ke-1 lagi.
    */
   async function handleUnskip() {
     if (!user || busy) return;
@@ -334,9 +334,8 @@ export function ExerciseTab({
                 }
                 detail={
                   isWalkDay
-                    ? 'Hari jalan pagi memang bonus — rentetan 🔥 tidak terpengaruh sama sekali.'
-                    : 'Rentetan 🔥 sudah kembali ke 0. Besok mulai lagi dari ' +
-                      'satu — yang penting jangan dua kali berturut-turut.'
+                    ? 'Hari jalan pagi memang bonus — streak 🔥 tidak terpengaruh sama sekali.'
+                    : '🔥 Streak sudah kembali ke 0.'
                 }
               />
             ) : isToday ? (
@@ -445,7 +444,7 @@ export function ExerciseTab({
 
             {/* ⏭️ Lewati latihan hari ini — jujur mencatat "hari ini tidak
                 latihan", bukan menyembunyikannya. Tekan lagi untuk membatalkan
-                tandanya (rentetan 🔥 tetap tidak kembali). */}
+                tandanya (streak 🔥 tetap tidak kembali). */}
         {canSkip && (
           <SkipButton
             skipped={skipped}
@@ -489,15 +488,15 @@ export function ExerciseTab({
         />
       </CenterDialog>
 
-      {/* Konfirmasi lewati — rentetan yang hilang tidak bisa dikembalikan,
+      {/* Konfirmasi lewati — streak yang hilang tidak bisa dikembalikan,
           jadi wajib ditanya dulu. */}
       <ConfirmDialog
         visible={confirmSkip}
         title={isWalkDay ? 'Lewati jalan pagi hari ini?' : 'Lewati latihan hari ini?'}
         detail={
           isWalkDay
-            ? `${session.emoji} ${session.title} ditandai ✕.\n\n🔥 Rentetan tidak terpengaruh — hari jalan pagi memang tidak pernah dihitung sebagai sesi latihan.`
-            : `${session.emoji} ${session.title} ditandai ✕ — semua gerakan dianggap tidak dikerjakan.\n\n🔥 Rentetan kembali ke 0 dan TIDAK bisa dikembalikan. Rekor terbaik & total sesimu tetap aman.`
+            ? `${session.emoji} ${session.title} ditandai ✕.\n\n🔥 Streak tidak terpengaruh — hari jalan pagi memang tidak pernah dihitung sebagai sesi latihan.`
+            : `${session.emoji} ${session.title} ditandai ✕ — semua gerakan dianggap tidak dikerjakan.\n\n🔥 Streak kembali ke 0 dan TIDAK bisa dikembalikan. Rekor terbaik & total sesimu tetap aman.`
         }
         confirmLabel="Ya, Lewati"
         busy={busy}
