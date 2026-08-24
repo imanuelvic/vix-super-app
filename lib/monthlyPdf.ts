@@ -111,9 +111,7 @@ function buildHtml(m: MonthlyMeeting): string {
     ],
     bodyHtml: isi + foto,
     footerNote:
-      `${terisi} dari ${MONTHLY_AGENDA_POINTS.length} poin agenda terisi · ` +
-      (fotoBersih.length ? `${fotoBersih.length} foto dokumentasi · ` : '') +
-      `dicetak ${formatFullDate(new Date())}`,
+      `Dikirim ${formatFullDate(new Date())}`,
     extraCss: ISI_CSS,
   });
 }

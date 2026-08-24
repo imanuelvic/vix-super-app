@@ -30,9 +30,10 @@ import {
     subscribeMonthlyMeetings,
     subscribeMonthlyPrayers,
     subscribeVisitations,
-    weekIndex,
-    WEEKLY_FOCUS_COUNT,
-    weeklyLeaders,
+    subscribeWeeklyFocus,
+    EMPTY_WEEKLY_FOCUS,
+    focusLeaders,
+    type WeeklyFocus,
     type CoreIdeasData,
     type CoreLeader,
     type ExLeader,
@@ -106,6 +107,9 @@ export default function CoreScreen() {
     EMPTY_MONTHLY_PRAYERS,
   );
   const [meetings, setMeetings] = useState<MonthlyMeeting[]>([]);
+  // Undian ulang 🎲 fokus minggu ini (dokumen kecil) — dipakai kartu Follow Up
+  // Mingguan DAN badge tab-nya, supaya keduanya menyebut orang yang sama.
+  const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [error, setError] = useState<string | null>(null);
 
   const dayId = dayDocId(new Date());
@@ -128,6 +132,7 @@ export default function CoreScreen() {
       subscribeCoreIdeas(user.uid, setIdeas, fail),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers, fail),
       subscribeMonthlyMeetings(user.uid, setMeetings, fail),
+      subscribeWeeklyFocus(user.uid, setWeeklyFocus, fail),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
@@ -194,6 +199,7 @@ export default function CoreScreen() {
             dayId={dayId}
             ideas={ideas}
             monthlyPrayers={monthlyPrayers}
+            weeklyFocus={weeklyFocus}
           />
         ) : tab === 'monthly' ? (
           <MonthlyTab meetings={meetings} />
@@ -208,11 +214,9 @@ export default function CoreScreen() {
           ini — angka yang sama dengan badge tile CORE di Home. */}
       <BottomTabs
         tabs={withBadge(TABS, {
-          followup: weeklyLeaders(
-            leaders ?? [],
-            weekIndex(new Date()),
-            WEEKLY_FOCUS_COUNT,
-          ).filter((l) => l.lastFollowupDayId !== dayId).length,
+          followup: focusLeaders(leaders ?? [], new Date(), weeklyFocus).filter(
+            (l) => l.lastFollowupDayId !== dayId,
+          ).length,
         })}
         value={tab}
         onChange={onTabPress}

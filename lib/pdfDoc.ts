@@ -250,7 +250,6 @@ export function pdfShellHtml({
       </div>
       <div class="kop-kanan">
         <img class="logo" src="${LOGO_CORE_GWU_DATA_URI}" alt="Logo CORE" />
-        <p class="merek">${escapeHtml(PDF_BRAND)}</p>
       </div>
     </div>
     ${chipHtml ? `<div class="info">${chipHtml}</div>` : ''}

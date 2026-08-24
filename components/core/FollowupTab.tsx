@@ -9,6 +9,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
@@ -34,10 +35,13 @@ import {
   prayerFollowupLeaders,
   saveCoreIdeas,
   saveCoreLeaders,
-  weekIndex,
+  canDrawWeeklyFocus,
+  drawWeeklyFocus,
+  focusLeaders,
+  saveWeeklyFocus,
   WEEKLY_FOCUS_COUNT,
   weeklyFollowupTopic,
-  weeklyLeaders,
+  type WeeklyFocus,
   type CoreIdea,
   type CoreIdeasData,
   type CoreLeader,
@@ -64,12 +68,15 @@ export function FollowupTab({
   dayId,
   ideas,
   monthlyPrayers,
+  weeklyFocus,
 }: {
   leaders: CoreLeader[];
   mainTeam: MainTeamMember[];
   dayId: string;
   ideas: CoreIdeasData;
   monthlyPrayers: MonthlyPrayers;
+  /** Undian ulang fokus minggu ini (kalau tombol 🎲 pernah ditekan Senin ini). */
+  weeklyFocus: WeeklyFocus;
 }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -227,13 +234,37 @@ export function FollowupTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaders, mainTeam, leaderById, dayId]);
 
-  // 2 CORE Leader fokus minggu ini (bergilir tiap minggu).
+  // 2 CORE Leader fokus minggu ini: hasil undian 🎲 Senin ini kalau ada,
+  // kalau tidak rotasi bawaan (bergilir tiap minggu).
   const weekLeaders = useMemo(
-    () => weeklyLeaders(leaders, weekIndex(new Date()), WEEKLY_FOCUS_COUNT),
+    () => focusLeaders(leaders, new Date(), weeklyFocus),
     // dayId sebagai dependency: pindah hari/minggu → hitung ulang.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [leaders, dayId],
+    [leaders, dayId, weeklyFocus],
   );
+
+  // Tombol undi ulang hanya muncul SENIN, dan hanya kalau memang ada CL lain
+  // yang bisa terpilih — kalau CL-nya pas dua orang, mengundi tidak mengubah
+  // apa pun.
+  const bisaUndi =
+    canDrawWeeklyFocus(new Date()) && leaders.length > WEEKLY_FOCUS_COUNT;
+  const [drawing, setDrawing] = useState(false);
+
+  async function handleDrawWeekly() {
+    if (!user || drawing) return;
+    setDrawing(true);
+    setError(null);
+    try {
+      await saveWeeklyFocus(
+        user.uid,
+        drawWeeklyFocus(leaders, weekLeaders, new Date()),
+      );
+    } catch {
+      setError(SAVE_ERROR);
+    } finally {
+      setDrawing(false);
+    }
+  }
 
   async function handleDoneLeader(leader: CoreLeader) {
     if (!user) return;
@@ -507,9 +538,19 @@ export function FollowupTab({
 
       {/* ===== Follow Up Mingguan: fokus 2 CORE Leader ===== */}
       <View style={styles.weekCard}>
-        <VixText heading="title" additionalStyle={styles.weekTitle}>
-          🎯  Follow Up Mingguan
-        </VixText>
+        <View style={styles.weekTop}>
+          <VixText heading="title" additionalStyle={styles.weekTitle}>
+            🎯  Follow Up Mingguan
+          </VixText>
+          {/* 🎲 undi ulang — SENIN saja (lihat canDrawWeeklyFocus). */}
+          {bisaUndi && (
+            <EmojiButton
+              emoji="🎲"
+              busy={drawing}
+              onPress={handleDrawWeekly}
+            />
+          )}
+        </View>
         <VixText additionalStyle={styles.weekLeadersText}>
           {weekLeaders.length > 0
             ? weekLeaders.map((l) => `${l.heart} ${l.name}`).join('  &  ')
@@ -807,7 +848,14 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 12,
   },
-  weekTitle: { color: Color.TEXT_REVERSE },
+  // Judul di kiri, tombol 🎲 di kanan — judulnya yang mengalah kalau sempit.
+  weekTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  weekTitle: { color: Color.TEXT_REVERSE, flexShrink: 1 },
   weekLeadersText: { color: Color.MAIN_LIGHT },
   // Doa Rantai — kartu ajakan isi pokok doa (awal bulan), tema spiritual (ungu).
   prayerFillCard: {

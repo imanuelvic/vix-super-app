@@ -44,14 +44,15 @@ import {
   type RoadmapItem,
 } from '@/lib/career';
 import {
+  EMPTY_WEEKLY_FOCUS,
+  focusLeaders,
   needsPdfShare,
   subscribeCoreLeaders,
   subscribeVisitations,
-  weekIndex,
-  WEEKLY_FOCUS_COUNT,
-  weeklyLeaders,
+  subscribeWeeklyFocus,
   type CoreLeader,
   type Visitation,
+  type WeeklyFocus,
 } from '@/lib/core';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { OWNER_NAME } from '@/lib/family';
@@ -136,7 +137,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 14;
+const BADGE_SOURCES = 15;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -161,6 +162,7 @@ export default function HomeScreen() {
   // Daftar kebiasaan — dipakai untuk menemukan baris Rhema & catatannya.
   const [habits, setHabits] = useState<ScheduledHabit[]>([]);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
+  const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [revive, setRevive] = useState<ReviveStreak | null | undefined>(
     undefined,
@@ -224,6 +226,9 @@ export default function HomeScreen() {
       subscribeChoreStatus(user.uid, mark('chores', setResidenceChores)),
       subscribeTasks(user.uid, mark('tasks', setTasks)),
       subscribeCoreLeaders(user.uid, mark('leaders', setLeaders)),
+      // Undian ulang 🎲 fokus minggu ini — ikut ditunggu supaya badge CORE
+      // menghitung ORANG YANG SAMA dengan yang tampil di tab Follow Up.
+      subscribeWeeklyFocus(user.uid, mark('weeklyFocus', setWeeklyFocus)),
       subscribeVisitations(user.uid, mark('visitations', setVisitations)),
       subscribeReviveStreak(user.uid, mark('revive', setRevive)),
       subscribePartStatus(user.uid, mark('carParts', setCarParts)),
@@ -342,7 +347,7 @@ export default function HomeScreen() {
     // + acara yang panduannya perlu dikirim hari ini (H-3; acara besar
     // H-14/7/3/2/1). Yang PDF-nya sudah dikirim hari ini tidak dihitung.
     core:
-      weeklyLeaders(leaders, weekIndex(now), WEEKLY_FOCUS_COUNT).filter(
+      focusLeaders(leaders, now, weeklyFocus).filter(
         (l) => l.lastFollowupDayId !== todayId,
       ).length +
       visitations.filter((v) => needsPdfShare(v, now, todayId)).length,

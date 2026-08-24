@@ -1145,6 +1145,101 @@ export function weekIndex(d: Date): number {
   return Math.floor(monday.getTime() / 86_400_000 / 7);
 }
 
+/**
+ * Undian ulang fokus minggu ini — hasil tekan tombol 🎲 di kartu Follow Up
+ * Mingguan. `weekIdx` menandai undian ini untuk MINGGU YANG MANA: begitu ganti
+ * minggu, nomornya tidak cocok lagi dan rotasi bawaan otomatis berlaku lagi.
+ * Jadi undiannya tidak perlu dibersihkan; dia kedaluwarsa sendiri.
+ */
+export type WeeklyFocus = { weekIdx: number; ids: string[] };
+
+export const EMPTY_WEEKLY_FOCUS: WeeklyFocus = { weekIdx: -1, ids: [] };
+
+export function subscribeWeeklyFocus(
+  uid: string,
+  onChange: (focus: WeeklyFocus) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    doc(db, 'users', uid, 'core', 'weeklyFocus'),
+    (snapshot) => {
+      const data = snapshot.data();
+      onChange(
+        data
+          ? {
+              weekIdx: Number(data.weekIdx) || -1,
+              ids: (data.ids as string[]) ?? [],
+            }
+          : EMPTY_WEEKLY_FOCUS,
+      );
+    },
+    onError,
+  );
+}
+
+export function saveWeeklyFocus(uid: string, focus: WeeklyFocus) {
+  return setDoc(doc(db, 'users', uid, 'core', 'weeklyFocus'), focus);
+}
+
+/**
+ * Boleh mengundi ulang hari ini? HANYA SENIN.
+ *
+ * Fokus mingguan ditentukan di awal minggu lalu dikerjakan sampai Minggu.
+ * Kalau bisa diganti di tengah minggu, orang yang sudah di-follow up bisa
+ * terlempar keluar daftar dan penggantinya tidak kebagian waktu.
+ */
+export function canDrawWeeklyFocus(now: Date): boolean {
+  return now.getDay() === 1;
+}
+
+/**
+ * CL fokus minggu ini: hasil undian ulang kalau undiannya memang untuk minggu
+ * ini, kalau tidak ya rotasi bawaan.
+ *
+ * CL yang sudah dihapus dari daftar otomatis gugur dari undian; kalau sampai
+ * TIDAK ada yang tersisa, rotasi bawaannya yang dipakai lagi.
+ */
+export function focusLeaders<T extends { id: string }>(
+  leaders: T[],
+  now: Date,
+  focus: WeeklyFocus,
+): T[] {
+  const idx = weekIndex(now);
+  if (focus.weekIdx === idx) {
+    const picked = focus.ids
+      .map((id) => leaders.find((l) => l.id === id))
+      .filter((l): l is T => l !== undefined);
+    if (picked.length > 0) return picked;
+  }
+  return weeklyLeaders(leaders, idx, WEEKLY_FOCUS_COUNT);
+}
+
+/**
+ * Undi ulang CL fokus minggu ini — sebisa mungkin BUKAN yang sedang dipakai,
+ * jadi menekan tombolnya selalu benar-benar berganti orang. Kalau CL yang lain
+ * kurang dari jatahnya, barulah semua ikut diundi lagi.
+ *
+ * `random` bisa dioper untuk pengujian.
+ */
+export function drawWeeklyFocus<T extends { id: string }>(
+  leaders: T[],
+  current: T[],
+  now: Date,
+  random: () => number = Math.random,
+): WeeklyFocus {
+  const lain = leaders.filter((l) => !current.some((c) => c.id === l.id));
+  const kolam = lain.length >= WEEKLY_FOCUS_COUNT ? lain : leaders;
+  const acak = [...kolam];
+  for (let i = acak.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [acak[i], acak[j]] = [acak[j], acak[i]];
+  }
+  return {
+    weekIdx: weekIndex(now),
+    ids: acak.slice(0, WEEKLY_FOCUS_COUNT).map((l) => l.id),
+  };
+}
+
 /** CL fokus minggu ini: `count` orang, bergilir tiap minggu. */
 export function weeklyLeaders<T>(
   leaders: T[],
