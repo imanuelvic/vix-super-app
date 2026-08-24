@@ -19,17 +19,44 @@ const COMPANY_INFO = {
   signer: 'Imanuel Victory Rumayar',
 };
 
+export type InvoicePreset = {
+  desc: string;
+  /** Perkiraan harga SATUAN (Rp) — bukan harga mati. */
+  price: number;
+};
+
 // Item siap-pakai untuk mempercepat pengisian rincian biaya.
-export const INVOICE_PRESETS: string[] = [
-  'Jasa Pembuatan Website',
-  'Jasa Pembuatan Aplikasi',
-  'Maintenance (per bulan)',
-  'Administrasi (per bulan)',
-  'Pemasaran & SEO (per bulan)',
-  'Lisensi & Tema',
-  'Domain (.id / .com)',
-  'Hosting',
+//
+// Tiap item punya PERKIRAAN harga satuannya. Begitu dipilih, harganya langsung
+// terisi supaya kamu tidak menebak dari nol tiap bikin invoice — dan tetap bisa
+// diubah per proyek (client besar, proyek buru-buru, diskon, dsb.). Yang
+// tersimpan di Firestore selalu harga yang benar-benar kamu pakai, bukan angka
+// di bawah ini.
+//
+// ANGKA-ANGKA INI PERKIRAAN AWAL, silakan betulkan sesuai tarifmu sendiri —
+// ini satu-satunya tempatnya, jangan ditulis ulang di layar mana pun.
+export const INVOICE_PRESETS: InvoicePreset[] = [
+  { desc: 'Jasa Pembuatan Website', price: 7_500_000 },
+  { desc: 'Jasa Pembuatan Aplikasi', price: 25_000_000 },
+  { desc: 'Maintenance (per bulan)', price: 500_000 },
+  { desc: 'Administrasi (per bulan)', price: 300_000 },
+  { desc: 'Pemasaran & SEO (per bulan)', price: 1_500_000 },
+  { desc: 'Lisensi & Tema', price: 1_000_000 },
+  { desc: 'Domain (.id / .com)', price: 250_000 },
+  { desc: 'Hosting', price: 1_200_000 },
 ];
+
+/**
+ * Perkiraan harga satuan untuk sebuah deskripsi item — 0 kalau item itu
+ * diketik sendiri (bukan dari daftar di atas). Dipakai layar untuk mengisi
+ * harga awal & menulis ancar-ancar di placeholder.
+ */
+export function presetPrice(desc: string): number {
+  const found = INVOICE_PRESETS.find(
+    (p) => p.desc.toLowerCase() === desc.trim().toLowerCase(),
+  );
+  return found?.price ?? 0;
+}
 
 const ROMAN = [
   'I', 'II', 'III', 'IV', 'V', 'VI',

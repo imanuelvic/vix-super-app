@@ -108,6 +108,9 @@ function RootNavigator() {
         <Stack.Screen name="residence" />
         <Stack.Screen name="wheel" />
         <Stack.Screen name="career" />
+        {/* Freelance: rincian satu proyek (baca-saja) + layar isiannya */}
+        <Stack.Screen name="project/[id]" />
+        <Stack.Screen name="project/edit/[id]" />
         <Stack.Screen name="family" />
         <Stack.Screen name="fun" />
         <Stack.Screen name="fitness" />

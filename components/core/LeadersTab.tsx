@@ -378,21 +378,23 @@ export function LeadersTab({
         <PressableScale
           style={styles.toggleHeader}
           onPress={() => setClOpen((o) => !o)}>
-          <VixText
-            heading="title"
-            numberOfLines={1}
-            additionalStyle={styles.toggleTitle}>
-            🫶 CORE Leader
-          </VixText>
-          <View style={styles.toggleRight}>
-            <VixText heading="label">
-              {clOpen ? 'Tutup' : `${leaders.length} orang`}
+          <View style={styles.toggleRow}>
+            <VixText
+              heading="title"
+              numberOfLines={1}
+              additionalStyle={styles.toggleTitle}>
+              🫶 CORE Leader
             </VixText>
-            <IconSymbol
-              name={clOpen ? 'chevron.up' : 'chevron.down'}
-              size={18}
-              color={Color.TEXT_LABEL}
-            />
+            <View style={styles.toggleRight}>
+              <VixText heading="label">
+                {clOpen ? 'Tutup' : `${leaders.length} orang`}
+              </VixText>
+              <IconSymbol
+                name={clOpen ? 'chevron.up' : 'chevron.down'}
+                size={18}
+                color={Color.TEXT_LABEL}
+              />
+            </View>
           </View>
         </PressableScale>
 
@@ -466,21 +468,23 @@ export function LeadersTab({
         <PressableScale
           style={styles.toggleHeader}
           onPress={() => setMtOpen((o) => !o)}>
-          <VixText
-            heading="title"
-            numberOfLines={1}
-            additionalStyle={styles.toggleTitle}>
-            👥 Main Team
-          </VixText>
-          <View style={styles.toggleRight}>
-            <VixText heading="label">
-              {mtOpen ? 'Tutup' : `${mainTeam.length} orang`}
+          <View style={styles.toggleRow}>
+            <VixText
+              heading="title"
+              numberOfLines={1}
+              additionalStyle={styles.toggleTitle}>
+              👥 Main Team
             </VixText>
-            <IconSymbol
-              name={mtOpen ? 'chevron.up' : 'chevron.down'}
-              size={18}
-              color={Color.TEXT_LABEL}
-            />
+            <View style={styles.toggleRight}>
+              <VixText heading="label">
+                {mtOpen ? 'Tutup' : `${mainTeam.length} orang`}
+              </VixText>
+              <IconSymbol
+                name={mtOpen ? 'chevron.up' : 'chevron.down'}
+                size={18}
+                color={Color.TEXT_LABEL}
+              />
+            </View>
           </View>
         </PressableScale>
         <View>
@@ -1171,18 +1175,22 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 },
   addRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   addFlex: { flex: 1 },
+  // Judul ini dipatok (sticky) di ScrollView. PENTING: ScrollView memindahkan
+  // style anak sticky-nya ke pembungkus buatannya sendiri, lalu memberi anaknya
+  // `{ flex: 1 }` polos (lihat ScrollViewStickyHeader.js — "We transfer the
+  // child style to the wrapper"). Jadi `flexDirection: 'row'` di sini TIDAK
+  // akan sampai ke PressableScale-nya, dan judul & "10 orang ⌄" jatuh
+  // atas-bawah. Karena itu barisnya dipegang <View> di DALAM (toggleRow) —
+  // style itu miliknya sendiri, tak ikut dipindahkan ke mana-mana.
   toggleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    // Jaraknya dulu margin, sekarang padding + latar sewarna halaman. Sebabnya
-    // judul ini DIPATOK: margin itu ruang KOSONG di luar kotaknya, jadi saat
-    // dipatok kartu-kartu terlihat menyelinap lewat celah 10px di bawah judul.
-    // Sebagai padding, celah itu ikut kena latar. Jarak yang terlihat sama
-    // persis seperti sebelumnya.
     paddingTop: 4,
     paddingBottom: 10,
     backgroundColor: Color.BACKGROUND,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   // Judul mengalah (menyusut/dipotong) & jumlah orang + panahnya TIDAK PERNAH
   // menyusut — jadi "10 orang ⌄" pasti tetap sebaris di kanan judul, tak
