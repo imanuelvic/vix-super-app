@@ -33,9 +33,13 @@ export type Fund = {
 };
 
 // Daftar Saku. Tambah dompet baru = tambah 1 baris di sini.
+//
+// CATATAN: membuang baris di sini hanya menyembunyikan dompetnya dari daftar —
+// dokumen `users/{uid}/funds/{key}` beserta mutasinya TETAP ada di Firestore.
+// Kalau dompet yang dibuang masih ada saldonya, uang itu jadi tak terlihat.
+// Bersihkan datanya sendiri di Firebase Console kalau memang mau hilang total.
+// (Home 🏘️ & Car 🚗 dibuang atas permintaan — 24 Agustus 2026.)
 export const FUNDS: Fund[] = [
-  { key: 'home', label: 'Home', icon: '🏘️' },
-  { key: 'car', label: 'Car', icon: '🚗' },
   { key: 'vacation', label: 'Vacation', icon: '🛩️' },
   { key: 'self-reward', label: 'Self-Reward', icon: '🏆' },
   { key: 'impulsive', label: 'Impulsive', icon: '🤑' },
