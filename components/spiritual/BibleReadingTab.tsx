@@ -132,7 +132,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
                 {editable && (
                   <PressableScale onPress={() => openEdit(d)} hitSlop={10}>
                     <VixText heading="label" additionalStyle={styles.editText}>
-                      ✏️ Edit
+                      Ubah
                     </VixText>
                   </PressableScale>
                 )}

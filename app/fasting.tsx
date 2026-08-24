@@ -335,7 +335,7 @@ export default function FastingScreen() {
             </>
           ) : (
             <VixText heading="label" additionalStyle={styles.hint}>
-              Simpan dulu keterangannya — daftar hari per hari muncul otomatis
+              Simpan maka daftar hari per hari muncul otomatis
               sesuai tanggal mulai & selesai 📆
             </VixText>
           )}
@@ -366,7 +366,7 @@ export default function FastingScreen() {
           onPress={() => setDDone((v) => !v)}>
           <CheckCircle checked={dDone} size={26} />
           <VixText heading="bold" additionalStyle={styles.doneText}>
-            {dDone ? '✅ Berhasil puasa hari ini' : '❌ Belum / gagal hari ini'}
+            {dDone ? 'Berhasil berpuasa' : '❌ Gagal'}
           </VixText>
         </PressableScale>
 

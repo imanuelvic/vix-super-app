@@ -461,6 +461,21 @@ export function skillOfWeek(now = new Date()): Skill {
   return SKILLS[weekNumber(now) % SKILLS.length];
 }
 
+/**
+ * Boleh ganti topik minggu ini? SENIN saja.
+ *
+ * Topiknya dicicil 4 langkah sepanjang minggu (Sen/Rab/Jum/Min). Kalau boleh
+ * diganti di tengah minggu, langkah yang sudah dikerjakan jadi milik topik
+ * LAIN — centangnya tetap ada tapi isinya tidak nyambung, dan skill yang
+ * setengah jalan itu ditinggal begitu saja. Jadi gantinya di awal minggu,
+ * sebelum ada yang dikerjakan. Sesudah Senin tombolnya hilang sendiri.
+ *
+ * (Sama aturannya dengan undian 🎲 fokus mingguan CORE.)
+ */
+export function canChangeWeekSkill(now = new Date()): boolean {
+  return now.getDay() === 1;
+}
+
 /** Berapa topik diskusi yang digilirkan tiap minggu. */
 export const TOPICS_PER_WEEK = 3;
 

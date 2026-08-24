@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/auth';
 import { BOOKS } from '@/lib/books';
 import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import {
+  canChangeWeekSkill,
   setSkillDone,
   setWeekSkill,
   SKILL_AREAS,
@@ -51,6 +52,10 @@ export function SkillsTab({
 
   const current = (week.skillKey ? skillOf(week.skillKey) : null) ?? skillOfWeek(now);
   const doneCount = SKILLS.filter((s) => skillsDone[s.key]).length;
+  // Ganti topik minggu ini SENIN saja — aturan yang sama dengan tombol
+  // 🔀 di sub-tab Target. Kalau cuma satu yang dibatasi, aturannya bocor
+  // lewat pintu satunya.
+  const bisaGanti = canChangeWeekSkill(now);
 
   async function makeCurrent(skill: Skill) {
     if (!user || busy) return;
@@ -222,7 +227,7 @@ export function SkillsTab({
               </VixText>
             ) : null}
 
-            {open.key !== current.key && (
+            {bisaGanti && open.key !== current.key && (
               <PrimaryButton
                 label="🎯 Jadikan Topik Minggu Ini"
                 onPress={() => makeCurrent(open)}

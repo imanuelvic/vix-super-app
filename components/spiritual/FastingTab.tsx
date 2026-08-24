@@ -60,7 +60,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
         )}
 
         <PrimaryButton
-          label="Buat Puasa Baru"
+          label="Tambah Puasa Baru"
           icon="plus"
           onPress={() => open()}
           additionalStyle={styles.addButton}

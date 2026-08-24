@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/auth';
 import { BOOKS } from '@/lib/books';
 import {
   bumpLearningStreak,
+  canChangeWeekSkill,
   dueStep,
   LEARNING_STEPS,
   learningStreakAlive,
@@ -76,6 +77,8 @@ export function WeekTab({
   const complete = weekComplete(week.steps);
   const due = dueStep(week.steps, now);
   const topics = topicsOfWeek(now);
+  // Ganti topik SENIN saja — lihat alasannya di canChangeWeekSkill.
+  const bisaGanti = canChangeWeekSkill(now);
   // Streak yang MASIH hidup: tercatat minggu ini, atau minggu lalu (belum
   // tuntas minggu ini, tapi belum putus juga). Lebih lama dari itu = sudah
   // bolong, jadi angkanya tidak lagi ditampilkan seolah masih berjalan.
@@ -188,11 +191,15 @@ export function WeekTab({
             </VixText>
           )}
 
-          <PressableScale style={styles.changeButton} onPress={() => setPickOpen(true)}>
-            <VixText heading="label" additionalStyle={styles.changeText}>
-              🔀 Ganti topik minggu ini
-            </VixText>
-          </PressableScale>
+          {bisaGanti && (
+            <PressableScale
+              style={styles.changeButton}
+              onPress={() => setPickOpen(true)}>
+              <VixText heading="label" additionalStyle={styles.changeText}>
+                🔀 Ganti topik minggu ini
+              </VixText>
+            </PressableScale>
+          )}
         </View>
 
         {/* ===== Buku rujukan ===== */}

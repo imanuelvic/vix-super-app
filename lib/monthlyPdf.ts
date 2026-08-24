@@ -75,10 +75,6 @@ function buildHtml(m: MonthlyMeeting): string {
       </section>`;
   }).join('');
 
-  const terisi = MONTHLY_AGENDA_POINTS.filter((p) =>
-    (m.points[p.key] ?? '').trim(),
-  ).length;
-
   // Dokumentasi foto ditempel sesudah 5 poin agenda — bukti rapatnya benar
   // terjadi. Isinya sudah pasti base64 buatan app sendiri, tapi tetap disaring
   // ke abjad base64 saja supaya tak mungkin ada tanda kutip yang mematahkan

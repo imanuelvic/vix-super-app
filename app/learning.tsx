@@ -13,8 +13,8 @@ import { WeekTab } from '@/components/learning/WeekTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import {
-  dueStep,
   EMPTY_WEEK,
+  learningPending,
   subscribeLearningStreak,
   subscribeLearningWeek,
   subscribeSkillsDone,
@@ -49,7 +49,9 @@ export default function LearningScreen() {
 
   const [week, setWeek] = useState<LearningWeek | null>(null);
   const [skillsDone, setSkillsDone] = useState<SkillsDone>({});
-  const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
+  // null = belum termuat. Badge ikut menunggunya (lihat `pending` di bawah)
+  // supaya angkanya tidak sempat salah sekejap saat layar dibuka.
+  const [topicsDone, setTopicsDone] = useState<TopicsDone | null>(null);
   // Streak minggu tuntas berturut-turut 🔥 — dasar achievement 🎓 Learning.
   const [streak, setStreak] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
 
@@ -65,9 +67,15 @@ export default function LearningScreen() {
   }, [user, weekId]);
 
   const current = week ?? EMPTY_WEEK;
-  // Badge sub-menu "Minggu Ini": 1 = ada langkah yang harinya sudah tiba tapi
-  // belum dikerjakan. Sama artinya dengan kartu reminder di Dashboard.
-  const pending = dueStep(current.steps, now) ? 1 : 0;
+  // Badge sub-tab 🎯 Target = ANGKA YANG SAMA dengan badge tile Learning di
+  // Home: langkah yang harinya sudah tiba tapi belum dikerjakan + topik
+  // diskusi minggu ini yang belum diobrolkan. Keduanya lewat learningPending,
+  // jadi mustahil berbeda pendapat. Semua yang dihitung memang ada di sub-tab
+  // ini (4 langkah + bagian "Diskusi Dalam Minggu Ini").
+  const pending =
+    week === null || topicsDone === null
+      ? 0
+      : learningPending(week.steps, topicsDone, now);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -78,7 +86,7 @@ export default function LearningScreen() {
       />
 
       <View style={styles.content} key={scrollKey}>
-        {week === null ? (
+        {week === null || topicsDone === null ? (
           <LoadingCenter />
         ) : tab === 'week' ? (
           <WeekTab

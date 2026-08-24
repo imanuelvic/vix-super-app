@@ -562,7 +562,7 @@ export default function FamilyScreen() {
                   style={styles.editButton}
                   onPress={() => openEdit(selected)}>
                   <VixText heading="bold" additionalStyle={styles.editButtonText}>
-                    ✏️ Edit {displayName(selected)}
+                    Ubah {displayName(selected)}
                   </VixText>
                 </PressableScale>
               </View>
