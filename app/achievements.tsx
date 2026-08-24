@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
+  achievementCategoryOf,
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORIES,
   resetAchievements,
@@ -93,7 +94,17 @@ export default function AchievementsScreen() {
   const [claimed, setClaimed] = useState<ClaimedReward[]>([]);
 
   // Kategori yang sedang dibuka di modal (null = tertutup).
-  const [openCat, setOpenCat] = useState<AchievementCategoryKey | null>(null);
+  //
+  // Nilai AWALNYA boleh datang dari tautan yang membuka layar ini: pil 🔥 di
+  // Habits mengirim ?cat=health → modal "Kebiasaan Sehat" sudah terbuka begitu
+  // layarnya muncul, tanpa perlu mencarinya lagi di daftar. Dipasang sebagai
+  // nilai awal useState (bukan lewat efek) supaya modalnya ada sejak render
+  // PERTAMA — tak ada kedipan daftar dulu baru modal menyusul. Setelah itu
+  // parameternya tidak dilihat lagi: ditutup ya tetap tertutup.
+  const { cat } = useLocalSearchParams<{ cat?: string }>();
+  const [openCat, setOpenCat] = useState<AchievementCategoryKey | null>(() =>
+    achievementCategoryOf(cat),
+  );
 
   // Sheet tambah/ubah hadiah + isiannya.
   const [editing, setEditing] = useState<SelfReward | 'new' | null>(null);

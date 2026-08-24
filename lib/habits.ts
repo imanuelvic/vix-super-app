@@ -2,6 +2,7 @@ import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { Color } from '@/assets/style/color';
 
+import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
@@ -13,9 +14,9 @@ import { liveDoc } from './liveDoc';
 export type HabitSlot = 'morning' | 'daytime' | 'night';
 
 export const HABIT_SLOTS: { key: HabitSlot; label: string; emoji: string }[] = [
-  { key: 'morning', label: 'Pagi', emoji: '🌅' },
-  { key: 'daytime', label: 'Siang', emoji: '🌤️' },
-  { key: 'night', label: 'Malam', emoji: '🌙' },
+  { key: 'morning', label: 'Pagi', emoji: DAYPART.morning },
+  { key: 'daytime', label: 'Siang', emoji: DAYPART.daytime },
+  { key: 'night', label: 'Malam', emoji: DAYPART.night },
 ];
 
 export function slotMeta(slot: HabitSlot) {
@@ -97,7 +98,7 @@ function renamedHabit(h: ScheduledHabit): ScheduledHabit {
 }
 
 // ===================== Kebiasaan yang centangnya dari catatan =====================
-// Sebagian kebiasaan buktinya BUKAN ketukan, melainkan tulisannya. Rhema
+// Sebagian kebiasaan buktinya BUKAN click, melainkan tulisannya. Rhema
 // contohnya: mencentang tanpa menulis apa pun cuma bikin angkanya bohong.
 // Jadi centangnya dikunci & ditentukan oleh panjang catatannya.
 
@@ -109,7 +110,7 @@ export function habitNoteDone(text: string): boolean {
   return text.trim().length >= HABIT_NOTE_MIN;
 }
 
-/** Centangnya ditentukan catatan, bukan ketukan (sekarang: Rhema). */
+/** Centangnya ditentukan catatan, bukan click (sekarang: Rhema). */
 export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
   return /rhema/i.test(h.label);
 }
@@ -336,7 +337,7 @@ export const FITNESS_HABIT_ID = 'fitness-link';
 // ===================== Pintasan kebiasaan =====================
 // Sebagian kebiasaan sebenarnya DIKERJAKAN di layar lain (atau di aplikasi
 // lain). Daripada mengingat sendiri harus buka apa, baris-baris itu diberi
-// keterangan kecil + ketukan yang langsung membawa ke tempatnya.
+// keterangan kecil + click yang langsung membawa ke tempatnya.
 //
 // Warnanya sengaja mengikuti warna ubin fitur tujuannya di Home (atau warna
 // merek aplikasi luar), jadi tujuannya sudah kebaca sebelum teksnya dibaca.
@@ -366,8 +367,8 @@ export type HabitLink = {
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
   external?: { scheme: string; web: string };
   /**
-   * true = centangnya TIDAK diketuk di Habits, melainkan ikut layar tujuan.
-   * Baris begini dikunci: lingkarannya abu-abu & ketukannya membuka tujuan.
+   * true = centangnya TIDAK di-click di Habits, melainkan ikut layar tujuan.
+   * Baris begini dikunci: lingkarannya abu-abu & click-nya membuka tujuan.
    */
   mirror?: boolean;
 };
@@ -409,7 +410,7 @@ export const HABIT_LINKS: HabitLink[] = [
     route: { pathname: '/daily-priority' },
   },
   // Baca Alkitab pagi, siang & malam — tujuannya layar yang sama dengan kartu
-  // di Home, jadi ketukan dari mana pun mendarat di tempat yang sama.
+  // di Home, jadi click dari mana pun mendarat di tempat yang sama.
   {
     match: /morning bible reading/i,
     note: 'Buka Baca Alkitab › Pagi',
@@ -417,7 +418,7 @@ export const HABIT_LINKS: HabitLink[] = [
     route: { pathname: '/bible-reading', params: { session: 'morning' } },
   },
   // Belum ada kebiasaan bernama ini di daftarmu — pintasannya disiapkan supaya
-  // begitu kamu menambahkannya, ketukannya langsung mendarat di sesi Siang.
+  // begitu kamu menambahkannya, click-nya langsung mendarat di sesi Siang.
   {
     match: /midday bible reading/i,
     note: 'Buka Baca Alkitab › Siang',

@@ -12,14 +12,27 @@ import Animated, {
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import type { AchievementCategoryKey } from '@/lib/achievements';
 
 // Pil streak 🔥 → buka halaman Achievements (streak & pencapaian).
 // Dipakai di baris sapaan (<GreetingHeader/>) dan di pojok kanan atas
 // header layar (mis. tab Habits). Satu tampilan, satu tempat ubah.
 //
+// `category` = kategori pencapaian yang diwakili angka di pil ini. Kalau
+// dioper, modal kategori itu LANGSUNG terbuka di layar Achievement — pilnya
+// menunjuk satu streak tertentu, jadi tidak masuk akal kalau yang dibuka cuma
+// daftar semua kategori lalu harus dicari lagi. Tanpa `category` (mis. pil
+// umum 🏆 di Home yang tidak mewakili satu kategori), layarnya terbuka biasa.
+//
 // Saat angkanya NAIK, pil ini meletup sekali — hadiah kecil yang langsung
 // terlihat begitu streak hari bertambah.
-export function StreakPill({ streak }: { streak: string | number }) {
+export function StreakPill({
+  streak,
+  category,
+}: {
+  streak: string | number;
+  category?: AchievementCategoryKey;
+}) {
   const router = useRouter();
 
   const count = Number(streak);
@@ -46,7 +59,13 @@ export function StreakPill({ streak }: { streak: string | number }) {
     <Animated.View style={popStyle}>
       <PressableScale
         style={styles.pill}
-        onPress={() => router.push('/achievements')}
+        onPress={() =>
+          router.push(
+            category
+              ? { pathname: '/achievements', params: { cat: category } }
+              : '/achievements',
+          )
+        }
         hitSlop={8}>
         <VixText heading="bold" additionalStyle={styles.text}>
           🔥 {streak}

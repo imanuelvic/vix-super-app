@@ -10,6 +10,7 @@ import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScroll
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -26,7 +27,7 @@ import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
 // Template Chat 💬 — kata-kata siap kirim untuk CORE Leader & grup CORE.
 //
-// Alurnya sengaja sependek mungkin: isi nama (atau ketuk chip CL-nya) → buka
+// Alurnya sengaja sependek mungkin: isi nama (atau click chip CL-nya) → buka
 // kategorinya → baca ketiga pilihannya → tekan "Kirim". WhatsApp terbuka dengan
 // teksnya sudah terisi, tinggal pilih mau ke chat siapa atau ke grup.
 //
@@ -75,34 +76,41 @@ export default function ChatTemplatesScreen() {
 
       <ScreenError message={error} />
 
+      {/* Kolom nama DIPATOK di atas — tidak ikut tergulung. Nama yang dituju
+          menempel ke SEMUA kategori, jadi saat menggulir ke bawah membandingkan
+          pilihan kata-katanya, kolom ini tetap terlihat & bisa langsung
+          diganti. Dipatok sebagai SAUDARA daftar (bukan posisi absolute), jadi
+          isinya mulai persis di bawahnya — tidak ada yang tertutupi. */}
+      {fields.includes('nama') && (
+        <StickyTop>
+          <VixText heading="label" additionalStyle={styles.fieldLabel}>
+            🙋 Nama yang dituju
+          </VixText>
+          <FormInput
+            style={styles.formGap}
+            placeholder="Kosongkan kalau untuk grup"
+            value={nama}
+            onChangeText={setNama}
+          />
+        </StickyTop>
+      )}
+
       <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-        {/* ===== Isian penanda ===== */}
-        {fields.includes('nama') && (
-          <>
-            <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              🙋 Nama yang dituju
-            </VixText>
-            <FormInput
-              style={styles.formGap}
-              placeholder="Kosongkan kalau untuk grup"
-              value={nama}
-              onChangeText={setNama}
-            />
-            {/* Pintasan nama CL — supaya tidak perlu mengetik & tidak salah
-                tulis. Ketuk lagi yang sedang aktif untuk mengosongkannya. */}
-            {leaders.length > 0 && (
-              <View style={styles.chipWrap}>
-                {leaders.map((l) => (
-                  <Chip
-                    key={l.id}
-                    label={`${l.heart} ${l.name}`}
-                    active={nama === l.name}
-                    onPress={() => setNama(nama === l.name ? '' : l.name)}
-                  />
-                ))}
-              </View>
-            )}
-          </>
+        {/* Pintasan nama CL — supaya tidak perlu mengetik & tidak salah tulis.
+            Click lagi yang sedang aktif untuk mengosongkannya. Chip-nya sengaja
+            TIDAK ikut dipatok: sepuluh nama memakan setengah layar, dan sekali
+            dipilih namanya sudah tercatat di kolom di atas. */}
+        {fields.includes('nama') && leaders.length > 0 && (
+          <View style={styles.chipWrap}>
+            {leaders.map((l) => (
+              <Chip
+                key={l.id}
+                label={`${l.heart} ${l.name}`}
+                active={nama === l.name}
+                onPress={() => setNama(nama === l.name ? '' : l.name)}
+              />
+            ))}
+          </View>
         )}
 
         {fields.includes('gelar') && (

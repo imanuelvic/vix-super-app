@@ -21,7 +21,7 @@ import { formatCompactDateTime } from '@/lib/format';
 //
 // Yang TIDAK di sini: bungkus kartunya. Riwayat memakai satu PressableScale
 // polos, sedangkan tab Visitation menaruh tombol share sebagai SAUDARA dari
-// area ketuk (Pressable bersarang tidak andal di iOS). Jadi bungkusnya tetap
+// area click (Pressable bersarang tidak andal di iOS). Jadi bungkusnya tetap
 // milik masing-masing layar.
 //
 // Status/hitung mundurnya juga BUKAN di sini — lihat <VisitationStatus> di

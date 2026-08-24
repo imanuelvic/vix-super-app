@@ -14,7 +14,7 @@ import { SAVE_ERROR } from '@/lib/messages';
 import { saveSelfKnowledge, type SelfKnowledge } from '@/lib/selfKnowledge';
 
 // Tab berbentuk KUADRAN — dipakai bersama oleh Ikigai (4 lingkaran) dan SWOT
-// (4 kotak). Bentuknya sama persis: satu kartu berwarna per kuadran, ketuk
+// (4 kotak). Bentuknya sama persis: satu kartu berwarna per kuadran, click
 // untuk mengisi. Satu komponen, dua fitur — biar tidak ada kode kembar.
 export type Quadrant<K extends string> = {
   key: K;

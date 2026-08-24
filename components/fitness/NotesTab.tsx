@@ -24,7 +24,7 @@ import { SAVE_ERROR } from '@/lib/messages';
 
 // Sub-tab Notes 📝 — kumpulan tautan & catatan latihan.
 //
-// Ketuk kartunya = LANGSUNG buka tautannya (itu yang paling sering dilakukan).
+// Click kartunya = LANGSUNG buka tautannya (itu yang paling sering dilakukan).
 // Mengubah/menghapus lewat tombol ✏️ di sebelahnya, yang sengaja jadi SAUDARA
 // kartunya — Pressable bersarang tidak andal di iOS.
 export function NotesTab({ notes }: { notes: FitNote[] }) {
@@ -119,7 +119,7 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
           return (
             <View key={n.id} style={styles.card}>
               {/* Area utama = buka tautannya. Kalau tidak ada tautannya,
-                  ketukan itu tidak melakukan apa-apa — jadi dimatikan supaya
+                  click itu tidak melakukan apa-apa — jadi dimatikan supaya
                   tidak terasa rusak. */}
               <PressableScale
                 style={styles.cardMain}

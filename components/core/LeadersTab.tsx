@@ -52,8 +52,8 @@ import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
  * Yang sedang DILIHAT (bukan diubah) di modal baca-saja.
  *
  * Dulu menekan barisnya langsung membuka form edit — sekali salah pencet saat
- * cuma ingin mengintip nomor WA-nya, satu ketukan lagi sudah bisa mengubah
- * data. Sekarang ketukan baris = lihat saja; mengubah harus lewat tombol ✏️.
+ * cuma ingin mengintip nomor WA-nya, satu click lagi sudah bisa mengubah
+ * data. Sekarang click baris = lihat saja; mengubah harus lewat tombol ✏️.
  */
 type Viewing = {
   emoji: string;
@@ -378,7 +378,12 @@ export function LeadersTab({
         <PressableScale
           style={styles.toggleHeader}
           onPress={() => setClOpen((o) => !o)}>
-          <VixText heading="title">🫶 CORE Leader</VixText>
+          <VixText
+            heading="title"
+            numberOfLines={1}
+            additionalStyle={styles.toggleTitle}>
+            🫶 CORE Leader
+          </VixText>
           <View style={styles.toggleRight}>
             <VixText heading="label">
               {clOpen ? 'Tutup' : `${leaders.length} orang`}
@@ -396,11 +401,11 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(l, today);
           const soon = daysUntil <= 30;
           return (
-            // Tombol 🎡 & ✏️ jadi SAUDARA area ketuk, bukan anaknya —
-            // Pressable bersarang di iOS bikin ketukan tombolnya ikut
+            // Tombol 🎡 & ✏️ jadi SAUDARA area click, bukan anaknya —
+            // Pressable bersarang di iOS bikin click tombolnya ikut
             // membuka modal barisnya.
             <View key={l.id} style={styles.card}>
-              {/* Ketuk baris = LIHAT data CL (baca-saja), bukan mengubahnya. */}
+              {/* Click baris = LIHAT data CL (baca-saja), bukan mengubahnya. */}
               <PressableScale
                 style={styles.cardLeft}
                 onPress={() =>
@@ -461,7 +466,12 @@ export function LeadersTab({
         <PressableScale
           style={styles.toggleHeader}
           onPress={() => setMtOpen((o) => !o)}>
-          <VixText heading="title">👥 Main Team</VixText>
+          <VixText
+            heading="title"
+            numberOfLines={1}
+            additionalStyle={styles.toggleTitle}>
+            👥 Main Team
+          </VixText>
           <View style={styles.toggleRight}>
             <VixText heading="label">
               {mtOpen ? 'Tutup' : `${mainTeam.length} orang`}
@@ -487,7 +497,7 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(m, today);
           const soon = daysUntil <= 30;
           return (
-            // Sama seperti kartu CL: ketuk baris = lihat, ✏️ = ubah.
+            // Sama seperti kartu CL: click baris = lihat, ✏️ = ubah.
             <View key={m.id} style={styles.card}>
               <PressableScale
                 style={styles.cardLeft}
@@ -538,7 +548,7 @@ export function LeadersTab({
         </View>
       </ScrollView>
 
-      {/* Modal BACA-SAJA — muncul saat barisnya diketuk. Tidak ada satu pun
+      {/* Modal BACA-SAJA — muncul saat barisnya di-click. Tidak ada satu pun
           kolom yang bisa diubah di sini; mengubah lewat tombol ✏️ di kartunya. */}
       <SheetModal
         visible={viewing !== null}
@@ -603,7 +613,7 @@ export function LeadersTab({
               </VixText>
               <FormInput
                 style={styles.archiveInput}
-                placeholder="mis. Mundur jadi CL · naik jadi MCL"
+                placeholder="mis. Mundur jadi CL · Naik jadi MCL"
                 value={archiveReason}
                 onChangeText={setArchiveReason}
                 editable={!busy}
@@ -841,7 +851,7 @@ function GenderField({
   );
 }
 
-// Input kepribadian: pilih 1 tiap kategori, tap lagi untuk mengosongkan.
+// Input kepribadian: pilih 1 tiap kategori, click lagi untuk mengosongkan.
 function PersonalityFields({
   disc,
   setDisc,
@@ -1174,7 +1184,16 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: Color.BACKGROUND,
   },
-  toggleRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  // Judul mengalah (menyusut/dipotong) & jumlah orang + panahnya TIDAK PERNAH
+  // menyusut — jadi "10 orang ⌄" pasti tetap sebaris di kanan judul, tak
+  // pernah jatuh ke baris bawah walau nama seksinya memanjang.
+  toggleTitle: { flexShrink: 1 },
+  toggleRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+  },
   emptyText: { textAlign: 'center', marginBottom: 12 },
   card: {
     flexDirection: 'row',

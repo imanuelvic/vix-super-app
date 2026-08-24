@@ -52,7 +52,7 @@ import { SAVE_ERROR } from '@/lib/messages';
 // Susunannya dari atas ke bawah = urutan yang paling sering dilihat:
 //   1. Ring kalori + target yang sudah disesuaikan dengan target berat
 //   2. Tiga takaran penting: protein (dikejar), gula & lemak (dibatasi)
-//   3. Daftar makan per waktu makan + paket sarapan sekali ketuk
+//   3. Daftar makan per waktu makan + paket sarapan sekali click
 //   4. Panduan singkat
 //
 // Air putih 💧 TIDAK diurus di sini — tempatnya cuma di kartu sapaan Home.
@@ -257,7 +257,7 @@ export function DietTab({
                 <VixText heading="label">{slotKcal} kkal</VixText>
               </View>
 
-              {/* Paket sarapan sekali ketuk — hanya di kartu Sarapan */}
+              {/* Paket sarapan sekali click — hanya di kartu Sarapan */}
               {slot.key === 'sarapan' && list.length === 0 && (
                 <View style={styles.comboBox}>
                   <VixText heading="label" additionalStyle={styles.comboHint}>

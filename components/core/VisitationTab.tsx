@@ -271,7 +271,7 @@ export function VisitationTab({
       <View key={v.id} style={[styles.card, deadlineBorder(tone)]}>
       <View style={styles.cardRow}>
       {/* Tekan bagian ini untuk edit / tandai selesai. Tombol share sengaja
-          jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin ketukan
+          jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin click
           tombolnya ikut membuka modal edit. */}
       <PressableScale style={styles.cardTapArea} onPress={() => openEdit(v)}>
         <VisitationCardBody visitation={v} leaders={namaLeaders} />
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 3,
   },
-  // Isi kartu (area ketuk) + tombol kirim PDF di kanan ATAS-nya.
+  // Isi kartu (area click) + tombol kirim PDF di kanan ATAS-nya.
   // 'flex-start' menahan tombolnya tetap di ujung atas walau kartunya
   // memanjang karena agenda yang berbaris-baris.
   // 'stretch' → kolom kanan setinggi kartunya, jadi isinya bisa dipisah:

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -28,25 +28,19 @@ export function BibleRefField({
   onChange: (ref: string) => void;
   editable?: boolean;
 }) {
-  const parsed = useMemo(() => parseBibleRef(value), [value]);
-
-  const [book, setBook] = useState(parsed.book);
-  const [chapter, setChapter] = useState(parsed.chapter);
-  const [verseFrom, setVerseFrom] = useState(parsed.verseFrom);
-  const [verseTo, setVerseTo] = useState(parsed.verseTo);
+  // Keempat bagiannya DITURUNKAN dari `value`, tidak disimpan lagi sebagai
+  // state sendiri. Tiap perubahan memang langsung dikirim ke atas lewat
+  // `onChange` dan kembali sebagai `value` baru, jadi salinan lokalnya cuma
+  // menduplikasi kebenaran yang sama — lengkap dengan satu efek untuk
+  // menyamakannya lagi tiap `value` berganti dari luar (mis. buka catatan
+  // lama). Sekarang tidak ada yang perlu disamakan: satu sumber saja.
+  const { book, chapter, verseFrom, verseTo } = useMemo(
+    () => parseBibleRef(value),
+    [value],
+  );
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [query, setQuery] = useState('');
-
-  // Nilai dari luar berubah (mis. buka catatan lama) → isi ulang bagiannya.
-  useEffect(() => {
-    setBook(parsed.book);
-    setChapter(parsed.chapter);
-    setVerseFrom(parsed.verseFrom);
-    setVerseTo(parsed.verseTo);
-    // Hanya saat teks acuannya benar-benar berganti dari luar.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
 
   function emit(next: Partial<Record<string, string>>) {
     const b = next.book ?? book;
@@ -57,7 +51,6 @@ export function BibleRefField({
   }
 
   function pickBook(name: string) {
-    setBook(name);
     setPickerOpen(false);
     setQuery('');
     emit({ book: name });
@@ -101,11 +94,7 @@ export function BibleRefField({
             placeholder={meta ? `1–${meta.chapters}` : '—'}
             keyboardType="number-pad"
             value={chapter}
-            onChangeText={(v) => {
-              const clean = v.replace(/\D/g, '');
-              setChapter(clean);
-              emit({ chapter: clean });
-            }}
+            onChangeText={(v) => emit({ chapter: v.replace(/\D/g, '') })}
             editable={editable && !!book}
           />
         </View>
@@ -117,11 +106,7 @@ export function BibleRefField({
             placeholder="Ayat"
             keyboardType="number-pad"
             value={verseFrom}
-            onChangeText={(v) => {
-              const clean = v.replace(/\D/g, '');
-              setVerseFrom(clean);
-              emit({ verseFrom: clean });
-            }}
+            onChangeText={(v) => emit({ verseFrom: v.replace(/\D/g, '') })}
             editable={editable && !!chapter}
           />
         </View>
@@ -133,11 +118,7 @@ export function BibleRefField({
             placeholder="Ayat"
             keyboardType="number-pad"
             value={verseTo}
-            onChangeText={(v) => {
-              const clean = v.replace(/\D/g, '');
-              setVerseTo(clean);
-              emit({ verseTo: clean });
-            }}
+            onChangeText={(v) => emit({ verseTo: v.replace(/\D/g, '') })}
             editable={editable && !!verseFrom}
           />
         </View>

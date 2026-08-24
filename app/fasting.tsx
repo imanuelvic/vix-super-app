@@ -22,6 +22,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useDraft } from '@/hooks/useDraft';
 import {
   deleteFastingPlan,
   fastingDay,
@@ -51,15 +52,6 @@ export default function FastingScreen() {
   const [planId, setPlanId] = useState(
     typeof idParam === 'string' ? idParam : '',
   );
-  const [loaded, setLoaded] = useState(false); // prefill form sekali saja
-
-  // Keterangan periode.
-  const [title, setTitle] = useState('');
-  const [prayer, setPrayer] = useState('');
-  const [rules, setRules] = useState('');
-  const [answer, setAnswer] = useState('');
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,17 +68,21 @@ export default function FastingScreen() {
 
   const plan = plans?.find((p) => p.id === planId) ?? null;
 
-  // Isi form dari data tersimpan — sekali saja, biar ketikan tak tertimpa.
-  useEffect(() => {
-    if (!plan || loaded) return;
-    setTitle(plan.title);
-    setPrayer(plan.prayer);
-    setRules(plan.rules);
-    setAnswer(plan.answer);
-    if (plan.startId) setStartDate(dayIdToDate(plan.startId));
-    if (plan.endId) setEndDate(dayIdToDate(plan.endId));
-    setLoaded(true);
-  }, [plan, loaded]);
+  // Keterangan periode. Isinya ikut data tersimpan SELAMA belum diketik —
+  // begitu diketik, ketikan itu yang menang (snapshot berikutnya tidak
+  // menimpanya). Hook bersama useDraft; dulu satu bendera `loaded` + satu efek
+  // besar yang mengisi keenam kolom sekaligus.
+  const [today] = useState(() => new Date());
+  const [title, setTitle] = useDraft(plan?.title ?? '');
+  const [prayer, setPrayer] = useDraft(plan?.prayer ?? '');
+  const [rules, setRules] = useDraft(plan?.rules ?? '');
+  const [answer, setAnswer] = useDraft(plan?.answer ?? '');
+  const [startDate, setStartDate] = useDraft(
+    plan?.startId ? dayIdToDate(plan.startId) : today,
+  );
+  const [endDate, setEndDate] = useDraft(
+    plan?.endId ? dayIdToDate(plan.endId) : today,
+  );
 
   const todayId = dayDocId(new Date());
   // Daftar hari mengikuti tanggal DI FORM, jadi langsung berubah saat tanggal
@@ -117,7 +113,6 @@ export default function FastingScreen() {
         endId: dayDocId(endDate),
       });
       setPlanId(id);
-      setLoaded(true);
     } catch {
       setError(SAVE_ERROR);
     } finally {
@@ -191,7 +186,12 @@ export default function FastingScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
           {/* ===== Keterangan periode puasa ===== */}
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          {/* Label PERTAMA tanpa marginTop — jarak ke subjudul layar sudah
+              dipegang header + paddingTop daftar. Dengan marginTop-nya, kolom
+              pertama menggantung jauh dari judulnya. */}
+          <VixText
+            heading="label"
+            additionalStyle={[styles.fieldLabel, styles.firstLabel]}>
             Nama puasa
           </VixText>
           <FormInput
@@ -401,8 +401,10 @@ export default function FastingScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  // paddingTop 4 = sama dengan layar berisian lain (mis. Template Chat).
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   fieldLabel: { marginTop: 12, marginBottom: 6 },
+  firstLabel: { marginTop: 0 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
   error: { marginTop: 10 },
   saveButton: { marginTop: 14 },

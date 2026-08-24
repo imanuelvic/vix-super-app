@@ -302,14 +302,23 @@ export default function ProfileScreen() {
             intro="SWOT dirimu sendiri: dua dari dalam (kekuatan & kelemahan), dua dari luar (peluang & ancaman). Tinjau ulang tiap kuartal 📊"
           />
         ) : (
-          <ProfileContent />
+          renderProfileContent()
         )}
       </View>
     </SafeAreaView>
   );
 
   // Isi subtab Profile — dipisah jadi fungsi biar bagian atas tetap terbaca.
-  function ProfileContent() {
+  //
+  // PENTING: dipanggil sebagai FUNGSI (`renderProfileContent()`), BUKAN dipasang
+  // sebagai komponen (`<ProfileContent />`). Fungsi ini dibuat ulang tiap kali
+  // layarnya render, jadi kalau dipasang sebagai komponen React menganggapnya
+  // jenis yang berbeda tiap render → seluruh isinya (termasuk modal "Ubah
+  // Profil") DIBONGKAR lalu DIPASANG LAGI. Itulah sebab modalnya dulu terlihat
+  // menutup & membuka sendiri tiap satu huruf diketik: kolom isiannya kehilangan
+  // fokus, keyboard ikut turun-naik. Dipanggil sebagai fungsi, JSX-nya menyatu
+  // ke induknya — tidak ada pemasangan ulang sama sekali.
+  function renderProfileContent() {
     if (!profile) return null; // sudah dijaga di atas; ini untuk TypeScript
     return (
       <ScrollView ref={mainScroll} contentContainerStyle={styles.content}>
@@ -343,7 +352,7 @@ export default function ProfileScreen() {
         {/* Sepasang catatan hidup — sengaja DI SINI, bukan di grid Home:
             isinya paling pribadi (pertobatan, relasi, gaji) jadi tidak ikut
             terpampang saat app dibuka atau ditunjukkan ke orang lain, tapi
-            tetap cuma 2 ketukan untuk dipantau rutin.
+            tetap cuma 2 click untuk dipantau rutin.
               📜 History  = masa lalu, biar ingat dari mana kamu datang
               📍 Timeline = masa depan, biar tahu mau ke mana */}
         <View style={styles.lifeRow}>

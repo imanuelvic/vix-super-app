@@ -40,7 +40,7 @@ import { Timestamp } from 'firebase/firestore';
 //
 // Tahapnya bisa diubah LANGSUNG dari kartunya (tanpa buka modal) — memindahkan
 // tahap itu hal yang paling sering dilakukan, dan yang paling sering dilakukan
-// harus jadi yang paling sedikit ketukannya.
+// harus jadi yang paling sedikit click-nya.
 export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
   const { user } = useAuth();
   const { ref: scrollRef, toTop } = useScrollTop();
@@ -272,7 +272,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. Review headset murah buat WFH"
+          placeholder="Isi Judul Ide"
           value={fTitle}
           onChangeText={setFTitle}
           editable={!busy}

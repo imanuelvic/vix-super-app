@@ -188,8 +188,8 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
       <View key={m.id} style={styles.card}>
         {/* Semua tombol ada DI ATAS, sebaris dengan judul — tak perlu
             menggulung notulen yang panjang dulu untuk bisa mengubah atau
-            mengirimnya. Tombolnya sengaja jadi SAUDARA dari area ketuk, bukan
-            anaknya: Pressable bersarang di iOS bikin ketukan tombolnya ikut
+            mengirimnya. Tombolnya sengaja jadi SAUDARA dari area click, bukan
+            anaknya: Pressable bersarang di iOS bikin click tombolnya ikut
             membuka/menutup kartu.
             Panah buka/tutup tidak dipakai lagi — seluruh blok judul memang
             sudah jadi sakelarnya, jadi panahnya cuma memakan tempat. */}
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 10,
   },
-  // Judul (area ketuk buka/tutup) + tombol-tombolnya, semua di baris paling
+  // Judul (area click buka/tutup) + tombol-tombolnya, semua di baris paling
   // atas. 'flex-start' menahan tombol tetap di KANAN ATAS walau judulnya
   // memanjang jadi beberapa baris.
   cardHeader: {

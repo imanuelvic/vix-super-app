@@ -13,6 +13,7 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
+import { useDraft } from '@/hooks/useDraft';
 import { useNow } from '@/hooks/useNow';
 import { formatMinutesLeft } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
@@ -48,8 +49,6 @@ export default function BibleReadingScreen() {
   // Jam BERJALAN (di-segarkan tiap menit) — untuk hitung mundur jendela baca.
   const { now } = useNow();
 
-  // Beberapa acuan sekaligus — kalau hari itu baca lebih dari satu kitab.
-  const [refs, setRefs] = useState<string[]>(['']);
   const [today, setToday] = useState<BibleReadingSessions | null>(null);
   const [streaks, setStreaks] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   const [busy, setBusy] = useState(false);
@@ -70,11 +69,14 @@ export default function BibleReadingScreen() {
   // Hari yang dilewati tidak punya acuan, jadi kolomnya dibiarkan kosong.
   const existing = today?.[session] ?? '';
   const skipped = isBibleSkipped(existing);
-  useEffect(() => {
-    if (existing && !isBibleSkipped(existing)) {
-      setRefs(existing.split(',').map((s) => s.trim()));
-    }
-  }, [existing]);
+
+  // Beberapa acuan sekaligus — kalau hari itu baca lebih dari satu kitab.
+  // Isinya ikut catatan tersimpan SELAMA belum diketik (hook bersama useDraft),
+  // jadi begitu datanya sampai kolomnya langsung terisi — tanpa efek yang
+  // menimpa ketikan yang sedang berjalan.
+  const [refs, setRefs] = useDraft<string[]>(
+    existing && !skipped ? existing.split(',').map((s) => s.trim()) : [''],
+  );
 
   const filled = refs.map((r) => r.trim()).filter(Boolean);
 

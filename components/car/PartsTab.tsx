@@ -82,7 +82,7 @@ export function PartsTab({
         sub:
           unknownCount > 0
             ? `${unknownCount} bagian belum pernah dicatat.`
-            : 'Tap bagian mana pun untuk memperbarui tanggalnya.',
+            : 'Click bagian mana pun untuk memperbarui tanggalnya.',
       }}
       groups={groups}
       dialogHint="Kapan terakhir diganti / dicek?"

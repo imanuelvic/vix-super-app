@@ -18,7 +18,7 @@ import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
 // Riwayat Revive 📖 — seluruh Revive yang pernah ditulis, dengan pencarian
-// (judul/isi) & pagination 10 per halaman. Tap Revive → editor untuk baca/ubah.
+// (judul/isi) & pagination 10 per halaman. Click Revive → editor untuk baca/ubah.
 export default function ReviveHistoryScreen() {
   const router = useRouter();
   const { user } = useAuth();

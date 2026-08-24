@@ -167,7 +167,7 @@ export default function MultiplicationDetailScreen() {
     setEditStep(null);
   }
 
-  /** Ketuk lingkaran status → ✅ ⇄ ⏳ (yang ❌ batal tidak ikut, harus lewat sheet). */
+  /** Click lingkaran status → ✅ ⇄ ⏳ (yang ❌ batal tidak ikut, harus lewat sheet). */
   function toggleStep(step: MultiStep) {
     if (!m || step.cancelled) return;
     save({
@@ -385,7 +385,7 @@ export default function MultiplicationDetailScreen() {
                             mark === 'cancel' && styles.stepCancel,
                             isNext && styles.stepNext,
                           ]}>
-                          {/* Ketuk lambangnya = tandai beres / batalkan */}
+                          {/* Click lambangnya = tandai beres / batalkan */}
                           <PressableScale
                             onPress={() => toggleStep(step)}
                             disabled={mark === 'cancel'}

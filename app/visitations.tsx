@@ -39,7 +39,7 @@ import { deadlineTone } from '@/lib/deadline';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
-// Tap kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
+// Click kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
 // hapus PERMANEN dari Firestore (benar-benar hilang, bukan nonaktif).
 export default function VisitationsScreen() {
   const { user } = useAuth();
@@ -180,7 +180,7 @@ export default function VisitationsScreen() {
             // Warna & label dari aturan bersama (lihat lib/deadline.ts).
             const tone = v.done ? 'unknown' : deadlineTone(days);
             return (
-              // Tap → edit status/tanggal/catatan atau hapus permanen.
+              // Click → edit status/tanggal/catatan atau hapus permanen.
               <PressableScale
                 key={v.id}
                 style={[styles.card, deadlineBorder(tone)]}

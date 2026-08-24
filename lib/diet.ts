@@ -5,6 +5,7 @@ import {
   type FirestoreError,
 } from 'firebase/firestore';
 
+import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { dayIdToDate } from './format';
@@ -20,9 +21,9 @@ import { bmrMale, type HealthProfile, type WeightTarget } from './health';
 export type MealSlot = 'sarapan' | 'siang' | 'malam' | 'cemilan';
 
 export const MEAL_SLOTS: { key: MealSlot; label: string; emoji: string }[] = [
-  { key: 'sarapan', label: 'Sarapan', emoji: '🌅' },
-  { key: 'siang', label: 'Makan Siang', emoji: '🌤️' },
-  { key: 'malam', label: 'Makan Malam', emoji: '🌙' },
+  { key: 'sarapan', label: 'Sarapan', emoji: DAYPART.morning },
+  { key: 'siang', label: 'Makan Siang', emoji: DAYPART.daytime },
+  { key: 'malam', label: 'Makan Malam', emoji: DAYPART.night },
   { key: 'cemilan', label: 'Cemilan', emoji: '🍪' },
 ];
 
@@ -229,7 +230,7 @@ export function mealFromPreset(
 
 // ===================== Paket sarapan siap pakai =====================
 // Sarapan tinggi gula (roti manis + kopi susu) diganti kombinasi
-// PROTEIN + SERAT + MIKRONUTRIEN. Sekali ketuk, semua isinya masuk.
+// PROTEIN + SERAT + MIKRONUTRIEN. Sekali click, semua isinya masuk.
 
 export type MealCombo = {
   key: string;

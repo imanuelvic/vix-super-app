@@ -150,7 +150,7 @@ export function UpkeepList({
               {group.label}
             </VixText>
             {group.rows.map((row) => (
-              // Tap = tandai baru dikerjakan (atau pilih tanggalnya).
+              // Click = tandai baru dikerjakan (atau pilih tanggalnya).
               <PressableScale
                 key={row.key}
                 style={[styles.row, deadlineBorder(row.tone)]}

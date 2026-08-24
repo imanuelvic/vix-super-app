@@ -120,7 +120,12 @@ export default function HabitsScreen() {
         <VixText heading="header" additionalStyle={styles.title}>
           Habits ✅
         </VixText>
-        <StreakPill streak={activeStreak(streak ?? null, dayId)} />
+        {/* Angka di pil ini = streak kebiasaan, jadi yang dibuka pun kategori
+            "🍎 Kebiasaan Sehat" — bukan daftar semua kategori. */}
+        <StreakPill
+          streak={activeStreak(streak ?? null, dayId)}
+          category="health"
+        />
       </View>
 
       <ScreenError message={error} />

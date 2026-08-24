@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { type LoginStreak as DayStreak } from './achievements';
+import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { dayIdToDate } from './format';
@@ -161,7 +162,7 @@ export function bumpReviveStreak(
 
 // ================ Bacaan Alkitab 📖 (Pagi, Siang & Malam) ================
 // TIGA sesi baca per hari, masing-masing punya jendela jam sendiri:
-//   🌅 Pagi 05.00–09.59 · ☀️ Siang 12.00–13.59 · 🌙 Malam 21.00–23.59
+//   🌅 Pagi 05.00–09.59 · 🌤️ Siang 12.00–13.59 · 🌙 Malam 21.00–23.59
 // Kartu reminder di Home hanya muncul di dalam jendela itu & selama sesi hari
 // itu belum diisi. Isinya string bebas: kitab/pasal yang dibaca.
 //
@@ -183,11 +184,11 @@ export const BIBLE_SESSIONS: {
   fromHour: number; // jendela mulai (inklusif)
   toHour: number; // jendela selesai (eksklusif)
 }[] = [
-  { key: 'morning', label: 'Pagi', title: 'Morning Bible Reading', emoji: '🌅', fromHour: 5, toHour: 10 },
+  { key: 'morning', label: 'Pagi', title: 'Morning Bible Reading', emoji: DAYPART.morning, fromHour: 5, toHour: 10 },
   // Siang sengaja SEMPIT (2 jam, jam makan siang) — jendela lebar bikin
   // "nanti saja" berulang sampai jamnya habis sendiri.
-  { key: 'daytime', label: 'Siang', title: 'Midday Bible Reading', emoji: '☀️', fromHour: 12, toHour: 14 },
-  { key: 'night', label: 'Malam', title: 'Night Bible Reading', emoji: '🌙', fromHour: 21, toHour: 24 },
+  { key: 'daytime', label: 'Siang', title: 'Midday Bible Reading', emoji: DAYPART.daytime, fromHour: 12, toHour: 14 },
+  { key: 'night', label: 'Malam', title: 'Night Bible Reading', emoji: DAYPART.night, fromHour: 21, toHour: 24 },
 ];
 
 export function bibleSessionMeta(session: BibleSession) {

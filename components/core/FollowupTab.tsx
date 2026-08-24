@@ -84,7 +84,7 @@ export function FollowupTab({
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
   // Modal tengah: pokok doa 1 CL (follow up), dan ide pendekatan 1 CL.
   const [prayerModal, setPrayerModal] = useState<CoreLeader | null>(null);
-  // Modal follow up mingguan (mirip Doa Rantai): ketuk kartu CL → lihat
+  // Modal follow up mingguan (mirip Doa Rantai): click kartu CL → lihat
   // pertanyaan + ide pendekatan, ganti pertanyaan di dalamnya. Menandai
   // "selesai" lewat tombol kecil di kartu (di luar modal).
   const [followupModal, setFollowupModal] = useState<{
@@ -294,7 +294,7 @@ export function FollowupTab({
     markBirthdayGreeted(user.uid, personId, dayId).catch(() => {});
   }
 
-  // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: ketuk untuk buka
+  // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: click untuk buka
   // modal (pertanyaan + ide pendekatan). Tombol "Selesai" kecil di kartu (di
   // luar modal) untuk menandai sudah follow up hari ini.
   function renderFollowCard({
@@ -344,7 +344,7 @@ export function FollowupTab({
     );
   }
 
-  // Kartu ringkas 1 CL untuk follow up pokok doa (Selasa & Kamis). Diketuk →
+  // Kartu ringkas 1 CL untuk follow up pokok doa (Selasa & Kamis). Di-click →
   // modal tengah berisi seluruh pokok doa + tombol WA.
   //
   // Bentuknya DUA KOLOM (lihat `prayerGrid`): satu baris per CL bikin blok Doa

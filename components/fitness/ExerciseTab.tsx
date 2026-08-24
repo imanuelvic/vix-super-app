@@ -408,7 +408,7 @@ export function ExerciseTab({
                           Gerakan berat badan → angkanya IKUT fitur Health dan
                           tidak bisa diubah di sini (berat badan cuma berubah
                           lewat pengingat timbang tiap Minggu di Health).
-                          Gerakan berbeban → ketuk untuk ubah bebannya. */}
+                          Gerakan berbeban → click untuk ubah bebannya. */}
                       {ex.cardio ? null : ex.weight === null ? (
                         <View style={styles.weightChip}>
                           <VixText heading="label" additionalStyle={styles.weightText}>

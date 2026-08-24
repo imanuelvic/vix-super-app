@@ -132,7 +132,7 @@ const VConnector = () => <View style={styles.vConnector} />;
 
 // ============ Picker nama anggota (buka-tutup) — module-scope ============
 // Dipakai untuk memilih Orang tua & Pasangan. Default ringkas 1 baris berisi
-// nama terpilih (tak menumpuk walau anggota banyak); diketuk → daftar nama
+// nama terpilih (tak menumpuk walau anggota banyak); di-click → daftar nama
 // muncul untuk dicentang. Tidak pakai modal-di-atas-modal (bermasalah di iOS).
 function MemberPicker({
   label,
@@ -232,7 +232,7 @@ const CHILD_COL_WIDTH = Math.max(
 const CHILD_AVATAR_SIZE = Math.min(46, CHILD_COL_WIDTH - 12);
 
 // Family Tree 👨‍👩‍👧‍👦 — silsilah ala The Sims: pohon 3 generasi yang
-// berpusat pada orang yang dipilih; tap siapa pun → pohon pindah ke dia.
+// berpusat pada orang yang dipilih; click siapa pun → pohon pindah ke dia.
 export default function FamilyScreen() {
   const { user } = useAuth();
   // `focus` dikirim dari reminder ulang tahun di Home → pusatkan pohon ke orang itu.
@@ -482,7 +482,7 @@ export default function FamilyScreen() {
               </VixText>
               <VixText heading="label" additionalStyle={styles.emptyText}>
                 Tambahkan dirimu dulu, lalu orang tua, pasangan, anak, dan
-                seterusnya. Tap siapa pun di pohon untuk berpindah seperti di
+                seterusnya. Click siapa pun di pohon untuk berpindah seperti di
                 The Sims 🎮
               </VixText>
             </View>

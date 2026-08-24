@@ -21,7 +21,7 @@ import { dayDocId } from './health';
 // users/{uid}/usage/{YYYY-MM-DD} → { dayId, counts:{key:n}, labels:{key:label} }.
 //
 // Anti-spam & hemat biaya: tiap fitur dihitung MAKSIMAL sekali per COOLDOWN
-// (mencegah double-tap / bolak-balik cepat membanjiri hitungan & tulisan
+// (mencegah double-click / bolak-balik cepat membanjiri hitungan & tulisan
 // Firestore). Cooldown disimpan di memori (reset saat app dimulai ulang — cukup).
 
 export type UsageDay = {

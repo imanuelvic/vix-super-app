@@ -192,7 +192,7 @@ export function MorningPrayerGate({
                 ke sub-tab lain yang bikin teralih.
                 Tapi TERTUTUP dulu (dropdown): 4 CL × 3 pokok doa membuat
                 gerbangnya jadi berlembar-lembar, dan yang panjang itu justru
-                jadi dibaca sambil lalu. Ketuk nama untuk membukanya — satu
+                jadi dibaca sambil lalu. Click nama untuk membukanya — satu
                 per satu, persis seperti daftar CL di CORE › Follow Up. */}
             {chainLeaders.map((l) => {
               const open = openChain === l.id;

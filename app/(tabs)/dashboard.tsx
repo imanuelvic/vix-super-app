@@ -677,10 +677,15 @@ export default function DashboardScreen() {
 
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
-          <PressableScale
-            style={styles.streakCard}
-            onPress={() => router.push('/achievements')}>
-            <View style={styles.streakItem}>
+          {/* Dua kolom, dua tujuan. Dulu satu kartu = satu tombol ke daftar
+              Achievement; sekarang tiap kolom membuka kategorinya sendiri.
+              Keduanya SAUDARA di dalam kartu (bukan Pressable bersarang —
+              di iOS itu tidak andal). Revive belum punya kategori sendiri di
+              Achievement, jadi kolomnya tetap membuka daftarnya. */}
+          <View style={styles.streakCard}>
+            <PressableScale
+              style={styles.streakItem}
+              onPress={() => router.push('/achievements')}>
               <VixText additionalStyle={styles.streakIcon}>📖</VixText>
               <VixText heading="header" additionalStyle={styles.streakNum}>
                 {revive?.count ?? 0}
@@ -696,9 +701,17 @@ export default function DashboardScreen() {
               <VixText heading="label" additionalStyle={styles.streakBest}>
                 hari beruntun
               </VixText>
-            </View>
+            </PressableScale>
             <View style={styles.streakDivider} />
-            <View style={styles.streakItem}>
+            {/* Angkanya streak kebiasaan → langsung ke kategori Kebiasaan Sehat */}
+            <PressableScale
+              style={styles.streakItem}
+              onPress={() =>
+                router.push({
+                  pathname: '/achievements',
+                  params: { cat: 'health' },
+                })
+              }>
               <VixText additionalStyle={styles.streakIcon}>✅</VixText>
               <VixText heading="header" additionalStyle={styles.streakNum}>
                 {activeStreak(habitStreak, todayId)}
@@ -709,8 +722,8 @@ export default function DashboardScreen() {
               <VixText heading="label" additionalStyle={styles.streakBest}>
                 hari beruntun
               </VixText>
-            </View>
-          </PressableScale>
+            </PressableScale>
+          </View>
 
           {/* Reminder kebiasaan sesi saat ini (Pagi/Siang/Malam). */}
           {curSlot && slotUndone.length > 0 && (
@@ -847,7 +860,7 @@ export default function DashboardScreen() {
               fg={Color.ACCENT_DARK}
               title="🎂 Reminder Family Birthday"
               texts={famBirthdays}
-              // Tap satu nama → buka Family & pusatkan pohon ke orang itu.
+              // Click satu nama → buka Family & pusatkan pohon ke orang itu.
               onItemPress={(id) =>
                 router.push({ pathname: '/family', params: { focus: id } })
               }
@@ -1297,7 +1310,17 @@ const styles = StyleSheet.create({
     borderColor: Color.ACCENT_DARK,
     paddingVertical: 18,
   },
-  streakItem: { flex: 1, alignItems: 'center', gap: 1 },
+  // paddingVertical + marginVertical negatif yang SAMA BESAR dengan padding
+  // kartunya: tampilannya tidak bergeser sepiksel pun, tapi area yang bisa
+  // di-click ikut mencakup padding atas-bawah kartu — persis seperti saat
+  // seluruh kartu masih satu tombol.
+  streakItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 1,
+    paddingVertical: 18,
+    marginVertical: -18,
+  },
   streakDivider: {
     width: 1,
     alignSelf: 'stretch',

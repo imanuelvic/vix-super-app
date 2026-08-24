@@ -21,6 +21,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
+import { useDraft } from '@/hooks/useDraft';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
@@ -55,17 +56,31 @@ export default function ReviveEditorScreen() {
 
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [streak, setStreak] = useState<DayStreak | null>(null);
-  const [loaded, setLoaded] = useState(false); // prefill sekali saja
-  const [exists, setExists] = useState(false);
-
-  const [editingDate, setEditingDate] = useState(new Date());
-  const [fTitle, setFTitle] = useState('');
-  const [fPassage, setFPassage] = useState('');
-  const [fVerse, setFVerse] = useState(''); // legacy — disimpan, tak ditampilkan
-  const [fRhema, setFRhema] = useState('');
-  const [fReflection, setFReflection] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Revive hari itu — null selama datanya belum sampai, atau kalau memang
+  // belum pernah ditulis.
+  const entry = entries?.find((e) => e.id === targetDay) ?? null;
+  const exists = entry !== null;
+
+  // Isian form: ikut Revive tersimpan SELAMA belum diketik; sekali diketik,
+  // ketikan itu yang menang (snapshot berikutnya tidak menimpanya). Hook
+  // bersama useDraft; dulu satu bendera `loaded` + satu efek yang mengisi
+  // keenam kolom sekaligus begitu data pertama datang.
+  const [fTitle, setFTitle] = useDraft(entry?.title ?? '');
+  const [fPassage, setFPassage] = useDraft(entry?.passage ?? '');
+  const [fRhema, setFRhema] = useDraft(entry?.rhema ?? '');
+  const [fReflection, setFReflection] = useDraft(entry?.reflection ?? '');
+
+  // Dua nilai ini memang TIDAK bisa diubah dari layar ini, jadi cukup
+  // diturunkan — tak perlu jadi isian yang bisa diketik:
+  //   • tanggal Revive: ikut yang tersimpan, atau jam layar ini dibuka;
+  //   • `verse`: kolom lama yang tetap ikut disimpan supaya catatan lama utuh,
+  //     tapi tidak ditampilkan di mana pun.
+  const [openedAt] = useState(() => new Date());
+  const editingDate = entry ? entry.date.toDate() : openedAt;
+  const fVerse = entry?.verse ?? '';
 
   useEffect(() => {
     if (!user) return;
@@ -76,22 +91,6 @@ export default function ReviveEditorScreen() {
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user]);
-
-  // Prefill dari Revive yang sudah ada (sekali, saat data pertama datang).
-  useEffect(() => {
-    if (entries === null || loaded) return;
-    const entry = entries.find((e) => e.id === targetDay) ?? null;
-    if (entry) {
-      setFTitle(entry.title);
-      setFPassage(entry.passage);
-      setFVerse(entry.verse);
-      setFRhema(entry.rhema);
-      setFReflection(entry.reflection);
-      setEditingDate(entry.date.toDate());
-      setExists(true);
-    }
-    setLoaded(true);
-  }, [entries, loaded, targetDay]);
 
   async function handleSave() {
     if (!user || busy) return;
@@ -176,7 +175,9 @@ export default function ReviveEditorScreen() {
         subtitle={`📖 ${formatFullDate(editingDate)}`}
       />
 
-      {!loaded ? (
+      {/* Sama seperti bendera `loaded` dulu: menunggu daftar Revive-nya sampai
+          (kosong pun tidak apa-apa — berarti hari itu memang belum ditulis). */}
+      {entries === null ? (
         <LoadingCenter />
       ) : (
         /* Keyboard iOS tidak lagi menutupi kolom Application */

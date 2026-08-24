@@ -23,7 +23,7 @@ export function InlineDelete({
 
   if (!confirming) {
     // Getaran "warning" — tubuh ikut diberi tahu bahwa ini jalur berbahaya,
-    // beda rasanya dari ketukan biasa.
+    // beda rasanya dari click biasa.
     return (
       <PressableScale
         onPress={() => setConfirming(true)}

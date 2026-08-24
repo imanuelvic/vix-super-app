@@ -4,7 +4,7 @@ import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
 // Notes 📝 di Fitness — tempat menyimpan tautan yang berserakan: video gerakan
-// di YouTube, program latihan, artikel gizi, playlist. Satu ketukan langsung
+// di YouTube, program latihan, artikel gizi, playlist. Satu click langsung
 // membuka tautannya, jadi tidak perlu mencari-cari lagi di riwayat browser.
 //
 // SATU dokumen array kecil: users/{uid}/fitness/notes -> { list: FitNote[] }

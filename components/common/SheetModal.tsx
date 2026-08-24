@@ -111,7 +111,7 @@ export function SheetModal({
   }));
 
   // Seret gagang/judul ke bawah untuk menutup. activeOffsetY(12) supaya
-  // ketukan biasa tidak langsung dianggap menyeret.
+  // click biasa tidak langsung dianggap menyeret.
   const pan = Gesture.Pan()
     .activeOffsetY(12)
     .onUpdate((e) => {

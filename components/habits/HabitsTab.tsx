@@ -177,7 +177,7 @@ export function HabitsTab({
 
   const range = idealWeightRange(profile.heightCm);
   const grouped = habitsBySlot(habits);
-  // Saringan area hidup (ketuk ikonnya di atas). null = tampilkan semua.
+  // Saringan area hidup (click ikonnya di atas). null = tampilkan semua.
   // Berlaku BERSAMA tab sesi: yang tampil = area ini, di sesi yang sedang
   // dibuka. Sengaja tidak ikut kereset saat pindah sesi — supaya bisa menyusuri
   // satu area dari Pagi ke Malam tanpa memilih ulang.
@@ -250,7 +250,7 @@ export function HabitsTab({
   /**
    * Buka tempat kebiasaan ini dikerjakan: layar lain di dalam app, atau
    * aplikasi luar. Kalau aplikasinya belum terpasang, jatuh ke alamat webnya —
-   * jangan sampai ketukannya terasa mati begitu saja.
+   * jangan sampai click-nya terasa mati begitu saja.
    */
   function openHabitLink(link: HabitLink) {
     if (link.route) {
@@ -545,8 +545,8 @@ export function HabitsTab({
         </View>
 
         {/* Lima area hidup hari ini — kelihatan mana yang masih bolong.
-            Sekaligus SARINGAN: ketuk satu area → daftar di bawah hanya berisi
-            area itu; ketuk lagi area yang sama → saringannya lepas. */}
+            Sekaligus SARINGAN: click satu area → daftar di bawah hanya berisi
+            area itu; click lagi area yang sama → saringannya lepas. */}
         <View style={styles.areaRow}>
           {areas.map((a) => {
             const meta = areaMeta(a.area);
@@ -623,7 +623,7 @@ export function HabitsTab({
             const checked = !skipped && !!day.done[habit.id];
             const tier = habitTier(habit);
             // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
-            // dapat keterangan kecil + ketukan yang langsung ke sana.
+            // dapat keterangan kecil + click yang langsung ke sana.
             const link = habitLink(habit);
             // Baris cermin (olahraga): centangnya datang dari fitur Fitness,
             // jadi di sini ia cuma penunjuk keadaan + pintasan ke sana.
@@ -652,7 +652,7 @@ export function HabitsTab({
                     tier === 'optional' && styles.rowOptional,
                   ]}>
                   {/* Getaran "berhasil" khusus saat MENCENTANG — melepas
-                      centang cukup ketukan biasa. Yang sudah dilewati tidak
+                      centang cukup click biasa. Yang sudah dilewati tidak
                       bisa dicentang: batalkan ✗ dulu. */}
                   <PressableScale
                     onPress={() =>
@@ -669,7 +669,7 @@ export function HabitsTab({
                   </PressableScale>
                   {/* Nama kebiasaan tidak bisa ditekan — ubah/urutkan/hapus
                       lewat tombol ✏️. KECUALI yang punya pintasan: di situ
-                      ketukan membawa ke tempat kebiasaannya dikerjakan. */}
+                      click membawa ke tempat kebiasaannya dikerjakan. */}
                   <PressableScale
                     style={styles.rowMain}
                     onPress={() => link && openHabitLink(link)}
@@ -861,8 +861,7 @@ export function HabitsTab({
             dihapus, daftarnya berhenti cocok dengan isi app. */}
         {editing !== 'new' && editing && isFixedHabit(editing) ? (
           <VixText heading="label" additionalStyle={styles.fixedNote}>
-            🔒 Kebiasaan wajib — tidak bisa dihapus, tapi urutannya bebas kamu
-            atur.
+            🔒 Kebiasaan yang wajib
           </VixText>
         ) : (
           <EditDelete

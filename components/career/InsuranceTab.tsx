@@ -24,6 +24,71 @@ import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
+// Kartu satu metrik dengan counter − +.
+//
+// Sengaja di LUAR InsuranceTab: kalau didefinisikan di dalamnya, tiap render
+// menghasilkan komponen "jenis baru" → React membongkar & memasang ulang kedua
+// kartunya tiap satu angka berubah (kedip, dan kalau ada kolom isian fokusnya
+// hilang). Isinya cuma bergantung pada prop, jadi tidak ada yang perlu ikut
+// masuk ke dalam.
+function MetricCard({
+  icon,
+  label,
+  done,
+  target,
+  onDelta,
+}: {
+  icon: string;
+  label: string;
+  done: number;
+  target: number;
+  onDelta: (d: number) => void;
+}) {
+  const percent = target > 0 ? Math.min((done / target) * 100, 100) : 0;
+  const hit = target > 0 && done >= target;
+  return (
+    <View style={styles.metricCard}>
+      <View style={styles.metricTop}>
+        <VixText heading="title">
+          {icon} {label}
+        </VixText>
+        <View style={styles.counterRow}>
+          <PressableScale
+            style={styles.counterMinus}
+            onPress={() => onDelta(-1)}
+            hitSlop={6}>
+            <VixText heading="bold" additionalStyle={styles.counterMinusText}>
+              −
+            </VixText>
+          </PressableScale>
+          <PressableScale
+            style={styles.counterPlus}
+            onPress={() => onDelta(1)}
+            hitSlop={6}>
+            <IconSymbol name="plus" size={18} color={Color.TEXT_REVERSE} />
+          </PressableScale>
+        </View>
+      </View>
+      <VixText heading="subheader" additionalStyle={styles.metricValue}>
+        {done}
+        <VixText heading="label"> / {target > 0 ? target : '—'} target</VixText>
+      </VixText>
+      <ProgressBar
+        value={percent}
+        total={100}
+        height={8}
+        color={hit ? Color.SUCCESS : Color.MAIN}
+        track={Color.CONTRAST_CONTAINER}
+      />
+      {hit && (
+        <VixText heading="label" additionalStyle={styles.hitText}>
+          🎉 Target tercapai — luar biasa!
+        </VixText>
+      )}
+    </View>
+  );
+}
+
 // Tab Insurance 🛡️: target bulanan agent Manulife — pitching, closing,
 // dan premi. Counter cepat (− +) untuk pencapaian, target di-set sendiri.
 export function InsuranceTab({ months }: { months: InsuranceMonths }) {
@@ -84,65 +149,6 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
     });
     setBusy(false);
     setTargetOpen(false);
-  }
-
-  // Kartu satu metrik dengan counter − +.
-  function MetricCard({
-    icon,
-    label,
-    done,
-    target,
-    onDelta,
-  }: {
-    icon: string;
-    label: string;
-    done: number;
-    target: number;
-    onDelta: (d: number) => void;
-  }) {
-    const percent = target > 0 ? Math.min((done / target) * 100, 100) : 0;
-    const hit = target > 0 && done >= target;
-    return (
-      <View style={styles.metricCard}>
-        <View style={styles.metricTop}>
-          <VixText heading="title">
-            {icon} {label}
-          </VixText>
-          <View style={styles.counterRow}>
-            <PressableScale
-              style={styles.counterMinus}
-              onPress={() => onDelta(-1)}
-              hitSlop={6}>
-              <VixText heading="bold" additionalStyle={styles.counterMinusText}>
-                −
-              </VixText>
-            </PressableScale>
-            <PressableScale
-              style={styles.counterPlus}
-              onPress={() => onDelta(1)}
-              hitSlop={6}>
-              <IconSymbol name="plus" size={18} color={Color.TEXT_REVERSE} />
-            </PressableScale>
-          </View>
-        </View>
-        <VixText heading="subheader" additionalStyle={styles.metricValue}>
-          {done}
-          <VixText heading="label"> / {target > 0 ? target : '—'} target</VixText>
-        </VixText>
-        <ProgressBar
-          value={percent}
-          total={100}
-          height={8}
-          color={hit ? Color.SUCCESS : Color.MAIN}
-          track={Color.CONTRAST_CONTAINER}
-        />
-        {hit && (
-          <VixText heading="label" additionalStyle={styles.hitText}>
-            🎉 Target tercapai — luar biasa!
-          </VixText>
-        )}
-      </View>
-    );
   }
 
   const premiPercent =

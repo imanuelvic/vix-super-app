@@ -5,6 +5,7 @@ import {
   type FirestoreError,
 } from 'firebase/firestore';
 
+import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { dayIdToDate, formatShortDayDate } from './format';
@@ -158,7 +159,7 @@ export type AchievementStats = {
   loginBest: number; // rekor streak doa pagi
   habitStreak: number; // streak kebiasaan Health 🔥
   bibleMorningBest: number; // streak terbaik baca pagi 🌅
-  bibleDaytimeBest: number; // streak terbaik baca siang ☀️
+  bibleDaytimeBest: number; // streak terbaik baca siang 🌤️
   bibleNightBest: number; // streak terbaik baca malam 🌙
   learningWeekBest: number; // rekor MINGGU beruntun target Learning tuntas 🎓
   fitTotal: number; // total sesi gym selesai
@@ -204,9 +205,9 @@ const CATEGORIES: {
   desc: string;
 }[] = [
   { key: 'login', feature: 'spiritual', icon: '🙏', label: 'Doa Pagi', desc: 'Streak doa pagi di gerbang pagi' },
-  { key: 'bibleMorning', feature: 'spiritual', icon: '🌅', label: 'Alkitab Pagi', desc: 'Streak baca Alkitab pagi' },
-  { key: 'bibleDaytime', feature: 'spiritual', icon: '☀️', label: 'Alkitab Siang', desc: 'Streak baca Alkitab siang' },
-  { key: 'bibleNight', feature: 'spiritual', icon: '🌙', label: 'Alkitab Malam', desc: 'Streak baca Alkitab malam' },
+  { key: 'bibleMorning', feature: 'spiritual', icon: DAYPART.morning, label: 'Alkitab Pagi', desc: 'Streak baca Alkitab pagi' },
+  { key: 'bibleDaytime', feature: 'spiritual', icon: DAYPART.daytime, label: 'Alkitab Siang', desc: 'Streak baca Alkitab siang' },
+  { key: 'bibleNight', feature: 'spiritual', icon: DAYPART.night, label: 'Alkitab Malam', desc: 'Streak baca Alkitab malam' },
   { key: 'health', feature: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit setiap hari' },
   { key: 'steps', feature: 'health', icon: '👣', label: 'Langkah Harian', desc: 'Rekor jumlah langkah dalam sehari' },
   { key: 'run', feature: 'health', icon: '🏃', label: 'Jarak Tempuh', desc: 'Patokan pelari — harian, mingguan & bulanan' },
@@ -224,6 +225,22 @@ const CATEGORIES: {
 export const ACHIEVEMENT_CATEGORIES = [...CATEGORIES].sort(
   (a, b) => homeFeatureIndex(a.feature) - homeFeatureIndex(b.feature),
 );
+
+/**
+ * Kunci kategori dari parameter URL — dipakai layar Achievement untuk langsung
+ * membuka modal yang dimaksud (mis. pil 🔥 di Habits → Kebiasaan Sehat).
+ *
+ * Apa pun yang tidak dikenal (kosong, salah tulis, kategori yang sudah dihapus)
+ * jatuh ke null = layarnya terbuka biasa tanpa modal. Jadi tautan lama tidak
+ * pernah membuat layarnya gagal.
+ */
+export function achievementCategoryOf(
+  key: string | undefined,
+): AchievementCategoryKey | null {
+  return CATEGORIES.some((c) => c.key === key)
+    ? (key as AchievementCategoryKey)
+    : null;
+}
 
 /** Detail "terakhir tercapai kapan" untuk achievement langkah (null bila belum). */
 function stepDetail(s: AchievementStats, tier: number): string | null {
@@ -298,8 +315,9 @@ function streakLadder(
 
 export const ACHIEVEMENTS: Achievement[] = [
   ...streakLadder('login', 'login', 'Berdoa pagi', (s) => s.loginBest),
-  { id: 'habit3', category: 'health', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan Health 3 hari', target: 3, of: (s) => s.habitStreak },
-  { id: 'habit7', category: 'health', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan Health 7 hari', target: 7, of: (s) => s.habitStreak },
+  { id: 'habit3', category: 'health', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan baik 3 hari', target: 3, of: (s) => s.habitStreak },
+  { id: 'habit7', category: 'health', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan baik 7 hari', target: 7, of: (s) => s.habitStreak },
+  { id: 'habit21', category: 'health', icon: '🔥', title: 'Sudah sehat', desc: 'Streak kebiasaan baik 21 hari', target: 21, of: (s) => s.habitStreak },
   // Kategori "Revive Rohani" DIHAPUS — pemicunya sama saja dengan Doa Pagi
   // (Revive memang langkah 1 di gerbang pagi), jadi dulu satu perbuatan
   // menghasilkan dua pencapaian. Streak Revive 🔥 sendiri tetap ada & tetap

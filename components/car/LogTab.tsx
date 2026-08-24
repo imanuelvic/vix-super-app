@@ -193,7 +193,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
             // di sini — sumbernya transaksi Finance, biar tidak beda data.
             //
             // Garis tepi HIJAU = baris ini bisa ditekan. Garis tepi krem biasa
-            // = datang dari Finance, jadi memang tidak menanggapi ketukan —
+            // = datang dari Finance, jadi memang tidak menanggapi click —
             // supaya tidak ada baris yang kelihatan bisa ditekan tapi diam.
             <ExpenseRow
               key={item.id}

@@ -308,7 +308,7 @@ export default function HistoryScreen() {
                   {yearItems.map((item) => {
                     const meta = historyCategoryMeta(item.category);
                     return (
-                      // Tombol ✏️ jadi SAUDARA area ketuk, bukan anaknya —
+                      // Tombol ✏️ jadi SAUDARA area click, bukan anaknya —
                       // Pressable bersarang tidak andal di iOS.
                       <View key={item.id} style={styles.row}>
                         <PressableScale

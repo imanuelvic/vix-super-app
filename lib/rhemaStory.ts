@@ -6,7 +6,7 @@ import { pickOfDay } from './core';
 
 // Rhema → Instagram Story ✍️
 //
-// Satu ketukan: rhema pagimu dirancang otomatis jadi gambar Story 1080×1920,
+// Satu click: rhema pagimu dirancang otomatis jadi gambar Story 1080×1920,
 // lalu dibagikan lewat lembar berbagi iOS (di situ ada Instagram → Story).
 //
 // ── Soal "didesain AI" ────────────────────────────────────────────────────

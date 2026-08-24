@@ -16,11 +16,11 @@ import { EmojiButton } from '@/components/common/EmojiButton';
  * pensil sewarna. Mau ganti rupa tombol edit? Cukup di berkas ini.
  *
  * Ukurannya ikut EmojiButton (42×42) — sekalian memenuhi anjuran Apple soal
- * luas ketuk minimum, karena sebelumnya beberapa hanya 16px ikon polos.
+ * luas click minimum, karena sebelumnya beberapa hanya 16px ikon polos.
  *
  * Catatan pemakaian: di dalam kartu, tombol ini harus jadi SAUDARA dari area
- * ketuk kartunya, bukan anaknya. Pressable bersarang tidak andal di iOS —
- * ketukan tombolnya ikut memicu aksi kartu.
+ * click kartunya, bukan anaknya. Pressable bersarang tidak andal di iOS —
+ * click tombolnya ikut memicu aksi kartu.
  */
 export function EditButton({
   onPress,

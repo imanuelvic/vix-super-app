@@ -228,7 +228,7 @@ export function TournamentTab() {
             <VixText heading="subheader" additionalStyle={styles.heroName}>
               {selected.name}
             </VixText>
-            {/* Ketuk barisnya untuk membetulkan nama & tanggal. Dulu tanggal
+            {/* Click barisnya untuk membetulkan nama & tanggal. Dulu tanggal
                 cuma bisa diisi sekali saat turnamen dibuat — kalau salah,
                 satu-satunya jalan adalah menghapus turnamennya (dan bracket
                 yang sudah jalan ikut hilang). */}
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   heroKicker: { color: Color.TOURNAMENT, letterSpacing: 1 },
   heroName: { color: Color.TEXT_REVERSE },
   heroDate: { color: Color.TEXT_ON_DARK_MUTED, marginTop: 2 },
-  // Area ketuk sebesar tulisannya saja — tanpa padding, jadi tinggi hero tetap.
+  // Area click sebesar tulisannya saja — tanpa padding, jadi tinggi hero tetap.
   heroDateBtn: { alignSelf: 'flex-start' },
   progressWrap: { gap: 4, marginTop: 8 },
   progressTrack: {

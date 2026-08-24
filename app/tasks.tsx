@@ -117,7 +117,7 @@ export default function TasksScreen() {
     tabParam === 'priority' ? 'priority' : 'daily',
   );
 
-  // Param kategori berubah (mis. tap task lain di Dashboard) → pindah kategori.
+  // Param kategori berubah (mis. click task lain di Dashboard) → pindah kategori.
   useEffect(() => {
     if (validCategory) {
       setCategory(validCategory);
@@ -705,7 +705,7 @@ export default function TasksScreen() {
         </Animated.View>
       )}
 
-      {/* Backdrop transparan: tap di luar menutup speed-dial.
+      {/* Backdrop transparan: click di luar menutup speed-dial.
           Sengaja Pressable biasa — area penutup tidak perlu animasi tekan. */}
       {mainTab === 'daily' && fabOpen && (
         <Pressable

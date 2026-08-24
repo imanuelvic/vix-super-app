@@ -8,6 +8,7 @@ import {
 
 import { type LoginStreak as DayStreak } from './achievements';
 import { pickOfDay, weekIndex } from './core';
+import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { dayIdToDate, formatDecimal } from './format';
@@ -362,7 +363,9 @@ export function fitReminderWindow(now: Date): boolean {
 
 /** "🌅 Sesi pagi" / "🌇 Sesi sore" — untuk kartu reminder Dashboard. */
 export function fitWindowLabel(now: Date): string {
-  return now.getHours() < FIT_MORNING_TO ? '🌅 Sesi pagi' : '🌇 Sesi sore';
+  return now.getHours() < FIT_MORNING_TO
+    ? `${DAYPART.morning} Sesi pagi`
+    : '🌇 Sesi sore'; // sore bukan salah satu sesi DAYPART
 }
 
 // ===================== Kata-kata semangat 🔥 =====================
@@ -608,7 +611,7 @@ export function setFitExerciseDone(
 // ikut sendiri, jadi tidak ada lagi centang dobel.
 //
 // Keduanya sengaja dipisah jadi dua fungsi (bukan satu yang menulis dua-duanya
-// sekaligus) supaya tiap ketukan cuma memicu SATU tulis Firestore. Ketukan
+// sekaligus) supaya tiap click cuma memicu SATU tulis Firestore. Click
 // gerakan terjadi berkali-kali tiap sesi; tanda lewati jarang.
 //
 // Sengaja tidak melempar error ke pemanggil: gagal menyinkronkan baris cermin

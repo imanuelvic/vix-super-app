@@ -198,7 +198,7 @@ export default function HomeScreen() {
   );
   // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
   const [intercessionOpen, setIntercessionOpen] = useState(false);
-  // Kalimat penyegar yang barusan diketuk "sudah dibaca" (null = belum ada).
+  // Kalimat penyegar yang barusan di-click "sudah dibaca" (null = belum ada).
   const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
@@ -287,7 +287,7 @@ export default function HomeScreen() {
   // Pagi sudah jadi langkah wajib di Morning Gateway; kartu ini pengingatnya
   // sepanjang hari, dan mulai jam 18.00 berubah jadi ajakan mendoakan lagi.
   // Ditampilkan RINGKAS (1 baris) supaya grid fitur tetap muat sekali layar —
-  // pokok doanya baru terbuka saat kartunya diketuk.
+  // pokok doanya baru terbuka saat kartunya di-click.
   // Hari Gereja ⛪ (Sabtu) & Negara 🇮🇩 (Minggu) pokok doanya ditambah kliping
   // berita sepekan terakhir — biar yang didoakan ikut yang sedang terjadi,
   // bukan cuma daftar tetap. Hari lain tidak berubah sama sekali.
@@ -314,7 +314,7 @@ export default function HomeScreen() {
   const showRhema = habitNoteDone(rhemaText) && rhemaWindowNow(now);
 
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
-  // Kalau sudah diketuk, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
+  // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
   // beda, jadi cukup dibandingkan teksnya — tak perlu menyimpan jam).
   const nudge = activeNudge(now, todayId);
   const showNudge = nudge !== null && nudge !== nudgeSeen;
@@ -502,7 +502,7 @@ export default function HomeScreen() {
               nudgeSchedule di lib/spiritual.ts), tiap kali dengan kalimat yang
               berbeda, lalu hilang sendiri sesudah satu jam. Sengaja di ATAS
               Doa Syafaat: syafaat wajib tiap hari, yang ini kejutan kecil.
-              Diketuk = "sudah dibaca" → hilang sampai giliran berikutnya. */}
+              Di-click = "sudah dibaca" → hilang sampai giliran berikutnya. */}
           {showNudge && (
             <Animated.View
               entering={FadeInDown.duration(350)}
@@ -519,7 +519,7 @@ export default function HomeScreen() {
 
           {/* Doa Syafaat 🙏 — pokok doa tetap sesuai hari dalam seminggu.
               Hari Doa Rantai CL (Selasa & Kamis) kartunya menuju CORE Follow
-              Up; hari lain diketuk untuk membuka/menutup pokok doanya. */}
+              Up; hari lain di-click untuk membuka/menutup pokok doanya. */}
           <Animated.View
             entering={FadeInDown.delay(40).duration(350)}
             style={styles.intercessionCard}>
@@ -543,7 +543,7 @@ export default function HomeScreen() {
 
           {/* Rhema Pagi Ini ✍️ — firman yang kamu tulis tadi pagi, dibaca
               ulang siang (12–13), sore (17–18), & malam (21–22). Muncul hanya
-              kalau rhema-nya memang sudah ditulis. Ketuk → tab Habits, sesi
+              kalau rhema-nya memang sudah ditulis. Click → tab Habits, sesi
               baris Rhema-nya, langsung tergulung ke barisnya (?focus=rhema). */}
           {showRhema && (
             <Animated.View
@@ -575,7 +575,7 @@ export default function HomeScreen() {
 
           {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00.
               Hanya muncul di dalam jendela jamnya & selama sesi itu belum
-              diisi. Ketuk → layar catat bacaan (pilih kitab + pasal & ayat). */}
+              diisi. Click → layar catat bacaan (pilih kitab + pasal & ayat). */}
           {bibleReadingDue && bibleMeta && bibleSession && (
             <Animated.View entering={FadeInDown.delay(60).duration(350)}>
               <PressableScale
