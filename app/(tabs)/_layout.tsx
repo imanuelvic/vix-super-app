@@ -14,6 +14,7 @@ import {
   type ScheduledHabit,
 } from '@/lib/habits';
 import { subscribeHabitDay, type HabitDay } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -29,11 +30,10 @@ export default function TabLayout() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubs = [
+    return unsubscribeAll([
       subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, todayId]);
 
   const habitsLeft = day

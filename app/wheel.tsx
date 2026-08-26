@@ -20,6 +20,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
 import { ScoreMeter } from '@/components/wheel/ScoreMeter';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatDecimal, formatFullDateTime } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -109,7 +110,8 @@ export default function WheelScreen() {
   const [tipArea, setTipArea] = useState<WheelAreaKey | null>(null);
 
   // Sedang mencetak PDF (bisa beberapa detik untuk radar + semua areanya).
-  const [sharing, setSharing] = useState(false);
+  const pdf = useBusyTask<'pdf'>();
+  const sharing = pdf.busy !== null;
 
   useEffect(() => {
     if (!user) return;
@@ -256,22 +258,20 @@ export default function WheelScreen() {
     }
   }
 
-  async function handleShare() {
-    if (!data || sharing) return;
-    setSharing(true);
-    setError(null);
-    try {
-      await shareWheelPdf(
-        data,
-        year,
-        q,
-        owner ? { name: orang, heart: params.heart ?? '🎡' } : null,
-      );
-    } catch {
-      setError('Gagal membuat PDF Wheel of Life. Coba lagi.');
-    } finally {
-      setSharing(false);
-    }
+  function handleShare() {
+    if (!data) return;
+    return pdf.run({
+      key: 'pdf',
+      start: () => setError(null),
+      task: () =>
+        shareWheelPdf(
+          data,
+          year,
+          q,
+          owner ? { name: orang, heart: params.heart ?? '🎡' } : null,
+        ),
+      fail: () => setError('Gagal membuat PDF Wheel of Life. Coba lagi.'),
+    });
   }
 
   // ============================ RENDER ============================

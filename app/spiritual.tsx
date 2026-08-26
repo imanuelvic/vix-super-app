@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AchievementButton } from '@/components/common/AchievementButton';
 import {
   BottomTabs,
   withBadge,
@@ -23,11 +24,14 @@ import { BibleReadingTab } from '@/components/spiritual/BibleReadingTab';
 import { FastingTab } from '@/components/spiritual/FastingTab';
 import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
+import { BIBLE_CATEGORY } from '@/lib/achievements';
 import { subscribeFastingPlans, type FastingPlan } from '@/lib/fasting';
 import { dayDocId } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
+  bibleSessionNow,
   reviveHandledToday,
   setReviveSkipped,
   subscribeBibleReadingDays,
@@ -78,7 +82,7 @@ export default function SpiritualScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeReviveEntries(
         user.uid,
         (next) => {
@@ -91,11 +95,11 @@ export default function SpiritualScreen() {
       subscribeBibleReadingDays(user.uid, setBibleDays, fail),
       subscribeFastingPlans(user.uid, setFastingPlans, fail),
       subscribeReviveStreak(user.uid, setReviveStreak, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
-  const todayId = dayDocId(new Date());
+  const now = new Date();
+  const todayId = dayDocId(now);
   const todayEntry = entries?.find((e) => e.id === todayId) ?? null;
   // Hari ini sengaja dilewati? (tandanya menempel di dokumen streak yang sama)
   const skippedToday = reviveStreak?.skippedDayId === todayId;
@@ -118,11 +122,25 @@ export default function SpiritualScreen() {
         backLabel="Home"
         title="Spiritual ✝️"
         subtitle="Being with God, bukan sekadar doing for God"
+        // Pojok kanan menyesuaikan sub-tab:
+        //   Revive  → 📖 riwayat + 🔥 "Doa Pagi" (Revive memang langkah 1
+        //             gerbang pagi — kategori "Revive Rohani" sengaja dihapus
+        //             dulu karena pemicunya sama persis, lihat lib/achievements)
+        //   Bible   → 🔥 sesi yang JENDELANYA sedang berjalan (di luar jam
+        //             baca mana pun, jatuh ke pagi 🌅 sebagai patokan)
+        //   Sermon & Fasting belum punya pencapaian → tak ada tombol 🔥.
         right={
           tab === 'revive' ? (
-            <EmojiButton
-              emoji="📖"
-              onPress={() => router.push('/revive-history')}
+            <>
+              <EmojiButton
+                emoji="📖"
+                onPress={() => router.push('/revive-history')}
+              />
+              <AchievementButton category="login" />
+            </>
+          ) : tab === 'bible' ? (
+            <AchievementButton
+              category={BIBLE_CATEGORY[bibleSessionNow(now) ?? 'morning']}
             />
           ) : undefined
         }

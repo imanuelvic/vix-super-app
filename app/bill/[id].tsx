@@ -21,6 +21,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { formatCompactDate, groupDigits, parseAmount } from '@/lib/format';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { DELETE_ERROR, LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { pickPhotoToRead } from '@/lib/photo';
 import { canScanReceipt, scanReceipt } from '@/lib/receiptOcr';
@@ -85,11 +86,10 @@ export default function BillScreen() {
 
   useEffect(() => {
     if (!user || !id) return;
-    const unsubs = [
+    return unsubscribeAll([
       subscribeBill(user.uid, id, setBill, () => setError(LOAD_ERROR)),
       subscribeBillPhoto(user.uid, id, setPhoto),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, id]);
 
   /** Simpan seluruh tagihan. Semua perubahan di layar ini lewat sini. */

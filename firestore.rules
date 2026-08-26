@@ -34,7 +34,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Ganti email di bawah kalau suatu saat email pemilik berubah.
+    // Ganti email di bawah kalau email pemilik berubah — ATAU kalau kamu
+    // baru meng-clone repo ini: isi dengan emailmu sendiri, sama persis
+    // dengan EXPO_PUBLIC_OWNER_EMAIL di .env. Kalau tidak, akunmu sendiri
+    // yang akan ditolak.
     function isOwner() {
       return request.auth != null
              && request.auth.token.email == 'imanuelvic@gmail.com';

@@ -35,14 +35,26 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // Auth dengan penyimpanan lokal (AsyncStorage) supaya login tetap tersimpan
 // setelah aplikasi ditutup. initializeAuth juga hanya boleh sekali.
-let auth: Auth;
-try {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-  });
-} catch {
-  // Sudah pernah di-init (hot-reload) — ambil instance yang ada.
-  auth = getAuth(app);
+//
+// PENTING — kalau .env belum diisi, Firebase Auth MELEMPAR `auth/invalid-api-key`
+// baik lewat initializeAuth MAUPUN getAuth. Dulu keduanya dipanggil di sini
+// tanpa syarat, jadi modul ini gagal dimuat dan aplikasi mati sebelum layar
+// apa pun tampil — orang yang baru clone repo ini cuma melihat layar putih,
+// padahal layar Login sudah menyiapkan pesan "belum dikonfigurasi".
+//
+// Jadi saat belum dikonfigurasi, Auth sengaja TIDAK disentuh sama sekali.
+// `auth` menjadi null dan satu-satunya pemakainya (contexts/auth.tsx) sudah
+// menjaga: tanpa konfigurasi ia tidak memanggil Firebase apa pun.
+let auth: Auth | null = null;
+if (isFirebaseConfigured) {
+  try {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+    });
+  } catch {
+    // Sudah pernah di-init (hot-reload) — ambil instance yang ada.
+    auth = getAuth(app);
+  }
 }
 
 // Firestore. experimentalForceLongPolling mencegah koneksi "menggantung"

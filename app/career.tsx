@@ -34,6 +34,7 @@ import {
   type InsuranceMonths,
   type RoadmapItem,
 } from '@/lib/career';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
 type CareerTab =
@@ -96,7 +97,7 @@ export default function CareerScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeRoadmap(
         user.uid,
         (next) => {
@@ -108,8 +109,7 @@ export default function CareerScreen() {
       subscribeFreelance(user.uid, setFreelance, fail),
       subscribeInsurance(user.uid, setInsurance, fail),
       subscribeAffiliateIdeas(user.uid, setIdeas, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   return (

@@ -102,6 +102,8 @@ import {
   subscribePriorityDay,
   type PriorityItem,
 } from '@/lib/priority';
+import { unsubscribeAll } from '@/lib/liveDoc';
+import { subscribeFeedGenerated } from '@/lib/reflectionFeed';
 import {
   refreshPrayerNews,
   subscribePrayerNews,
@@ -192,6 +194,9 @@ export default function HomeScreen() {
   // Tiga prioritas hari ini 💡 — untuk angka di tombol header. Dokumennya per
   // tanggal, jadi ganti hari = daftar kosong lagi tanpa perlu direset.
   const [priorities, setPriorities] = useState<PriorityItem[]>(EMPTY_PRIORITY);
+  // Feed refleksi hari ini sudah dibuat? Selama BELUM, tombol "Generate Feed"
+  // bertahan di kartu refleksi — di luar jam baca-ulangnya sekalipun.
+  const [feedGenerated, setFeedGenerated] = useState(false);
   // Kliping berita mingguan untuk syafaat Gereja & Negara.
   // undefined = dokumennya belum terbaca (jangan ambil berita dulu),
   // null = memang belum pernah ada catatannya.
@@ -218,7 +223,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubs = [
+    return unsubscribeAll([
       // --- Sumber badge (ikut ditunggu useReadyGate) ---
       subscribeLearningWeek(user.uid, weekId, mark('learningWeek', setLearningWeek)),
       subscribeTopicsDone(user.uid, mark('topicsDone', setTopicsDone)),
@@ -245,8 +250,8 @@ export default function HomeScreen() {
       subscribeWaterStreak(user.uid, setWaterStreak),
       subscribePrayerNews(user.uid, setPrayerNews),
       subscribePriorityDay(user.uid, todayId, setPriorities),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+      subscribeFeedGenerated(user.uid, todayId, setFeedGenerated),
+    ]);
   }, [user, todayId, weekId, mark]);
 
   // "Cron" kliping doa syafaat 📰🙏 — app ini tidak punya server maupun tugas
@@ -311,12 +316,17 @@ export default function HomeScreen() {
       ? intercession.points.map((p) => `• ${p}`)
       : [intercessionSummary];
 
-  // Rhema pagi ✍️ — firman yang kamu tulis di kebiasaan "1 Rhema before
-  // Activities". Ditampilkan ULANG di sini pada jam 12–13, 17–18, & 21–22
-  // supaya tidak berhenti di kolom catatan; kalau belum ditulis, tidak muncul.
+  // Refleksi harian 📓 — yang kamu tulis di kebiasaan "Daily Reflection
+  // Journal". Ditampilkan ULANG di sini pada jam 12–13, 17–18, & 21–22 supaya
+  // tidak berhenti di kolom catatan; kalau belum ditulis, tidak muncul.
   const rhemaHabit = habits.find(isNoteDrivenHabit);
   const rhemaText = rhemaHabit ? (day?.notes[rhemaHabit.id] ?? '') : '';
-  const showRhema = habitNoteDone(rhemaText) && rhemaWindowNow(now);
+  const reflectionWritten = habitNoteDone(rhemaText);
+  // Tombol Generate Feed bertahan sampai feed hari itu benar-benar dibuat.
+  const showGenerate = reflectionWritten && !feedGenerated;
+  // Karena itu kartunya juga ikut bertahan di luar jam baca-ulang — kalau tidak,
+  // tombolnya cuma bisa dijangkau tiga jendela sehari.
+  const showRhema = reflectionWritten && (rhemaWindowNow(now) || showGenerate);
 
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
   // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
@@ -546,10 +556,14 @@ export default function HomeScreen() {
             />
           </Animated.View>
 
-          {/* Rhema Pagi Ini ✍️ — firman yang kamu tulis tadi pagi, dibaca
-              ulang siang (12–13), sore (17–18), & malam (21–22). Muncul hanya
-              kalau rhema-nya memang sudah ditulis. Click → tab Habits, sesi
-              baris Rhema-nya, langsung tergulung ke barisnya (?focus=rhema). */}
+          {/* Refleksi Hari Ini 📓 — yang kamu tulis tadi pagi, dibaca ulang
+              siang (12–13), sore (17–18), & malam (21–22). Click tulisannya →
+              tab Habits, langsung tergulung ke barisnya (?focus=rhema).
+
+              Baris "🖼️ Generate Feed" TETAP ADA selama feed hari itu belum
+              dibuat — termasuk di luar tiga jendela jam di atas, karena itulah
+              satu-satunya pintunya. Begitu feed-nya jadi, barisnya hilang dan
+              kartunya kembali cuma tampil di jendela baca-ulang. */}
           {showRhema && (
             <Animated.View
               entering={FadeInDown.delay(50).duration(350)}
@@ -557,18 +571,18 @@ export default function HomeScreen() {
               <ReminderCard
                 bg={Color.SPIRITUAL}
                 fg={Color.SPIRITUAL_DARK}
-                title="✍️ Rhema Pagi Ini"
-                // Mode per-baris: rhema-nya ke Habits, tombol Story ke layar
-                // rancangannya. Dipakai supaya keduanya jadi tombol SENDIRI —
-                // kartunya tidak lagi jadi satu Pressable besar, jadi tak ada
-                // Pressable bersarang (yang tidak andal di iOS).
-                texts={[
-                  { id: 'rhema', text: rhemaText },
-                  { id: 'story', text: '📤 Bagikan ke Instagram Story' },
-                ]}
+                title="📓 Refleksi Hari Ini"
+                texts={
+                  showGenerate
+                    ? [
+                        { id: 'rhema', text: rhemaText },
+                        { id: 'feed', text: '🖼️ Generate Feed' },
+                      ]
+                    : [{ id: 'rhema', text: rhemaText }]
+                }
                 onItemPress={(id) =>
-                  id === 'story'
-                    ? router.push('/rhema-story')
+                  id === 'feed'
+                    ? router.push('/reflection-feed')
                     : router.push({
                         pathname: '/habits',
                         params: { focus: 'rhema' },
@@ -638,8 +652,18 @@ export default function HomeScreen() {
                       styles.tileLabelPill,
                       { backgroundColor: feature.bg },
                     ]}>
+                    {/* Nama tile SELALU satu baris. Kolomnya 21,5% dari lebar
+                        konten → di iPhone 15 tinggal 61,9pt di dalam pil,
+                        sedangkan "Residence" butuh 65pt: tanpa ini ia pecah
+                        jadi dua baris. adjustsFontSizeToFit hanya MENGECILKAN
+                        yang tak muat, jadi nama lain (terpanjang berikutnya
+                        "Reminder", 59,4pt) tetap 13pt seperti sekarang —
+                        cara yang sama dipakai tulisan sub-tab bawah. */}
                     <VixText
                       heading="label"
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
                       additionalStyle={[styles.tileLabel, { color: feature.fg }]}>
                       {feature.label}
                     </VixText>

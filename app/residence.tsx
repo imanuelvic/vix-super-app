@@ -27,6 +27,7 @@ import {
   type ChoreStatusMap,
   type ResidenceLog,
 } from '@/lib/residence';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
   readingDue,
@@ -74,7 +75,7 @@ export default function ResidenceScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeResidenceLogs(
         user.uid,
         (next) => {
@@ -87,8 +88,7 @@ export default function ResidenceScreen() {
       subscribeChoreStatus(user.uid, setChores, fail),
       subscribeTokenPurchases(user.uid, setPurchases, fail),
       subscribeMeterReadings(user.uid, setReadings, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   // Bersih-bersih SEKALI: log air/listrik lama yang diinput manual dihapus

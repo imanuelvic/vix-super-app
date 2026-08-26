@@ -9,7 +9,9 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Ganti email di bawah kalau suatu saat email pemilik berubah.
+    // Ganti email di bawah kalau email pemilik berubah — ATAU kalau kamu
+    // baru meng-clone repo ini: isi dengan emailmu sendiri, sama persis
+    // dengan EXPO_PUBLIC_OWNER_EMAIL di .env.
     function isOwner() {
       return request.auth != null
              && request.auth.token.email == 'imanuelvic@gmail.com';

@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AchievementButton } from '@/components/common/AchievementButton';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -72,6 +73,8 @@ export default function StepsScreen() {
         backLabel="Health"
         title="Langkah Kaki👣"
         subtitle="Pencapaian langkah harianmu"
+        // Daftar tier di layar ini persis isi kategori "👣 Langkah Harian".
+        right={<AchievementButton category="steps" />}
       />
 
       <ScrollView contentContainerStyle={styles.content}>

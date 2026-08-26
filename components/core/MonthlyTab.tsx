@@ -19,7 +19,9 @@ import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { usePagination } from '@/hooks/usePagination';
+import { useSearchMode } from '@/hooks/useSearchMode';
 import {
   deleteMonthlyMeeting,
   emptyMonthlyPoints,
@@ -47,8 +49,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Mode cari 🔍 — sama seperti sub-tab Pertemuan & Transaksi di Finance.
-  const [searchMode, setSearchMode] = useState(false);
-  const [query, setQuery] = useState('');
+  const { searchMode, query, setQuery, toggleSearch } = useSearchMode();
 
   // Form tambah/edit.
   const [editing, setEditing] = useState<MonthlyMeeting | 'new' | null>(null);
@@ -62,10 +63,11 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   );
   // Dokumentasi foto rapat — JPEG base64 kecil, ikut tercetak di PDF.
   const [fPhotos, setFPhotos] = useState<string[]>([]);
-  const [photoBusy, setPhotoBusy] = useState(false);
+  const foto = useBusyTask<'foto'>();
+  const photoBusy = foto.busy !== null;
   const [formError, setFormError] = useState<string | null>(null);
   // Notulen yang PDF-nya sedang dibuat (null = tidak ada).
-  const [sharingId, setSharingId] = useState<string | null>(null);
+  const pdf = useBusyTask();
 
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const shown =
@@ -80,11 +82,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
 
   // Halaman notulen — sama seperti daftar panjang lain di app ini.
   const { currentPage, pageCount, pageItems, setPage } = usePagination(shown);
-
-  function toggleSearch() {
-    setSearchMode((on) => !on);
-    setQuery('');
-  }
 
   function openAdd() {
     const now = new Date();
@@ -108,31 +105,26 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   }
 
   /** Tambah satu foto dokumentasi dari galeri (sudah dikecilkan otomatis). */
-  async function handleAddPhoto() {
-    if (photoBusy || busy || fPhotos.length >= MAX_MEETING_PHOTOS) return;
-    setPhotoBusy(true);
-    try {
-      const photo = await pickMeetingPhoto();
-      if (photo) setFPhotos((prev) => [...prev, photo]);
-    } catch {
-      setFormError(PHOTO_ERROR);
-    } finally {
-      setPhotoBusy(false);
-    }
+  function handleAddPhoto() {
+    if (busy || fPhotos.length >= MAX_MEETING_PHOTOS) return;
+    return foto.run({
+      key: 'foto',
+      task: async () => {
+        const photo = await pickMeetingPhoto();
+        if (photo) setFPhotos((prev) => [...prev, photo]);
+      },
+      fail: () => setFormError(PHOTO_ERROR),
+    });
   }
 
   /** Cetak notulen jadi PDF lalu buka share sheet (ada WhatsApp di dalamnya). */
-  async function handleShare(m: MonthlyMeeting) {
-    if (sharingId) return;
-    setSharingId(m.id);
-    setError(null);
-    try {
-      await shareMonthlyPdf(m);
-    } catch {
-      setError('Gagal membuat PDF notulen. Coba lagi.');
-    } finally {
-      setSharingId(null);
-    }
+  function handleShare(m: MonthlyMeeting) {
+    return pdf.run({
+      key: m.id,
+      start: () => setError(null),
+      task: () => shareMonthlyPdf(m),
+      fail: () => setError('Gagal membuat PDF notulen. Coba lagi.'),
+    });
   }
 
   async function handleSave() {
@@ -222,8 +214,8 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           <EmojiButton
             icon="square.and.arrow.up"
             onPress={() => handleShare(m)}
-            busy={sharingId === m.id}
-            disabled={sharingId !== null}
+            busy={pdf.busy === m.id}
+            disabled={pdf.busy !== null}
           />
         </View>
 

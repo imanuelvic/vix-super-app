@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -52,8 +53,26 @@ export function BottomTabs<T extends string>({
   value: T;
   onChange: (key: T) => void;
 }) {
+  // Pita di BAWAH tab bar (area home indicator iPhone) ikut jadi putih.
+  //
+  // Dulu pita itu berwarna krem: layar fiturnya memakai SafeAreaView
+  // edges={['top','bottom']}, jadi ruang aman bawah tergambar sebagai
+  // paddingBottom milik SafeAreaView — latarnya Color.BACKGROUND, sedangkan
+  // tab bar-nya Color.CONTAINER. Hasilnya dua warna bertumpuk.
+  //
+  // Caranya: tab bar dibuat lebih tinggi sebesar ruang aman itu
+  // (paddingBottom), lalu ditarik balik dengan marginBottom NEGATIF sebesar
+  // yang sama. Tinggi yang "dipesan" ke flexbox tetap seperti semula →
+  // isi layar, tombol melayang (mis. FAB Reminder), dan posisi tulisan tab
+  // TIDAK bergeser sedikit pun; yang berubah cuma latar putihnya kini
+  // menutup sampai ujung bawah layar.
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.tabBar}>
+    <View
+      style={[
+        styles.tabBar,
+        { paddingBottom: 8 + insets.bottom, marginBottom: -insets.bottom },
+      ]}>
       {tabs.map((t) => (
         <Tab
           key={t.key}
@@ -138,7 +157,9 @@ const styles = StyleSheet.create({
     backgroundColor: Color.CONTAINER,
     borderTopWidth: 1,
     borderTopColor: Color.BORDER,
-    paddingVertical: 8,
+    // paddingBottom ditimpa di komponennya (8 + ruang aman bawah).
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   tabButton: { flex: 1, alignItems: 'center', gap: 2 },
   active: { color: Color.MAIN },

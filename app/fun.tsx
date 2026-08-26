@@ -24,6 +24,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatShortDayDate, groupDigits, parseAmount } from '@/lib/format';
 import {
@@ -91,7 +92,8 @@ export default function FunScreen() {
   const [price, setPrice] = useState('');
   const [finishMin, setFinishMin] = useState('');
   const [medalPhoto, setMedalPhoto] = useState<string | null>(null);
-  const [photoBusy, setPhotoBusy] = useState(false);
+  const foto = useBusyTask<'foto'>();
+  const photoBusy = foto.busy !== null;
   // Field khusus Summit — rincian anggaran pendakian.
   const [costOT, setCostOT] = useState('');
   const [costRent, setCostRent] = useState('');
@@ -179,17 +181,16 @@ export default function FunScreen() {
     setFormOpen(true);
   }
 
-  async function handlePickMedal() {
-    if (photoBusy || saving) return;
-    setPhotoBusy(true);
-    try {
-      const photo = await pickCompressedMedal();
-      if (photo) setMedalPhoto(photo);
-    } catch {
-      setFormError(PHOTO_ERROR);
-    } finally {
-      setPhotoBusy(false);
-    }
+  function handlePickMedal() {
+    if (saving) return;
+    return foto.run({
+      key: 'foto',
+      task: async () => {
+        const photo = await pickCompressedMedal();
+        if (photo) setMedalPhoto(photo);
+      },
+      fail: () => setFormError(PHOTO_ERROR),
+    });
   }
 
   async function handleSave() {

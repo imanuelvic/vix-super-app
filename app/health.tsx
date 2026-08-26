@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AchievementButton } from '@/components/common/AchievementButton';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -28,6 +29,7 @@ import {
   type WeekStatsMap,
   type WeightTarget,
 } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
 type HealthTab = 'steps' | 'diet' | 'checkup';
@@ -72,7 +74,7 @@ export default function HealthScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeHealthProfile(
         user.uid,
         (p) => {
@@ -86,8 +88,7 @@ export default function HealthScreen() {
       subscribeWeekStats(user.uid, setWeeks, fail),
       subscribeDietDay(user.uid, dayId, setDiet, fail),
       subscribeWeightTarget(user.uid, setTarget, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, dayId]);
 
   // Air putih 💧 tidak diurus dari layar ini lagi — pencatatannya cuma di
@@ -98,20 +99,34 @@ export default function HealthScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Tombol kanan atas menyesuaikan sub-tab yang sedang dibuka:
-          Steps → rekor langkah · Check-up → info kesehatan. */}
+          Steps → rekor langkah · Check-up → info kesehatan.
+          Di sebelahnya 🔥 achievement milik sub-tab itu:
+            Steps → 📅 Target Mingguan (aerobik + strength) — angkanya tak
+                    tampil di mana pun selain di modal itu, beda dengan
+                    patokan jarak yang sudah ✅/❌ satu per satu di tab ini.
+            Diet  → 💧 Air Putih (penghitung gelasnya sendiri di kartu sapaan
+                    Home; ini cuma pintu ke pencapaiannya).
+            Check-up belum punya pencapaian → tak ada tombol 🔥. */}
       <ScreenHeader
         backLabel="Home"
         title="Health 🍎"
         subtitle="Jaga tubuh, kelola energi"
         right={
-          tab === 'steps' ? (
-            <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
-          ) : (
-            <EmojiButton
-              emoji="💪🏻"
-              onPress={() => router.push('/health-info')}
-            />
-          )
+          <>
+            {tab === 'steps' ? (
+              <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
+            ) : (
+              <EmojiButton
+                emoji="💪🏻"
+                onPress={() => router.push('/health-info')}
+              />
+            )}
+            {tab === 'steps' ? (
+              <AchievementButton category="week" />
+            ) : tab === 'diet' ? (
+              <AchievementButton category="water" />
+            ) : null}
+          </>
         }
       />
 

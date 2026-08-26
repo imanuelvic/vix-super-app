@@ -27,6 +27,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useSearchMode } from '@/hooks/useSearchMode';
 import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
 import { openPayApp, payAppForFund } from '@/lib/payapps';
 import {
@@ -66,22 +67,12 @@ export default function FundScreen() {
   // Mode cari (dibuka via FAB 🔍) — sama persis dengan tab Transaksi Finance:
   // cari kata di judul/catatan + urutkan terbaru / terbesar / terkecil.
   const listRef = useRef<FlatList<FundEntry>>(null);
-  const [searchMode, setSearchMode] = useState(false);
-  const [query, setQuery] = useState('');
   const [sort, setSort] = useState<'recent' | 'high' | 'low'>('recent');
-
   // Buka/tutup mode cari. Tutup = reset kata & urutan.
-  function toggleSearch() {
-    setSearchMode((s) => {
-      const next = !s;
-      if (!next) {
-        setQuery('');
-        setSort('recent');
-      }
-      return next;
-    });
-    listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }
+  const { searchMode, query, setQuery, toggleSearch } = useSearchMode({
+    onClose: () => setSort('recent'),
+    onToggle: () => listRef.current?.scrollToOffset({ offset: 0, animated: false }),
+  });
 
   // Daftar yang ditampilkan: apa adanya, atau hasil pencarian saat mode cari.
   const shown = useMemo(() => {

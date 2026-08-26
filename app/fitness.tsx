@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AchievementButton } from '@/components/common/AchievementButton';
 import {
   BottomTabs,
   withBadge,
@@ -35,6 +36,7 @@ import {
   type HealthProfile,
   type WeightTarget,
 } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
 type Tab = 'program' | 'exercise' | 'progress' | 'notes';
@@ -74,15 +76,14 @@ export default function FitnessScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeFitWeights(user.uid, setWeights, fail),
       subscribeFitDay(user.uid, dayId, setDay, fail),
       subscribeFitStreak(user.uid, setStreak, fail),
       subscribeHealthProfile(user.uid, setProfile, fail),
       subscribeWeightTarget(user.uid, setTarget, fail),
       subscribeFitNotes(user.uid, setNotes, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, dayId]);
 
   // Tutup buku hari-hari yang sudah lewat 🔥 — streak & achievement baru
@@ -106,6 +107,9 @@ export default function FitnessScreen() {
         backLabel="Home"
         title="Fitness 💪"
         subtitle="3 beban · 2 lari · 2 jalan · pagi atau sore"
+        // Sesi latihan di layar inilah yang menghidupkan kategori
+        // "🏋️ Fitness Konsisten" — jadi pintunya ditaruh di sini juga.
+        right={<AchievementButton category="fitness" />}
       />
 
       <ScreenError message={error} />

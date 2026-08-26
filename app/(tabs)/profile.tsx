@@ -24,6 +24,7 @@ import { BodyCard } from '@/components/health/BodyCard';
 import { PersonalityTab } from '@/components/profile/PersonalityTab';
 import { QuadrantTab, type Quadrant } from '@/components/profile/QuadrantTab';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { pickCompressedPhoto } from '@/lib/family';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
@@ -32,6 +33,7 @@ import {
   subscribeSelfKnowledge,
   type SelfKnowledge,
 } from '@/lib/selfKnowledge';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   EMPTY_PROFILE,
@@ -178,13 +180,14 @@ export default function ProfileScreen() {
   // Form edit (salinan profil saat modal dibuka).
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<Profile>(EMPTY_PROFILE);
-  const [photoBusy, setPhotoBusy] = useState(false);
+  const foto = useBusyTask<'foto'>();
+  const photoBusy = foto.busy !== null;
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    const unsubs = [
+    return unsubscribeAll([
       subscribeProfile(
         user.uid,
         (p) => {
@@ -195,8 +198,7 @@ export default function ProfileScreen() {
       ),
       subscribeHealthProfile(user.uid, setBody, () => setError(LOAD_ERROR)),
       subscribeSelfKnowledge(user.uid, setSelf, () => setError(LOAD_ERROR)),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   function openEdit() {
@@ -206,17 +208,15 @@ export default function ProfileScreen() {
     setEditOpen(true);
   }
 
-  async function handlePickPhoto() {
-    if (photoBusy) return;
-    setPhotoBusy(true);
-    try {
-      const photo = await pickCompressedPhoto();
-      if (photo) setForm((prev) => ({ ...prev, photo }));
-    } catch {
-      setFormError(PHOTO_ERROR);
-    } finally {
-      setPhotoBusy(false);
-    }
+  function handlePickPhoto() {
+    return foto.run({
+      key: 'foto',
+      task: async () => {
+        const photo = await pickCompressedPhoto();
+        if (photo) setForm((prev) => ({ ...prev, photo }));
+      },
+      fail: () => setFormError(PHOTO_ERROR),
+    });
   }
 
   async function handleSave() {

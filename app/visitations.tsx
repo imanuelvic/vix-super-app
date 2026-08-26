@@ -36,6 +36,7 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { deadlineTone } from '@/lib/deadline';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
@@ -61,12 +62,11 @@ export default function VisitationsScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeVisitations(user.uid, setVisitations, fail),
       subscribeCoreLeaders(user.uid, setLeaders, fail),
       subscribeExLeaders(user.uid, setExLeaders, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   const today = new Date();

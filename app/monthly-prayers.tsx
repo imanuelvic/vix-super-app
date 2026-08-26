@@ -26,6 +26,7 @@ import {
 } from '@/lib/core';
 import { dayIdToDate, formatShortDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Pokok Doa Bulanan 🙏 — kumpulkan pergumulan tiap CORE Leader untuk bulan ini.
@@ -52,7 +53,7 @@ export default function MonthlyPrayersScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeCoreLeaders(
         user.uid,
         (next) => {
@@ -62,8 +63,7 @@ export default function MonthlyPrayersScreen() {
         fail,
       ),
       subscribeMonthlyPrayers(user.uid, setData, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   const now = new Date();

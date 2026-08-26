@@ -40,10 +40,16 @@ export function ScreenHeader({
             <VixText heading="header" additionalStyle={styles.title}>
               {title}
             </VixText>
-            {subtitle ? <VixText heading="label">{subtitle}</VixText> : null}
           </View>
           {right ? <View style={styles.rightBox}>{right}</View> : null}
         </View>
+        {/* Subjudul mengambil LEBAR PENUH header, bukan cuma sisa di kiri
+            tombol. Sebelumnya ia ikut menyempit tiap ada tombol di pojok
+            kanan — dengan dua tombol (mis. Spiritual: 📖 + 🔥) kolomnya
+            tinggal 251pt di iPhone 15, sedangkan "Being with God, bukan
+            sekadar doing for God" butuh 282pt, jadi pecah dua baris. Di
+            layar tanpa tombol lebarnya sama persis seperti dulu. */}
+        {subtitle ? <VixText heading="label">{subtitle}</VixText> : null}
         {children}
       </View>
     </View>
@@ -67,5 +73,8 @@ const styles = StyleSheet.create({
   },
   titleBox: { flex: 1 },
   title: { color: Color.MAIN },
-  rightBox: { paddingTop: 4 },
+  // Baris, bukan tumpukan: sebagian layar punya DUA tombol di pojok kanan
+  // (mis. Spiritual 📖 riwayat + 🔥 achievement). Dengan satu tombol saja
+  // hasilnya persis sama seperti sebelumnya.
+  rightBox: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 4 },
 });

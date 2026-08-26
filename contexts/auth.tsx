@@ -7,7 +7,7 @@ import {
 } from 'firebase/auth';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { auth } from '@/lib/firebase';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { clearLiveCache } from '@/lib/liveDoc';
 
 // Hanya email pemilik yang boleh masuk. Kalau env kosong, gate dimatikan
@@ -26,6 +26,21 @@ class NotOwnerError extends Error {
   }
 }
 
+// Belum ada .env (mis. repo ini baru di-clone orang lain). Firebase Auth
+// TIDAK boleh disentuh sama sekali dalam keadaan ini — lihat lib/firebase.ts.
+class NotConfiguredError extends Error {
+  code = 'auth/not-configured';
+  constructor() {
+    super('Firebase belum dikonfigurasi. Isi .env dengan proyek Firebase-mu sendiri.');
+  }
+}
+
+/** Auth yang dijamin ada; melempar pesan jelas kalau .env belum diisi. */
+function requireAuth() {
+  if (!auth) throw new NotConfiguredError();
+  return auth;
+}
+
 type AuthContextValue = {
   user: User | null;
   initializing: boolean;
@@ -38,14 +53,19 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [initializing, setInitializing] = useState(true);
+  // Tanpa konfigurasi tidak ada sesi apa pun yang bisa dipulihkan, jadi tidak
+  // ada yang perlu ditunggu — layar Login langsung tampil beserta pesan
+  // "belum dikonfigurasi". (Nilai awal, bukan setState di dalam efek.)
+  const [initializing, setInitializing] = useState(isFirebaseConfigured);
 
   useEffect(() => {
+    const a = auth;
+    if (!a) return;
     // Dipanggil sekali saat start (dari sesi tersimpan), lalu tiap login/logout.
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+    const unsubscribe = onAuthStateChanged(a, async (nextUser) => {
       // Pertahanan: kalau sesi tersimpan ternyata bukan pemilik, paksa keluar.
       if (nextUser && !isOwner(nextUser)) {
-        await signOut(auth);
+        await signOut(a);
         setUser(null);
         setInitializing(false);
         return;
@@ -61,24 +81,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       initializing,
       signIn: async (email, password) => {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
-        if (!isOwner(auth.currentUser)) {
-          await signOut(auth);
+        const a = requireAuth();
+        await signInWithEmailAndPassword(a, email.trim(), password);
+        if (!isOwner(a.currentUser)) {
+          await signOut(a);
           throw new NotOwnerError();
         }
       },
       signUp: async (email, password) => {
+        const a = requireAuth();
         // Cegah pembuatan akun selain email pemilik.
         if (OWNER_EMAIL && email.trim().toLowerCase() !== OWNER_EMAIL) {
           throw new NotOwnerError();
         }
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
+        await createUserWithEmailAndPassword(a, email.trim(), password);
       },
       logout: async () => {
         // Bersihkan simpanan dokumen di HP dulu — jangan sampai data akun lama
         // tertinggal di disk/memori setelah keluar.
         await clearLiveCache();
-        await signOut(auth);
+        if (auth) await signOut(auth);
       },
     }),
     [user, initializing],

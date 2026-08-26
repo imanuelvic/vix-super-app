@@ -35,6 +35,7 @@ import {
   withWeeklyNews,
   type PrayerNews,
 } from '@/lib/prayerNews';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { reviveHandledToday, subscribeReviveStreak } from '@/lib/spiritual';
 import { openWhatsAppChat } from '@/lib/whatsapp';
 
@@ -56,14 +57,13 @@ export default function MorningPrayerScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubs = [
+    return unsubscribeAll([
       subscribeLoginStreak(user.uid, setLogin),
       subscribeReviveStreak(user.uid, setReviveStreak),
       subscribeCoreLeaders(user.uid, setLeaders),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
       subscribePrayerNews(user.uid, setPrayerNews),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   // Jam BERJALAN (di-segarkan tiap menit), bukan `new Date()` sekali render —

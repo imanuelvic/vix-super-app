@@ -87,7 +87,10 @@ export type ScheduledHabit = {
 // centang harian tetap aman karena kuncinya id, bukan nama.
 
 const HABIT_RENAMES: { match: RegExp; label: string }[] = [
-  { match: /1 kalimat rhema/i, label: '✍️ 1 Rhema before Activities' },
+  // Dulu "1 kalimat rhema", lalu "✍️ 1 Rhema before Activities". Sekarang jadi
+  // jurnal refleksi harian — tulisannya yang sama, tapi namanya tidak lagi
+  // mengunci isinya ke satu kalimat ayat saja.
+  { match: /1 kalimat rhema|rhema before activities/i, label: '📓 Daily Reflection Journal' },
   // 📝 → 💡 supaya emojinya sama dengan tombol & layar Daily Priority 💡.
   { match: /top 3 priorit/i, label: '💡 Top 3 Priorities' },
 ];
@@ -98,9 +101,9 @@ function renamedHabit(h: ScheduledHabit): ScheduledHabit {
 }
 
 // ===================== Kebiasaan yang centangnya dari catatan =====================
-// Sebagian kebiasaan buktinya BUKAN click, melainkan tulisannya. Rhema
-// contohnya: mencentang tanpa menulis apa pun cuma bikin angkanya bohong.
-// Jadi centangnya dikunci & ditentukan oleh panjang catatannya.
+// Sebagian kebiasaan buktinya BUKAN click, melainkan tulisannya. Daily
+// Reflection Journal contohnya: mencentang tanpa menulis apa pun cuma bikin
+// angkanya bohong. Jadi centangnya dikunci & ditentukan panjang catatannya.
 
 /** Panjang minimal catatan supaya kebiasaan bercatatan dianggap selesai. */
 export const HABIT_NOTE_MIN = 10;
@@ -110,23 +113,32 @@ export function habitNoteDone(text: string): boolean {
   return text.trim().length >= HABIT_NOTE_MIN;
 }
 
-/** Centangnya ditentukan catatan, bukan click (sekarang: Rhema). */
+/**
+ * Centangnya ditentukan catatan, bukan click (sekarang: Daily Reflection
+ * Journal).
+ *
+ * "rhema" TETAP dikenali: nama tersimpannya di Firestore masih yang lama, dan
+ * beberapa layar mencari baris ini lewat fungsi inilah — bukan lewat id yang
+ * ditulis tangan. Melepas kata itu berarti baris jurnalnya "hilang" bagi Home,
+ * layar Generate Feed, dan penguncian centangnya sekaligus.
+ */
 export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
-  return /rhema/i.test(h.label);
+  return /rhema|reflection journal/i.test(h.label);
 }
 
-// Rhema pagi ditampilkan ULANG di Home pada jam-jam ini, biar firman paginya
-// tidak berhenti di kolom catatan — dibaca lagi saat siang, sore, & malam.
-const RHEMA_WINDOWS: [number, number][] = [
+// Refleksi pagi ditampilkan ULANG di Home pada jam-jam ini, biar tulisan
+// paginya tidak berhenti di kolom catatan — dibaca lagi saat siang, sore, &
+// malam.
+const REFLECTION_WINDOWS: [number, number][] = [
   [12, 13],
   [17, 18],
   [21, 22],
 ];
 
-/** Sekarang jam tayang kartu "Rhema Pagi Ini" di Home? */
+/** Sekarang jam tayang kartu refleksi di Home? */
 export function rhemaWindowNow(now: Date): boolean {
   const h = now.getHours();
-  return RHEMA_WINDOWS.some(([dari, sampai]) => h >= dari && h < sampai);
+  return REFLECTION_WINDOWS.some(([dari, sampai]) => h >= dari && h < sampai);
 }
 
 export function habitArea(h: ScheduledHabit): HabitArea {

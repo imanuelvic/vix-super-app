@@ -15,7 +15,6 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { SheetModal } from '@/components/common/SheetModal';
-import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { HEARTS } from '@/lib/core';
@@ -143,25 +142,17 @@ export function MultiplicationTab() {
     }
   }
 
-  const running = (list ?? []).filter((m) => multiStatus(m) === 'running');
-  const done = (list ?? []).filter((m) => multiStatus(m) === 'done');
-
   return (
     <View style={styles.flex}>
       {list === null ? (
         <LoadingCenter />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          <SummaryCard
-            label="🌱 Multiplikasi CORE"
-            value={
-              list.length === 0 ? 'Belum ada' : `${list.length} multiplikasi`
-            }
-            sub={`${done.length} selesai · ${running.length} sedang berjalan`}
-          />
-
+          {/* Kartu ringkasan "x multiplikasi · y selesai · z berjalan"
+              DIHAPUS: angkanya toh terbaca langsung dari daftar di bawahnya,
+              dan menyingkirkannya membuat kartu pertama muncul lebih awal. */}
           <PrimaryButton
-            label="Buat Multiplikasi"
+            label="Buat Rencana Multiplikasi"
             icon="plus"
             onPress={openAdd}
             additionalStyle={styles.addButton}
@@ -221,7 +212,11 @@ export function MultiplicationTab() {
                         <VixText
                           heading="bold"
                           additionalStyle={
-                            status === 'done' ? styles.statusDone : styles.status
+                            status === 'done'
+                              ? styles.statusDone
+                              : status === 'cancelled'
+                                ? styles.statusCancel
+                                : styles.status
                           }>
                           {multiStatusLabel(status)}
                         </VixText>
@@ -353,6 +348,7 @@ const styles = StyleSheet.create({
   bar: { marginTop: 4, marginBottom: 2 },
   status: { color: Color.TEXT_LABEL },
   statusDone: { color: Color.SUCCESS },
+  statusCancel: { color: Color.DANGER },
   // Form
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },

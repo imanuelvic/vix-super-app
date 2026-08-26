@@ -1,6 +1,6 @@
 import { invoiceTotal, type FreelanceProject, type InvoiceItem } from './career';
 import { formatDate } from './format';
-import { escapeHtml, sharePdf } from './pdfDoc';
+import { escapeHtml, pdfFileName, sharePdf } from './pdfDoc';
 import { formatRupiah } from './transactions';
 
 // Invoice PDF untuk proyek freelance — template resmi PT. Victory Technology
@@ -204,9 +204,27 @@ function buildInvoiceHtml(p: FreelanceProject, date: Date): string {
  * Buat PDF invoice lalu buka share sheet (WhatsApp / Save to Files / dll).
  * Lempar error kalau gagal supaya pemanggil bisa menampilkan pesan.
  */
+/**
+ * Nama berkas invoice: "Victory Technology - 042-VTI-VIII-2026.pdf".
+ *
+ * Garis miring nomor invoice ("042/VTI/VIII/2026") diganti tanda hubung: `/`
+ * tidak sah di nama berkas, dan kalau dibiarkan pdfFileName menggantinya jadi
+ * SPASI sehingga nomornya terbaca seperti empat kata lepas.
+ */
+export function invoiceFileName(p: FreelanceProject, date: Date): string {
+  const nomor = invoiceNumber(p, date).replace(/\//g, '-');
+  return pdfFileName(`Victory Technology - ${nomor}`, 'Invoice');
+}
+
 export function shareInvoicePdf(p: FreelanceProject): Promise<void> {
-  // Tanpa nama berkas: invoice tetap memakai nama acak bawaan expo-print,
-  // persis seperti sebelumnya. (Bisa dinamai "Invoice 042-VTI-VIII-2026.pdf"
-  // kalau kamu mau — tinggal minta.)
-  return sharePdf(buildInvoiceHtml(p, new Date()), 'Bagikan Invoice');
+  // SATU tanggal untuk isi PDF DAN nama berkasnya. Kalau `new Date()`
+  // dipanggil dua kali, keduanya bisa jatuh di bulan berbeda tepat saat
+  // pergantian bulan — nomor di dalam dokumen jadi tidak sama dengan nomor di
+  // namanya, dan itu jenis kesalahan yang baru ketahuan setelah terkirim.
+  const now = new Date();
+  return sharePdf(
+    buildInvoiceHtml(p, now),
+    'Bagikan Invoice',
+    invoiceFileName(p, now),
+  );
 }

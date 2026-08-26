@@ -32,6 +32,9 @@ function messageFromError(code: string): string {
       return 'Gagal terhubung. Cek koneksi internet.';
     case 'auth/invalid-api-key':
       return 'Konfigurasi Firebase belum benar (cek file .env).';
+    // Repo ini publik: yang baru clone belum punya .env sama sekali.
+    case 'auth/not-configured':
+      return 'Firebase belum dikonfigurasi. Isi .env dengan proyek Firebase milikmu sendiri, lalu restart aplikasi.';
     case 'auth/not-owner':
       return 'Akun ini tidak diizinkan. Hanya pemilik yang bisa masuk.';
     default:

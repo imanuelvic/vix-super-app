@@ -36,6 +36,7 @@ import { VixText } from '@/components/common/VixText';
 import { PriorityTab } from '@/components/tasks/PriorityTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
@@ -147,8 +148,7 @@ export default function TasksScreen() {
 
   // Bulan yang dilihat — tidak bisa mundur sebelum bulan berjalan.
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth()); // 0–11
+  const { year, month, shiftMonth: moveMonth, goNow } = useMonthCursor(now);
 
   // Sheet tambah/edit task.
   const [editing, setEditing] = useState<Task | 'new' | null>(null);
@@ -248,15 +248,7 @@ export default function TasksScreen() {
     // Mundur ke bulan sebelum bulan berjalan tidak ada artinya —
     // semua task lama sudah rollover ke hari ini.
     if (delta < 0 && atMinMonth) return;
-    const d = new Date(year, month + delta, 1);
-    setYear(d.getFullYear());
-    setMonth(d.getMonth());
-  }
-
-  // Tekan label bulan di tengah → langsung balik ke bulan berjalan.
-  function goNow() {
-    setYear(now.getFullYear());
-    setMonth(now.getMonth());
+    moveMonth(delta);
   }
 
   const shown = tasks.filter((t) => t.category === category);

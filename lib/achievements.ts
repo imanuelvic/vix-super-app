@@ -214,8 +214,25 @@ const CATEGORIES: {
   { key: 'week', feature: 'health', icon: '📅', label: 'Target Mingguan', desc: 'Aerobik + strength training 2 hari/minggu' },
   { key: 'water', feature: 'health', icon: '💧', label: 'Air Putih', desc: 'Cukup 8 gelas air setiap hari' },
   { key: 'learning', feature: 'learning', icon: '🎓', label: 'Learning', desc: 'Minggu beruntun 4 langkah belajar tuntas' },
-  { key: 'fitness', feature: 'fitness', icon: '🏋️', label: 'Gym Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
+  { key: 'fitness', feature: 'fitness', icon: '🏋️', label: 'Fitness Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
 ];
+
+/**
+ * Sesi baca Alkitab → kategori pencapaiannya. Dipakai tombol 🔥 di layar
+ * Bacaan Alkitab & tab Bible Reading, supaya modal yang terbuka adalah sesi
+ * yang sedang dilihat — bukan daftar semua kategori.
+ *
+ * Kuncinya sengaja ditulis apa adanya (bukan `import type { BibleSession }`)
+ * agar lib/achievements tidak perlu bergantung pada lib/spiritual.
+ */
+export const BIBLE_CATEGORY: Record<
+  'morning' | 'daytime' | 'night',
+  AchievementCategoryKey
+> = {
+  morning: 'bibleMorning',
+  daytime: 'bibleDaytime',
+  night: 'bibleNight',
+};
 
 /**
  * Kategori siap tampil — sudah diurutkan mengikuti grid Home. Kategori dengan

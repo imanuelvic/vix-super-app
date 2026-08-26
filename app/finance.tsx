@@ -25,6 +25,7 @@ import {
   type SubcategoryMap,
 } from '@/lib/budgets';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useNow } from '@/hooks/useNow';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { MONTH_NAMES } from '@/lib/format';
@@ -55,8 +56,7 @@ export default function FinanceScreen() {
 
   // Bulan yang sedang dilihat (default: bulan ini) — dipakai semua sub-menu.
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth()); // 0–11
+  const { year, month, shiftMonth, goNow } = useMonthCursor(now);
 
   // Transaksi dikunci ke bulan yang dilihat: begitu bulannya digeser, daftarnya
   // kosong lagi (loading) di render yang sama — tak ada sekejap pun angka bulan
@@ -133,18 +133,6 @@ export default function FinanceScreen() {
     if (!user || !unlocked) return;
     return subscribeSubcategories(user.uid, setSubcats, () => {});
   }, [user, unlocked]);
-
-  // Tekan label bulan di tengah → langsung balik ke bulan berjalan.
-  function goNow() {
-    setYear(now.getFullYear());
-    setMonth(now.getMonth());
-  }
-
-  function shiftMonth(delta: number) {
-    const d = new Date(year, month + delta, 1);
-    setYear(d.getFullYear());
-    setMonth(d.getMonth());
-  }
 
   // Belum buka PIN → tampilkan keypad, isi Finance belum dirender sama sekali.
   // Batal → kembali ke layar sebelumnya (Finance kini dibuka dari grid Home).

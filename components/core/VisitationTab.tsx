@@ -23,8 +23,10 @@ import {
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useEditParam } from '@/hooks/useEditParam';
 import { usePagination } from '@/hooks/usePagination';
+import { useSearchMode } from '@/hooks/useSearchMode';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
   markVisitationPdfSent,
@@ -87,12 +89,12 @@ export function VisitationTab({
   const [filterKind, setFilterKind] = useState<MeetingKind | null>(null);
   // Mode cari (dibuka dari FAB 🔍) — mencari di SELURUH visitasi, termasuk
   // yang sudah lewat & selesai, karena yang biasanya dicari justru arsipnya.
-  const [searchMode, setSearchMode] = useState(false);
-  const [query, setQuery] = useState('');
+  const { searchMode, query, setQuery, toggleSearch } = useSearchMode();
 
   // Panduan acara ikut ditempel ke notulen visitasi PDF, jadi didengarkan di sini.
   const [rules, setRules] = useState<CoreRule[]>([]);
-  const [sharingId, setSharingId] = useState<string | null>(null);
+  // Visitasi yang PDF-nya sedang dibuat (null = tidak ada).
+  const pdf = useBusyTask();
 
   useEffect(() => {
     if (!user) return;
@@ -159,11 +161,6 @@ export function VisitationTab({
             return jarak !== 0 ? jarak : db - da;
           });
 
-  function toggleSearch() {
-    setSearchMode((on) => !on);
-    setQuery('');
-  }
-
   function openAdd() {
     setEditing('new');
     form.reset(leaders[0]?.id);
@@ -218,30 +215,30 @@ export function VisitationTab({
    * Cetak visitasi + panduan acaranya jadi PDF, buka share sheet, lalu catat
    * bahwa hari ini sudah dikirim supaya badge remindernya padam.
    */
-  async function handleShare(v: Visitation) {
-    if (!user || sharingId) return;
-    setSharingId(v.id);
-    setError(null);
-    try {
-      await shareVisitationPdf(
-        v,
-        // Ikut ex-CL: PDF visitasi lama tetap menyebut namanya, bukan "CORE".
-        namaLeaders,
-        rules.find((r) => r.kind === v.kind),
-      );
-      // Dicatat SESUDAH share sheet terbuka. Kalau pencatatannya gagal, PDF
-      // sudah terlanjur terkirim — jadi kegagalannya cukup diabaikan, badge
-      // menyala sehari lagi jauh lebih baik daripada pesan error palsu.
-      if (v.pdfSentDayId !== todayId) {
-        markVisitationPdfSent(user.uid, visitations, v.id, todayId).catch(
-          () => undefined,
+  function handleShare(v: Visitation) {
+    if (!user) return;
+    const uid = user.uid;
+    return pdf.run({
+      key: v.id,
+      start: () => setError(null),
+      task: async () => {
+        await shareVisitationPdf(
+          v,
+          // Ikut ex-CL: PDF visitasi lama tetap menyebut namanya, bukan "CORE".
+          namaLeaders,
+          rules.find((r) => r.kind === v.kind),
         );
-      }
-    } catch {
-      setError('Gagal membuat notulen visitasi. Coba lagi.');
-    } finally {
-      setSharingId(null);
-    }
+        // Dicatat SESUDAH share sheet terbuka. Kalau pencatatannya gagal, PDF
+        // sudah terlanjur terkirim — jadi kegagalannya cukup diabaikan, badge
+        // menyala sehari lagi jauh lebih baik daripada pesan error palsu.
+        if (v.pdfSentDayId !== todayId) {
+          markVisitationPdfSent(uid, visitations, v.id, todayId).catch(
+            () => undefined,
+          );
+        }
+      },
+      fail: () => setError('Gagal membuat notulen visitasi. Coba lagi.'),
+    });
   }
 
   async function handleDelete() {
@@ -290,8 +287,8 @@ export function VisitationTab({
           icon="square.and.arrow.up"
           active={perluKirim}
           onPress={() => handleShare(v)}
-          busy={sharingId === v.id}
-          disabled={sharingId !== null}
+          busy={pdf.busy === v.id}
+          disabled={pdf.busy !== null}
         />
         <VisitationStatus visitation={v} tone={tone} days={days} />
       </View>

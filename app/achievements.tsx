@@ -50,6 +50,7 @@ import {
   type WeekStatsMap,
 } from '@/lib/health';
 import { subscribeLearningStreak, type WeekStreak } from '@/lib/learning';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   claimSelfReward,
@@ -214,7 +215,7 @@ export default function AchievementsScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeLoginStreak(user.uid, setLogin, fail),
       subscribeStreak(user.uid, setHabit, fail),
       subscribeBibleStreaks(user.uid, setBible, fail),
@@ -227,8 +228,7 @@ export default function AchievementsScreen() {
       subscribeSelfRewardBalance(user.uid, setBalance, fail),
       subscribeSelfRewards(user.uid, setRewards, fail),
       subscribeClaimedRewards(user.uid, setClaimed, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   // Tutup buku sesi gym yang harinya sudah habis 🔥 — sama seperti yang

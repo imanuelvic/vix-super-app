@@ -102,24 +102,38 @@ export function multiProgress(m: Multiplication): {
   return { done: live.filter((s) => s.done).length, total: live.length };
 }
 
-export type MultiStatus = 'planned' | 'running' | 'done';
+export type MultiStatus = 'planned' | 'running' | 'done' | 'cancelled';
 
 /**
  * Status DITURUNKAN dari langkahnya, bukan disimpan sendiri — supaya tidak
  * mungkin ada kartu bertulis "Selesai" padahal masih ada langkah menggantung.
+ *
+ * ❌ Batal: multiplikasi yang di dalamnya ADA langkah dibatalkan dan tidak
+ * ada lagi langkah hidup yang menunggu. Sebelumnya keadaan ini terbaca
+ * "✅ Selesai" — karena langkah batal memang tidak ikut dihitung, sisanya
+ * jadi 16/16 dan tampak tuntas. Padahal justru langkah-langkah penutupnya
+ * (mis. CORE Perdana) yang dicoret: rencananya berhenti di tengah jalan, dan
+ * kartunya harus jujur mengatakan itu.
+ *
+ * Multiplikasi yang SELURUH langkahnya batal juga masuk sini — dulu ia
+ * terbaca "🗓️ Rencana" karena penyebutnya nol.
  */
 export function multiStatus(m: Multiplication): MultiStatus {
   const { done, total } = multiProgress(m);
-  if (total > 0 && done === total) return 'done';
+  const adaYangBatal = m.steps.some((s) => s.cancelled);
+  if (total === 0) return adaYangBatal ? 'cancelled' : 'planned';
+  if (done === total) return adaYangBatal ? 'cancelled' : 'done';
   return done > 0 ? 'running' : 'planned';
 }
 
 export function multiStatusLabel(status: MultiStatus): string {
   return status === 'done'
     ? '✅ Selesai'
-    : status === 'running'
-      ? '⏳ Berjalan'
-      : '🗓️ Rencana';
+    : status === 'cancelled'
+      ? '❌ Batal'
+      : status === 'running'
+        ? '⏳ Berjalan'
+        : '🗓️ Rencana';
 }
 
 /** Langkah urut tanggal (terlama dulu) — urutan baca timeline. */

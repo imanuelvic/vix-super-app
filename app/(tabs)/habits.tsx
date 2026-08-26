@@ -47,6 +47,7 @@ import {
   type Streak,
   type WeightTarget,
 } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
   PRIORITY_COUNT,
@@ -80,6 +81,7 @@ function mirrorState(
   kind: HabitMirror,
   priorities: PriorityItem[],
   bible: BibleReadingSessions,
+  now: Date,
 ): { done: boolean; skipped: boolean } {
   if (kind === 'priority') {
     return {
@@ -87,7 +89,7 @@ function mirrorState(
       skipped: false,
     };
   }
-  return bibleMirrorState(bible, MIRROR_SESSION[kind]);
+  return bibleMirrorState(bible, MIRROR_SESSION[kind], now);
 }
 
 export default function HabitsScreen() {
@@ -120,13 +122,15 @@ export default function HabitsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Lewat tengah malam id harinya ikut berganti sendiri — ceklis kembali
-  // kosong tanpa perlu restart app (lihat hooks/useNow.ts).
-  const { todayId: dayId } = useNow();
+  // kosong tanpa perlu restart app (lihat hooks/useNow.ts). `now` juga dipakai
+  // baris cermin Baca Alkitab: begitu jendela sesinya habis, tandanya berubah
+  // jadi ✗ sendiri tanpa perlu layarnya dibuka ulang.
+  const { now, todayId: dayId } = useNow();
 
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeHealthProfile(
         user.uid,
         (p) => {
@@ -145,8 +149,7 @@ export default function HabitsScreen() {
       subscribeFitDay(user.uid, dayId, setFitDay),
       subscribePriorityDay(user.uid, dayId, setPriorities),
       subscribeBibleReadingToday(user.uid, dayId, setBible),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, dayId]);
 
   // Baris "📖 Midday Bible Reading" disisipkan sekali kalau belum ada — Baca
@@ -188,7 +191,7 @@ export default function HabitsScreen() {
       const kind = habitMirror(habit);
       // 'fitness' punya efeknya sendiri di atas.
       if (kind === null || kind === 'fitness') continue;
-      const want = mirrorState(kind, priorities, bible);
+      const want = mirrorState(kind, priorities, bible, now);
       if (!!day.skipped[habit.id] !== want.skipped) {
         setHabitSkipped(user.uid, dayId, habit.id, want.skipped).catch(
           () => undefined,
@@ -199,7 +202,10 @@ export default function HabitsScreen() {
         );
       }
     }
-  }, [user, dayId, day, schedule, priorities, bible]);
+    // `now` ikut jadi dependency: jam berjalan (useNow) menyegarkannya tiap
+    // menit, jadi ✗ otomatis untuk sesi yang jendelanya baru saja habis
+    // tertulis sendiri tanpa menunggu layar ini dibuka ulang.
+  }, [user, dayId, day, schedule, priorities, bible, now]);
 
   const loading =
     !profile || !schedule || !day || target === undefined || streak === undefined;

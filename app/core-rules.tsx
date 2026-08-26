@@ -19,6 +19,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RuleBody } from '@/components/core/RuleBody';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { MEETING_KINDS } from '@/lib/core';
 import {
   deleteCoreRule,
@@ -42,7 +43,8 @@ export default function CoreRulesScreen() {
   const [rules, setRules] = useState<CoreRule[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openKind, setOpenKind] = useState<string | null>(null);
-  const [sharingKind, setSharingKind] = useState<string | null>(null);
+  // Dokumen yang PDF-nya sedang dibuat (null = tidak ada).
+  const pdf = useBusyTask();
 
   // Form tambah/ubah dokumen.
   const [editing, setEditing] = useState<CoreRule | 'new' | null>(null);
@@ -107,17 +109,13 @@ export default function CoreRulesScreen() {
   }
 
   /** Cetak panduan jadi PDF lalu buka share sheet (ada WhatsApp di dalamnya). */
-  async function handleShare(r: CoreRule) {
-    if (sharingKind) return;
-    setSharingKind(r.kind);
-    setError(null);
-    try {
-      await shareRulePdf(r);
-    } catch {
-      setError('Gagal membuat PDF panduan. Coba lagi.');
-    } finally {
-      setSharingKind(null);
-    }
+  function handleShare(r: CoreRule) {
+    return pdf.run({
+      key: r.kind,
+      start: () => setError(null),
+      task: () => shareRulePdf(r),
+      fail: () => setError('Gagal membuat PDF panduan. Coba lagi.'),
+    });
   }
 
   async function handleSave() {
@@ -244,8 +242,8 @@ export default function CoreRulesScreen() {
                 label="Share PDF"
                 variant="filled"
                 onPress={() => handleShare(r)}
-                busy={sharingKind === r.kind}
-                disabled={sharingKind !== null}
+                busy={pdf.busy === r.kind}
+                disabled={pdf.busy !== null}
                 additionalStyle={styles.actionButton}
               />
             </View>

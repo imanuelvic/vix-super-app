@@ -13,6 +13,7 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useMonthCursor } from '@/hooks/useMonthCursor';
 import {
   EMPTY_INSURANCE,
   insuranceMonthKey,
@@ -95,8 +96,7 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
   const { user } = useAuth();
 
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth()); // 0–11
+  const { year, month, shiftMonth, goNow } = useMonthCursor(now);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -109,12 +109,6 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
 
   const key = insuranceMonthKey(year, month);
   const data = months[key] ?? EMPTY_INSURANCE;
-
-  function shiftMonth(delta: number) {
-    const d = new Date(year, month + delta, 1);
-    setYear(d.getFullYear());
-    setMonth(d.getMonth());
-  }
 
   async function update(partial: Partial<InsuranceMonth>) {
     if (!user) return;
@@ -165,12 +159,7 @@ export function InsuranceTab({ months }: { months: InsuranceMonths }) {
           <IconSymbol name="chevron.left" size={20} color={Color.MAIN} />
         </PressableScale>
         {/* Tekan label bulan → balik ke bulan berjalan */}
-        <PressableScale
-          onPress={() => {
-            setYear(now.getFullYear());
-            setMonth(now.getMonth());
-          }}
-          hitSlop={10}>
+        <PressableScale onPress={goNow} hitSlop={10}>
           <VixText heading="bold" additionalStyle={styles.monthText}>
             {MONTH_NAMES[month]} {year}
           </VixText>

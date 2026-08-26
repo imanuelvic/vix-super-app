@@ -84,6 +84,10 @@ function RootNavigator() {
         <Stack.Screen name="revive" />
         <Stack.Screen name="revive-history" />
         <Stack.Screen name="bible-reading" />
+        {/* Ayat yang dibaca → gambar Instagram Story (vixtory.archive) */}
+        <Stack.Screen name="bible-story" />
+        {/* Refleksi harian → gambar Instagram Feed (vixtory.archive) */}
+        <Stack.Screen name="reflection-feed" />
         <Stack.Screen name="fasting" />
         <Stack.Screen name="learning" />
 
@@ -96,6 +100,8 @@ function RootNavigator() {
         <Stack.Screen name="core" />
         <Stack.Screen name="visitations" />
         <Stack.Screen name="monthly-prayers" />
+        {/* Pedoman CORE Leader (syarat calon + tugasnya) — dari sub-tab Multiplication */}
+        <Stack.Screen name="leader-criteria" />
 
         {/* Finance: dulu tab utama, kini dibuka dari grid Home */}
         <Stack.Screen name="finance" />

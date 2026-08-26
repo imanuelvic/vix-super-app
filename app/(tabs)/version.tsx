@@ -9,6 +9,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   dayIdToDate,
@@ -17,7 +18,6 @@ import {
   formatShortDayDateTime,
   monthLabel,
 } from '@/lib/format';
-import { dayDocId } from '@/lib/health';
 import {
   aggregateDays,
   dayTotal,
@@ -50,7 +50,11 @@ export default function VersionScreen() {
   // dari Firestore CUMA satu deret — hari-hari bulan ini (paling banyak 31
   // dokumen kecil, sekali baca saat tab dibuka). Minggu ini tinggal disaring
   // dari deret yang sama, jadi tidak ada pembacaan tambahan.
-  const todayId = dayDocId(new Date());
+  // Jam berjalan (hook bersama) — bukan `new Date()` lepas saat render.
+  // Dua untungnya: render jadi murni (React Compiler tidak lagi menandainya),
+  // dan lewat tengah malam `todayId` ikut berganti sendiri, jadi layar ini
+  // tidak menampilkan angka kemarin kalau dibiarkan terbuka semalaman.
+  const { now, todayId } = useNow();
   const thisMonth = monthLabel();
   const monthRangeLabel = formatMonthRange();
   const weekRangeLabel = formatWeekRange();
@@ -89,7 +93,7 @@ export default function VersionScreen() {
 
   // Umur aplikasi sejak pertama dibuat.
   const appAgeDays =
-    Math.floor((Date.now() - APP_BIRTHDAY.getTime()) / 86_400_000) + 1;
+    Math.floor((now.getTime() - APP_BIRTHDAY.getTime()) / 86_400_000) + 1;
 
   async function handleCheckUpdate() {
     if (busy) return;

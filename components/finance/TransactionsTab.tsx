@@ -29,6 +29,7 @@ import { VixText } from '@/components/common/VixText';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useSearchMode } from '@/hooks/useSearchMode';
 import {
   budgetKey,
   isFuelTransaction,
@@ -122,9 +123,13 @@ export function TransactionsTab({
   // Mode cari (dibuka via FAB 🔍): cari kata + urutkan terbesar/terkecil.
   // listRef → lompat ke paling atas saat mode cari dibuka/ditutup.
   const listRef = useRef<FlatList<Transaction>>(null);
-  const [searchMode, setSearchMode] = useState(false);
-  const [query, setQuery] = useState('');
   const [sort, setSort] = useState<'recent' | 'high' | 'low'>('recent');
+  // Buka/tutup mode cari. Tutup = reset kata & urutan. Lalu langsung ke paling
+  // atas — sama seperti menekan ulang sub-tab Transaksi.
+  const { searchMode, query, setQuery, toggleSearch } = useSearchMode({
+    onClose: () => setSort('recent'),
+    onToggle: () => listRef.current?.scrollToOffset({ offset: 0, animated: false }),
+  });
 
   // Modal edit transaksi.
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -275,20 +280,6 @@ export function TransactionsTab({
     } finally {
       setSaving(false);
     }
-  }
-
-  // Buka/tutup mode cari. Tutup = reset kata & urutan.
-  function toggleSearch() {
-    setSearchMode((s) => {
-      const next = !s;
-      if (!next) {
-        setQuery('');
-        setSort('recent');
-      }
-      return next;
-    });
-    // Langsung ke paling atas — sama seperti menekan ulang sub-tab Transaksi.
-    listRef.current?.scrollToOffset({ offset: 0, animated: false });
   }
 
   function openEdit(item: Transaction) {

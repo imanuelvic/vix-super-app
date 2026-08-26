@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AchievementButton } from '@/components/common/AchievementButton';
 import { BottomTabs, withBadge, type BottomTab } from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -25,6 +26,7 @@ import {
   type TopicsDone,
   type WeekStreak,
 } from '@/lib/learning';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { EMPTY_DAY_STREAK as EMPTY_WEEK_STREAK } from '@/lib/streak';
 
 type LearningTabKey = 'week' | 'skills' | 'topics';
@@ -57,13 +59,12 @@ export default function LearningScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubs = [
+    return unsubscribeAll([
       subscribeLearningWeek(user.uid, weekId, setWeek),
       subscribeSkillsDone(user.uid, setSkillsDone),
       subscribeTopicsDone(user.uid, setTopicsDone),
       subscribeLearningStreak(user.uid, setStreak),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, weekId]);
 
   const current = week ?? EMPTY_WEEK;
@@ -83,6 +84,8 @@ export default function LearningScreen() {
         backLabel="Home"
         title="Learning 🎓"
         subtitle="Satu ilmu baru tiap minggu"
+        // Streak MINGGUAN Learning 🎓 lahir dari 4 langkah di layar ini.
+        right={<AchievementButton category="learning" />}
       />
 
       <View style={styles.content} key={scrollKey}>

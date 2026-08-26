@@ -25,6 +25,7 @@ import { useDraft } from '@/hooks/useDraft';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   applicationPrompt,
@@ -85,11 +86,10 @@ export default function ReviveEditorScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setFormError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeReviveEntries(user.uid, setEntries, fail),
       subscribeReviveStreak(user.uid, setStreak, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   async function handleSave() {

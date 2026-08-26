@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +28,7 @@ import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { currentAge, nextBirthday } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -224,17 +225,32 @@ function MemberPicker({
 // dibagi 5 dengan jarak antar-kolom). Avatar sedikit lebih kecil dari kolom.
 // Anak ke-6 dst. otomatis turun ke baris berikutnya.
 const CHILD_ROW_GAP = 8;
-const TREE_INNER_WIDTH = Dimensions.get('window').width - 40 - 24;
-const CHILD_COL_WIDTH = Math.max(
-  44,
-  Math.floor((TREE_INNER_WIDTH - CHILD_ROW_GAP * 4) / 5) - 1,
-);
-const CHILD_AVATAR_SIZE = Math.min(46, CHILD_COL_WIDTH - 12);
+
+/**
+ * Ukuran kolom & avatar baris anak untuk lebar layar tertentu.
+ *
+ * Dulu ini dihitung SEKALI di luar komponen lewat `Dimensions.get('window')`.
+ * Angkanya jadi beku: di iPad yang jendelanya bisa berubah ukuran (Split
+ * View / Stage Manager) lebarnya tetap memakai angka saat layar ini pertama
+ * dimuat, jadi 5 kolomnya meleset. Sekarang lebarnya dibaca tiap render lewat
+ * useWindowDimensions().
+ */
+function childRowSizes(windowWidth: number) {
+  const inner = windowWidth - 40 - 24;
+  const col = Math.max(
+    44,
+    Math.floor((inner - CHILD_ROW_GAP * 4) / 5) - 1,
+  );
+  return { col, avatar: Math.min(46, col - 12) };
+}
 
 // Family Tree 👨‍👩‍👧‍👦 — silsilah ala The Sims: pohon 3 generasi yang
 // berpusat pada orang yang dipilih; click siapa pun → pohon pindah ke dia.
 export default function FamilyScreen() {
   const { user } = useAuth();
+  // Lebar layar SAAT INI — ikut berubah kalau jendela iPad diubah ukurannya.
+  const { width: windowWidth } = useWindowDimensions();
+  const anak = childRowSizes(windowWidth);
   // `focus` dikirim dari reminder ulang tahun di Home → pusatkan pohon ke orang itu.
   const { focus } = useLocalSearchParams<{ focus?: string }>();
 
@@ -259,7 +275,8 @@ export default function FamilyScreen() {
   const [fParents, setFParents] = useState<string[]>([]);
   const [fPartners, setFPartners] = useState<string[]>([]);
   const [fPhoto, setFPhoto] = useState<string | null>(null);
-  const [photoBusy, setPhotoBusy] = useState(false);
+  const foto = useBusyTask<'foto'>();
+  const photoBusy = foto.busy !== null;
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   // Picker mana yang sedang terbuka di form (hanya satu sekaligus, biar rapi).
@@ -361,17 +378,15 @@ export default function FamilyScreen() {
     setFPartners((prev) => (prev.includes(id) ? [] : [id]));
   }
 
-  async function handlePickPhoto() {
-    if (photoBusy) return;
-    setPhotoBusy(true);
-    try {
-      const photo = await pickCompressedPhoto();
-      if (photo) setFPhoto(photo);
-    } catch {
-      setFormError(PHOTO_ERROR);
-    } finally {
-      setPhotoBusy(false);
-    }
+  function handlePickPhoto() {
+    return foto.run({
+      key: 'foto',
+      task: async () => {
+        const photo = await pickCompressedPhoto();
+        if (photo) setFPhoto(photo);
+      },
+      fail: () => setFormError(PHOTO_ERROR),
+    });
   }
 
   async function handleSave() {
@@ -547,8 +562,8 @@ export default function FamilyScreen() {
                         <Avatar
                           key={c.id}
                           m={c}
-                          size={CHILD_AVATAR_SIZE}
-                          colWidth={CHILD_COL_WIDTH}
+                          size={anak.avatar}
+                          colWidth={anak.col}
                           today={today}
                           onSelect={setSelectedId}
                         />

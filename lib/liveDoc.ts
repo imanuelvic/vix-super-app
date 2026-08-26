@@ -262,3 +262,27 @@ export function liveDoc(
     }, IDLE_MS);
   };
 }
+
+/**
+ * Lepaskan sekumpulan langganan sekaligus — dipakai sebagai nilai kembalian
+ * `useEffect` yang memasang beberapa listener:
+ *
+ *   useEffect(() => {
+ *     if (!user) return;
+ *     const fail = () => setError(LOAD_ERROR);
+ *     return unsubscribeAll([
+ *       subscribeA(user.uid, setA, fail),
+ *       subscribeB(user.uid, setB, fail),
+ *     ]);
+ *   }, [user]);
+ *
+ * Sebelumnya blok ini disalin apa adanya di 24 layar (`const unsubs = […]`
+ * lalu `return () => unsubs.forEach((unsub) => unsub())`). Selain jadi
+ * panjang, bentuk lama itu memungkinkan seseorang menulis daftarnya tapi lupa
+ * mengembalikan pembersihnya — listenernya menggantung tanpa ada yang sadar.
+ * Dengan bentuk ini daftar & pembersihnya jadi satu ekspresi, jadi tidak bisa
+ * terpisah. Perilakunya sama persis dengan yang lama.
+ */
+export function unsubscribeAll(unsubs: (() => void)[]): () => void {
+  return () => unsubs.forEach((unsub) => unsub());
+}

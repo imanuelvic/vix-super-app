@@ -15,6 +15,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { PlacesTab } from '@/components/social/PlacesTab';
 import { SplitBillTab } from '@/components/social/SplitBillTab';
 import { useAuth } from '@/contexts/auth';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
   billUnsettled,
@@ -48,11 +49,10 @@ export default function SocialScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeBills(user.uid, setBills, fail),
       subscribePlaces(user.uid, setPlaces, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   return (

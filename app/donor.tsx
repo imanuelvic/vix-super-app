@@ -34,6 +34,7 @@ import {
   type DonorSchedule,
 } from '@/lib/donor';
 import { formatFullDate, formatMonthsDays } from '@/lib/format';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
 
@@ -73,7 +74,7 @@ export default function DonorScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeDonor(
         user.uid,
         (next) => {
@@ -83,8 +84,7 @@ export default function DonorScreen() {
         fail,
       ),
       subscribeHealthProfile(user.uid, setProfile, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   const today = new Date();

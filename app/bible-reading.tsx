@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { AchievementButton } from '@/components/common/AchievementButton';
 import { BibleRefField } from '@/components/common/BibleRefField';
 import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -15,8 +16,10 @@ import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
 import { useNow } from '@/hooks/useNow';
+import { BIBLE_CATEGORY } from '@/lib/achievements';
 import { formatMinutesLeft } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
   BIBLE_SKIPPED,
@@ -58,11 +61,10 @@ export default function BibleReadingScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubs = [
+    return unsubscribeAll([
       subscribeBibleReadingToday(user.uid, dayId, setToday),
       subscribeBibleStreaks(user.uid, setStreaks),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, dayId]);
 
   // Sudah pernah diisi hari ini → tampilkan lagi supaya bisa ditambah/dibetulkan.
@@ -144,6 +146,9 @@ export default function BibleReadingScreen() {
         backLabel="Home"
         title={`${meta.title} ${meta.emoji}`}
         subtitle="Pilih kitab, lalu isi pasal & ayatnya"
+        // Layar ini SATU sesi saja, jadi modal yang dibuka pun sesi itu:
+        // pagi 🌅 / siang 🌤️ / malam 🌙 — bukan daftar semua kategori.
+        right={<AchievementButton category={BIBLE_CATEGORY[session]} />}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -250,6 +255,33 @@ export default function BibleReadingScreen() {
           busy={busy}
           onPress={handleSkip}
         />
+
+        {/* OPSIONAL — bacaan hari ini jadi Story Instagram 9:16 bertanda
+            `vixtory.archive`, sekeluarga dengan Feed refleksi harian.
+            Acuannya dioper apa adanya lewat parameter (pendek), jadi Story
+            bisa dibuat walau bacaannya belum ditekan "Sudah baca". Baru
+            muncul setelah ada isinya — tanpa acuan tak ada yang bisa
+            dipajang. */}
+        {filled.length > 0 && (
+          <>
+            <View style={styles.storyDivider} />
+            <PressableScale
+              style={styles.storyRow}
+              onPress={() =>
+                router.push({
+                  pathname: '/bible-story',
+                  params: { session, refs: filled.join(', ') },
+                })
+              }>
+              <VixText heading="bold" additionalStyle={styles.storyText}>
+                📖 Bagikan ayatnya ke Instagram Story
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.storyHint}>
+                Pilih bacaannya, ketik ayatnya kalau mau — opsional
+              </VixText>
+            </PressableScale>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -272,6 +304,22 @@ const styles = StyleSheet.create({
   countdownText: { color: Color.ACCENT_DARK },
   countdownSoonText: { color: Color.DANGER },
   countdownSub: { color: Color.TEXT_LABEL },
+  // Pemisah tipis: yang di bawahnya bonus, bukan bagian dari mencatat bacaan.
+  storyDivider: {
+    height: 1,
+    backgroundColor: Color.BORDER,
+    marginTop: 22,
+    marginBottom: 14,
+  },
+  storyRow: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 2,
+  },
+  storyText: { color: Color.SPIRITUAL_DARK },
+  storyHint: { color: Color.SPIRITUAL_DARK },
   refCard: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 18,

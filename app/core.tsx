@@ -43,6 +43,7 @@ import {
     type Visitation,
 } from '@/lib/core';
 import { dayDocId } from '@/lib/health';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
 type CoreTab =
@@ -117,7 +118,7 @@ export default function CoreScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeCoreLeaders(
         user.uid,
         (next) => {
@@ -133,8 +134,7 @@ export default function CoreScreen() {
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers, fail),
       subscribeMonthlyMeetings(user.uid, setMeetings, fail),
       subscribeWeeklyFocus(user.uid, setWeeklyFocus, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   return (
@@ -146,8 +146,9 @@ export default function CoreScreen() {
         // Tombol kanan atas menyesuaikan tab yang aktif:
         // Visitation → 📜 Rules & Suggestions + 🕘 riwayat visitasi ·
         // Follow Up → 💬 template chat + 🙏 pokok doa bulanan ·
-        // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang).
-        // Monthly & Multiplication belum punya halaman pendamping.
+        // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang) ·
+        // Multiplication → 🧭 Pedoman Calon CORE Leader.
+        // Monthly belum punya halaman pendamping.
         right={
           tab === 'visitation' ? (
             <View style={styles.headerButtons}>
@@ -175,6 +176,15 @@ export default function CoreScreen() {
             </View>
           ) : tab === 'leaders' ? (
             <EmojiButton emoji="🗂️" onPress={() => router.push('/ex-leaders')} />
+          ) : tab === 'multiplication' ? (
+            /* Pedoman 🧭 — dua lembar sekaligus: syarat calon CORE Leader
+               baru, dan tugas yang dipegangnya setelah memimpin. Tempatnya di
+               sini karena keduanya dibaca tiap kali menyiapkan siapa yang akan
+               memimpin CORE hasil pemekaran. */
+            <EmojiButton
+              emoji="🧭"
+              onPress={() => router.push('/leader-criteria')}
+            />
           ) : undefined
         }
       />

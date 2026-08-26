@@ -24,6 +24,7 @@ import {
   type CarLog,
   type PartStatusMap,
 } from '@/lib/car';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
 type CarTab = 'log' | 'parts' | 'info';
@@ -52,7 +53,7 @@ export default function CarScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeCarLogs(
         user.uid,
         (next) => {
@@ -62,8 +63,7 @@ export default function CarScreen() {
         fail,
       ),
       subscribePartStatus(user.uid, setParts, fail),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user]);
 
   return (

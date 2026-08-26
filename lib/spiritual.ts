@@ -211,6 +211,20 @@ export function bibleMinutesLeft(session: BibleSession, now: Date): number {
 }
 
 /**
+ * Jendela sesi ini sudah lewat? Dipakai baris cermin di Habits untuk memberi
+ * tanda ✗ SENDIRI: sesi yang jamnya habis tanpa dibaca memang tidak dikerjakan,
+ * jadi barisnya tidak boleh dibiarkan menggantung seolah masih bisa dikejar.
+ *
+ * Catatan sesi Malam: jendelanya tutup jam 24.00, dan pada jam itu juga id
+ * harinya sudah berganti — jadi baris Malam tidak pernah sempat terlihat dalam
+ * keadaan "lewat" di layar Habits. Itu memang benar, bukan kelalaian: selama
+ * masih hari ini, malam masih bisa dikejar.
+ */
+export function bibleWindowPassed(session: BibleSession, now: Date): boolean {
+  return bibleMinutesLeft(session, now) <= 0;
+}
+
+/**
  * Penanda "hari ini dilewati" — disimpan di kolom yang sama dengan bacaannya.
  * Gunanya: kartu reminder di Home berhenti menagih untuk hari itu, TAPI
  * streak 🔥 sengaja TIDAK naik — dilewati ya dilewati, tidak dihitung baca.
@@ -252,10 +266,18 @@ export function bibleSessionRead(
 export function bibleMirrorState(
   sessions: BibleReadingSessions,
   session: BibleSession,
+  now: Date,
 ): { done: boolean; skipped: boolean } {
+  const done = bibleSessionRead(sessions, session);
   return {
-    done: bibleSessionRead(sessions, session),
-    skipped: isBibleSkipped(sessions[session]),
+    done,
+    skipped:
+      // Ditandai lewat sendiri di layar Baca Alkitab…
+      isBibleSkipped(sessions[session]) ||
+      // …ATAU jamnya memang sudah habis tanpa dibaca. Yang kedua ini tidak
+      // bisa dibatalkan lagi dari Habits — waktunya sudah lewat, dan angka
+      // hariannya harus jujur.
+      (!done && bibleWindowPassed(session, now)),
   };
 }
 

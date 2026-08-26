@@ -655,11 +655,18 @@ export function HabitsTab({
                   {/* Getaran "berhasil" khusus saat MENCENTANG — melepas
                       centang cukup click biasa. Yang sudah dilewati tidak
                       bisa dicentang: batalkan ✗ dulu. */}
+                  {/* Baris cermin yang perkaranya SUDAH SELESAI — tercentang
+                      (mis. Bible Reading-nya sudah diisi) atau ✗ karena jendela
+                      jamnya habis — lingkarannya mati total, tidak lagi bisa
+                      diklik. Dulu ia masih membuka layar asalnya, dan itu
+                      menyesatkan: yang sudah lewat waktunya memang tak bisa
+                      diapa-apakan lagi dari sini. Nama kebiasaannya tetap bisa
+                      diklik kalau mau melihat catatannya. */}
                   <PressableScale
                     onPress={() =>
                       mirrored ? openHabitLink(link!) : handleToggle(habit)
                     }
-                    disabled={fromNote || (skipped && !mirrored)}
+                    disabled={fromNote || skipped || (mirrored && checked)}
                     hitSlop={8}
                     haptic={checked || mirrored ? 'light' : 'success'}>
                     <CheckCircle

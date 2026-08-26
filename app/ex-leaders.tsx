@@ -21,6 +21,7 @@ import {
   type ExLeader,
 } from '@/lib/core';
 import { dayIdToDate, formatShortDate, MONTH_NAMES } from '@/lib/format';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Arsip Ex CORE Leader 🗂️ — CL yang sudah tidak digembalakan lagi, beserta
@@ -42,7 +43,7 @@ export default function ExLeadersScreen() {
   useEffect(() => {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeCoreLeaders(
         user.uid,
         (l) => {
@@ -52,8 +53,7 @@ export default function ExLeadersScreen() {
         fail,
       ),
       subscribeExLeaders(user.uid, setExLeaders, fail),
-    ];
-    return () => unsubs.forEach((u) => u());
+    ]);
   }, [user]);
 
   const today = new Date();

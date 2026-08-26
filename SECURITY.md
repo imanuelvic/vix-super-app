@@ -15,6 +15,7 @@ yang masih perlu kamu klik sendiri di Console, dan kenapa.
 | Isolasi antar-akun | `request.auth.uid == userId` di rules — tiap akun hanya bisa menyentuh cabangnya sendiri. |
 | Firebase Storage | Tidak dipakai sama sekali (foto disimpan sebagai base64 di Firestore). Rules-nya tetap dipasang sebagai penutup. |
 | Hapus data | Selalu permanen (hard delete), tidak ada data "terhapus" yang diam-diam masih tersimpan. |
+| Repo di-clone orang | Tanpa `.env`, aplikasi **tidak menghubungi Firebase mana pun**: Auth sengaja tidak diinisialisasi sama sekali dan layar Login menampilkan "belum dikonfigurasi". Tidak ada jalur diam-diam ke proyek pemilik. |
 
 ### Firebase Web API Key itu BUKAN rahasia
 
@@ -26,6 +27,22 @@ memberi akses. Yang menentukan siapa boleh baca/tulis adalah Security Rules.
 Yang **BENAR-BENAR rahasia** dan tidak boleh pernah masuk repo maupun aplikasi:
 service account Admin SDK (`*-firebase-adminsdk-*.json`). Itu bisa melewati
 SEMUA rules. Sudah masuk `.gitignore`.
+
+### Satu jalur nyantol yang perlu diketahui: EAS Update
+
+`app.json` memuat `owner`, `extra.eas.projectId`, dan `updates.url` — itu
+identitas proyek **EAS milik pemilik**, dan memang harus ada supaya `eas build`
+/ `eas update` jalan.
+
+Akibatnya: orang yang meng-clone repo ini lalu mem-build **secara lokal** tanpa
+mengganti nilai itu, aplikasinya masih menunjuk endpoint pembaruan pemilik.
+Yang bisa dia dapat hanyalah bundel JavaScript yang memang sudah publik di repo
+ini — datanya tetap tak tersentuh karena dijaga Security Rules. Tapi ia ikut
+memakai kuota pembaruan pemilik.
+
+Karena itu `README.md` mewajibkan langkah `eas init` bagi yang meng-clone.
+Kalau suatu saat mau menutup jalur ini rapat-rapat, pindahkan ketiga nilai itu
+ke `app.config.ts` yang membacanya dari variabel lingkungan.
 
 ---
 

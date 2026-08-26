@@ -155,6 +155,7 @@ import {
   subscribeSermons,
   type SermonNote,
 } from '@/lib/sermon';
+import { unsubscribeAll } from '@/lib/liveDoc';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import {
   activeFasting,
@@ -242,7 +243,7 @@ export default function DashboardScreen() {
     if (!user) return;
     const nowQ = quarterOf(new Date());
     const wheelQid = quarterDocId(nowQ.year, nowQ.q);
-    const unsubs = [
+    return unsubscribeAll([
       subscribeLearningWeek(user.uid, weekId, setLearningWeek),
       subscribeTopicsDone(user.uid, setTopicsDone),
       subscribeWheel(user.uid, wheelQid, setWheel),
@@ -271,8 +272,7 @@ export default function DashboardScreen() {
       subscribeFun(user.uid, setFun),
       subscribePartStatus(user.uid, setCarParts),
       subscribeChoreStatus(user.uid, setResidenceChores),
-    ];
-    return () => unsubs.forEach((unsub) => unsub());
+    ]);
   }, [user, todayId, weekId]);
 
   // Kebiasaan harian (sama tiap hari) — untuk reminder sesi.
