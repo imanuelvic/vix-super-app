@@ -342,6 +342,25 @@ export const FITNESS_HABIT_ID = 'fitness-link';
 // Warnanya sengaja mengikuti warna ubin fitur tujuannya di Home (atau warna
 // merek aplikasi luar), jadi tujuannya sudah kebaca sebelum teksnya dibaca.
 
+/**
+ * Sumber centang OTOMATIS sebuah baris kebiasaan.
+ *
+ * Baris begini tidak bisa dicentang manual di Habits — buktinya ada di layar
+ * lain, dan mencentangnya sendiri di sini cuma bikin angka hariannya bohong.
+ * Lingkarannya dikunci abu-abu, dan click-nya membuka layar tujuannya.
+ *
+ * Aturan "sudah"-nya masing-masing:
+ *   fitness       → semua gerakan sesi hari ini beres (lib/fitness.ts)
+ *   priority      → ketiga Daily Priority sudah diisi
+ *   bible-*       → bacaan sesi itu sudah dicatat lewat "✅ Sudah baca"
+ */
+export type HabitMirror =
+  | 'fitness'
+  | 'priority'
+  | 'bible-morning'
+  | 'bible-daytime'
+  | 'bible-night';
+
 export type HabitLink = {
   /** Cocokkan lewat id tetap — dipakai baris olahraga gabungan. */
   id?: string;
@@ -367,10 +386,10 @@ export type HabitLink = {
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
   external?: { scheme: string; web: string };
   /**
-   * true = centangnya TIDAK di-click di Habits, melainkan ikut layar tujuan.
+   * Ada = centangnya TIDAK di-click di Habits, melainkan ikut layar tujuan.
    * Baris begini dikunci: lingkarannya abu-abu & click-nya membuka tujuan.
    */
-  mirror?: boolean;
+  mirrorOf?: HabitMirror;
 };
 
 // Urutan penting: yang lebih spesifik diperiksa duluan. "Revive + IG Story" &
@@ -381,7 +400,7 @@ export const HABIT_LINKS: HabitLink[] = [
     note: 'Dicentang dari fitur Fitness',
     color: Color.FITNESS_DARK,
     route: { pathname: '/fitness' },
-    mirror: true,
+    mirrorOf: 'fitness',
   },
   {
     match: /\b(ig|instagram)\b/i,
@@ -401,37 +420,73 @@ export const HABIT_LINKS: HabitLink[] = [
     color: Color.DANGER,
     route: { pathname: '/health', params: { tab: 'diet' } },
   },
-  // Top 3 Priorities — sekarang punya layarnya sendiri (Daily Priority 💡),
-  // jadi barisnya tidak lagi cuma centang tanpa isi.
+  // Top 3 Priorities — punya layarnya sendiri (Daily Priority 💡), dan
+  // centangnya ikut layar itu: tercentang begitu ketiga prioritas hari ini
+  // terisi. Mencentangnya di sini tanpa menuliskan apa-apa cuma bikin bohong.
   {
     match: /top 3 priorit/i,
-    note: 'Buka Daily Priority 💡',
+    note: 'Dicentang dari Daily Priority 💡',
     color: Color.MAIN_DARK,
     route: { pathname: '/daily-priority' },
+    mirrorOf: 'priority',
   },
   // Baca Alkitab pagi, siang & malam — tujuannya layar yang sama dengan kartu
-  // di Home, jadi click dari mana pun mendarat di tempat yang sama.
+  // di Home, jadi click dari mana pun mendarat di tempat yang sama. Ketiganya
+  // ikut catatan bacaannya: tercentang sesudah "✅ Sudah baca" di sana.
   {
     match: /morning bible reading/i,
-    note: 'Buka Baca Alkitab › Pagi',
+    note: 'Dicentang dari Baca Alkitab › Pagi',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/bible-reading', params: { session: 'morning' } },
+    mirrorOf: 'bible-morning',
   },
-  // Belum ada kebiasaan bernama ini di daftarmu — pintasannya disiapkan supaya
-  // begitu kamu menambahkannya, click-nya langsung mendarat di sesi Siang.
   {
     match: /midday bible reading/i,
-    note: 'Buka Baca Alkitab › Siang',
+    note: 'Dicentang dari Baca Alkitab › Siang',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/bible-reading', params: { session: 'daytime' } },
+    mirrorOf: 'bible-daytime',
   },
   {
     match: /night bible reading/i,
-    note: 'Buka Baca Alkitab › Malam',
+    note: 'Dicentang dari Baca Alkitab › Malam',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/bible-reading', params: { session: 'night' } },
+    mirrorOf: 'bible-night',
   },
 ];
+
+/** Sumber centang otomatis baris ini (null = dicentang sendiri seperti biasa). */
+export function habitMirror(h: ScheduledHabit): HabitMirror | null {
+  return habitLink(h)?.mirrorOf ?? null;
+}
+
+// ---- Baris "📖 Midday Bible Reading" ----
+// Baca Alkitab punya TIGA sesi (lib/spiritual.ts) tapi daftar kebiasaan cuma
+// punya baris Pagi & Malam — sesi Siang tidak pernah tertagih di Habits.
+// Barisnya disisipkan sekali saat layar Habits dibuka.
+export const BIBLE_DAYTIME_HABIT_ID = 'bible-daytime-link';
+
+const MIDDAY_BIBLE: ScheduledHabit = {
+  id: BIBLE_DAYTIME_HABIT_ID,
+  label: '📖 Midday Bible Reading',
+  slot: 'daytime',
+  area: 'spirit',
+  tier: 'core',
+};
+
+/**
+ * Daftar kebiasaan + baris Siang-nya kalau memang belum ada.
+ * null = sudah ada → JANGAN menulis apa pun ke Firestore.
+ */
+export function withMiddayBible(
+  habits: ScheduledHabit[],
+): ScheduledHabit[] | null {
+  const sudahAda = habits.some(
+    (h) => h.id === BIBLE_DAYTIME_HABIT_ID || /midday bible reading/i.test(h.label),
+  );
+  return sudahAda ? null : [...habits, MIDDAY_BIBLE];
+}
 
 /**
  * Kebiasaan berpintasan itu WAJIB: ia mencerminkan sesuatu yang dikerjakan di

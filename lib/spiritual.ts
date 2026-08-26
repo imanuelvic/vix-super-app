@@ -224,6 +224,41 @@ export function isBibleSkipped(passage: string): boolean {
 /** Isi ketiga sesi dalam satu hari ("" = belum diisi). */
 export type BibleReadingSessions = Record<BibleSession, string>;
 
+/**
+ * Sesi ini benar-benar SUDAH DIBACA hari itu?
+ *
+ * Bukan sekadar "ada isinya": hari yang ditandai dilewati (`__skip__`) juga
+ * tersimpan di kolom yang sama, dan itu jelas bukan membaca. Dipakai baris
+ * cermin Baca Alkitab di Habits — aturannya harus SATU supaya centang di
+ * Habits tak mungkin beda pendapat dengan catatan bacaannya.
+ */
+export function bibleSessionRead(
+  sessions: BibleReadingSessions,
+  session: BibleSession,
+): boolean {
+  const isi = sessions[session];
+  return !!isi && !isBibleSkipped(isi);
+}
+
+/**
+ * Keadaan yang SEHARUSNYA tampil di baris cermin Baca Alkitab di Habits.
+ *
+ * Bentuknya sama dengan `fitMirrorState` (lib/fitness.ts) supaya layar Habits
+ * memperlakukan semua baris cermin dengan cara yang sama. Termasuk tanda
+ * dilewati: sesi yang kamu tandai lewat di layar Baca Alkitab membuat barisnya
+ * bertanda ✗ juga — kalau tidak, baris itu tak akan pernah bisa dilewati
+ * (tombol ✗-nya memang tidak ada di baris cermin).
+ */
+export function bibleMirrorState(
+  sessions: BibleReadingSessions,
+  session: BibleSession,
+): { done: boolean; skipped: boolean } {
+  return {
+    done: bibleSessionRead(sessions, session),
+    skipped: isBibleSkipped(sessions[session]),
+  };
+}
+
 /** Berapa sesi LAIN di hari itu yang sudah terisi. */
 function otherFilled(
   sessions: BibleReadingSessions,

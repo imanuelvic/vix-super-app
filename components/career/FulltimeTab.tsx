@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -70,8 +70,10 @@ export function FulltimeTab({
   const [fTitle, setFTitle] = useState('');
   const [fPic, setFPic] = useState('');
   const [fNote, setFNote] = useState('');
-  const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
-  const [fStatus, setFStatus] = useState<RoadmapStatus>('todo');
+  // Yang KAMU pilih di chip. Nilai efektifnya (setelah aturan H-7) diturunkan
+  // di bawah — lihat `fPriority` & `fStatus`.
+  const [pickPriority, setFPriority] = useState<1 | 2 | 3>(2);
+  const [pickStatus, setFStatus] = useState<RoadmapStatus>('todo');
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
   // menekan dengan tenggat).
   const [fBacklog, setFBacklog] = useState(false);
@@ -84,14 +86,19 @@ export function FulltimeTab({
   // Backlog (tanpa deadline) & yang sudah Selesai tidak kena aturan ini.
   const urgent =
     !fBacklog &&
-    fStatus !== 'done' &&
+    pickStatus !== 'done' &&
     daysBetween(new Date(), fDeadline) <= CAREER_REMINDER_DAYS;
 
-  useEffect(() => {
-    if (!urgent) return;
-    setFPriority((p) => (p === 1 ? p : 1));
-    setFStatus((s) => (s === 'todo' ? 'progress' : s));
-  }, [urgent]);
+  // Nilai yang DIPAKAI (tampil di chip & yang disimpan). Dihitung saat render
+  // dari pilihanmu + jendela H-7, bukan didorong balik ke state lewat efek.
+  //
+  // Hasilnya sama persis — `handleSave` memang sudah menegakkan aturan ini
+  // sendiri — tapi tanpa efek, aturannya berlaku "SELAMA masih H-7" seperti
+  // yang tertulis di atas. Dulu, sekali efeknya jalan, P1-nya menempel walau
+  // deadline-nya kamu geser jauh lagi.
+  const fPriority: 1 | 2 | 3 = urgent ? 1 : pickPriority;
+  const fStatus: RoadmapStatus =
+    urgent && pickStatus === 'todo' ? 'progress' : pickStatus;
 
   // Sudah Selesai → pilihan deadline/backlog disembunyikan (tidak relevan lagi).
   const isDone = fStatus === 'done';
@@ -165,9 +172,9 @@ export function FulltimeTab({
       title: fTitle.trim(),
       pic: fPic.trim(), // string kosong = tanpa PIC (hindari undefined ke Firestore)
       note: fNote.trim(),
-      // Aturan H-7 ditegakkan juga di sini (tidak bergantung timing efek).
-      priority: urgent ? 1 : fPriority,
-      status: urgent && fStatus === 'todo' ? 'progress' : fStatus,
+      // Sudah termasuk aturan H-7 (lihat penurunannya di atas).
+      priority: fPriority,
+      status: fStatus,
       deadline: fBacklog ? null : Timestamp.fromDate(fDeadline),
     };
     const next =

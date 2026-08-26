@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -60,7 +60,8 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   const [editing, setEditing] = useState<OtherTask | 'new' | null>(null);
   const [fTitle, setFTitle] = useState('');
   const [fNote, setFNote] = useState('');
-  const [fPriority, setFPriority] = useState<1 | 2 | 3>(2);
+  // Yang KAMU pilih di chip; nilai efektifnya diturunkan di bawah (`fPriority`).
+  const [pickPriority, setFPriority] = useState<1 | 2 | 3>(2);
   const [fCategory, setFCategory] = useState<TaskCategory>('personal');
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
   const [formError, setFormError] = useState<string | null>(null);
@@ -70,11 +71,13 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   const [filterCat, setFilterCat] = useState<TaskCategory | null>(null);
 
   // Tenggat tinggal ≤ 7 hari (termasuk lewat) → otomatis P1 & terkunci.
+  //
+  // Dihitung saat render dari pilihanmu + tenggatnya, bukan didorong balik ke
+  // state lewat efek. Hasilnya sama — `handleSave` memang sudah menegakkan
+  // aturan yang sama — bedanya P1-nya sekarang benar-benar berlaku "selama
+  // masih H-7": geser tenggatnya jauh lagi, pilihan aslimu balik.
   const urgent = daysBetween(new Date(), fDeadline) <= OTHER_REMINDER_DAYS;
-  useEffect(() => {
-    if (!urgent) return;
-    setFPriority((p) => (p === 1 ? p : 1));
-  }, [urgent]);
+  const fPriority: 1 | 2 | 3 = urgent ? 1 : pickPriority;
 
   const today = new Date();
   const sorted = items
@@ -129,11 +132,11 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     setBusy(true);
     setFormError(null);
     try {
-      // Aturan H-7 ditegakkan di sini juga, tidak bergantung timing effect.
       const data = {
         title: fTitle.trim(),
         note: fNote.trim(),
-        priority: (urgent ? 1 : fPriority) as 1 | 2 | 3,
+        // Sudah termasuk aturan H-7 (lihat penurunannya di atas).
+        priority: fPriority,
         category: fCategory,
         deadline: fDeadline,
       };

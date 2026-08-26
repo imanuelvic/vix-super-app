@@ -1523,8 +1523,9 @@ export function monthlyPrayersFilled(data: MonthlyPrayers, now: Date): boolean {
 // Jadwalnya SENGAJA dikunci sama dengan Doa Syafaat (lib/intercession.ts):
 // Selasa & Kamis di sana memang bertopik "🔗 Doa Rantai CL". Dulu Sabtu ikut,
 // padahal syafaat Sabtu bertopik ⛪ Gereja — akibatnya gerbang doa pagi Sabtu
-// punya 4 langkah sementara hari lain 3. Sekarang selalu 3: Revive → (Doa
-// Rantai ATAU Doa Syafaat) → Bapa Kami.
+// punya satu langkah lebih banyak dari hari lain. Sekarang jumlahnya selalu
+// sama: Revive → (Doa Rantai ATAU Doa Syafaat) → Memuji & Menyembah →
+// Bapa Kami.
 const PRAYER_FOLLOWUP_DAYS = [2, 4];
 const PRAYER_FOLLOWUP_COUNT = 4; // CL yang difokuskan tiap sesi (bergilir)
 

@@ -23,6 +23,11 @@ dan janganlah membawa kami ke dalam pencobaan, tetapi lepaskanlah kami dari pada
 
 Karena Engkaulah yang empunya Kerajaan dan kuasa dan kemuliaan sampai selama-lamanya. Amin.`;
 
+// Ayat pengiring langkah memuji & menyembah (Mazmur 95:1–2, TB).
+const MAZMUR_95 = `Marilah kita bersorak-sorai untuk TUHAN, bersorak-sorak bagi gunung batu keselamatan kita.
+
+Biarlah kita menghadap wajah-Nya dengan nyanyian syukur, bersorak-sorak bagi-Nya dengan nyanyian mazmur.`;
+
 // Lock screen doa pagi — muncul sekali/hari (batas jam 4 pagi) DI MANA PUN
 // posisi kamu di app. Tidak bisa dilewati; harus Revive + doa Bapa Kami, dan
 // kalau hari ini jadwal Doa Rantai, follow up-nya jadi langkah ke-3.
@@ -78,6 +83,7 @@ export function MorningPrayerGate({
 }) {
   const [prayed, setPrayed] = useState(false);
   const [interceded, setInterceded] = useState(false);
+  const [worshiped, setWorshiped] = useState(false);
   // CL mana yang pokok doanya sedang dibuka (null = semua tertutup). Satu saja
   // pada satu waktu — supaya gerbangnya tetap pendek & fokus.
   const [openChain, setOpenChain] = useState<string | null>(null);
@@ -94,14 +100,21 @@ export function MorningPrayerGate({
   const showIntercession = !chainIsToday || !chainDue;
 
   // Nomor langkah dihitung dari langkah mana saja yang muncul hari ini.
+  // Urutannya tetap: Revive → (Doa Rantai) → (Doa Syafaat) → Memuji &
+  // Menyembah → Bapa Kami. Dua di tengah bisa absen tergantung hari; memuji &
+  // menyembah dan Bapa Kami SELALU ada.
   const nChain = 2;
   const nIntercession = chainDue ? 3 : 2;
-  const stepCount =
-    2 + (chainDue ? 1 : 0) + (showIntercession ? 1 : 0); // Revive + … + Bapa Kami
+  const nWorship = 2 + (chainDue ? 1 : 0) + (showIntercession ? 1 : 0);
+  const stepCount = nWorship + 1; // + Bapa Kami sebagai penutup
   const nPrayer = stepCount;
 
   const ready =
-    prayed && reviveDone && chainDone && (!showIntercession || interceded);
+    prayed &&
+    worshiped &&
+    reviveDone &&
+    chainDone &&
+    (!showIntercession || interceded);
 
   // Peringatan mulai muncul 1 jam sebelum tutup. Lewat jam 09.00 doa pagi
   // hari ini terlewat sendiri — gerbangnya menghilang & streak 🔥 hangus.
@@ -298,6 +311,38 @@ export function MorningPrayerGate({
           </Animated.View>
         )}
 
+        {/* Memuji & menyembah — tepat sebelum Bapa Kami. Ditaruh di sini
+            dengan sengaja: sesudah membawa beban orang lain (syafaat), hati
+            diangkat kepada Dia sendiri dulu, baru menutup dengan doa yang
+            diajarkan Tuhan Yesus. Tiap hari, tanpa kecuali. */}
+        <Animated.View
+          entering={FadeInDown.delay(300).duration(350)}
+          style={styles.stepCard}>
+          <VixText heading="title" additionalStyle={styles.stepTitle}>
+            {nWorship}. Memuji & Menyembah 🎶
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.stepHint}>
+            Nyanyikan bagi Dia — satu lagu pun cukup. Bukan pemanasan sebelum
+            berdoa; ini bagian dari doanya sendiri.
+          </VixText>
+          <View style={styles.prayerBox}>
+            <VixText heading="paragraph" additionalStyle={styles.prayerText}>
+              {MAZMUR_95}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.verseRef}>
+              — Mazmur 95:1–2
+            </VixText>
+          </View>
+          <PressableScale
+            style={styles.checkRow}
+            onPress={() => setWorshiped((v) => !v)}>
+            <CheckCircle checked={worshiped} />
+            <VixText heading="bold" additionalStyle={styles.checkText}>
+              Sudah memuji & menyembah Tuhan
+            </VixText>
+          </PressableScale>
+        </Animated.View>
+
         {/* Langkah terakhir: Bapa Kami */}
         <Animated.View
           entering={FadeInDown.delay(120).duration(350)}
@@ -414,6 +459,8 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   prayerText: { color: Color.TEXT_TITLE, lineHeight: 24 },
+  // Sumber ayat — sewarna judul fitur Spiritual, rata kanan seperti kutipan.
+  verseRef: { color: Color.SPIRITUAL_DARK, textAlign: 'right', marginTop: 8 },
   // Butir pokok doa syafaat — sedikit lebih rapat dari teks Bapa Kami.
   pointText: { color: Color.TEXT_TITLE, lineHeight: 22 },
   // Kartu pokok doa 1 CORE Leader di dalam langkah Doa Rantai.

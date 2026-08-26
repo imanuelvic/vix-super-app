@@ -37,10 +37,10 @@ import {
   habitArea,
   habitLink,
   habitNoteDone,
-  isFixedHabit,
-  isNoteDrivenHabit,
   habitsBySlot,
   habitTier,
+  isFixedHabit,
+  isNoteDrivenHabit,
   newHabitId,
   saveHabits,
   slotMeta,
@@ -625,9 +625,10 @@ export function HabitsTab({
             // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
             // dapat keterangan kecil + click yang langsung ke sana.
             const link = habitLink(habit);
-            // Baris cermin (olahraga): centangnya datang dari fitur Fitness,
-            // jadi di sini ia cuma penunjuk keadaan + pintasan ke sana.
-            const fromFitness = link?.mirror === true;
+            // Baris cermin (olahraga, Top 3 Priorities, Baca Alkitab):
+            // centangnya datang dari layar tempat pekerjaannya benar-benar
+            // dilakukan, jadi di sini ia cuma penunjuk keadaan + pintasan.
+            const mirrored = link?.mirrorOf !== undefined;
             // Baris bercatatan (Rhema): centangnya ditentukan tulisannya, jadi
             // lingkarannya dikunci — mencentang tanpa menulis itu bohong.
             const fromNote = isNoteDrivenHabit(habit);
@@ -656,15 +657,15 @@ export function HabitsTab({
                       bisa dicentang: batalkan ✗ dulu. */}
                   <PressableScale
                     onPress={() =>
-                      fromFitness ? openHabitLink(link!) : handleToggle(habit)
+                      mirrored ? openHabitLink(link!) : handleToggle(habit)
                     }
-                    disabled={fromNote || (skipped && !fromFitness)}
+                    disabled={fromNote || (skipped && !mirrored)}
                     hitSlop={8}
-                    haptic={checked || fromFitness ? 'light' : 'success'}>
+                    haptic={checked || mirrored ? 'light' : 'success'}>
                     <CheckCircle
                       checked={checked}
                       skipped={skipped}
-                      locked={fromFitness || fromNote}
+                      locked={mirrored || fromNote}
                     />
                   </PressableScale>
                   {/* Nama kebiasaan tidak bisa ditekan — ubah/urutkan/hapus
@@ -695,10 +696,10 @@ export function HabitsTab({
                   <View style={styles.rowActions}>
                     {/* ✗ → lewati kebiasaan ini KHUSUS hari ini (tekan lagi =
                         batal). Bukan hapus: daftarnya tetap utuh besok.
-                        Baris olahraga tidak punya tombol ini: melewati latihan
-                        dilakukan di fitur Fitness, biar tandanya tidak bisa
-                        beda antara dua layar. */}
-                    {!fromFitness && (
+                        Baris cermin tidak punya tombol ini: melewatinya
+                        dilakukan di layar asalnya (Fitness / Baca Alkitab),
+                        biar tandanya tidak bisa beda antara dua layar. */}
+                    {!mirrored && (
                       <PressableScale
                         style={[styles.skipButton, skipped && styles.skipButtonOn]}
                         onPress={() => handleSkip(habit)}

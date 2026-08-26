@@ -27,11 +27,17 @@ import {
 } from '@/lib/fitness';
 import {
   FITNESS_HABIT_ID,
+  habitMirror,
+  saveHabits,
   subscribeHabitSchedule,
+  withMiddayBible,
+  type HabitMirror,
   type ScheduledHabit,
 } from '@/lib/habits';
 import {
   activeStreak,
+  setHabitDone,
+  setHabitSkipped,
   subscribeHabitDay,
   subscribeHealthProfile,
   subscribeStreak,
@@ -42,6 +48,47 @@ import {
   type WeightTarget,
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
+import {
+  PRIORITY_COUNT,
+  priorityFilled,
+  subscribePriorityDay,
+  type PriorityItem,
+} from '@/lib/priority';
+import {
+  bibleMirrorState,
+  subscribeBibleReadingToday,
+  type BibleReadingSessions,
+  type BibleSession,
+} from '@/lib/spiritual';
+
+// Baris cermin Baca Alkitab → sesi mana yang jadi acuannya.
+const MIRROR_SESSION: Record<string, BibleSession> = {
+  'bible-morning': 'morning',
+  'bible-daytime': 'daytime',
+  'bible-night': 'night',
+};
+
+/**
+ * Keadaan yang SEHARUSNYA tampil di baris cermin ini hari ini.
+ *
+ * Daily Priority tidak punya "dilewati" — tiga prioritas itu memang diisi atau
+ * tidak. Jadi skipped-nya selalu false; kalau barisnya pernah ditandai ✗ dulu,
+ * tanda itu dilepas sekali (tombol ✗-nya sudah tidak ada di baris cermin, jadi
+ * membiarkannya berarti tandanya tak akan pernah bisa dibatalkan).
+ */
+function mirrorState(
+  kind: HabitMirror,
+  priorities: PriorityItem[],
+  bible: BibleReadingSessions,
+): { done: boolean; skipped: boolean } {
+  if (kind === 'priority') {
+    return {
+      done: priorityFilled(priorities) === PRIORITY_COUNT,
+      skipped: false,
+    };
+  }
+  return bibleMirrorState(bible, MIRROR_SESSION[kind]);
+}
 
 export default function HabitsScreen() {
   const { user } = useAuth();
@@ -64,6 +111,12 @@ export default function HabitsScreen() {
   const [target, setTarget] = useState<WeightTarget | null | undefined>(undefined);
   const [streak, setStreak] = useState<Streak | null | undefined>(undefined);
   const [fitDay, setFitDay] = useState<FitDay | null>(null);
+  // Dua sumber centang otomatis lain (Daily Priority & catatan Baca Alkitab).
+  // Bukan untuk ditampilkan — hanya untuk menyelaraskan baris cerminnya.
+  // Dokumen yang sama sudah didengarkan Home untuk badge, dan liveDoc memakai
+  // listener bersama, jadi tidak menambah pembacaan Firestore.
+  const [priorities, setPriorities] = useState<PriorityItem[] | null>(null);
+  const [bible, setBible] = useState<BibleReadingSessions | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Lewat tengah malam id harinya ikut berganti sendiri — ceklis kembali
@@ -90,9 +143,20 @@ export default function HabitsScreen() {
       // (lihat efek di bawah). Listener-nya dipakai bersama lewat liveDoc,
       // jadi tidak menambah pembacaan Firestore.
       subscribeFitDay(user.uid, dayId, setFitDay),
+      subscribePriorityDay(user.uid, dayId, setPriorities),
+      subscribeBibleReadingToday(user.uid, dayId, setBible),
     ];
     return () => unsubs.forEach((unsub) => unsub());
   }, [user, dayId]);
+
+  // Baris "📖 Midday Bible Reading" disisipkan sekali kalau belum ada — Baca
+  // Alkitab punya tiga sesi, jadi Siang pun harus tertagih di Habits. Menulis
+  // HANYA kalau memang belum ada; sesudah itu tidak pernah menulis lagi.
+  useEffect(() => {
+    if (!user || !schedule) return;
+    const next = withMiddayBible(schedule);
+    if (next) saveHabits(user.uid, next).catch(() => undefined);
+  }, [user, schedule]);
 
   // Baris "🏋️ Morning Exercise" dicerminkan dari fitur Fitness saat gerakan
   // dicentang di sana. Sesi yang beres SEBELUM cermin ini ada — atau tulis yang
@@ -110,6 +174,32 @@ export default function HabitsScreen() {
       syncFitnessHabit(user.uid, dayId, want.done);
     }
   }, [user, dayId, day, fitDay]);
+
+  // Baris cermin lainnya: "💡 Top 3 Priorities" & ketiga "Bible Reading".
+  // Centangnya ikut layar tempat pekerjaannya benar-benar dilakukan, jadi
+  // angka harian di Habits tak mungkin beda dengan isi layar itu.
+  //
+  // Caranya sama persis dengan baris olahraga di atas: tanda ✗ diurus lebih
+  // dulu (setHabitSkipped sekalian melepas centangnya, jadi tak perlu tulis
+  // kedua), dan menulis HANYA kalau memang berbeda — normalnya nol tulis.
+  useEffect(() => {
+    if (!user || !day || !schedule || !priorities || !bible) return;
+    for (const habit of schedule) {
+      const kind = habitMirror(habit);
+      // 'fitness' punya efeknya sendiri di atas.
+      if (kind === null || kind === 'fitness') continue;
+      const want = mirrorState(kind, priorities, bible);
+      if (!!day.skipped[habit.id] !== want.skipped) {
+        setHabitSkipped(user.uid, dayId, habit.id, want.skipped).catch(
+          () => undefined,
+        );
+      } else if (!!day.done[habit.id] !== want.done) {
+        setHabitDone(user.uid, dayId, habit.id, want.done).catch(
+          () => undefined,
+        );
+      }
+    }
+  }, [user, dayId, day, schedule, priorities, bible]);
 
   const loading =
     !profile || !schedule || !day || target === undefined || streak === undefined;

@@ -163,7 +163,7 @@ Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi ke
   {
     key: 'wisuda',
     title: '🎓 Happy Graduation',
-    hint: 'Isi gelarnya — mis. S.Kom · S.E. · S.T. · S.Psi. · S.Ked · M.M.',
+    hint: 'Mis. S.Kom.',
     fields: ['nama', 'gelar'],
     variants: [
       {

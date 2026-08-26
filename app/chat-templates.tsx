@@ -4,12 +4,12 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SelectField, type SelectOption } from '@/components/common/SelectField';
 import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -34,6 +34,12 @@ import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 // Teksnya sendiri ada di lib/chatTemplates.ts — layar ini cuma menampilkan &
 // mengisi penandanya. Tak ada satu pun pembacaan Firestore khusus di sini;
 // daftar CL yang didengarkan memang sudah dipakai layar CORE.
+
+// Dua pilihan yang BUKAN CORE Leader di dropdown nama. Diawali garis bawah
+// supaya mustahil bentrok dengan id CL (id CL selalu "cr…").
+const GRUP = '__grup__';
+const MANUAL = '__manual__';
+
 export default function ChatTemplatesScreen() {
   const { user } = useAuth();
 
@@ -42,7 +48,12 @@ export default function ChatTemplatesScreen() {
 
   // Isian penanda. Dipakai bersama SEMUA kategori — ganti nama sekali,
   // seluruh pilihan di layar ikut berubah.
-  const [nama, setNama] = useState('');
+  //
+  // Yang disimpan cuma PILIHAN di dropdown (+ nama ketikan kalau "nama lain").
+  // Nama jadinya diturunkan dari situ, bukan disalin ke state kedua — kalau
+  // disalin, mengganti nama CL di layar CORE tidak akan ikut terbarui di sini.
+  const [pilihan, setPilihan] = useState<string>(GRUP);
+  const [namaLain, setNamaLain] = useState('');
   const [gelar, setGelar] = useState('');
 
   // Kategori yang sedang dibuka. Default: Motivational Words — itu yang
@@ -66,6 +77,21 @@ export default function ChatTemplatesScreen() {
   const open = CHAT_CATEGORIES.find((c) => c.key === openKey) ?? null;
   const fields: ChatField[] = open ? open.fields : ['nama'];
 
+  // Isi dropdown: grup dulu (paling sering — Motivational Words tiap pagi),
+  // lalu para CL, dan "ketik sendiri" paling bawah untuk orang di luar daftar.
+  const pilihanNama: SelectOption<string>[] = [
+    { key: GRUP, label: '👥 Grup CORE', sub: 'Tanpa nama — untuk kirim ke grup' },
+    ...leaders.map((l) => ({ key: l.id, label: `${l.heart} ${l.name}` })),
+    { key: MANUAL, label: '✍️ Ketik nama lain…', sub: 'Untuk orang di luar daftar CL' },
+  ];
+
+  // Nama yang benar-benar dipakai mengisi penanda {nama}. Grup (atau CL yang
+  // sudah dihapus) → kosong, persis seperti kolom yang dikosongkan dulu.
+  const nama =
+    pilihan === MANUAL
+      ? namaLain.trim()
+      : (leaders.find((l) => l.id === pilihan)?.name ?? '');
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
@@ -86,33 +112,30 @@ export default function ChatTemplatesScreen() {
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
             🙋 Nama yang dituju
           </VixText>
-          <FormInput
-            style={styles.formGap}
-            placeholder="Kosongkan kalau untuk grup"
-            value={nama}
-            onChangeText={setNama}
+          {/* Dulu di sini ada kolom ketik + sepuluh chip nama CL yang memakan
+              setengah layar. Sekarang satu dropdown: daftarnya baru terbuka
+              saat ditekan, jadi kata-kata templatnya langsung kelihatan. */}
+          <SelectField
+            value={pilihan}
+            options={pilihanNama}
+            onChange={(key) => key && setPilihan(key)}
           />
+          {/* Kolom ketik hanya muncul kalau memang "nama lain" — orang di luar
+              daftar CL tetap bisa dituju, tidak ada yang hilang. */}
+          {pilihan === MANUAL && (
+            <FormInput
+              style={styles.manualInput}
+              placeholder="Nama orangnya"
+              value={namaLain}
+              onChangeText={setNamaLain}
+              autoFocus
+            />
+          )}
+          <View style={styles.stickyGap} />
         </StickyTop>
       )}
 
       <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-        {/* Pintasan nama CL — supaya tidak perlu mengetik & tidak salah tulis.
-            Click lagi yang sedang aktif untuk mengosongkannya. Chip-nya sengaja
-            TIDAK ikut dipatok: sepuluh nama memakan setengah layar, dan sekali
-            dipilih namanya sudah tercatat di kolom di atas. */}
-        {fields.includes('nama') && leaders.length > 0 && (
-          <View style={styles.chipWrap}>
-            {leaders.map((l) => (
-              <Chip
-                key={l.id}
-                label={`${l.heart} ${l.name}`}
-                active={nama === l.name}
-                onPress={() => setNama(nama === l.name ? '' : l.name)}
-              />
-            ))}
-          </View>
-        )}
-
         {fields.includes('gelar') && (
           <>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -120,7 +143,7 @@ export default function ChatTemplatesScreen() {
             </VixText>
             <FormInput
               style={styles.formGap}
-              placeholder="mis. S.Kom"
+              placeholder="Mis. S.Kom"
               value={gelar}
               onChangeText={setGelar}
             />
@@ -239,12 +262,11 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
-  chipWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 14,
-  },
+  manualInput: { marginTop: 8 },
+  // Jarak dropdown ke kartu kategori pertama. Ditaruh sebagai elemen sendiri,
+  // bukan margin bawah SelectField — daftar pilihannya terbuka INLINE di bawah
+  // kolom, jadi margin di kolomnya akan menyisipkan celah di tengah.
+  stickyGap: { height: 10 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
