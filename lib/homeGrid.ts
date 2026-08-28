@@ -32,6 +32,7 @@ export type HomeFeature = {
     | 'party.popper.fill'
     | 'dumbbell.fill'
     | 'globe'
+    | 'newspaper.fill'
     | 'bird.fill'
     | 'trophy.fill'
     | 'graduationcap.fill'
@@ -61,7 +62,7 @@ export const HOME_FEATURES: HomeFeature[] = [
 
   { key: 'car', label: 'Car', icon: 'car.fill', route: '/car', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
   { key: 'residence', label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK },
-  { key: 'world', label: 'World', icon: 'globe', route: '/world', bg: Color.WORLD, fg: Color.WORLD_DARK },
+  { key: 'news', label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK },
   { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
 
   { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },

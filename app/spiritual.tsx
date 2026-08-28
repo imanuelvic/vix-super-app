@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,19 +51,15 @@ const TABS: BottomTab<Tab>[] = [
   { key: 'fasting', label: 'Fasting', icon: 'figure.mind.and.body' },
 ];
 
-function isTab(value?: string): value is Tab {
-  return TABS.some((t) => t.key === value);
-}
-
 export default function SpiritualScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
-  const { tab, setTab, scrollKey, onTabPress } = useTabScroll<Tab>(
-    isTab(tabParam) ? tabParam : 'revive',
-  );
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. Reminder
+  // Dashboard bisa mengarahkan ke tab tertentu lewat ?tab=…
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('revive', {
+    tabs: TABS,
+  });
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [bibleDays, setBibleDays] = useState<BibleReadingDay[]>([]);
@@ -73,11 +69,6 @@ export default function SpiritualScreen() {
   const [reviveStreak, setReviveStreak] = useState<ReviveStreak | null>(null);
   const [skipBusy, setSkipBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Reminder Dashboard bisa mengarahkan ke tab tertentu lewat param.
-  useEffect(() => {
-    if (isTab(tabParam)) setTab(tabParam);
-  }, [tabParam, setTab]);
 
   useEffect(() => {
     if (!user) return;

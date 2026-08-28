@@ -392,7 +392,8 @@ export type HabitLink = {
       | '/spiritual'
       | '/health'
       | '/bible-reading'
-      | '/daily-priority';
+      | '/daily-priority'
+      | '/news';
     params?: Record<string, string>;
   };
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
@@ -402,6 +403,17 @@ export type HabitLink = {
    * Baris begini dikunci: lingkarannya abu-abu & click-nya membuka tujuan.
    */
   mirrorOf?: HabitMirror;
+  /**
+   * true = membuka pintasannya SEKALIGUS mencentang kebiasaannya.
+   *
+   * Bedanya dengan `mirrorOf`: di sana centangnya menunggu bukti di layar
+   * tujuan (bacaan tercatat, latihan beres). Di sini tidak ada yang bisa
+   * dijadikan bukti — membaca berita tak meninggalkan jejak — jadi yang
+   * dihitung adalah keputusannya: click = "sekarang saya baca", dan app
+   * langsung membawanya ke sana. Lingkarannya tetap bisa di-click sendiri,
+   * jadi centangnya masih bisa dibatalkan kalau ternyata batal membaca.
+   */
+  doneOnOpen?: boolean;
 };
 
 // Urutan penting: yang lebih spesifik diperiksa duluan. "Revive + IG Story" &
@@ -431,6 +443,15 @@ export const HABIT_LINKS: HabitLink[] = [
     note: 'Buka Health › Diet',
     color: Color.DANGER,
     route: { pathname: '/health', params: { tab: 'diet' } },
+  },
+  // Baca berita — langsung mendarat di tab Berita fitur News 📰, dan barisnya
+  // ikut tercentang saat itu juga (lihat `doneOnOpen`).
+  {
+    match: /reading the news|baca berita/i,
+    note: 'Buka News › Berita & tandai selesai',
+    color: Color.NEWS_DARK,
+    route: { pathname: '/news', params: { tab: 'news' } },
+    doneOnOpen: true,
   },
   // Top 3 Priorities — punya layarnya sendiri (Daily Priority 💡), dan
   // centangnya ikut layar itu: tercentang begitu ketiga prioritas hari ini

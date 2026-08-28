@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { Chip } from '@/components/common/Chip';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -17,7 +17,7 @@ import {
   NEWS_ERROR,
   NEWS_SOURCES,
   type NewsSource,
-} from '@/lib/world';
+} from '@/lib/news';
 
 // Tab News 📰 — judul berita terbaru dari RSS publik (tanpa API key).
 // Hanya JUDUL + TAUTAN yang ditampilkan; isi artikel dibuka di browser lewat
@@ -50,20 +50,32 @@ export function NewsTab() {
   const prayerPoints = prayerNews
     ? [...prayerNews.points.church, ...prayerNews.points.nation]
     : [];
+  const aktif = NEWS_SOURCES.find((s) => s.key === source)!;
 
   return (
     <View style={styles.flex}>
-      <View style={styles.tabsWrap}>
-        <SegmentTabs
-          tabs={NEWS_SOURCES.map((s) => ({
-            key: s.key,
-            label: `${s.emoji} ${s.label}`,
-            sub: s.sub,
-          }))}
-          value={source}
-          onChange={setSource}
-        />
-      </View>
+      {/* Pemilih sumber. Dulu SegmentTabs (tiga kotak sama lebar), tapi sejak
+          ada Teknologi & Dev jumlahnya lima — lima kotak di layar 393 pt
+          menyisakan ±52 pt teks per kotak, dan "📈 Bloomberg" jadi mengecil
+          sampai sulit dibaca. Chip yang bisa digeser tidak punya batas itu.
+          Keterangan sumbernya pindah ke satu baris di bawahnya, jadi tidak
+          ada keterangan yang hilang. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.sourceRow}>
+        {NEWS_SOURCES.map((s) => (
+          <Chip
+            key={s.key}
+            label={`${s.emoji} ${s.label}`}
+            active={s.key === source}
+            onPress={() => setSource(s.key)}
+          />
+        ))}
+      </ScrollView>
+      <VixText heading="label" additionalStyle={styles.sourceSub}>
+        {aktif.sub}
+      </VixText>
 
       {items === null && busy ? (
         <LoadingCenter />
@@ -85,7 +97,7 @@ export function NewsTab() {
             <RefreshControl
               refreshing={busy}
               onRefresh={() => reload()}
-              tintColor={Color.WORLD_DARK}
+              tintColor={Color.NEWS_DARK}
             />
           }>
           {/* Kliping doa syafaat minggu ini 🙏 — hanya di tab Indonesia, karena
@@ -146,7 +158,13 @@ export function NewsTab() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  tabsWrap: { paddingHorizontal: 20, paddingTop: 8 },
+  sourceRow: { gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingRight: 24 },
+  sourceSub: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 10,
+    color: Color.TEXT_LABEL,
+  },
   center: {
     flex: 1,
     alignItems: 'center',
@@ -174,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  source: { color: Color.WORLD_DARK, flexShrink: 1 },
+  source: { color: Color.NEWS_DARK, flexShrink: 1 },
   // Kliping doa syafaat — sengaja berwarna Spiritual (ungu), bukan World,
   // supaya langsung terbaca "ini bagian doa", bukan sekadar berita lain.
   prayerCard: {

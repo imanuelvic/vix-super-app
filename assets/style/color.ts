@@ -73,8 +73,8 @@ export const Color = {
   HOUSE: '#D3DEE9', // biru-abu slate (fitur Home/rumah)
   HOUSE_DARK: '#3F5A73',
 
-  WORLD: '#BFE3E0', // teal pastel (fitur World — populasi & berita dunia)
-  WORLD_DARK: '#1F6F6A',
+  NEWS: '#BFE3E0', // teal pastel (fitur News — berita terkini & populasi dunia)
+  NEWS_DARK: '#1F6F6A',
 
   // Learning dipindah dari kuning-madu ke periwinkle (biru-ungu) supaya tidak
   // bertabrakan dengan emas Tournament & kuning Family.

@@ -54,6 +54,7 @@ const MAPPING = {
   'repeat': 'repeat',
   'laptopcomputer': 'laptop',
   'globe': 'public',
+  'newspaper.fill': 'newspaper',
   'shield.fill': 'shield',
   'cart.fill': 'shopping-cart',
   'wrench.and.screwdriver.fill': 'build',

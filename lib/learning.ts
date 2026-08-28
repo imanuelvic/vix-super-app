@@ -1,6 +1,8 @@
 import {
+  collection,
   deleteField,
   doc,
+  onSnapshot,
   setDoc,
   type FirestoreError,
 } from 'firebase/firestore';
@@ -508,6 +510,22 @@ export function pendingTopicsOfWeek(
   return topicsOfWeek(now).filter((t) => !done[t.key]);
 }
 
+// Jam tayang kartu "Diskusi Dalam Minggu Ini" di HOME (menit sejak 00.00).
+//
+// Home itu launcher — kartunya harus tetap sedikit, jadi yang ini cuma numpang
+// satu jam sehari: 11.30–12.30, tepat menjelang jam makan siang, saat ngobrol
+// memang paling mungkin terjadi. Di luar jam itu Home bersih lagi.
+//
+// Dashboard TIDAK memakai ini: di sana kartunya tetap tampil sepanjang hari
+// seperti reminder lain — itu memang halaman tagihan harian.
+const DISCUSSION_WINDOW: [number, number] = [11 * 60 + 30, 12 * 60 + 30];
+
+/** Sekarang jam tayang kartu diskusi di Home? */
+export function discussionWindowNow(now = new Date()): boolean {
+  const menit = now.getHours() * 60 + now.getMinutes();
+  return menit >= DISCUSSION_WINDOW[0] && menit < DISCUSSION_WINDOW[1];
+}
+
 /**
  * Langkah yang HARINYA SUDAH TIBA tapi belum dikerjakan.
  *
@@ -618,6 +636,60 @@ export function setLearningNote(uid: string, weekId: string, note: string) {
 /** Ganti topik minggu ini secara manual (menimpa rotasi otomatis). */
 export function setWeekSkill(uid: string, weekId: string, skillKey: string) {
   return setDoc(weekRef(uid, weekId), { skillKey }, { merge: true });
+}
+
+// ---- Arsip rangkuman 📔 ----
+// Rangkuman yang kamu tulis tiap Jumat tersimpan di dokumen minggunya
+// (`note`), tapi selama ini cuma bisa dibaca selagi minggu itu masih berjalan
+// — Senin berikutnya layarnya pindah ke minggu baru dan tulisannya seolah
+// hilang. Arsip ini membacanya kembali, semuanya sekaligus.
+
+/** Satu lembar arsip: minggu, ilmunya, dan rangkuman yang kamu tulis. */
+export type LearningNote = {
+  weekId: string; // "YYYY-MM-DD" (Senin minggu itu)
+  skillKey: string | null;
+  note: string;
+};
+
+/**
+ * Semua rangkuman yang pernah ditulis, terbaru dulu.
+ *
+ * Koleksi `learning` juga memuat dokumen `skills` & `topics` yang BUKAN
+ * minggu; keduanya disaring lewat bentuk id-nya ("YYYY-MM-DD"), bukan lewat
+ * daftar nama yang harus diingat kalau nanti ada dokumen lain.
+ */
+export function subscribeLearningNotes(
+  uid: string,
+  onChange: (notes: LearningNote[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return onSnapshot(
+    collection(db, 'users', uid, 'learning'),
+    (snapshot) => {
+      const list = snapshot.docs
+        .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.id))
+        .map((d) => ({
+          weekId: d.id,
+          skillKey: (d.data().skillKey as string) ?? null,
+          note: ((d.data().note as string) ?? '').trim(),
+        }))
+        .filter((n) => n.note.length > 0)
+        .sort((a, b) => b.weekId.localeCompare(a.weekId));
+      onChange(list);
+    },
+    onError,
+  );
+}
+
+/**
+ * Ilmu yang dipelajari pada satu minggu arsip — yang dipilih manual, atau
+ * hasil rotasi otomatis minggu itu kalau tidak pernah diganti.
+ */
+export function skillOfNote(note: LearningNote): Skill {
+  return (
+    (note.skillKey ? skillOf(note.skillKey) : null) ??
+    skillOfWeek(dayIdToDate(note.weekId))
+  );
 }
 
 // ---- Skill yang sudah dituntaskan: { done: { [skillKey]: weekId } } ----

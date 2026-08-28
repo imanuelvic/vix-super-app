@@ -62,11 +62,6 @@ const TABS: BottomTab<CoreTab>[] = [
   { key: 'multiplication', label: 'Multiplication', icon: 'arrow.triangle.branch' },
 ];
 
-/** Nilai ?tab=… yang dikenali (dipakai reminder Dashboard & deep link). */
-function asCoreTab(value?: string): CoreTab | null {
-  return TABS.some((t) => t.key === value) ? (value as CoreTab) : null;
-}
-
 // CORE — penggembalaan sebagai MCL: follow up harian para CORE Leader.
 export default function CoreScreen() {
   const router = useRouter();
@@ -75,10 +70,7 @@ export default function CoreScreen() {
   // Default masuk ke Follow Up: itu tugas harianmu. Bisa dioverride lewat
   // param ?tab=… (mis. kartu reminder visitasi di Dashboard), plus ?edit=<id>
   // untuk otomatis membuka modal visitasi yang ditekan.
-  const { tab: tabParam, edit: editParam } = useLocalSearchParams<{
-    tab?: string;
-    edit?: string;
-  }>();
+  const { edit: editParam } = useLocalSearchParams<{ edit?: string }>();
 
   // Setelah ?edit=… dipakai (modal terbuka), bersihkan param dari URL. Tanpa
   // ini modal auto-terbuka lagi tiap balik ke subtab Visitation (konten
@@ -87,15 +79,11 @@ export default function CoreScreen() {
   const clearEditParam = useCallback(() => {
     if (editParam) router.setParams({ edit: '' });
   }, [editParam, router]);
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
-  const { tab, setTab, scrollKey, onTabPress } = useTabScroll<CoreTab>(
-    asCoreTab(tabParam) ?? 'followup',
-  );
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan, plus ?tab=…
+  const { tab, scrollKey, onTabPress } = useTabScroll<CoreTab>('followup', {
+    tabs: TABS,
+  });
 
-  useEffect(() => {
-    const next = asCoreTab(tabParam);
-    if (next) setTab(next);
-  }, [tabParam, setTab]);
   const [leaders, setLeaders] = useState<CoreLeader[] | null>(null);
   // Ex CORE Leader ikut didengarkan — BUKAN untuk dijadwalkan lagi, tapi supaya
   // visitasi lama dengan mereka tetap bisa menampilkan namanya & ikut ketemu

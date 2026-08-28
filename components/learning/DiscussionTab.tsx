@@ -13,20 +13,35 @@ import { useAuth } from '@/contexts/auth';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   setTopicDone,
+  skillAreaMeta,
+  skillOf,
+  skillOfWeek,
   TOPIC_GROUPS,
+  topicGroupMeta,
   TOPICS,
   topicsOfWeek,
+  type LearningWeek,
   type TopicsDone,
 } from '@/lib/learning';
 import { SAVE_ERROR } from '@/lib/messages';
 
-// Sub-tab 💬 Diskusi — 62 bahan percakapan dari daftarmu, dikelompokkan jadi 6.
+// Sub-tab 💬 Discussion — 62 bahan percakapan dari daftarmu, dikelompokkan
+// jadi 6.
 //
 // Gunanya bukan sekadar checklist: ilmu baru benar-benar melekat kalau
 // DIUCAPKAN, bukan cuma dibaca. Tiap minggu TIGA topik dari sini jadi pemantik
 // langkah ke-4 ("Ceritakan"), dan sisanya bisa dipakai kapan saja — ngobrol
 // dengan pasangan, teman CORE, atau keluarga.
-export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
+export function DiscussionTab({
+  topicsDone,
+  week,
+  now,
+}: {
+  topicsDone: TopicsDone;
+  /** Minggu berjalan — untuk tahu ilmu apa yang jadi bahan utamanya. */
+  week: LearningWeek;
+  now: Date;
+}) {
   const { user } = useAuth();
 
   const [group, setGroup] = useState<string | null>(null);
@@ -35,8 +50,14 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
   // Tekan chip kelompok yang sedang aktif LAGI → daftar balik ke paling atas.
   const { ref: scrollRef, toTop } = useScrollTop();
 
+  // Ilmu minggu ini — bahan diskusi UTAMA. Aturannya sama dengan sub-tab
+  // Target: hasil rotasi otomatis, kecuali kalau sudah diganti manual.
+  const skill = (week.skillKey ? skillOf(week.skillKey) : null) ?? skillOfWeek(now);
+  const area = skillAreaMeta(skill.area);
+
   // Ketiga topik giliran minggu ini — ditandai di daftar panjang ini juga.
-  const weeklyKeys = new Set(topicsOfWeek(new Date()).map((t) => t.key));
+  const weekly = topicsOfWeek(now);
+  const weeklyKeys = new Set(weekly.map((t) => t.key));
   const doneCount = TOPICS.filter((t) => topicsDone[t.key]).length;
   const shown = group ? TOPICS.filter((t) => t.group === group) : TOPICS;
 
@@ -61,6 +82,54 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
           <ProgressBar value={doneCount} total={TOPICS.length} color={Color.LEARNING_DARK} />
         </View>
 
+        {/* ===== Diskusi Dalam Minggu Ini =====
+            Dipindah ke sini dari sub-tab Target (28 Agu 2026). Tempatnya
+            memang di sub-tab ini: daftar topiknya ada di bawah, dan yang
+            giliran minggu ini tinggal ditarik ke atas — bukan disalin ke
+            layar lain. Badge sub-tabnya ikut pindah. */}
+        <VixText heading="title" additionalStyle={styles.weeklyTitle}>
+          Diskusi Dalam Minggu Ini
+        </VixText>
+
+        {/* Bahan utama = ilmu minggu ini. Sengaja TANPA checkbox: "sudah
+            diceritakan atau belum" sudah dicatat langkah Minggu (Ceritakan)
+            di sub-tab Target — dua kotak untuk satu hal yang sama cuma bikin
+            bingung. */}
+        <View style={styles.mainTopicCard}>
+          <VixText heading="bold" additionalStyle={styles.mainTopicTitle}>
+            {area.emoji} {skill.title}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.mainTopicHint}>
+            Ilmu minggu ini — ceritakan pakai bahasamu sendiri, jangan baca
+            catatan.
+          </VixText>
+        </View>
+
+        {/* Tiga topik giliran minggu ini — pemantik kalau diskusinya masih mau
+            lanjut. Dicentang setelah benar-benar diobrolkan. */}
+        {weekly.map((t) => {
+          const meta = topicGroupMeta(t.group);
+          const checked = !!topicsDone[t.key];
+          return (
+            <PressableScale
+              key={`weekly-${t.key}`}
+              style={[styles.topicCard, checked && styles.topicCardDone]}
+              onPress={() => toggle(t.key, checked)}
+              haptic={checked ? 'light' : 'success'}>
+              <CheckCircle checked={checked} />
+              <View style={styles.rowMain}>
+                <VixText heading="bold">
+                  {meta.emoji} {t.label}
+                </VixText>
+              </View>
+            </PressableScale>
+          );
+        })}
+
+        <VixText heading="title" additionalStyle={styles.allTitle}>
+          Semua Bahan Diskusi
+        </VixText>
+
         <FilterChips
           options={TOPIC_GROUPS.map((g) => ({
             key: g.key,
@@ -72,18 +141,6 @@ export function TopicsTab({ topicsDone }: { topicsDone: TopicsDone }) {
           onChange={setGroup}
           onRepress={toTop}
         />
-
-        {/* Keterangan kelompok yang sedang dipilih */}
-        {group ? (
-          <VixText heading="label" additionalStyle={styles.groupHint}>
-            {TOPIC_GROUPS.find((g) => g.key === group)?.hint}
-          </VixText>
-        ) : (
-          <VixText heading="label" additionalStyle={styles.groupHint}>
-            Centang setelah topiknya benar-benar diobrolkan dengan seseorang —
-            bukan sekadar dibaca.
-          </VixText>
-        )}
 
         {shown.map((t) => {
           const checked = !!topicsDone[t.key];
@@ -125,7 +182,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   barWrap: { marginTop: -4, marginBottom: 10 },
-  groupHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -144,6 +200,37 @@ const styles = StyleSheet.create({
   },
   // Topik yang jadi bahan "Ceritakan" minggu ini.
   rowWeekly: { borderColor: Color.LEARNING_DARK, borderWidth: 1.5 },
+  // ---- Blok "Diskusi Dalam Minggu Ini" (pindahan dari sub-tab Target) ----
+  weeklyTitle: { marginTop: 4, marginBottom: 8 },
+  allTitle: { marginTop: 14, marginBottom: 8 },
+  mainTopicCard: {
+    backgroundColor: Color.LEARNING,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.LEARNING_DARK,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+    gap: 2,
+  },
+  mainTopicTitle: { color: Color.LEARNING_DARK },
+  mainTopicHint: { color: Color.LEARNING_DARK },
+  topicCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  topicCardDone: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderColor: Color.MAIN_LIGHT,
+  },
   rowMain: { flex: 1, gap: 2 },
   rowTitleDone: { color: Color.TEXT_LABEL },
   rowGroup: { color: Color.TEXT_LABEL },

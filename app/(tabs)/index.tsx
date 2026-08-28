@@ -63,10 +63,13 @@ import {
   type FitDay,
 } from '@/lib/fitness';
 import {
+  discussionWindowNow,
   EMPTY_WEEK,
   learningPending,
+  pendingTopicsOfWeek,
   subscribeLearningWeek,
   subscribeTopicsDone,
+  topicGroupMeta,
   weekDocId,
   type LearningWeek,
   type TopicsDone,
@@ -328,6 +331,23 @@ export default function HomeScreen() {
   // tombolnya cuma bisa dijangkau tiga jendela sehari.
   const showRhema = reflectionWritten && (rhemaWindowNow(now) || showGenerate);
 
+  // Diskusi Dalam Minggu Ini 💬 — tiga topik giliran minggu ini yang belum
+  // diobrolkan. Tidak dipatok hari: ngobrol terjadi saat kebetulan ketemu
+  // orangnya, jadi tagihannya bertahan SEPANJANG minggu itu lalu berganti
+  // sendiri tiap Senin — persis aturan yang dipakai Dashboard & badge tile.
+  //
+  // Bedanya di sini cuma jam tayangnya (11.30–12.30, lihat lib/learning.ts):
+  // Home itu launcher, bukan daftar tagihan. Di luar jam itu kartunya hilang
+  // walau ketiganya belum dicentang — yang menagih sepanjang hari tetap
+  // Dashboard.
+  const discussionTopics = discussionWindowNow(now)
+    ? pendingTopicsOfWeek(topicsDone, now)
+    : [];
+  // Menunggu langganan topicsDone tiba dulu (gerbang yang sama dengan badge
+  // tile). Tanpa ini, dokumennya yang belum termuat terbaca "belum ada yang
+  // dicentang" → kartunya berkedip lengkap 3 topik sekejap tiap Home dibuka.
+  const showDiscussion = badgesReady && discussionTopics.length > 0;
+
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
   // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
   // beda, jadi cukup dibandingkan teksnya — tak perlu menyimpan jam).
@@ -532,6 +552,33 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
+          {/* Diskusi Dalam Minggu Ini 💬 — TEPAT di depan Doa Syafaat, dan
+              cuma pada jam 11.30–12.30. Ketiga topiknya dicentang di sub-tab
+              💬 Discussion, jadi kartunya menuju ke situ langsung. Hilang
+              sendiri begitu ketiganya diobrolkan; kalau belum, ia kembali tiap
+              siang sepanjang minggu itu. */}
+          {showDiscussion && (
+            <Animated.View
+              entering={FadeInDown.delay(20).duration(350)}
+              style={styles.discussionCard}>
+              <ReminderCard
+                bg={Color.LEARNING}
+                fg={Color.LEARNING_DARK}
+                title="💬 Diskusi Dalam Minggu Ini"
+                texts={discussionTopics.map((t) => ({
+                  id: t.key,
+                  text: `${topicGroupMeta(t.group).emoji} ${t.label}`,
+                }))}
+                onPress={() =>
+                  router.push({
+                    pathname: '/learning',
+                    params: { tab: 'topics' },
+                  })
+                }
+              />
+            </Animated.View>
+          )}
+
           {/* Doa Syafaat 🙏 — pokok doa tetap sesuai hari dalam seminggu.
               Hari Doa Rantai CL (Selasa & Kamis) kartunya menuju CORE Follow
               Up; hari lain di-click untuk membuka/menutup pokok doanya. */}
@@ -708,6 +755,8 @@ const styles = StyleSheet.create({
   // Kartu Doa Syafaat — tepat di bawah kartu sapaan, di atas Baca Alkitab.
   // Penyegar acak — jaraknya sama dengan kartu Doa Syafaat di bawahnya.
   nudgeCard: { marginBottom: 10 },
+  // Diskusi siang — jaraknya sama dengan kartu reminder lain di kolom ini.
+  discussionCard: { marginBottom: 10 },
   intercessionCard: { marginBottom: 10 },
   // Rhema pagi — jaraknya sama dengan kartu reminder lain di kolom ini.
   rhemaCard: { marginBottom: 10 },

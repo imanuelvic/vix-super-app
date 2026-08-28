@@ -34,9 +34,11 @@ export {
   ARCHIVE_NAME,
   archiveNo,
   designOf,
+  openInstagram,
+  photoErrorMessage,
   wrapLines,
   SHARE_DESIGNS as FEED_DESIGNS,
-  sharePng as shareFeedPng,
+  savePngToPhotos as saveFeedToPhotos,
   type ShareDesign as FeedDesign,
 } from './shareImage';
 

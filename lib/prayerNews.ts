@@ -4,7 +4,7 @@ import { db } from './firebase';
 import { type IntercessionTopic } from './intercession';
 import { weekDocId } from './learning';
 import { liveDoc } from './liveDoc';
-import { fetchRss } from './world';
+import { fetchRss } from './news';
 
 // Pokok doa syafaat yang MENGIKUTI berita 📰🙏
 //

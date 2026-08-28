@@ -1,15 +1,16 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { SheetModal } from '@/components/common/SheetModal';
-import { SummaryCard } from '@/components/common/SummaryCard';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -22,7 +23,10 @@ import {
   SKILL_AREAS,
   SKILLS,
   skillOf,
+  skillOfNote,
   skillOfWeek,
+  subscribeLearningNotes,
+  type LearningNote,
   type LearningWeek,
   type Skill,
   type SkillsDone,
@@ -49,6 +53,17 @@ export function SkillsTab({
   const [open, setOpen] = useState<Skill | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Arsip rangkuman 📔 — dilangganani HANYA saat modalnya dibuka. Isinya
+  // seluruh koleksi minggu, jadi tidak pantas dibaca tiap kali sub-tab ini
+  // dibuka padahal jarang dilihat.
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [notes, setNotes] = useState<LearningNote[] | null>(null);
+
+  useEffect(() => {
+    if (!user || !archiveOpen) return;
+    return subscribeLearningNotes(user.uid, setNotes, () => setNotes([]));
+  }, [user, archiveOpen]);
 
   const current = (week.skillKey ? skillOf(week.skillKey) : null) ?? skillOfWeek(now);
   const doneCount = SKILLS.filter((s) => skillsDone[s.key]).length;
@@ -92,17 +107,31 @@ export function SkillsTab({
   return (
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SummaryCard
-          label="Sudah dipelajari"
-          value={`${doneCount}/${SKILLS.length} topik 🎓`}
-        />
+        {/* Kartu ringkasan + pintu ke arsip rangkuman. Tombolnya ditaruh DI
+            DALAM kartunya (bukan baris sendiri) supaya tidak menambah tinggi
+            layar — ruang kanan kartu ini memang menganggur. */}
+        <SummaryCard>
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryMain}>
+              <VixText heading="label" additionalStyle={summaryText.label}>
+                Sudah dipelajari
+              </VixText>
+              <VixText heading="subheader" additionalStyle={summaryText.value}>
+                {doneCount}/{SKILLS.length} topik 🎓
+              </VixText>
+            </View>
+            <PressableScale
+              style={styles.archiveButton}
+              onPress={() => setArchiveOpen(true)}>
+              <VixText heading="bold" additionalStyle={styles.archiveText}>
+                📔 Arsip
+              </VixText>
+            </PressableScale>
+          </View>
+        </SummaryCard>
         <View style={styles.barWrap}>
           <ProgressBar value={doneCount} total={SKILLS.length} color={Color.LEARNING_DARK} />
         </View>
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Satu topik per minggu → seluruh daftar ini habis dalam ±
-          {Math.ceil(SKILLS.length / 4)} bulan.
-        </VixText>
 
         {SKILL_AREAS.map((area) => {
           const list = SKILLS.filter((s) => s.area === area.key);
@@ -162,6 +191,41 @@ export function SkillsTab({
 
         <FormError message={error} gap="none" additionalStyle={styles.error} />
       </ScrollView>
+
+      {/* Arsip rangkuman 📔 — semua yang pernah ditulis hari Jumat di sub-tab
+          Target, terbaru dulu. BACA saja: mengubahnya tetap di minggunya
+          masing-masing, jadi tidak ada dua pintu edit untuk satu tulisan. */}
+      <SheetModal
+        visible={archiveOpen}
+        title="📔 Arsip Rangkuman"
+        subtitle="Semua rangkuman Jumat yang pernah kamu tulis"
+        onClose={() => setArchiveOpen(false)}>
+        {notes === null ? (
+          <LoadingCenter />
+        ) : notes.length === 0 ? (
+          <VixText heading="paragraph" additionalStyle={styles.archiveEmpty}>
+            Belum ada rangkuman. Tulis 3 poin di sub-tab 🎯 Target — langkah
+            Jumat (Rangkum) — dan semuanya akan berkumpul di sini.
+          </VixText>
+        ) : (
+          notes.map((n) => {
+            const s = skillOfNote(n);
+            return (
+              <View key={n.weekId} style={styles.noteCard}>
+                <VixText heading="label" additionalStyle={styles.noteDate}>
+                  📅 Minggu {formatShortDayDate(dayIdToDate(n.weekId))}
+                </VixText>
+                <VixText heading="bold" additionalStyle={styles.noteTitle}>
+                  {SKILL_AREAS.find((a) => a.key === s.area)?.emoji} {s.title}
+                </VixText>
+                <VixText heading="paragraph" additionalStyle={styles.noteText}>
+                  {n.note}
+                </VixText>
+              </View>
+            );
+          })
+        )}
+      </SheetModal>
 
       {/* Detail satu topik */}
       <SheetModal
@@ -261,7 +325,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   barWrap: { marginTop: -4, marginBottom: 8 },
-  hint: { color: Color.TEXT_LABEL, marginBottom: 4 },
   areaHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -313,4 +376,34 @@ const styles = StyleSheet.create({
   detailDone: { color: Color.MAIN_DARK, marginTop: 10 },
   detailButton: { marginTop: 14 },
   error: { marginTop: 10 },
+  // ---- Kartu ringkasan + tombol arsip ----
+  summaryRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  summaryMain: { flex: 1, gap: 4 },
+  // Di atas kartu hijau tua: garis tepi terang, bukan blok warna — supaya
+  // terbaca sebagai tombol tanpa menyaingi angka besarnya.
+  archiveButton: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Color.MAIN_LIGHT,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  archiveText: { color: Color.MAIN_LIGHT },
+  // ---- Isi modal arsip ----
+  archiveEmpty: { color: Color.TEXT_PARAGRAPH },
+  noteCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    borderLeftWidth: 3,
+    borderLeftColor: Color.LEARNING_DARK,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+    gap: 3,
+  },
+  noteDate: { color: Color.LEARNING_DARK },
+  noteTitle: { color: Color.TEXT_TITLE },
+  noteText: { color: Color.TEXT_PARAGRAPH },
 });

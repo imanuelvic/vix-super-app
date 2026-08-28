@@ -5,10 +5,17 @@ import { liveDoc } from './liveDoc';
 import { dayIdToDate, daysBetween } from './format';
 import { dayDocId } from './health';
 
-// Fitur World 🌏 — dua hal tentang dunia:
-//   1) Populasi dunia: catatan historis (dari worldometers.info) + perkiraan
+// Fitur News 📰 — dua hal:
+//   1) Berita terkini lewat RSS publik (tanpa API key).
+//   2) Populasi dunia: catatan historis (dari worldometers.info) + perkiraan
 //      hidup yang dihitung sendiri di perangkat.
-//   2) Berita terkini lewat RSS publik (tanpa API key).
+//
+// ⚠️ Fiturnya dulu bernama "World 🌏". Berkas, layar, rute & warnanya sudah
+// diganti jadi News, TAPI jalur Firestore-nya SENGAJA tetap
+// `users/{uid}/world/…`. Mengganti jalurnya berarti catatan populasi &
+// kliping doa syafaat yang sudah tersimpan jadi yatim — tidak terbaca lagi,
+// padahal datanya masih ada. Nama koleksi tak pernah kelihatan di layar;
+// yang kelihatan sudah News.
 
 // ============================ Populasi dunia ============================
 // Catatan historis di bawah ini SALINAN dari catatan manual pemilik app
@@ -286,7 +293,12 @@ export function pointGrowth(
 // Yang diambil hanya JUDUL + TAUTAN (bukan isi artikel) — isi artikel milik
 // penerbitnya, dibuka di browser lewat tautan aslinya.
 
-export type NewsSource = 'bloomberg' | 'world' | 'indonesia';
+export type NewsSource =
+  | 'bloomberg'
+  | 'world'
+  | 'indonesia'
+  | 'tech'
+  | 'dev';
 
 export const NEWS_SOURCES: {
   key: NewsSource;
@@ -297,16 +309,68 @@ export const NEWS_SOURCES: {
   { key: 'bloomberg', label: 'Bloomberg', emoji: '📈', sub: 'bisnis & pasar' },
   { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },
   { key: 'indonesia', label: 'Indonesia', emoji: '🇮🇩', sub: 'dalam negeri' },
+  { key: 'tech', label: 'Teknologi', emoji: '🤖', sub: 'AI, robotika & gadget' },
+  { key: 'dev', label: 'Dev', emoji: '📱', sub: 'Expo, RN, iOS & Android' },
 ];
 
-const NEWS_FEEDS: Record<NewsSource, string> = {
-  bloomberg:
-    'https://news.google.com/rss/search?q=site:bloomberg.com+when:7d&hl=en-US&gl=US&ceid=US:en',
-  world:
-    'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en',
+/**
+ * Satu alamat RSS beserta nama sumbernya.
+ *
+ * `source` dipakai kalau feed-nya tidak menyebutkan penerbitnya sendiri. Feed
+ * Google News selalu menyebutkannya (lewat tag `<source>` atau ekor judul
+ * " - Nama Media"), tapi blog resmi seperti reactnative.dev tidak — tanpa ini
+ * semuanya akan tertulis "Google News", yang jelas salah.
+ */
+type Feed = { url: string; source?: string };
+
+// Sebagian sumber menggabung BEBERAPA feed. Alasannya beda-beda:
+//   tech → satu topik resmi (gadget & industri) + satu pencarian AI/robotika,
+//          karena topik TECHNOLOGY sendiri jarang memuat riset AI.
+//   dev  → tak ada satu pun feed yang memuat Expo, React Native, iOS, Android
+//          & web sekaligus; yang ada blog RESMI masing-masing, dan itu justru
+//          jauh lebih bermutu daripada hasil pencarian Google News (pencarian
+//          "Expo" malah memungut berita pameran dagang & D23 Expo).
+const NEWS_FEEDS: Record<NewsSource, Feed[]> = {
+  bloomberg: [
+    {
+      url: 'https://news.google.com/rss/search?q=site:bloomberg.com+when:7d&hl=en-US&gl=US&ceid=US:en',
+    },
+  ],
+  world: [
+    {
+      url: 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en',
+    },
+  ],
   // hl/gl/ceid Indonesia → judulnya berbahasa Indonesia, medianya media lokal.
-  indonesia:
-    'https://news.google.com/rss/headlines/section/topic/NATION?hl=id&gl=ID&ceid=ID:id',
+  indonesia: [
+    {
+      url: 'https://news.google.com/rss/headlines/section/topic/NATION?hl=id&gl=ID&ceid=ID:id',
+    },
+  ],
+  tech: [
+    {
+      url: 'https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=en-US&gl=US&ceid=US:en',
+    },
+    // Kata kuncinya sengaja TANPA tanda kutip: frasa berkutip di dalam grup OR
+    // pernah mengembalikan nol hasil di feed ini (kasus "harga pangan" di
+    // lib/prayerNews.ts). Ketiga kata ini sudah cukup tanpa dikutip.
+    {
+      url: 'https://news.google.com/rss/search?q=artificial+intelligence+OR+AI+OR+robotics+when:7d&hl=en-US&gl=US&ceid=US:en',
+    },
+  ],
+  dev: [
+    { url: 'https://reactnative.dev/blog/rss.xml', source: 'React Native' },
+    { url: 'https://expo.dev/changelog/rss.xml', source: 'Expo' },
+    {
+      url: 'https://developer.apple.com/news/rss/news.rss',
+      source: 'Apple Developer',
+    },
+    {
+      url: 'https://android-developers.googleblog.com/feeds/posts/default?alt=rss',
+      source: 'Android Developers',
+    },
+    { url: 'https://web.dev/static/blog/feed.xml', source: 'web.dev' },
+  ],
 };
 
 export type NewsItem = {
@@ -350,7 +414,11 @@ function tagValue(block: string, tag: string): string {
  * Dipakai bersama: tab News (lewat `fetchNews`) & rangkuman doa syafaat
  * mingguan (lib/prayerNews.ts) — satu pembaca RSS, bukan dua salinan.
  */
-export async function fetchRss(url: string, tag: string): Promise<NewsItem[]> {
+export async function fetchRss(
+  url: string,
+  tag: string,
+  fallbackSource = 'Google News',
+): Promise<NewsItem[]> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
   let res: Response;
@@ -379,15 +447,48 @@ export async function fetchRss(url: string, tag: string): Promise<NewsItem[]> {
       title: hasTail ? rawTitle.slice(0, cut) : rawTitle,
       link: tagValue(block, 'link'),
       source:
-        feedSource || (hasTail ? rawTitle.slice(cut + 3) : 'Google News'),
+        feedSource || (hasTail ? rawTitle.slice(cut + 3) : fallbackSource),
       publishedAt: parsed && !isNaN(parsed.getTime()) ? parsed : null,
     };
   });
 }
 
-/** Judul berita terbaru untuk satu sumber di tab News. */
-export function fetchNews(source: NewsSource): Promise<NewsItem[]> {
-  return fetchRss(NEWS_FEEDS[source], source);
+/** Berapa berita yang ditampilkan per sumber sesudah digabung & diurutkan. */
+const NEWS_LIMIT = 40;
+
+/**
+ * Judul berita terbaru untuk satu sumber di tab News.
+ *
+ * Sumber yang punya beberapa feed diambil BERBARENGAN dengan `allSettled`:
+ * satu feed mati (blog dipindah, jaringan putus) tidak boleh mengosongkan
+ * seluruh tab — sisanya tetap tampil. Baru kalau SEMUANYA gagal, errornya
+ * dilempar supaya layarnya menampilkan "Coba lagi".
+ *
+ * Hasilnya diurutkan terbaru dulu, dan judul yang sama (satu berita dimuat
+ * dua feed) cuma tampil sekali.
+ */
+export async function fetchNews(source: NewsSource): Promise<NewsItem[]> {
+  const feeds = NEWS_FEEDS[source];
+  const hasil = await Promise.allSettled(
+    feeds.map((f, i) => fetchRss(f.url, `${source}-${i}`, f.source)),
+  );
+  if (hasil.every((h) => h.status === 'rejected')) {
+    throw hasil[0].reason instanceof Error
+      ? hasil[0].reason
+      : new Error(NEWS_ERROR);
+  }
+
+  const seen = new Set<string>();
+  return hasil
+    .flatMap((h) => (h.status === 'fulfilled' ? h.value : []))
+    .filter((n) => {
+      const kunci = n.title.toLowerCase();
+      if (!kunci || seen.has(kunci)) return false;
+      seen.add(kunci);
+      return true;
+    })
+    .sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0))
+    .slice(0, NEWS_LIMIT);
 }
 
 /** "3 jam lalu" / "2 hari lalu" — umur berita, ringkas. */

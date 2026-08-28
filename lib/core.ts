@@ -54,7 +54,92 @@ export type CoreLeader = {
   major?: string | null; // jurusan
   job?: string | null; // profesi
   workplace?: string | null; // tempat kerja
+  // Data tubuh (opsional) — lihat bagian "Data tubuh CL" di bawah.
+  heightCm?: number | null;
+  weightKg?: number | null;
+  waistCm?: number | null;
+  bodyUpdatedDayId?: string | null;
 };
+
+// ==================== Data tubuh CL 🧍 ====================
+// SENGAJA cuma tiga angka: tinggi, berat, lingkar perut.
+//
+// Ini bukan salinan Data Tubuh di Profile (yang punya golongan darah, ukuran
+// mata, ukuran baju, dst). Itu data DIRI SENDIRI; yang ini data orang lain
+// yang kamu gembalakan, dan gunanya cuma satu: melihat apakah mereka bergerak
+// menuju badan yang sehat. Tiga angka ini sudah cukup untuk BMI, rentang berat
+// ideal, dan rasio perut/tinggi — tiga ukuran yang paling jujur soal itu.
+// Menanyakan lebih dari ini ke CL juga mulai terasa tidak pantas.
+//
+// Persen lemak & BMR sengaja TIDAK dihitung: rumusnya di app ini khusus laki-
+// laki (bmrMale / bodyFatMale), sedangkan CL ada yang perempuan — angka yang
+// salah lebih buruk daripada angka yang tidak ada.
+
+/** Isian form data tubuh (selalu string, ikut gaya StudyWork). */
+export type LeaderBody = { height: string; weight: string; waist: string };
+
+export const EMPTY_LEADER_BODY: LeaderBody = { height: '', weight: '', waist: '' };
+
+type LeaderBodyFields = {
+  heightCm: number | null;
+  weightKg: number | null;
+  waistCm: number | null;
+};
+
+/** Bagian data tubuh dari data tersimpan — untuk mengisi form. */
+export function leaderBodyOf(p: Partial<LeaderBodyFields>): LeaderBody {
+  const teks = (n: number | null | undefined) => (n != null ? String(n) : '');
+  return {
+    height: teks(p.heightCm),
+    weight: teks(p.weightKg),
+    waist: teks(p.waistCm),
+  };
+}
+
+/** Angka dari isian form: kosong / bukan angka / ≤ 0 → null. */
+function angka(t: string): number | null {
+  const n = Number(t.trim().replace(',', '.'));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * Bentuk simpannya, PLUS tanggal perubahannya.
+ *
+ * `bodyUpdatedDayId` hanya ikut berganti kalau salah satu ANGKANYA benar-benar
+ * berubah. Kalau tidak, membetulkan nomor HP saja akan memajukan tanggalnya —
+ * dan kartu data tubuhnya jadi mengaku "baru diperbarui hari ini" padahal
+ * berat badannya masih angka dua bulan lalu.
+ */
+export function leaderBodyPayload(
+  form: LeaderBody,
+  prev: Partial<LeaderBodyFields & { bodyUpdatedDayId?: string | null }>,
+  todayId: string,
+): LeaderBodyFields & { bodyUpdatedDayId: string | null } {
+  const next: LeaderBodyFields = {
+    heightCm: angka(form.height),
+    weightKg: angka(form.weight),
+    waistCm: angka(form.waist),
+  };
+  const berubah =
+    next.heightCm !== (prev.heightCm ?? null) ||
+    next.weightKg !== (prev.weightKg ?? null) ||
+    next.waistCm !== (prev.waistCm ?? null);
+  const adaIsi =
+    next.heightCm != null || next.weightKg != null || next.waistCm != null;
+  return {
+    ...next,
+    bodyUpdatedDayId: berubah
+      ? adaIsi
+        ? todayId
+        : null // semuanya dikosongkan → tanggalnya ikut hilang
+      : (prev.bodyUpdatedDayId ?? null),
+  };
+}
+
+/** Ada minimal satu angka yang terisi? */
+export function hasLeaderBody(p: Partial<LeaderBodyFields>): boolean {
+  return p.heightCm != null || p.weightKg != null || p.waistCm != null;
+}
 
 // ============ Pendidikan & pekerjaan (CL maupun Main Team) ============
 // Empat kolom yang SEMUANYA opsional. Ditulis sebagai satu bagian tersendiri

@@ -7,11 +7,26 @@ import { VixText } from '@/components/common/VixText';
 // dipakai tab Info mobil 🚗 & rumah 🏠. Nilainya boleh membungkus ke baris
 // berikutnya (flexShrink) tapi tetap rata kanan, jadi baris panjang seperti
 // nomor rangka tidak mendorong labelnya keluar.
-export function InfoRow({ label, value }: { label: string; value: string }) {
+export function InfoRow({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  /**
+   * Warna khusus untuk nilainya — dipakai baris yang isinya sekaligus
+   * PENILAIAN, bukan sekadar angka (mis. "25,2 · Obesitas I" merah di kartu
+   * data tubuh CL). Kosong = warna judul biasa.
+   */
+  valueColor?: string;
+}) {
   return (
     <View style={styles.row}>
       <VixText heading="label">{label}</VixText>
-      <VixText heading="bold" additionalStyle={styles.value}>
+      <VixText
+        heading="bold"
+        additionalStyle={[styles.value, valueColor ? { color: valueColor } : null]}>
         {value}
       </VixText>
     </View>

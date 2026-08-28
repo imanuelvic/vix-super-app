@@ -195,18 +195,7 @@ export function MorningPrayerGate({
               {nChain}. Doa Rantai
               {chainIsToday ? ` — syafaat hari ini ${topic.emoji}` : ''}
             </VixText>
-            <VixText heading="label" additionalStyle={styles.stepHint}>
-              Giliran hari ini {chainLeaders.length} CORE Leader. Pagi ini cukup{' '}
-              {chainQuota} dulu — sisanya didoakan malam nanti 🌙
-            </VixText>
 
-            {/* Pokok doanya ditaruh LANGSUNG di sini, tidak lagi lewat tombol
-                ke fitur CORE — supaya doa pagi tidak berubah jadi pintu masuk
-                ke sub-tab lain yang bikin teralih.
-                Tapi TERTUTUP dulu (dropdown): 4 CL × 3 pokok doa membuat
-                gerbangnya jadi berlembar-lembar, dan yang panjang itu justru
-                jadi dibaca sambil lalu. Click nama untuk membukanya — satu
-                per satu, persis seperti daftar CL di CORE › Follow Up. */}
             {chainLeaders.map((l) => {
               const open = openChain === l.id;
               return (
@@ -320,10 +309,6 @@ export function MorningPrayerGate({
           style={styles.stepCard}>
           <VixText heading="title" additionalStyle={styles.stepTitle}>
             {nWorship}. Memuji & Menyembah 🎶
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.stepHint}>
-            Nyanyikan bagi Dia — satu lagu pun cukup. Bukan pemanasan sebelum
-            berdoa; ini bagian dari doanya sendiri.
           </VixText>
           <View style={styles.prayerBox}>
             <VixText heading="paragraph" additionalStyle={styles.prayerText}>
@@ -452,7 +437,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   stepTitle: { color: Color.TEXT_TITLE },
-  stepHint: { color: Color.TEXT_LABEL },
   prayerBox: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 14,

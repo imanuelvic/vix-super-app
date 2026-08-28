@@ -20,12 +20,14 @@ import { useAuth } from '@/contexts/auth';
 import {
   birthdayGroupText,
   birthdayPersonalText,
+  canDrawWeeklyFocus,
+  drawWeeklyFocus,
+  focusLeaders,
   followupMessage,
   isCurrentMonthPrayers,
   isPrayerFollowupDay,
   markBirthdayGreeted,
   markPrayerFollowed,
-  subscribeBirthdayGreets,
   monthlyPointsFor,
   monthlyPrayersFilled,
   newCoreIdeaId,
@@ -35,22 +37,21 @@ import {
   prayerFollowupLeaders,
   saveCoreIdeas,
   saveCoreLeaders,
-  canDrawWeeklyFocus,
-  drawWeeklyFocus,
-  focusLeaders,
   saveWeeklyFocus,
+  subscribeBirthdayGreets,
   WEEKLY_FOCUS_COUNT,
   weeklyFollowupTopic,
-  type WeeklyFocus,
+  type BirthdayGreets,
   type CoreIdea,
   type CoreIdeasData,
   type CoreLeader,
   type IdeaCadence,
   type MainTeamMember,
-  type BirthdayGreets,
   type MonthlyPrayers,
+  type WeeklyFocus,
 } from '@/lib/core';
 import { formatDate, MONTH_NAMES } from '@/lib/format';
+import { todayName } from '@/lib/chatTemplates';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   openWhatsAppChat,
@@ -786,6 +787,25 @@ export function FollowupTab({
               </>
             )}
           </ScrollView>
+          {/* Pengingat Motivational Word 🔥 — ditaruh persis di atas tombol
+              Chat WA, karena di sinilah WhatsApp dibuka. Follow up itu urusan
+              satu orang; Motivational Word urusan GRUP dan gampang terlewat
+              justru pada pagi yang sibuk mengejar follow up. Click-nya
+              membawa ke Template Chat, yang memang sudah membuka kategori
+              Motivational Words dengan pilihan hari ini tersorot. */}
+          <PressableScale
+            style={styles.motivasiRow}
+            onPress={() => {
+              setFollowupModal(null);
+              router.push('/chat-templates');
+            }}>
+            <VixText heading="label" additionalStyle={styles.motivasiText}>
+              🔥 Sudah kirim Motivational Word {todayName()} ke grup CORE?
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.motivasiLink}>
+              Buka Template Chat ›
+            </VixText>
+          </PressableScale>
           {followupModal.phone ? (
             <PressableScale
               style={styles.modalWaButton}
@@ -1005,6 +1025,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalPointText: { color: Color.TEXT_TITLE },
+  // Pengingat Motivational Word 🔥 — sengaja TIDAK sekuat tombol Chat WA:
+  // ia mengingatkan, bukan menggantikan yang sedang dikerjakan.
+  motivasiRow: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+    gap: 2,
+  },
+  motivasiText: { color: Color.MAIN_DARK },
+  motivasiLink: { color: Color.MAIN },
   modalWaButton: {
     alignItems: 'center',
     paddingVertical: 12,

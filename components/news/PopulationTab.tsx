@@ -18,7 +18,7 @@ import {
   POPULATION_SOURCE,
   RECORD_DAY,
   type PopulationSaved,
-} from '@/lib/world';
+} from '@/lib/news';
 
 // Tab Population 🌏 — perkiraan populasi dunia yang berjalan tiap detik,
 // fakta laju pertambahan, dan riwayat catatan bulanan.
@@ -114,7 +114,7 @@ export function PopulationTab({ saved }: { saved: PopulationSaved }) {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   hero: {
-    backgroundColor: Color.WORLD_DARK,
+    backgroundColor: Color.NEWS_DARK,
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
@@ -140,16 +140,16 @@ const styles = StyleSheet.create({
   factValue: { color: Color.TEXT_TITLE, textAlign: 'center' },
   factLabel: { textAlign: 'center' },
   noteCard: {
-    backgroundColor: Color.WORLD,
+    backgroundColor: Color.NEWS,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: Color.WORLD_DARK,
+    borderColor: Color.NEWS_DARK,
     padding: 14,
     gap: 8,
     marginBottom: 4,
   },
-  noteText: { color: Color.WORLD_DARK },
-  sourceLink: { color: Color.WORLD_DARK },
+  noteText: { color: Color.NEWS_DARK },
+  sourceLink: { color: Color.NEWS_DARK },
   sectionTitle: { marginTop: 14, marginBottom: 10 },
   row: {
     flexDirection: 'row',
@@ -165,5 +165,5 @@ const styles = StyleSheet.create({
   },
   rowMain: { flex: 1, gap: 1 },
   rowCount: { color: Color.TEXT_TITLE },
-  rowGrowth: { color: Color.WORLD_DARK },
+  rowGrowth: { color: Color.NEWS_DARK },
 });

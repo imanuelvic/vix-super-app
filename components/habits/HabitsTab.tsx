@@ -252,7 +252,15 @@ export function HabitsTab({
    * aplikasi luar. Kalau aplikasinya belum terpasang, jatuh ke alamat webnya —
    * jangan sampai click-nya terasa mati begitu saja.
    */
-  function openHabitLink(link: HabitLink) {
+  function openHabitLink(link: HabitLink, habit?: ScheduledHabit) {
+    // `doneOnOpen` (mis. "Reading the News"): click-nya berarti "sekarang saya
+    // kerjakan", jadi barisnya dicentang saat itu juga lalu layarnya dibuka.
+    // Dicentang DULU supaya centangnya sudah terpasang begitu kembali dari
+    // sana; kalau gagal menulis, pesannya muncul & layarnya tetap dibuka —
+    // menahan perpindahannya cuma bikin click-nya terasa mati.
+    if (link.doneOnOpen && habit && !day.done[habit.id] && !day.skipped[habit.id]) {
+      void handleToggle(habit);
+    }
     if (link.route) {
       router.push({ pathname: link.route.pathname, params: link.route.params });
       return;
@@ -680,7 +688,7 @@ export function HabitsTab({
                       click membawa ke tempat kebiasaannya dikerjakan. */}
                   <PressableScale
                     style={styles.rowMain}
-                    onPress={() => link && openHabitLink(link)}
+                    onPress={() => link && openHabitLink(link, habit)}
                     disabled={!link}>
                     <VixText
                       heading="paragraph"

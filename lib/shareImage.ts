@@ -1,5 +1,6 @@
 import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import * as Linking from 'expo-linking';
+import { Asset, requestPermissionsAsync } from 'expo-media-library';
 
 import { Color } from '../assets/style/color';
 import { dayIdToDate } from './format';
@@ -11,6 +12,17 @@ import { dayIdToDate } from './format';
 // Yang tinggal di sini cuma yang benar-benar SAMA di keduanya: rupa/warna,
 // nomor arsip, pemenggal baris, dan cara menyimpan/membagikan berkasnya.
 // Ukuran & tata letaknya beda jauh, jadi itu tetap di berkasnya masing-masing.
+//
+// ── PENTING soal ukuran gambar ────────────────────────────────────────────
+// Svg.toDataURL({ width, height }) hanya menentukan besar KANVAS-nya; kartunya
+// tetap digambar sebesar ukuran TATA LETAK view-nya (react-native-svg memanggil
+// drawToContext dengan `self.bounds`, bukan dengan kanvas yang kita minta).
+// Jadi kalau pratinjaunya dirender selebar 320 px, hasilnya kartu 320 px di
+// pojok kiri-atas kanvas 1080 px — sisanya kosong/hitam.
+//
+// Karena itu kedua layar merender kartunya pada ukuran PENUH (1080 px) lalu
+// mengecilkannya secara visual dengan `transform: scale`. Transform tidak
+// mengubah ukuran tata letak, jadi yang tertangkap tetap 1080 px penuh.
 //
 // ── Kenapa gambarnya dibuat DI HP, bukan oleh AI ──────────────────────────
 //   1. App ini tidak punya AI sama sekali. Menambahkannya berarti API key ikut
@@ -182,32 +194,71 @@ export function lineY(layout: TextLayout, i: number): number {
   return atas + i * layout.lineHeight + layout.lineHeight * 0.72;
 }
 
+/** Izin Foto ditolak — dibedakan supaya layarnya bisa memberi pesan yang benar. */
+export class PhotoPermissionError extends Error {
+  constructor() {
+    super('Izin menyimpan ke Foto belum diberikan.');
+    this.name = 'PhotoPermissionError';
+  }
+}
+
 /**
- * Tulis PNG hasil rancangan lalu buka lembar berbagi iOS.
+ * Pesan yang tepat untuk kegagalan menyimpan gambar.
  *
- * Di lembar itu ada "Save Image" (simpan ke Foto) maupun Instagram & aplikasi
- * lain — satu pintu untuk simpan MAUPUN bagikan. `dialogTitle` yang membedakan
- * maksud tombolnya.
- *
- * `base64` = keluaran Svg.toDataURL() (tanpa awalan `data:`). Berkasnya cuma
- * singgah di folder cache; iOS membersihkannya sendiri.
+ * Izin yang ditolak BUKAN "coba lagi" — mengulang tidak akan pernah berhasil
+ * sampai izinnya dinyalakan sendiri di Settings, dan iOS cuma menanyakannya
+ * SEKALI. Jadi kasus itu diberi jalan keluarnya, bukan ajakan mengulang.
  */
-export async function sharePng(
+export function photoErrorMessage(error: unknown): string {
+  return error instanceof PhotoPermissionError
+    ? 'Izin simpan ke Foto belum diberikan. Buka Settings → vix → Photos → pilih “Add Photos Only”, lalu coba lagi.'
+    : 'Gagal menyimpan gambarnya. Coba lagi ya.';
+}
+
+/**
+ * Simpan PNG hasil rancangan LANGSUNG ke Foto di HP.
+ *
+ * `base64` = keluaran Svg.toDataURL() (tanpa awalan `data:`). Berkasnya ditulis
+ * dulu ke folder cache karena Foto hanya menerima berkas, bukan teks base64;
+ * setelah tersalin ke Foto, salinan cache-nya tidak dipakai lagi dan iOS
+ * membersihkannya sendiri.
+ *
+ * Izin yang diminta sengaja `writeOnly` (Add Photos Only): app ini cuma perlu
+ * MENAMBAH gambar, tidak perlu membaca seluruh galerimu.
+ */
+export async function savePngToPhotos(
   base64: string,
   fileName: string,
-  dialogTitle: string,
 ): Promise<void> {
+  const izin = await requestPermissionsAsync(true);
+  if (!izin.granted) throw new PhotoPermissionError();
+
   const file = new File(Paths.cache, fileName);
   // Membuat gambar hari yang sama dua kali akan bentrok nama → yang lama dibuang.
   if (file.exists) file.delete();
   file.create();
   file.write(base64, { encoding: 'base64' });
 
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(file.uri, {
-      mimeType: 'image/png',
-      UTI: 'public.png',
-      dialogTitle,
-    });
+  await Asset.create(file.uri);
+}
+
+/**
+ * Buka aplikasi Instagram.
+ *
+ * `story` membuka langsung kamera Story — di pojok kiri bawahnya ada pratinjau
+ * foto TERBARU di galerimu, jadi gambar yang barusan disimpan tinggal
+ * di-click sekali. `app` membuka Instagram apa adanya (untuk Feed, karena
+ * unggahan Feed memang lewat tombol + di dalam app-nya).
+ *
+ * iOS tidak mengizinkan aplikasi lain menyuntikkan gambar ke dalam Instagram
+ * tanpa izin khusus dari Meta — karena itu alurnya: simpan ke Foto dulu, baru
+ * Instagram dibuka. Kalau Instagram tidak terpasang, situsnya yang dibuka.
+ */
+export async function openInstagram(target: 'app' | 'story'): Promise<void> {
+  const skema = target === 'story' ? 'instagram://story-camera' : 'instagram://app';
+  try {
+    await Linking.openURL(skema);
+  } catch {
+    await Linking.openURL('https://www.instagram.com/');
   }
 }

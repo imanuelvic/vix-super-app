@@ -3,7 +3,7 @@
     "name": "vix",
     "slug": "vix-super-app",
     "owner": "imanuelvic",
-    "version": "1.3.1",
+    "version": "1.3.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "vixsuperapp",
@@ -48,6 +48,14 @@
         {
           "photosPermission": "vix mengakses galeri untuk memilih foto anggota keluarga di Family Tree, dokumentasi rapat CORE, dan foto nota di Split Bill.",
           "cameraPermission": "vix memakai kamera untuk memotret nota, lalu isinya dibaca langsung di HP-mu untuk dibagi di Split Bill."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "vix menyimpan gambar Daily Reflection & ayat Alkitab yang kamu buat ke Foto, supaya bisa diunggah ke Instagram.",
+          "photosPermission": "vix menyimpan gambar buatanmu ke Foto. Isi galerimu tidak dibaca.",
+          "isAccessMediaLocationEnabled": false
         }
       ],
       [

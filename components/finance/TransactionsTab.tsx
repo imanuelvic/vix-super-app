@@ -710,7 +710,7 @@ export function TransactionsTab({
         ListHeaderComponent={searchMode ? renderSearchHeader() : renderHeader()}
         ListEmptyComponent={
           <View style={styles.center}>
-            <VixText heading="label">
+            <VixText heading="label" additionalStyle={styles.transactionLogLabel}>
               {searchMode
                 ? query.trim()
                   ? 'Tidak ada transaksi yang cocok 🔍'
@@ -943,6 +943,7 @@ const styles = StyleSheet.create({
   },
   summaryHeader: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
     marginBottom: 6,
@@ -1068,7 +1069,8 @@ const styles = StyleSheet.create({
   rowRight: { alignItems: 'flex-end', gap: 6 },
   amountIncome: { color: Color.SUCCESS },
   amountOut: { color: Color.TEXT_TITLE },
-  center: { alignItems: 'center', justifyContent: 'center', paddingTop: 40 },
+  center: { alignItems: 'center', justifyContent: 'center', paddingTop: 30 },
+  transactionLogLabel: { alignItems: 'center' },
   // Mode cari
   searchWrap: { marginBottom: 8 },
   sortRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },

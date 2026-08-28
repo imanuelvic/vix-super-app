@@ -59,12 +59,9 @@ export default function CareerScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Reminder Home bisa mengarahkan langsung ke tab tertentu lewat ?tab=…
-  // dan ?edit=<id> untuk otomatis membuka modal edit item yang ditekan.
-  const { tab: tabParam, edit: editParam } = useLocalSearchParams<{
-    tab?: string;
-    edit?: string;
-  }>();
+  // ?edit=<id> untuk otomatis membuka modal edit item yang ditekan.
+  // (?tab=… diurus useTabScroll di bawah.)
+  const { edit: editParam } = useLocalSearchParams<{ edit?: string }>();
 
   // Setelah tab memakai ?edit=… (membuka modal), bersihkan param dari URL. Tanpa
   // ini, modal auto-terbuka lagi tiap kembali ke subtab (konten di-mount ulang
@@ -73,20 +70,11 @@ export default function CareerScreen() {
   const clearEditParam = useCallback(() => {
     if (editParam) router.setParams({ edit: '' });
   }, [editParam, router]);
-  const isCareerTab = (t?: string): t is CareerTab =>
-    t === 'fulltime' ||
-    t === 'freelance' ||
-    t === 'affiliate' ||
-    t === 'insurance' ||
-    t === 'business';
-
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
-  const { tab, setTab, scrollKey, onTabPress } = useTabScroll<CareerTab>(
-    isCareerTab(tabParam) ? tabParam : 'fulltime',
-  );
-  useEffect(() => {
-    if (isCareerTab(tabParam)) setTab(tabParam);
-  }, [tabParam, setTab]);
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan, plus buka
+  // sub-tab tertentu lewat ?tab=… (reminder Dashboard & deep link).
+  const { tab, scrollKey, onTabPress } = useTabScroll<CareerTab>('fulltime', {
+    tabs: TABS,
+  });
 
   const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
   const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);

@@ -23,20 +23,16 @@ import {
   setLearningNote,
   setLearningStep,
   setSkillDone,
-  setTopicDone,
   setWeekSkill,
   skillAreaMeta,
   skillOf,
   skillOfWeek,
   SKILLS,
   stepsDone,
-  topicGroupMeta,
-  topicsOfWeek,
   weekComplete,
   type LearningStep,
   type LearningWeek,
   type SkillsDone,
-  type TopicsDone,
   type WeekStreak,
 } from '@/lib/learning';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -51,14 +47,12 @@ export function WeekTab({
   weekId,
   now,
   skillsDone,
-  topicsDone,
   streak,
 }: {
   week: LearningWeek;
   weekId: string;
   now: Date;
   skillsDone: SkillsDone;
-  topicsDone: TopicsDone;
   /** Streak minggu tuntas berturut-turut (lastDayId = weekId). */
   streak: WeekStreak;
 }) {
@@ -76,7 +70,6 @@ export function WeekTab({
   const doneCount = stepsDone(week.steps);
   const complete = weekComplete(week.steps);
   const due = dueStep(week.steps, now);
-  const topics = topicsOfWeek(now);
   // Ganti topik SENIN saja — lihat alasannya di canChangeWeekSkill.
   const bisaGanti = canChangeWeekSkill(now);
   // Streak yang MASIH hidup: tercatat minggu ini, atau minggu lalu (belum
@@ -124,15 +117,6 @@ export function WeekTab({
     try {
       await setWeekSkill(user.uid, weekId, key);
       setPickOpen(false);
-    } catch {
-      setError(SAVE_ERROR);
-    }
-  }
-
-  async function toggleTopic(key: string, checked: boolean) {
-    if (!user) return;
-    try {
-      await setTopicDone(user.uid, key, !checked);
     } catch {
       setError(SAVE_ERROR);
     }
@@ -294,48 +278,10 @@ export function WeekTab({
           );
         })}
 
-        {/* ===== Bahan diskusi minggu ini ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Diskusi Dalam Minggu Ini
-        </VixText>
-
-        {/* Bahan utama = ilmu minggu ini. Sengaja TANPA checkbox: "sudah
-            diceritakan atau belum" sudah dicatat langkah Minggu (Ceritakan)
-            di atas — dua kotak untuk satu hal yang sama cuma bikin bingung. */}
-        <View style={styles.mainTopicCard}>
-          <VixText heading="bold" additionalStyle={styles.mainTopicTitle}>
-            {area.emoji} {skill.title}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.mainTopicHint}>
-            Ilmu minggu ini — ceritakan pakai bahasamu sendiri, jangan baca
-            catatan.
-          </VixText>
-        </View>
-
-        {/* Tiga topik diskusi giliran minggu ini — pemantik kalau diskusinya
-            masih mau lanjut. Dicentang setelah benar-benar diobrolkan.
-            Keterangan kelompoknya sengaja TIDAK ditulis di tiap baris: ketiga
-            topik biasanya sekelompok, jadi kalimatnya cuma terulang tiga kali
-            dan menutupi judul topiknya sendiri. Keterangan itu tetap ada di
-            sub-tab Discussion, satu kali di atas daftarnya. */}
-        {topics.map((t) => {
-          const meta = topicGroupMeta(t.group);
-          const checked = !!topicsDone[t.key];
-          return (
-            <PressableScale
-              key={t.key}
-              style={[styles.topicCard, checked && styles.topicCardDone]}
-              onPress={() => toggleTopic(t.key, checked)}
-              haptic={checked ? 'light' : 'success'}>
-              <CheckCircle checked={checked} />
-              <View style={styles.stepMain}>
-                <VixText heading="bold">
-                  {meta.emoji} {t.label}
-                </VixText>
-              </View>
-            </PressableScale>
-          );
-        })}
+        {/* Bahan diskusi minggu ini DIPINDAH ke sub-tab 💬 Discussion —
+            tempatnya memang di situ (satu daftar topik, satu tempat), dan
+            sub-tab ini jadi kembali fokus ke empat langkah mingguannya.
+            Badge-nya ikut pindah. */}
 
         <FormError message={error} gap="none" additionalStyle={styles.error} />
       </ScrollView>

@@ -4,12 +4,30 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { openNdcMinistry } from '@/lib/spiritual';
+import { openNdcMinistry, openYouVersion } from '@/lib/spiritual';
+
+/**
+ * App luar yang dituju tombolnya — sengaja BEDA per layar, karena
+ * keperluannya memang beda:
+ *   ndc        → renungan harian NDC, bahan Tulis Revive ✍️
+ *   youversion → Alkitabnya sendiri, yang dibuka saat Baca Alkitab 📖
+ */
+const APPS = {
+  ndc: { label: '📱 Buka NDC Ministry', open: openNdcMinistry },
+  youversion: { label: '📖 Buka YouVersion', open: openYouVersion },
+};
 
 // Pembuka layar rohani: satu kalimat reminder yang diundi per hari, lalu
-// tombol ke app NDC Ministry. Dipakai bersama oleh Tulis Revive ✍️ dan Baca
+// tombol ke app luar. Dipakai bersama oleh Tulis Revive ✍️ dan Baca
 // Alkitab 📖 — dulu blok ini cuma ada di Revive dan disalin manual.
-export function SpiritualIntro({ reminder }: { reminder: string }) {
+export function SpiritualIntro({
+  reminder,
+  app = 'ndc',
+}: {
+  reminder: string;
+  app?: keyof typeof APPS;
+}) {
+  const tujuan = APPS[app];
   return (
     <>
       <View style={styles.reminderCard}>
@@ -20,10 +38,10 @@ export function SpiritualIntro({ reminder }: { reminder: string }) {
           {reminder}
         </VixText>
       </View>
-      <PressableScale style={styles.appButton} onPress={openNdcMinistry}>
+      <PressableScale style={styles.appButton} onPress={tujuan.open}>
         <View style={styles.appButtonMain}>
           <VixText heading="bold" additionalStyle={styles.appButtonText}>
-            📱 Buka NDC Ministry
+            {tujuan.label}
           </VixText>
         </View>
         <IconSymbol name="chevron.right" size={20} color={Color.TEXT_REVERSE} />

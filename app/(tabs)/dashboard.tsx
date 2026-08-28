@@ -1207,7 +1207,14 @@ export default function DashboardScreen() {
                 id: t.key,
                 text: `${topicGroupMeta(t.group).emoji} ${t.label}`,
               }))}
-              onPress={() => router.push('/learning')}
+              // Mendarat LANGSUNG di sub-tab 💬 Discussion — di situlah
+              // ketiganya sekarang dicentang.
+              onPress={() =>
+                router.push({
+                  pathname: '/learning',
+                  params: { tab: 'topics' },
+                })
+              }
             />
           )}
 

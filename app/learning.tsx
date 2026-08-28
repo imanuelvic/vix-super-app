@@ -8,14 +8,15 @@ import { BottomTabs, withBadge, type BottomTab } from '@/components/common/Botto
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
+import { DiscussionTab } from '@/components/learning/DiscussionTab';
 import { SkillsTab } from '@/components/learning/SkillsTab';
-import { TopicsTab } from '@/components/learning/TopicsTab';
 import { WeekTab } from '@/components/learning/WeekTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import {
   EMPTY_WEEK,
-  learningPending,
+  pendingSteps,
+  pendingTopicsOfWeek,
   subscribeLearningStreak,
   subscribeLearningWeek,
   subscribeSkillsDone,
@@ -43,7 +44,10 @@ const TABS: BottomTab<LearningTabKey>[] = [
 
 export default function LearningScreen() {
   const { user } = useAuth();
-  const { tab, scrollKey, onTabPress } = useTabScroll<LearningTabKey>('week');
+  // Reminder "Diskusi Dalam Minggu Ini" di Dashboard mendarat di ?tab=topics.
+  const { tab, scrollKey, onTabPress } = useTabScroll<LearningTabKey>('week', {
+    tabs: TABS,
+  });
   const { now } = useNow();
 
   // id minggu = tanggal Senin minggu ini → otomatis ganti tiap Senin.
@@ -68,15 +72,15 @@ export default function LearningScreen() {
   }, [user, weekId]);
 
   const current = week ?? EMPTY_WEEK;
-  // Badge sub-tab 🎯 Target = ANGKA YANG SAMA dengan badge tile Learning di
-  // Home: langkah yang harinya sudah tiba tapi belum dikerjakan + topik
-  // diskusi minggu ini yang belum diobrolkan. Keduanya lewat learningPending,
-  // jadi mustahil berbeda pendapat. Semua yang dihitung memang ada di sub-tab
-  // ini (4 langkah + bagian "Diskusi Dalam Minggu Ini").
-  const pending =
-    week === null || topicsDone === null
-      ? 0
-      : learningPending(week.steps, topicsDone, now);
+  // Badge dipecah mengikuti tempat pekerjaannya — sejak "Diskusi Dalam Minggu
+  // Ini" pindah ke sub-tab 💬 Discussion, angkanya ikut pindah ke situ:
+  //   🎯 Target     → langkah yang harinya sudah tiba tapi belum dikerjakan
+  //   💬 Discussion → topik giliran minggu ini yang belum diobrolkan
+  // Jumlah keduanya = badge tile Learning di Home (learningPending), jadi
+  // angkanya tetap mustahil berbeda pendapat dengan Home.
+  const stepsPending = week === null ? 0 : pendingSteps(week.steps, now);
+  const topicsPending =
+    topicsDone === null ? 0 : pendingTopicsOfWeek(topicsDone, now).length;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -97,7 +101,6 @@ export default function LearningScreen() {
             weekId={weekId}
             now={now}
             skillsDone={skillsDone}
-            topicsDone={topicsDone}
             streak={streak}
           />
         ) : tab === 'skills' ? (
@@ -108,12 +111,12 @@ export default function LearningScreen() {
             skillsDone={skillsDone}
           />
         ) : (
-          <TopicsTab topicsDone={topicsDone} />
+          <DiscussionTab topicsDone={topicsDone} week={current} now={now} />
         )}
       </View>
 
       <BottomTabs
-        tabs={withBadge(TABS, { week: pending })}
+        tabs={withBadge(TABS, { week: stepsPending, topics: topicsPending })}
         value={tab}
         onChange={onTabPress}
       />

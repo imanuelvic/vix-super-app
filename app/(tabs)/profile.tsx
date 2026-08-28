@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -159,21 +159,12 @@ export default function ProfileScreen() {
 
   // Layar lain bisa membuka sub-tab tertentu langsung lewat ?tab=… — mis.
   // kartu Data Tubuh di Fitness → Progress yang mengarah ke ?tab=body.
-  const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
-  const isProfileTab = (t?: string): t is Tab =>
-    TABS.some((x) => x.key === t);
-
-  const { tab, setTab, scrollKey, onTabPress } = useTabScroll<Tab>(
-    isProfileTab(tabParam) ? tabParam : 'profile',
-  );
-  // Param dibersihkan setelah dipakai. Profile itu tab (layarnya tetap hidup),
-  // jadi kalau param dibiarkan menempel, kunjungan berikutnya lewat tombol tab
-  // bawah akan terus dipaksa balik ke sub-tab yang sama.
-  useEffect(() => {
-    if (!isProfileTab(tabParam)) return;
-    setTab(tabParam);
-    router.setParams({ tab: '' });
-  }, [tabParam, setTab, router]);
+  // `clearParam`: Profile itu tab (layarnya tetap hidup), jadi paramnya
+  // dibersihkan sesudah dipakai — lihat alasannya di useTabScroll.
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('profile', {
+    tabs: TABS,
+    clearParam: true,
+  });
 
   const [error, setError] = useState<string | null>(null);
 

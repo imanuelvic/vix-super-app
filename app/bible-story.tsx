@@ -12,6 +12,7 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { BibleStoryCard } from '@/components/spiritual/BibleStoryCard';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useNow } from '@/hooks/useNow';
 import {
   storyFileName,
@@ -20,7 +21,14 @@ import {
   STORY_W,
 } from '@/lib/bibleStory';
 import { formatFullDate } from '@/lib/format';
-import { archiveNo, designOf, SHARE_DESIGNS, sharePng } from '@/lib/shareImage';
+import {
+  archiveNo,
+  designOf,
+  openInstagram,
+  photoErrorMessage,
+  savePngToPhotos,
+  SHARE_DESIGNS,
+} from '@/lib/shareImage';
 import { bibleSessionMeta, bibleSessionOf } from '@/lib/spiritual';
 
 // Ayat Alkitab 📖 → Story Instagram 9:16.
@@ -45,7 +53,12 @@ export default function BibleStoryScreen() {
   const [pickedRef, setPickedRef] = useState(refs[0] ?? '');
   const [verse, setVerse] = useState('');
   const [pickedKey, setPickedKey] = useState(SHARE_DESIGNS[0].key);
-  const [busy, setBusy] = useState<'save' | 'share' | null>(null);
+  // Tombol mana yang sedang bekerja — dua tombol, satu proses.
+  const kerja = useBusyTask<'save' | 'ig'>();
+  // Gambar mana yang SUDAH tersimpan di Foto (kunci = rupa + acuan + ayatnya).
+  // Dipakai supaya menekan "Buka Instagram" sesudah "Simpan" tidak menyimpan
+  // gambar yang sama dua kali ke galerimu.
+  const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const svgRef = useRef<Svg>(null);
@@ -57,38 +70,54 @@ export default function BibleStoryScreen() {
   // Pratinjau selebar layar dikurangi tepi, tapi dibatasi supaya lembar 9:16-nya
   // tetap muat utuh di layar mana pun (termasuk iPhone 15 yang tingginya pas).
   const previewW = Math.min(width - 40, 260);
+  const previewH = (previewW * STORY_H) / STORY_W;
+  // Kartunya SELALU dirender pada ukuran asli 1080×1920, lalu dikecilkan
+  // dengan transform. Lihat catatan panjang di lib/shareImage.ts: yang
+  // tertangkap toDataURL itu ukuran TATA LETAK view-nya, bukan kanvas yang
+  // kita minta — dirender sebesar pratinjau, hasilnya kartu kecil di pojok
+  // kiri-atas dengan sisanya hitam.
+  const scale = previewW / STORY_W;
+
+  /** Gambar kartunya jadi PNG 1080×1920 (base64, tanpa awalan `data:`). */
+  function buatPng(): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const svg = svgRef.current;
+      if (!svg) {
+        reject(new Error('kartu belum siap'));
+        return;
+      }
+      svg.toDataURL((data) => resolve(data), {
+        width: STORY_W,
+        height: STORY_H,
+      });
+    });
+  }
+
+  /** Simpan ke Foto — dilewati kalau gambar yang persis sama sudah tersimpan. */
+  async function simpanKeFoto(): Promise<void> {
+    const kunci = `${design.key}|${reference}|${verse}`;
+    if (saved === kunci) return;
+    await savePngToPhotos(await buatPng(), storyFileName(todayId, reference));
+    setSaved(kunci);
+  }
 
   /**
-   * Gambar ulang kartunya pada ukuran Story SEBENARNYA (1080×1920) — bukan
-   * sebesar pratinjaunya; kalau tidak, gambarnya pecah saat diunggah. Lalu
-   * buka lembar berbagi iOS: di situ ada "Save Image" maupun Instagram.
+   * `save` = simpan ke Foto saja.
+   * `ig`   = simpan ke Foto LALU buka kamera Story Instagram. Urutannya memang
+   *          begitu: iOS tidak mengizinkan app lain menaruh gambar langsung ke
+   *          dalam Instagram, jadi gambarnya harus sudah ada di galeri dulu —
+   *          di kamera Story, foto terbaru muncul di pojok kiri bawah.
    */
-  async function buatStory(mode: 'save' | 'share') {
-    if (!svgRef.current || busy) return;
-    setBusy(mode);
-    setError(null);
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const svg = svgRef.current;
-        if (!svg) {
-          reject(new Error('kartu belum siap'));
-          return;
-        }
-        svg.toDataURL((data) => resolve(data), {
-          width: STORY_W,
-          height: STORY_H,
-        });
-      });
-      await sharePng(
-        base64,
-        storyFileName(todayId, reference),
-        mode === 'save' ? 'Simpan ke Foto' : 'Bagikan ke Instagram Story',
-      );
-    } catch {
-      setError('Gagal membuat gambarnya. Coba lagi ya.');
-    } finally {
-      setBusy(null);
-    }
+  async function buatStory(mode: 'save' | 'ig') {
+    await kerja.run({
+      key: mode,
+      start: () => setError(null),
+      task: async () => {
+        await simpanKeFoto();
+        if (mode === 'ig') await openInstagram('story');
+      },
+      fail: (e) => setError(photoErrorMessage(e)),
+    });
   }
 
   return (
@@ -96,7 +125,7 @@ export default function BibleStoryScreen() {
       <ScreenHeader
         backLabel={meta.title}
         title="Bagikan Ayat 📖"
-        subtitle="Bacaan hari ini jadi Story 9:16"
+        subtitle="Instastory"
       />
 
       <ScreenError message={error} />
@@ -131,12 +160,7 @@ export default function BibleStoryScreen() {
           )}
 
           <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            ✍️ Bunyi ayatnya
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.fieldNote}>
-            Opsional. Kosongkan saja kalau cuma mau memajang acuannya —
-            app tidak menyimpan teks Alkitab, jadi bunyinya kamu salin sendiri
-            supaya tidak ada satu huruf pun yang dikarang.
+            ✍️ Isi Ayat
           </VixText>
           <FormInput
             style={styles.verseInput}
@@ -144,25 +168,29 @@ export default function BibleStoryScreen() {
             value={verse}
             onChangeText={setVerse}
             multiline
-            editable={!busy}
+            editable={kerja.busy === null}
           />
 
-          {/* Pratinjau — persis yang akan keluar, cuma dikecilkan. */}
           <View style={styles.previewWrap}>
-            <BibleStoryCard
-              ref={svgRef}
-              verse={verse}
-              reference={reference}
-              sessionLabel={meta.title.toUpperCase()}
-              design={design}
-              dateLabel={formatFullDate(now)}
-              archiveLabel={archiveNo(todayId)}
-              width={previewW}
-            />
+            <View
+              style={[styles.previewClip, { width: previewW, height: previewH }]}>
+              <View style={[styles.full, { transform: [{ scale }] }]}>
+                <BibleStoryCard
+                  ref={svgRef}
+                  verse={verse}
+                  reference={reference}
+                  sessionLabel={meta.title.toUpperCase()}
+                  design={design}
+                  dateLabel={formatFullDate(now)}
+                  archiveLabel={archiveNo(todayId)}
+                  width={STORY_W}
+                />
+              </View>
+            </View>
           </View>
 
           <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            🎨 Rupa
+            🎨 Style
           </VixText>
           <View style={styles.chipWrap}>
             {SHARE_DESIGNS.map((d) => (
@@ -176,26 +204,25 @@ export default function BibleStoryScreen() {
           </View>
 
           <PrimaryButton
-            label="💾 Simpan Gambar"
-            busy={busy === 'save'}
+            label="💾 Simpan ke Foto"
+            busy={kerja.busy === 'save'}
             onPress={() => buatStory('save')}
             background={Color.MAIN_DARK}
             additionalStyle={styles.actionTop}
           />
           <PrimaryButton
-            label="📤 Bagikan ke Story"
-            busy={busy === 'share'}
-            onPress={() => buatStory('share')}
+            label="📸 Buka Instagram Story"
+            busy={kerja.busy === 'ig'}
+            onPress={() => buatStory('ig')}
             background={Color.SPIRITUAL_DARK}
             additionalStyle={styles.action}
           />
 
-          <VixText heading="label" additionalStyle={styles.hint}>
-            Dua-duanya membuka lembar berbagi iOS: pilih “Save Image” untuk
-            menyimpan ke Foto, atau Instagram untuk langsung mengunggah sebagai
-            Story. Gambarnya dibuat di HP-mu sendiri dan tidak dikirim ke mana
-            pun.
-          </VixText>
+          {saved === `${design.key}|${reference}|${verse}` && (
+            <VixText heading="label" additionalStyle={styles.savedNote}>
+              ✅ Tersimpan di Foto — di kamera Story, dia foto yang paling baru.
+            </VixText>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -208,13 +235,14 @@ const styles = StyleSheet.create({
   emptyWrap: { paddingHorizontal: 20, paddingTop: 20 },
   empty: { textAlign: 'center' },
   sectionTitle: { marginTop: 14, marginBottom: 8 },
-  fieldNote: { marginBottom: 8 },
   verseInput: { minHeight: 96, textAlignVertical: 'top' },
-  // Pratinjau ditengahkan supaya terasa seperti selembar gambar, bukan bagian
-  // dari layar.
   previewWrap: { alignItems: 'center', paddingVertical: 14 },
+  // Kartunya dirender seukuran aslinya lalu dikecilkan; kotak ini yang
+  // memotongnya jadi sebesar pratinjau.
+  previewClip: { overflow: 'hidden' },
+  full: { width: STORY_W, height: STORY_H, transformOrigin: 'top left' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   actionTop: { marginTop: 18 },
   action: { marginTop: 10 },
-  hint: { color: Color.TEXT_LABEL, marginTop: 8 },
+  savedNote: { marginTop: 10, textAlign: 'center', color: Color.SUCCESS },
 });

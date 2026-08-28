@@ -17,15 +17,19 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
+import { LeaderBodyDialog } from '@/components/core/LeaderBodyDialog';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
   archiveCoreLeader,
   currentAge,
   DISC_OPTIONS,
+  EMPTY_LEADER_BODY,
   EMPTY_STUDY_WORK,
   GENDER_OPTIONS,
   HEARTS,
+  leaderBodyOf,
+  leaderBodyPayload,
   LOVE_LANG_OPTIONS,
   loveLangLabel,
   MBTI_TYPES,
@@ -41,6 +45,7 @@ import {
   workLine,
   type CoreLeader,
   type Gender,
+  type LeaderBody,
   type MainTeamMember,
   type StudyWork,
 } from '@/lib/core';
@@ -109,10 +114,15 @@ export function LeadersTab({
   const [fLove, setFLove] = useState<string | null>(null);
   // Pendidikan & pekerjaan — satu objek, bukan 4 state terpisah.
   const [fStudy, setFStudy] = useState<StudyWork>(EMPTY_STUDY_WORK);
+  // Data tubuh — sama polanya: satu objek berisi tiga isian teks.
+  const [fBody, setFBody] = useState<LeaderBody>(EMPTY_LEADER_BODY);
   const [formError, setFormError] = useState<string | null>(null);
   // Mode "lepas CL": ganti isi modal edit jadi form alasan sebelum diarsipkan.
   const [archiving, setArchiving] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
+
+  // CL yang data tubuhnya sedang dilihat (null = dialognya tertutup).
+  const [bodyOf, setBodyOf] = useState<CoreLeader | null>(null);
 
   // Form Main Team (terpisah karena field-nya beda: pilih CL, tanpa hati).
   const [editingMT, setEditingMT] = useState<MainTeamMember | 'new' | null>(null);
@@ -154,6 +164,7 @@ export function LeadersTab({
     setFMbti(null);
     setFLove(null);
     setFStudy(EMPTY_STUDY_WORK);
+    setFBody(EMPTY_LEADER_BODY);
     setFormError(null);
     setArchiving(false);
     setArchiveReason('');
@@ -170,6 +181,7 @@ export function LeadersTab({
     setFMbti(l.mbti ?? null);
     setFLove(l.loveLanguage ?? null);
     setFStudy(studyWorkOf(l));
+    setFBody(leaderBodyOf(l));
     setFormError(null);
     setArchiving(false);
     setArchiveReason('');
@@ -197,6 +209,13 @@ export function LeadersTab({
       mbti: fMbti,
       loveLanguage: fLove,
       ...studyWorkPayload(fStudy),
+      // Tanggalnya cuma bergerak kalau ANGKANYA berubah — lihat
+      // leaderBodyPayload di lib/core.ts.
+      ...leaderBodyPayload(
+        fBody,
+        editing === 'new' ? {} : editing,
+        dayDocId(today),
+      ),
     };
     const next =
       editing === 'new'
@@ -435,11 +454,13 @@ export function LeadersTab({
                 </View>
               </PressableScale>
               <View style={styles.cardRight}>
-                {/* Dua tombol di pojok kanan ATAS kartu:
+                {/* Tiga tombol di pojok kanan ATAS kartu:
+                    🧍 = data tubuhnya (BACA saja — mengubahnya lewat ✏️).
                     🎡 = Wheel of Life CL ini (layar yang sama persis dengan
                          roda milikku, cuma datanya per CL — lihat app/wheel).
                     ✏️ = ubah datanya. */}
                 <View style={styles.cardActions}>
+                  <EmojiButton emoji="🧍" onPress={() => setBodyOf(l)} />
                   <EmojiButton
                     emoji="🎡"
                     onPress={() =>
@@ -551,6 +572,9 @@ export function LeadersTab({
         )}
         </View>
       </ScrollView>
+
+      {/* Data tubuh CL 🧍 — juga BACA-SAJA, aturan yang sama. */}
+      <LeaderBodyDialog leader={bodyOf} onClose={() => setBodyOf(null)} />
 
       {/* Modal BACA-SAJA — muncul saat barisnya di-click. Tidak ada satu pun
           kolom yang bisa diubah di sini; mengubah lewat tombol ✏️ di kartunya. */}
@@ -701,6 +725,38 @@ export function LeadersTab({
                 love={fLove}
                 setLove={setFLove}
               />
+
+              {/* Data tubuh 🧍 — SATU-SATUNYA tempat mengubahnya. Tombol 🧍 di
+                  kartu cuma menampilkannya. */}
+              <VixText heading="bold" additionalStyle={styles.bodyHeading}>
+                🧍 Data Tubuh
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.bodyHint}>
+                Opsional — buat memantau apakah badannya bergerak ke arah yang
+                sehat. Tanggal “diperbarui” cuma bergeser kalau angkanya berubah.
+              </VixText>
+              <View style={styles.bodyRow}>
+                {(
+                  [
+                    ['height', 'Tinggi (cm)', '169'],
+                    ['weight', 'Berat (kg)', '58'],
+                    ['waist', 'Lingkar perut (cm)', '72'],
+                  ] as const
+                ).map(([key, label, contoh]) => (
+                  <View key={key} style={styles.bodyField}>
+                    <VixText heading="label" additionalStyle={styles.bodyLabel}>
+                      {label}
+                    </VixText>
+                    <FormInput
+                      placeholder={contoh}
+                      keyboardType="decimal-pad"
+                      value={fBody[key]}
+                      onChangeText={(t) => setFBody((b) => ({ ...b, [key]: t }))}
+                      editable={!busy}
+                    />
+                  </View>
+                ))}
+              </View>
 
               <FormError message={formError} />
               <EditDelete
@@ -1301,6 +1357,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   archiveInput: { minHeight: 100, textAlignVertical: 'top', marginBottom: 10 },
+  // Data tubuh di form ✏️ — tiga kolom angka sebaris.
+  bodyHeading: { color: Color.TEXT_TITLE, marginTop: 14 },
+  bodyHint: { marginTop: 2, marginBottom: 8 },
+  bodyRow: { flexDirection: 'row', gap: 8 },
+  bodyField: { flex: 1, gap: 4 },
+  bodyLabel: { color: Color.TEXT_LABEL },
   archiveButton: {
     marginTop: 8,
     alignItems: 'center',

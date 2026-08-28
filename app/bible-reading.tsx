@@ -7,6 +7,7 @@ import { Color } from '@/assets/style/color';
 import { AchievementButton } from '@/components/common/AchievementButton';
 import { BibleRefField } from '@/components/common/BibleRefField';
 import { FormError } from '@/components/common/FormError';
+import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -23,8 +24,10 @@ import { unsubscribeAll } from '@/lib/liveDoc';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
   BIBLE_SKIPPED,
+  BIBLE_VERSION_DEFAULT,
   bibleDayComplete,
   bibleMinutesLeft,
+  bibleRefWithVersion,
   bibleSessionMeta,
   bibleSessionOf,
   bumpBibleStreaks,
@@ -35,6 +38,7 @@ import {
   subscribeBibleReadingToday,
   subscribeBibleStreaks,
   type BibleReadingSessions,
+  type BibleReadingVersions,
   type BibleStreaks,
 } from '@/lib/spiritual';
 
@@ -53,6 +57,7 @@ export default function BibleReadingScreen() {
   const { now } = useNow();
 
   const [today, setToday] = useState<BibleReadingSessions | null>(null);
+  const [versions, setVersions] = useState<BibleReadingVersions | null>(null);
   const [streaks, setStreaks] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +67,10 @@ export default function BibleReadingScreen() {
   useEffect(() => {
     if (!user) return;
     return unsubscribeAll([
-      subscribeBibleReadingToday(user.uid, dayId, setToday),
+      subscribeBibleReadingToday(user.uid, dayId, (sessions, versi) => {
+        setToday(sessions);
+        setVersions(versi);
+      }),
       subscribeBibleStreaks(user.uid, setStreaks),
     ]);
   }, [user, dayId]);
@@ -80,7 +88,15 @@ export default function BibleReadingScreen() {
     existing && !skipped ? existing.split(',').map((s) => s.trim()) : [''],
   );
 
+  // Terjemahan yang dibaca ("TB", "BIS", "NIV", …). Bebas diketik: daftar
+  // terjemahan di YouVersion terlalu panjang untuk dijadikan pilihan, dan
+  // yang kamu pakai sehari-hari cuma segelintir. Kosong = TB.
+  const [version, setVersion] = useDraft<string>(
+    versions?.[session] ?? BIBLE_VERSION_DEFAULT,
+  );
+
   const filled = refs.map((r) => r.trim()).filter(Boolean);
+  const versiTerpakai = version.trim() || BIBLE_VERSION_DEFAULT;
 
   // Sisa waktu jendela sesi ini. ≤ 0 = sudah lewat; ≤ 30 menit = aba-aba merah.
   const minutesLeft = bibleMinutesLeft(session, now);
@@ -99,7 +115,13 @@ export default function BibleReadingScreen() {
     setBusy(true);
     setError(null);
     try {
-      await saveBibleReading(user.uid, dayId, session, filled.join(', '));
+      await saveBibleReading(
+        user.uid,
+        dayId,
+        session,
+        filled.join(', '),
+        versiTerpakai,
+      );
       // "Lengkap" = KETIGA sesi hari ini terisi setelah simpan ini.
       await bumpBibleStreaks(
         user.uid,
@@ -145,7 +167,10 @@ export default function BibleReadingScreen() {
       <ScreenHeader
         backLabel="Home"
         title={`${meta.title} ${meta.emoji}`}
-        subtitle="Pilih kitab, lalu isi pasal & ayatnya"
+        // Mazmur 1:2 / Yosua 1:8 — merenungkan firman-Nya siang & malam.
+        // Layar ini punya tiga sesi (pagi, siang, malam), jadi kalimatnya
+        // sekaligus menjelaskan kenapa bacanya dibagi tiga.
+        subtitle="Merenungkan firman-Nya pagi, siang & malam"
         // Layar ini SATU sesi saja, jadi modal yang dibuka pun sesi itu:
         // pagi 🌅 / siang 🌤️ / malam 🌙 — bukan daftar semua kategori.
         right={<AchievementButton category={BIBLE_CATEGORY[session]} />}
@@ -177,10 +202,15 @@ export default function BibleReadingScreen() {
           </View>
         )}
 
-        {/* Reminder hari ini + pintasan NDC Ministry — bentuk & isinya sama
-            dengan Tulis Revive. Undiannya diberi garam berbeda per sesi, jadi
-            pagi, malam, & Revive tidak menampilkan kalimat yang sama persis. */}
-        <SpiritualIntro reminder={dailyReminder(dayId, `baca-${session}`)} />
+        {/* Reminder hari ini + pintasan ke YouVersion — bentuknya sama dengan
+            Tulis Revive, tapi tujuan tombolnya beda: di sini yang dibuka
+            ALKITABNYA (YouVersion), bukan renungan NDC. Undiannya diberi garam
+            berbeda per sesi, jadi pagi, malam, & Revive tidak menampilkan
+            kalimat yang sama persis. */}
+        <SpiritualIntro
+          reminder={dailyReminder(dayId, `baca-${session}`)}
+          app="youversion"
+        />
 
         {refs.map((ref, i) => (
           <View key={i} style={styles.refCard}>
@@ -213,13 +243,31 @@ export default function BibleReadingScreen() {
           </VixText>
         </PressableScale>
 
+        {/* Terjemahan yang dibaca. Satu untuk seluruh bacaan hari itu —
+            praktisnya memang begitu: satu app dibuka, satu terjemahan dipilih,
+            lalu semua pasalnya dibaca di situ. */}
+        <View style={styles.versionRow}>
+          <VixText heading="label" additionalStyle={styles.versionLabel}>
+            Terjemahan
+          </VixText>
+          <FormInput
+            placeholder={BIBLE_VERSION_DEFAULT}
+            value={version}
+            onChangeText={setVersion}
+            editable={!busy}
+            autoCapitalize="characters"
+            maxLength={12}
+            style={styles.versionInput}
+          />
+        </View>
+
         {filled.length > 0 && (
           <View style={styles.summaryCard}>
             <VixText heading="label" additionalStyle={styles.summaryLabel}>
               Tersimpan sebagai
             </VixText>
             <VixText heading="bold" additionalStyle={styles.summaryText}>
-              {filled.join(', ')}
+              {bibleRefWithVersion(filled.join(', '), versiTerpakai)}
             </VixText>
           </View>
         )}
@@ -347,6 +395,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   addText: { color: Color.SPIRITUAL_DARK },
+  versionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  versionLabel: { color: Color.TEXT_LABEL },
+  // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
+  versionInput: { flex: 1, maxWidth: 140 },
   summaryCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

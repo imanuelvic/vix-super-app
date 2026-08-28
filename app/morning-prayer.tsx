@@ -90,9 +90,6 @@ export default function MorningPrayerScreen() {
     points: points[l.id] ?? [],
     done: monthlyPrayers.followedDayId[l.id] === todayId,
   }));
-  // Pagi cukup memenuhi KUOTA (2), bukan semuanya — sisanya untuk malam nanti.
-  // Kalau CL giliran hari ini kebetulan kurang dari kuota, kuotanya menyesuaikan
-  // supaya gerbangnya tidak pernah mustahil dicentang.
   const chainQuota = Math.min(PRAYER_MORNING_QUOTA, chainRows.length);
   const chainDoneCount = chainRows.filter((l) => l.done).length;
   const chainLeft = chainDue ? Math.max(0, chainQuota - chainDoneCount) : 0;

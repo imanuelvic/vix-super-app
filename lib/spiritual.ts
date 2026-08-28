@@ -238,6 +238,29 @@ export function isBibleSkipped(passage: string): boolean {
 /** Isi ketiga sesi dalam satu hari ("" = belum diisi). */
 export type BibleReadingSessions = Record<BibleSession, string>;
 
+// ===================== Versi terjemahan =====================
+// Acuan bacaan tanpa terjemahannya masih setengah keterangan: "Amsal 16" di
+// TB dan di BIS bunyinya bisa jauh berbeda, dan enam bulan lagi kamu tidak
+// akan ingat baca yang mana. Disimpan TERPISAH dari acuannya (bukan disambung
+// jadi satu teks) supaya acuannya tetap bisa diurai — pemilih kitab, Story
+// ayat, dan pencarian riwayat semuanya membaca acuan yang bersih.
+
+/** Terjemahan bawaan kalau belum pernah diisi — Terjemahan Baru. */
+export const BIBLE_VERSION_DEFAULT = 'TB';
+
+/** Terjemahan tiap sesi dalam satu hari. */
+export type BibleReadingVersions = Record<BibleSession, string>;
+
+/** Acuan + terjemahannya, siap ditampilkan: "Amsal 16 (TB)". */
+export function bibleRefWithVersion(passage: string, version: string): string {
+  const acuan = passage.trim();
+  // Dirapikan DULU, baru jatuh ke bawaannya — "   " itu truthy, jadi kalau
+  // urutannya dibalik terjemahan yang isinya spasi lolos jadi kosong.
+  const versi = version.trim() || BIBLE_VERSION_DEFAULT;
+  if (!acuan || isBibleSkipped(acuan)) return acuan;
+  return `${acuan} (${versi})`;
+}
+
 /**
  * Sesi ini benar-benar SUDAH DIBACA hari itu?
  *
@@ -315,6 +338,8 @@ export function bibleHasOther(
 export type BibleReadingDay = BibleReadingSessions & {
   id: string; // "YYYY-MM-DD"
   date: Timestamp;
+  /** Terjemahan tiap sesi hari itu — kosong di Firestore berarti TB. */
+  versions: BibleReadingVersions;
 };
 
 /** Sesi yang jendelanya sedang terbuka sekarang (null = di luar jam baca). */
@@ -330,6 +355,24 @@ function readSessions(data?: Record<string, unknown>): BibleReadingSessions {
     morning: (data?.morning as string) ?? '',
     daytime: (data?.daytime as string) ?? '',
     night: (data?.night as string) ?? '',
+  };
+}
+
+/**
+ * Terjemahan tiap sesi. Disimpan sebagai field datar (`morningVersion`, …)
+ * supaya `setDoc(..., { merge: true })` per sesi tetap sesederhana sebelumnya.
+ *
+ * Catatan yang dibuat SEBELUM kolom ini ada tidak punya field-nya sama sekali
+ * → semuanya jatuh ke TB. Itu memang benar: seluruh catatan lama dibuat dari
+ * Terjemahan Baru.
+ */
+function readVersions(data?: Record<string, unknown>): BibleReadingVersions {
+  const ambil = (k: string) =>
+    ((data?.[k] as string) || '').trim() || BIBLE_VERSION_DEFAULT;
+  return {
+    morning: ambil('morningVersion'),
+    daytime: ambil('daytimeVersion'),
+    night: ambil('nightVersion'),
   };
 }
 
@@ -353,6 +396,7 @@ export function subscribeBibleReadingDays(
           id: d.id,
           ...readSessions(d.data()),
           date: d.data().date as Timestamp,
+          versions: readVersions(d.data()),
         })),
       );
     },
@@ -364,26 +408,41 @@ export function subscribeBibleReadingDays(
 export function subscribeBibleReadingToday(
   uid: string,
   dayId: string,
-  onChange: (sessions: BibleReadingSessions) => void,
+  onChange: (
+    sessions: BibleReadingSessions,
+    versions: BibleReadingVersions,
+  ) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   return liveDoc(
     doc(db, 'users', uid, 'bibleRead', dayId),
-    (snapshot) => onChange(readSessions(snapshot.data())),
+    (snapshot) =>
+      onChange(readSessions(snapshot.data()), readVersions(snapshot.data())),
     onError,
   );
 }
 
-/** Simpan bacaan SATU sesi — merge, jadi sesi lain di hari itu tidak tersentuh. */
+/**
+ * Simpan bacaan SATU sesi — merge, jadi sesi lain di hari itu tidak tersentuh.
+ *
+ * `version` boleh dikosongkan; yang tersimpan tetap TB. Ditulis walau sama
+ * dengan bawaannya supaya catatannya jujur menyebut terjemahan yang dipakai,
+ * bukan menebak dari kekosongan.
+ */
 export function saveBibleReading(
   uid: string,
   dayId: string,
   session: BibleSession,
   passage: string,
+  version: string = BIBLE_VERSION_DEFAULT,
 ) {
   return setDoc(
     doc(db, 'users', uid, 'bibleRead', dayId),
-    { [session]: passage, date: Timestamp.fromDate(dayIdToDate(dayId)) },
+    {
+      [session]: passage,
+      [`${session}Version`]: version.trim() || BIBLE_VERSION_DEFAULT,
+      date: Timestamp.fromDate(dayIdToDate(dayId)),
+    },
     { merge: true },
   );
 }
@@ -611,15 +670,29 @@ export function activeNudge(now: Date, dayId: string): string | null {
   );
 }
 
-// ===================== Aplikasi NDC Ministry 📱 =====================
-// Dibuka lewat deep link resmi app NDC Ministry. Kalau app-nya belum terpasang
-// / skemanya tak dikenali, jatuh ke halaman App Store supaya bisa dipasang.
+// ===================== Aplikasi luar 📱 =====================
+// Dibuka lewat deep link resmi masing-masing. Kalau app-nya belum terpasang /
+// skemanya tak dikenali, jatuh ke halaman App Store supaya bisa dipasang.
+//
+// Dua app, dua keperluan yang memang berbeda:
+//   NDC Ministry → renungan harian NDC (dipakai layar Tulis Revive ✍️)
+//   YouVersion   → Alkitabnya sendiri (dipakai layar Baca Alkitab 📖)
 
 const NDC_DEEPLINK = 'ndc://';
 const NDC_APP_STORE = 'https://apps.apple.com/id/app/ndc-ministry/id1452468715';
 
 export function openNdcMinistry() {
   return openExternalUrl(NDC_DEEPLINK, { fallback: NDC_APP_STORE });
+}
+
+// YouVersion (nama resminya di App Store cuma "Bible", penerbitnya Life.Church).
+const YOUVERSION_DEEPLINK = 'youversion://';
+const YOUVERSION_APP_STORE = 'https://apps.apple.com/id/app/bible/id282935706';
+
+export function openYouVersion() {
+  return openExternalUrl(YOUVERSION_DEEPLINK, {
+    fallback: YOUVERSION_APP_STORE,
+  });
 }
 
 // ===================== Pertanyaan pemantik ✨ =====================

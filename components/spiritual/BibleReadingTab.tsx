@@ -16,7 +16,9 @@ import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   BIBLE_SESSIONS,
+  BIBLE_VERSION_DEFAULT,
   bibleHasOther,
+  bibleRefWithVersion,
   bibleSessionMeta,
   bibleSessionNow,
   deleteBibleReading,
@@ -41,6 +43,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
   // Hari yang sedang diedit (hanya hari ini) + isi kotak teksnya.
   const [editing, setEditing] = useState<BibleReadingDay | null>(null);
   const [text, setText] = useState('');
+  const [version, setVersion] = useState(BIBLE_VERSION_DEFAULT);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -58,6 +61,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
     // Yang dilewati tidak pernah masuk daftar, jadi isinya pasti acuan asli —
     // penanda "__skip__" tak mungkin nyasar ke kotak teks ini.
     setText(d[session]);
+    setVersion(d.versions[session]);
     setFormError(null);
   }
 
@@ -71,7 +75,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
     setBusy(true);
     setFormError(null);
     try {
-      await saveBibleReading(user.uid, editing.id, session, value);
+      await saveBibleReading(user.uid, editing.id, session, value, version);
       setEditing(null);
     } catch {
       setFormError(SAVE_ERROR);
@@ -137,8 +141,11 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
                   </PressableScale>
                 )}
               </View>
+              {/* "Amsal 16 (TB)" — acuannya beserta terjemahan yang dibaca.
+                  Catatan lama yang belum punya kolom terjemahan tampil (TB),
+                  dan itu memang benar: semuanya dibuat dari Terjemahan Baru. */}
               <VixText heading="paragraph" additionalStyle={styles.cardText}>
-                {d[session]}
+                {bibleRefWithVersion(d[session], d.versions[session])}
               </VixText>
             </View>
           );
@@ -169,6 +176,19 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
           editable={!busy}
           multiline
           style={styles.input}
+        />
+
+        <VixText heading="label" additionalStyle={styles.fieldLabelTop}>
+          Terjemahan
+        </VixText>
+        <FormInput
+          placeholder={BIBLE_VERSION_DEFAULT}
+          value={version}
+          onChangeText={setVersion}
+          editable={!busy}
+          autoCapitalize="characters"
+          maxLength={12}
+          style={styles.versionInput}
         />
 
         <FormError message={formError} gap="top" />
@@ -209,5 +229,8 @@ const styles = StyleSheet.create({
   editText: { color: Color.MAIN },
   cardText: { color: Color.TEXT_TITLE },
   fieldLabel: { marginBottom: 6 },
+  fieldLabelTop: { marginTop: 12, marginBottom: 6 },
   input: { minHeight: 88, textAlignVertical: 'top' },
+  // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
+  versionInput: { maxWidth: 140 },
 });

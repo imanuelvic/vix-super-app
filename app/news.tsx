@@ -7,27 +7,34 @@ import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { NewsTab } from '@/components/world/NewsTab';
-import { PopulationTab } from '@/components/world/PopulationTab';
+import { NewsTab } from '@/components/news/NewsTab';
+import { PopulationTab } from '@/components/news/PopulationTab';
 import { useAuth } from '@/contexts/auth';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
   recordMonthlyPopulation,
   subscribePopulationLog,
   type PopulationSaved,
-} from '@/lib/world';
+} from '@/lib/news';
 
-type Tab = 'population' | 'news';
+type Tab = 'news' | 'population';
 
 const TABS: BottomTab<Tab>[] = [
-  { key: 'population', label: 'Population', icon: 'globe' },
   { key: 'news', label: 'News', icon: 'list.bullet' },
+  { key: 'population', label: 'Population', icon: 'globe' },
 ];
 
-// World 🌏 — populasi dunia (catatan + perkiraan hidup) & berita terkini.
-export default function WorldScreen() {
+// News 📰 — berita terkini (RSS publik) & populasi dunia.
+//
+// Dulu bernama "World 🌏". Yang berubah cuma namanya: isinya tetap dua tab
+// yang sama, dengan Berita naik jadi tab pertama karena itu yang dibuka
+// tiap hari (baris kebiasaan "Reading the News" mendarat di sini).
+export default function NewsScreen() {
   const { user } = useAuth();
-  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('population');
+  // Baris kebiasaan "Reading the News" di Habits mendarat di ?tab=news.
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('news', {
+    tabs: TABS,
+  });
 
   const [saved, setSaved] = useState<PopulationSaved>({});
   const [error, setError] = useState<string | null>(null);
@@ -51,14 +58,14 @@ export default function WorldScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Home"
-        title="World 🌏"
-        subtitle="Populasi dunia & berita terkini"
+        title="News 📰"
+        subtitle="Berita terkini & populasi dunia"
       />
 
       <ScreenError message={error} />
 
       <View style={styles.body} key={scrollKey}>
-        {tab === 'population' ? <PopulationTab saved={saved} /> : <NewsTab />}
+        {tab === 'news' ? <NewsTab /> : <PopulationTab saved={saved} />}
       </View>
 
       <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />

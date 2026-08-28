@@ -30,8 +30,12 @@ export function useBusyTask<K extends string = string>(): {
     key: K;
     /** Pekerjaannya. Kalau melempar error, `fail` yang dipanggil. */
     task: () => Promise<void>;
-    /** Dijalankan saat gagal — biasanya menampilkan pesan. */
-    fail: () => void;
+    /**
+     * Dijalankan saat gagal — biasanya menampilkan pesan. Error-nya ikut
+     * dioper supaya pemanggil bisa membedakan sebabnya (mis. izin ditolak
+     * ≠ gagal menggambar); yang tidak peduli cukup menulis `() => …`.
+     */
+    fail: (error: unknown) => void;
     /** Dijalankan tepat sebelum mulai — biasanya membersihkan pesan lama. */
     start?: () => void;
   }) => Promise<void>;
@@ -46,7 +50,7 @@ export function useBusyTask<K extends string = string>(): {
   }: {
     key: K;
     task: () => Promise<void>;
-    fail: () => void;
+    fail: (error: unknown) => void;
     start?: () => void;
   }) {
     if (busy !== null) return;
@@ -54,8 +58,8 @@ export function useBusyTask<K extends string = string>(): {
     start?.();
     try {
       await task();
-    } catch {
-      fail();
+    } catch (error) {
+      fail(error);
     } finally {
       setBusy(null);
     }

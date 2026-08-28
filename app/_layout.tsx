@@ -122,7 +122,7 @@ function RootNavigator() {
         <Stack.Screen name="fitness" />
         <Stack.Screen name="book" />
         <Stack.Screen name="book/[key]" />
-        <Stack.Screen name="world" />
+        <Stack.Screen name="news" />
 
         {/* Sepasang: masa lalu & masa depan — dibuka dari tab Profile */}
         <Stack.Screen name="history" />
