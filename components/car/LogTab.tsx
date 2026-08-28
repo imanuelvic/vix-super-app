@@ -30,7 +30,7 @@ import {
   parseAmount,
   parseDecimal,
 } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
+import { useFormSave } from '@/hooks/useFormSave';
 import { formatRupiah } from '@/lib/transactions';
 
 const TYPE_META = Object.fromEntries(
@@ -51,8 +51,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
   const [fCost, setFCost] = useState('');
   const [fLiters, setFLiters] = useState('');
   const [fDate, setFDate] = useState(new Date());
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   const now = new Date();
   const stats = useMemo(() => {
@@ -105,8 +104,6 @@ export function LogTab({ items }: { items: CarLog[] }) {
       setFormError('Nama produk/kegiatan wajib diisi.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const liters = fType === 'bensin' ? parseDecimal(fLiters) : 0;
     const data = {
       type: fType,
@@ -117,18 +114,14 @@ export function LogTab({ items }: { items: CarLog[] }) {
       liters: liters > 0 ? liters : null,
       date: fDate,
     };
-    try {
+    await save(async () => {
       if (editing === 'new') {
         await addCarLog(user.uid, data);
       } else {
         await updateCarLog(user.uid, editing.id, data);
       }
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

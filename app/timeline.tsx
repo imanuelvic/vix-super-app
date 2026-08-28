@@ -20,6 +20,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -52,8 +53,7 @@ export default function TimelineScreen() {
   const [fTitle, setFTitle] = useState('');
   const [fCategory, setFCategory] = useState<TimelineCategoryKey>('future');
   const [fMonth, setFMonth] = useState<number | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   useEffect(() => {
     if (!user) return;
@@ -118,8 +118,6 @@ export default function TimelineScreen() {
       setFormError('Wishlist wajib diisi.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: TimelineItem = {
       id: editing === 'new' ? newTimelineId() : editing.id,
       title: fTitle.trim(),
@@ -131,14 +129,10 @@ export default function TimelineScreen() {
       editing === 'new'
         ? [...items, data]
         : items.map((i) => (i.id === editing.id ? data : i));
-    try {
+    await save(async () => {
       await saveTimelineYear(user.uid, year, next);
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

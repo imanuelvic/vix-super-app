@@ -1,9 +1,9 @@
 import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
 import { dayIdToDate, daysBetween } from './format';
 import { dayDocId } from './health';
+import { liveDoc } from './liveDoc';
 
 // Fitur News 📰 — dua hal:
 //   1) Berita terkini lewat RSS publik (tanpa API key).
@@ -306,11 +306,11 @@ export const NEWS_SOURCES: {
   emoji: string;
   sub: string;
 }[] = [
-  { key: 'bloomberg', label: 'Bloomberg', emoji: '📈', sub: 'bisnis & pasar' },
-  { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },
-  { key: 'indonesia', label: 'Indonesia', emoji: '🇮🇩', sub: 'dalam negeri' },
   { key: 'tech', label: 'Teknologi', emoji: '🤖', sub: 'AI, robotika & gadget' },
   { key: 'dev', label: 'Dev', emoji: '📱', sub: 'Expo, RN, iOS & Android' },
+  { key: 'indonesia', label: 'Indonesia', emoji: '🇮🇩', sub: 'dalam negeri' },
+  { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },
+  { key: 'bloomberg', label: 'Bloomberg', emoji: '📈', sub: 'bisnis & pasar' },
 ];
 
 /**

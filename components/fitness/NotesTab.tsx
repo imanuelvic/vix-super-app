@@ -19,6 +19,7 @@ import {
   urlHost,
   type FitNote,
 } from '@/lib/fitNotes';
+import { useFormSave } from '@/hooks/useFormSave';
 import { openExternalUrl } from '@/lib/linking';
 import { SAVE_ERROR } from '@/lib/messages';
 
@@ -34,8 +35,7 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
   const [fTitle, setFTitle] = useState('');
   const [fUrl, setFUrl] = useState('');
   const [fNote, setFNote] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   function openAdd() {
     setEditing('new');
@@ -59,8 +59,6 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
       setFormError('Judulnya diisi dulu ya.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: FitNote = {
       id: editing === 'new' ? newFitNoteId() : editing.id,
       title: fTitle.trim(),
@@ -68,7 +66,7 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
       url: tidyUrl(fUrl),
       note: fNote.trim(),
     };
-    try {
+    await save(async () => {
       await saveFitNotes(
         user.uid,
         editing === 'new'
@@ -76,11 +74,7 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
           : notes.map((n) => (n.id === editing.id ? data : n)),
       );
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /** Hapus permanen — daftarnya ditulis ulang tanpa catatan ini. */

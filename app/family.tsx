@@ -29,9 +29,10 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useFormSave } from '@/hooks/useFormSave';
 import { currentAge, nextBirthday } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
-import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR, PHOTO_ERROR } from '@/lib/messages';
 import {
   childrenOf,
   countGenerations,
@@ -277,8 +278,7 @@ export default function FamilyScreen() {
   const [fPhoto, setFPhoto] = useState<string | null>(null);
   const foto = useBusyTask<'foto'>();
   const photoBusy = foto.busy !== null;
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
   // Picker mana yang sedang terbuka di form (hanya satu sekaligus, biar rapi).
   const [openPicker, setOpenPicker] = useState<'parents' | 'partners' | null>(
     null,
@@ -395,8 +395,6 @@ export default function FamilyScreen() {
       setFormError('Nama wajib diisi.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: FamilyMember = {
       id: editing === 'new' ? newFamilyId() : editing.id,
       name: fName.trim(),
@@ -412,16 +410,12 @@ export default function FamilyScreen() {
       partnerIds: fPartners,
       photo: fPhoto,
     };
-    try {
+    await save(async () => {
       // `all` diteruskan supaya penanda "saya" jadi eksklusif (hanya satu orang).
       await saveFamilyMember(user.uid, data, all);
       setSelectedId(data.id); // pohon langsung berpusat ke dia
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

@@ -18,6 +18,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useEditParam } from '@/hooks/useEditParam';
+import { useFormSave } from '@/hooks/useFormSave';
 import {
   CAREER_REMINDER_DAYS,
   effectiveRoadmap,
@@ -29,7 +30,7 @@ import {
   type RoadmapStatus,
 } from '@/lib/career';
 import { daysBetween, formatDate, whenLabel } from '@/lib/format';
-import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 
 // Deadline default untuk prioritas baru: seminggu dari sekarang.
 function defaultDeadline(): Date {
@@ -63,7 +64,7 @@ export function FulltimeTab({
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Form tambah/edit. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<RoadmapItem | 'new' | null>(null);
@@ -77,7 +78,6 @@ export function FulltimeTab({
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
   // menekan dengan tenggat).
   const [fBacklog, setFBacklog] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
 
   // ===== Aturan H-7 (mendesak) =====
   // Deadline tinggal ≤ 7 hari (termasuk yang sudah lewat) & belum selesai →
@@ -153,7 +153,10 @@ export function FulltimeTab({
     setFDeadline(item.deadline ? item.deadline.toDate() : defaultDeadline());
     setFBacklog(!item.deadline);
     setFormError(null);
-  }, []);
+    // setFormError datang dari useFormSave. Isinya setter useState (tetap
+    // sepanjang hidup komponen), tapi lewat batas hook lint tak bisa
+    // memastikannya — jadi disebut saja, tidak ada bedanya saat berjalan.
+  }, [setFormError]);
 
   // Auto-buka modal edit saat dibuka dari reminder Home (?edit=<id>).
   // Aturannya milik bersama — lihat hooks/useEditParam.ts.
@@ -165,8 +168,6 @@ export function FulltimeTab({
       setFormError('Isi judul pekerjaannya dulu.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: RoadmapItem = {
       id: editing === 'new' ? newCareerId() : editing.id,
       title: fTitle.trim(),
@@ -181,14 +182,10 @@ export function FulltimeTab({
       editing === 'new'
         ? [...items, data]
         : items.map((i) => (i.id === editing.id ? data : i));
-    try {
+    await save(async () => {
       await saveRoadmap(user.uid, next);
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

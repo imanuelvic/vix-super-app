@@ -21,6 +21,7 @@ import {
 } from '@/components/core/VisitationCardBody';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
@@ -37,7 +38,7 @@ import {
 } from '@/lib/core';
 import { deadlineTone } from '@/lib/deadline';
 import { unsubscribeAll } from '@/lib/liveDoc';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
 
 // Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
 // Click kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
@@ -56,8 +57,7 @@ export default function VisitationsScreen() {
   // Visitation di CORE (lihat hooks/useVisitationForm.ts).
   const [editing, setEditing] = useState<Visitation | null>(null);
   const form = useVisitationForm();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   useEffect(() => {
     if (!user) return;
@@ -105,25 +105,19 @@ export default function VisitationsScreen() {
       setFormError('Pilih CORE Leader-nya dulu.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: Visitation = {
       id: editing.id,
       ...form.payload(),
       // Catatan kirim PDF milik jadwalnya, bukan formnya — dipertahankan.
       pdfSentDayId: editing.pdfSentDayId,
     };
-    try {
+    await save(async () => {
       await saveVisitations(
         user.uid,
         all.map((v) => (v.id === editing.id ? data : v)),
       );
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   // Hapus PERMANEN: item dibuang dari array lalu dokumen ditulis ulang —

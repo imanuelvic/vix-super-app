@@ -21,6 +21,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   ageAtYear,
@@ -46,7 +47,7 @@ export default function HistoryScreen() {
 
   const [items, setItems] = useState<HistoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Tampilan: filter kategori, urutan tahun, dan pencarian.
   const [category, setCategory] = useState<HistoryCategoryKey | null>(null);
@@ -64,7 +65,6 @@ export default function HistoryScreen() {
   const [fMilestone, setFMilestone] = useState('');
   const [fTitle, setFTitle] = useState('');
   const [fDetail, setFDetail] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -142,8 +142,6 @@ export default function HistoryScreen() {
       setFormError('Tahun selesai harus sama atau setelah tahun mulai.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: HistoryItem = {
       id: editing === 'new' ? newHistoryId() : editing.id,
       year,
@@ -157,14 +155,10 @@ export default function HistoryScreen() {
       editing === 'new'
         ? [...items, data]
         : items.map((i) => (i.id === editing.id ? data : i));
-    try {
+    await save(async () => {
       await saveHistory(user.uid, next);
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

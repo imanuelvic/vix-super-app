@@ -11,9 +11,10 @@ import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 import {
   BIBLE_SESSIONS,
   BIBLE_VERSION_DEFAULT,
@@ -44,8 +45,7 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
   const [editing, setEditing] = useState<BibleReadingDay | null>(null);
   const [text, setText] = useState('');
   const [version, setVersion] = useState(BIBLE_VERSION_DEFAULT);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Hari yang sesi ini-nya benar-benar DIBACA (days sudah urut terbaru →
   // terlama). Hari yang sengaja dilewati tidak ditampilkan sama sekali: ini
@@ -72,16 +72,10 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
       setFormError('Isi kitab & pasalnya dulu, atau hapus catatannya.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
-    try {
+    await save(async () => {
       await saveBibleReading(user.uid, editing.id, session, value, version);
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

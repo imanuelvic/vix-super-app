@@ -20,6 +20,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import {
@@ -33,7 +34,7 @@ import {
   type MonthlyMeeting,
 } from '@/lib/core';
 import { formatCompactDateTime, MONTH_NAMES } from '@/lib/format';
-import { DELETE_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, PHOTO_ERROR } from '@/lib/messages';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
 
 // Sub-tab 🗒️ Monthly — notulen Mentoring Bulanan dari gereja.
@@ -44,7 +45,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
   // Kartu yang sedang dibentangkan (rapat lama default tertutup biar ringkas).
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -65,7 +66,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const [fPhotos, setFPhotos] = useState<string[]>([]);
   const foto = useBusyTask<'foto'>();
   const photoBusy = foto.busy !== null;
-  const [formError, setFormError] = useState<string | null>(null);
   // Notulen yang PDF-nya sedang dibuat (null = tidak ada).
   const pdf = useBusyTask();
 
@@ -133,9 +133,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
       setFormError('Judul rapat wajib diisi.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
-    try {
+    await save(async () => {
       await saveMonthlyMeeting(
         user.uid,
         editing === 'new' ? newMonthlyMeetingId() : editing.id,
@@ -154,11 +152,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
         },
       );
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

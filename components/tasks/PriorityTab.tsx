@@ -16,6 +16,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { daysBetween, formatDate } from '@/lib/format';
 import { FilterChips } from '@/components/common/FilterChips';
@@ -52,7 +53,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Tekan chip kategori yang sedang aktif LAGI → daftar balik ke paling atas.
   const { ref: scrollRef, toTop } = useScrollTop();
@@ -64,7 +65,6 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   const [pickPriority, setFPriority] = useState<1 | 2 | 3>(2);
   const [fCategory, setFCategory] = useState<TaskCategory>('personal');
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
-  const [formError, setFormError] = useState<string | null>(null);
 
   // Filter kategori di atas daftar (null = semua). Urutan & emoji mengikuti
   // sub-tab Reminder Harian — satu sumber, tidak ditulis ulang.
@@ -129,9 +129,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
       setFormError('Isi reminder dulu.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
-    try {
+    await save(async () => {
       const data = {
         title: fTitle.trim(),
         note: fNote.trim(),
@@ -146,11 +144,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
         await updateOtherTask(user.uid, editing.id, data);
       }
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

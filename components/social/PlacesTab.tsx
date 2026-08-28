@@ -15,6 +15,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { groupDigits, parseAmount } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -49,8 +50,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
   const [fVisited, setFVisited] = useState(false);
   const [fRating, setFRating] = useState(0);
   const [fNote, setFNote] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   const belum = places.filter((p) => !p.visited).length;
   const sudah = places.length - belum;
@@ -90,8 +90,6 @@ export function PlacesTab({ places }: { places: Place[] }) {
       setFormError('Nama tempatnya diisi dulu ya.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: Place = {
       id: editing === 'new' ? newPlaceId() : editing.id,
       name: fName.trim(),
@@ -103,7 +101,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
       rating: fVisited ? fRating : 0,
       note: fNote.trim(),
     };
-    try {
+    await save(async () => {
       await savePlaces(
         user.uid,
         editing === 'new'
@@ -111,11 +109,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
           : places.map((p) => (p.id === editing.id ? data : p)),
       );
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /** Hapus permanen — daftarnya ditulis ulang tanpa tempat ini. */

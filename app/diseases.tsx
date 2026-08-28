@@ -16,6 +16,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { formatDate } from '@/lib/format';
 import {
@@ -25,7 +26,7 @@ import {
   updateDisease,
   type Disease,
 } from '@/lib/health';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR } from '@/lib/messages';
 
 /** Lama sakit dalam hari (minimal 1). Belum sembuh → dihitung sampai hari ini. */
 function sickDays(d: Disease): number {
@@ -49,8 +50,7 @@ export default function DiseasesScreen() {
   const [fStart, setFStart] = useState(new Date());
   const [fRecovered, setFRecovered] = useState(false);
   const [fRecoverDate, setFRecoverDate] = useState(new Date());
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   useEffect(() => {
     if (!user) return;
@@ -97,8 +97,6 @@ export default function DiseasesScreen() {
       setFormError('Nama penyakit dan penyebab wajib diisi.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data = {
       name: fName.trim(),
       cause: fCause.trim(),
@@ -106,18 +104,14 @@ export default function DiseasesScreen() {
       start: fStart,
       recover: fRecovered ? fRecoverDate : null,
     };
-    try {
+    await save(async () => {
       if (editing === 'new') {
         await addDisease(user.uid, data);
       } else {
         await updateDisease(user.uid, editing.id, data);
       }
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

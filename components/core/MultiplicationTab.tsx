@@ -17,9 +17,10 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { HEARTS } from '@/lib/core';
 import { formatFullDate } from '@/lib/format';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR } from '@/lib/messages';
 import {
   multiProgress,
   multiStatus,
@@ -53,8 +54,7 @@ export function MultiplicationTab() {
   const [fFirst, setFFirst] = useState(new Date());
   const [fDay, setFDay] = useState('');
   const [fPlace, setFPlace] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const { busy, formError, setFormError, save } = useFormSave();
 
   useEffect(() => {
     if (!user) return;
@@ -111,8 +111,6 @@ export function MultiplicationTab() {
       setFormError('Isi nama CORE asal & CORE barunya dulu.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const base =
       editing === 'new'
         ? {
@@ -122,7 +120,7 @@ export function MultiplicationTab() {
             createdAt: Date.now(),
           }
         : { id: editing.id, steps: editing.steps, members: editing.members, createdAt: editing.createdAt };
-    try {
+    await save(async () => {
       await saveMultiplication(user.uid, {
         ...base,
         fromName: fFrom.trim(),
@@ -135,11 +133,7 @@ export function MultiplicationTab() {
         place: fPlace.trim(),
       });
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   return (

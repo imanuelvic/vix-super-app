@@ -25,6 +25,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useEditParam } from '@/hooks/useEditParam';
+import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
@@ -47,7 +48,7 @@ import { subscribeCoreRules, type CoreRule } from '@/lib/coreRules';
 import { deadlineTone } from '@/lib/deadline';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 import { shareVisitationPdf } from '@/lib/visitationPdf';
 
 // Tab Visitation 📅: jadwal MCL bertemu CORE para CL (Visitasi / Fellowship) —
@@ -75,13 +76,12 @@ export function VisitationTab({
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Form tambah/edit ('new' = sedang menambah baru). Isian & aturannya dipakai
   // bersama layar Riwayat Visitasi (lihat hooks/useVisitationForm.ts).
   const [editing, setEditing] = useState<Visitation | 'new' | null>(null);
   const form = useVisitationForm();
-  const [formError, setFormError] = useState<string | null>(null);
   // Modal tips + filter jadwal (default tanpa filter → tampil semua).
   const [tipsModal, setTipsModal] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
@@ -189,8 +189,6 @@ export function VisitationTab({
       setFormError('Pilih CORE Leader-nya dulu.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: Visitation = {
       id: editing === 'new' ? newVisitationId() : editing.id,
       ...form.payload(),
@@ -201,14 +199,10 @@ export function VisitationTab({
       editing === 'new'
         ? [...visitations, data]
         : visitations.map((v) => (v.id === editing.id ? data : v));
-    try {
+    await save(async () => {
       await saveVisitations(user.uid, next);
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /**

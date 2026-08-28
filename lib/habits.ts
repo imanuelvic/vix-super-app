@@ -448,7 +448,7 @@ export const HABIT_LINKS: HabitLink[] = [
   // ikut tercentang saat itu juga (lihat `doneOnOpen`).
   {
     match: /reading the news|baca berita/i,
-    note: 'Buka News › Berita & tandai selesai',
+    note: 'Buka News',
     color: Color.NEWS_DARK,
     route: { pathname: '/news', params: { tab: 'news' } },
     doneOnOpen: true,

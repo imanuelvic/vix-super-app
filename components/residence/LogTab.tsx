@@ -14,8 +14,8 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
 import {
   addResidenceLog,
   deleteResidenceLog,
@@ -46,8 +46,7 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
   const [fNote, setFNote] = useState('');
   const [fCost, setFCost] = useState('');
   const [fDate, setFDate] = useState(new Date());
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   const now = new Date();
   const summary = useMemo(() => {
@@ -90,8 +89,6 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
       setFormError('Keterangannya diisi dulu ya.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data = {
       type: fType,
       title: fTitle.trim(),
@@ -99,18 +96,14 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
       cost: parseAmount(fCost),
       date: fDate,
     };
-    try {
+    await save(async () => {
       if (editing === 'new') {
         await addResidenceLog(user.uid, data);
       } else {
         await updateResidenceLog(user.uid, editing.id, data);
       }
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

@@ -49,6 +49,7 @@ import {
   type MainTeamMember,
   type StudyWork,
 } from '@/lib/core';
+import { useFormSave } from '@/hooks/useFormSave';
 import { MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -96,7 +97,7 @@ export function LeadersTab({
   const [viewing, setViewing] = useState<Viewing | null>(null);
 
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Dropdown daftar — default TERTUTUP biar layar tidak langsung penuh list.
   const [clOpen, setClOpen] = useState(false);
@@ -116,7 +117,6 @@ export function LeadersTab({
   const [fStudy, setFStudy] = useState<StudyWork>(EMPTY_STUDY_WORK);
   // Data tubuh — sama polanya: satu objek berisi tiga isian teks.
   const [fBody, setFBody] = useState<LeaderBody>(EMPTY_LEADER_BODY);
-  const [formError, setFormError] = useState<string | null>(null);
   // Mode "lepas CL": ganti isi modal edit jadi form alasan sebelum diarsipkan.
   const [archiving, setArchiving] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
@@ -193,8 +193,6 @@ export function LeadersTab({
       setFormError('Nama wajib diisi.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: CoreLeader = {
       id: editing === 'new' ? newCoreLeaderId() : editing.id,
       name: fName.trim(),
@@ -221,14 +219,10 @@ export function LeadersTab({
       editing === 'new'
         ? [...leaders, data]
         : leaders.map((l) => (l.id === editing.id ? data : l));
-    try {
+    await save(async () => {
       await saveCoreLeaders(user.uid, next);
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

@@ -24,11 +24,6 @@ const TABS: BottomTab<Tab>[] = [
   { key: 'population', label: 'Population', icon: 'globe' },
 ];
 
-// News 📰 — berita terkini (RSS publik) & populasi dunia.
-//
-// Dulu bernama "World 🌏". Yang berubah cuma namanya: isinya tetap dua tab
-// yang sama, dengan Berita naik jadi tab pertama karena itu yang dibuka
-// tiap hari (baris kebiasaan "Reading the News" mendarat di sini).
 export default function NewsScreen() {
   const { user } = useAuth();
   // Baris kebiasaan "Reading the News" di Habits mendarat di ?tab=news.

@@ -14,6 +14,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   AFFILIATE_PLATFORMS,
@@ -54,9 +55,8 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
   const [fStage, setFStage] = useState<IdeaStage>('idea');
   const [fProduct, setFProduct] = useState('');
   const [fLink, setFLink] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const counts = stageCounts(ideas);
   const shown = sortedIdeas(
@@ -97,8 +97,6 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
       setFormError('Judul idenya diisi dulu ya.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const data: ContentIdea = {
       id: editing === 'new' ? newIdeaId() : editing.id,
       title: fTitle.trim(),
@@ -110,7 +108,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
       // Waktu dibuat dipertahankan saat mengubah — itu yang menentukan urutan.
       createdAt: editing === 'new' ? Timestamp.now() : editing.createdAt,
     };
-    try {
+    await save(async () => {
       await saveAffiliateIdeas(
         user.uid,
         editing === 'new'
@@ -118,11 +116,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
           : ideas.map((i) => (i.id === editing.id ? data : i)),
       );
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /** Hapus permanen — daftarnya ditulis ulang tanpa ide ini. */

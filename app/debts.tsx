@@ -29,6 +29,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
+import { useFormSave } from '@/hooks/useFormSave';
 import { deadlineDue, deadlineLabel } from '@/lib/deadline';
 import {
   addDebtPayment,
@@ -87,8 +88,7 @@ export default function DebtsScreen() {
   const [fFinal, setFFinal] = useState(new Date());
   const [fPeriod, setFPeriod] = useState<DebtPeriod>('once');
   const [fInstallment, setFInstallment] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Sheet bayar cicilan + riwayat pembayaran.
   const [paying, setPaying] = useState<Debt | null>(null);
@@ -171,8 +171,6 @@ export default function DebtsScreen() {
       setFormError('Isi total pinjamannya dulu.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
     const base = editing === 'new' ? null : editing;
     const data: Debt = {
       id: base ? base.id : newDebtId(),
@@ -188,14 +186,10 @@ export default function DebtsScreen() {
       payments: base ? base.payments : [],
       done: base ? base.done : false,
     };
-    try {
+    await save(async () => {
       await saveDebt(user.uid, data);
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {
