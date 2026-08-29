@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { LinkedNotesButton } from '@/components/core/LinkedNotesButton';
 import { DateField } from '@/components/common/DateField';
-import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -33,6 +33,11 @@ import {
   saveMonthlyMeeting,
   type MonthlyMeeting,
 } from '@/lib/core';
+import {
+  EMPTY_CORE_NOTE_LINKS,
+  subscribeCoreNoteLinks,
+  type CoreNoteLinks,
+} from '@/lib/coreNotes';
 import { formatCompactDateTime, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, PHOTO_ERROR } from '@/lib/messages';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
@@ -43,6 +48,18 @@ import { shareMonthlyPdf } from '@/lib/monthlyPdf';
 // tinggal diisi — tidak perlu mengetik ulang judul poinnya tiap rapat.
 export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const { user } = useAuth();
+
+  // Catatan Revive/Khotbah yang disambungkan ke rapat — untuk tombol 🔗.
+  // Dilanggan di sini, bukan dioper dari layarnya: dokumennya SATU dan
+  // liveDoc menggabungkan langganan dokumen yang sama, jadi sub-tab Visitation
+  // yang juga membacanya tidak menambah biaya baca sama sekali.
+  const [noteLinks, setNoteLinks] = useState<CoreNoteLinks>(
+    EMPTY_CORE_NOTE_LINKS,
+  );
+  useEffect(() => {
+    if (!user) return;
+    return subscribeCoreNoteLinks(user.uid, setNoteLinks);
+  }, [user]);
 
   const [error, setError] = useState<string | null>(null);
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
@@ -211,6 +228,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             busy={pdf.busy === m.id}
             disabled={pdf.busy !== null}
           />
+          {/* 🔗 muncul HANYA kalau ada Catatan Revive / Khotbah yang kamu
+              sambungkan ke rapat ini dari fitur Spiritual. */}
+          <LinkedNotesButton links={noteLinks} coreId={m.id} />
         </View>
 
         {expanded && (
@@ -323,7 +343,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. Mentoring Agustus 2026"
+          placeholder="Judul rapat"
           value={fTitle}
           onChangeText={setFTitle}
           editable={!busy}
@@ -359,7 +379,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. Gereja NDC lt. 3"
+          placeholder="Nama tempat"
           value={fPlace}
           onChangeText={setFPlace}
           editable={!busy}
@@ -426,15 +446,11 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
         </View>
 
         <FormError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus notulen ini"
+          deleteLabel="Hapus notulen ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

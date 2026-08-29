@@ -26,6 +26,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
+import { ChipRow } from '@/components/common/ChipRow';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
@@ -531,11 +532,9 @@ export default function TasksScreen() {
       ) : (
         <>
           {/* Ganti kategori = ganti to-do list. Ref tiap chip untuk drop drag. */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipScroll}
-            contentContainerStyle={styles.chipRow}>
+          <ChipRow
+            additionalStyle={styles.chipScroll}
+            contentStyle={styles.chipRow}>
             {TASK_CATEGORIES.map((c) => {
               const count = tasks.filter(
                 (t) => t.category === c.key && !t.done && t.dayId === todayId,
@@ -582,7 +581,7 @@ export default function TasksScreen() {
                 </View>
               );
             })}
-          </ScrollView>
+          </ChipRow>
 
           {/* Petunjuk muncul saat menyeret task */}
           {dragTask && (
@@ -924,12 +923,7 @@ const styles = StyleSheet.create({
   // mengukur tinggi kontennya sendiri (chip pernah terpotong). Dibuat lega
   // (60) karena emoji di Android bikin chip lebih tinggi dari teks biasa.
   chipScroll: { flexGrow: 0, height: 60, marginBottom: 8 },
-  chipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-  },
+  chipRow: { paddingHorizontal: 20 },
   // Ruang badge ditaruh di pembungkus chip (bukan padding ScrollView) —
   // ScrollView horizontal di Android suka salah hitung tinggi kontennya.
   chipHolder: { paddingTop: 6 },

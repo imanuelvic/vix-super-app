@@ -85,16 +85,23 @@ export function designOf(key: string): ShareDesign {
   return SHARE_DESIGNS.find((d) => d.key === key) ?? SHARE_DESIGNS[0];
 }
 
+/** Tahun kabisat? (aturan Gregorian lengkap — 1900 bukan, 2000 iya.) */
+export function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
 /**
- * Nomor arsip: hari ke-berapa dalam tahun itu, mis. "No. 238".
- * Inilah yang membuatnya terbaca sebagai ARSIP — tiap lembar punya nomor urut
- * yang jujur, bukan hiasan acak. (Dipakai apa adanya di gambar.)
+ * Nomor arsip: hari ke-berapa dalam tahun itu, dari total harinya —
+ * mis. "Day 241 / 365", dan "Day 241 / 366" di tahun kabisat.
+ *
+ * Inilah yang membuatnya terbaca sebagai ARSIP: bukan cuma nomor urut, tapi
+ * juga seberapa jauh tahun ini sudah berjalan. (Dipakai apa adanya di gambar.)
  */
 export function archiveNo(dayId: string): string {
   const d = dayIdToDate(dayId);
   const awal = new Date(d.getFullYear(), 0, 0);
   const hari = Math.round((d.getTime() - awal.getTime()) / 86_400_000);
-  return `No. ${String(hari).padStart(3, '0')}`;
+  return `Day ${hari} / ${isLeapYear(d.getFullYear()) ? 366 : 365}`;
 }
 
 /**

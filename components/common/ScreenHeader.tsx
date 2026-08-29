@@ -56,6 +56,21 @@ export function ScreenHeader({
   );
 }
 
+// Tinggi baris judul dipatok, TIDAK ikut isinya.
+//
+// Sebelumnya baris ini setinggi isi tertingginya: judul saja setinggi 45
+// (lineHeight `header`), sedangkan judul + tombol pojok kanan setinggi tombolnya
+// (42) ditambah jarak atasnya. Akibatnya subjudul di bawahnya pindah tempat
+// setiap kali tombol pojok kanan muncul atau hilang — dan itu terjadi TIAP
+// GANTI SUB-TAB (mis. Spiritual: Revive punya 📖 + 🔥, Sermon tidak punya
+// keduanya), jadi kalimat "Being with God…" ikut naik-turun sendiri padahal
+// tulisannya sama.
+//
+// Dipatok 46 = tombol 42 + sedikit napas, cukup memuat judul 45 juga. Sekarang
+// baris ini selalu setinggi itu, ada tombol atau tidak, jadi subjudulnya diam
+// di tempat. Berlaku untuk SEMUA layar yang memakai header ini.
+const TITLE_ROW_HEIGHT = 46;
+
 const styles = StyleSheet.create({
   backRow: {
     flexDirection: 'row',
@@ -68,13 +83,15 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    // Ditengahkan, bukan menempel atas: judul & tombol sama-sama duduk di
+    // tengah tinggi tetap di atas, jadi keduanya tidak lagi saling mendorong.
+    alignItems: 'center',
     gap: 10,
+    minHeight: TITLE_ROW_HEIGHT,
   },
   titleBox: { flex: 1 },
   title: { color: Color.MAIN },
   // Baris, bukan tumpukan: sebagian layar punya DUA tombol di pojok kanan
-  // (mis. Spiritual 📖 riwayat + 🔥 achievement). Dengan satu tombol saja
-  // hasilnya persis sama seperti sebelumnya.
-  rightBox: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 4 },
+  // (mis. Spiritual 📖 riwayat + 🔥 achievement).
+  rightBox: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

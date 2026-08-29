@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
-import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { FormError } from '@/components/common/FormError';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { FormInput } from '@/components/common/FormInput';
@@ -142,11 +142,24 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
         {logs.map((item) => {
           const meta = TYPE_META[item.type];
           return (
+            // Catatan dari Finance TIDAK bisa diubah di sini — sumbernya
+            // transaksi Finance, biar tidak ada dua angka yang beda.
+            //
+            // Garis tepi hijau = baris ini bisa ditekan; garis krem biasa =
+            // datang dari Finance, jadi memang tidak menanggapi click. Aturan
+            // & rupanya sama persis dengan Log di fitur Car 🚗.
             <ExpenseRow
               key={item.id}
               title={`${meta.icon} ${item.title}`}
               cost={item.cost}
+              active={!item.fromFinance}
+              disabled={item.fromFinance}
               onPress={() => openEdit(item)}>
+              {item.fromFinance && (
+                <VixText heading="label" additionalStyle={styles.fromFinance}>
+                  💰 Data dari Finance
+                </VixText>
+              )}
               <VixText heading="label">
                 {meta.label}
                 {item.note ? ` · ${item.note}` : ''}
@@ -200,15 +213,11 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
           />
         </View>
         <FormError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus catatan ini"
+          deleteLabel="Hapus catatan ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />
@@ -218,6 +227,8 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
 }
 
 const styles = StyleSheet.create({
+  // Warnanya sama dengan penanda yang sama di Log Car 🚗.
+  fromFinance: { color: Color.MAIN },
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },

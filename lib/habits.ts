@@ -393,7 +393,8 @@ export type HabitLink = {
       | '/health'
       | '/bible-reading'
       | '/daily-priority'
-      | '/news';
+      | '/news'
+      | '/reflection-feed';
     params?: Record<string, string>;
   };
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
@@ -414,6 +415,19 @@ export type HabitLink = {
    * jadi centangnya masih bisa dibatalkan kalau ternyata batal membaca.
    */
   doneOnOpen?: boolean;
+  /**
+   * true = pintasannya baru muncul SESUDAH barisnya tercentang.
+   *
+   * Untuk kebiasaan yang hasilnya baru ada setelah dikerjakan: 📓 Daily
+   * Reflection Journal baru bisa dibuatkan feed-nya kalau refleksinya memang
+   * sudah ditulis. Sebelum itu tombolnya sengaja tidak ada — membukanya cuma
+   * menghadapkan layar kosong.
+   *
+   * Baris begini TIDAK dianggap `isFixedHabit`: pintasannya cuma pintu
+   * tambahan, bukan cermin pekerjaan di layar lain, jadi barisnya tetap boleh
+   * dihapus seperti kebiasaan biasa.
+   */
+  whenDone?: boolean;
 };
 
 // Urutan penting: yang lebih spesifik diperiksa duluan. "Revive + IG Story" &
@@ -426,8 +440,28 @@ export const HABIT_LINKS: HabitLink[] = [
     route: { pathname: '/fitness' },
     mirrorOf: 'fitness',
   },
+  // 📓 Daily Reflection Journal → layar Generate Feed 🖼️.
+  //
+  // Diperiksa DULUAN karena namanya memuat kata "journal", bukan "ig" —
+  // tapi urutannya tetap ditulis di sini supaya jelas ia mendahului aturan
+  // Instagram di bawah kalau nanti namanya diubah jadi memuat keduanya.
+  //
+  // `whenDone`: pintunya baru muncul sesudah refleksinya benar-benar ditulis
+  // (baris ini centangnya memang ditentukan tulisannya — lihat
+  // `isNoteDrivenHabit`), karena feed-nya dibuat DARI tulisan itu. Ini juga
+  // satu-satunya pintu yang menetap: kartu di Home hilang begitu feed-nya
+  // jadi, sedangkan baris ini tetap ada sepanjang hari.
   {
-    match: /\b(ig|instagram)\b/i,
+    match: /reflection journal|rhema/i,
+    note: 'Buka Instagram Feed 🖼️',
+    color: Color.INSTAGRAM,
+    route: { pathname: '/reflection-feed' },
+    whenDone: true,
+  },
+  {
+    // "instastory" & "insta story" ikut dikenali — nama barisnya boleh
+    // berbunyi "Share Revive ke Instastory" tanpa kehilangan pintasannya.
+    match: /\b(ig|instagram|instastory|insta story)\b/i,
     note: 'Buka aplikasi Instagram',
     color: Color.INSTAGRAM,
     external: { scheme: 'instagram://app', web: 'https://www.instagram.com/' },
@@ -528,7 +562,11 @@ export function withMiddayBible(
  * dilewati sehari (✗), tapi tombol hapusnya sengaja tidak ada.
  */
 export function isFixedHabit(h: ScheduledHabit): boolean {
-  return habitLink(h) !== null;
+  const link = habitLink(h);
+  // `whenDone` dikecualikan: pintasannya cuma pintu tambahan sesudah barisnya
+  // beres (📓 Jurnal → Instagram Feed), bukan cermin pekerjaan di layar lain.
+  // Tanpa pengecualian ini baris jurnalnya mendadak kehilangan tombol hapus.
+  return link !== null && !link.whenDone;
 }
 
 /** Pintasan untuk satu kebiasaan (null = kebiasaan biasa). */

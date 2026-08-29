@@ -39,7 +39,7 @@ export type FastingPlan = {
   days: Record<string, FastingDay>;
 };
 
-const EMPTY_FASTING_DAY: FastingDay = {
+export const EMPTY_FASTING_DAY: FastingDay = {
   prayer: '',
   done: false,
   answer: '',
@@ -104,6 +104,40 @@ export function activeFasting(
 /** Hari ke berapa (1-based); 0 kalau tanggalnya di luar rentang. */
 export function fastingDayNumber(plan: FastingPlan, dayId: string): number {
   return fastingDayIds(plan.startId, plan.endId).indexOf(dayId) + 1;
+}
+
+// ===================== Kartu centang malam 🍽️ =====================
+// Puasa dinilai SESUDAH harinya dijalani, bukan di tengahnya — jadi tagihannya
+// muncul malam: jam 20.00 sampai tengah malam. Sesudah tengah malam harinya
+// sudah berganti dan yang ditagih hari berikutnya.
+const FASTING_CHECK_FROM_HOUR = 20;
+
+/** Sekarang jam tayang kartu centang puasa di Home? (20.00–23.59) */
+export function fastingCheckWindow(now: Date): boolean {
+  return now.getHours() >= FASTING_CHECK_FROM_HOUR;
+}
+
+/**
+ * Puasa yang hari ini MASIH perlu dicentang, di jam tayangnya — null kalau
+ * tidak ada yang perlu ditagih.
+ *
+ * "Belum dicentang" sengaja berarti belum ada catatan sama sekali untuk hari
+ * itu: begitu kamu menyimpan modalnya — berhasil ✅ maupun ❌ gagal — harinya
+ * sudah dijawab, jadi kartunya berhenti menagih. Menagih terus sampai
+ * "berhasil" cuma memaksa berbohong.
+ */
+export function fastingCheckDue(
+  plans: FastingPlan[],
+  now: Date,
+  todayId: string,
+): FastingPlan | null {
+  if (!fastingCheckWindow(now)) return null;
+  const plan = activeFasting(plans, now);
+  if (!plan) return null;
+  const hari = plan.days?.[todayId];
+  const sudahDijawab =
+    !!hari && (hari.done || !!hari.prayer.trim() || !!hari.answer.trim());
+  return sudahDijawab ? null : plan;
 }
 
 function plansRef(uid: string) {

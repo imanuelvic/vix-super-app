@@ -75,6 +75,12 @@ export type ResidenceLog = {
   note: string; // catatan tambahan, boleh kosong
   cost: number; // Rp
   date: Timestamp;
+  /**
+   * true = barisnya lahir dari transaksi Finance (Expense › Residence),
+   * bukan dicatat di sini. Baris begitu BACA-SAJA: sumbernya transaksi itu,
+   * jadi mengubahnya di sini cuma bikin dua angka yang beda.
+   */
+  fromFinance?: boolean;
 };
 
 function residenceLogsCollection(uid: string) {
@@ -120,6 +126,32 @@ export function addResidenceLog(uid: string, data: ResidenceLogInput) {
 export function updateResidenceLog(uid: string, id: string, data: ResidenceLogInput) {
   return updateDoc(doc(db, 'users', uid, 'houseLogs', id), {
     ...data,
+    date: Timestamp.fromDate(data.date),
+  });
+}
+
+/**
+ * Catat/perbarui log rumah yang berasal dari transaksi Finance.
+ *
+ * Id dokumennya sengaja DISAMAKAN dengan id transaksinya → satu transaksi
+ * selalu tepat satu catatan (tidak pernah dobel walau disimpan berkali-kali),
+ * dan menghapusnya cukup `deleteResidenceLog(uid, txId)`.
+ *
+ * Persis pola `syncFuelLog` di lib/car.ts — pengeluaran rumah cukup dicatat
+ * SEKALI di Finance, lalu muncul sendiri di Residence › Log sebagai baris
+ * baca-saja.
+ */
+export function syncResidenceLog(
+  uid: string,
+  txId: string,
+  data: { type: ResidenceLogType; title: string; cost: number; date: Date },
+) {
+  return setDoc(doc(db, 'users', uid, 'houseLogs', txId), {
+    type: data.type,
+    title: data.title,
+    note: '',
+    cost: data.cost,
+    fromFinance: true,
     date: Timestamp.fromDate(data.date),
   });
 }

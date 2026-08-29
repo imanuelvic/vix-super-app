@@ -7,7 +7,6 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
 import {
   activeFasting,
-  fastingDay,
   fastingDayNumber,
   fastingProgress,
   type FastingPlan,
@@ -46,11 +45,6 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
             <VixText heading="title" additionalStyle={styles.activeTitle}>
               {active.title}
             </VixText>
-            {fastingDay(active, todayId).prayer || active.prayer ? (
-              <VixText heading="paragraph" additionalStyle={styles.activeText}>
-                🙏 {fastingDay(active, todayId).prayer || active.prayer}
-              </VixText>
-            ) : null}
             {active.rules ? (
               <VixText heading="label" additionalStyle={styles.activeText}>
                 📜 {active.rules}

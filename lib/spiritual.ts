@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { type LoginStreak as DayStreak } from './achievements';
+import { usfmRef } from './bible';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
@@ -619,6 +620,44 @@ function seededUnit(dayId: string, key: string): number {
   return (x >>> 0) / 4_294_967_296;
 }
 
+// ===================== Ayat penyembahan 🎶 =====================
+// Subjudul layar Spiritual. Dulu satu kalimat tetap ("Being with God, bukan
+// sekadar doing for God"); sekarang ayat tentang memuji & menyembah yang
+// berganti tiap hari.
+//
+// Diundi dari `dayId`, BUKAN acak tiap render — jadi sepanjang hari itu
+// bunyinya sama persis: pindah-pindah sub-tab tidak menggantinya, dan tidak
+// ada tulisan yang berkedip.
+//
+// PANJANGNYA PUNYA BATAS, dan batasnya bukan selera: subjudul ini satu baris
+// selebar header (393 − 40 = 353pt di iPhone 15). Kalau ada satu ayat yang
+// lebih panjang, hari itu saja ia pecah dua baris — headernya jadi lebih
+// tinggi dan seluruh isi layarnya turun, persis keluhan yang mau dihilangkan.
+// Yang terpanjang di daftar ini 346pt, diukur dari metrik font Inter-nya
+// sendiri. Menambah ayat? Ukur dulu.
+export const WORSHIP_VERSES: string[] = [
+  'Menyembah dalam roh dan kebenaran — Yohanes 4:24',
+  'Segala yang bernapas, pujilah TUHAN — Mazmur 150:6',
+  'Bersyukurlah, pujilah nama-Nya — Mazmur 100:4',
+  'Nyanyikanlah nyanyian baru — Mazmur 96:1',
+  'Memuji TUHAN seumur hidupku — Mazmur 146:2',
+  'Marilah kita sujud menyembah — Mazmur 95:6',
+  'Tubuhmu, persembahan yang hidup — Roma 12:1',
+  'Menyanyikan kasih setia-Mu pagi hari — Mazmur 59:17',
+  'Muliakanlah TUHAN bersamaku — Mazmur 34:4',
+  'Bersukacitalah senantiasa dalam Tuhan — Filipi 4:4',
+  'Naikkan syukur sebagai korban — Mazmur 50:14',
+  'Korban bibir yang memuji nama-Nya — Ibrani 13:15',
+];
+
+/** Ayat penyembahan untuk hari ini — sama sepanjang hari itu. */
+export function worshipVerseOfDay(dayId: string): string {
+  const i = Math.floor(seededUnit(dayId, 'worship') * WORSHIP_VERSES.length);
+  // Pengaman kalau hasil undiannya persis 1 (secara teori bisa membulat ke
+  // panjang daftarnya) — jangan sampai subjudulnya jadi `undefined`.
+  return WORSHIP_VERSES[Math.min(i, WORSHIP_VERSES.length - 1)];
+}
+
 /**
  * Jadwal penyegar hari ini — 3 kemunculan, jamnya diundi tapi dijamin tidak
  * saling menempel: sisa waktu di dalam jendela dibagi acak ke celah-celahnya,
@@ -689,9 +728,73 @@ export function openNdcMinistry() {
 const YOUVERSION_DEEPLINK = 'youversion://';
 const YOUVERSION_APP_STORE = 'https://apps.apple.com/id/app/bible/id282935706';
 
-export function openYouVersion() {
-  return openExternalUrl(YOUVERSION_DEEPLINK, {
-    fallback: YOUVERSION_APP_STORE,
+/**
+ * Nomor terjemahan di YouVersion, dipetakan dari singkatan yang KAMU tulis di
+ * kolom "Terjemahan".
+ *
+ * ⚠️ Sengaja cuma diisi yang sudah dipastikan. Menebak nomornya berbahaya:
+ * nomor yang salah tetap membuka Alkitab, tapi di TERJEMAHAN LAIN — dan itu
+ * tidak kelihatan salah sampai kamu membaca ayatnya.
+ *
+ * Menambah sendiri gampang: buka bible.com, pilih terjemahannya, lihat
+ * alamatnya — `bible.com/bible/306/PRO.29.TB` → angka 306 itulah nomornya.
+ * Singkatan yang belum ada di sini tetap dibuka ke pasal yang benar, cuma
+ * pakai terjemahan yang terakhir kamu buka di YouVersion.
+ */
+export const YOUVERSION_VERSION_ID: Record<string, number> = {
+  TB: 306, // Alkitab Terjemahan Baru (LAI)
+};
+
+/** Nomor terjemahan untuk singkatan ini (null = belum terdaftar). */
+export function youVersionVersionId(version: string): number | null {
+  return YOUVERSION_VERSION_ID[version.trim().toUpperCase()] ?? null;
+}
+
+/**
+ * Alamat YouVersion untuk satu acuan — dipakai tombol 📖 Buka YouVersion dan
+ * tiap baris riwayat bacaan.
+ *
+ * `reference` memakai kode USFM (lihat lib/bible.ts): PRO.29, JHN.3.16 — kode
+ * yang sama di semua bahasa, jadi tidak bergantung nama kitab bahasa Indonesia.
+ * `version` ditempelkan HANYA kalau nomornya sudah dipastikan; kalau tidak,
+ * YouVersion membuka pasal yang benar dengan terjemahan yang sedang aktif di
+ * sana — lebih baik daripada salah terjemahan diam-diam.
+ */
+export function youVersionLink(
+  refText: string,
+  version?: string,
+): { scheme: string; web: string } {
+  const usfm = usfmRef(refText);
+  if (!usfm) {
+    // Kitabnya tak dikenali → buka YouVersion apa adanya, seperti dulu.
+    return { scheme: YOUVERSION_DEEPLINK, web: 'https://www.bible.com/' };
+  }
+  const id = version ? youVersionVersionId(version) : null;
+  return {
+    scheme: `youversion://bible?reference=${usfm}${id ? `&version=${id}` : ''}`,
+    web: id
+      ? `https://www.bible.com/bible/${id}/${usfm}`
+      : `https://www.bible.com/search/bible?q=${encodeURIComponent(refText)}`,
+  };
+}
+
+/**
+ * Buka YouVersion. Tanpa acuan → halaman depannya (seperti dulu); dengan
+ * acuan → langsung ke pasalnya.
+ *
+ * Cadangannya bertingkat: skema app → alamat web bible.com → halaman App
+ * Store (kalau app-nya memang belum terpasang & webnya pun gagal dibuka).
+ */
+export function openYouVersion(refText?: string, version?: string) {
+  if (!refText?.trim()) {
+    return openExternalUrl(YOUVERSION_DEEPLINK, {
+      fallback: YOUVERSION_APP_STORE,
+    });
+  }
+  const { scheme, web } = youVersionLink(refText, version);
+  return openExternalUrl(scheme, {
+    fallback: web,
+    onError: () => void openExternalUrl(YOUVERSION_APP_STORE),
   });
 }
 

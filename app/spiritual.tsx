@@ -37,6 +37,7 @@ import {
   subscribeBibleReadingDays,
   subscribeReviveEntries,
   subscribeReviveStreak,
+  worshipVerseOfDay,
   type BibleReadingDay,
   type ReviveEntry,
   type ReviveStreak,
@@ -112,7 +113,10 @@ export default function SpiritualScreen() {
       <ScreenHeader
         backLabel="Home"
         title="Spiritual ✝️"
-        subtitle="Being with God, bukan sekadar doing for God"
+        // Ayat penyembahan hari ini — berganti tiap hari, tapi TETAP sama
+        // sepanjang hari itu (diundi dari tanggalnya, lihat lib/spiritual.ts),
+        // jadi pindah-pindah sub-tab tidak menggantinya di tengah jalan.
+        subtitle={worshipVerseOfDay(todayId)}
         // Pojok kanan menyesuaikan sub-tab:
         //   Revive  → 📖 riwayat + 🔥 "Doa Pagi" (Revive memang langkah 1
         //             gerbang pagi — kategori "Revive Rohani" sengaja dihapus

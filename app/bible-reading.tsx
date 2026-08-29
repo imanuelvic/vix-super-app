@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
 import { useNow } from '@/hooks/useNow';
 import { BIBLE_CATEGORY } from '@/lib/achievements';
-import { formatMinutesLeft } from '@/lib/format';
+import { formatFullDate, formatMinutesLeft } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -173,8 +173,14 @@ export default function BibleReadingScreen() {
         subtitle="Merenungkan firman-Nya pagi, siang & malam"
         // Layar ini SATU sesi saja, jadi modal yang dibuka pun sesi itu:
         // pagi 🌅 / siang 🌤️ / malam 🌙 — bukan daftar semua kategori.
-        right={<AchievementButton category={BIBLE_CATEGORY[session]} />}
-      />
+        right={<AchievementButton category={BIBLE_CATEGORY[session]} />}>
+        {/* Tanggalnya, sama seperti layar rohani lain (Tulis Revive, Catatan
+            Khotbah): catatan bacaan itu melekat pada HARI tertentu, jadi
+            harinya harus kelihatan tanpa perlu diingat-ingat. */}
+        <VixText heading="label" additionalStyle={styles.dateLine}>
+          📅 {formatFullDate(now)}
+        </VixText>
+      </ScreenHeader>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Hitung mundur jendela baca — supaya jelas "sampai jam berapa ini
@@ -207,9 +213,14 @@ export default function BibleReadingScreen() {
             ALKITABNYA (YouVersion), bukan renungan NDC. Undiannya diberi garam
             berbeda per sesi, jadi pagi, malam, & Revive tidak menampilkan
             kalimat yang sama persis. */}
+        {/* Begitu bacaannya diisi, tombolnya tidak lagi cuma "buka app": ia
+            membuka PASAL ITU. Acuan pertama yang dipakai — kalau ada beberapa
+            kitab, sisanya tinggal di-click dari riwayatnya. */}
         <SpiritualIntro
           reminder={dailyReminder(dayId, `baca-${session}`)}
           app="youversion"
+          passage={filled[0]}
+          version={versiTerpakai}
         />
 
         {refs.map((ref, i) => (
@@ -324,9 +335,6 @@ export default function BibleReadingScreen() {
               <VixText heading="bold" additionalStyle={styles.storyText}>
                 📖 Bagikan ayatnya ke Instagram Story
               </VixText>
-              <VixText heading="label" additionalStyle={styles.storyHint}>
-                Pilih bacaannya, ketik ayatnya kalau mau — opsional
-              </VixText>
             </PressableScale>
           </>
         )}
@@ -337,6 +345,7 @@ export default function BibleReadingScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  dateLine: { marginTop: 2 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
   // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.
@@ -367,7 +376,6 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   storyText: { color: Color.SPIRITUAL_DARK },
-  storyHint: { color: Color.SPIRITUAL_DARK },
   refCard: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 18,

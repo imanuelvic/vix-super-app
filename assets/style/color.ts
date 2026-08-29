@@ -24,6 +24,11 @@ export const Color = {
   CONTRAST_CONTAINER: '#F5E7D2',
   BORDER: '#EBDCC5',
   OVERLAY: '#00000066', // latar gelap transparan di belakang modal
+  // Abu-abu "tidak berlaku" — untuk pilihan yang memang belum punya isi, mis.
+  // kategori Finance yang budget-nya belum diatur (0). Sengaja SEGELAP teks
+  // keterangan, bukan pucat: yang dituju "tidak ada budget", bukan "mati".
+  DISABLED: '#D8D5CE',
+  DISABLED_DARK: '#6B6B63',
 
   // Teks
   TEXT_TITLE: '#10221C',

@@ -70,6 +70,10 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     { key: 'parents', label: 'Parents', icon: '👨🏻', active: true },
     { key: 'gathering-core', label: 'Gathering CORE', icon: '💚', active: true },
     { key: 'rent', label: 'Rent', icon: '🏘️', active: true },
+    // Pengeluaran rumah — sub-kategorinya = jenis catatan di fitur Residence
+    // (lib/residence.ts), dan transaksinya otomatis ikut tercatat di Log
+    // Residence. Pola yang sama dengan Transportation › Bensin ⛽ → Car.
+    { key: 'residence', label: 'Residence', icon: '🏠', active: true },
     { key: 'electricity', label: 'Electricity', icon: '⚡', active: true },
     { key: 'water', label: 'Water', icon: '💧', active: true },
     { key: 'wifi', label: 'Wifi', icon: '📶', active: true },

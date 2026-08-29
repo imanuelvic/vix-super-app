@@ -82,3 +82,30 @@ export function priorityPending(items: PriorityItem[]): number {
   const filled = priorityFilled(items);
   return filled === 0 ? PRIORITY_COUNT : filled - priorityDone(items);
 }
+
+/**
+ * Isi pil 💡 di Home. Tiga keadaan, tiga bunyi yang berbeda:
+ *
+ *   'kosong'  → belum diisi sama sekali. Angkanya SENGAJA tidak ditampilkan
+ *               (angka "3" terbaca seolah sudah ada tiga hal yang menunggu,
+ *               padahal yang menunggu justru keputusannya) — diganti ⚠️.
+ *   'sisa'    → sudah diisi, tinggal sekian yang belum dicoret: 3 → 2 → 1.
+ *   'beres'   → semuanya dicoret → ✅.
+ *
+ * Mengisinya WAJIB tiga, sesuai namanya di daftar kebiasaan: Top 3 Priorities.
+ */
+export type PriorityState = 'kosong' | 'sisa' | 'beres';
+
+export function priorityState(items: PriorityItem[]): PriorityState {
+  const filled = priorityFilled(items);
+  if (filled === 0) return 'kosong';
+  return filled - priorityDone(items) === 0 ? 'beres' : 'sisa';
+}
+
+/** Tulisan di pil 💡 Home: "💡 ⚠️" · "💡 2" · "💡 ✅". */
+export function priorityBadgeText(items: PriorityItem[]): string {
+  const keadaan = priorityState(items);
+  if (keadaan === 'kosong') return '💡 ⚠️';
+  if (keadaan === 'beres') return '💡 ✅';
+  return `💡 ${priorityPending(items)}`;
+}

@@ -6,6 +6,7 @@ import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
+import { WeekTargetCard } from '@/components/health/WeekTargetCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useHealthToday } from '@/hooks/useHealthToday';
@@ -135,24 +136,25 @@ export function StepsTab({
         </VixText>
       </SummaryCard>
 
+      {/* ===== Target MINGGUAN milikmu sendiri =====
+          Ditaruh paling atas sesudah angka hari ini: inilah yang dikejar,
+          jadi ia yang harus pertama terlihat. Mulai dari nol lagi tiap Senin
+          jam 00.00, sama seperti akumulasi mingguannya. */}
+      <WeekTargetCard km={weekKm} />
+
       {/* ===== Minggu ini (Senin–Minggu, reset tiap Senin) ===== */}
       <MileageCard
         title="📅 Minggu Ini"
-        sub="Senin–Minggu · mulai dari 0 lagi tiap Senin"
         km={weekKm}
         steps={weekTotal}
         hit={weekHit}
         milestones={RUN_WEEK_MILESTONES}
       />
 
-      {/* Target kesehatan mingguan: aerobik + strength training 2 hari */}
+      {/* Anjuran kesehatan umum — BUKAN target pribadi (itu kartu di atas). */}
       <View style={styles.card}>
         <VixText heading="title" additionalStyle={styles.cardTitle}>
-          🎯 Target Sehat Mingguan
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.subText}>
-          Anjuran dewasa: ±150 menit aerobik sedang + strength training minimal
-          2 hari per minggu.
+          🩺 Anjuran Kesehatan
         </VixText>
         <GoalRow
           label="🚶 Aktivitas aerobik"
@@ -171,7 +173,6 @@ export function StepsTab({
       {/* ===== Bulan ini (tantangan ala Strava) ===== */}
       <MileageCard
         title={`🗓️ ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`}
-        sub="Tantangan bulanan — akumulasi seluruh bulan"
         km={monthKm}
         steps={monthTotal}
         hit={monthHit}
@@ -214,14 +215,12 @@ export function StepsTab({
 // Kartu akumulasi (mingguan / bulanan) + bar menuju patokan berikutnya.
 function MileageCard({
   title,
-  sub,
   km,
   steps,
   hit,
   milestones,
 }: {
   title: string;
-  sub: string;
   km: number;
   steps: number;
   hit: { km: number; emoji: string; label: string } | null;
@@ -239,9 +238,10 @@ function MileageCard({
           {formatDecimal(km)} km
         </VixText>
       </View>
-      <VixText heading="label" additionalStyle={styles.subText}>
-        {sub}
-      </VixText>
+      {/* Keterangan "Senin–Minggu · mulai dari 0 lagi tiap Senin" &
+          "Tantangan bulanan" dibuang (30 Agu 2026): judulnya sendiri sudah
+          bilang periodenya, dan dua baris keterangan di tiap kartu bikin
+          layarnya penuh tulisan yang tidak pernah dibaca lagi. */}
       <VixText heading="label" additionalStyle={styles.subText}>
         👣 {groupDigits(String(steps))} langkah
         {hit ? `  ·  ${hit.emoji} ${hit.label} tercapai` : ''}

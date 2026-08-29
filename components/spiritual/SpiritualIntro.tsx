@@ -13,8 +13,8 @@ import { openNdcMinistry, openYouVersion } from '@/lib/spiritual';
  *   youversion → Alkitabnya sendiri, yang dibuka saat Baca Alkitab 📖
  */
 const APPS = {
-  ndc: { label: '📱 Buka NDC Ministry', open: openNdcMinistry },
-  youversion: { label: '📖 Buka YouVersion', open: openYouVersion },
+  ndc: { label: '📱 Buka NDC Ministry', open: () => void openNdcMinistry() },
+  youversion: { label: '📖 Buka YouVersion', open: () => void openYouVersion() },
 };
 
 // Pembuka layar rohani: satu kalimat reminder yang diundi per hari, lalu
@@ -23,11 +23,24 @@ const APPS = {
 export function SpiritualIntro({
   reminder,
   app = 'ndc',
+  passage,
+  version,
 }: {
   reminder: string;
   app?: keyof typeof APPS;
+  /**
+   * Acuan yang sudah kamu isi ("Amsal 29", "Yohanes 3:16"). Kalau ada, tombol
+   * YouVersion tidak lagi membuka halaman depannya, tapi LANGSUNG ke pasal itu
+   * — dan tulisannya ikut menyebutkan tujuannya, supaya jelas ke mana ia
+   * membawa sebelum ditekan.
+   */
+  passage?: string;
+  /** Singkatan terjemahannya (TB, TSI, …) — lihat YOUVERSION_VERSION_ID. */
+  version?: string;
 }) {
   const tujuan = APPS[app];
+  const acuan = passage?.trim() ?? '';
+  const keAcuan = app === 'youversion' && acuan.length > 0;
   return (
     <>
       <View style={styles.reminderCard}>
@@ -38,11 +51,21 @@ export function SpiritualIntro({
           {reminder}
         </VixText>
       </View>
-      <PressableScale style={styles.appButton} onPress={tujuan.open}>
+      <PressableScale
+        style={styles.appButton}
+        onPress={() =>
+          keAcuan ? void openYouVersion(acuan, version) : tujuan.open()
+        }>
         <View style={styles.appButtonMain}>
           <VixText heading="bold" additionalStyle={styles.appButtonText}>
             {tujuan.label}
           </VixText>
+          {keAcuan && (
+            <VixText heading="label" additionalStyle={styles.appButtonSub}>
+              Langsung ke {acuan}
+              {version?.trim() ? ` (${version.trim()})` : ''}
+            </VixText>
+          )}
         </View>
         <IconSymbol name="chevron.right" size={20} color={Color.TEXT_REVERSE} />
       </PressableScale>
@@ -77,4 +100,5 @@ const styles = StyleSheet.create({
   },
   appButtonMain: { flex: 1, gap: 1 },
   appButtonText: { color: Color.TEXT_REVERSE },
+  appButtonSub: { color: Color.TEXT_ON_DARK_MUTED },
 });

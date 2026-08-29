@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CardActionButton } from '@/components/common/CardActionButton';
-import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -372,17 +371,13 @@ export default function CoreRulesScreen() {
         <FormError message={formError} />
         {/* Pengenal dokumen ini adalah `kind` (sekaligus id Firestore-nya),
             jadi dipetakan ke bentuk {id} yang dipakai EditDelete untuk `key`. */}
-        <EditDelete
+        <EditFooter
           editing={
             editing === null || editing === 'new' ? editing : { id: editing.kind }
           }
-          label="Hapus panduan ini"
+          deleteLabel="Hapus panduan ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

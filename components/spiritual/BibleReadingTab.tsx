@@ -12,6 +12,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { splitBibleRefs, usfmRef } from '@/lib/bible';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR } from '@/lib/messages';
@@ -19,11 +20,11 @@ import {
   BIBLE_SESSIONS,
   BIBLE_VERSION_DEFAULT,
   bibleHasOther,
-  bibleRefWithVersion,
   bibleSessionMeta,
   bibleSessionNow,
   deleteBibleReading,
   isBibleSkipped,
+  openYouVersion,
   saveBibleReading,
   type BibleReadingDay,
   type BibleSession,
@@ -137,10 +138,36 @@ export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
               </View>
               {/* "Amsal 16 (TB)" — acuannya beserta terjemahan yang dibaca.
                   Catatan lama yang belum punya kolom terjemahan tampil (TB),
-                  dan itu memang benar: semuanya dibuat dari Terjemahan Baru. */}
-              <VixText heading="paragraph" additionalStyle={styles.cardText}>
-                {bibleRefWithVersion(d[session], d.versions[session])}
-              </VixText>
+                  dan itu memang benar: semuanya dibuat dari Terjemahan Baru.
+
+                  Tiap acuan bisa di-click SENDIRI-SENDIRI → membuka pasal itu
+                  di YouVersion. Baris "Yakobus 3, Amsal 14" jadi dua tombol,
+                  bukan satu: yang mau dibaca ulang biasanya cuma salah satunya.
+                  Terjemahannya ikut, jadi yang terbuka bacaan yang sama persis
+                  (selama nomor versinya sudah terdaftar — lihat lib/spiritual). */}
+              <View style={styles.refRow}>
+                {splitBibleRefs(d[session]).map((acuan, i) => {
+                  const versi = d.versions[session] || BIBLE_VERSION_DEFAULT;
+                  const bisa = usfmRef(acuan) !== null;
+                  return (
+                    <PressableScale
+                      key={`${d.id}-${i}`}
+                      style={[styles.refChip, !bisa && styles.refChipPlain]}
+                      onPress={() => void openYouVersion(acuan, versi)}
+                      disabled={!bisa}>
+                      <VixText
+                        heading="paragraph"
+                        additionalStyle={bisa ? styles.refChipText : styles.cardText}>
+                        {acuan}
+                        {bisa ? ' ›' : ''}
+                      </VixText>
+                    </PressableScale>
+                  );
+                })}
+                <VixText heading="paragraph" additionalStyle={styles.cardVersion}>
+                  ({d.versions[session] || BIBLE_VERSION_DEFAULT})
+                </VixText>
+              </View>
             </View>
           );
         })}
@@ -222,6 +249,19 @@ const styles = StyleSheet.create({
   cardDate: { color: Color.SPIRITUAL_DARK },
   editText: { color: Color.MAIN },
   cardText: { color: Color.TEXT_TITLE },
+  // Acuan yang bisa di-click tampil sebagai pil ungu muda — beda jelas dari
+  // teks biasa, jadi kelihatan mana yang membuka YouVersion dan mana yang
+  // cuma tulisan (kitab yang namanya tidak dikenali tetap tampil apa adanya).
+  refRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  refChip: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  refChipPlain: { backgroundColor: 'transparent', paddingHorizontal: 0 },
+  refChipText: { color: Color.SPIRITUAL_DARK },
+  cardVersion: { color: Color.TEXT_LABEL },
   fieldLabel: { marginBottom: 6 },
   fieldLabelTop: { marginTop: 12, marginBottom: 6 },
   input: { minHeight: 88, textAlignVertical: 'top' },

@@ -3,8 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
-import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -337,15 +336,11 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
         />
 
         <FormError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus ide ini"
+          deleteLabel="Hapus ide ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Chip } from '@/components/common/Chip';
+import { ChipRow } from '@/components/common/ChipRow';
 
 // Baris chip filter yang bisa digeser: "ALL" + satu chip per pilihan,
 // masing-masing boleh menampilkan angka. Menekan chip yang sedang aktif akan
@@ -31,10 +32,7 @@ export function FilterChips<T extends string>({
   onRepress?: () => void;
 }) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}>
+    <ChipRow contentStyle={styles.row}>
       <Chip
         label={allLabel}
         active={value === null}
@@ -54,10 +52,10 @@ export function FilterChips<T extends string>({
           }}
         />
       ))}
-    </ScrollView>
+    </ChipRow>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { gap: 8, paddingRight: 4, paddingBottom: 12 },
+  row: { paddingRight: 4, paddingBottom: 12 },
 });

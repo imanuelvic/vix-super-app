@@ -142,3 +142,75 @@ export function parseBibleRef(text: string): {
     verseTo: m?.[3] ?? '',
   };
 }
+
+// ===================== Kode USFM (untuk YouVersion) =====================
+// YouVersion menunjuk kitab dengan kode USFM tiga huruf yang sama di semua
+// bahasa — "Amsal" di sana tetap `PRO`, "Kisah Para Rasul" tetap `ACT`. Jadi
+// nama Indonesia di daftar atas perlu dipetakan ke kodenya sekali di sini,
+// dan seluruh app tinggal memakai `usfmOf`.
+export const USFM_BY_BOOK: Record<string, string> = {
+  // ===== Perjanjian Lama =====
+  Kejadian: 'GEN', Keluaran: 'EXO', Imamat: 'LEV', Bilangan: 'NUM',
+  Ulangan: 'DEU', Yosua: 'JOS', 'Hakim-Hakim': 'JDG', Rut: 'RUT',
+  '1 Samuel': '1SA', '2 Samuel': '2SA', '1 Raja-Raja': '1KI',
+  '2 Raja-Raja': '2KI', '1 Tawarikh': '1CH', '2 Tawarikh': '2CH',
+  Ezra: 'EZR', Nehemia: 'NEH', Ester: 'EST', Ayub: 'JOB', Mazmur: 'PSA',
+  Amsal: 'PRO', Pengkhotbah: 'ECC', 'Kidung Agung': 'SNG', Yesaya: 'ISA',
+  Yeremia: 'JER', Ratapan: 'LAM', Yehezkiel: 'EZK', Daniel: 'DAN',
+  Hosea: 'HOS', Yoel: 'JOL', Amos: 'AMO', Obaja: 'OBA', Yunus: 'JON',
+  Mikha: 'MIC', Nahum: 'NAM', Habakuk: 'HAB', Zefanya: 'ZEP', Hagai: 'HAG',
+  Zakharia: 'ZEC', Maleakhi: 'MAL',
+  // ===== Perjanjian Baru =====
+  Matius: 'MAT', Markus: 'MRK', Lukas: 'LUK', Yohanes: 'JHN',
+  'Kisah Para Rasul': 'ACT', Roma: 'ROM', '1 Korintus': '1CO',
+  '2 Korintus': '2CO', Galatia: 'GAL', Efesus: 'EPH', Filipi: 'PHP',
+  Kolose: 'COL', '1 Tesalonika': '1TH', '2 Tesalonika': '2TH',
+  '1 Timotius': '1TI', '2 Timotius': '2TI', Titus: 'TIT', Filemon: 'PHM',
+  Ibrani: 'HEB', Yakobus: 'JAS', '1 Petrus': '1PE', '2 Petrus': '2PE',
+  '1 Yohanes': '1JN', '2 Yohanes': '2JN', '3 Yohanes': '3JN', Yudas: 'JUD',
+  Wahyu: 'REV',
+};
+
+/** Kode USFM satu kitab (null = namanya tidak dikenali). */
+export function usfmOf(book: string): string | null {
+  return USFM_BY_BOOK[book.trim()] ?? null;
+}
+
+/**
+ * Ubah teks acuan jadi rujukan USFM yang dimengerti YouVersion.
+ *
+ *   "Amsal 29"      → "PRO.29"
+ *   "Amsal 3:5-6"   → "PRO.3.5"     (ayat awalnya saja — YouVersion membuka
+ *                                    pasalnya lalu menyorot ayat itu)
+ *   "Yakobus"       → "JAS.1"       (tanpa pasal → mulai dari pasal 1)
+ *   "Sesuatu"       → null          (kitabnya tak dikenali)
+ *
+ * Acuan ganda ("Yakobus 3, Amsal 14") sengaja TIDAK diurus di sini — yang
+ * memanggil memecahnya dulu, supaya tiap acuan bisa di-click sendiri-sendiri.
+ */
+export function usfmRef(text: string): string | null {
+  const { book, chapter, verseFrom } = parseBibleRef(text);
+  const kode = book ? usfmOf(book) : null;
+  if (!kode) return null;
+  const pasal = chapter || '1';
+  return verseFrom ? `${kode}.${pasal}.${verseFrom}` : `${kode}.${pasal}`;
+}
+
+/**
+ * Pecah satu baris catatan jadi acuan-acuan terpisah.
+ * "Yakobus 3, Amsal 14" → ["Yakobus 3", "Amsal 14"]
+ */
+export function splitBibleRefs(text: string): string[] {
+  return text
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    // "Amsal 3:5-6" tidak boleh ikut terpecah — pemisahnya koma, dan bagian
+    // yang tidak diawali nama kitab digabungkan kembali ke acuan sebelumnya.
+    .reduce<string[]>((out, bagian) => {
+      if (parseBibleRef(bagian).book) out.push(bagian);
+      else if (out.length) out[out.length - 1] += `, ${bagian}`;
+      else out.push(bagian);
+      return out;
+    }, []);
+}

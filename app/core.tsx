@@ -21,9 +21,7 @@ import { MultiplicationTab } from '@/components/core/MultiplicationTab';
 import { VisitationTab } from '@/components/core/VisitationTab';
 import { useAuth } from '@/contexts/auth';
 import {
-    EMPTY_CORE_IDEAS,
     EMPTY_MONTHLY_PRAYERS,
-    subscribeCoreIdeas,
     subscribeCoreLeaders,
     subscribeExLeaders,
     subscribeMainTeam,
@@ -32,9 +30,8 @@ import {
     subscribeVisitations,
     subscribeWeeklyFocus,
     EMPTY_WEEKLY_FOCUS,
-    focusLeaders,
+    followupDue,
     type WeeklyFocus,
-    type CoreIdeasData,
     type CoreLeader,
     type ExLeader,
     type MainTeamMember,
@@ -42,7 +39,7 @@ import {
     type MonthlyPrayers,
     type Visitation,
 } from '@/lib/core';
-import { dayDocId } from '@/lib/health';
+import { useNow } from '@/hooks/useNow';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
@@ -91,7 +88,6 @@ export default function CoreScreen() {
   const [exLeaders, setExLeaders] = useState<ExLeader[]>([]);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[] | null>(null);
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
-  const [ideas, setIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(
     EMPTY_MONTHLY_PRAYERS,
   );
@@ -101,7 +97,9 @@ export default function CoreScreen() {
   const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [error, setError] = useState<string | null>(null);
 
-  const dayId = dayDocId(new Date());
+  // Jam BERJALAN (di-segarkan tiap menit): badge Follow Up menyala sendiri
+  // tepat jam 09.00 tanpa perlu layarnya dibuka ulang.
+  const { now, todayId: dayId } = useNow();
 
   useEffect(() => {
     if (!user) return;
@@ -118,7 +116,6 @@ export default function CoreScreen() {
       subscribeExLeaders(user.uid, setExLeaders, fail),
       subscribeMainTeam(user.uid, setMainTeam, fail),
       subscribeVisitations(user.uid, setVisitations, fail),
-      subscribeCoreIdeas(user.uid, setIdeas, fail),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers, fail),
       subscribeMonthlyMeetings(user.uid, setMeetings, fail),
       subscribeWeeklyFocus(user.uid, setWeeklyFocus, fail),
@@ -153,6 +150,13 @@ export default function CoreScreen() {
             <View style={styles.headerButtons}>
               {/* Template chat 💬 — kata-kata siap kirim (kedukaan, get well,
                   wisuda, motivasi harian) untuk CL maupun grup CORE. */}
+              {/* Idea For CORE 💡 — masukan yang dikumpulkan pelan-pelan.
+                  Dulu menumpang di ujung bawah tab ini; sekarang layarnya
+                  sendiri, dan pintunya di sini, sebelah template chat. */}
+              <EmojiButton
+                emoji="💡"
+                onPress={() => router.push('/core-ideas')}
+              />
               <EmojiButton
                 emoji="💬"
                 onPress={() => router.push('/chat-templates')}
@@ -195,7 +199,6 @@ export default function CoreScreen() {
             leaders={leaders}
             mainTeam={mainTeam}
             dayId={dayId}
-            ideas={ideas}
             monthlyPrayers={monthlyPrayers}
             weeklyFocus={weeklyFocus}
           />
@@ -208,13 +211,12 @@ export default function CoreScreen() {
         )}
       </View>
 
-      {/* Badge Follow Up = 2 CL fokus minggu ini yang belum di-follow up hari
-          ini — angka yang sama dengan badge tile CORE di Home. */}
+      {/* Badge Follow Up = CL fokus minggu ini yang belum di-follow up hari
+          ini, dan baru menyala mulai jam 09.00 (lihat followupDue di
+          lib/core.ts) — angka yang sama dengan badge tile CORE di Home. */}
       <BottomTabs
         tabs={withBadge(TABS, {
-          followup: focusLeaders(leaders ?? [], new Date(), weeklyFocus).filter(
-            (l) => l.lastFollowupDayId !== dayId,
-          ).length,
+          followup: followupDue(leaders ?? [], now, weeklyFocus, dayId).length,
         })}
         value={tab}
         onChange={onTabPress}

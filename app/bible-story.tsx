@@ -139,8 +139,6 @@ export default function BibleStoryScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Pilih acuan mana yang mau dipajang — cuma muncul kalau memang
-              ada lebih dari satu bacaan hari itu. */}
           {refs.length > 1 && (
             <>
               <VixText heading="title" additionalStyle={styles.sectionTitle}>

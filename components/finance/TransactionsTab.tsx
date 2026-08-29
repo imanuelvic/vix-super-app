@@ -33,12 +33,18 @@ import { useSearchMode } from '@/hooks/useSearchMode';
 import {
   budgetKey,
   isFuelTransaction,
+  isResidenceTransaction,
   subLabelOf,
   subsOf,
   type BudgetMap,
   type SubcategoryMap,
 } from '@/lib/budgets';
 import { deleteCarLog, syncFuelLog } from '@/lib/car';
+import {
+  deleteResidenceLog,
+  syncResidenceLog,
+  type ResidenceLogType,
+} from '@/lib/residence';
 import {
   activeCategories,
   categoryOf,
@@ -200,13 +206,24 @@ export function TransactionsTab({
   // Sedang mencatat pengisian bensin? → muncul kolom Liter & otomatis
   // tersalin ke fitur Car 🚗 (Log) begitu disimpan.
   const isFuel = !!category && isFuelTransaction(type, category, sub ?? undefined);
+  const isResidence =
+    !!category && isResidenceTransaction(type, category, sub ?? undefined);
 
   // Warna latar pilihan kategori sesuai pemakaian budget-nya: kuning ≥75%,
   // biru pas 100% (budget habis persis), merah kalau MELEBIHI 100% (over
-  // budget). Kategori tanpa budget → normal.
+  // budget).
+  //
+  // Kategori TANPA budget (belum diatur / 0) kini abu-abu gelap, bukan putih
+  // polos seperti dulu. Dulu ia tak bisa dibedakan dari kategori yang
+  // budget-nya masih longgar — dua keadaan yang sangat berbeda tampil sama.
   function categoryBudgetStyle(key: string): ViewStyle | undefined {
     const allocated = budget[budgetKey(type, key)] ?? 0;
-    if (allocated <= 0) return undefined;
+    if (allocated <= 0) {
+      return {
+        backgroundColor: Color.DISABLED,
+        borderColor: Color.DISABLED_DARK,
+      };
+    }
     const percent =
       ((realization.get(budgetKey(type, key)) ?? 0) / allocated) * 100;
     if (percent > 100)
@@ -266,6 +283,16 @@ export function TransactionsTab({
           title: note.trim() || 'Bensin',
           cost: value,
           liters: fuelLiters > 0 ? fuelLiters : null,
+          date: new Date(),
+        });
+      }
+      // Pengeluaran rumah → sekalian tercatat di Residence › Log, pola yang
+      // sama persis dengan bensin di atas.
+      if (isResidence) {
+        await syncResidenceLog(user.uid, ref.id, {
+          type: sub as ResidenceLogType,
+          title: note.trim() || subLabelOf(subcats, type, category!, sub!),
+          cost: value,
           date: new Date(),
         });
       }
@@ -337,6 +364,17 @@ export function TransactionsTab({
           date: new Date(),
         });
       }
+      // Begitu juga salinan pengeluaran rumah → Residence › Log.
+      if (isResidenceTransaction(editing.type, editing.category, editSub ?? undefined)) {
+        await syncResidenceLog(user.uid, ref.id, {
+          type: editSub as ResidenceLogType,
+          title:
+            editNote.trim() ||
+            subLabelOf(subcats, editing.type, editing.category, editSub!),
+          cost: value,
+          date: new Date(),
+        });
+      }
       setConfirmCopy(false);
       setEditing(null);
       // Salinan bertanggal hari ini → posisinya paling atas daftar. Langsung
@@ -365,6 +403,16 @@ export function TransactionsTab({
       editSub ?? undefined,
     );
     const wasFuel = isFuelTransaction(editing.type, editing.category, editing.sub);
+    const nowResidence = isResidenceTransaction(
+      editing.type,
+      editing.category,
+      editSub ?? undefined,
+    );
+    const wasResidence = isResidenceTransaction(
+      editing.type,
+      editing.category,
+      editing.sub,
+    );
     const editLitersValue = nowFuel ? parseDecimal(editLiters) : 0;
     try {
       await updateTransaction(user.uid, editing.id, {
@@ -385,6 +433,20 @@ export function TransactionsTab({
         });
       } else if (wasFuel) {
         await deleteCarLog(user.uid, editing.id);
+      }
+      // Log Residence ikut menyesuaikan: diperbarui kalau (masih) pengeluaran
+      // rumah, dihapus kalau sub-nya dilepas.
+      if (nowResidence) {
+        await syncResidenceLog(user.uid, editing.id, {
+          type: editSub as ResidenceLogType,
+          title:
+            editNote.trim() ||
+            subLabelOf(subcats, editing.type, editing.category, editSub!),
+          cost: value,
+          date: editDate,
+        });
+      } else if (wasResidence) {
+        await deleteResidenceLog(user.uid, editing.id);
       }
       setEditing(null);
     } catch {
@@ -408,6 +470,16 @@ export function TransactionsTab({
         )
       ) {
         await deleteCarLog(user.uid, confirmDelete.id);
+      }
+      // Begitu juga catatan kembarannya di Residence › Log.
+      if (
+        isResidenceTransaction(
+          confirmDelete.type,
+          confirmDelete.category,
+          confirmDelete.sub,
+        )
+      ) {
+        await deleteResidenceLog(user.uid, confirmDelete.id);
       }
     } catch {
       setError(DELETE_ERROR);

@@ -8,6 +8,7 @@ import {
 
 import { FINANCE_CATEGORIES, type FinanceType } from './categories';
 import { db } from './firebase';
+import { RESIDENCE_LOG_TYPES } from './residence';
 import { liveDoc } from './liveDoc';
 
 /**
@@ -182,11 +183,37 @@ export type SubcategoryMap = Record<string, Subcategory[]>;
 const FUEL_CATEGORY_KEY = 'transportation';
 const FUEL_SUB_KEY = 'bensin';
 
+// ---- Sub BAWAAN: Residence 🏠 ----
+// Jembatan kedua, polanya sama persis dengan Bensin: transaksi
+// Expense › Residence › <jenis> otomatis jadi catatan di Residence → Log.
+//
+// Daftar subnya TIDAK ditulis ulang di sini — diambil langsung dari
+// RESIDENCE_LOG_TYPES, jadi jenis pengeluaran rumah cuma didefinisikan di satu
+// tempat (lib/residence.ts) dan mustahil beda antara dua fitur.
+export const RESIDENCE_CATEGORY_KEY = 'residence';
+
 const BUILTIN_SUBS: SubcategoryMap = {
   [budgetKey('expense', FUEL_CATEGORY_KEY)]: [
     { key: FUEL_SUB_KEY, label: '⛽ Bensin', builtin: true },
   ],
+  [budgetKey('expense', RESIDENCE_CATEGORY_KEY)]: RESIDENCE_LOG_TYPES.map(
+    (t) => ({ key: t.key, label: `${t.icon} ${t.label}`, builtin: true }),
+  ),
 };
+
+/** Transaksi ini pengeluaran rumah? (Expense › Residence › jenis apa pun) */
+export function isResidenceTransaction(
+  type: FinanceType,
+  categoryKey: string,
+  subKey: string | undefined,
+): boolean {
+  return (
+    type === 'expense' &&
+    categoryKey === RESIDENCE_CATEGORY_KEY &&
+    !!subKey &&
+    RESIDENCE_LOG_TYPES.some((t) => t.key === subKey)
+  );
+}
 
 /** Transaksi ini pengisian bensin? (Expense › Transportation › Bensin) */
 export function isFuelTransaction(

@@ -15,17 +15,14 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { checkupSummary } from '@/components/health/CheckupStatusCard';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
 import { formatDate } from '@/lib/format';
 import {
   addCheckup,
-  checkupDaysUntil,
-  checkupNextDate,
-  CHECKUP_INFO,
   CHECKUP_TYPES,
   deleteCheckup,
-  evaluateCheckup,
   updateCheckup,
   type Checkup,
   type CheckupType,
@@ -164,15 +161,40 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           </PressableScale>
         </View>
 
-        {/* ===== Informasi penting: pengecekan terakhir per jenis ===== */}
-        {CHECKUP_TYPES.map((meta) => (
-          <StatusCard
-            key={meta.key}
-            meta={meta}
-            latest={latestByType.get(meta.key)}
-            onInfo={() => router.push('/health-info')}
-          />
-        ))}
+        {/* ===== Hasil terakhir — SATU kotak, dua angka =====
+            Dulu dua kartu panjang berjajar ke bawah dan memakan hampir
+            seluruh layar: tombol "Catat Pemeriksaan" & riwayatnya harus
+            digulung jauh dulu. Sekarang ringkas — keterangan lengkapnya
+            (nilai normal, tips, jadwal berikutnya) satu click di halaman
+            sendiri. Titik ⚠️ muncul kalau ada yang di luar normal atau sudah
+            waktunya dicek lagi, jadi yang penting tetap terlihat dari sini. */}
+        <PressableScale
+          style={styles.summaryCard}
+          onPress={() => router.push('/checkup-status')}>
+          <View style={styles.summaryRow}>
+            {CHECKUP_TYPES.map((meta) => {
+              const s = checkupSummary(meta.key, latestByType.get(meta.key));
+              return (
+                <View key={meta.key} style={styles.summaryItem}>
+                  <VixText heading="label" additionalStyle={styles.summaryLabel}>
+                    {meta.icon} {meta.label}
+                    {s.perhatian ? ' ⚠️' : ''}
+                  </VixText>
+                  <VixText
+                    heading="subheader"
+                    additionalStyle={
+                      s.perhatian ? styles.summaryWarn : styles.summaryValue
+                    }>
+                    {s.value}
+                  </VixText>
+                </View>
+              );
+            })}
+          </View>
+          <VixText heading="label" additionalStyle={styles.summaryHint}>
+            Lihat nilai normal, tips & jadwal cek berikutnya ›
+          </VixText>
+        </PressableScale>
 
         {/* ===== Catat pemeriksaan baru → buka bottom sheet ===== */}
         <PrimaryButton
@@ -320,84 +342,6 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
   );
 }
 
-// Kartu "informasi penting": nilai normal, hasil terakhir + evaluasinya,
-// kapan terakhir diperiksa, dan (kalau tidak normal) tips + tombol Info.
-function StatusCard({
-  meta,
-  latest,
-  onInfo,
-}: {
-  meta: (typeof CHECKUP_TYPES)[number];
-  latest?: Checkup;
-  onInfo: () => void;
-}) {
-  const info = CHECKUP_INFO[meta.key];
-  if (!latest) {
-    return (
-      <View style={[styles.statusCard, styles.statusWarn]}>
-        <VixText heading="bold" additionalStyle={styles.statusTitle}>
-          {meta.icon} {meta.label}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.normalText}>
-          Normal: {info.normal}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.warnText}>
-          ⚠️ Belum pernah dicatat — segera periksa dan catat di bawah.
-        </VixText>
-      </View>
-    );
-  }
-
-  const daysUntil = checkupDaysUntil(latest, new Date());
-  const due = daysUntil <= 0;
-  const nextDate = checkupNextDate(latest);
-  const result = evaluateCheckup(meta.key, latest.value);
-  const abnormal = result.status === 'high' || result.status === 'low';
-  return (
-    <View style={[styles.statusCard, due && styles.statusWarn]}>
-      <View style={styles.statusHeader}>
-        <VixText heading="bold" additionalStyle={styles.statusTitle}>
-          {meta.icon} {meta.label}
-        </VixText>
-        <VixText heading="subheader" additionalStyle={styles.statusValue}>
-          {latest.value}
-        </VixText>
-      </View>
-      <VixText heading="label" additionalStyle={styles.normalText}>
-        Normal: {info.normal}
-      </VixText>
-      {result.label ? (
-        <VixText
-          heading="bold"
-          additionalStyle={result.status === 'normal' ? styles.okText : styles.abnormalText}>
-          Hasil terakhir: {result.label}
-        </VixText>
-      ) : null}
-      <VixText heading="label">
-        Terakhir dicek: {formatDate(latest.date.toDate())}
-      </VixText>
-      {/* Kalau hasil terakhir tidak normal → tips + arahkan ke halaman Info */}
-      {abnormal && result.tip ? (
-        <View style={styles.adviceBox}>
-          <VixText heading="label" additionalStyle={styles.adviceText}>
-            💡 {result.tip}
-          </VixText>
-        </View>
-      ) : null}
-      {due ? (
-        <VixText heading="label" additionalStyle={styles.warnText}>
-          ⚠️ Waktunya cek lagi! Jadwal 6 bulan ({formatDate(nextDate)}) sudah
-          {daysUntil === 0 ? ' tiba hari ini' : ` lewat ${-daysUntil} hari`}.
-        </VixText>
-      ) : (
-        <VixText heading="label" additionalStyle={styles.nextText}>
-          🗓️ Cek lagi: {formatDate(nextDate)} · {daysUntil} hari lagi
-        </VixText>
-      )}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
@@ -418,40 +362,24 @@ const styles = StyleSheet.create({
     borderColor: Color.FINANCE_EXPENSE_DARK,
   },
   navTextDonor: { color: Color.DANGER },
-  statusCard: {
+  // Kotak ringkas hasil terakhir — dua angka berdampingan, satu click ke
+  // halaman keterangan lengkapnya.
+  summaryCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Color.BORDER,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 10,
-    gap: 4,
-  },
-  statusWarn: {
-    backgroundColor: Color.WARNING_TRANSPARENT,
-    borderColor: Color.WARNING,
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     gap: 8,
   },
-  statusTitle: { color: Color.TEXT_TITLE },
-  statusValue: { color: Color.MAIN_DARK },
-  warnText: { color: Color.WARNING },
-  nextText: { color: Color.MAIN_DARK },
-  normalText: { color: Color.TEXT_LABEL },
-  okText: { color: Color.SUCCESS },
-  abnormalText: { color: Color.DANGER },
-  adviceBox: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 10,
-    padding: 10,
-    gap: 8,
-    marginTop: 2,
-  },
-  adviceText: { color: Color.TEXT_PARAGRAPH },
+  summaryRow: { flexDirection: 'row', gap: 12 },
+  summaryItem: { flex: 1, gap: 2 },
+  summaryLabel: { color: Color.TEXT_LABEL },
+  summaryValue: { color: Color.MAIN_DARK },
+  summaryWarn: { color: Color.DANGER },
+  summaryHint: { color: Color.TEXT_LABEL },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
   addButton: { marginTop: 4, marginBottom: 4 },
   fieldLabel: { marginBottom: 6 },

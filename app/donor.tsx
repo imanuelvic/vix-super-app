@@ -8,7 +8,7 @@ import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -400,17 +400,14 @@ export default function DonorScreen() {
           </VixText>
         </PressableScale>
         <ScreenError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus jadwal ini"
+          deleteLabel="Hapus jadwal ini"
           busy={busy}
           onDelete={handleDeleteSchedule}
-        />
-        <DualButtons
-          confirmLabel={editing === 'new' ? 'Tambah' : 'Simpan'}
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSaveSchedule}
+          confirmLabel={editing === 'new' ? 'Tambah' : 'Simpan'}
         />
       </SheetModal>
 

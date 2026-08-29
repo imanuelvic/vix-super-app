@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -135,7 +135,12 @@ export function HabitsTab({
   // efek di bawah berulang kali.
   const rhemaId = rhema?.id ?? null;
   const rhemaSlot = rhema?.slot ?? null;
-  const rhemaJumped = useRef(false);
+
+  // Sudah pernah melompat sejak layar ini dibuka? Satu penanda untuk DUA
+  // lompatan sekaligus (baris Rhema dari Home, dan baris pertama yang masih
+  // menunggu saat layar dibuka biasa) — sesudah salah satunya jalan, posisimu
+  // milikmu sendiri: jangan ditarik-tarik tiap satu baris dicentang.
+  const bukaanJumped = useRef(false);
 
   // Pindah dulu ke sesi tempat baris Rhema berada (biasanya Pagi). Saringan
   // areanya ikut dilepas — kalau tidak, barisnya bisa saja sedang tersembunyi.
@@ -143,23 +148,8 @@ export function HabitsTab({
     if (!focusRhema || !rhemaSlot) return;
     setActiveSlot(rhemaSlot);
     setAreaFilter(null);
-    rhemaJumped.current = false;
+    bukaanJumped.current = false;
   }, [focusRhema, rhemaSlot]);
-
-  // Baru menggulung SESUDAH daftarnya benar-benar tergambar — ukuran isi
-  // ScrollView adalah tanda paling andal untuk itu (pola yang sama dipakai
-  // hooks/useDueJump.ts).
-  const handleContentSize = useCallback(() => {
-    if (!focusRhema || rhemaJumped.current || !rhemaId) return;
-    const y = rowY.current[rhemaId];
-    if (y === undefined) return;
-    rhemaJumped.current = true;
-    scrollRef.current?.scrollTo({
-      y: Math.max(0, blockY.current + y - 8),
-      animated: true,
-    });
-    onFocusDone?.();
-  }, [focusRhema, rhemaId, onFocusDone, scrollRef]);
 
   // Modal tambah/edit kebiasaan.
   const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);
@@ -192,6 +182,39 @@ export function HabitsTab({
   //                ditandai ✗ dikeluarkan supaya tidak menahan skor.
   const counted = countedHabits(habits, day.skipped);
   const countedBySlot = habitsBySlot(counted);
+
+  // Baris pertama yang masih menunggu di sesi yang sedang dibuka.
+  const firstPendingId =
+    activeList.find((h) => !day.done[h.id] && !day.skipped[h.id])?.id ?? null;
+
+  // Baru menggulung SESUDAH daftarnya benar-benar tergambar — ukuran isi
+  // ScrollView adalah tanda paling andal untuk itu (pola yang sama dipakai
+  // hooks/useDueJump.ts).
+  //
+  // Dua lompatan berbagi satu pintu ini, dan urutannya penting: kalau layar
+  // dibuka DARI kartu Refleksi di Home (?focus=rhema), yang dituju barisnya —
+  // bukan baris pertama yang belum dicentang.
+  // Sengaja TANPA useCallback: `firstPendingId` diturunkan dari daftar yang
+  // sedang tampil, dan React Compiler (menyala di app ini) tidak bisa
+  // membuktikan daftar dependency yang ditulis tangan masih benar untuk nilai
+  // seperti itu — ia menolak dengan `preserve-manual-memoization`. Dibiarkan
+  // fungsi biasa, compiler-nya yang menghafalkan sendiri.
+  function handleContentSize() {
+    // Sudah pernah melompat sejak layar ini dibuka → jangan ditarik-tarik lagi.
+    if (bukaanJumped.current) return;
+    // Dari kartu Refleksi di Home? Barisnya yang dituju. Kalau tidak, baris
+    // pertama yang masih menunggu di sesi jam sekarang.
+    const targetId = focusRhema ? rhemaId : firstPendingId;
+    if (!targetId) return;
+    const y = rowY.current[targetId];
+    if (y === undefined) return;
+    bukaanJumped.current = true;
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, blockY.current + y - 8),
+      animated: true,
+    });
+    if (focusRhema) onFocusDone?.();
+  }
 
   // Ukuran keberhasilan hari ini: skor 0–10 + 5 area hidup yang terjaga —
   // bukan lagi "berapa dari 39 tercentang".
@@ -599,14 +622,24 @@ export function HabitsTab({
             const slotDone = list.filter((h) => day.done[h.id]).length;
             const complete = list.length > 0 && slotDone === list.length;
             const allSkipped = grouped[s.key].length > 0 && list.length === 0;
+            // Ada yang dilewati ✗ di sesi ini? Yang dilewati memang keluar
+            // dari hitungan, jadi sesinya bisa terbaca "✅ beres" padahal ada
+            // yang TIDAK dikerjakan — dan itu memuji diri sendiri terlalu
+            // cepat. Sesi begitu ditandai ❌ merah, bukan ✅.
+            const adaDilewati = grouped[s.key].some((h) => day.skipped[h.id]);
+            const tuntas = complete && !adaDilewati;
             return {
               key: s.key,
               label: `${s.emoji} ${s.label}`,
               sub: allSkipped
                 ? '⏭️ dilewati'
-                : complete
+                : tuntas
                   ? '✅ beres'
-                  : `${slotDone}/${list.length}`,
+                  : complete
+                    ? '❌ tak tuntas'
+                    : `${slotDone}/${list.length}`,
+              subColor:
+                complete && !tuntas ? Color.DANGER : undefined,
             };
           })}
           value={activeSlot}
@@ -632,7 +665,13 @@ export function HabitsTab({
             const tier = habitTier(habit);
             // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
             // dapat keterangan kecil + click yang langsung ke sana.
-            const link = habitLink(habit);
+            const rawLink = habitLink(habit);
+            // Pintasan bertanda `whenDone` (📓 Jurnal → Instagram Feed) baru
+            // muncul sesudah barisnya tercentang: feed-nya dibuat DARI tulisan
+            // refleksinya, jadi sebelum ditulis pintunya memang belum ada
+            // gunanya. Sesudah itu ia menetap sepanjang hari — beda dengan
+            // kartu di Home yang hilang begitu feed-nya jadi.
+            const link = rawLink?.whenDone && !checked ? null : rawLink;
             // Baris cermin (olahraga, Top 3 Priorities, Baca Alkitab):
             // centangnya datang dari layar tempat pekerjaannya benar-benar
             // dilakukan, jadi di sini ia cuma penunjuk keadaan + pintasan.
@@ -937,8 +976,18 @@ export function HabitsTab({
   );
 }
 
-// Kolom catatan singkat di bawah kebiasaan yang memintanya. Disimpan saat
-// selesai mengetik (onBlur) — bukan tiap huruf, biar hemat tulis Firestore.
+// Catatan di bawah kebiasaan yang memintanya (refleksi, syukur, rhema).
+//
+// Dulu kolom isian LANGSUNG di dalam daftar, dan itu tidak enak dipakai:
+// barisnya ada di tengah daftar yang panjang, sedangkan bagian atas (sapaan +
+// ringkasan + tab sesi) menempel di atas dan tab bawah menempel di bawah —
+// begitu keyboard iOS naik, sisa ruang untuk mengetik tinggal beberapa baris
+// dan tulisannya sendiri sering ketutupan.
+//
+// Sekarang barisnya cuma PRATINJAU yang bisa di-click; menulisnya di dalam
+// SheetModal, yang sudah punya penghindar keyboard sendiri dan bisa dibuat
+// selega yang dibutuhkan. Cara menyimpannya tidak berubah: sekali saat
+// selesai (tekan Simpan), bukan tiap huruf.
 function HabitNote({
   placeholder,
   value,
@@ -948,18 +997,54 @@ function HabitNote({
   value: string;
   onSave: (text: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState(value);
+
+  function simpan() {
+    if (text.trim() !== value) onSave(text.trim());
+    setOpen(false);
+  }
+
   return (
-    <FormInput
-      style={styles.noteInput}
-      placeholder={placeholder}
-      value={text}
-      onChangeText={setText}
-      onBlur={() => {
-        if (text.trim() !== value) onSave(text.trim());
-      }}
-      multiline
-    />
+    <>
+      <PressableScale
+        style={styles.noteBox}
+        onPress={() => {
+          setText(value); // selalu mulai dari yang tersimpan
+          setOpen(true);
+        }}>
+        <VixText
+          heading="paragraph"
+          additionalStyle={value ? styles.noteFilled : styles.notePlaceholder}>
+          {value || placeholder}
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.noteHint}>
+          ✍️
+        </VixText>
+      </PressableScale>
+
+      <SheetModal
+        visible={open}
+        title="📓 Catatan Hari Ini"
+        subtitle={placeholder}
+        onClose={() => setOpen(false)}
+        footer={
+          <DualButtons
+            confirmLabel="Simpan"
+            onCancel={() => setOpen(false)}
+            onConfirm={simpan}
+          />
+        }>
+        <FormInput
+          style={styles.noteSheetInput}
+          placeholder={placeholder}
+          value={text}
+          onChangeText={setText}
+          multiline
+          autoFocus
+        />
+      </SheetModal>
+    </>
   );
 }
 
@@ -1057,12 +1142,28 @@ const styles = StyleSheet.create({
   // ⚪ Opsional — bonus, jadi tampilannya sengaja lebih kalem.
   rowOptional: { opacity: 0.7 },
   // Catatan singkat di bawah kebiasaan refleksi/syukur/rhema.
-  noteInput: {
+  // Pratinjau catatan di daftar — bentuknya sama persis dengan kolom isian
+  // yang dulu ada di sini (tinggi minimum, jarak, garis tepi), jadi daftarnya
+  // tidak bergeser sama sekali; bedanya sekarang ia tombol, bukan kolom.
+  noteBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
     minHeight: 64,
-    textAlignVertical: 'top',
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     marginTop: -2,
     marginBottom: 8,
   },
+  noteFilled: { flex: 1, color: Color.TEXT_TITLE },
+  notePlaceholder: { flex: 1, color: Color.TEXT_PLACEHOLDER },
+  noteHint: { color: Color.TEXT_LABEL },
+  // Kolom isian DI DALAM modal — dibuat lega, karena di sinilah menulisnya.
+  noteSheetInput: { minHeight: 180, textAlignVertical: 'top' },
   // Pilihan tingkat & area di modal ubah kebiasaan.
   fieldLabel: { marginTop: 14, marginBottom: 6 },
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

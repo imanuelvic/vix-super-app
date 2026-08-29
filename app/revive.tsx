@@ -19,11 +19,13 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
+import { ConnectCoreButton } from '@/components/spiritual/ConnectCoreButton';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { formatFullDate } from '@/lib/format';
+import { purgeNoteLinks } from '@/lib/coreNotes';
 import { dayDocId } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -64,6 +66,13 @@ export default function ReviveEditorScreen() {
   // belum pernah ditulis.
   const entry = entries?.find((e) => e.id === targetDay) ?? null;
   const exists = entry !== null;
+
+  // Revive hari LAIN yang sudah tertulis = ARSIP: dibuka jadi bacaan, bukan
+  // form. Aturannya sama dengan Catatan Khotbah yang terkunci mulai Selasa —
+  // yang sudah masuk riwayat memang tidak ditulis ulang, dan membiarkannya
+  // bisa diubah cuma bikin catatan lama pelan-pelan bergeser dari aslinya.
+  // Revive HARI INI tetap bisa diisi & diperbaiki sepuasnya.
+  const arsip = exists && targetDay !== todayId;
 
   // Isian form: ikut Revive tersimpan SELAMA belum diketik; sekali diketik,
   // ketikan itu yang menang (snapshot berikutnya tidak menimpanya). Hook
@@ -138,6 +147,10 @@ export default function ReviveEditorScreen() {
     setBusy(true);
     try {
       await deleteReviveEntry(user.uid, targetDay);
+      // Acara CORE yang menyambung ke catatan ini ikut dilepas, supaya tidak
+      // ada tombol 🔗 yang menunjuk catatan yang sudah tiada. Gagal pun tidak
+      // membatalkan penghapusannya — penampilnya sudah tahan sambungan yatim.
+      purgeNoteLinks(user.uid, 'revive', targetDay).catch(() => {});
       router.back();
     } finally {
       setBusy(false);
@@ -171,14 +184,54 @@ export default function ReviveEditorScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
-        title="Tulis Revive ✍️"
+        title={arsip ? 'Catatan Revive 📖' : 'Tulis Revive ✍️'}
         subtitle={`📖 ${formatFullDate(editingDate)}`}
       />
 
-      {/* Sama seperti bendera `loaded` dulu: menunggu daftar Revive-nya sampai
-          (kosong pun tidak apa-apa — berarti hari itu memang belum ditulis). */}
       {entries === null ? (
         <LoadingCenter />
+      ) : arsip && entry ? (
+        /* ===================== ARSIP — baca saja ===================== */
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.arsipTop}>
+            <VixText heading="label" additionalStyle={styles.lockChip}>
+              🔒 Arsip
+            </VixText>
+            {entry.passage ? (
+              <VixText heading="label" additionalStyle={styles.arsipPassage}>
+                📖 {entry.passage}
+              </VixText>
+            ) : null}
+          </View>
+          <VixText heading="subheader" additionalStyle={styles.arsipTitle}>
+            {entry.title}
+          </VixText>
+
+          {/* Teksnya utuh — tidak dipotong, enter yang kamu ketik ikut
+              terbaca sebagai ganti baris. Inilah gunanya layar penuh. */}
+          <BacaBlok label="✨ Rhema" text={entry.rhema} />
+          <BacaBlok label="🏃🏻‍➡️ Aplikasi" text={entry.reflection} />
+
+          <PressableScale
+            style={[styles.waButton, styles.shareButton]}
+            onPress={shareToWhatsApp}>
+            <VixText heading="bold" additionalStyle={styles.waButtonText}>
+              💬 Share ke WhatsApp
+            </VixText>
+          </PressableScale>
+
+          {/* Sambungkan bahan ini ke acara CORE yang akan datang. */}
+          <ConnectCoreButton
+            kind="revive"
+            noteId={targetDay}
+            title={entry.title}
+          />
+
+          <VixText heading="label" additionalStyle={styles.lockNote}>
+            🔒 Catatan ini sudah jadi arsip — bisa dibaca, dibagikan, &
+            disambungkan ke acara CORE, tapi tidak bisa diubah lagi.
+          </VixText>
+        </ScrollView>
       ) : (
         /* Keyboard iOS tidak lagi menutupi kolom Application */
         <KeyboardAvoidingView
@@ -190,12 +243,17 @@ export default function ReviveEditorScreen() {
             {/* Reminder hari ini + pintasan NDC Ministry — dibaca dulu, baru
                 menulis renungan. Bentuknya dipakai bersama layar Baca Alkitab. */}
             <SpiritualIntro reminder={reminder} />
+            {/* Judulnya diketik apa adanya. Dulu `autoCapitalize="characters"`
+                → keyboard iOS mengunci Caps Lock, jadi tiap huruf jadi besar
+                dan mengetik judul biasa terasa dipaksa. Judul yang sudah
+                tersimpan besar semua tidak berubah — yang diubah cuma cara
+                mengetiknya. (Beda dengan kolom Terjemahan di Baca Alkitab:
+                "TB"/"TSI" memang singkatan, huruf besar di situ benar.) */}
             <FormInput
               style={styles.formGap}
               placeholder="Judul Revive"
               value={fTitle}
               onChangeText={setFTitle}
-              autoCapitalize="characters"
               editable={!busy}
             />
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -248,6 +306,15 @@ export default function ReviveEditorScreen() {
               onPress={handleSave}
               additionalStyle={styles.saveButton}
             />
+            {/* Sudah tersimpan → boleh disambungkan ke acara CORE yang akan
+                datang, tanpa menunggu jadi arsip besok. */}
+            {exists && entry && (
+              <ConnectCoreButton
+                kind="revive"
+                noteId={targetDay}
+                title={entry.title}
+              />
+            )}
             {exists && (
               <InlineDelete
                 key={targetDay}
@@ -263,8 +330,44 @@ export default function ReviveEditorScreen() {
   );
 }
 
+/** Satu blok bacaan di mode arsip — dilewati kalau memang kosong. */
+function BacaBlok({ label, text }: { label: string; text: string }) {
+  if (!text.trim()) return null;
+  return (
+    <View style={styles.bacaBlok}>
+      <VixText heading="label" additionalStyle={styles.bacaLabel}>
+        {label}
+      </VixText>
+      <VixText heading="paragraph" additionalStyle={styles.bacaText}>
+        {text}
+      </VixText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  // ---- Mode arsip (baca saja) ----
+  arsipTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  lockChip: {
+    backgroundColor: Color.ACCENT,
+    color: Color.ACCENT_DARK,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  arsipPassage: { color: Color.SPIRITUAL_DARK },
+  arsipTitle: { color: Color.TEXT_TITLE, marginBottom: 4 },
+  bacaBlok: { marginTop: 12, gap: 2 },
+  bacaLabel: { color: Color.TEXT_LABEL },
+  bacaText: { color: Color.TEXT_PARAGRAPH },
+  lockNote: { color: Color.TEXT_LABEL, textAlign: 'center', marginTop: 14 },
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   formGap: { marginBottom: 10 },

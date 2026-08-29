@@ -47,6 +47,8 @@ import {
   ideaReminderDue,
   isPrayerFollowupDay,
   meetingKindMeta,
+  EMPTY_WEEKLY_FOCUS,
+  followupDue,
   meetingLeaderNames,
   needsPdfShare,
   monthlyPointsFor,
@@ -58,6 +60,7 @@ import {
   subscribeMainTeam,
   subscribeMonthlyPrayers,
   subscribeVisitations,
+  subscribeWeeklyFocus,
   visitDaysUntil,
   visitReminderWindow,
   type CoreIdeasData,
@@ -65,6 +68,7 @@ import {
   type MainTeamMember,
   type MonthlyPrayers,
   type Visitation,
+  type WeeklyFocus,
 } from '@/lib/core';
 import {
   debtDaysUntil,
@@ -200,6 +204,9 @@ export default function DashboardScreen() {
   const [schedule, setSchedule] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
+  // Undian 🎲 CL fokus minggu ini — supaya kartu Follow Up di sini menyebut
+  // ORANG YANG SAMA dengan badge sub-tabnya & kartu pagi di Home.
+  const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[]>([]);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [family, setFamily] = useState<FamilyMember[]>([]);
@@ -254,6 +261,7 @@ export default function DashboardScreen() {
       subscribeHabitSchedule(user.uid, setSchedule),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeCoreLeaders(user.uid, setLeaders),
+      subscribeWeeklyFocus(user.uid, setWeeklyFocus),
       subscribeMainTeam(user.uid, setMainTeam),
       subscribeVisitations(user.uid, setVisitations),
       subscribeFamily(user.uid, setFamily),
@@ -378,6 +386,11 @@ export default function DashboardScreen() {
         } (${formatDate(v.date.toDate())})`,
       };
     });
+
+  // Follow Up Mingguan 🎯 — kosong sebelum jam 09.00 (lihat followupDue di
+  // lib/core.ts): follow up itu percakapan, dan percakapan tidak dimulai
+  // jam 00.05.
+  const followupPending = followupDue(leaders, now, weeklyFocus, todayId);
 
   // Ulang tahun CORE Leader & Main Team: hari ini + 7 hari ke depan.
   // Sumber & jendelanya sama dengan daftar di CORE → tab Follow Up.
@@ -1024,6 +1037,26 @@ export default function DashboardScreen() {
                 bulan ini 🙏
               </VixText>
             </ReminderCard>
+          )}
+
+          {/* Follow Up Mingguan 🎯 — CL giliran minggu ini yang belum
+              di-follow up HARI INI. Beda dengan kartu pagi di Home yang cuma
+              numpang 09.00–09.30: di sini ia bertahan sampai dikerjakan,
+              karena Dashboard memang halaman tagihan harian. Sumbernya sama
+              (followupDue), jadi keduanya mustahil beda pendapat. */}
+          {followupPending.length > 0 && (
+            <ReminderCard
+              bg={Color.FINANCE_INVESTMENT}
+              fg={Color.FINANCE_INVESTMENT_DARK}
+              title="🎯 Reminder Follow Up Mingguan"
+              texts={followupPending.map((l) => ({
+                id: l.id,
+                text: `${l.heart} ${l.name}`,
+              }))}
+              onPress={() =>
+                router.push({ pathname: '/core', params: { tab: 'followup' } })
+              }
+            />
           )}
 
           {/* Doa Rantai — follow up pokok doa bergilir (Selasa & Kamis).

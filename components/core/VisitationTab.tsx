@@ -4,8 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { deadlineBorder } from '@/components/common/Deadline';
-import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { Pagination } from '@/components/common/Pagination';
@@ -16,6 +15,7 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
+import { LinkedNotesButton } from '@/components/core/LinkedNotesButton';
 import {
   VisitationCardBody,
   VisitationStatus,
@@ -44,6 +44,11 @@ import {
   type MeetingKind,
   type Visitation,
 } from '@/lib/core';
+import {
+  EMPTY_CORE_NOTE_LINKS,
+  subscribeCoreNoteLinks,
+  type CoreNoteLinks,
+} from '@/lib/coreNotes';
 import { subscribeCoreRules, type CoreRule } from '@/lib/coreRules';
 import { deadlineTone } from '@/lib/deadline';
 import { formatFullDate } from '@/lib/format';
@@ -77,6 +82,17 @@ export function VisitationTab({
 
   const [error, setError] = useState<string | null>(null);
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
+
+  // Catatan Revive/Khotbah yang disambungkan ke visitasi — untuk tombol 🔗.
+  // Dokumennya SATU dan liveDoc menggabungkan langganan dokumen yang sama,
+  // jadi sub-tab Monthly yang juga membacanya tidak menambah biaya baca.
+  const [noteLinks, setNoteLinks] = useState<CoreNoteLinks>(
+    EMPTY_CORE_NOTE_LINKS,
+  );
+  useEffect(() => {
+    if (!user) return;
+    return subscribeCoreNoteLinks(user.uid, setNoteLinks);
+  }, [user]);
 
   // Form tambah/edit ('new' = sedang menambah baru). Isian & aturannya dipakai
   // bersama layar Riwayat Visitasi (lihat hooks/useVisitationForm.ts).
@@ -284,6 +300,10 @@ export function VisitationTab({
           busy={pdf.busy === v.id}
           disabled={pdf.busy !== null}
         />
+        {/* 🔗 muncul HANYA kalau ada Catatan Revive / Khotbah yang kamu
+            sambungkan ke acara ini dari fitur Spiritual — jadi ia benar-benar
+            berarti "ada bahan di dalam sini". */}
+        <LinkedNotesButton links={noteLinks} coreId={v.id} />
         <VisitationStatus visitation={v} tone={tone} days={days} />
       </View>
       </View>
@@ -430,15 +450,11 @@ export function VisitationTab({
         />
 
         <FormError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus jadwal ini"
+          deleteLabel="Hapus jadwal ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

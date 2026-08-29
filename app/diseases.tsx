@@ -4,10 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { DateField } from '@/components/common/DateField';
-import { DualButtons } from '@/components/common/DualButtons';
+import { EditFooter } from '@/components/common/EditFooter';
 import { FormInput } from '@/components/common/FormInput';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -249,15 +248,11 @@ export default function DiseasesScreen() {
         )}
 
         <FormError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus catatan ini"
+          deleteLabel="Hapus catatan ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

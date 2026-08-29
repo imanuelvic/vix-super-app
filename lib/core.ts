@@ -1299,6 +1299,46 @@ export function focusLeaders<T extends { id: string }>(
   return weeklyLeaders(leaders, idx, WEEKLY_FOCUS_COUNT);
 }
 
+// ===================== Tagihan Follow Up Mingguan 🎯 =====================
+// Follow up itu percakapan, dan percakapan tidak dimulai jam 00.05. Tagihannya
+// baru menyala jam 09.00 — jam orang sudah bangun & pesan masuk tidak
+// mengganggu. Sebelum itu badge-nya 0 & kartunya tidak muncul, walaupun
+// harinya memang belum di-follow up.
+const FOLLOWUP_FROM_HOUR = 9;
+
+// Kartu "penting" di Home cuma numpang SETENGAH JAM (09.00–09.30). Home itu
+// launcher, jadi tagihan yang menetap sepanjang hari tempatnya di Dashboard;
+// yang di Home cuma tepukan bahu di jam yang paling mungkin dikerjakan.
+const FOLLOWUP_CARD_TO_MINUTE = 9 * 60 + 30;
+
+/** Sudah lewat jam 09.00? (tagihan follow-up mulai menghitung) */
+export function followupHourReached(now: Date): boolean {
+  return now.getHours() >= FOLLOWUP_FROM_HOUR;
+}
+
+/** Sekarang jam tayang kartu Follow Up di Home? (09.00–09.30) */
+export function followupCardWindow(now: Date): boolean {
+  const menit = now.getHours() * 60 + now.getMinutes();
+  return menit >= FOLLOWUP_FROM_HOUR * 60 && menit < FOLLOWUP_CARD_TO_MINUTE;
+}
+
+/**
+ * CORE Leader fokus minggu ini yang HARI INI belum di-follow up — kosong
+ * sebelum jam 09.00.
+ *
+ * Satu-satunya aturan penagihan Follow Up: badge sub-tab, badge tile Home, dan
+ * kartu reminder sama-sama berangkat dari sini, jadi ketiganya mustahil beda
+ * pendapat soal siapa yang masih tertagih.
+ */
+export function followupDue<
+  T extends { id: string; lastFollowupDayId?: string | null },
+>(leaders: T[], now: Date, focus: WeeklyFocus, todayId: string): T[] {
+  if (!followupHourReached(now)) return [];
+  return focusLeaders(leaders, now, focus).filter(
+    (l) => l.lastFollowupDayId !== todayId,
+  );
+}
+
 /**
  * Undi ulang CL fokus minggu ini — sebisa mungkin BUKAN yang sedang dipakai,
  * jadi menekan tombolnya selalu benar-benar berganti orang. Kalau CL yang lain

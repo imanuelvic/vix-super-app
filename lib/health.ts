@@ -278,6 +278,56 @@ export function clearWeightTarget(uid: string) {
   return deleteDoc(doc(db, 'users', uid, 'health', 'target'));
 }
 
+// ===================== Target jarak MINGGUAN 🎯 =====================
+// users/{uid}/health/weekTarget — satu dokumen, satu angka.
+//
+// Beda dari WEEK_STEP_GOAL (70.000 langkah) yang merupakan ANJURAN kesehatan
+// untuk orang dewasa pada umumnya: yang ini targetmu SENDIRI, kamu yang
+// menentukan, dan ia mulai dari nol lagi tiap Senin jam 00.00 — sama seperti
+// akumulasi minggunya (lihat weekDayIds).
+
+export type WeekDistanceTarget = { km: number };
+
+/** Usul awal saat kolomnya masih kosong (≈ 5 km × 5 hari). */
+export const WEEK_TARGET_DEFAULT_KM = 25;
+
+function weekTargetRef(uid: string) {
+  return doc(db, 'users', uid, 'health', 'weekTarget');
+}
+
+export function subscribeWeekTarget(
+  uid: string,
+  onChange: (target: WeekDistanceTarget | null) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    weekTargetRef(uid),
+    (snapshot) => {
+      const km = snapshot.data()?.km;
+      onChange(typeof km === 'number' && km > 0 ? { km } : null);
+    },
+    onError,
+  );
+}
+
+export function saveWeekTarget(uid: string, km: number) {
+  return setDoc(weekTargetRef(uid), { km });
+}
+
+export function clearWeekTarget(uid: string) {
+  return deleteDoc(weekTargetRef(uid));
+}
+
+/**
+ * Sisa jarak minggu ini — 0 berarti targetnya sudah tercapai.
+ *
+ * Sengaja tidak pernah negatif: yang ingin dibaca "kurang berapa lagi", bukan
+ * "kelebihan berapa". Kelebihannya sudah terlihat dari angka jaraknya sendiri.
+ */
+export function weekTargetLeft(km: number, targetKm: number): number {
+  return Math.max(0, targetKm - km);
+}
+
 /** Rentang berat sehat (BMI normal Asia-Pasifik 18,5–22,9) untuk tinggi tertentu. */
 export function idealWeightRange(heightCm: number): { min: number; max: number } {
   const m2 = (heightCm / 100) ** 2;
@@ -862,7 +912,6 @@ export const RUN_WEEK_MILESTONES: { km: number; emoji: string; label: string }[]
     { km: 100, emoji: '👑', label: 'Century Week' },
   ];
 
-/** Tantangan BULANAN ala Strava. */
 export const RUN_MONTH_MILESTONES: { km: number; emoji: string; label: string }[] =
   [
     { km: 100, emoji: '🎽', label: '100K Bulanan' },

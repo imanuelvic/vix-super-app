@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -461,16 +460,11 @@ export function DietTab({
           </View>
         </View>
 
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus makanan ini"
+          deleteLabel="Hapus makanan ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

@@ -1,20 +1,13 @@
 import { useRouter } from 'expo-router';
-import { Timestamp } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
-import { Chip } from '@/components/common/Chip';
-import { DateField } from '@/components/common/DateField';
-import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
-import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -30,29 +23,24 @@ import {
   markPrayerFollowed,
   monthlyPointsFor,
   monthlyPrayersFilled,
-  newCoreIdeaId,
   nextBirthday,
   personalityTips,
   prayerChainMessage,
   prayerFollowupLeaders,
-  saveCoreIdeas,
   saveCoreLeaders,
   saveWeeklyFocus,
   subscribeBirthdayGreets,
   WEEKLY_FOCUS_COUNT,
   weeklyFollowupTopic,
   type BirthdayGreets,
-  type CoreIdea,
-  type CoreIdeasData,
   type CoreLeader,
-  type IdeaCadence,
   type MainTeamMember,
   type MonthlyPrayers,
   type WeeklyFocus,
 } from '@/lib/core';
-import { formatDate, MONTH_NAMES } from '@/lib/format';
+import { MONTH_NAMES } from '@/lib/format';
 import { todayName } from '@/lib/chatTemplates';
-import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   openWhatsAppChat,
   shareTextToWhatsApp,
@@ -62,19 +50,21 @@ import {
 // Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
 // membangun hubungan — Senin pertanyaan doa wajib, hari lain pertanyaan acak
 // (8 aspek hidup / diskusi ringan / penggali kepribadian). Plus pengingat
-// ulang tahun & Idea For CORE.
+// ulang tahun.
+//
+// 💡 Idea For CORE pindah ke layarnya sendiri (app/core-ideas.tsx, tombol 💡
+// di pojok kanan atas) — dulu ia menumpang di ujung bawah tab ini dan selalu
+// kalah: harus digulung jauh dulu tiap mau menambah satu baris.
 export function FollowupTab({
   leaders,
   mainTeam,
   dayId,
-  ideas,
   monthlyPrayers,
   weeklyFocus,
 }: {
   leaders: CoreLeader[];
   mainTeam: MainTeamMember[];
   dayId: string;
-  ideas: CoreIdeasData;
   monthlyPrayers: MonthlyPrayers;
   /** Undian ulang fokus minggu ini (kalau tombol 🎲 pernah ditekan Senin ini). */
   weeklyFocus: WeeklyFocus;
@@ -105,90 +95,6 @@ export function FollowupTab({
       loveLanguage?: string | null;
     };
   } | null>(null);
-
-  // ===== Idea For CORE — form tambah/edit =====
-  const [editingIdea, setEditingIdea] = useState<CoreIdea | 'new' | null>(null);
-  const [iText, setIText] = useState('');
-  const [iNote, setINote] = useState('');
-  const [iDate, setIDate] = useState(new Date());
-  const [iBusy, setIBusy] = useState(false);
-  const [iError, setIError] = useState<string | null>(null);
-
-  // Ide terbaru di atas.
-  const sortedIdeas = useMemo(
-    () =>
-      [...ideas.ideas].sort((a, b) => b.date.toMillis() - a.date.toMillis()),
-    [ideas.ideas],
-  );
-
-  async function setCadence(cadence: IdeaCadence) {
-    if (!user || cadence === ideas.cadence) return;
-    try {
-      await saveCoreIdeas(user.uid, { ...ideas, cadence });
-    } catch {
-      setError(SAVE_ERROR);
-    }
-  }
-
-  function openAddIdea() {
-    setEditingIdea('new');
-    setIText('');
-    setINote('');
-    setIDate(new Date());
-    setIError(null);
-  }
-
-  function openEditIdea(idea: CoreIdea) {
-    setEditingIdea(idea);
-    setIText(idea.text);
-    setINote(idea.note);
-    setIDate(idea.date ? idea.date.toDate() : new Date());
-    setIError(null);
-  }
-
-  async function handleSaveIdea() {
-    if (!user || !editingIdea || iBusy) return;
-    if (!iText.trim()) {
-      setIError('Isi idenya dulu.');
-      return;
-    }
-    setIBusy(true);
-    setIError(null);
-    const data: CoreIdea = {
-      id: editingIdea === 'new' ? newCoreIdeaId() : editingIdea.id,
-      text: iText.trim(),
-      note: iNote.trim(),
-      date: Timestamp.fromDate(iDate),
-    };
-    const nextIdeas =
-      editingIdea === 'new'
-        ? [...ideas.ideas, data]
-        : ideas.ideas.map((i) => (i.id === editingIdea.id ? data : i));
-    try {
-      await saveCoreIdeas(user.uid, { ...ideas, ideas: nextIdeas });
-      setEditingIdea(null);
-    } catch {
-      setIError(SAVE_ERROR);
-    } finally {
-      setIBusy(false);
-    }
-  }
-
-  async function handleDeleteIdea() {
-    if (!user || !editingIdea || editingIdea === 'new' || iBusy) return;
-    setIBusy(true);
-    try {
-      await saveCoreIdeas(user.uid, {
-        ...ideas,
-        ideas: ideas.ideas.filter((i) => i.id !== editingIdea.id),
-      });
-    } catch {
-      setError(DELETE_ERROR);
-    } finally {
-      setEditingIdea(null);
-      setIBusy(false);
-    }
-  }
 
   const leaderById = useMemo(
     () => new Map(leaders.map((l) => [l.id, l])),
@@ -570,107 +476,7 @@ export function FollowupTab({
         }),
       )}
 
-      {/* ===== Idea For CORE (paling bawah) ===== */}
-      <View style={styles.ideaHeader}>
-        <VixText heading="title">💡 Idea For CORE</VixText>
-        <PressableScale
-          style={styles.ideaAddButton}
-          onPress={openAddIdea}
-          hitSlop={8}>
-          <VixText heading="bold" additionalStyle={styles.ideaAddText}>
-            + Tambah
-          </VixText>
-        </PressableScale>
-      </View>
-      <View style={styles.cadenceRow}>
-        <Chip
-          label="🗓️ Mingguan"
-          active={ideas.cadence === 'weekly'}
-          onPress={() => setCadence('weekly')}
-          additionalStyle={styles.cadenceChip}
-        />
-        <Chip
-          label="📅 Bulanan"
-          active={ideas.cadence === 'monthly'}
-          onPress={() => setCadence('monthly')}
-          additionalStyle={styles.cadenceChip}
-        />
-      </View>
-      {sortedIdeas.length === 0 ? (
-        <VixText heading="label" additionalStyle={styles.emptyText}>
-          Belum ada idea. Tekan “+ Tambah” untuk mulai memberi masukan.
-        </VixText>
-      ) : (
-        sortedIdeas.map((idea) => (
-          // Tekan kartu untuk edit; tombol share membuka share sheet.
-          <PressableScale
-            key={idea.id}
-            style={styles.ideaCard}
-            onPress={() => openEditIdea(idea)}>
-            <VixText heading="paragraph" additionalStyle={styles.ideaText}>
-              {idea.text}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.ideaDate}>
-              🗓️ {formatDate(idea.date.toDate())}
-            </VixText>
-            {idea.note ? (
-              <View style={styles.ideaNoteBox}>
-                <VixText heading="label" additionalStyle={styles.ideaNoteText}>
-                  📝 {idea.note}
-                </VixText>
-              </View>
-            ) : null}
-          </PressableScale>
-        ))
-      )}
     </ScrollView>
-
-    {/* Sheet tambah/edit Idea For CORE */}
-    <SheetModal
-      visible={!!editingIdea}
-      title={editingIdea === 'new' ? 'Tambah Idea' : 'Edit Idea'}
-      subtitle="Masukan buat CORE — bisa di-share ke grup MT"
-      onClose={() => setEditingIdea(null)}>
-      <FormInput
-        style={styles.ideaInput}
-        placeholder="Idenya apa?"
-        value={iText}
-        onChangeText={setIText}
-        multiline
-        editable={!iBusy}
-      />
-      <FormInput
-        style={styles.ideaInput}
-        placeholder="Catatan untuk grup MT (opsional)"
-        value={iNote}
-        onChangeText={setINote}
-        multiline
-        editable={!iBusy}
-      />
-      <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        Tanggal
-      </VixText>
-      <View style={styles.formGap}>
-        <DateField
-          key={editingIdea === 'new' ? 'new' : editingIdea?.id}
-          value={iDate}
-          onChange={setIDate}
-        />
-      </View>
-      <FormError message={iError} />
-      <EditDelete
-        editing={editingIdea}
-        label="Hapus idea ini"
-        busy={iBusy}
-        onDelete={handleDeleteIdea}
-      />
-      <DualButtons
-        confirmLabel="Simpan"
-        busy={iBusy}
-        onCancel={() => setEditingIdea(null)}
-        onConfirm={handleSaveIdea}
-      />
-    </SheetModal>
 
     {/* Modal tengah: seluruh pokok doa 1 CL + tombol WA */}
     <CenterDialog visible={!!prayerModal} onClose={() => setPrayerModal(null)}>
@@ -1048,46 +854,8 @@ const styles = StyleSheet.create({
   modalCloseText: { color: Color.TEXT_LABEL },
   doneText: { color: Color.SUCCESS },
   emptyText: { textAlign: 'center', marginBottom: 12 },
-  // Idea For CORE
-  ideaHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 4,
-  },
-  ideaAddButton: {
-    backgroundColor: Color.MAIN,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  ideaAddText: { color: Color.TEXT_REVERSE },
-  cadenceRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  cadenceChip: { flex: 1 },
-  ideaCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.ACCENT_DARK,
-    padding: 14,
-    marginBottom: 10,
-    gap: 6,
-  },
-  ideaText: { color: Color.TEXT_TITLE },
-  ideaDate: { color: Color.TEXT_PLACEHOLDER },
-  ideaNoteBox: {
-    backgroundColor: Color.ACCENT,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  ideaNoteText: { color: Color.ACCENT_DARK },
-  ideaInput: {
-    marginBottom: 10,
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
+  // Idea For CORE pindah ke layarnya sendiri (app/core-ideas.tsx) — gayanya
+  // ikut ke sana, tidak ada yang tertinggal menganggur di sini.
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
 });

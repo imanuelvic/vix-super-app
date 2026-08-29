@@ -18,6 +18,12 @@ export type SegmentTab<T extends string> = {
   key: T;
   label: string; // mis. "🌅 Pagi"
   sub?: string; // mis. "5/8" atau "✅ beres" — kosongkan kalau tak perlu angka
+  /**
+   * Warna khusus keterangannya — untuk keadaan yang harus langsung terbaca
+   * "ini bukan kabar baik" (mis. sesi yang tuntas tapi ada yang dilewati).
+   * Kosong = ikut warna bawaan (ikut aktif/tidaknya tab).
+   */
+  subColor?: string;
 };
 
 export function SegmentTabs<T extends string>({
@@ -84,7 +90,11 @@ function Segment<T extends string>({
       {tab.sub ? (
         <VixText
           heading="label"
-          additionalStyle={[styles.sub, active && styles.subActive]}>
+          additionalStyle={[
+            styles.sub,
+            active && styles.subActive,
+            tab.subColor ? { color: tab.subColor } : null,
+          ]}>
           {tab.sub}
         </VixText>
       ) : null}

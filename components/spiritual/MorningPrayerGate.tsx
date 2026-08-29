@@ -134,21 +134,10 @@ export function MorningPrayerGate({
         <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
           <VixText additionalStyle={styles.sun}>🌅</VixText>
           <VixText heading="header" additionalStyle={styles.title}>
-            Selamat pagi!
+            Shalom, selamat pagi!
           </VixText>
-          <VixText heading="paragraph" additionalStyle={styles.subtitle}>
-            Sebelum memulai hari, luangkan waktu bersama Bapa dulu 🙏
-          </VixText>
-          {streakCount > 0 && (
-            <View style={styles.streakPill}>
-              <VixText heading="bold" additionalStyle={styles.streakText}>
-                🔥 {streakCount} hari berdoa
-              </VixText>
-            </View>
-          )}
         </Animated.View>
 
-        {/* Hitung mundur — muncul 1 jam terakhir sebelum jendelanya tutup. */}
         {closingSoon && (
           <Animated.View entering={FadeIn.duration(300)} style={styles.warnCard}>
             <VixText heading="bold" additionalStyle={styles.warnText}>
@@ -406,17 +395,6 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', gap: 6, marginBottom: 18 },
   sun: { fontSize: 56, lineHeight: 68 },
   title: { color: Color.TEXT_REVERSE },
-  subtitle: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
-  streakPill: {
-    backgroundColor: Color.SPIRITUAL,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    marginTop: 4,
-  },
-  streakText: { color: Color.SPIRITUAL_DARK },
-  // Hitung mundur menuju jam 09.00 — krem, supaya menonjol di latar ungu
-  // tanpa terasa seperti pesan kesalahan.
   warnCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,

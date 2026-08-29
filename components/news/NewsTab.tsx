@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
+import { ChipRow } from '@/components/common/ChipRow';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -55,15 +56,16 @@ export function NewsTab() {
   return (
     <View style={styles.flex}>
       {/* Pemilih sumber. Dulu SegmentTabs (tiga kotak sama lebar), tapi sejak
-          ada Teknologi & Dev jumlahnya lima — lima kotak di layar 393 pt
+          ada Tech & Dev jumlahnya lima — lima kotak di layar 393 pt
           menyisakan ±52 pt teks per kotak, dan "📈 Bloomberg" jadi mengecil
           sampai sulit dibaca. Chip yang bisa digeser tidak punya batas itu.
           Keterangan sumbernya pindah ke satu baris di bawahnya, jadi tidak
-          ada keterangan yang hilang. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.sourceRow}>
+          ada keterangan yang hilang.
+
+          `fit="spread"`: di layar lebar (iPad) kelimanya muat sekaligus dan
+          dibagi rata dari tepi ke tepi; di iPhone 15 kelimanya memang tidak
+          muat, jadi barisnya kembali bisa digeser dengan sendirinya. */}
+      <ChipRow fit="spread" contentStyle={styles.sourceRow}>
         {NEWS_SOURCES.map((s) => (
           <Chip
             key={s.key}
@@ -72,7 +74,7 @@ export function NewsTab() {
             onPress={() => setSource(s.key)}
           />
         ))}
-      </ScrollView>
+      </ChipRow>
       <VixText heading="label" additionalStyle={styles.sourceSub}>
         {aktif.sub}
       </VixText>
@@ -158,7 +160,7 @@ export function NewsTab() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  sourceRow: { gap: 8, paddingHorizontal: 20, paddingTop: 8, paddingRight: 24 },
+  sourceRow: { paddingHorizontal: 20, paddingTop: 8 },
   sourceSub: {
     paddingHorizontal: 20,
     paddingTop: 8,

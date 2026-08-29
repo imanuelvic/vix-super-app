@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
 import {
   deleteFastingPlan,
+  EMPTY_FASTING_DAY as EMPTY_DAY,
   fastingDay,
   fastingDayIds,
   fastingProgress,
@@ -46,7 +47,12 @@ import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 export default function FastingScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { id: idParam } = useLocalSearchParams<{ id?: string }>();
+  // ?id=<puasa> membuka periode tertentu; ?day=<YYYY-MM-DD> sekalian membuka
+  // modal hari itu (dipakai kartu 🍽️ malam di Home — lihat lib/fasting.ts).
+  const { id: idParam, day: dayParam } = useLocalSearchParams<{
+    id?: string;
+    day?: string;
+  }>();
 
   const [plans, setPlans] = useState<FastingPlan[] | null>(null);
   const [planId, setPlanId] = useState(
@@ -54,12 +60,6 @@ export default function FastingScreen() {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Hari yang sedang diedit di modal (null = tertutup).
-  const [editDay, setEditDay] = useState<string | null>(null);
-  const [dPrayer, setDPrayer] = useState('');
-  const [dAnswer, setDAnswer] = useState('');
-  const [dDone, setDDone] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -89,6 +89,29 @@ export default function FastingScreen() {
   // digeser — walaupun belum ditekan Simpan.
   const dayIds = fastingDayIds(dayDocId(startDate), dayDocId(endDate));
   const progress = plan ? fastingProgress(plan) : { done: 0, total: 0 };
+
+  // Hari yang modalnya terbuka (null = tertutup). Nilai awalnya ikut ?day=…,
+  // jadi kartu malam di Home bisa mendarat LANGSUNG di modal hari ini tanpa
+  // efek penyalin — begitu kamu menutup atau pindah hari, pilihanmu yang
+  // menang seterusnya. Pola yang sama dengan kolom isian di atas.
+  const [editDay, setEditDay] = useDraft<string | null>(
+    dayParam && dayIds.includes(dayParam) ? dayParam : null,
+  );
+
+  // Ketikan di modal, DIKUNCI PER HARI. Kalau disimpan telanjang dalam tiga
+  // useState biasa, membuka modal lewat ?day=… tidak akan mengisinya (tak ada
+  // yang memanggil openDay), dan menyalinnya lewat useEffect dilarang aturan
+  // `set-state-in-effect`. Di sini kolomnya DITURUNKAN dari data harinya, dan
+  // ketikan cuma menimpanya — jadi pindah hari otomatis kembali ke data hari
+  // itu, bukan sisa ketikan hari sebelumnya.
+  const [edits, setEdits] = useState<Record<string, FastingDay>>({});
+  const dayData =
+    editDay && plan ? fastingDay(plan, editDay) : EMPTY_DAY;
+  const draft = (editDay ? edits[editDay] : null) ?? dayData;
+  const setDraft = (patch: Partial<FastingDay>) => {
+    if (!editDay) return;
+    setEdits((e) => ({ ...e, [editDay]: { ...draft, ...patch } }));
+  };
 
   async function handleSaveInfo() {
     if (!user || busy) return;
@@ -133,13 +156,15 @@ export default function FastingScreen() {
     }
   }
 
+  /** Buka modal satu hari — kolomnya selalu mulai dari data tersimpannya. */
   function openDay(dayId: string) {
     if (!plan) return;
-    const d = fastingDay(plan, dayId);
+    setEdits((e) => {
+      const bersih = { ...e };
+      delete bersih[dayId];
+      return bersih;
+    });
     setEditDay(dayId);
-    setDPrayer(d.prayer);
-    setDAnswer(d.answer);
-    setDDone(d.done);
   }
 
   async function saveDay(dayId: string, next: FastingDay) {
@@ -163,9 +188,9 @@ export default function FastingScreen() {
     if (!editDay || busy) return;
     setBusy(true);
     await saveDay(editDay, {
-      prayer: dPrayer.trim(),
-      answer: dAnswer.trim(),
-      done: dDone,
+      prayer: draft.prayer.trim(),
+      answer: draft.answer.trim(),
+      done: draft.done,
     });
     setBusy(false);
     setEditDay(null);
@@ -363,10 +388,10 @@ export default function FastingScreen() {
         {/* Berhasil / gagal hari itu */}
         <PressableScale
           style={styles.doneRow}
-          onPress={() => setDDone((v) => !v)}>
-          <CheckCircle checked={dDone} size={26} />
+          onPress={() => setDraft({ done: !draft.done })}>
+          <CheckCircle checked={draft.done} size={26} />
           <VixText heading="bold" additionalStyle={styles.doneText}>
-            {dDone ? 'Berhasil berpuasa' : '❌ Gagal'}
+            {draft.done ? 'Berhasil berpuasa' : '❌ Gagal'}
           </VixText>
         </PressableScale>
 
@@ -375,8 +400,8 @@ export default function FastingScreen() {
         </VixText>
         <FormInput
           placeholder="Yang khusus didoakan hari ini"
-          value={dPrayer}
-          onChangeText={setDPrayer}
+          value={draft.prayer}
+          onChangeText={(v) => setDraft({ prayer: v })}
           editable={!busy}
           multiline
           style={styles.textArea}
@@ -387,8 +412,8 @@ export default function FastingScreen() {
         </VixText>
         <FormInput
           placeholder="Apa yang terjadi / Tuhan jawab hari ini?"
-          value={dAnswer}
-          onChangeText={setDAnswer}
+          value={draft.answer}
+          onChangeText={(v) => setDraft({ answer: v })}
           editable={!busy}
           multiline
           style={styles.textArea}

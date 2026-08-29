@@ -5,9 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
-import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -421,15 +420,11 @@ export default function HistoryScreen() {
         />
 
         <ScreenError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus kejadian ini"
+          deleteLabel="Hapus kejadian ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

@@ -6,9 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
-import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -396,15 +395,11 @@ export default function TimelineScreen() {
         </View>
 
         <ScreenError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus wishlist ini"
+          deleteLabel="Hapus wishlist ini"
           busy={busy}
           onDelete={handleDelete}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSave}
         />

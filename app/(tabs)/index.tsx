@@ -45,7 +45,8 @@ import {
 } from '@/lib/career';
 import {
   EMPTY_WEEKLY_FOCUS,
-  focusLeaders,
+  followupCardWindow,
+  followupDue,
   needsPdfShare,
   subscribeCoreLeaders,
   subscribeVisitations,
@@ -55,6 +56,12 @@ import {
   type WeeklyFocus,
 } from '@/lib/core';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
+import {
+  fastingCheckDue,
+  fastingDayNumber,
+  subscribeFastingPlans,
+  type FastingPlan,
+} from '@/lib/fasting';
 import { OWNER_NAME } from '@/lib/family';
 import {
   EMPTY_FIT_DAY,
@@ -101,7 +108,7 @@ import {
 import { HOME_FEATURES } from '@/lib/homeGrid';
 import {
   EMPTY_PRIORITY,
-  priorityPending,
+  priorityBadgeText,
   subscribePriorityDay,
   type PriorityItem,
 } from '@/lib/priority';
@@ -210,6 +217,9 @@ export default function HomeScreen() {
   const [intercessionOpen, setIntercessionOpen] = useState(false);
   // Kalimat penyegar yang barusan di-click "sudah dibaca" (null = belum ada).
   const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
+  // Periode puasa 🍽️ — untuk kartu centang malam. null = belum termuat, jadi
+  // kartunya tidak sempat berkedip sebelum datanya sampai.
+  const [fastingPlans, setFastingPlans] = useState<FastingPlan[] | null>(null);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
   // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
@@ -254,6 +264,7 @@ export default function HomeScreen() {
       subscribePrayerNews(user.uid, setPrayerNews),
       subscribePriorityDay(user.uid, todayId, setPriorities),
       subscribeFeedGenerated(user.uid, todayId, setFeedGenerated),
+      subscribeFastingPlans(user.uid, setFastingPlans),
     ]);
   }, [user, todayId, weekId, mark]);
 
@@ -348,6 +359,20 @@ export default function HomeScreen() {
   // dicentang" → kartunya berkedip lengkap 3 topik sekejap tiap Home dibuka.
   const showDiscussion = badgesReady && discussionTopics.length > 0;
 
+  // Follow Up Mingguan 🎯 — CL giliran minggu ini yang belum di-follow up
+  // hari ini. Menyala mulai jam 09.00 (percakapan tidak dimulai jam 00.05).
+  const followupPending = followupDue(leaders, now, weeklyFocus, todayId);
+  // Kartunya sendiri cuma numpang SETENGAH JAM (09.00–09.30): Home itu
+  // launcher, jadi tagihan yang menetap sepanjang hari tempatnya di Dashboard
+  // — yang di sini cuma tepukan bahu di jam paling mungkin dikerjakan.
+  const showFollowup =
+    badgesReady && followupCardWindow(now) && followupPending.length > 0;
+
+  // Puasa 🍽️ — kartu centang malam (20.00–24.00). Puasa dinilai SESUDAH
+  // harinya dijalani, bukan di tengahnya, jadi tagihannya memang malam.
+  // Hilang begitu hari itu dijawab — berhasil ✅ maupun ❌ gagal.
+  const fastingDue = fastingCheckDue(fastingPlans ?? [], now, todayId);
+
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
   // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
   // beda, jadi cukup dibandingkan teksnya — tak perlu menyimpan jam).
@@ -373,13 +398,13 @@ export default function HomeScreen() {
       freelance.filter((p) => freelanceReminderWindow(p, now)).length,
     // Kebiasaan harian pindah ke tab Habits ✅ — badge-nya ikut ke sana,
     // jadi tile Health tidak lagi punya angka (isinya Steps & Check-up).
-    // 2 CORE Leader fokus minggu ini yang belum di-follow up hari ini,
-    // + acara yang panduannya perlu dikirim hari ini (H-3; acara besar
-    // H-14/7/3/2/1). Yang PDF-nya sudah dikirim hari ini tidak dihitung.
+    // CORE Leader fokus minggu ini yang belum di-follow up hari ini — baru
+    // menyala mulai jam 09.00, sama dengan badge sub-tab Follow Up & kartu
+    // reminder-nya (lihat followupDue di lib/core.ts) — ditambah acara yang
+    // panduannya perlu dikirim hari ini (H-3; acara besar H-14/7/3/2/1).
+    // Yang PDF-nya sudah dikirim hari ini tidak dihitung.
     core:
-      focusLeaders(leaders, now, weeklyFocus).filter(
-        (l) => l.lastFollowupDayId !== todayId,
-      ).length +
+      followupPending.length +
       visitations.filter((v) => needsPdfShare(v, now, todayId)).length,
     // Revive belum ditulis DAN belum ditandai dilewati hari ini = 1 (dua-duanya
     // tersimpan di dokumen streak yang sama).
@@ -456,14 +481,16 @@ export default function HomeScreen() {
           vix <VixText heading="label">Super App</VixText>
         </VixText>
         <View style={styles.brandRight}>
-          {/* Daily Priority 💡 — tiga hal terpenting hari ini. Angkanya =
-              berapa yang belum beres (3 kalau belum diisi sama sekali), jadi
-              mengisinya di pagi hari ikut tertagih. */}
+          {/* Daily Priority 💡 — tiga hal terpenting hari ini.
+              ⚠️ belum diisi · angka = sisa yang belum dicoret · ✅ beres.
+              Angkanya sengaja TIDAK muncul selama belum diisi: "3" terbaca
+              seolah sudah ada tiga hal yang menunggu, padahal yang menunggu
+              justru keputusannya. Lihat priorityBadgeText di lib/priority.ts. */}
           <PressableScale
             style={styles.priorityPill}
             onPress={() => router.push('/daily-priority')}>
             <VixText heading="bold" additionalStyle={styles.priorityPillText}>
-              💡 {priorityPending(priorities)}
+              {priorityBadgeText(priorities)}
             </VixText>
           </PressableScale>
           {/* Pintasan ke halaman Achievement 🏆 — lambang saja, tanpa angka.
@@ -552,6 +579,31 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
+          {/* Follow Up Mingguan 🎯 — cuma jam 09.00–09.30, dan cuma kalau
+              masih ada yang belum di-follow up hari ini. Click → CORE ›
+              Follow Up, tempat tombol Chat WA-nya. Sepanjang sisa hari
+              tagihannya tetap terlihat di badge & di Dashboard. */}
+          {showFollowup && (
+            <Animated.View
+              entering={FadeInDown.delay(30).duration(350)}
+              style={styles.followupCard}>
+              {/* Warnanya ikut tile CORE di grid (biru) — sama seperti kartu
+                  Doa Rantai & Pertemuan CORE di Dashboard. */}
+              <ReminderCard
+                bg={Color.FINANCE_INVESTMENT}
+                fg={Color.FINANCE_INVESTMENT_DARK}
+                title="🎯 Follow Up Mingguan"
+                texts={followupPending.map((l) => ({
+                  id: l.id,
+                  text: `${l.heart} ${l.name}`,
+                }))}
+                onPress={() =>
+                  router.push({ pathname: '/core', params: { tab: 'followup' } })
+                }
+              />
+            </Animated.View>
+          )}
+
           {/* Diskusi Dalam Minggu Ini 💬 — TEPAT di depan Doa Syafaat, dan
               cuma pada jam 11.30–12.30. Ketiga topiknya dicentang di sub-tab
               💬 Discussion, jadi kartunya menuju ke situ langsung. Hilang
@@ -634,6 +686,30 @@ export default function HomeScreen() {
                         pathname: '/habits',
                         params: { focus: 'rhema' },
                       })
+                }
+              />
+            </Animated.View>
+          )}
+
+          {/* Puasa 🍽️ — cuma malam (20.00–24.00) & cuma kalau hari ini belum
+              dijawab. Click → layar puasanya dengan modal HARI INI sudah
+              terbuka, jadi tinggal centang & tulis jawaban doanya. */}
+          {fastingDue && (
+            <Animated.View
+              entering={FadeInDown.delay(55).duration(350)}
+              style={styles.fastingCard}>
+              <ReminderCard
+                bg={Color.SPIRITUAL}
+                fg={Color.SPIRITUAL_DARK}
+                title={`🍽️ ${fastingDue.title}`}
+                texts={[
+                  `Hari ke-${fastingDayNumber(fastingDue, todayId)} — sudah dijalani? Centang sekarang`,
+                ]}
+                onPress={() =>
+                  router.push({
+                    pathname: '/fasting',
+                    params: { id: fastingDue.id, day: todayId },
+                  })
                 }
               />
             </Animated.View>
@@ -755,11 +831,15 @@ const styles = StyleSheet.create({
   // Kartu Doa Syafaat — tepat di bawah kartu sapaan, di atas Baca Alkitab.
   // Penyegar acak — jaraknya sama dengan kartu Doa Syafaat di bawahnya.
   nudgeCard: { marginBottom: 10 },
+  // Follow Up pagi — jaraknya sama dengan kartu reminder lain di kolom ini.
+  followupCard: { marginBottom: 10 },
   // Diskusi siang — jaraknya sama dengan kartu reminder lain di kolom ini.
   discussionCard: { marginBottom: 10 },
   intercessionCard: { marginBottom: 10 },
   // Rhema pagi — jaraknya sama dengan kartu reminder lain di kolom ini.
   rhemaCard: { marginBottom: 10 },
+  // Centang puasa malam — jaraknya sama dengan kartu reminder lain.
+  fastingCard: { marginBottom: 10 },
   welcomeTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',

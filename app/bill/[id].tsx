@@ -512,11 +512,11 @@ export default function BillScreen() {
         title="Keterangan Bill"
         onClose={() => setInfoOpen(false)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏷️ Judul
+          🏷️ Acara / Kegiatan
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. Makan bareng anak CORE"
+          placeholder="Nama acaranya"
           value={fTitle}
           onChangeText={setFTitle}
           editable={!busy}

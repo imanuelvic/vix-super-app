@@ -14,8 +14,10 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
+import { ConnectCoreButton } from '@/components/spiritual/ConnectCoreButton';
 import { useAuth } from '@/contexts/auth';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { purgeNoteLinks } from '@/lib/coreNotes';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
@@ -133,6 +135,8 @@ export default function SermonScreen() {
     setBusy(true);
     try {
       await deleteSermon(user.uid, sundayId);
+      // Lepas sambungan 🔗 ke acara CORE (lihat catatan yang sama di revive).
+      purgeNoteLinks(user.uid, 'sermon', sundayId).catch(() => {});
       router.back();
     } catch {
       setError(DELETE_ERROR);
@@ -302,6 +306,14 @@ export default function SermonScreen() {
               💬 Share ke WhatsApp
             </VixText>
           </PressableScale>
+
+          {/* Sambungkan khotbah ini ke acara CORE yang akan datang — bahan
+              yang kamu terima Minggu jadi bahan yang kamu bawakan nanti. */}
+          <ConnectCoreButton
+            kind="sermon"
+            noteId={note.id}
+            title={note.title}
+          />
 
           {/* Terkunci mulai Selasa — jadi tombol ubah cuma ada selama masih
               Minggu/Senin. Isinya tetap bisa dibaca & dibagikan selamanya. */}

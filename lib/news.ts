@@ -306,7 +306,7 @@ export const NEWS_SOURCES: {
   emoji: string;
   sub: string;
 }[] = [
-  { key: 'tech', label: 'Teknologi', emoji: '🤖', sub: 'AI, robotika & gadget' },
+  { key: 'tech', label: 'Tech', emoji: '🤖', sub: 'AI, robotika & gadget' },
   { key: 'dev', label: 'Dev', emoji: '📱', sub: 'Expo, RN, iOS & Android' },
   { key: 'indonesia', label: 'Indonesia', emoji: '🇮🇩', sub: 'dalam negeri' },
   { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },

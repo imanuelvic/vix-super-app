@@ -5,8 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { DualButtons } from '@/components/common/DualButtons';
-import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -499,11 +498,11 @@ export default function AchievementsScreen() {
         subtitle="Hadiahnya bebas — yang penting kamu sendiri yang mau"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🎁 Emoji (opsional)
+          🎁 Emoji
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. ☕"
+          placeholder="Isi emoji"
           value={fIcon}
           onChangeText={setFIcon}
           maxLength={4}
@@ -533,15 +532,11 @@ export default function AchievementsScreen() {
         />
 
         <FormError message={formError} />
-        <EditDelete
+        <EditFooter
           editing={editing}
-          label="Hapus hadiah ini"
+          deleteLabel="Hapus hadiah ini"
           busy={busy}
           onDelete={handleDeleteReward}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
           onCancel={() => setEditing(null)}
           onConfirm={handleSaveReward}
         />
