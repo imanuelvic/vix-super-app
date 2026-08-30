@@ -44,14 +44,18 @@ import {
   type RoadmapItem,
 } from '@/lib/career';
 import {
+  coreAttention,
   EMPTY_WEEKLY_FOCUS,
   followupCardWindow,
   followupDue,
-  needsPdfShare,
+  subscribeBirthdayGreets,
   subscribeCoreLeaders,
+  subscribeMainTeam,
   subscribeVisitations,
   subscribeWeeklyFocus,
+  type BirthdayGreets,
   type CoreLeader,
+  type MainTeamMember,
   type Visitation,
   type WeeklyFocus,
 } from '@/lib/core';
@@ -149,7 +153,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 15;
+const BADGE_SOURCES = 17;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -174,6 +178,8 @@ export default function HomeScreen() {
   // Daftar kebiasaan — dipakai untuk menemukan baris Rhema & catatannya.
   const [habits, setHabits] = useState<ScheduledHabit[]>([]);
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
+  const [mainTeam, setMainTeam] = useState<MainTeamMember[]>([]);
+  const [greets, setGreets] = useState<BirthdayGreets>({});
   const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [revive, setRevive] = useState<ReviveStreak | null | undefined>(
@@ -248,6 +254,11 @@ export default function HomeScreen() {
       // menghitung ORANG YANG SAMA dengan yang tampil di tab Follow Up.
       subscribeWeeklyFocus(user.uid, mark('weeklyFocus', setWeeklyFocus)),
       subscribeVisitations(user.uid, mark('visitations', setVisitations)),
+      // Main Team & ucapan ulang tahun — bukan hiasan: ulang tahun hari ini
+      // yang belum diucapkan ikut jadi tagihan CORE, persis seperti di badge
+      // sub-tab Follow Up (lihat coreAttention di lib/core.ts).
+      subscribeMainTeam(user.uid, mark('mainTeam', setMainTeam)),
+      subscribeBirthdayGreets(user.uid, mark('greets', setGreets)),
       subscribeReviveStreak(user.uid, mark('revive', setRevive)),
       subscribePartStatus(user.uid, mark('carParts', setCarParts)),
       subscribeRoadmap(user.uid, mark('roadmap', setRoadmap)),
@@ -362,6 +373,17 @@ export default function HomeScreen() {
   // Follow Up Mingguan 🎯 — CL giliran minggu ini yang belum di-follow up
   // hari ini. Menyala mulai jam 09.00 (percakapan tidak dimulai jam 00.05).
   const followupPending = followupDue(leaders, now, weeklyFocus, todayId);
+  // Seluruh tagihan CORE (kiriman panduan + follow up + ulang tahun) —
+  // perhitungan yang SAMA dengan badge sub-tab di dalam layar CORE.
+  const perhatianCore = coreAttention({
+    leaders,
+    mainTeam,
+    visitations,
+    greets,
+    focus: weeklyFocus,
+    now,
+    todayId,
+  });
   // Kartunya sendiri cuma numpang SETENGAH JAM (09.00–09.30): Home itu
   // launcher, jadi tagihan yang menetap sepanjang hari tempatnya di Dashboard
   // — yang di sini cuma tepukan bahu di jam paling mungkin dikerjakan.
@@ -398,14 +420,11 @@ export default function HomeScreen() {
       freelance.filter((p) => freelanceReminderWindow(p, now)).length,
     // Kebiasaan harian pindah ke tab Habits ✅ — badge-nya ikut ke sana,
     // jadi tile Health tidak lagi punya angka (isinya Steps & Check-up).
-    // CORE Leader fokus minggu ini yang belum di-follow up hari ini — baru
-    // menyala mulai jam 09.00, sama dengan badge sub-tab Follow Up & kartu
-    // reminder-nya (lihat followupDue di lib/core.ts) — ditambah acara yang
-    // panduannya perlu dikirim hari ini (H-3; acara besar H-14/7/3/2/1).
-    // Yang PDF-nya sudah dikirim hari ini tidak dihitung.
-    core:
-      followupPending.length +
-      visitations.filter((v) => needsPdfShare(v, now, todayId)).length,
+    // Tagihan CORE hari ini — dihitung SEKALI di lib/core.ts (coreAttention)
+    // lalu dipakai bersama badge sub-tab Visitation & Follow Up di dalam
+    // layarnya. Karena angkanya berasal dari sumber yang sama, tak akan ada
+    // lagi badge "1" di Home yang begitu dibuka tidak menunjuk ke mana-mana.
+    core: perhatianCore.total,
     // Revive belum ditulis DAN belum ditandai dilewati hari ini = 1 (dua-duanya
     // tersimpan di dokumen streak yang sama).
     spiritual:

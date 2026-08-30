@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  documentId,
   increment,
   limit,
   onSnapshot,
@@ -422,6 +423,43 @@ export function setHabitSkipped(
       ? { skipped: { [habitId]: true }, done: { [habitId]: false } }
       : { skipped: { [habitId]: false } },
     { merge: true },
+  );
+}
+
+export type HabitNoteDay = { dayId: string; text: string };
+
+/**
+ * Riwayat catatan SATU kebiasaan — hari terbaru dulu, hari yang catatannya
+ * kosong tidak ikut. Dipakai layar Riwayat Syukur 🙏.
+ *
+ * Diurutkan lewat `documentId()` karena id dokumennya sendiri "YYYY-MM-DD":
+ * urutan abjadnya = urutan tanggalnya, jadi tidak perlu field `date` tambahan
+ * dan tidak perlu composite index. Dibatasi 120 hari — kira-kira empat bulan
+ * terakhir; catatan lamanya tetap tersimpan, cuma tidak ikut dibaca sekaligus.
+ */
+export function subscribeHabitNotes(
+  uid: string,
+  habitId: string,
+  onChange: (days: HabitNoteDay[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const q = query(
+    collection(db, 'users', uid, 'habitDays'),
+    orderBy(documentId(), 'desc'),
+    limit(120),
+  );
+  return onSnapshot(
+    q,
+    (snapshot) =>
+      onChange(
+        snapshot.docs
+          .map((d) => {
+            const notes = (d.data().notes as Record<string, string>) ?? {};
+            return { dayId: d.id, text: notes[habitId] ?? '' };
+          })
+          .filter((d) => d.text.trim().length > 0),
+      ),
+    onError,
   );
 }
 

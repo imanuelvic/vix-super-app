@@ -37,6 +37,7 @@ export type HomeFeature = {
     | 'trophy.fill'
     | 'graduationcap.fill'
     | 'diamond.fill'
+    | 'iphone'
     | 'wineglass.fill';
   route: Href;
   /** Warna tile + warna ikon/tulisannya. */
@@ -65,6 +66,8 @@ export const HOME_FEATURES: HomeFeature[] = [
   { key: 'news', label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK },
   { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK },
 
+  // Device 📱 — paket kuota iPhone/iPad & seluruh biaya perangkat.
+  { key: 'device', label: 'Device', icon: 'iphone', route: '/device', bg: Color.LEARNING, fg: Color.LEARNING_DARK },
   { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK },
   // Social 🥂 — patungan (Split Bill) & tempat nongkrong bareng teman.
   { key: 'social', label: 'Social', icon: 'wineglass.fill', route: '/social', bg: Color.SOCIAL, fg: Color.SOCIAL_DARK },

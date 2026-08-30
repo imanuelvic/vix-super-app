@@ -6,7 +6,11 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { categoryOf } from '@/lib/categories';
 import { formatShortDayDate, monthLabel } from '@/lib/format';
-import { formatRupiah, type Transaction } from '@/lib/transactions';
+import {
+  formatRupiah,
+  utilityKindOf,
+  type Transaction,
+} from '@/lib/transactions';
 
 export function UtilityTab({
   transactions,
@@ -23,12 +27,18 @@ export function UtilityTab({
     let lastWater: Transaction | undefined;
     let lastElectric: Transaction | undefined;
     // transactions sudah urut terbaru dulu → entri pertama tiap jenis = terakhir.
+    //
+    // Jenisnya TIDAK lagi dibaca dari `t.category` langsung: sejak Electricity
+    // & Water melebur jadi sub-kategori Residence, transaksi baru berbentuk
+    // `residence › electric/water` sementara yang lama tetap `electricity` /
+    // `water`. utilityKindOf mengerti keduanya (lihat lib/transactions.ts).
     for (const t of transactions) {
       const d = t.date.toDate();
-      if (t.category === 'water') {
+      const jenis = utilityKindOf(t);
+      if (jenis === 'water') {
         if (sameMonth(d)) waterMonth += t.amount;
         if (!lastWater) lastWater = t;
-      } else if (t.category === 'electricity') {
+      } else if (jenis === 'electric') {
         if (sameMonth(d)) electricMonth += t.amount;
         if (!lastElectric) lastElectric = t;
       }

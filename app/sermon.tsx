@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { ActionStack } from '@/components/common/ActionStack';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -13,6 +14,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { ShareWhatsAppButton } from '@/components/common/ShareWhatsAppButton';
 import { VixText } from '@/components/common/VixText';
 import { ConnectCoreButton } from '@/components/spiritual/ConnectCoreButton';
 import { useAuth } from '@/contexts/auth';
@@ -261,76 +263,81 @@ export default function SermonScreen() {
             {note.title}
           </VixText>
 
-          {note.preacher || note.serviceTime ? (
-            <View style={styles.metaRow}>
-              {note.preacher ? (
-                <VixText heading="label" additionalStyle={styles.metaChip}>
-                  🎤 {note.preacher}
-                </VixText>
-              ) : null}
-              {note.serviceTime ? (
-                <VixText heading="label" additionalStyle={styles.metaChip}>
-                  🕙 {note.serviceTime}
-                </VixText>
-              ) : null}
-              {!bisaDiubah ? (
-                <VixText heading="label" additionalStyle={styles.lockChip}>
-                  🔒 Arsip
-                </VixText>
-              ) : null}
-            </View>
-          ) : null}
+          {/* Satu kolom, satu jarak: `gap` yang mengatur, bukan marginBottom
+              tiap bagian. Bagian yang kosong (tak ada pembicara, tak ada
+              quotes) tidak meninggalkan jarak menggantung — dan yang paling
+              penting, bagian TERAKHIR tidak menambah jarak ke tombol di
+              bawahnya. Dulu di sinilah 16-nya menumpuk. */}
+          <View style={styles.readCol}>
+            {note.preacher || note.serviceTime ? (
+              <View style={styles.metaRow}>
+                {note.preacher ? (
+                  <VixText heading="label" additionalStyle={styles.metaChip}>
+                    🎤 {note.preacher}
+                  </VixText>
+                ) : null}
+                {note.serviceTime ? (
+                  <VixText heading="label" additionalStyle={styles.metaChip}>
+                    🕙 {note.serviceTime}
+                  </VixText>
+                ) : null}
+                {!bisaDiubah ? (
+                  <VixText heading="label" additionalStyle={styles.lockChip}>
+                    🔒 Arsip
+                  </VixText>
+                ) : null}
+              </View>
+            ) : null}
 
-          {note.quote ? (
-            <View style={styles.quoteBox}>
-              <VixText heading="paragraph" additionalStyle={styles.quoteText}>
-                “{note.quote}”
+            {note.quote ? (
+              <View style={styles.quoteBox}>
+                <VixText heading="paragraph" additionalStyle={styles.quoteText}>
+                  “{note.quote}”
+                </VixText>
+              </View>
+            ) : null}
+
+            {/* Ketiga blok di bawah TIDAK memakai numberOfLines dan tidak
+                memotong apa pun: teksnya utuh, enter yang kamu ketik ikut
+                terbaca sebagai ganti baris. Inilah gunanya layar penuh. */}
+            <ReadBlock label="📝 Catatan Khotbah" text={note.note ?? ''} />
+            <ReadBlock label="🏃🏻‍➡️ Aplikasi" text={note.reflection} />
+          </View>
+
+          <ActionStack>
+            <ShareWhatsAppButton
+              onPress={() =>
+                shareTextToWhatsApp(sermonShareText(note), () =>
+                  setError(WHATSAPP_ERROR),
+                )
+              }
+            />
+
+            {/* Sambungkan khotbah ini ke acara CORE yang akan datang — bahan
+                yang kamu terima Minggu jadi bahan yang kamu bawakan nanti. */}
+            <ConnectCoreButton
+              kind="sermon"
+              noteId={note.id}
+              title={note.title}
+            />
+
+            {/* Terkunci mulai Selasa — jadi tombol ubah cuma ada selama masih
+                Minggu/Senin. Isinya tetap bisa dibaca & dibagikan selamanya. */}
+            {bisaDiubah ? (
+              <PressableScale
+                style={styles.editButton}
+                onPress={() => bukaForm(note)}>
+                <VixText heading="bold" additionalStyle={styles.editText}>
+                  ✏️ Ubah catatan
+                </VixText>
+              </PressableScale>
+            ) : (
+              <VixText heading="label" additionalStyle={styles.lockNote}>
+                🔒 Catatan ini sudah jadi arsip — bisa dibaca & dibagikan, tapi
+                tidak bisa diubah lagi.
               </VixText>
-            </View>
-          ) : null}
-
-          {/* Ketiga blok di bawah TIDAK memakai numberOfLines dan tidak
-              memotong apa pun: teksnya utuh, enter yang kamu ketik ikut
-              terbaca sebagai ganti baris. Inilah gunanya layar penuh. */}
-          <ReadBlock label="📝 Catatan Khotbah" text={note.note ?? ''} />
-          <ReadBlock label="🏃🏻‍➡️ Aplikasi" text={note.reflection} />
-
-          <PressableScale
-            style={styles.waButton}
-            onPress={() =>
-              shareTextToWhatsApp(sermonShareText(note), () =>
-                setError(WHATSAPP_ERROR),
-              )
-            }>
-            <VixText heading="bold" additionalStyle={styles.waButtonText}>
-              💬 Share ke WhatsApp
-            </VixText>
-          </PressableScale>
-
-          {/* Sambungkan khotbah ini ke acara CORE yang akan datang — bahan
-              yang kamu terima Minggu jadi bahan yang kamu bawakan nanti. */}
-          <ConnectCoreButton
-            kind="sermon"
-            noteId={note.id}
-            title={note.title}
-          />
-
-          {/* Terkunci mulai Selasa — jadi tombol ubah cuma ada selama masih
-              Minggu/Senin. Isinya tetap bisa dibaca & dibagikan selamanya. */}
-          {bisaDiubah ? (
-            <PressableScale
-              style={styles.editButton}
-              onPress={() => bukaForm(note)}>
-              <VixText heading="bold" additionalStyle={styles.editText}>
-                ✏️ Ubah catatan
-              </VixText>
-            </PressableScale>
-          ) : (
-            <VixText heading="label" additionalStyle={styles.lockNote}>
-              🔒 Catatan ini sudah jadi arsip — bisa dibaca & dibagikan, tapi
-              tidak bisa diubah lagi.
-            </VixText>
-          )}
+            )}
+          </ActionStack>
         </ScrollView>
       ) : (
         /* Dokumennya tidak ada & masa isinya sudah lewat. */
@@ -359,7 +366,7 @@ export default function SermonScreen() {
 function ReadBlock({ label, text }: { label: string; text: string }) {
   if (!text.trim()) return null;
   return (
-    <View style={styles.readBlock}>
+    <View>
       <VixText heading="label" additionalStyle={styles.readLabel}>
         {label}
       </VixText>
@@ -382,7 +389,9 @@ const styles = StyleSheet.create({
   deleteText: { color: Color.DANGER },
   // Mode baca
   readTitle: { color: Color.TEXT_TITLE, marginBottom: 8 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  // Jarak antar bagian bacaan — satu angka untuk seluruh kolom.
+  readCol: { gap: 16 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   metaChip: {
     backgroundColor: Color.SPIRITUAL,
     color: Color.SPIRITUAL_DARK,
@@ -406,22 +415,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 14,
   },
   quoteText: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
-  readBlock: { marginBottom: 16 },
   readLabel: { color: Color.SPIRITUAL_DARK, marginBottom: 4 },
   readText: { color: Color.TEXT_PARAGRAPH },
-  waButton: {
-    backgroundColor: Color.WHATSAPP,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  waButtonText: { color: Color.TEXT_REVERSE },
   editButton: {
-    marginTop: 10,
     alignItems: 'center',
     paddingVertical: 14,
     borderRadius: 12,
@@ -430,6 +428,6 @@ const styles = StyleSheet.create({
     backgroundColor: Color.CONTAINER,
   },
   editText: { color: Color.SPIRITUAL_DARK },
-  lockNote: { textAlign: 'center', marginTop: 12 },
+  lockNote: { textAlign: 'center' },
   empty: { textAlign: 'center', marginTop: 40, paddingHorizontal: 30 },
 });

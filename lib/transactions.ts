@@ -34,8 +34,26 @@ export type Transaction = {
   date: Timestamp;
 };
 
-// Kategori pengeluaran yang direkap di fitur Home (tab Air-Listrik).
-const UTILITY_CATEGORIES = ['electricity', 'water'] as const;
+// Kategori pengeluaran yang direkap di fitur Residence (tab Air-Listrik).
+//
+// Ada DUA bentuk yang sama-sama sah, dan keduanya harus ikut terbaca:
+//   • lama — kategori berdiri sendiri: `electricity` / `water`
+//   • baru — sesudah kelimanya melebur ke Residence (lihat lib/categories.ts):
+//            kategori `residence` dengan sub `electric` / `water`
+// Transaksi lama TIDAK ditulis ulang, jadi rekapnya harus mengerti keduanya.
+// Kalau tidak, catatan sebelum peleburan seolah hilang dari tab Air-Listrik —
+// padahal datanya masih utuh.
+const UTILITY_CATEGORIES = ['electricity', 'water', 'residence'] as const;
+
+/** Jenis utilitas rumah dari sebuah transaksi — null = bukan air/listrik. */
+export function utilityKindOf(t: Transaction): 'water' | 'electric' | null {
+  if (t.category === 'water') return 'water';
+  if (t.category === 'electricity') return 'electric';
+  if (t.category !== 'residence') return null;
+  if (t.sub === 'water') return 'water';
+  if (t.sub === 'electric') return 'electric';
+  return null;
+}
 
 // Semua transaksi milik satu user: users/{uid}/transactions
 // Path ini otomatis tercakup Security Rules users/{userId}/{document=**}.
@@ -54,9 +72,37 @@ export function subscribeUtilityTransactions(
   onChange: (items: Transaction[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
+  return subscribeCategoryTransactions(
+    uid,
+    [...UTILITY_CATEGORIES],
+    // Kategori `residence` ikut terbawa oleh query di atas, tapi yang masuk
+    // rekap air-listrik hanya sub air & listriknya — iuran, wifi & kawan-kawan
+    // tempatnya di tab Log.
+    (items) => onChange(items.filter((t) => utilityKindOf(t) !== null)),
+    onError,
+  );
+}
+
+/**
+ * Dengarkan transaksi dari sekumpulan kategori, LINTAS BULAN — terbaru dulu.
+ *
+ * Filter `in` satu-field memakai index otomatis Firestore (TIDAK butuh
+ * composite index); urutannya dihitung di klien supaya tetap tanpa index.
+ * Dipakai rekap read-only yang memang harus melihat seluruh riwayat satu
+ * jenis pengeluaran: Air-Listrik di Residence 🏠 & Log di Device 📱.
+ *
+ * ⚠️ `in` dibatasi 30 nilai oleh Firestore — jauh lebih dari cukup di sini,
+ * tapi jangan dipakai untuk daftar kategori yang bisa tumbuh bebas.
+ */
+export function subscribeCategoryTransactions(
+  uid: string,
+  categories: string[],
+  onChange: (items: Transaction[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
   const q = query(
     transactionsCollection(uid),
-    where('category', 'in', [...UTILITY_CATEGORIES]),
+    where('category', 'in', categories),
   );
   return onSnapshot(
     q,

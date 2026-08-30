@@ -16,6 +16,7 @@ import {
   fetchNews,
   newsAge,
   NEWS_ERROR,
+  NEWS_SOURCE_DEFAULT,
   NEWS_SOURCES,
   type NewsSource,
 } from '@/lib/news';
@@ -25,7 +26,7 @@ import {
 // tautan aslinya karena itu milik penerbitnya.
 export function NewsTab() {
   const { user } = useAuth();
-  const [source, setSource] = useState<NewsSource>('bloomberg');
+  const [source, setSource] = useState<NewsSource>(NEWS_SOURCE_DEFAULT);
   // Kliping doa syafaat minggu ini — dibaca saja; yang menyegarkannya Home
   // (sekali seminggu, lihat lib/prayerNews.ts).
   const [prayerNews, setPrayerNews] = useState<PrayerNews | null>(null);
@@ -55,28 +56,35 @@ export function NewsTab() {
 
   return (
     <View style={styles.flex}>
-      {/* Pemilih sumber. Dulu SegmentTabs (tiga kotak sama lebar), tapi sejak
-          ada Tech & Dev jumlahnya lima — lima kotak di layar 393 pt
-          menyisakan ±52 pt teks per kotak, dan "📈 Bloomberg" jadi mengecil
-          sampai sulit dibaca. Chip yang bisa digeser tidak punya batas itu.
-          Keterangan sumbernya pindah ke satu baris di bawahnya, jadi tidak
-          ada keterangan yang hilang.
+      {/* Pemilih sumber — kelimanya harus MUAT SEKALIGUS di iPhone 15, tanpa
+          ada yang terpotong di tepi.
 
-          `fit="spread"`: di layar lebar (iPad) kelimanya muat sekaligus dan
-          dibagi rata dari tepi ke tepi; di iPhone 15 kelimanya memang tidak
-          muat, jadi barisnya kembali bisa digeser dengan sendirinya. */}
+          Ruang yang ada 353 pt (393 − padding 20 kiri-kanan). Yang tidak muat
+          ternyata bukan namanya, tapi EMOJI-nya: tiap emoji + spasinya makan
+          ±20 pt, jadi kelimanya sendiri sudah 100 pt — seperlima baris. Dengan
+          emoji, nama sependek apa pun tetap lewat (kelimanya butuh ±434 pt);
+          tanpa emoji dan dengan dua nama dipendekkan (Indonesia → Indo,
+          Bloomberg → Bisnis) jadi 323 pt, muat dengan sisa 30 pt.
+
+          Emojinya tidak hilang — pindah ke baris keterangan di bawah, tempat
+          ia justru lebih berguna karena berdampingan dengan penjelasannya.
+          Nama panjangnya pun ikut ke sana ("Bloomberg · bisnis & pasar"),
+          jadi tidak ada keterangan yang benar-benar dibuang.
+
+          `fit="spread"`: karena sekarang muat, kelimanya dibagi rata dari tepi
+          ke tepi — di iPhone 15 maupun iPad. */}
       <ChipRow fit="spread" contentStyle={styles.sourceRow}>
         {NEWS_SOURCES.map((s) => (
           <Chip
             key={s.key}
-            label={`${s.emoji} ${s.label}`}
+            label={s.label}
             active={s.key === source}
             onPress={() => setSource(s.key)}
           />
         ))}
       </ChipRow>
       <VixText heading="label" additionalStyle={styles.sourceSub}>
-        {aktif.sub}
+        {aktif.emoji} {aktif.sub}
       </VixText>
 
       {items === null && busy ? (

@@ -10,14 +10,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { ActionStack } from '@/components/common/ActionStack';
 import { BibleRefField } from '@/components/common/BibleRefField';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
-import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { ShareWhatsAppButton } from '@/components/common/ShareWhatsAppButton';
 import { VixText } from '@/components/common/VixText';
 import { ConnectCoreButton } from '@/components/spiritual/ConnectCoreButton';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
@@ -212,20 +213,15 @@ export default function ReviveEditorScreen() {
           <BacaBlok label="✨ Rhema" text={entry.rhema} />
           <BacaBlok label="🏃🏻‍➡️ Aplikasi" text={entry.reflection} />
 
-          <PressableScale
-            style={[styles.waButton, styles.shareButton]}
-            onPress={shareToWhatsApp}>
-            <VixText heading="bold" additionalStyle={styles.waButtonText}>
-              💬 Share ke WhatsApp
-            </VixText>
-          </PressableScale>
-
-          {/* Sambungkan bahan ini ke acara CORE yang akan datang. */}
-          <ConnectCoreButton
-            kind="revive"
-            noteId={targetDay}
-            title={entry.title}
-          />
+          <ActionStack>
+            <ShareWhatsAppButton onPress={shareToWhatsApp} />
+            {/* Sambungkan bahan ini ke acara CORE yang akan datang. */}
+            <ConnectCoreButton
+              kind="revive"
+              noteId={targetDay}
+              title={entry.title}
+            />
+          </ActionStack>
 
           <VixText heading="label" additionalStyle={styles.lockNote}>
             🔒 Catatan ini sudah jadi arsip — bisa dibaca, dibagikan, &
@@ -288,33 +284,23 @@ export default function ReviveEditorScreen() {
               multiline
               editable={!busy}
             />
-            {/* Setelah keempat bagian terisi → langsung tombol share (tanpa
-                preview isi pesan; teksnya tetap dibuat di shareToWhatsApp). */}
-            {allFilled && (
-              <PressableScale
-                style={[styles.waButton, styles.shareButton]}
-                onPress={shareToWhatsApp}>
-                <VixText heading="bold" additionalStyle={styles.waButtonText}>
-                  💬 Share ke WhatsApp
-                </VixText>
-              </PressableScale>
-            )}
-            <FormError message={formError} />
-            <PrimaryButton
-              label="Simpan"
-              busy={busy}
-              onPress={handleSave}
-              additionalStyle={styles.saveButton}
-            />
-            {/* Sudah tersimpan → boleh disambungkan ke acara CORE yang akan
-                datang, tanpa menunggu jadi arsip besok. */}
-            {exists && entry && (
-              <ConnectCoreButton
-                kind="revive"
-                noteId={targetDay}
-                title={entry.title}
-              />
-            )}
+            <ActionStack>
+              {/* Setelah keempat bagian terisi → langsung tombol share (tanpa
+                  preview isi pesan; teksnya tetap dibuat di shareToWhatsApp). */}
+              {allFilled && <ShareWhatsAppButton onPress={shareToWhatsApp} />}
+              {/* gap="none" — jaraknya sudah dipegang ActionStack. */}
+              <FormError message={formError} gap="none" />
+              <PrimaryButton label="Simpan" busy={busy} onPress={handleSave} />
+              {/* Sudah tersimpan → boleh disambungkan ke acara CORE yang akan
+                  datang, tanpa menunggu jadi arsip besok. */}
+              {exists && entry && (
+                <ConnectCoreButton
+                  kind="revive"
+                  noteId={targetDay}
+                  title={entry.title}
+                />
+              )}
+            </ActionStack>
             {exists && (
               <InlineDelete
                 key={targetDay}
@@ -377,19 +363,10 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 12,
   },
+  // Tanpa marginBottom: jarak ke tombol di bawahnya dipegang ActionStack,
+  // supaya sama persis dengan mode arsip (dan dengan layar Spiritual lain).
   mediumInput: {
     minHeight: 90,
     textAlignVertical: 'top',
-    marginBottom: 8,
   },
-  saveButton: { marginTop: 4 },
-  // Tombol share ke WhatsApp — muncul setelah keempat bagian terisi.
-  waButton: {
-    backgroundColor: Color.WHATSAPP,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  shareButton: { marginBottom: 12 },
-  waButtonText: { color: Color.TEXT_REVERSE },
 });

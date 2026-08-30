@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
+import { ActionStack } from '@/components/common/ActionStack';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -201,26 +202,27 @@ export default function BibleStoryScreen() {
             ))}
           </View>
 
-          <PrimaryButton
-            label="💾 Simpan ke Foto"
-            busy={kerja.busy === 'save'}
-            onPress={() => buatStory('save')}
-            background={Color.MAIN_DARK}
-            additionalStyle={styles.actionTop}
-          />
-          <PrimaryButton
-            label="📸 Buka Instagram Story"
-            busy={kerja.busy === 'ig'}
-            onPress={() => buatStory('ig')}
-            background={Color.SPIRITUAL_DARK}
-            additionalStyle={styles.action}
-          />
+          <ActionStack>
+            <PrimaryButton
+              label="💾 Simpan ke Foto"
+              busy={kerja.busy === 'save'}
+              onPress={() => buatStory('save')}
+              background={Color.MAIN_DARK}
+            />
+            <PrimaryButton
+              label="📸 Buka Instagram Story"
+              busy={kerja.busy === 'ig'}
+              onPress={() => buatStory('ig')}
+              background={Color.SPIRITUAL_DARK}
+            />
 
-          {saved === `${design.key}|${reference}|${verse}` && (
-            <VixText heading="label" additionalStyle={styles.savedNote}>
-              ✅ Tersimpan di Foto — di kamera Story, dia foto yang paling baru.
-            </VixText>
-          )}
+            {saved === `${design.key}|${reference}|${verse}` && (
+              <VixText heading="label" additionalStyle={styles.savedNote}>
+                ✅ Tersimpan di Foto — di kamera Story, dia foto yang paling
+                baru.
+              </VixText>
+            )}
+          </ActionStack>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -240,7 +242,5 @@ const styles = StyleSheet.create({
   previewClip: { overflow: 'hidden' },
   full: { width: STORY_W, height: STORY_H, transformOrigin: 'top left' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  actionTop: { marginTop: 18 },
-  action: { marginTop: 10 },
-  savedNote: { marginTop: 10, textAlign: 'center', color: Color.SUCCESS },
+  savedNote: { textAlign: 'center', color: Color.SUCCESS },
 });

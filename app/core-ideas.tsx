@@ -29,8 +29,7 @@ import {
 import { formatDate } from '@/lib/format';
 import { LOAD_ERROR } from '@/lib/messages';
 
-// Layar 💡 Idea For CORE — masukan buat CORE, mingguan atau bulanan.
-//
+// Layar 💡 Idea For CORE
 // Dulu menumpang di ujung bawah sub-tab Follow Up. Tempatnya salah: Follow Up
 // itu daftar orang yang harus dihubungi HARI INI, sedangkan ide adalah bahan
 // yang dikumpulkan pelan-pelan — dan yang di bawah selalu kalah, harus
@@ -125,7 +124,7 @@ export default function CoreIdeasScreen() {
       <ScreenHeader
         backLabel="CORE"
         title="Idea For CORE 💡"
-        subtitle="Masukan buat CORE — bisa di-share ke grup MT"
+        subtitle="Masukan buat CORE"
       />
 
       <ScreenError message={error} />
@@ -188,7 +187,7 @@ export default function CoreIdeasScreen() {
       <SheetModal
         visible={!!editing}
         title={editing === 'new' ? 'Tambah Idea 💡' : 'Edit Idea 💡'}
-        subtitle="Masukan buat CORE — bisa di-share ke grup MT"
+        subtitle="Masukan buat CORE"
         onClose={() => setEditing(null)}>
         <FormInput
           style={styles.input}

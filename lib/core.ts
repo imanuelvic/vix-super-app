@@ -1340,6 +1340,73 @@ export function followupDue<
 }
 
 /**
+ * Ulang tahun HARI INI yang ucapannya belum dikirim — CORE Leader & Main Team
+ * sekaligus, karena keduanya sama-sama muncul di sub-tab Follow Up.
+ */
+export function birthdayDue(
+  leaders: (HasBirthday & { id: string })[],
+  mainTeam: (HasBirthday & { id: string })[],
+  greets: BirthdayGreets,
+  today: Date,
+  todayId: string,
+): (HasBirthday & { id: string })[] {
+  return [...leaders, ...mainTeam].filter(
+    (p) => nextBirthday(p, today).daysUntil === 0 && greets[p.id] !== todayId,
+  );
+}
+
+/**
+ * SATU perhitungan tagihan CORE, dipakai badge tile Home DAN badge sub-tab di
+ * dalam layar CORE.
+ *
+ * Kenapa harus satu: dulu Home menghitung follow up + kiriman panduan, tapi
+ * sub-tab cuma menghitung follow up. Akibatnya tile CORE di Home menyala "1"
+ * sementara di dalamnya tidak ada satu pun sub-tab yang bertanda — badge-nya
+ * benar, tapi tidak menunjukkan ke mana harus pergi, dan itu justru bikin
+ * badge tidak lagi dipercaya. Ulang tahun pun begitu: ia menagih di layar
+ * Follow Up tapi tak pernah ikut terhitung di mana-mana.
+ *
+ * Sekarang `total` memang benar-benar jumlah bagian-bagiannya, jadi mustahil
+ * ada angka di Home yang tidak punya tujuan di dalam.
+ */
+export type CoreAttention = {
+  /** Acara yang panduannya perlu dikirim hari ini (H-3; acara besar H-14…1). */
+  visitation: number;
+  /** CL fokus yang belum di-follow up + ulang tahun yang belum diucapkan. */
+  followup: number;
+  total: number;
+};
+
+export function coreAttention<
+  L extends HasBirthday & { id: string; lastFollowupDayId?: string | null },
+  M extends HasBirthday & { id: string },
+>({
+  leaders,
+  mainTeam,
+  visitations,
+  greets,
+  focus,
+  now,
+  todayId,
+}: {
+  leaders: L[];
+  mainTeam: M[];
+  visitations: Visitation[];
+  greets: BirthdayGreets;
+  focus: WeeklyFocus;
+  now: Date;
+  todayId: string;
+}): CoreAttention {
+  const visitation = visitations.filter((v) =>
+    needsPdfShare(v, now, todayId),
+  ).length;
+  const followup =
+    followupDue(leaders, now, focus, todayId).length +
+    birthdayDue(leaders, mainTeam, greets, now, todayId).length;
+  return { visitation, followup, total: visitation + followup };
+}
+
+/**
  * Undi ulang CL fokus minggu ini — sebisa mungkin BUKAN yang sedang dipakai,
  * jadi menekan tombolnya selalu benar-benar berganti orang. Kalau CL yang lain
  * kurang dari jatahnya, barulah semua ikut diundi lagi.

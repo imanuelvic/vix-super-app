@@ -69,15 +69,30 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     { key: 'insurance', label: 'Insurance', icon: '☂️', active: true },
     { key: 'parents', label: 'Parents', icon: '👨🏻', active: true },
     { key: 'gathering-core', label: 'Gathering CORE', icon: '💚', active: true },
-    { key: 'rent', label: 'Rent', icon: '🏘️', active: true },
     // Pengeluaran rumah — sub-kategorinya = jenis catatan di fitur Residence
     // (lib/residence.ts), dan transaksinya otomatis ikut tercatat di Log
     // Residence. Pola yang sama dengan Transportation › Bensin ⛽ → Car.
     { key: 'residence', label: 'Residence', icon: '🏠', active: true },
-    { key: 'electricity', label: 'Electricity', icon: '⚡', active: true },
-    { key: 'water', label: 'Water', icon: '💧', active: true },
-    { key: 'wifi', label: 'Wifi', icon: '📶', active: true },
-    { key: 'maintenance', label: 'Maintenance', icon: '⚙️', active: true },
+    // ── Lima kategori di bawah ini MELEBUR ke Residence ─────────────────
+    // Rent, Electricity, Water, Wifi & Maintenance semuanya pengeluaran rumah
+    // yang sama; berdiri sendiri-sendiri cuma bikin satu rumah terpecah jadi
+    // enam baris budget yang tak pernah bisa dijumlahkan, dan tak satu pun
+    // dari kelimanya pernah muncul di Log Residence.
+    //
+    // Sekarang mereka jadi SUB-kategori Residence (lihat RESIDENCE_LOG_TYPES).
+    // `active: false`, BUKAN dihapus — dan itu penting:
+    //   • transaksi lama yang memakai key ini tetap terbaca & tampil apa
+    //     adanya di riwayat, tidak jadi "❓";
+    //   • baris budget-nya tetap muncul di Budgeting selama masih ada
+    //     nominal/realisasinya (BudgetingTab menyaring `active || allocated >
+    //     0 || realized > 0`), jadi angka Agustus tidak hilang dari layar.
+    // Yang berubah cuma satu: kelimanya tidak lagi muncul saat MENCATAT
+    // transaksi baru — yang baru masuk lewat Residence › <jenis>.
+    { key: 'rent', label: 'Rent', icon: '🏘️', active: false },
+    { key: 'electricity', label: 'Electricity', icon: '⚡', active: false },
+    { key: 'water', label: 'Water', icon: '💧', active: false },
+    { key: 'wifi', label: 'Wifi', icon: '📶', active: false },
+    { key: 'maintenance', label: 'Maintenance', icon: '⚙️', active: false },
   ],
   saving: [
     { key: 'emergency-fund', label: 'Emergency Fund', icon: '🚨', active: true },

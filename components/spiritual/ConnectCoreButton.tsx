@@ -183,7 +183,9 @@ const styles = StyleSheet.create({
     borderColor: Color.FINANCE_INVESTMENT_DARK,
     paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 10,
+    // Tanpa marginTop sendiri — jaraknya dipegang <ActionStack/> di layar yang
+    // memakainya (Catatan Revive & Catatan Khotbah), sama seperti tombol lain
+    // di tumpukan yang sama.
   },
   buttonText: { color: Color.FINANCE_INVESTMENT_DARK },
   row: {

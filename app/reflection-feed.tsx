@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
+import { ActionStack } from '@/components/common/ActionStack';
 import { Chip } from '@/components/common/Chip';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -182,26 +183,26 @@ export default function ReflectionFeedScreen() {
             ))}
           </View>
 
-          <PrimaryButton
-            label="💾 Simpan ke Foto"
-            busy={kerja.busy === 'save'}
-            onPress={() => jalankan('save')}
-            background={Color.MAIN_DARK}
-            additionalStyle={styles.actionTop}
-          />
-          <PrimaryButton
-            label="📸 Buka Instagram"
-            busy={kerja.busy === 'ig'}
-            onPress={() => jalankan('ig')}
-            background={Color.SPIRITUAL_DARK}
-            additionalStyle={styles.action}
-          />
+          <ActionStack>
+            <PrimaryButton
+              label="💾 Simpan ke Foto"
+              busy={kerja.busy === 'save'}
+              onPress={() => jalankan('save')}
+              background={Color.MAIN_DARK}
+            />
+            <PrimaryButton
+              label="📸 Buka Instagram"
+              busy={kerja.busy === 'ig'}
+              onPress={() => jalankan('ig')}
+              background={Color.SPIRITUAL_DARK}
+            />
 
-          {saved === `${design.key}|${text}` && (
-            <VixText heading="label" additionalStyle={styles.savedNote}>
-              ✅ Tersimpan di Foto — di Instagram, dia foto yang paling baru.
-            </VixText>
-          )}
+            {saved === `${design.key}|${text}` && (
+              <VixText heading="label" additionalStyle={styles.savedNote}>
+                ✅ Tersimpan di Foto — di Instagram, dia foto yang paling baru.
+              </VixText>
+            )}
+          </ActionStack>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -220,7 +221,5 @@ const styles = StyleSheet.create({
   full: { width: FEED_W, height: FEED_H, transformOrigin: 'top left' },
   sectionTitle: { marginTop: 14, marginBottom: 8 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  actionTop: { marginTop: 18 },
-  action: { marginTop: 10 },
-  savedNote: { marginTop: 10, textAlign: 'center', color: Color.SUCCESS },
+  savedNote: { textAlign: 'center', color: Color.SUCCESS },
 });

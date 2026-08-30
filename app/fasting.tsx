@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { ACTION_TOP } from '@/assets/style/space';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -432,7 +433,8 @@ const styles = StyleSheet.create({
   firstLabel: { marginTop: 0 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
   error: { marginTop: 10 },
-  saveButton: { marginTop: 14 },
+  // Jarak tombol aksi dari isian di atasnya — sama dengan layar Spiritual lain.
+  saveButton: { marginTop: ACTION_TOP },
   hint: { marginTop: 16, textAlign: 'center' },
   progressCard: {
     backgroundColor: Color.SPIRITUAL_DARK,

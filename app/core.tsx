@@ -22,6 +22,7 @@ import { VisitationTab } from '@/components/core/VisitationTab';
 import { useAuth } from '@/contexts/auth';
 import {
     EMPTY_MONTHLY_PRAYERS,
+    subscribeBirthdayGreets,
     subscribeCoreLeaders,
     subscribeExLeaders,
     subscribeMainTeam,
@@ -30,7 +31,8 @@ import {
     subscribeVisitations,
     subscribeWeeklyFocus,
     EMPTY_WEEKLY_FOCUS,
-    followupDue,
+    coreAttention,
+    type BirthdayGreets,
     type WeeklyFocus,
     type CoreLeader,
     type ExLeader,
@@ -95,6 +97,10 @@ export default function CoreScreen() {
   // Undian ulang 🎲 fokus minggu ini (dokumen kecil) — dipakai kartu Follow Up
   // Mingguan DAN badge tab-nya, supaya keduanya menyebut orang yang sama.
   const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
+  // Ucapan ulang tahun yang sudah dikirim hari ini — dibaca di sini (bukan
+  // cuma di dalam sub-tab Follow Up) supaya badge-nya ikut padam begitu
+  // ucapannya terkirim, bukan menunggu tabnya dibuka.
+  const [greets, setGreets] = useState<BirthdayGreets>({});
   const [error, setError] = useState<string | null>(null);
 
   // Jam BERJALAN (di-segarkan tiap menit): badge Follow Up menyala sendiri
@@ -119,8 +125,20 @@ export default function CoreScreen() {
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers, fail),
       subscribeMonthlyMeetings(user.uid, setMeetings, fail),
       subscribeWeeklyFocus(user.uid, setWeeklyFocus, fail),
+      subscribeBirthdayGreets(user.uid, setGreets, fail),
     ]);
   }, [user]);
+
+  // Tagihan CORE hari ini — angka yang SAMA dipakai badge tile di Home.
+  const perhatian = coreAttention({
+    leaders: leaders ?? [],
+    mainTeam: mainTeam ?? [],
+    visitations: visitations ?? [],
+    greets,
+    focus: weeklyFocus,
+    now,
+    todayId: dayId,
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -211,12 +229,16 @@ export default function CoreScreen() {
         )}
       </View>
 
-      {/* Badge Follow Up = CL fokus minggu ini yang belum di-follow up hari
-          ini, dan baru menyala mulai jam 09.00 (lihat followupDue di
-          lib/core.ts) — angka yang sama dengan badge tile CORE di Home. */}
+      {/* Badge sub-tab dihitung DARI SUMBER YANG SAMA dengan badge tile CORE
+          di Home (coreAttention di lib/core.ts), jadi angka di luar selalu
+          punya tujuan di dalam:
+            Visitation → acara yang panduannya perlu dikirim hari ini
+            Follow Up  → CL fokus yang belum di-follow up (mulai jam 09.00)
+                         + ulang tahun hari ini yang belum diucapkan */}
       <BottomTabs
         tabs={withBadge(TABS, {
-          followup: followupDue(leaders ?? [], now, weeklyFocus, dayId).length,
+          visitation: perhatian.visitation,
+          followup: perhatian.followup,
         })}
         value={tab}
         onChange={onTabPress}

@@ -4,6 +4,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { ACTION_GAP, ACTION_TOP } from '@/assets/style/space';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -467,8 +468,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   checkText: { color: Color.TEXT_TITLE, flexShrink: 1 },
-  confirm: { marginTop: 4 },
-  skipButton: { alignItems: 'center', paddingVertical: 14, marginTop: 8 },
+  // 14 (marginBottom kartu langkah terakhir) + 4 = ACTION_TOP. Kartunya tidak
+  // bisa kehilangan marginBottom-nya — dipakai semua langkah — jadi sisanya
+  // yang ditambahkan di sini.
+  confirm: { marginTop: ACTION_TOP - 14 },
+  skipButton: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginTop: ACTION_GAP,
+  },
   skipText: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   confirmDisabled: {
     backgroundColor: Color.SPIRITUAL,

@@ -308,10 +308,19 @@ export const NEWS_SOURCES: {
 }[] = [
   { key: 'tech', label: 'Tech', emoji: '🤖', sub: 'AI, robotika & gadget' },
   { key: 'dev', label: 'Dev', emoji: '📱', sub: 'Expo, RN, iOS & Android' },
-  { key: 'indonesia', label: 'Indonesia', emoji: '🇮🇩', sub: 'dalam negeri' },
+  { key: 'indonesia', label: 'Indo', emoji: '🇮🇩', sub: 'Indonesia · dalam negeri' },
   { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },
-  { key: 'bloomberg', label: 'Bloomberg', emoji: '📈', sub: 'bisnis & pasar' },
+  { key: 'bloomberg', label: 'Bisnis', emoji: '📈', sub: 'Bloomberg · bisnis & pasar' },
 ];
+
+/**
+ * Sumber yang terbuka duluan saat tab Berita dibuka.
+ *
+ * Tech — bukan Bloomberg seperti dulu. Dua alasannya: ini yang paling sering
+ * dibaca pemilik app, dan karena ia yang PALING KIRI, barisnya mulai dari
+ * awal sehingga chip pertama utuh, tidak setengah terpotong di tepi layar.
+ */
+export const NEWS_SOURCE_DEFAULT: NewsSource = NEWS_SOURCES[0].key;
 
 /**
  * Satu alamat RSS beserta nama sumbernya.

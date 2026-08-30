@@ -35,13 +35,17 @@ import {
   HABIT_SLOTS,
   HABIT_TIERS,
   habitArea,
+  filledNoteLines,
   habitLink,
   habitNoteDone,
+  habitNoteLines,
   habitsBySlot,
   habitTier,
   isFixedHabit,
   isNoteDrivenHabit,
+  joinNoteLines,
   newHabitId,
+  splitNoteLines,
   saveHabits,
   slotMeta,
   tierMeta,
@@ -778,6 +782,9 @@ export function HabitsTab({
                     key={`${habit.id}-${dayId}`}
                     placeholder={habit.notePrompt ?? 'Tulis singkat saja…'}
                     value={day.notes[habit.id] ?? ''}
+                    // "🙏 Bersyukur 3 Hal" minta TIGA butir, bukan satu
+                    // paragraf — lihat habitNoteLines di lib/habits.ts.
+                    lines={habitNoteLines(habit)}
                     onSave={(t) => handleNote(habit, t)}
                   />
                 )}
@@ -988,20 +995,40 @@ export function HabitsTab({
 // SheetModal, yang sudah punya penghindar keyboard sendiri dan bisa dibuat
 // selega yang dibutuhkan. Cara menyimpannya tidak berubah: sekali saat
 // selesai (tekan Simpan), bukan tiap huruf.
+// `lines` > 0 → catatannya BUKAN satu paragraf, melainkan daftar berbutir
+// sebanyak itu (mis. "🙏 Bersyukur 3 Hal" → 3 kotak kecil bernomor). Satu
+// kotak besar untuk tiga hal terbukti jadi satu kalimat panjang; tiga kotak
+// bernomor menagih tiga hal dengan sendirinya, tanpa perlu aturan apa pun.
+//
+// Yang tersimpan tetap SATU teks dipisah baris — tidak ada bentuk data baru
+// dan tidak ada migrasi (lihat splitNoteLines/joinNoteLines di lib/habits.ts).
 function HabitNote({
   placeholder,
   value,
+  lines = 0,
   onSave,
 }: {
   placeholder: string;
   value: string;
+  lines?: number;
   onSave: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(value);
+  const [butir, setButir] = useState<string[]>(() =>
+    splitNoteLines(value, Math.max(lines, 1)),
+  );
+
+  const berbutir = lines > 0;
+  // Pratinjau baris: butirannya dirangkai jadi satu baris pendek supaya kartu
+  // kebiasaannya tidak memanjang tiga kali lipat.
+  const pratinjau = berbutir
+    ? filledNoteLines(value).join(' · ')
+    : value;
 
   function simpan() {
-    if (text.trim() !== value) onSave(text.trim());
+    const isi = berbutir ? joinNoteLines(butir) : text.trim();
+    if (isi !== value) onSave(isi);
     setOpen(false);
   }
 
@@ -1010,13 +1037,15 @@ function HabitNote({
       <PressableScale
         style={styles.noteBox}
         onPress={() => {
-          setText(value); // selalu mulai dari yang tersimpan
+          // selalu mulai dari yang tersimpan
+          setText(value);
+          setButir(splitNoteLines(value, Math.max(lines, 1)));
           setOpen(true);
         }}>
         <VixText
           heading="paragraph"
           additionalStyle={value ? styles.noteFilled : styles.notePlaceholder}>
-          {value || placeholder}
+          {pratinjau || placeholder}
         </VixText>
         <VixText heading="label" additionalStyle={styles.noteHint}>
           ✍️
@@ -1035,14 +1064,33 @@ function HabitNote({
             onConfirm={simpan}
           />
         }>
-        <FormInput
-          style={styles.noteSheetInput}
-          placeholder={placeholder}
-          value={text}
-          onChangeText={setText}
-          multiline
-          autoFocus
-        />
+        {berbutir ? (
+          butir.map((isi, i) => (
+            <View key={i} style={styles.noteLineBox}>
+              <VixText heading="label" additionalStyle={styles.noteLineLabel}>
+                {i + 1}.
+              </VixText>
+              <FormInput
+                style={styles.noteLineInput}
+                placeholder={`Hal ke-${i + 1}`}
+                value={isi}
+                onChangeText={(t) =>
+                  setButir((lama) => lama.map((v, j) => (j === i ? t : v)))
+                }
+                autoFocus={i === 0}
+              />
+            </View>
+          ))
+        ) : (
+          <FormInput
+            style={styles.noteSheetInput}
+            placeholder={placeholder}
+            value={text}
+            onChangeText={setText}
+            multiline
+            autoFocus
+          />
+        )}
       </SheetModal>
     </>
   );
@@ -1164,6 +1212,15 @@ const styles = StyleSheet.create({
   noteHint: { color: Color.TEXT_LABEL },
   // Kolom isian DI DALAM modal — dibuat lega, karena di sinilah menulisnya.
   noteSheetInput: { minHeight: 180, textAlignVertical: 'top' },
+  // Tiga kotak kecil bernomor — bentuk untuk catatan yang isinya butiran.
+  noteLineBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  noteLineLabel: { color: Color.TEXT_LABEL, width: 16 },
+  noteLineInput: { flex: 1 },
   // Pilihan tingkat & area di modal ubah kebiasaan.
   fieldLabel: { marginTop: 14, marginBottom: 6 },
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

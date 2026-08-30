@@ -131,6 +131,13 @@ export default function SpiritualScreen() {
                 emoji="📖"
                 onPress={() => router.push('/revive-history')}
               />
+              {/* 🙏 Riwayat Syukur — "3 hal" yang kamu tulis tiap malam di
+                  Habits. Ditaruh di sini, bukan di Habits: Habits tempat
+                  MENULISNYA, Spiritual tempat MEMBACANYA lagi. */}
+              <EmojiButton
+                emoji="🙏"
+                onPress={() => router.push('/gratitude')}
+              />
               <AchievementButton category="login" />
             </>
           ) : tab === 'bible' ? (

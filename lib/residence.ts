@@ -46,13 +46,21 @@ export const RESIDENCE_INFO = {
 export type ResidenceLogType =
   | 'water'
   | 'electric'
+  | 'rent'
   | 'iuran'
   | 'water-heater'
   | 'wifi'
+  | 'maintenance'
   | 'cleaning'
   | 'lainnya';
 
 // group: 'utility' tampil di tab Air-Listrik, 'log' tampil di tab Log.
+//
+// Daftar ini SEKALIGUS jadi sub-kategori Expense › Residence di Finance
+// (lihat BUILTIN_SUBS di lib/budgets.ts). Itu sebabnya Rent 🏘️ & Maintenance
+// ⚙️ ada di sini: dulu keduanya kategori Finance yang berdiri sendiri, padahal
+// keduanya pengeluaran rumah yang sama — dan karena berdiri sendiri, tak satu
+// pun pernah muncul di Log Residence. Sekarang satu daftar, dua tempat.
 export const RESIDENCE_LOG_TYPES: {
   key: ResidenceLogType;
   label: string;
@@ -61,9 +69,11 @@ export const RESIDENCE_LOG_TYPES: {
 }[] = [
   { key: 'water', label: 'Water PAM', icon: '💧', group: 'utility' },
   { key: 'electric', label: 'Electric Token', icon: '⚡', group: 'utility' },
+  { key: 'rent', label: 'Rent', icon: '🏘️', group: 'log' },
   { key: 'iuran', label: 'Iuran Lingkungan', icon: '🏘️', group: 'log' },
   { key: 'water-heater', label: 'Water Heater', icon: '👨🏽‍🔧', group: 'log' },
   { key: 'wifi', label: 'Wifi', icon: '🛜', group: 'log' },
+  { key: 'maintenance', label: 'Maintenance', icon: '⚙️', group: 'log' },
   { key: 'cleaning', label: 'Cleaning / Disinfektan', icon: '🪣', group: 'log' },
   { key: 'lainnya', label: 'Lainnya', icon: '🧾', group: 'log' },
 ];

@@ -104,6 +104,9 @@ const MAPPING = {
   'wineglass.fill': 'local-bar',
   'receipt.fill': 'receipt-long',
   'cup.and.saucer.fill': 'local-cafe',
+  // Fitur Device 📱 — tile Home + kedua sub-tab perangkatnya.
+  'iphone': 'smartphone',
+  'ipad': 'tablet-mac',
 } as IconMapping;
 
 /**

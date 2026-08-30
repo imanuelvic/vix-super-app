@@ -74,38 +74,45 @@ export function priorityDone(items: PriorityItem[]): number {
 }
 
 /**
- * Angka badge 💡 di Home: berapa prioritas hari ini yang belum beres.
- * Belum diisi sama sekali → 3, karena mengisinya itu sendiri yang ditagih
- * (inilah gunanya: dipilih di pagi hari, bukan diingat-ingat).
+ * Berapa prioritas hari ini yang belum beres — yang belum DICORET, entah
+ * karena belum dikerjakan atau karena barisnya memang belum diisi. Baris
+ * kosong ikut dihitung: mengisinya itu sendiri yang ditagih (inilah gunanya —
+ * dipilih di pagi hari, bukan diingat-ingat).
  */
 export function priorityPending(items: PriorityItem[]): number {
-  const filled = priorityFilled(items);
-  return filled === 0 ? PRIORITY_COUNT : filled - priorityDone(items);
+  return PRIORITY_COUNT - priorityDone(items);
 }
 
 /**
  * Isi pil 💡 di Home. Tiga keadaan, tiga bunyi yang berbeda:
  *
- *   'kosong'  → belum diisi sama sekali. Angkanya SENGAJA tidak ditampilkan
- *               (angka "3" terbaca seolah sudah ada tiga hal yang menunggu,
- *               padahal yang menunggu justru keputusannya) — diganti ⚠️.
- *   'sisa'    → sudah diisi, tinggal sekian yang belum dicoret: 3 → 2 → 1.
- *   'beres'   → semuanya dicoret → ✅.
+ *   'kurang'  → belum genap TIGA. Angkanya SENGAJA tidak ditampilkan —
+ *               diganti ⚠️ — karena angka di situ terbaca sebagai "sekian
+ *               yang tersisa dikerjakan", padahal yang tersisa justru
+ *               KEPUTUSANNYA: masih ada baris yang belum kamu isi.
+ *   'sisa'    → ketiganya sudah terisi, tinggal sekian yang belum dicoret:
+ *               3 → 2 → 1.
+ *   'beres'   → ketiganya dicoret → ✅.
  *
- * Mengisinya WAJIB tiga, sesuai namanya di daftar kebiasaan: Top 3 Priorities.
+ * Kenapa 1 atau 2 baris terisi TETAP ⚠️, bukan angka: mengisinya wajib tiga,
+ * sesuai namanya di daftar kebiasaan — Top 3 Priorities. Kalau baru dua yang
+ * terisi lalu pilnya sudah menampilkan "2", pil itu berbohong dua kali: ia
+ * terlihat seperti sudah beres memilih, dan angkanya kebetulan sama dengan
+ * "tinggal 2 yang belum dicoret". ⚠️ menagih hal yang benar — isi dulu
+ * ketiganya.
  */
-export type PriorityState = 'kosong' | 'sisa' | 'beres';
+export type PriorityState = 'kurang' | 'sisa' | 'beres';
 
 export function priorityState(items: PriorityItem[]): PriorityState {
   const filled = priorityFilled(items);
-  if (filled === 0) return 'kosong';
+  if (filled < PRIORITY_COUNT) return 'kurang';
   return filled - priorityDone(items) === 0 ? 'beres' : 'sisa';
 }
 
 /** Tulisan di pil 💡 Home: "💡 ⚠️" · "💡 2" · "💡 ✅". */
 export function priorityBadgeText(items: PriorityItem[]): string {
   const keadaan = priorityState(items);
-  if (keadaan === 'kosong') return '💡 ⚠️';
+  if (keadaan === 'kurang') return '💡 ⚠️';
   if (keadaan === 'beres') return '💡 ✅';
   return `💡 ${priorityPending(items)}`;
 }

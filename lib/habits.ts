@@ -126,6 +126,52 @@ export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
   return /rhema|reflection journal/i.test(h.label);
 }
 
+// ===================== Catatan yang isinya BUTIRAN =====================
+// Sebagian catatan harian bukan satu paragraf, tapi daftar pendek dengan
+// jumlah yang sudah tertentu. "🙏 Bersyukur 3 Hal" contohnya: namanya sendiri
+// sudah menyebut TIGA, tapi kolomnya cuma satu kotak besar — jadi yang
+// tertulis di situ sering cuma satu kalimat panjang, dan "3 hal"-nya tak
+// pernah benar-benar tiga.
+//
+// Yang disimpan TETAP satu teks di `habitDays/{hari}.notes[id]`, dipisah
+// baris. Tidak ada bentuk data baru, tidak ada migrasi: catatan lama yang
+// terlanjur satu kalimat terbaca sebagai butir pertama, dua sisanya kosong.
+
+/** Berapa butir yang diminta baris "Bersyukur 3 Hal". */
+export const GRATITUDE_LINES = 3;
+
+/** Baris yang catatannya daftar berbutir — 0 = satu kotak biasa. */
+export function habitNoteLines(h: ScheduledHabit): number {
+  return /bersyukur/i.test(h.label) ? GRATITUDE_LINES : 0;
+}
+
+/** Pecah catatan jadi tepat `lines` butir (kurang → dikosongkan). */
+export function splitNoteLines(text: string, lines: number): string[] {
+  const isi = text.split('\n');
+  return Array.from({ length: lines }, (_, i) => isi[i]?.trim() ?? '');
+}
+
+/**
+ * Gabung butiran jadi satu teks simpanan. Butir kosong DI TENGAH tetap
+ * disimpan sebagai baris kosong — kalau tidak, mengosongkan butir ke-2 akan
+ * membuat butir ke-3 naik ke tempatnya, dan apa yang kamu tulis pindah baris
+ * sendiri. Baris kosong di EKOR dibuang supaya catatan yang benar-benar
+ * kosong tetap terbaca kosong.
+ */
+export function joinNoteLines(lines: string[]): string {
+  const bersih = lines.map((l) => l.trim());
+  while (bersih.length > 0 && bersih[bersih.length - 1] === '') bersih.pop();
+  return bersih.join('\n');
+}
+
+/** Butir yang benar-benar terisi — untuk pratinjau & daftar riwayat. */
+export function filledNoteLines(text: string): string[] {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+}
+
 // Refleksi pagi ditampilkan ULANG di Home pada jam-jam ini, biar tulisan
 // paginya tidak berhenti di kolom catatan — dibaca lagi saat siang, sore, &
 // malam.
@@ -430,12 +476,14 @@ export type HabitLink = {
   whenDone?: boolean;
 };
 
-// Urutan penting: yang lebih spesifik diperiksa duluan. "Revive + IG Story" &
-// "Share Revive ke WA CORE" sama-sama memuat kata "revive".
+// Urutan penting: yang lebih spesifik diperiksa duluan. "Share Revive ke
+// Instastory" & "Share Revive ke WAG" sama-sama memuat kata "revive" — yang
+// pertama harus tertangkap aturan Instagram DULU, sebelum sampai ke aturan
+// Revive di bawahnya.
 export const HABIT_LINKS: HabitLink[] = [
   {
     id: FITNESS_HABIT_ID,
-    note: 'Dicentang dari fitur Fitness',
+    note: 'Buka fitur Fitness',
     color: Color.FITNESS_DARK,
     route: { pathname: '/fitness' },
     mirrorOf: 'fitness',
@@ -467,7 +515,11 @@ export const HABIT_LINKS: HabitLink[] = [
     external: { scheme: 'instagram://app', web: 'https://www.instagram.com/' },
   },
   {
-    match: /revive.*(\bwa\b|whatsapp|core)/i,
+    // `wag?` = "WA" maupun "WAG" — nama barisnya boleh berbunyi "Share Revive
+    // ke WAG" tanpa kehilangan pintasannya. Tanpa `g`-nya, `\bwa\b` tidak
+    // mengenali "WAG" sama sekali (batas katanya jatuh di tempat lain), dan
+    // barisnya diam-diam berubah jadi kebiasaan biasa tanpa pintu.
+    match: /revive.*(\bwag?\b|whatsapp|core)/i,
     note: 'Buka Spiritual › Revive',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/spiritual', params: { tab: 'revive' } },
@@ -492,7 +544,7 @@ export const HABIT_LINKS: HabitLink[] = [
   // terisi. Mencentangnya di sini tanpa menuliskan apa-apa cuma bikin bohong.
   {
     match: /top 3 priorit/i,
-    note: 'Dicentang dari Daily Priority 💡',
+    note: 'Buka Daily Priority 💡',
     color: Color.MAIN_DARK,
     route: { pathname: '/daily-priority' },
     mirrorOf: 'priority',
@@ -502,21 +554,21 @@ export const HABIT_LINKS: HabitLink[] = [
   // ikut catatan bacaannya: tercentang sesudah "✅ Sudah baca" di sana.
   {
     match: /morning bible reading/i,
-    note: 'Dicentang dari Baca Alkitab › Pagi',
+    note: 'Buka Baca Alkitab › Pagi',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/bible-reading', params: { session: 'morning' } },
     mirrorOf: 'bible-morning',
   },
   {
     match: /midday bible reading/i,
-    note: 'Dicentang dari Baca Alkitab › Siang',
+    note: 'Buka Baca Alkitab › Siang',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/bible-reading', params: { session: 'daytime' } },
     mirrorOf: 'bible-daytime',
   },
   {
     match: /night bible reading/i,
-    note: 'Dicentang dari Baca Alkitab › Malam',
+    note: 'Buka Baca Alkitab › Malam',
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/bible-reading', params: { session: 'night' } },
     mirrorOf: 'bible-night',

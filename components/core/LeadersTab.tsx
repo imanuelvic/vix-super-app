@@ -725,10 +725,6 @@ export function LeadersTab({
               <VixText heading="bold" additionalStyle={styles.bodyHeading}>
                 🧍 Data Tubuh
               </VixText>
-              <VixText heading="label" additionalStyle={styles.bodyHint}>
-                Opsional — buat memantau apakah badannya bergerak ke arah yang
-                sehat. Tanggal “diperbarui” cuma bergeser kalau angkanya berubah.
-              </VixText>
               <View style={styles.bodyRow}>
                 {(
                   [
@@ -759,7 +755,6 @@ export function LeadersTab({
                 busy={busy}
                 onDelete={handleDelete}
               />
-              {/* Lepas CL (arsipkan, beda dari hapus permanen) */}
               {editing !== 'new' && editing !== null && (
                 <PressableScale
                   style={styles.archiveButton}
@@ -1351,10 +1346,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   archiveInput: { minHeight: 100, textAlignVertical: 'top', marginBottom: 10 },
-  // Data tubuh di form ✏️ — tiga kolom angka sebaris.
   bodyHeading: { color: Color.TEXT_TITLE, marginTop: 14 },
-  bodyHint: { marginTop: 2, marginBottom: 8 },
-  bodyRow: { flexDirection: 'row', gap: 8 },
+  bodyRow: { flexDirection: 'row', gap: 8, marginBottom: 6,  },
   bodyField: { flex: 1, gap: 4 },
   bodyLabel: { color: Color.TEXT_LABEL },
   archiveButton: {
