@@ -3,7 +3,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   orderBy,
   query,
   Timestamp,
@@ -12,6 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 import { daysBetween } from './format';
 
 // Fitur Device 📱 — perangkat yang dipakai sehari-hari & biayanya.
@@ -90,17 +90,7 @@ export function subscribeDataPlans(
   // orderBy satu field → tanpa composite index. Yang paling baru berakhir di
   // atas: paket aktif memang yang tanggal habisnya paling jauh ke depan.
   const q = query(plansCollection(uid), orderBy('endDate', 'desc'));
-  return onSnapshot(
-    q,
-    (snapshot) =>
-      onChange(
-        snapshot.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<DataPlan, 'id'>),
-        })),
-      ),
-    onError,
-  );
+  return liveList<DataPlan>(q, onChange, onError);
 }
 
 type PlanInput = {

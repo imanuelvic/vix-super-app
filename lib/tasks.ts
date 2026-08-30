@@ -3,7 +3,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -14,6 +13,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 import { daysBetween } from './format';
 import { dayDocId } from './health';
 
@@ -33,9 +33,9 @@ export const TASK_CATEGORIES: {
   { key: 'personal', label: 'PERSONAL', icon: '👤' },
   { key: 'work', label: 'WORK', icon: '💼' },
   { key: 'ministry', label: 'MINISTRY', icon: '🙏' },
-  { key: 'learning', label: 'LEARNING', icon: '📚' },
   // Emoji sama dengan fitur Fun & Recreation 🎉 biar gampang dikenali.
   { key: 'fun', label: 'FUN', icon: '🎉' },
+  { key: 'learning', label: 'LEARNING', icon: '📚' },
 ];
 
 // Set key kategori yang masih berlaku — untuk membersihkan task "yatim".
@@ -69,24 +69,17 @@ export function subscribeTasks(
   onError?: (error: FirestoreError) => void,
 ) {
   const q = query(tasksCollection(uid), orderBy('createdAt', 'desc'));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const today = dayDocId(new Date());
-      const tasks = snapshot.docs.map((d) => {
-        const data = d.data() as Omit<Task, 'id'>;
-        // Task lama: tanpa kategori → Personal; tanpa tanggal → hari ini.
-        return {
-          id: d.id,
-          ...data,
-          category: data.category ?? 'personal',
-          dayId: data.dayId ?? today,
-        };
-      });
-      onChange(tasks);
-    },
-    onError,
-  );
+  const today = dayDocId(new Date());
+  return liveList<Task>(q, onChange, onError, (d) => {
+    const data = d.data() as Omit<Task, 'id'>;
+    // Task lama: tanpa kategori → Personal; tanpa tanggal → hari ini.
+    return {
+      id: d.id,
+      ...data,
+      category: data.category ?? 'personal',
+      dayId: data.dayId ?? today,
+    };
+  });
 }
 
 export function addTask(
@@ -276,24 +269,16 @@ export function subscribeOtherTasks(
   onError?: (error: FirestoreError) => void,
 ) {
   const q = query(otherTasksCollection(uid), orderBy('createdAt', 'desc'));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => {
-          const data = d.data() as Omit<OtherTask, 'id'>;
-          return {
-            id: d.id,
-            ...data,
-            priority: data.priority ?? 2,
-            note: data.note ?? '',
-            category: data.category ?? 'personal',
-          };
-        }),
-      );
-    },
-    onError,
-  );
+  return liveList<OtherTask>(q, onChange, onError, (d) => {
+    const data = d.data() as Omit<OtherTask, 'id'>;
+    return {
+      id: d.id,
+      ...data,
+      priority: data.priority ?? 2,
+      note: data.note ?? '',
+      category: data.category ?? 'personal',
+    };
+  });
 }
 
 export function addOtherTask(

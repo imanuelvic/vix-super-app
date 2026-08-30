@@ -3,7 +3,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   orderBy,
   query,
   Timestamp,
@@ -14,6 +13,7 @@ import {
 
 import type { FinanceType } from './categories';
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 
 export type Transaction = {
   id: string;
@@ -104,14 +104,12 @@ export function subscribeCategoryTransactions(
     transactionsCollection(uid),
     where('category', 'in', categories),
   );
-  return onSnapshot(
+  // Urutannya dihitung di klien (bukan orderBy) supaya tetap tanpa index —
+  // itu urusan DAFTARNYA, jadi dikerjakan di sini, bukan di pemetaan barisnya.
+  return liveList<Transaction>(
     q,
-    (snapshot) => {
-      const items = snapshot.docs
-        .map((d) => ({ id: d.id, ...(d.data() as Omit<Transaction, 'id'>) }))
-        .sort((a, b) => b.date.toMillis() - a.date.toMillis());
-      onChange(items);
-    },
+    (items) =>
+      onChange([...items].sort((a, b) => b.date.toMillis() - a.date.toMillis())),
     onError,
   );
 }
@@ -136,17 +134,7 @@ export function subscribeTransactionsByMonth(
     where('date', '<', end),
     orderBy('date', 'desc'),
   );
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const items = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Transaction, 'id'>),
-      }));
-      onChange(items);
-    },
-    onError,
-  );
+  return liveList<Transaction>(q, onChange, onError);
 }
 
 export function addTransaction(

@@ -4,8 +4,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { categoryOf } from '@/lib/categories';
 import { formatShortDayDate, monthLabel } from '@/lib/format';
+import { RESIDENCE_LOG_TYPES } from '@/lib/residence';
 import {
   formatRupiah,
   utilityKindOf,
@@ -64,7 +64,7 @@ export function UtilityTab({
           </View>
           <View style={styles.utilRow}>
             <VixText heading="bold" additionalStyle={summaryText.value}>
-              ⚡ Listrik (token)
+              ⚡ Listrik Token
             </VixText>
             <VixText heading="bold" additionalStyle={summaryText.value}>
               {formatRupiah(electricMonth)}
@@ -88,19 +88,30 @@ export function UtilityTab({
           </VixText>
         </View>
 
+        <VixText heading="label" additionalStyle={styles.source}>
+          💰 Data dari Finance — dicatat & diubah di sana.
+        </VixText>
+
         {transactions.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada transaksi listrik/air. Catat di Finance dengan kategori ⚡
-            Electricity atau 💧 Water.
+            Belum ada transaksi listrik/air. Catat di Finance dengan kategori 🏠
+            Residence → 💧 Air PAM atau ⚡ Listrik Token.
           </VixText>
         ) : (
           transactions.map((t) => {
-            const cat = categoryOf('expense', t.category);
+            // Judulnya JENIS-nya (Air PAM / Listrik Token), bukan nama
+            // kategorinya. Sejak keduanya melebur ke Residence, seluruh baris
+            // di sini akan berbunyi "🏠 Residence" — persis sama semua, dan
+            // yang membedakannya justru sub-jenisnya.
+            const jenis = utilityKindOf(t);
+            const meta = jenis
+              ? RESIDENCE_LOG_TYPES.find((r) => r.key === jenis)
+              : undefined;
             return (
               <View key={t.id} style={styles.row}>
                 <View style={styles.rowLeft}>
                   <VixText heading="bold" additionalStyle={styles.rowTitle}>
-                    {cat.icon} {cat.label}
+                    {meta ? `${meta.icon} ${meta.label}` : t.note || 'Utilitas'}
                   </VixText>
                   {t.note ? <VixText heading="label">{t.note}</VixText> : null}
                   <VixText heading="label">
@@ -132,6 +143,8 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 10,
   },
+  // Penanda asal data — bunyinya sama persis dengan tab Log & Log di Car 🚗.
+  source: { color: Color.MAIN, marginBottom: 10 },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     flexDirection: 'row',

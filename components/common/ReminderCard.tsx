@@ -21,6 +21,7 @@ export function ReminderCard({
   texts,
   onPress,
   onItemPress,
+  right,
   children,
 }: {
   bg: string; // warna latar pastel
@@ -29,17 +30,29 @@ export function ReminderCard({
   texts?: (string | { id: string; text: string })[];
   onPress?: () => void;
   onItemPress?: (id: string) => void;
+  /**
+   * Tombol kecil di sebelah judul, mis. 📤 bagikan kartunya jadi gambar.
+   *
+   * Ada = kartunya TIDAK lagi jadi satu tombol besar; yang bisa ditekan cuma
+   * badan teksnya. Pressable bersarang di iOS bikin tombol di dalam ikut
+   * memicu tombol pembungkusnya — jadi keduanya sengaja bersebelahan, bukan
+   * bertumpuk.
+   */
+  right?: ReactNode;
   children?: ReactNode; // isi khusus (mis. kutipan yang di-clamp)
 }) {
   const color: StyleProp<TextStyle> = { color: fg };
   const cardStyle = [styles.card, { backgroundColor: bg, borderColor: fg }];
 
-  const body = (
+  // Judul selalu hitam (kontras di semua warna kartu); isi baris ikut fg.
+  const judul = (
+    <VixText heading="bold" additionalStyle={styles.title}>
+      {title}
+    </VixText>
+  );
+
+  const isi = (
     <>
-      {/* Judul selalu hitam (kontras di semua warna kartu); isi baris ikut fg */}
-      <VixText heading="bold" additionalStyle={styles.title}>
-        {title}
-      </VixText>
       {texts?.map((t, i) => {
         if (typeof t !== 'string') {
           if (onItemPress) {
@@ -77,11 +90,32 @@ export function ReminderCard({
 
   // Mode per-baris: bungkus View biasa (tombolnya ada di tiap baris).
   if (onItemPress) {
-    return <View style={cardStyle}>{body}</View>;
+    return (
+      <View style={cardStyle}>
+        {judul}
+        {isi}
+      </View>
+    );
   }
+
+  // Ada tombol di sebelah judul → judul & tombolnya berdampingan, dan yang
+  // bisa ditekan cuma badan teksnya (tanpa Pressable bersarang).
+  if (right) {
+    return (
+      <View style={cardStyle}>
+        <View style={styles.headRow}>
+          <View style={styles.headTitle}>{judul}</View>
+          {right}
+        </View>
+        <PressableScale onPress={onPress}>{isi}</PressableScale>
+      </View>
+    );
+  }
+
   return (
     <PressableScale style={cardStyle} onPress={onPress}>
-      {body}
+      {judul}
+      {isi}
     </PressableScale>
   );
 }
@@ -97,6 +131,9 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   title: { color: Color.TEXT_TITLE },
+  // Baris judul saat kartunya punya tombol sendiri di kanan.
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headTitle: { flex: 1 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',

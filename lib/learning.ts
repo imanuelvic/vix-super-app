@@ -404,7 +404,7 @@ export const LEARNING_STEPS: {
     emoji: '🎯',
     label: 'Kenali',
     minutes: 15,
-    how: 'Cari gambaran besarnya dulu. Cukup sampai bisa menjawab "ini apa, dan kenapa penting buatku?"',
+    how: 'Pelajari "ini apa, dan kenapa penting buatku?"',
     time: LEARNING_TIME_LABEL,
   },
   {
@@ -414,7 +414,7 @@ export const LEARNING_STEPS: {
     emoji: '📖',
     label: 'Gali',
     minutes: 15,
-    how: 'SATU sumber saja: 1 bab buku, 1 artikel, atau 1 video. Banyak sumber malah bikin tidak ada yang masuk.',
+    how: 'SATU sumber saja: 1 bab buku, 1 artikel, atau 1 video.',
     time: LEARNING_TIME_LABEL,
   },
   {
@@ -424,7 +424,7 @@ export const LEARNING_STEPS: {
     emoji: '✍️',
     label: 'Rangkum',
     minutes: 10,
-    how: 'Tulis 3 poin pakai bahasamu sendiri di kotak bawah. Inilah langkah yang bikin ilmunya benar-benar nempel.',
+    how: 'Tulis 3 poin rangkuman darimu.',
     time: LEARNING_TIME_LABEL,
   },
   {
@@ -434,7 +434,7 @@ export const LEARNING_STEPS: {
     emoji: '💬',
     label: 'Ceritakan',
     minutes: 5,
-    how: 'Ceritakan ke 1 orang, pakai topik diskusi di bawah. Kalau bisa menjelaskan, berarti kamu memang paham.',
+    how: 'Ceritakan ke 1 orang.',
     time: '',
   },
 ];

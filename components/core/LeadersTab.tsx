@@ -448,13 +448,16 @@ export function LeadersTab({
                 </View>
               </PressableScale>
               <View style={styles.cardRight}>
-                {/* Tiga tombol di pojok kanan ATAS kartu:
-                    🧍 = data tubuhnya (BACA saja — mengubahnya lewat ✏️).
-                    🎡 = Wheel of Life CL ini (layar yang sama persis dengan
-                         roda milikku, cuma datanya per CL — lihat app/wheel).
-                    ✏️ = ubah datanya. */}
+                {/* Tombol kartu, dua baris — DULU bertiga berjajar di satu
+                    baris atas, dan di iPhone 15 barisnya jadi sepadat itu
+                    sampai nama CL-nya ikut terhimpit.
+                      baris 1 · 🎡 Wheel of Life CL ini (layar yang sama persis
+                                dengan roda milikku, cuma datanya per CL) +
+                                ✏️ ubah datanya
+                      baris 2 · 🧍 data tubuhnya (BACA saja — diubah lewat ✏️)
+                    Yang turun ke bawah sengaja yang 🧍: ia paling jarang
+                    ditekan, dan ruang di bawah ✏️ memang menganggur. */}
                 <View style={styles.cardActions}>
-                  <EmojiButton emoji="🧍" onPress={() => setBodyOf(l)} />
                   <EmojiButton
                     emoji="🎡"
                     onPress={() =>
@@ -466,6 +469,7 @@ export function LeadersTab({
                   />
                   <EditButton onPress={() => openEdit(l)} />
                 </View>
+                <EmojiButton emoji="🧍" onPress={() => setBodyOf(l)} />
                 {soon && (
                   <View style={styles.birthdayChip}>
                     <VixText heading="label" additionalStyle={styles.birthdayChipText}>

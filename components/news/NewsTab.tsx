@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -30,6 +30,9 @@ export function NewsTab() {
   // Kliping doa syafaat minggu ini — dibaca saja; yang menyegarkannya Home
   // (sekali seminggu, lihat lib/prayerNews.ts).
   const [prayerNews, setPrayerNews] = useState<PrayerNews | null>(null);
+  // Daftar beritanya — dipegang supaya bisa digulung balik ke atas saat chip
+  // sumber yang sedang aktif ditekan lagi.
+  const listRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -54,32 +57,47 @@ export function NewsTab() {
     : [];
   const aktif = NEWS_SOURCES.find((s) => s.key === source)!;
 
+  /**
+   * Click chip sumber. Menekan sumber yang SUDAH aktif = minta yang terbaru:
+   * daftarnya diambil ulang dan digulung balik ke paling atas.
+   *
+   * Pola yang sama dengan tab bawah di seluruh app (useTabScroll): tekan lagi
+   * tab yang sedang dibuka → balik ke atas. Bedanya di sini sekalian memuat
+   * ulang, karena isinya berita — yang "paling atas" hari ini belum tentu
+   * yang paling atas satu jam lagi.
+   */
+  function pilihSumber(key: NewsSource) {
+    if (key !== source) {
+      setSource(key);
+      return;
+    }
+    reload();
+    listRef.current?.scrollTo({ y: 0, animated: true });
+  }
+
   return (
     <View style={styles.flex}>
-      {/* Pemilih sumber — kelimanya harus MUAT SEKALIGUS di iPhone 15, tanpa
-          ada yang terpotong di tepi.
+      {/* Pemilih sumber — kelimanya harus terlihat SEKALIGUS, tanpa ada yang
+          terpotong di tepi.
 
-          Ruang yang ada 353 pt (393 − padding 20 kiri-kanan). Yang tidak muat
-          ternyata bukan namanya, tapi EMOJI-nya: tiap emoji + spasinya makan
-          ±20 pt, jadi kelimanya sendiri sudah 100 pt — seperlima baris. Dengan
-          emoji, nama sependek apa pun tetap lewat (kelimanya butuh ±434 pt);
-          tanpa emoji dan dengan dua nama dipendekkan (Indonesia → Indo,
-          Bloomberg → Bisnis) jadi 323 pt, muat dengan sisa 30 pt.
+          Emojinya sudah pindah ke baris keterangan di bawah (tiap emoji +
+          spasinya makan ±20 pt; kelimanya saja seperlima baris), dan dua nama
+          dipendekkan — Indonesia → Indo, Bloomberg → Bisnis. Itu membuat
+          kelimanya muat 323 pt di ruang 353 pt iPhone 15.
 
-          Emojinya tidak hilang — pindah ke baris keterangan di bawah, tempat
-          ia justru lebih berguna karena berdampingan dengan penjelasannya.
-          Nama panjangnya pun ikut ke sana ("Bloomberg · bisnis & pasar"),
-          jadi tidak ada keterangan yang benar-benar dibuang.
-
-          `fit="spread"`: karena sekarang muat, kelimanya dibagi rata dari tepi
-          ke tepi — di iPhone 15 maupun iPad. */}
-      <ChipRow fit="spread" contentStyle={styles.sourceRow}>
+          Tapi 30 pt sisa itu tipis, dan yang menghabiskannya bukan cuma
+          namanya: ukuran huruf sistem bisa diperbesar sendiri oleh pembacanya.
+          Karena itu barisnya TIDAK lagi digeser, melainkan `fit="wrap"` —
+          chip yang tidak muat turun ke baris berikutnya. Baris yang digeser
+          menyembunyikan pilihan di luar layar; baris yang turun tidak pernah
+          menyembunyikan apa pun, berapa pun besar hurufnya. */}
+      <ChipRow fit="wrap" contentStyle={styles.sourceRow}>
         {NEWS_SOURCES.map((s) => (
           <Chip
             key={s.key}
             label={s.label}
             active={s.key === source}
-            onPress={() => setSource(s.key)}
+            onPress={() => pilihSumber(s.key)}
           />
         ))}
       </ChipRow>
@@ -102,6 +120,7 @@ export function NewsTab() {
         </View>
       ) : (
         <ScrollView
+          ref={listRef}
           contentContainerStyle={styles.content}
           refreshControl={
             <RefreshControl

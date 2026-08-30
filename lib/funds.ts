@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 
 /**
  * Saku = "dompet" dana per tujuan (seperti Pocket di bank Jago).
@@ -115,17 +116,7 @@ export function subscribeFundEntries(
   onError?: (error: FirestoreError) => void,
 ) {
   const q = query(entriesCollection(uid, fundKey), orderBy('date', 'desc'));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const entries = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<FundEntry, 'id'>),
-      }));
-      onChange(entries);
-    },
-    onError,
-  );
+  return liveList<FundEntry>(q, onChange, onError);
 }
 
 export function addFundEntry(

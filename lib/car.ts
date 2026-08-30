@@ -4,7 +4,6 @@ import {
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -15,7 +14,7 @@ import {
 
 import { type DeadlineTone } from './deadline';
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 import { daysBetween } from './format';
 
 // Fitur Car 🚗 — Mazda 2 R Skyactiv 2015 (merah):
@@ -91,18 +90,10 @@ export function subscribeCarLogs(
 ) {
   // orderBy satu field saja → tidak butuh composite index.
   const q = query(carLogsCollection(uid), orderBy('date', 'desc'), limit(200));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => {
-          const data = d.data() as Omit<CarLog, 'id'>;
-          return { id: d.id, ...data, liters: data.liters ?? null };
-        }),
-      );
-    },
-    onError,
-  );
+  return liveList<CarLog>(q, onChange, onError, (d) => {
+    const data = d.data() as Omit<CarLog, 'id'>;
+    return { id: d.id, ...data, liters: data.liters ?? null };
+  });
 }
 
 export type CarLogInput = {

@@ -22,6 +22,7 @@ import {
   countResidenceAttention,
   deleteResidenceLogs,
   RESIDENCE_INFO,
+  RESIDENCE_LOG_TYPES,
   subscribeChoreStatus,
   subscribeResidenceLogs,
   type ChoreStatusMap,
@@ -97,8 +98,17 @@ export default function ResidenceScreen() {
   const cleanupRan = useRef(false);
   useEffect(() => {
     if (!user || logs === null || cleanupRan.current) return;
+    // Jenis yang sudah TIDAK ADA lagi di RESIDENCE_LOG_TYPES (air & listrik
+    // sejak pindah ke tab Air-Listrik; Iuran Lingkungan & Water Heater sejak
+    // dibuang 30 Agu 2026) — barisnya tak akan pernah tampil lagi di mana pun,
+    // jadi dibuang permanen daripada menumpuk jadi data yatim.
     const staleIds = logs
-      .filter((l) => l.type === 'water' || l.type === 'electric')
+      .filter(
+        (l) =>
+          l.type === 'water' ||
+          l.type === 'electric' ||
+          !RESIDENCE_LOG_TYPES.some((t) => t.key === l.type),
+      )
       .map((l) => l.id);
     if (staleIds.length === 0) return;
     cleanupRan.current = true;

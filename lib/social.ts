@@ -3,7 +3,6 @@ import {
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -12,7 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 
 // Social 🥂 — fitur untuk yang terjadi SAAT bergaul dengan teman.
 //
@@ -123,11 +122,7 @@ export function subscribeBills(
   // orderBy satu field saja → tidak butuh composite index. Dibatasi 60 seperti
   // notulen CORE: fotonya ikut terbawa tiap kali daftarnya dibaca.
   const q = query(billsCollection(uid), orderBy('date', 'desc'), limit(60));
-  return onSnapshot(
-    q,
-    (snapshot) => onChange(snapshot.docs.map((d) => fromDoc(d.id, d.data()))),
-    onError,
-  );
+  return liveList<Bill>(q, onChange, onError, (d) => fromDoc(d.id, d.data()));
 }
 
 /** Satu tagihan saja — dipakai layar rinciannya (hemat, tidak menarik semua). */

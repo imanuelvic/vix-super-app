@@ -6,7 +6,6 @@ import {
   documentId,
   increment,
   limit,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -18,7 +17,7 @@ import {
 
 import { type LoginStreak as DayStreak } from './achievements';
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 import { daysBetween } from './format';
 import { alreadyCounted, nextStreak } from './streak';
 
@@ -448,18 +447,16 @@ export function subscribeHabitNotes(
     orderBy(documentId(), 'desc'),
     limit(120),
   );
-  return onSnapshot(
+  // Penyaringannya di DAFTAR (hari tanpa catatan dibuang), pemetaannya per
+  // baris — dua urusan berbeda, jadi ditulis di dua tempat berbeda.
+  return liveList<HabitNoteDay>(
     q,
-    (snapshot) =>
-      onChange(
-        snapshot.docs
-          .map((d) => {
-            const notes = (d.data().notes as Record<string, string>) ?? {};
-            return { dayId: d.id, text: notes[habitId] ?? '' };
-          })
-          .filter((d) => d.text.trim().length > 0),
-      ),
+    (days) => onChange(days.filter((d) => d.text.trim().length > 0)),
     onError,
+    (d) => {
+      const notes = (d.data().notes as Record<string, string>) ?? {};
+      return { dayId: d.id, text: notes[habitId] ?? '' };
+    },
   );
 }
 
@@ -699,15 +696,7 @@ export function subscribeCheckups(
     orderBy('date', 'desc'),
     limit(100),
   );
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Checkup, 'id'>) })),
-      );
-    },
-    onError,
-  );
+  return liveList<Checkup>(q, onChange, onError);
 }
 
 export function addCheckup(
@@ -760,15 +749,7 @@ export function subscribeDiseases(
     orderBy('start', 'desc'),
     limit(100),
   );
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Disease, 'id'>) })),
-      );
-    },
-    onError,
-  );
+  return liveList<Disease>(q, onChange, onError);
 }
 
 export function addDisease(

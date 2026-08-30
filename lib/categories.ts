@@ -66,33 +66,22 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     { key: 'personal-services', label: 'Personal Services', icon: '👤', active: true },
     { key: 'shopping', label: 'Shopping', icon: '🛍️', active: true },
     { key: 'mobile-data-admin', label: 'Mobile, Data & Administration', icon: '📱', active: true },
-    { key: 'insurance', label: 'Insurance', icon: '☂️', active: true },
     { key: 'parents', label: 'Parents', icon: '👨🏻', active: true },
-    { key: 'gathering-core', label: 'Gathering CORE', icon: '💚', active: true },
     // Pengeluaran rumah — sub-kategorinya = jenis catatan di fitur Residence
     // (lib/residence.ts), dan transaksinya otomatis ikut tercatat di Log
     // Residence. Pola yang sama dengan Transportation › Bensin ⛽ → Car.
-    { key: 'residence', label: 'Residence', icon: '🏠', active: true },
-    // ── Lima kategori di bawah ini MELEBUR ke Residence ─────────────────
-    // Rent, Electricity, Water, Wifi & Maintenance semuanya pengeluaran rumah
-    // yang sama; berdiri sendiri-sendiri cuma bikin satu rumah terpecah jadi
-    // enam baris budget yang tak pernah bisa dijumlahkan, dan tak satu pun
-    // dari kelimanya pernah muncul di Log Residence.
     //
-    // Sekarang mereka jadi SUB-kategori Residence (lihat RESIDENCE_LOG_TYPES).
-    // `active: false`, BUKAN dihapus — dan itu penting:
-    //   • transaksi lama yang memakai key ini tetap terbaca & tampil apa
-    //     adanya di riwayat, tidak jadi "❓";
-    //   • baris budget-nya tetap muncul di Budgeting selama masih ada
-    //     nominal/realisasinya (BudgetingTab menyaring `active || allocated >
-    //     0 || realized > 0`), jadi angka Agustus tidak hilang dari layar.
-    // Yang berubah cuma satu: kelimanya tidak lagi muncul saat MENCATAT
-    // transaksi baru — yang baru masuk lewat Residence › <jenis>.
+    // Electricity, Water, Wifi & Maintenance DULU kategori sendiri; keempatnya
+    // sudah dihapus permanen (lihat REMOVED_BUDGET_KEYS di lib/budgets.ts) dan
+    // sekarang jadi sub-kategori di sini. Rent ikut melebur, tapi kategorinya
+    // ditahan `active: false` — beda dengan keempat itu, transaksi lamanya
+    // masih ada, dan menghapusnya akan membuat riwayatnya tampil sebagai "❓".
+    { key: 'residence', label: 'Residence', icon: '🏠', active: true },
     { key: 'rent', label: 'Rent', icon: '🏘️', active: false },
-    { key: 'electricity', label: 'Electricity', icon: '⚡', active: false },
-    { key: 'water', label: 'Water', icon: '💧', active: false },
-    { key: 'wifi', label: 'Wifi', icon: '📶', active: false },
-    { key: 'maintenance', label: 'Maintenance', icon: '⚙️', active: false },
+    // Dua paling bawah, urutannya sesuai permintaan pemilik app:
+    // Gathering CORE, lalu Insurance paling akhir.
+    { key: 'gathering-core', label: 'Gathering CORE', icon: '💚', active: true },
+    { key: 'insurance', label: 'Insurance', icon: '☂️', active: true },
   ],
   saving: [
     { key: 'emergency-fund', label: 'Emergency Fund', icon: '🚨', active: true },

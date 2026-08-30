@@ -13,6 +13,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { CheckupTab } from '@/components/health/CheckupTab';
 import { DietTab } from '@/components/health/DietTab';
+import { FunArchive } from '@/components/fun/FunArchive';
 import { StepsTab } from '@/components/health/StepsTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
@@ -32,14 +33,19 @@ import {
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type HealthTab = 'steps' | 'diet' | 'checkup';
+type HealthTab = 'steps' | 'race' | 'diet' | 'checkup';
 
 // Tab bar bawah di dalam layar Health.
 // Kebiasaan harian TIDAK lagi di sini — pindah ke tab besar Habits ✅
 // (app/(tabs)/habits.tsx). Yang tinggal di sini semuanya soal tubuh:
 // langkah kaki, makan, dan pemeriksaan.
+// Race pindah ke sini dari Fun (30 Agu 2026) & ditaruh TEPAT di kanan Steps:
+// keduanya soal kaki yang sama — Steps mencatat latihannya sehari-hari, Race
+// mencatat hasilnya. Entrinya tidak berpindah dokumen; yang berubah cuma
+// tempat membacanya (lihat FunArchive).
 const TABS: BottomTab<HealthTab>[] = [
   { key: 'steps', label: 'Steps', icon: 'figure.walk' },
+  { key: 'race', label: 'Race', icon: 'figure.run' },
   { key: 'diet', label: 'Diet', icon: 'fork.knife' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
@@ -52,7 +58,9 @@ export default function HealthScreen() {
   // Default masuk ke tab Steps; reminder Dashboard bisa mengarahkan ke tab lain.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   const { tab, scrollKey, onTabPress } = useTabScroll<HealthTab>(
-    tabParam === 'checkup' || tabParam === 'diet' ? tabParam : 'steps',
+    tabParam === 'checkup' || tabParam === 'diet' || tabParam === 'race'
+      ? tabParam
+      : 'steps',
   );
 
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
@@ -137,6 +145,8 @@ export default function HealthScreen() {
           <LoadingCenter />
         ) : tab === 'steps' ? (
           <StepsTab profile={profile} stepDays={stepDays} weeks={weeks} />
+        ) : tab === 'race' ? (
+          <FunArchive category="race" />
         ) : tab === 'diet' ? (
           <DietTab day={diet} dayId={dayId} profile={profile} target={target} />
         ) : (

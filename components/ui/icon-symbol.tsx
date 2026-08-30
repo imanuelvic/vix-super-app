@@ -107,6 +107,11 @@ const MAPPING = {
   // Fitur Device 📱 — tile Home + kedua sub-tab perangkatnya.
   'iphone': 'smartphone',
   'ipad': 'tablet-mac',
+  // Tombol "bahan tersambung" di kartu acara CORE — sebaris dengan tombol
+  // kirim, jadi rupanya harus ikon rata juga, bukan emoji 🔗.
+  'link': 'link',
+  // Sub-tab Creators 🎬 di Fun — video terbaru kanal YouTube yang diikuti.
+  'play.rectangle.fill': 'smart-display',
 } as IconMapping;
 
 /**

@@ -5,6 +5,8 @@ import {
   type DocumentData,
   type DocumentReference,
   type FirestoreError,
+  type Query,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 
 // Lapisan bersama untuk semua langganan DOKUMEN Firestore. Dua masalah yang
@@ -261,6 +263,65 @@ export function liveDoc(
       entries.delete(path);
     }, IDLE_MS);
   };
+}
+
+/**
+ * Langganan satu KOLEKSI/kueri — pengganti langsung untuk blok yang sebelumnya
+ * disalin 20 kali di 15 berkas lib:
+ *
+ *   return onSnapshot(
+ *     q,
+ *     (snapshot) => {
+ *       onChange(
+ *         snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<X, 'id'>) })),
+ *       );
+ *     },
+ *     onError,
+ *   );
+ *
+ * ── ⚠️ BUKAN saudara kembar `liveDoc` ─────────────────────────────────────
+ * Namanya mirip, kelakuannya TIDAK. `liveDoc` menggabungkan listener dokumen
+ * yang sama & menyimpan isinya ke disk; yang ini murni PEMBUNGKUS BENTUK —
+ * tanpa cache, tanpa penggabungan. Memasangnya dua kali untuk kueri yang sama
+ * tetap dua koneksi & dua kali biaya baca, persis seperti `onSnapshot` biasa.
+ * Ditaruh di berkas ini supaya keduanya berdampingan, bukan karena mesinnya
+ * sama.
+ *
+ * `row` mengubah satu dokumen jadi satu barisnya. Bawaannya `{ id, ...data }`
+ * — bentuk yang dipakai sepuluh langganan. Yang datanya perlu dirapikan dulu
+ * (nilai bawaan untuk dokumen lama, nama kolom yang berganti) mengirim
+ * mappernya sendiri; yang perlu diurutkan/disaring melakukannya di `onChange`,
+ * karena itu urusan DAFTARNYA, bukan barisnya.
+ *
+ * Soal `as T` pada bawaannya: isi dokumen Firestore memang tak bisa diperiksa
+ * TypeScript, jadi paksaan tipe itu tidak terhindarkan — tiap pemanggil dulu
+ * menuliskannya sendiri (`as Omit<X, 'id'>`). Yang berubah cuma tempatnya:
+ * sekarang satu, jadi kalau suatu hari mau diganti pemeriksaan sungguhan,
+ * cukup satu tempat yang disentuh.
+ */
+export function liveList<T>(
+  q: Query,
+  onChange: (items: T[]) => void,
+  onError?: (error: FirestoreError) => void,
+  row?: (d: QueryDocumentSnapshot) => T,
+): () => void {
+  return onSnapshot(
+    q,
+    (snapshot) =>
+      onChange(
+        // `id` ditaruh SESUDAH sebaran isinya, bukan sebelum. Kalau sebelum,
+        // dokumen yang kebetulan menyimpan field bernama `id` akan menimpa id
+        // dokumen aslinya — dan baris itu lalu menyamar jadi baris lain, jadi
+        // menghapus/mengubahnya bisa mengenai dokumen yang salah.
+        //
+        // Hari ini tak ada koleksi yang menyimpannya (tiap penulisan sudah
+        // membuang `id` lebih dulu), jadi urutan ini tidak mengubah apa pun
+        // sekarang — ia menjaga supaya penulisan berikutnya yang lupa membuang
+        // `id` tidak diam-diam merusak daftarnya.
+        snapshot.docs.map(row ?? ((d) => ({ ...d.data(), id: d.id }) as T)),
+      ),
+    onError,
+  );
 }
 
 /**

@@ -2,7 +2,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   setDoc,
   writeBatch,
   type FirestoreError,
@@ -10,6 +9,7 @@ import {
 
 import { MEETING_KINDS } from './core';
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 
 // ===================== Rules & Suggestions 📜 =====================
 // Panduan resmi kegiatan CORE — dokumen yang dikirim ke setiap CORE Leader
@@ -72,29 +72,22 @@ export function subscribeCoreRules(
 ) {
   // Tanpa orderBy: urutannya mengikuti MEETING_KINDS (lihat sortCoreRules),
   // supaya sama persis dengan urutan jenis acara di layar Pertemuan.
-  return onSnapshot(
-    rulesCollection(uid),
-    (snapshot) =>
-      onChange(
-        snapshot.docs.map((d) => {
-          const data = d.data();
-          return {
-            kind: d.id,
-            // Dokumen lama belum punya `icon` → ambil dari jenis acaranya.
-            icon:
-              (data.icon as string) ??
-              MEETING_KINDS.find((k) => k.key === d.id)?.icon ??
-              '📜',
-            title: (data.title as string) ?? '',
-            credit: (data.credit as string) ?? '',
-            version: (data.version as string) ?? '',
-            updated: (data.updated as string) ?? '',
-            body: (data.body as string) ?? '',
-          };
-        }),
-      ),
-    onError,
-  );
+  return liveList<CoreRule>(rulesCollection(uid), onChange, onError, (d) => {
+    const data = d.data();
+    return {
+      kind: d.id,
+      // Dokumen lama belum punya `icon` → ambil dari jenis acaranya.
+      icon:
+        (data.icon as string) ??
+        MEETING_KINDS.find((k) => k.key === d.id)?.icon ??
+        '📜',
+      title: (data.title as string) ?? '',
+      credit: (data.credit as string) ?? '',
+      version: (data.version as string) ?? '',
+      updated: (data.updated as string) ?? '',
+      body: (data.body as string) ?? '',
+    };
+  });
 }
 
 export function saveCoreRule(uid: string, rule: CoreRule) {

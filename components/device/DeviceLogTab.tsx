@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Color } from '@/assets/style/color';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -51,11 +50,6 @@ export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) 
           </VixText>
         </SummaryCard>
 
-        <VixText heading="label" additionalStyle={styles.source}>
-          💰 Dibaca dari Finance › Expense › Mobile, Data & Administration —
-          diubah di sana, bukan di sini.
-        </VixText>
-
         {transactions.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
             Belum ada pengeluaran perangkat. Catat pulsa/paket datamu di Finance,
@@ -88,6 +82,5 @@ export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  source: { color: Color.MAIN, marginTop: 12, marginBottom: 10 },
   empty: { textAlign: 'center', marginVertical: 10 },
 });

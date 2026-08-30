@@ -1,6 +1,7 @@
 import { File, Paths } from 'expo-file-system';
 import * as Linking from 'expo-linking';
 import { Asset, requestPermissionsAsync } from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 
 import { Color } from '../assets/style/color';
 import { dayIdToDate } from './format';
@@ -247,6 +248,36 @@ export async function savePngToPhotos(
   file.write(base64, { encoding: 'base64' });
 
   await Asset.create(file.uri);
+}
+
+/**
+ * Bagikan gambar lewat lembar berbagi iOS — WhatsApp, Telegram, Notes, siapa
+ * pun yang bisa menerima gambar. Berkasnya ditulis ke folder cache app, jadi
+ * TIDAK menambah apa pun ke galeri Foto-mu (beda dengan savePngToPhotos).
+ *
+ * Kenapa PNG dan bukan JPG: gambar keluar dari `Svg.toDataURL()` memang PNG,
+ * dan mengubahnya jadi JPG butuh modul native tambahan (expo-image-manipulator)
+ * — artinya build EAS baru untuk keuntungan yang nol: WhatsApp menampilkan PNG
+ * sebagai foto biasa, persis sama.
+ */
+export async function sharePng(
+  base64: string,
+  fileName: string,
+  dialogTitle: string,
+): Promise<void> {
+  const file = new File(Paths.cache, fileName);
+  // Membagikan gambar hari yang sama dua kali akan bentrok nama → yang lama
+  // dibuang dulu (pola yang sama dengan savePngToPhotos di atas).
+  if (file.exists) file.delete();
+  file.create();
+  file.write(base64, { encoding: 'base64' });
+
+  if (!(await Sharing.isAvailableAsync())) throw new Error('sharing off');
+  await Sharing.shareAsync(file.uri, {
+    mimeType: 'image/png',
+    dialogTitle,
+    UTI: 'public.png',
+  });
 }
 
 /**

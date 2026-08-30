@@ -3,7 +3,6 @@ import {
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -14,7 +13,7 @@ import {
 import { db } from './firebase';
 import { dayIdToDate, formatFullDate } from './format';
 import { dayDocId } from './health';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 
 // Catatan Khotbah ⛪ — catatan dari khotbah ibadah Minggu di NDC.
 // SATU catatan per hari Minggu: id dokumen = dayId Minggunya, jadi tidak
@@ -51,18 +50,7 @@ export function subscribeSermons(
     orderBy('date', 'desc'),
     limit(90),
   );
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<SermonNote, 'id'>),
-        })),
-      );
-    },
-    onError,
-  );
+  return liveList<SermonNote>(q, onChange, onError);
 }
 
 /** Dengarkan SATU catatan khotbah — untuk layar bacanya (1 dokumen kecil). */
@@ -167,4 +155,46 @@ export function sermonReminderActive(now: Date): boolean {
   if (day !== 3 && day !== 5) return false; // 3 = Rabu, 5 = Jumat
   const mins = now.getHours() * 60 + now.getMinutes();
   return mins >= 12 * 60 + 30 && mins <= 17 * 60 + 30;
+}
+
+// ===================== Kirim catatan khotbah 📤 =====================
+//
+// KAMIS jam 12.00–14.00: waktunya membagikan catatan khotbah Minggu kemarin
+// ke CORE Leader lewat WhatsApp.
+//
+// Kenapa Kamis, dan bukan sesudah ibadah: catatannya baru terkunci jadi arsip
+// hari Selasa (lihat sermonEditable), jadi sebelum itu isinya masih mungkin
+// kamu rapikan. Kamis siang catatannya sudah final, dan masih cukup jauh dari
+// ibadah berikutnya untuk sempat dibaca orang.
+//
+// Ini BEDA dari `sermonReminderActive` (Rabu & Jumat sore, di Dashboard): yang
+// itu mengajak MERENUNGKAN lagi khotbahnya sendiri; yang ini mengajak
+// MEMBAGIKANNYA.
+export const SERMON_SHARE_DAY = 4; // 4 = Kamis
+export const SERMON_SHARE_FROM_MINUTE = 12 * 60;
+export const SERMON_SHARE_TO_MINUTE = 14 * 60;
+
+/** Sekarang sedang di dalam jendela kirim (Kamis 12.00–14.00)? */
+export function sermonShareWindow(now: Date): boolean {
+  if (now.getDay() !== SERMON_SHARE_DAY) return false;
+  const menit = now.getHours() * 60 + now.getMinutes();
+  return menit >= SERMON_SHARE_FROM_MINUTE && menit < SERMON_SHARE_TO_MINUTE;
+}
+
+/**
+ * Catatan khotbah yang perlu dikirim sekarang — null kalau bukan jamnya, atau
+ * kalau catatan Minggu kemarin memang belum pernah ditulis.
+ *
+ * Sengaja TIDAK menagih catatan yang belum ada: mengajak membagikan sesuatu
+ * yang belum ditulis cuma jadi tuduhan, bukan pengingat.
+ */
+export function sermonShareDue(
+  sermons: SermonNote[],
+  now: Date,
+): SermonNote | null {
+  if (!sermonShareWindow(now)) return null;
+  // Hari Kamis, `currentSundayId` menunjuk Minggu 4 hari lalu — persis ibadah
+  // yang catatannya mau dibagikan.
+  const sundayId = currentSundayId(now);
+  return sermons.find((s) => s.id === sundayId) ?? null;
 }

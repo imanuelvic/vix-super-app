@@ -55,8 +55,12 @@ export function LinkedNotesButton({
 
   return (
     <>
+      {/* Ikon rata sewarna, BUKAN emoji 🔗 — ia berdiri sebaris dengan tombol
+          kirim (square.and.arrow.up), dan emoji berwarna di sebelah ikon rata
+          membuat keduanya terbaca sebagai dua jenis tombol yang berbeda,
+          padahal keduanya sama-sama aksi kartu ini. */}
       <EmojiButton
-        emoji="🔗"
+        icon="link"
         badge={tersambung.length > 1 ? tersambung.length : 0}
         onPress={() => setOpen(true)}
       />

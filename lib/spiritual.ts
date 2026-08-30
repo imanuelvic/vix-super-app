@@ -3,7 +3,6 @@ import {
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -15,7 +14,7 @@ import { type LoginStreak as DayStreak } from './achievements';
 import { usfmRef } from './bible';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 import { dayIdToDate } from './format';
 import { yesterdayId } from './health';
 import { hashString, pickOfDay } from './core';
@@ -49,18 +48,7 @@ export function subscribeReviveEntries(
     orderBy('date', 'desc'),
     limit(90),
   );
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<ReviveEntry, 'id'>),
-        })),
-      );
-    },
-    onError,
-  );
+  return liveList<ReviveEntry>(q, onChange, onError);
 }
 
 export function saveReviveEntry(
@@ -389,20 +377,12 @@ export function subscribeBibleReadingDays(
     orderBy('date', 'desc'),
     limit(90),
   );
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => ({
-          id: d.id,
-          ...readSessions(d.data()),
-          date: d.data().date as Timestamp,
-          versions: readVersions(d.data()),
-        })),
-      );
-    },
-    onError,
-  );
+  return liveList<BibleReadingDay>(q, onChange, onError, (d) => ({
+    id: d.id,
+    ...readSessions(d.data()),
+    date: d.data().date as Timestamp,
+    versions: readVersions(d.data()),
+  }));
 }
 
 /** HANYA hari ini — dipakai Dashboard (1 dokumen saja, hemat read). */
@@ -559,6 +539,43 @@ const REMINDERS: string[] = [
   '🌙 Tidurlah tenang. Dunia tetap berputar tanpa kamu yang menahannya.',
   '🔥 Semangatmu boleh naik-turun; kesetiaan Tuhan tidak pernah.',
   '🧭 Tidak tahu arah? Itu bukan gagal — itu undangan untuk bertanya pada-Nya.',
+  // --- Ayat Alkitab ---
+  // Dikutip apa adanya (Terjemahan Baru), dipendekkan seperlunya dengan "…"
+  // dan SELALU disertai acuannya. Bukan supaya terlihat rohani: kalimat yang
+  // dibagikan ke orang lain harus bisa dicek sendiri sumbernya. Firman yang
+  // dikutip tanpa alamat pelan-pelan berubah jadi kutipan motivasi biasa.
+  '🕊️ "Damai sejahtera Kutinggalkan bagimu… janganlah gelisah dan gentar hatimu." — Yoh 14:27',
+  '🦅 "Orang yang menanti-nantikan TUHAN mendapat kekuatan baru… mereka berlari dan tidak menjadi lesu." — Yes 40:31',
+  '🛡️ "Janganlah takut, sebab Aku menyertai engkau… Aku akan meneguhkan, bahkan akan menolong engkau." — Yes 41:10',
+  '🧡 "Serahkanlah segala kekuatiranmu kepada-Nya, sebab Ia yang memelihara kamu." — 1 Ptr 5:7',
+  '🌱 "Segala perkara dapat kutanggung di dalam Dia yang memberi kekuatan kepadaku." — Flp 4:13',
+  '🙏 "Janganlah hendaknya kamu kuatir tentang apa pun juga, tetapi nyatakanlah… keinginanmu kepada Allah dalam doa." — Flp 4:6',
+  '🌟 "Percayalah kepada TUHAN dengan segenap hatimu, dan janganlah bersandar pada pengertianmu sendiri." — Ams 3:5',
+  '🕯️ "Firman-Mu itu pelita bagi kakiku dan terang bagi jalanku." — Mzm 119:105',
+  '🌄 "Tak berkesudahan kasih setia TUHAN… selalu baru tiap pagi." — Rat 3:22-23',
+  '🤲 "Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi kelegaan kepadamu." — Mat 11:28',
+  '🎯 "Carilah dahulu Kerajaan Allah dan kebenarannya, maka semuanya itu akan ditambahkan kepadamu." — Mat 6:33',
+  '💪 "Kuatkan dan teguhkanlah hatimu… sebab TUHAN, Allahmu, menyertai engkau ke mana pun engkau pergi." — Yos 1:9',
+  '🌊 "Apabila engkau menyeberang melalui air, Aku akan menyertai engkau." — Yes 43:2',
+  '🍇 "Tinggallah di dalam Aku dan Aku di dalam kamu… di luar Aku kamu tidak dapat berbuat apa-apa." — Yoh 15:4-5',
+  '🌈 "Kita tahu sekarang, bahwa Allah turut bekerja dalam segala sesuatu untuk mendatangkan kebaikan." — Rm 8:28',
+  '🔥 "Janganlah kendor dalam kerajinan. Biarlah rohmu menyala-nyala dan layanilah Tuhan." — Rm 12:11',
+  '🌾 "Janganlah kita jemu-jemu berbuat baik, karena… kita akan menuai, jika kita tidak menjadi lemah." — Gal 6:9',
+  '🙌 "Segala sesuatu yang kamu perbuat, perbuatlah dengan segenap hatimu seperti untuk Tuhan." — Kol 3:23',
+  '🌤️ "Berbahagialah orang yang sabar bertahan dalam pencobaan…" — Yak 1:12',
+  '🫶 "Kasihilah TUHAN, Allahmu, dengan segenap hatimu… dan kasihilah sesamamu manusia seperti dirimu sendiri." — Mat 22:37,39',
+  '📖 "Hendaklah perkataan Kristus diam dengan segala kekayaannya di antara kamu." — Kol 3:16',
+  '🌙 "Dengan tenteram aku mau membaringkan diri, lalu segera tidur, sebab hanya Engkau, ya TUHAN, yang membiarkan aku diam dengan aman." — Mzm 4:9',
+  '🧗 "Sebab kita hidup karena percaya, bukan karena melihat." — 2 Kor 5:7',
+  '🪨 "TUHAN adalah gunung batuku, kubu pertahananku dan penyelamatku." — Mzm 18:3',
+  '🌻 "Bersukacitalah senantiasa dalam Tuhan! Sekali lagi kukatakan: Bersukacitalah!" — Flp 4:4',
+  '🧎 "Rendahkanlah dirimu di hadapan Tuhan, dan Ia akan meninggikan kamu." — Yak 4:10',
+  '🍞 "Akulah roti hidup; barangsiapa datang kepada-Ku, ia tidak akan lapar lagi." — Yoh 6:35',
+  '⏰ "Untuk segala sesuatu ada masanya, untuk apa pun di bawah langit ada waktunya." — Pkh 3:1',
+  '💧 "Ia membaringkan aku di padang yang berumput hijau, Ia membimbing aku ke air yang tenang." — Mzm 23:2',
+  '🕊️ "Berbahagialah orang yang membawa damai, karena mereka akan disebut anak-anak Allah." — Mat 5:9',
+  '✨ "Hendaklah terangmu bercahaya di depan orang, supaya mereka melihat perbuatanmu yang baik." — Mat 5:16',
+  '🔑 "Mintalah, maka akan diberikan kepadamu; carilah, maka kamu akan mendapat." — Mat 7:7',
 ];
 
 /**

@@ -1,22 +1,19 @@
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
   Timestamp,
-  updateDoc,
   writeBatch,
   type FirestoreError,
 } from 'firebase/firestore';
 
 import { type DeadlineTone } from './deadline';
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 import { daysBetween } from './format';
 
 // Fitur Residence 🏠 — rumah kontrakan Casa Jardin. Mirip fitur Car:
@@ -47,8 +44,6 @@ export type ResidenceLogType =
   | 'water'
   | 'electric'
   | 'rent'
-  | 'iuran'
-  | 'water-heater'
   | 'wifi'
   | 'maintenance'
   | 'cleaning'
@@ -67,11 +62,9 @@ export const RESIDENCE_LOG_TYPES: {
   icon: string;
   group: 'utility' | 'log';
 }[] = [
-  { key: 'water', label: 'Water PAM', icon: '💧', group: 'utility' },
-  { key: 'electric', label: 'Electric Token', icon: '⚡', group: 'utility' },
+  { key: 'water', label: 'Air PAM', icon: '💧', group: 'utility' },
+  { key: 'electric', label: 'Listrik Token', icon: '⚡', group: 'utility' },
   { key: 'rent', label: 'Rent', icon: '🏘️', group: 'log' },
-  { key: 'iuran', label: 'Iuran Lingkungan', icon: '🏘️', group: 'log' },
-  { key: 'water-heater', label: 'Water Heater', icon: '👨🏽‍🔧', group: 'log' },
   { key: 'wifi', label: 'Wifi', icon: '🛜', group: 'log' },
   { key: 'maintenance', label: 'Maintenance', icon: '⚙️', group: 'log' },
   { key: 'cleaning', label: 'Cleaning / Disinfektan', icon: '🪣', group: 'log' },
@@ -104,41 +97,13 @@ export function subscribeResidenceLogs(
 ) {
   // orderBy satu field saja → tidak butuh composite index.
   const q = query(residenceLogsCollection(uid), orderBy('date', 'desc'), limit(300));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<ResidenceLog, 'id'>),
-        })),
-      );
-    },
-    onError,
-  );
+  return liveList<ResidenceLog>(q, onChange, onError);
 }
 
-export type ResidenceLogInput = {
-  type: ResidenceLogType;
-  title: string;
-  note: string;
-  cost: number;
-  date: Date;
-};
-
-export function addResidenceLog(uid: string, data: ResidenceLogInput) {
-  return addDoc(residenceLogsCollection(uid), {
-    ...data,
-    date: Timestamp.fromDate(data.date),
-  });
-}
-
-export function updateResidenceLog(uid: string, id: string, data: ResidenceLogInput) {
-  return updateDoc(doc(db, 'users', uid, 'houseLogs', id), {
-    ...data,
-    date: Timestamp.fromDate(data.date),
-  });
-}
+// `ResidenceLogInput`, `addResidenceLog` & `updateResidenceLog` DIHAPUS (30
+// Agu 2026) bersama tombol "Catat Pengeluaran" di tab Log. Satu pengeluaran
+// rumah cuma punya satu pintu sekarang — Finance — jadi tidak mungkin lagi
+// satu pembayaran tercatat dua kali dengan angka berbeda.
 
 /**
  * Catat/perbarui log rumah yang berasal dari transaksi Finance.

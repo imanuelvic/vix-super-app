@@ -2,7 +2,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
   setDoc,
   Timestamp,
   type FirestoreError,
@@ -10,6 +9,7 @@ import {
 
 import { deadlineDue, deadlineTone, type DeadlineTone } from './deadline';
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 import { daysBetween } from './format';
 
 // Fitur Pinjaman 🤝 — dua arah:
@@ -66,17 +66,7 @@ export function subscribeDebts(
   onChange: (debts: Debt[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
-    debtsCollection(uid),
-    (snapshot) => {
-      const debts = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Debt, 'id'>),
-      }));
-      onChange(debts);
-    },
-    onError,
-  );
+  return liveList<Debt>(debtsCollection(uid), onChange, onError);
 }
 
 /** Tambah / ubah pinjaman (dokumen ditulis penuh, termasuk daftar cicilan). */

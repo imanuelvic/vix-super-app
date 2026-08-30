@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +19,7 @@ import { TransactionsTab } from '@/components/finance/TransactionsTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
+  purgeRemovedBudgets,
   subscribeBudget,
   subscribeSubcategories,
   type BudgetMap,
@@ -89,6 +90,23 @@ export default function FinanceScreen() {
   useEffect(() => {
     if (!user || !unlocked) return;
     return subscribeDebts(user.uid, setDebts);
+  }, [user, unlocked]);
+
+  // Bersih-bersih SEKALI per buka layar: alokasi budget milik kategori yang
+  // sudah dihapus (Electricity, Water, Wifi, Maintenance & dua sub Residence)
+  // dibuang PERMANEN dari tiap dokumen bulan.
+  //
+  // Kenapa harus dihapus dan bukan dibiarkan: nominalnya tak pernah lagi
+  // kelihatan di layar mana pun, tapi tetap ikut tersalin tiap kali budget
+  // bulan baru menyalin bulan sebelumnya — jadi angka yang sudah kamu buang
+  // hidup terus diam-diam. Daftarnya dikunci di REMOVED_BUDGET_KEYS, jadi
+  // tidak ada budget lain yang bisa tersenggol. Gagal pun tidak apa-apa:
+  // ia coba lagi lain kali, dan bulan yang sudah bersih tidak ditulis ulang.
+  const purged = useRef(false);
+  useEffect(() => {
+    if (!user || !unlocked || purged.current) return;
+    purged.current = true;
+    purgeRemovedBudgets(user.uid).catch(() => {});
   }, [user, unlocked]);
 
   useEffect(() => {

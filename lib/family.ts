@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -10,6 +9,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 import { pickCompressedImage } from './photo';
 
 // Family Tree 👨‍👩‍👧‍👦 — silsilah keluarga ala The Sims:
@@ -68,28 +68,20 @@ export function subscribeFamily(
 ) {
   // Urut dari yang paling tua — enak untuk memilih akar pohon.
   const q = query(membersCollection(uid), orderBy('birthYear', 'asc'));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => {
-          const data = d.data() as Omit<FamilyMember, 'id'>;
-          return {
-            id: d.id,
-            ...data,
-            nickname: data.nickname ?? '',
-            // Data lama belum punya circle/isSelf → anggap keluarga inti, bukan saya.
-            circle: data.circle ?? 'inti',
-            isSelf: data.isSelf ?? false,
-            parentIds: data.parentIds ?? [],
-            partnerIds: data.partnerIds ?? [],
-            photo: data.photo ?? null,
-          };
-        }),
-      );
-    },
-    onError,
-  );
+  return liveList<FamilyMember>(q, onChange, onError, (d) => {
+    const data = d.data() as Omit<FamilyMember, 'id'>;
+    return {
+      id: d.id,
+      ...data,
+      nickname: data.nickname ?? '',
+      // Data lama belum punya circle/isSelf → anggap keluarga inti, bukan saya.
+      circle: data.circle ?? 'inti',
+      isSelf: data.isSelf ?? false,
+      parentIds: data.parentIds ?? [],
+      partnerIds: data.partnerIds ?? [],
+      photo: data.photo ?? null,
+    };
+  });
 }
 
 /**

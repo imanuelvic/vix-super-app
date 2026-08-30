@@ -21,8 +21,8 @@ import {
   type WeekDistanceTarget,
 } from '@/lib/health';
 
-// Kartu 🎯 Target Mingguan — target jarak yang KAMU tentukan sendiri, dengan
-// tulisan "sisa sekian lagi", persis pola target berat di layar Habits.
+// Kartu 🎯 Target Langkah Mingguan — target jarak yang KAMU tentukan sendiri,
+// dengan tulisan "sisa sekian lagi", persis pola target berat di layar Habits.
 //
 // Bedanya dengan kartu "Target Sehat Mingguan" di bawahnya: yang itu ANJURAN
 // umum untuk orang dewasa (±150 menit aerobik + 2 hari strength). Yang ini
@@ -74,7 +74,7 @@ export function WeekTargetCard({ km }: { km: number }) {
     return (
       <PressableScale style={styles.card} onPress={bukaDialog}>
         <VixText heading="title" additionalStyle={styles.title}>
-          🎯 Target Mingguan
+          🎯 Target Langkah Mingguan
         </VixText>
         <VixText heading="label" additionalStyle={styles.hint}>
           Belum dipasang. Tentukan targetmu minggu ini — biar ada yang dikejar,
@@ -91,7 +91,7 @@ export function WeekTargetCard({ km }: { km: number }) {
     <PressableScale style={styles.card} onPress={bukaDialog}>
       <View style={styles.top}>
         <VixText heading="title" additionalStyle={styles.title}>
-          🎯 Target Mingguan
+          🎯 Target Langkah Mingguan
         </VixText>
         <VixText heading="subheader" additionalStyle={styles.value}>
           {formatDecimal(km)} / {formatDecimal(target.km)} km
@@ -113,7 +113,7 @@ export function WeekTargetCard({ km }: { km: number }) {
     return (
       <CenterDialog visible={open} onClose={() => setOpen(false)}>
         <VixText heading="title" additionalStyle={styles.dialogTitle}>
-          🎯 Target Mingguan
+          🎯 Target Langkah Mingguan
         </VixText>
         <VixText heading="label" additionalStyle={styles.dialogSub}>
           Berapa km yang mau kamu kejar dalam seminggu? Hitungannya mulai dari

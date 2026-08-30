@@ -199,7 +199,7 @@ export default function ReflectionFeedScreen() {
 
             {saved === `${design.key}|${text}` && (
               <VixText heading="label" additionalStyle={styles.savedNote}>
-                ✅ Tersimpan di Foto — di Instagram, dia foto yang paling baru.
+                ✅ Tersimpan di Photos
               </VixText>
             )}
           </ActionStack>

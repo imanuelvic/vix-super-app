@@ -644,6 +644,10 @@ export function HabitsTab({
                     : `${slotDone}/${list.length}`,
               subColor:
                 complete && !tuntas ? Color.DANGER : undefined,
+              // SELURUH tabnya ikut memerah, bukan cuma tulisan kecilnya —
+              // "❌ tak tuntas" di bawah label mudah terlewat waktu mata cuma
+              // menyapu deretan tab.
+              danger: complete && !tuntas,
             };
           })}
           value={activeSlot}
@@ -947,11 +951,22 @@ export function HabitsTab({
         <VixText heading="title" additionalStyle={styles.modalTitle}>
           Target Berat
         </VixText>
-        <VixText heading="label" additionalStyle={styles.modalHint}>
-          Rentang sehat (BMI 18,5–22,9) untuk {profile.heightCm} cm:{' '}
-          {formatDecimal(range.min)}–{formatDecimal(range.max)} kg. Kalau fokus
-          bangun otot, boleh di atas itu — jaga lingkar perut tetap &lt; 90 cm.
-        </VixText>
+        {/* Keterangan sekaligus PINTU. Rentang sehat ini dihitung dari TINGGI
+            BADAN-mu, dan tinggi badan cuma bisa diubah di satu tempat: Profile
+            → 🧍 Data Tubuh. Dulu angkanya muncul begitu saja tanpa memberi
+            tahu dari mana asalnya — kalau tingginya keliru, tidak ada petunjuk
+            ke mana harus membetulkannya. */}
+        <PressableScale
+          style={styles.targetHint}
+          onPress={() => {
+            setTargetOpen(false);
+            router.push({ pathname: '/profile', params: { tab: 'body' } });
+          }}>
+          <VixText heading="label" additionalStyle={styles.targetHintText}>
+            🧍 Sehat {formatDecimal(range.min)}–{formatDecimal(range.max)} kg
+            untuk {formatDecimal(profile.heightCm)} cm · ubah di Profile ›
+          </VixText>
+        </PressableScale>
         <FormInput
           placeholder="Target berat (kg)"
           keyboardType="decimal-pad"
@@ -1295,6 +1310,16 @@ const styles = StyleSheet.create({
   moveText: { color: Color.MAIN_DARK },
   error: { marginBottom: 8, marginTop: 6 },
   modalTitle: { marginBottom: 4 },
-  modalHint: { marginBottom: 10 },
+  // Keterangan rentang sehat di modal Target Berat — sekaligus pintu ke
+  // Profile › 🧍 Data Tubuh, jadi rupanya sengaja seperti baris yang bisa
+  // ditekan (latar samar + tulisan sewarna aksi), bukan teks mati.
+  targetHint: {
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+  },
+  targetHintText: { color: Color.MAIN_DARK },
   deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 12 },
 });

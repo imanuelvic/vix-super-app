@@ -289,21 +289,27 @@ export function VisitationTab({
           nama yang panjang jadi terjepit; lalu sempat menggantung persis di
           bawah tombol share, jadi mengambang di tengah kartu yang tinggi. */}
       <View style={styles.cardSide}>
-        {/* Kirim visitasi + panduan acaranya ke CORE Leader lewat WhatsApp.
-            Cuma emoji supaya tidak makan tempat. Latarnya menyala hijau pada
-            hari pengingat (H-3, atau H-14/7/3/2/1 untuk acara besar); badge di
-            Home & Dashboard tetap yang menagih. */}
-        <EmojiButton
-          icon="square.and.arrow.up"
-          active={perluKirim}
-          onPress={() => handleShare(v)}
-          busy={pdf.busy === v.id}
-          disabled={pdf.busy !== null}
-        />
-        {/* 🔗 muncul HANYA kalau ada Catatan Revive / Khotbah yang kamu
-            sambungkan ke acara ini dari fitur Spiritual — jadi ia benar-benar
-            berarti "ada bahan di dalam sini". */}
-        <LinkedNotesButton links={noteLinks} coreId={v.id} />
+        {/* Kedua tombol aksi kartu ini BERSEBELAHAN, bukan bertumpuk — dulu
+            keduanya bertumpuk, dan kartunya jadi tinggi sendiri hanya karena
+            ada bahan tersambung. Yang tersambung di KIRI, kirim di kanan:
+            membaca bahannya mendahului mengirimnya. */}
+        <View style={styles.cardActions}>
+          {/* Tombol bahan muncul HANYA kalau ada Catatan Revive / Khotbah yang
+              kamu sambungkan ke acara ini dari fitur Spiritual — jadi ia
+              benar-benar berarti "ada bahan di dalam sini". */}
+          <LinkedNotesButton links={noteLinks} coreId={v.id} />
+          {/* Kirim visitasi + panduan acaranya ke CORE Leader lewat WhatsApp.
+              Latarnya menyala hijau pada hari pengingat (H-3, atau
+              H-14/7/3/2/1 untuk acara besar); badge di Home & Dashboard tetap
+              yang menagih. */}
+          <EmojiButton
+            icon="square.and.arrow.up"
+            active={perluKirim}
+            onPress={() => handleShare(v)}
+            busy={pdf.busy === v.id}
+            disabled={pdf.busy !== null}
+          />
+        </View>
         <VisitationStatus visitation={v} tone={tone} days={days} />
       </View>
       </View>
@@ -601,6 +607,8 @@ const styles = StyleSheet.create({
   // kartu yang tinggi. Rata kanan supaya tulisan sepanjang apa pun tetap
   // sejajar dengan tombolnya.
   cardSide: { alignItems: 'flex-end', justifyContent: 'space-between', gap: 6 },
+  // Dua tombol aksi berdampingan (bahan tersambung 🔗 lalu kirim).
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tip: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
   // Footer modal filter: dua tombol (Bersihkan / Selesai).
   filterFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },

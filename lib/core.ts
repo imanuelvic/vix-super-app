@@ -4,7 +4,6 @@ import {
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -14,7 +13,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 import { pickCompressedImage } from './photo';
 
 // CORE — komunitas sel gereja. Pemilik app adalah MCL (Mentor CORE Leader)
@@ -807,25 +806,18 @@ export function subscribeMonthlyMeetings(
 ) {
   // orderBy satu field saja → tidak butuh composite index.
   const q = query(monthlyCollection(uid), orderBy('date', 'desc'), limit(60));
-  return onSnapshot(
-    q,
-    (snapshot) =>
-      onChange(
-        snapshot.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            title: (data.title as string) ?? '',
-            date: data.date as Timestamp,
-            place: (data.place as string) ?? '',
-            points: (data.points as Record<string, string>) ?? {},
-            // Notulen lama belum punya dokumentasi foto → daftar kosong.
-            photos: (data.photos as string[]) ?? [],
-          };
-        }),
-      ),
-    onError,
-  );
+  return liveList<MonthlyMeeting>(q, onChange, onError, (d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      title: (data.title as string) ?? '',
+      date: data.date as Timestamp,
+      place: (data.place as string) ?? '',
+      points: (data.points as Record<string, string>) ?? {},
+      // Notulen lama belum punya dokumentasi foto → daftar kosong.
+      photos: (data.photos as string[]) ?? [],
+    };
+  });
 }
 
 export function saveMonthlyMeeting(

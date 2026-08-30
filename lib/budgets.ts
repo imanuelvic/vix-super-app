@@ -1,8 +1,11 @@
 import {
+  collection,
   deleteField,
   doc,
   getDoc,
+  getDocs,
   setDoc,
+  updateDoc,
   type FirestoreError,
 } from 'firebase/firestore';
 
@@ -62,6 +65,65 @@ export function totalBudgetOf(
     total += allocations[budgetKey(type, c.key)] ?? 0;
   }
   return total;
+}
+
+// ===================== Alokasi yang sudah DIBUANG =====================
+//
+// Kategori & sub-budget yang benar-benar dihapus — bukan disembunyikan.
+// Alokasinya masih menempel di dokumen budget tiap bulan (map `allocations`),
+// dan angka yatim seperti itu bukan cuma sampah: begitu kategorinya lenyap
+// dari kode, nominalnya tak pernah lagi kelihatan di layar mana pun, tapi
+// tetap ikut tersalin tiap kali budget bulan baru menyalin bulan sebelumnya.
+//
+// Daftarnya SENGAJA ditulis satu per satu, bukan "apa pun yang tidak ada di
+// FINANCE_CATEGORIES". Aturan otomatis begitu terlihat pintar sampai suatu
+// hari sebuah key salah ketik — lalu ia menghapus budget yang masih dipakai,
+// diam-diam, tanpa bisa dikembalikan.
+export const REMOVED_BUDGET_KEYS: string[] = [
+  // Melebur jadi sub-kategori Residence (30 Agu 2026).
+  'expense:electricity',
+  'expense:water',
+  'expense:wifi',
+  'expense:maintenance',
+  // Sub-budget Residence yang ikut dibuang.
+  'expense:residence:iuran',
+  'expense:residence:water-heater',
+];
+
+/** Key ini termasuk yang dibuang? (kategorinya sendiri atau sub-budget-nya) */
+function isRemovedKey(key: string): boolean {
+  return REMOVED_BUDGET_KEYS.some((k) => key === k || key.startsWith(`${k}:`));
+}
+
+/**
+ * Hapus PERMANEN alokasi yang sudah dibuang, dari SELURUH bulan.
+ *
+ * Bukan soft-delete: nominalnya benar-benar hilang dari Firestore dan tidak
+ * bisa dikembalikan. Aman dijalankan berulang — bulan yang sudah bersih tidak
+ * ditulis ulang sama sekali, jadi pemanggilan kedua nol tulis.
+ *
+ * Mengembalikan berapa alokasi yang terhapus (0 = memang sudah bersih).
+ */
+export async function purgeRemovedBudgets(uid: string): Promise<number> {
+  const snapshot = await getDocs(collection(db, 'users', uid, 'budgets'));
+  let terhapus = 0;
+  for (const d of snapshot.docs) {
+    const allocations = (d.data().allocations as BudgetMap) ?? {};
+    const sisa: BudgetMap = {};
+    let buang = 0;
+    for (const [key, nilai] of Object.entries(allocations)) {
+      if (isRemovedKey(key)) buang++;
+      else sisa[key] = nilai;
+    }
+    if (buang === 0) continue;
+    // Seluruh map ditulis ulang tanpa key yang dibuang. Cara ini dipilih
+    // daripada deleteField() per key karena key-nya memuat ":" — di jalur
+    // field bertitik, tanda itu harus di-escape sendiri, dan salah escape
+    // berarti menghapus field yang salah.
+    await updateDoc(d.ref, { allocations: sisa });
+    terhapus += buang;
+  }
+  return terhapus;
 }
 
 /** "2026-07" — id dokumen budget per bulan. `month` 0–11 seperti Date JS. */

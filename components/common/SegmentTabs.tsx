@@ -24,6 +24,14 @@ export type SegmentTab<T extends string> = {
    * Kosong = ikut warna bawaan (ikut aktif/tidaknya tab).
    */
   subColor?: string;
+  /**
+   * true = SELURUH tabnya ikut memerah, bukan cuma keterangannya.
+   *
+   * Bedanya penting: tulisan merah kecil di bawah label mudah terlewat waktu
+   * mata cuma menyapu deretan tab. Kartunya yang memerah terbaca sebelum satu
+   * huruf pun dibaca — dan itulah gunanya penanda "tak tuntas".
+   */
+  danger?: boolean;
 };
 
 export function SegmentTabs<T extends string>({
@@ -66,13 +74,16 @@ function Segment<T extends string>({
     on.value = withTiming(active ? 1 : 0, { duration: 200 });
   }, [active, on]);
 
+  // Tab bertanda bahaya memakai pasangan warna MERAH-nya sendiri — tapi tetap
+  // ikut animasi aktif/tidaknya, jadi perpindahan tab terasa sama halusnya.
+  const diam = tab.danger ? Color.DANGER_TRANSPARENT : Color.CONTAINER;
+  const nyala = tab.danger ? Color.DANGER_TRANSPARENT : Color.MAIN_TRANSPARENT;
+  const tepiDiam = tab.danger ? Color.DANGER : Color.BORDER;
+  const tepiNyala = tab.danger ? Color.DANGER : Color.MAIN;
+
   const skin = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      on.value,
-      [0, 1],
-      [Color.CONTAINER, Color.MAIN_TRANSPARENT],
-    ),
-    borderColor: interpolateColor(on.value, [0, 1], [Color.BORDER, Color.MAIN]),
+    backgroundColor: interpolateColor(on.value, [0, 1], [diam, nyala]),
+    borderColor: interpolateColor(on.value, [0, 1], [tepiDiam, tepiNyala]),
   }));
 
   return (
@@ -84,7 +95,11 @@ function Segment<T extends string>({
         heading="bold"
         numberOfLines={1}
         adjustsFontSizeToFit
-        additionalStyle={[styles.label, active && styles.labelActive]}>
+        additionalStyle={[
+          styles.label,
+          active && styles.labelActive,
+          tab.danger && styles.labelDanger,
+        ]}>
         {tab.label}
       </VixText>
       {tab.sub ? (
@@ -117,6 +132,7 @@ const styles = StyleSheet.create({
   },
   label: { color: Color.TEXT_LABEL },
   labelActive: { color: Color.MAIN_DARK },
+  labelDanger: { color: Color.DANGER },
   sub: { color: Color.TEXT_PLACEHOLDER },
   subActive: { color: Color.MAIN },
 });

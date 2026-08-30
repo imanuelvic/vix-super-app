@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { Greeting } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
@@ -129,6 +130,11 @@ import {
   subscribeChoreStatus,
   type ChoreStatusMap,
 } from '@/lib/residence';
+import {
+  sermonShareDue,
+  subscribeSermons,
+  type SermonNote,
+} from '@/lib/sermon';
 import { billUnsettled, subscribeBills, type Bill } from '@/lib/social';
 import {
   activeNudge,
@@ -153,7 +159,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 17;
+const BADGE_SOURCES = 18;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -226,6 +232,8 @@ export default function HomeScreen() {
   // Periode puasa 🍽️ — untuk kartu centang malam. null = belum termuat, jadi
   // kartunya tidak sempat berkedip sebelum datanya sampai.
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[] | null>(null);
+  // Catatan khotbah — untuk kartu "Kirim Catatan Khotbah" tiap Kamis siang.
+  const [sermons, setSermons] = useState<SermonNote[]>([]);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
   // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
@@ -259,6 +267,7 @@ export default function HomeScreen() {
       // sub-tab Follow Up (lihat coreAttention di lib/core.ts).
       subscribeMainTeam(user.uid, mark('mainTeam', setMainTeam)),
       subscribeBirthdayGreets(user.uid, mark('greets', setGreets)),
+      subscribeSermons(user.uid, mark('sermons', setSermons)),
       subscribeReviveStreak(user.uid, mark('revive', setRevive)),
       subscribePartStatus(user.uid, mark('carParts', setCarParts)),
       subscribeRoadmap(user.uid, mark('roadmap', setRoadmap)),
@@ -394,6 +403,9 @@ export default function HomeScreen() {
   // harinya dijalani, bukan di tengahnya, jadi tagihannya memang malam.
   // Hilang begitu hari itu dijawab — berhasil ✅ maupun ❌ gagal.
   const fastingDue = fastingCheckDue(fastingPlans ?? [], now, todayId);
+
+  // Kirim catatan khotbah 📤 — Kamis 12.00–14.00, kalau catatannya memang ada.
+  const sermonDue = badgesReady ? sermonShareDue(sermons, now) : null;
 
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
   // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
@@ -594,6 +606,20 @@ export default function HomeScreen() {
                 title="🕊️ Reminder"
                 texts={[nudge]}
                 onPress={() => setNudgeSeen(nudge)}
+                // 📤 Jadikan gambar persegi lalu kirim ke WhatsApp. Kalimatnya
+                // DIOPER, bukan diundi ulang di layar sana — yang dibagikan
+                // harus persis kalimat yang barusan kamu baca di sini.
+                right={
+                  <EmojiButton
+                    emoji="📤"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/reminder-share',
+                        params: { text: nudge },
+                      })
+                    }
+                  />
+                }
               />
             </Animated.View>
           )}
@@ -618,6 +644,33 @@ export default function HomeScreen() {
                 }))}
                 onPress={() =>
                   router.push({ pathname: '/core', params: { tab: 'followup' } })
+                }
+              />
+            </Animated.View>
+          )}
+
+          {/* Kirim Catatan Khotbah 📤 — cuma KAMIS jam 12.00–14.00, dan cuma
+              kalau catatan Minggu kemarin memang sudah ditulis. Click →
+              halaman catatannya, tempat tombol "💬 Share ke WhatsApp"-nya
+              berada. Catatannya sudah jadi arsip sejak Selasa, jadi yang
+              dibagikan pasti versi finalnya. */}
+          {sermonDue && (
+            <Animated.View
+              entering={FadeInDown.delay(40).duration(350)}
+              style={styles.sermonCard}>
+              <ReminderCard
+                bg={Color.SPIRITUAL}
+                fg={Color.SPIRITUAL_DARK}
+                title="📤 Kirim Catatan Khotbah"
+                texts={[
+                  sermonDue.title,
+                  'Bagikan ke CORE Leader lewat WhatsApp 💬',
+                ]}
+                onPress={() =>
+                  router.push({
+                    pathname: '/sermon',
+                    params: { id: sermonDue.id },
+                  })
                 }
               />
             </Animated.View>
@@ -852,6 +905,7 @@ const styles = StyleSheet.create({
   nudgeCard: { marginBottom: 10 },
   // Follow Up pagi — jaraknya sama dengan kartu reminder lain di kolom ini.
   followupCard: { marginBottom: 10 },
+  sermonCard: { marginBottom: 10 },
   // Diskusi siang — jaraknya sama dengan kartu reminder lain di kolom ini.
   discussionCard: { marginBottom: 10 },
   intercessionCard: { marginBottom: 10 },

@@ -3,7 +3,6 @@ import {
   deleteDoc,
   doc,
   limit,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -11,6 +10,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 import { dayIdToDate } from './format';
 import { dayDocId } from './health';
 
@@ -152,27 +152,19 @@ export function subscribeFastingPlans(
 ) {
   // orderBy satu field saja → tidak butuh composite index.
   const q = query(plansRef(uid), orderBy('startId', 'desc'), limit(50));
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      onChange(
-        snapshot.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            title: (data.title as string) ?? '',
-            prayer: (data.prayer as string) ?? '',
-            rules: (data.rules as string) ?? '',
-            answer: (data.answer as string) ?? '',
-            startId: (data.startId as string) ?? '',
-            endId: (data.endId as string) ?? '',
-            days: (data.days as Record<string, FastingDay>) ?? {},
-          };
-        }),
-      );
-    },
-    onError,
-  );
+  return liveList<FastingPlan>(q, onChange, onError, (d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      title: (data.title as string) ?? '',
+      prayer: (data.prayer as string) ?? '',
+      rules: (data.rules as string) ?? '',
+      answer: (data.answer as string) ?? '',
+      startId: (data.startId as string) ?? '',
+      endId: (data.endId as string) ?? '',
+      days: (data.days as Record<string, FastingDay>) ?? {},
+    };
+  });
 }
 
 /** Simpan/ubah keterangan periode puasa (tanpa menyentuh catatan harian). */

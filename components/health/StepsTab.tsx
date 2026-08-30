@@ -34,9 +34,21 @@ import {
 import { readRecentDailySteps } from '@/lib/healthkit';
 
 // Tab Steps 👣 — langkah hari ini dari Apple Health, plus akumulasi MINGGUAN
-// (Senin–Minggu, reset sendiri tiap Senin karena hanya menjumlah 7 dayId
-// minggu berjalan) dan BULANAN ala tantangan Strava. Jarak dipakai supaya
+// (Senin–Minggu) dan BULANAN ala tantangan Strava. Jarak dipakai supaya
 // pencapaiannya memakai patokan yang dikenal pelari (5K, Long Run, dst).
+//
+// ── Kapan angkanya mulai dari nol lagi ────────────────────────────────────
+// Tiap kartu di layar ini punya periodenya sendiri, dan dulu itu cuma
+// tersirat dari judulnya — "Minggu Ini" tidak memberi tahu apakah minggunya
+// mulai Senin atau Minggu, dan "hari ini" tidak memberi tahu jam berapa ia
+// berganti. Sekarang tiap kartu menuliskannya sendiri.
+//
+// Resetnya sendiri tidak butuh tugas latar apa pun: yang dijumlah cuma dayId
+// yang termasuk periode berjalan, jadi begitu tanggalnya bergeser, hitungannya
+// otomatis mulai dari nol. Tidak ada yang bisa lupa berjalan.
+const RESET_HARIAN = '🔄 Mulai lagi tiap hari, jam 00.00';
+const RESET_MINGGUAN = '🔄 Mulai lagi tiap Senin';
+const RESET_BULANAN = '🔄 Mulai lagi tiap tanggal 1';
 export function StepsTab({
   profile,
   stepDays,
@@ -101,6 +113,8 @@ export function StepsTab({
   const thisWeekGym = weeks[weekStartId(now)]?.gym ?? 0;
 
   const todayKm = stepsToKm(todaySteps, height);
+  // Patokan harian yang BELUM tembus — itu yang masih berguna dilihat.
+  const belumTembus = RUN_DAY_MILESTONES.filter((m) => todayKm < m.km);
   const dayHit = runMilestoneOf(todayKm, RUN_DAY_MILESTONES);
   const weekHit = runMilestoneOf(weekKm, RUN_WEEK_MILESTONES);
   const monthHit = runMilestoneOf(monthKm, RUN_MONTH_MILESTONES);
@@ -134,6 +148,9 @@ export function StepsTab({
           ≈ {formatDecimal(todayKm)} km
           {dayHit ? `  ·  ${dayHit.emoji} ${dayHit.label}` : ''}
         </VixText>
+        <VixText heading="label" additionalStyle={summaryText.label}>
+          {RESET_HARIAN}
+        </VixText>
       </SummaryCard>
 
       {/* ===== Target MINGGUAN milikmu sendiri =====
@@ -142,20 +159,26 @@ export function StepsTab({
           jam 00.00, sama seperti akumulasi mingguannya. */}
       <WeekTargetCard km={weekKm} />
 
-      {/* ===== Minggu ini (Senin–Minggu, reset tiap Senin) ===== */}
+      {/* ===== Minggu ini (Senin–Minggu) ===== */}
       <MileageCard
         title="📅 Minggu Ini"
+        reset={RESET_MINGGUAN}
         km={weekKm}
         steps={weekTotal}
         hit={weekHit}
         milestones={RUN_WEEK_MILESTONES}
       />
 
-      {/* Anjuran kesehatan umum — BUKAN target pribadi (itu kartu di atas). */}
+      {/* Anjuran kesehatan umum — BUKAN target pribadi (itu kartu di atas).
+          Periodenya sama dengan kartu Minggu Ini, jadi keterangan resetnya
+          cukup satu baris di sini juga. */}
       <View style={styles.card}>
-        <VixText heading="title" additionalStyle={styles.cardTitle}>
-          🩺 Anjuran Kesehatan
-        </VixText>
+        <View style={styles.cardHeader}>
+          <VixText heading="title">🩺 Anjuran Kesehatan</VixText>
+          <VixText heading="label" additionalStyle={styles.resetText}>
+            {RESET_MINGGUAN}
+          </VixText>
+        </View>
         <GoalRow
           label="🚶 Aktivitas aerobik"
           value={weekTotal}
@@ -173,34 +196,40 @@ export function StepsTab({
       {/* ===== Bulan ini (tantangan ala Strava) ===== */}
       <MileageCard
         title={`🗓️ ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`}
+        reset={RESET_BULANAN}
         km={monthKm}
         steps={monthTotal}
         hit={monthHit}
         milestones={RUN_MONTH_MILESTONES}
       />
 
-      {/* ===== Patokan jarak harian ala pelari ===== */}
+      {/* ===== Patokan jarak harian ala pelari =====
+          Yang SUDAH tembus hari ini tidak ditampilkan lagi — daftarnya jadi
+          "sisa yang bisa dikejar", bukan tujuh baris tetap yang setengahnya
+          cuma centang. Kalau semuanya tembus, barulah satu baris perayaan. */}
       <View style={styles.card}>
-        <VixText heading="title" additionalStyle={styles.cardTitle}>
-          🏃 Patokan Jarak Harian
-        </VixText>
-        {RUN_DAY_MILESTONES.map((m) => {
-          const reached = todayKm >= m.km;
-          return (
+        <View style={styles.cardHeader}>
+          <VixText heading="title">🏃 Patokan Jarak Harian</VixText>
+          <VixText heading="label" additionalStyle={styles.resetText}>
+            {RESET_HARIAN}
+          </VixText>
+        </View>
+        {belumTembus.length === 0 ? (
+          <VixText heading="bold" additionalStyle={styles.msValueOn}>
+            🎉 Semua patokan hari ini sudah tembus!
+          </VixText>
+        ) : (
+          belumTembus.map((m) => (
             <View key={m.label} style={styles.msRow}>
-              <VixText
-                heading="bold"
-                additionalStyle={reached ? styles.msLabelOn : styles.msLabel}>
+              <VixText heading="bold" additionalStyle={styles.msLabel}>
                 {m.emoji} {m.label}
               </VixText>
-              <VixText
-                heading="bold"
-                additionalStyle={reached ? styles.msValueOn : styles.msValue}>
-                {reached ? '✅' : `${formatDecimal(m.km)} km`}
+              <VixText heading="bold" additionalStyle={styles.msValue}>
+                kurang {formatDecimal(m.km - todayKm)} km
               </VixText>
             </View>
-          );
-        })}
+          ))
+        )}
         <VixText heading="label" additionalStyle={styles.hint}>
           Jarak diperkirakan dari langkah × panjang langkah (±
           {formatDecimal(strideMeters(profile.heightCm) * 100)} cm untuk tinggi{' '}
@@ -213,14 +242,22 @@ export function StepsTab({
 }
 
 // Kartu akumulasi (mingguan / bulanan) + bar menuju patokan berikutnya.
+//
+// Isinya sengaja tinggal TIGA hal: berapa jauh, berapa langkah, dan tinggal
+// berapa lagi menuju patokan berikutnya. Baris "sudah tercapai" digabung ke
+// baris langkahnya — dulu ia berdiri sendiri, dan kartunya jadi empat baris
+// tulisan yang sebagian mengulang hal yang sama.
 function MileageCard({
   title,
+  reset,
   km,
   steps,
   hit,
   milestones,
 }: {
   title: string;
+  /** Kapan angkanya mulai dari nol lagi — mis. "🔄 Mulai lagi tiap Senin". */
+  reset: string;
   km: number;
   steps: number;
   hit: { km: number; emoji: string; label: string } | null;
@@ -238,17 +275,16 @@ function MileageCard({
           {formatDecimal(km)} km
         </VixText>
       </View>
-      {/* Keterangan "Senin–Minggu · mulai dari 0 lagi tiap Senin" &
-          "Tantangan bulanan" dibuang (30 Agu 2026): judulnya sendiri sudah
-          bilang periodenya, dan dua baris keterangan di tiap kartu bikin
-          layarnya penuh tulisan yang tidak pernah dibaca lagi. */}
-      <VixText heading="label" additionalStyle={styles.subText}>
-        👣 {groupDigits(String(steps))} langkah
-        {hit ? `  ·  ${hit.emoji} ${hit.label} tercapai` : ''}
+      <VixText heading="label" additionalStyle={styles.resetText}>
+        {reset}
       </VixText>
       <View style={styles.barTrack}>
         <View style={[styles.barFill, { width: `${pct}%` }]} />
       </View>
+      <VixText heading="label" additionalStyle={styles.subText}>
+        👣 {groupDigits(String(steps))} langkah
+        {hit ? `  ·  ${hit.emoji} ${hit.label}` : ''}
+      </VixText>
       <VixText heading="label" additionalStyle={styles.subText}>
         {next
           ? `Menuju ${next.emoji} ${next.label} — kurang ${formatDecimal(next.km - km)} km`
@@ -323,8 +359,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
-  cardTitle: { marginBottom: 4 },
   kmText: { color: Color.MAIN_DARK },
+  // Keterangan periode reset — sengaja sewarna & seukuran keterangan lain,
+  // supaya ia terbaca sebagai catatan kecil, bukan bagian dari angkanya.
+  resetText: { color: Color.TEXT_LABEL },
   subText: { color: Color.TEXT_LABEL, marginBottom: 2 },
   barTrack: {
     height: 8,
