@@ -5,7 +5,7 @@ import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { categoryOf } from '@/lib/categories';
-import { formatShortDayDate, monthLabel } from '@/lib/format';
+import { formatShortDayDate, monthLabel, sameMonth } from '@/lib/format';
 import { formatRupiah, type Transaction } from '@/lib/transactions';
 
 // Tab Log 🧾 — pengeluaran soal perangkat, BACA-SAJA.
@@ -28,12 +28,7 @@ export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) 
     for (const t of transactions) {
       const d = t.date.toDate();
       total += t.amount;
-      if (
-        d.getFullYear() === now.getFullYear() &&
-        d.getMonth() === now.getMonth()
-      ) {
-        bulanIni += t.amount;
-      }
+      if (sameMonth(d, now)) bulanIni += t.amount;
     }
     return { bulanIni, total };
     // eslint-disable-next-line react-hooks/exhaustive-deps

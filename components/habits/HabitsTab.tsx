@@ -70,9 +70,6 @@ import {
 import { openExternalUrl } from '@/lib/linking';
 import { SAVE_ERROR } from '@/lib/messages';
 
-// Tab Habits: kebiasaan harian (sama tiap hari) dibagi 3 sesi
-// Pagi/Siang/Malam — bisa ditambah, di-rename, diurutkan, & dihapus. Plus
-// ring progress + streak 🔥, air minum 💧, dan target berat 🎯.
 export function HabitsTab({
   habits,
   day,
@@ -227,7 +224,6 @@ export function HabitsTab({
   // bukan lagi "berapa dari 39 tercentang".
   const score = dailyScore(habits, day.done, day.skipped);
   const areas = areaProgress(habits, day.done, day.skipped);
-  const keptCount = areas.filter((a) => a.kept).length;
   const coreAllDone = coreDone(habits, day.done, day.skipped);
 
   // Streak 🔥 bisa jadi lengkap dari LUAR layar ini: olahraga dicentang di
@@ -305,8 +301,6 @@ export function HabitsTab({
     const nextChecked = !day.done[habit.id];
     try {
       await setHabitDone(user.uid, dayId, habit.id, nextChecked);
-      // Streak naik saat seluruh kebiasaan 🟢 INTI hari ini beres — bukan
-      // menunggu ke-39 semuanya tercentang (itu praktis mustahil).
       if (nextChecked) {
         const nextDone = { ...day.done, [habit.id]: true };
         if (coreDone(habits, nextDone, day.skipped)) {
@@ -519,32 +513,18 @@ export function HabitsTab({
             digeser ke SAMPING ring, supaya daftar kebiasaan di bawah dapat
             ruang scroll yang lega. */}
         <View style={styles.statsRow}>
-          {/* Skor 0–10 murni dari kebiasaan 🟢 Inti — Pendukung & Opsional
-              tidak menambah angka ini (lihat `dailyScore`). */}
           <View style={styles.heroCard}>
             <DonutChart
-              size={64}
+              size={66}
               thickness={8}
               slices={[
                 { value: score, color: Color.MAIN_LIGHT },
                 { value: 10 - score, color: Color.MAIN },
               ]}>
-              <VixText heading="title" additionalStyle={styles.heroRingText}>
-                {score}
-              </VixText>
-              {/* 🟢 = penanda skor ini hanya naik dari kebiasaan Inti */}
               <VixText heading="label" additionalStyle={styles.heroRingSub}>
-                🟢/10
+                {score}/10
               </VixText>
             </DonutChart>
-            <View style={styles.heroSide}>
-              <VixText heading="bold" additionalStyle={styles.heroSideValue}>
-                {keptCount}/5
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.heroRingSub}>
-                area streak🔥
-              </VixText>
-            </View>
           </View>
 
           {/* Seluruh kartu = tombol ubah/pasang target. Judul "🎯 Target" &
@@ -680,10 +660,6 @@ export function HabitsTab({
             // tercentang (tanda done-nya memang ikut dilepas saat di-skip).
             const skipped = !!day.skipped[habit.id];
             const checked = !skipped && !!day.done[habit.id];
-            // Kebiasaan INTI = yang menentukan streak 🔥. Penandanya sekarang
-            // tulisannya sendiri yang TEBAL — dulu lambang berwarna 🟢🟡⚪ di
-            // depan tiap baris, dan arti ketiganya harus dihafal dulu sebelum
-            // berguna. Tebal/tidak tebal langsung terbaca tanpa kunci apa pun.
             const inti = isCoreHabit(habit);
             // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
             // dapat keterangan kecil + click yang langsung ke sana.
@@ -1157,11 +1133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  heroRingText: { color: Color.TEXT_REVERSE },
   heroRingSub: { color: Color.TEXT_ON_DARK_MUTED },
-  heroSide: { flex: 1 },
-  heroSideValue: { color: Color.TEXT_REVERSE },
-  // Lima area hidup — hijau muda kalau kebiasaan intinya sudah beres.
   areaRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
   areaChip: {
     flex: 1,
@@ -1201,7 +1173,7 @@ const styles = StyleSheet.create({
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: Color.BORDER,
+    borderColor: Color.MAIN_DARK,
     padding: 14,
     gap: 8,
   },

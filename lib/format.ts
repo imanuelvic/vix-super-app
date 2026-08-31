@@ -123,6 +123,24 @@ export function startOfDay(d: Date): Date {
 }
 
 /**
+ * Dua tanggal jatuh di BULAN yang sama? Tahunnya ikut dibandingkan, jadi
+ * Agustus tahun lalu TIDAK sama dengan Agustus tahun ini.
+ *
+ * Itulah jebakannya, dan itu sebabnya pemeriksaan ini pantas jadi satu fungsi:
+ * penyaring "bulan ini" tersebar di Car, Device (×2), Residence (×2), & Token,
+ * semuanya ditulis ulang dari nol — cukup satu yang lupa membandingkan tahun,
+ * dan total "bulan ini" diam-diam ikut menjumlah bulan yang sama tahun lalu.
+ */
+export function sameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+/** Dua tanggal jatuh di HARI yang sama (jam & menitnya diabaikan). */
+export function sameDay(a: Date, b: Date): boolean {
+  return sameMonth(a, b) && a.getDate() === b.getDate();
+}
+
+/**
  * Selisih HARI KALENDER antara dua tanggal (`to` − `from`), mengabaikan jam.
  * Positif = `to` di masa depan, 0 = hari yang sama, negatif = sudah lewat.
  * Dipakai untuk semua hitungan "x hari lagi" / "lewat x hari".

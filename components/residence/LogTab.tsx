@@ -5,7 +5,7 @@ import { Color } from '@/assets/style/color';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { formatDate, monthLabel } from '@/lib/format';
+import { formatDate, monthLabel, sameMonth } from '@/lib/format';
 import {
   RESIDENCE_LOG_TYPES,
   type ResidenceLog,
@@ -37,13 +37,7 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
   const monthTotal = useMemo(
     () =>
       logs
-        .filter((l) => {
-          const d = l.date.toDate();
-          return (
-            d.getFullYear() === now.getFullYear() &&
-            d.getMonth() === now.getMonth()
-          );
-        })
+        .filter((l) => sameMonth(l.date.toDate(), now))
         .reduce((sum, l) => sum + l.cost, 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [logs],

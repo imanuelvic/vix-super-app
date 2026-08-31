@@ -126,14 +126,14 @@ const TAB_TITLE: Record<Tab, string> = {
 // Empat lingkaran Ikigai — warna pastel berbeda biar gampang dibedakan.
 const IKIGAI: Quadrant<'love' | 'goodAt' | 'worldNeeds' | 'paidFor'>[] = [
   { key: 'love', emoji: '❤️', title: 'Yang Kamu CINTAI', hint: 'Apa yang bikin kamu lupa waktu saat mengerjakannya?', bg: Color.FINANCE_EXPENSE, fg: Color.FINANCE_EXPENSE_DARK },
-  { key: 'goodAt', emoji: '💪', title: 'Yang Kamu KUASAI', hint: 'Apa yang orang sering minta tolong ke kamu?', bg: Color.FUN, fg: Color.FUN_DARK },
+  { key: 'goodAt', emoji: '💪', title: 'Yang Kamu KUASAI', hint: 'Apa yang orang sering minta tolong ke kamu?', bg: Color.GREEN_SOFT, fg: Color.GREEN_SOFT_DARK },
   { key: 'worldNeeds', emoji: '🌍', title: 'Yang DIBUTUHKAN Dunia', hint: 'Masalah apa di sekitarmu yang bikin kamu gelisah?', bg: Color.FINANCE_INVESTMENT, fg: Color.FINANCE_INVESTMENT_DARK },
   { key: 'paidFor', emoji: '💰', title: 'Yang Bisa DIBAYAR', hint: 'Keahlian apa yang orang mau bayar untuk itu?', bg: Color.ACCENT, fg: Color.ACCENT_DARK },
 ];
 
 // Empat kotak SWOT — dua ke dalam (S/W), dua ke luar (O/T).
 const SWOT: Quadrant<'strengths' | 'weaknesses' | 'opportunities' | 'threats'>[] = [
-  { key: 'strengths', emoji: '💚', title: 'Strengths — Kekuatan', hint: 'Apa keunggulanmu dibanding orang lain?', bg: Color.FUN, fg: Color.FUN_DARK },
+  { key: 'strengths', emoji: '💚', title: 'Strengths — Kekuatan', hint: 'Apa keunggulanmu dibanding orang lain?', bg: Color.GREEN_SOFT, fg: Color.GREEN_SOFT_DARK },
   { key: 'weaknesses', emoji: '🧡', title: 'Weaknesses — Kelemahan', hint: 'Apa yang masih jadi PR-mu, jujur saja.', bg: Color.CAREER, fg: Color.ACCENT_DARK },
   { key: 'opportunities', emoji: '💙', title: 'Opportunities — Peluang', hint: 'Peluang apa yang terbuka buatmu tahun ini?', bg: Color.FINANCE_INVESTMENT, fg: Color.FINANCE_INVESTMENT_DARK },
   { key: 'threats', emoji: '❤️', title: 'Threats — Ancaman', hint: 'Apa yang bisa menggagalkan rencanamu?', bg: Color.FINANCE_EXPENSE, fg: Color.FINANCE_EXPENSE_DARK },

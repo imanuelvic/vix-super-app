@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { formatShortDayDate, monthLabel } from '@/lib/format';
+import { formatShortDayDate, monthLabel, sameMonth } from '@/lib/format';
 import { RESIDENCE_LOG_TYPES } from '@/lib/residence';
 import {
   formatRupiah,
@@ -20,8 +20,6 @@ export function UtilityTab({
   const now = new Date();
 
   const { waterMonth, electricMonth, lastWater, lastElectric } = useMemo(() => {
-    const sameMonth = (d: Date) =>
-      d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     let waterMonth = 0;
     let electricMonth = 0;
     let lastWater: Transaction | undefined;
@@ -36,10 +34,10 @@ export function UtilityTab({
       const d = t.date.toDate();
       const jenis = utilityKindOf(t);
       if (jenis === 'water') {
-        if (sameMonth(d)) waterMonth += t.amount;
+        if (sameMonth(d, now)) waterMonth += t.amount;
         if (!lastWater) lastWater = t;
       } else if (jenis === 'electric') {
-        if (sameMonth(d)) electricMonth += t.amount;
+        if (sameMonth(d, now)) electricMonth += t.amount;
         if (!lastElectric) lastElectric = t;
       }
     }

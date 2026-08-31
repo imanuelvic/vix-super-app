@@ -28,6 +28,7 @@ import {
   groupDigits,
   parseAmount,
   parseDecimal,
+  sameMonth,
 } from '@/lib/format';
 import { useFormSave } from '@/hooks/useFormSave';
 import { formatRupiah } from '@/lib/transactions';
@@ -56,13 +57,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
   const stats = useMemo(() => {
     const totalAll = items.reduce((sum, i) => sum + i.cost, 0);
     const totalMonth = items
-      .filter((i) => {
-        const d = i.date.toDate();
-        return (
-          d.getFullYear() === now.getFullYear() &&
-          d.getMonth() === now.getMonth()
-        );
-      })
+      .filter((i) => sameMonth(i.date.toDate(), now))
       .reduce((sum, i) => sum + i.cost, 0);
     return {
       totalAll,

@@ -361,7 +361,8 @@ export default function BibleReadingScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  dateLine: { marginTop: 2 },
+  // Ikut warna pita header ungu di belakangnya.
+  dateLine: { marginTop: 2, color: Color.SPIRITUAL_DARK },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
   // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.

@@ -160,8 +160,8 @@ export function PersonalityTab({ data }: { data: Personality }) {
         title="Temperamen"
         value={temp?.label ?? null}
         sub={temp?.sub}
-        bg={Color.FUN}
-        fg={Color.FUN_DARK}
+        bg={Color.GREEN_SOFT}
+        fg={Color.GREEN_SOFT_DARK}
         onPress={openEdit}
       />
 

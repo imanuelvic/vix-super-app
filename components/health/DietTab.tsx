@@ -184,7 +184,7 @@ export function DietTab({
             size={104}
             thickness={12}
             slices={[
-              { value: Math.min(totals.kcal, goal.kcal), color: Color.FUN },
+              { value: Math.min(totals.kcal, goal.kcal), color: Color.GREEN_SOFT },
               { value: Math.max(goal.kcal - totals.kcal, 0), color: Color.MAIN },
             ]}>
             <VixText heading="title" additionalStyle={styles.heroRing}>
@@ -624,16 +624,16 @@ const styles = StyleSheet.create({
   comboBox: { gap: 8 },
   comboHint: { color: Color.TEXT_LABEL },
   comboButton: {
-    backgroundColor: Color.FUN,
+    backgroundColor: Color.GREEN_SOFT,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Color.FUN_DARK,
+    borderColor: Color.GREEN_SOFT_DARK,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 1,
   },
   comboTitle: { color: Color.TEXT_TITLE },
-  comboSub: { color: Color.FUN_DARK },
+  comboSub: { color: Color.GREEN_SOFT_DARK },
   mealRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -2,6 +2,7 @@ import { doc, setDoc, Timestamp, type FirestoreError } from 'firebase/firestore'
 
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
+import { sameDay, sameMonth } from './format';
 
 // Token listrik ⚡ — versi aplikasi dari spreadsheet "Electric Token".
 //
@@ -195,10 +196,9 @@ export function spansOfMonth(
   year: number,
   month: number,
 ): UsageSpan[] {
-  return spans.filter((s) => {
-    const d = s.to.at.toDate();
-    return d.getFullYear() === year && d.getMonth() === month;
-  });
+  // Tanggal acuannya dibuat SEKALI di luar penyaring, bukan tiap entri.
+  const acuan = new Date(year, month, 1);
+  return spans.filter((s) => sameMonth(s.to.at.toDate(), acuan));
 }
 
 export type UsageSummary = {
@@ -256,10 +256,8 @@ export function purchasesOfMonth(
   year: number,
   month: number,
 ): TokenPurchase[] {
-  return purchases.filter((p) => {
-    const d = p.date.toDate();
-    return d.getFullYear() === year && d.getMonth() === month;
-  });
+  const acuan = new Date(year, month, 1);
+  return purchases.filter((p) => sameMonth(p.date.toDate(), acuan));
 }
 
 export function totalCost(purchases: TokenPurchase[]): number {
@@ -290,13 +288,6 @@ export const TOKEN_LOW_DAYS = 3;
  * — app ini memang tidak punya keduanya.
  */
 export function readingDue(readings: MeterReading[], now: Date): boolean {
-  const hariIni = readings.filter((r) => {
-    const d = r.at.toDate();
-    return (
-      d.getFullYear() === now.getFullYear() &&
-      d.getMonth() === now.getMonth() &&
-      d.getDate() === now.getDate()
-    );
-  });
+  const hariIni = readings.filter((r) => sameDay(r.at.toDate(), now));
   return hariIni.length < 2;
 }

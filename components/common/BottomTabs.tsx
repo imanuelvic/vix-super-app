@@ -14,6 +14,7 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 
 type IconName = ComponentProps<typeof IconSymbol>['name'];
 
@@ -44,6 +45,10 @@ export function withBadge<T extends string>(
 // satu komponen untuk semua, biar gaya & perilakunya seragam.
 // Badge memakai bentuk yang sama dengan badge tile di Home: bulat merah,
 // >9 jadi "9+", 0 = tidak ditampilkan (tanda hari ini beres 🎉).
+//
+// Sub-menu yang sedang dibuka memakai WARNA FITURNYA (pil pastel + ikon &
+// tulisan gelap senada) — pasangan warna yang sama dengan pita header di atas
+// layar, jadi fiturnya terbingkai warna itu dari kepala sampai kaki.
 export function BottomTabs<T extends string>({
   tabs,
   value,
@@ -53,6 +58,7 @@ export function BottomTabs<T extends string>({
   value: T;
   onChange: (key: T) => void;
 }) {
+  const theme = useFeatureTheme();
   // Pita di BAWAH tab bar (area home indicator iPhone) ikut jadi putih.
   //
   // Dulu pita itu berwarna krem: layar fiturnya memakai SafeAreaView
@@ -78,6 +84,8 @@ export function BottomTabs<T extends string>({
           key={t.key}
           tab={t}
           active={value === t.key}
+          bg={theme.bg}
+          fg={theme.fg}
           onPress={() => onChange(t.key)}
         />
       ))}
@@ -91,10 +99,14 @@ export function BottomTabs<T extends string>({
 function Tab<T extends string>({
   tab,
   active,
+  bg,
+  fg,
   onPress,
 }: {
   tab: BottomTab<T>;
   active: boolean;
+  bg: string;
+  fg: string;
   onPress: () => void;
 }) {
   const jump = useSharedValue(0);
@@ -121,12 +133,18 @@ function Tab<T extends string>({
   return (
     <PressableScale style={styles.tabButton} onPress={onPress}>
       <View>
+        {/* Pil pastel di belakang ikon yang sedang aktif — penanda "kamu di
+            sini" yang terbaca sebelum warnanya sempat dibandingkan, dan
+            sekaligus membawa warna fitur turun ke kaki layar. */}
+        {active && (
+          <View style={[styles.activePill, { backgroundColor: bg }]} />
+        )}
         {/* Hanya ikonnya yang melompat; badge tetap diam di pojok. */}
         <Animated.View style={iconStyle}>
           <IconSymbol
             name={tab.icon}
             size={24}
-            color={active ? Color.MAIN : Color.TEXT_LABEL}
+            color={active ? fg : Color.TEXT_LABEL}
           />
         </Animated.View>
         {!!tab.badge && tab.badge > 0 && (
@@ -144,7 +162,7 @@ function Tab<T extends string>({
         heading="label"
         numberOfLines={1}
         adjustsFontSizeToFit
-        additionalStyle={active ? styles.active : undefined}>
+        additionalStyle={active ? { color: fg } : undefined}>
         {tab.label}
       </VixText>
     </PressableScale>
@@ -162,7 +180,16 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   tabButton: { flex: 1, alignItems: 'center', gap: 2 },
-  active: { color: Color.MAIN },
+  // Pil di BELAKANG ikon (posisi mutlak, melebar keluar dari kotak ikon 24pt)
+  // supaya menambahkannya tidak menggeser tinggi tab sedikit pun.
+  activePill: {
+    position: 'absolute',
+    top: -5,
+    bottom: -5,
+    left: -14,
+    right: -14,
+    borderRadius: 999,
+  },
   badge: {
     position: 'absolute',
     top: -6,

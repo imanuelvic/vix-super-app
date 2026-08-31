@@ -303,7 +303,7 @@ export default function WheelScreen() {
         {mode === 'overview' && (
           <View style={styles.quarterRow}>
             <PressableScale onPress={() => shift(-1)} hitSlop={10}>
-              <IconSymbol name="chevron.left" size={20} color={Color.MAIN} />
+              <IconSymbol name="chevron.left" size={20} color={Color.WHEEL_DARK} />
             </PressableScale>
             {/* Tekan label kuartal → balik ke kuartal berjalan */}
             <PressableScale
@@ -317,7 +317,7 @@ export default function WheelScreen() {
               </VixText>
             </PressableScale>
             <PressableScale onPress={() => shift(1)} hitSlop={10}>
-              <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
+              <IconSymbol name="chevron.right" size={20} color={Color.WHEEL_DARK} />
             </PressableScale>
           </View>
         )}
@@ -767,7 +767,8 @@ const styles = StyleSheet.create({
     gap: 14,
     marginTop: 2,
   },
-  quarterText: { minWidth: 80, textAlign: 'center' },
+  // Ikut warna pita header di belakangnya, bukan teal merek.
+  quarterText: { minWidth: 80, textAlign: 'center', color: Color.WHEEL_DARK },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Wizard
   progressTrack: {

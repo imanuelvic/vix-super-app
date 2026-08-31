@@ -13,7 +13,7 @@ import {
 
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
-import { MONTH_NAMES } from './format';
+import { MONTH_NAMES, sameMonth } from './format';
 import { dayDocId } from './health';
 
 // Pelacakan pemakaian fitur 📊 — berapa kali tiap tile/fitur DIBUKA per hari,
@@ -130,7 +130,7 @@ export function formatWeekRange(now = new Date()): string {
   end.setDate(end.getDate() + 6); // Minggu
   const sm = MONTH_NAMES[start.getMonth()];
   const em = MONTH_NAMES[end.getMonth()];
-  return start.getMonth() === end.getMonth()
+  return sameMonth(start, end)
     ? `${start.getDate()}–${end.getDate()} ${sm}`
     : `${start.getDate()} ${sm} – ${end.getDate()} ${em}`;
 }

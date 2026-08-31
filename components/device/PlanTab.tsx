@@ -31,7 +31,7 @@ import {
   type DeviceKey,
   type PlanInput,
 } from '@/lib/device';
-import { formatDate, groupDigits, parseAmount } from '@/lib/format';
+import { formatDate, groupDigits, parseAmount, sameMonth } from '@/lib/format';
 import { formatRupiah } from '@/lib/transactions';
 
 /** "28" / "1,5" → angka GB. Koma & titik sama-sama diterima. */
@@ -80,12 +80,7 @@ export function PlanTab({
   // Total biaya paket yang MULAI bulan ini — angka yang paling sering
   // ditanyakan sendiri: "bulan ini habis berapa buat kuota?"
   const biayaBulanIni = milik
-    .filter((p) => {
-      const d = p.startDate.toDate();
-      return (
-        d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-      );
-    })
+    .filter((p) => sameMonth(p.startDate.toDate(), now))
     .reduce((sum, p) => sum + p.cost, 0);
 
   /** Isian form apa adanya — dipakai Simpan maupun Salin. */
