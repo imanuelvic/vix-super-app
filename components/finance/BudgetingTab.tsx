@@ -518,6 +518,7 @@ const styles = StyleSheet.create({
   summaryTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },
@@ -558,7 +559,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowLabel: { flex: 1, color: Color.TEXT_TITLE },
-  rowBottom: { flexDirection: 'row', justifyContent: 'space-between' },
+  rowBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
   realText: { color: Color.MAIN },
   overText: { color: Color.DANGER },
   modalTitle: { marginBottom: 2 },

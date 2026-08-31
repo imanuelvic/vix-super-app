@@ -126,6 +126,11 @@ import {
   type PrayerNews,
 } from '@/lib/prayerNews';
 import {
+  devicesNeedingTopUp,
+  subscribeDataPlans,
+  type DataPlan,
+} from '@/lib/device';
+import {
   countResidenceAttention,
   subscribeChoreStatus,
   type ChoreStatusMap,
@@ -142,8 +147,10 @@ import {
   bibleSessionNow,
   reviveHandledToday,
   subscribeBibleReadingToday,
+  subscribeMyReminders,
   subscribeReviveStreak,
   type BibleReadingSessions,
+  type MyReminder,
   type ReviveStreak,
 } from '@/lib/spiritual';
 import {
@@ -159,7 +166,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 18;
+const BADGE_SOURCES = 19;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -229,11 +236,16 @@ export default function HomeScreen() {
   const [intercessionOpen, setIntercessionOpen] = useState(false);
   // Kalimat penyegar yang barusan di-click "sudah dibaca" (null = belum ada).
   const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
+  // Rhema & Aplikasi yang kamu pasang sendiri dari Revive 📌 — salah satunya
+  // menggantikan satu giliran penyegar hari ini (lihat nudgeSchedule).
+  const [myReminders, setMyReminders] = useState<MyReminder[]>([]);
   // Periode puasa 🍽️ — untuk kartu centang malam. null = belum termuat, jadi
   // kartunya tidak sempat berkedip sebelum datanya sampai.
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[] | null>(null);
   // Catatan khotbah — untuk kartu "Kirim Catatan Khotbah" tiap Kamis siang.
   const [sermons, setSermons] = useState<SermonNote[]>([]);
+  // Paket kuota — untuk badge tile Device 📱 saat paketnya sudah H-1.
+  const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
   // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
@@ -275,11 +287,13 @@ export default function HomeScreen() {
       subscribeOtherTasks(user.uid, mark('otherTasks', setOtherTasks)),
       subscribeFitDay(user.uid, todayId, mark('fitDay', setFitDay)),
       subscribeDebts(user.uid, mark('debts', setDebts)),
+      subscribeDataPlans(user.uid, mark('dataPlans', setDataPlans)),
       // --- Sisanya mengisi kartu & sapaan, bukan badge ---
       subscribeLoginStreak(user.uid, setLogin),
       subscribeHabitDay(user.uid, todayId, setDay),
       subscribeHabitSchedule(user.uid, setHabits),
       subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
+      subscribeMyReminders(user.uid, setMyReminders),
       subscribeWaterStreak(user.uid, setWaterStreak),
       subscribePrayerNews(user.uid, setPrayerNews),
       subscribePriorityDay(user.uid, todayId, setPriorities),
@@ -410,8 +424,11 @@ export default function HomeScreen() {
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
   // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
   // beda, jadi cukup dibandingkan teksnya — tak perlu menyimpan jam).
-  const nudge = activeNudge(now, todayId);
-  const showNudge = nudge !== null && nudge !== nudgeSeen;
+  // Kalau kamu sudah memasang Rhema/Aplikasi sendiri dari Revive 📌, SATU dari
+  // ketiga giliran hari ini jadi milik tulisanmu — dan giliran itu ingat asal
+  // catatannya, jadi kartunya bisa di-click balik ke Revive-nya.
+  const nudge = activeNudge(now, todayId, myReminders);
+  const showNudge = nudge !== null && nudge.text !== nudgeSeen;
 
   // Badge merah per fitur: berapa hal harian yang BELUM selesai hari ini.
   // 0 = badge hilang — tanda hari ini beres 🎉
@@ -460,6 +477,10 @@ export default function HomeScreen() {
     // Patungan yang masih ada orang belum setor — angka yang sama dipakai
     // badge sub-tab Split Bill di dalam fitur Social.
     social: bills.filter(billUnsettled).length,
+    // Perangkat yang paket kuotanya sudah H-1 (habis besok atau hari ini) —
+    // waktunya isi ulang. Angkanya sama persis dengan badge sub-tab di dalam
+    // layar Device, karena aturannya satu (lihat lib/device.ts).
+    device: devicesNeedingTopUp(dataPlans, now),
   };
 
   // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).
@@ -603,19 +624,37 @@ export default function HomeScreen() {
               <ReminderCard
                 bg={Color.MAIN_LIGHT}
                 fg={Color.MAIN_DARK}
-                title="🕊️ Reminder"
-                texts={[nudge]}
-                onPress={() => setNudgeSeen(nudge)}
-                // 📤 Jadikan gambar persegi lalu kirim ke WhatsApp. Kalimatnya
+                title={nudge.day ? '🕊️ Reminder dari Revive-mu' : '🕊️ Reminder'}
+                texts={[nudge.text]}
+                // Kalimat bawaan: click = "sudah dibaca", kartunya pergi.
+                // Kalimat TULISANMU sendiri: selain itu, ia juga membuka
+                // catatan Revive asalnya — di situlah kalimatnya utuh, lengkap
+                // dengan bacaan & judulnya.
+                onPress={() => {
+                  setNudgeSeen(nudge.text);
+                  if (nudge.day) {
+                    router.push({
+                      pathname: '/revive',
+                      params: { day: nudge.day },
+                    });
+                  }
+                }}
+                // Jadikan gambar persegi lalu kirim ke WhatsApp. Kalimatnya
                 // DIOPER, bukan diundi ulang di layar sana — yang dibagikan
                 // harus persis kalimat yang barusan kamu baca di sini.
-                right={
+                //
+                // Ikon berbagi baku (square.and.arrow.up), bukan emoji 📤 —
+                // rupanya sama dengan tombol kirim di fitur CORE, dan tombol
+                // AKSI di app ini memang memakai ikon rata sewarna supaya tidak
+                // ramai warna di dalam kartu. Emoji disimpan untuk pintasan
+                // navigasi, yang lambangnya jadi penanda tujuan.
+                action={
                   <EmojiButton
-                    emoji="📤"
+                    icon="square.and.arrow.up"
                     onPress={() =>
                       router.push({
                         pathname: '/reminder-share',
-                        params: { text: nudge },
+                        params: { text: nudge.text },
                       })
                     }
                   />
@@ -916,6 +955,7 @@ const styles = StyleSheet.create({
   welcomeTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 10,
   },

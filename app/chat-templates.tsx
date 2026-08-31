@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -23,7 +24,11 @@ import {
   type ChatField,
 } from '@/lib/chatTemplates';
 import { subscribeCoreLeaders, type CoreLeader } from '@/lib/core';
-import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
+import {
+  openWhatsAppChat,
+  shareTextToWhatsApp,
+  WHATSAPP_ERROR,
+} from '@/lib/whatsapp';
 
 // Template Chat 💬 — kata-kata siap kirim untuk CORE Leader & grup CORE.
 //
@@ -42,6 +47,7 @@ const MANUAL = '__manual__';
 
 export default function ChatTemplatesScreen() {
   const { user } = useAuth();
+  const router = useRouter();
 
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +62,11 @@ export default function ChatTemplatesScreen() {
   const [namaLain, setNamaLain] = useState('');
   const [gelar, setGelar] = useState('');
 
-  // Kategori yang sedang dibuka. Default: Motivational Words — itu yang
-  // dikirim tiap pagi, jadi paling sering dicari.
-  const [openKey, setOpenKey] = useState<string | null>('motivational');
+  // Kategori yang sedang dibuka. null = SEMUANYA tertutup, dan itu keadaan
+  // awalnya: satu kategori yang terbuka sendiri mendorong kategori lain jauh ke
+  // bawah layar, jadi yang lain seolah tidak ada. Tertutup semua = seluruh
+  // daftarnya kelihatan sekali pandang, tinggal pilih.
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   const hariIni = todayName();
 
@@ -67,8 +75,24 @@ export default function ChatTemplatesScreen() {
     return subscribeCoreLeaders(user.uid, setLeaders, () => undefined);
   }, [user]);
 
+  /**
+   * Kirim ke WhatsApp. Dua jalan, dan yang menentukan siapa yang dituju:
+   *
+   *   • CL tertentu YANG NOMORNYA SUDAH ADA → chat orang itu dibuka LANGSUNG.
+   *     Templat ini memang ditulis untuk satu orang (namanya sudah disisipkan
+   *     ke dalam kalimatnya), jadi masih disuruh memilih chat lagi di WhatsApp
+   *     itu satu langkah yang tidak perlu — dan satu peluang salah kirim.
+   *   • Grup CORE, nama ketikan sendiri, atau CL yang nomornya belum diisi →
+   *     seperti dulu: WhatsApp terbuka dengan teksnya siap, tujuannya kamu
+   *     pilih sendiri. Ini BUKAN kegagalan, jadi tidak ada pesan galat —
+   *     keterangannya sudah tertulis di bawah kolom nama.
+   */
   function handleSend(text: string) {
     setError(null);
+    if (cl?.phone) {
+      openWhatsAppChat(cl.phone, text, () => setError(WHATSAPP_ERROR));
+      return;
+    }
     shareTextToWhatsApp(text, () => setError(WHATSAPP_ERROR));
   }
 
@@ -87,10 +111,14 @@ export default function ChatTemplatesScreen() {
 
   // Nama yang benar-benar dipakai mengisi penanda {nama}. Grup (atau CL yang
   // sudah dihapus) → kosong, persis seperti kolom yang dikosongkan dulu.
-  const nama =
-    pilihan === MANUAL
-      ? namaLain.trim()
-      : (leaders.find((l) => l.id === pilihan)?.name ?? '');
+  // CORE Leader yang sedang dituju — null kalau tujuannya Grup CORE atau nama
+  // yang diketik sendiri. Dari sinilah nomor WA-nya diambil.
+  const cl =
+    pilihan === GRUP || pilihan === MANUAL
+      ? null
+      : (leaders.find((l) => l.id === pilihan) ?? null);
+
+  const nama = pilihan === MANUAL ? namaLain.trim() : (cl?.name ?? '');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -130,6 +158,26 @@ export default function ChatTemplatesScreen() {
               onChangeText={setNamaLain}
               autoFocus
             />
+          )}
+          {/* Ke mana tombol "Kirim" akan bermuara — ditulis SEBELUM ditekan.
+              Tanpa ini, dua perilaku yang berbeda (langsung ke chat orangnya
+              vs. memilih chat sendiri) cuma bisa diketahui dengan mencobanya,
+              dan yang nomornya belum diisi terasa seperti fitur yang rusak. */}
+          {cl && (
+            <PressableScale
+              style={styles.tujuan}
+              disabled={!!cl.phone}
+              onPress={() =>
+                router.push({ pathname: '/core', params: { tab: 'leaders' } })
+              }>
+              <VixText
+                heading="label"
+                additionalStyle={cl.phone ? styles.tujuanOn : styles.tujuanOff}>
+                {cl.phone
+                  ? `💬 Langsung ke chat ${cl.name} · +62${cl.phone}`
+                  : `⚠️ Nomor WA ${cl.name} belum diisi — nanti masih pilih chat sendiri. Isi di CORE › Leaders ›`}
+              </VixText>
+            </PressableScale>
           )}
           <View style={styles.stickyGap} />
         </StickyTop>
@@ -263,6 +311,10 @@ const styles = StyleSheet.create({
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   manualInput: { marginTop: 8 },
+  // Keterangan tujuan kirim, tepat di bawah kolom nama.
+  tujuan: { marginTop: 8 },
+  tujuanOn: { color: Color.MAIN_DARK },
+  tujuanOff: { color: Color.WARNING },
   // Jarak dropdown ke kartu kategori pertama. Ditaruh sebagai elemen sendiri,
   // bukan margin bawah SelectField — daftar pilihannya terbuka INLINE di bawah
   // kolom, jadi margin di kolomnya akan menyisipkan celah di tengah.

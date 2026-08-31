@@ -59,7 +59,6 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
   expense: [
     { key: 'food-drink', label: 'Food Drink', icon: '🍛', active: true },
     { key: 'transportation', label: 'Transportation', icon: '🚗', active: true },
-    { key: 'travel', label: 'Travel', icon: '✈️', active: true },
     { key: 'snacks', label: 'Snacks', icon: '🍟', active: true },
     { key: 'groceries', label: 'Groceries', icon: '🍗', active: true },
     { key: 'fun-recreation', label: 'Fun Recreation', icon: '🎢', active: true },
@@ -78,10 +77,17 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     // masih ada, dan menghapusnya akan membuat riwayatnya tampil sebagai "❓".
     { key: 'residence', label: 'Residence', icon: '🏠', active: true },
     { key: 'rent', label: 'Rent', icon: '🏘️', active: false },
-    // Dua paling bawah, urutannya sesuai permintaan pemilik app:
-    // Gathering CORE, lalu Insurance paling akhir.
-    { key: 'gathering-core', label: 'Gathering CORE', icon: '💚', active: true },
+    // Tiga paling bawah, urutannya sesuai permintaan pemilik app: Ministry,
+    // Insurance, lalu Travel paling akhir. Ketiganya kebetulan sama-sama
+    // pengeluaran yang tidak dianggarkan bulanan.
+    //
+    // ⚠️ `key`-nya TETAP 'gathering-core' walau namanya sekarang Ministry:
+    // key inilah yang tersimpan di tiap transaksi & budget lama. Menggantinya
+    // berarti seluruh riwayat Gathering CORE berubah jadi "❓ kategori tak
+    // dikenal" — yang berganti cuma nama & lambang yang kamu lihat.
+    { key: 'gathering-core', label: 'Ministry', icon: '🙏', active: true },
     { key: 'insurance', label: 'Insurance', icon: '☂️', active: true },
+    { key: 'travel', label: 'Travel', icon: '✈️', active: true },
   ],
   saving: [
     { key: 'emergency-fund', label: 'Emergency Fund', icon: '🚨', active: true },

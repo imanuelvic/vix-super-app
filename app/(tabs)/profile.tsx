@@ -280,7 +280,7 @@ export default function ProfileScreen() {
             part="ikigai"
             values={self.ikigai}
             quadrants={IKIGAI}
-            intro="Ikigai = titik temu empat hal ini — alasanmu bangun pagi. Isi pelan-pelan, tidak harus sekali jadi 🎌"
+            intro="Ikigai"
             footerKey="statement"
             footerTitle="🎯 Kalimat Ikigai-ku"
             footerHint="Rangkum jadi satu kalimat: aku ada untuk…"
@@ -390,10 +390,6 @@ export default function ProfileScreen() {
             </View>
           );
         })}
-
-        <VixText heading="label" additionalStyle={styles.privacyNote}>
-          🔒 Data ini cuma tersimpan di akun pribadimu. Isi lewat “Ubah”.
-        </VixText>
 
       {/* Modal edit profil (semua field + foto) */}
       <SheetModal
@@ -528,7 +524,6 @@ const styles = StyleSheet.create({
   infoLabel: { color: Color.TEXT_LABEL },
   infoValue: { color: Color.TEXT_TITLE },
   infoEmpty: { color: Color.TEXT_PLACEHOLDER },
-  privacyNote: { color: Color.TEXT_LABEL, textAlign: 'center', marginTop: 4 },
   // Modal edit
   photoPicker: {
     alignSelf: 'center',

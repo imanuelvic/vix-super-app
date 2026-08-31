@@ -10,11 +10,15 @@ import { formatRupiah, type Transaction } from '@/lib/transactions';
 
 // Tab Log 🧾 — pengeluaran soal perangkat, BACA-SAJA.
 //
-// Sumbernya transaksi Finance kategori "Mobile, Data & Administration" — bukan
-// catatan terpisah. Aturannya sama persis dengan Log di Car 🚗 & Air-Listrik di
-// Residence 🏠: satu pengeluaran cuma boleh punya SATU tempat pencatatan,
-// supaya tidak pernah ada dua angka yang berbeda untuk hal yang sama.
-// Mengubahnya di Finance, bukan di sini.
+// Sumbernya transaksi Finance kategori "Mobile, Data & Administration"
+// sub "📱 Mobile" — bukan catatan terpisah, dan bukan pula seluruh kategori
+// itu: Admin Bank, Cost/Taxes & Subscriptions tinggal di kategori yang sama
+// tapi bukan biaya perangkat (penyaringnya di lib/device.ts).
+//
+// Aturannya sama persis dengan Log di Car 🚗 & Air-Listrik di Residence 🏠:
+// satu pengeluaran cuma boleh punya SATU tempat pencatatan, supaya tidak
+// pernah ada dua angka yang berbeda untuk hal yang sama. Mengubahnya di
+// Finance, bukan di sini.
 export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) {
   const now = new Date();
 
@@ -51,9 +55,13 @@ export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) 
         </SummaryCard>
 
         {transactions.length === 0 ? (
+          // Sub-nya disebut namanya: yang tampil di sini disaring lewat NAMA
+          // sub-kategorinya, jadi kalau sub "Mobile" di Finance diganti nama,
+          // di sinilah petunjuk kenapa daftarnya tiba-tiba kosong.
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada pengeluaran perangkat. Catat pulsa/paket datamu di Finance,
-            nanti otomatis muncul di sini 📱
+            Belum ada pengeluaran perangkat. Catat pulsa/paket datamu di Finance
+            dengan kategori 📱 Mobile, Data & Administration → sub 📱 Mobile,
+            nanti otomatis muncul di sini
           </VixText>
         ) : (
           transactions.map((t) => {

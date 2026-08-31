@@ -342,6 +342,7 @@ const styles = StyleSheet.create({
   heroTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },
@@ -353,9 +354,16 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 14,
   },
+  // `flexWrap` di baris judul kartu BUKAN hiasan: judul & keterangan di
+  // sampingnya sama-sama tulisan yang panjangnya berubah-ubah (nama bulan,
+  // "🔄 Mulai lagi tiap hari, jam 00.00", angka km yang makin besar). Tanpa
+  // wrap, yang kedua tidak menyusut & tidak turun — ia menerobos keluar kartu
+  // lalu terpotong di tepi layar. Dengan wrap ia turun ke baris berikutnya, dan
+  // selama masih muat sebaris tampilannya sama persis seperti sebelumnya.
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     marginBottom: 6,
   },
@@ -377,6 +385,7 @@ const styles = StyleSheet.create({
   goalTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },
@@ -386,6 +395,7 @@ const styles = StyleSheet.create({
   msRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     paddingVertical: 8,
     borderTopWidth: 1,

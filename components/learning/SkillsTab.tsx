@@ -204,8 +204,7 @@ export function SkillsTab({
           <LoadingCenter />
         ) : notes.length === 0 ? (
           <VixText heading="paragraph" additionalStyle={styles.archiveEmpty}>
-            Belum ada rangkuman. Tulis 3 poin di sub-tab 🎯 Target — langkah
-            Jumat (Rangkum) — dan semuanya akan berkumpul di sini.
+            Belum ada rangkuman.
           </VixText>
         ) : (
           notes.map((n) => {
@@ -213,7 +212,7 @@ export function SkillsTab({
             return (
               <View key={n.weekId} style={styles.noteCard}>
                 <VixText heading="label" additionalStyle={styles.noteDate}>
-                  📅 Minggu {formatShortDayDate(dayIdToDate(n.weekId))}
+                  📅 {formatShortDayDate(dayIdToDate(n.weekId))}
                 </VixText>
                 <VixText heading="bold" additionalStyle={styles.noteTitle}>
                   {SKILL_AREAS.find((a) => a.key === s.area)?.emoji} {s.title}

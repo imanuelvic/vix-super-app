@@ -160,9 +160,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 6,
   },
+  // "🎯 Target Langkah Mingguan" + "47,7 / 20 km" hampir tak muat sebaris di
+  // iPhone 15 — dan begitu angkanya jadi lima digit, angkanya yang terpotong
+  // keluar kartu. `flexWrap` menurunkannya ke baris berikutnya (lihat catatan
+  // lengkapnya di StepsTab).
   top: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },

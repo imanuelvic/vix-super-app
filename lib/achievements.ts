@@ -189,7 +189,6 @@ export type AchievementCategoryKey =
   | 'steps'
   | 'run'
   | 'week'
-  | 'strength'
   | 'water'
   | 'learning';
 
@@ -221,10 +220,15 @@ const CATEGORIES: {
   // ia diukur atas MINGGU-nya sebagai satu satuan, dan menaruhnya di kolom
   // strength akan membuat kolom itu tidak lagi murni soal angkat beban.
   { key: 'week', feature: 'health', icon: '👣', label: 'Target Langkah Mingguan', desc: 'Tembus target langkah tiap pekan' },
-  { key: 'strength', feature: 'health', icon: '🏋️', label: 'Strength Training', desc: 'Angkat beban minimal 2 hari/minggu' },
   { key: 'water', feature: 'health', icon: '💧', label: 'Air Putih', desc: 'Cukup 8 gelas air setiap hari' },
   { key: 'learning', feature: 'learning', icon: '🎓', label: 'Learning', desc: 'Minggu beruntun 4 langkah belajar tuntas' },
-  { key: 'fitness', feature: 'fitness', icon: '🏋️', label: 'Fitness Konsisten', desc: 'Sesi latihan beres 5×/minggu' },
+  // Dulu DUA baris terpisah dengan lambang 🏋️ yang sama: "Strength Training"
+  // (minggu dengan angkat beban ≥2 hari) & "Fitness Konsisten" (jumlah sesi
+  // latihan). Ukurannya memang beda, tapi keduanya menghitung hal yang sama —
+  // latihan di fitur Fitness — dan berdiri berdampingan keduanya cuma bikin
+  // bingung "bedanya apa". Digabung jadi satu kolom; TIDAK ADA lencana yang
+  // hilang, ketiga lencana mingguannya cuma pindah ke sini.
+  { key: 'fitness', feature: 'fitness', icon: '🏋️', label: 'Fitness', desc: 'Sesi latihan & angkat beban 2 hari/minggu' },
 ];
 
 /**
@@ -398,9 +402,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'weekStep1', category: 'week', icon: '🚶', title: 'Minggu Aktif', desc: 'Tembus target langkah dalam sepekan', target: 1, of: (s) => s.weekStepHits },
   { id: 'weekStep4', category: 'week', icon: '✨', title: 'Sebulan Aktif', desc: '4 minggu tembus target langkah', target: 4, of: (s) => s.weekStepHits },
   { id: 'weekStep12', category: 'week', icon: '🏅', title: 'Sekuartal Aktif', desc: '12 minggu tembus target langkah', target: 12, of: (s) => s.weekStepHits },
-  { id: 'weekGym1', category: 'strength', icon: '🏋️', title: 'Strength 2×', desc: 'Strength training 2 hari dalam sepekan', target: 1, of: (s) => s.weekGymHits },
-  { id: 'weekGym4', category: 'strength', icon: '💪', title: 'Sebulan Kuat', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits },
-  { id: 'weekGym12', category: 'strength', icon: '🔥', title: 'Sekuartal Kuat', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits },
+  { id: 'weekGym1', category: 'fitness', icon: '🏋️', title: 'Strength 2×', desc: 'Strength training 2 hari dalam sepekan', target: 1, of: (s) => s.weekGymHits },
+  { id: 'weekGym4', category: 'fitness', icon: '💪', title: 'Sebulan Kuat', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits },
+  { id: 'weekGym12', category: 'fitness', icon: '🔥', title: 'Sekuartal Kuat', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits },
   { id: 'weekBoth1', category: 'week', icon: '⭐', title: 'Minggu Sempurna', desc: 'Aerobik & strength tercapai dalam sepekan', target: 1, of: (s) => s.weekBothHits },
   { id: 'weekBoth4', category: 'week', icon: '👑', title: 'Sebulan Sempurna', desc: '4 minggu sempurna', target: 4, of: (s) => s.weekBothHits },
   { id: 'weekBoth12', category: 'week', icon: '💎', title: 'Sekuartal Sempurna', desc: '12 minggu sempurna', target: 12, of: (s) => s.weekBothHits },

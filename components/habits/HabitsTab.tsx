@@ -33,14 +33,14 @@ import {
   defaultSlot,
   HABIT_AREAS,
   HABIT_SLOTS,
-  HABIT_TIERS,
   habitArea,
   filledNoteLines,
   habitLink,
-  habitNoteDone,
+  habitNoteFilled,
   habitNoteLines,
   habitsBySlot,
   habitTier,
+  isCoreHabit,
   isFixedHabit,
   isNoteDrivenHabit,
   joinNoteLines,
@@ -48,7 +48,6 @@ import {
   splitNoteLines,
   saveHabits,
   slotMeta,
-  tierMeta,
   type HabitArea,
   type HabitLink,
   type HabitSlot,
@@ -182,8 +181,12 @@ export function HabitsTab({
   // DUA daftar yang sengaja dibedakan:
   // • `grouped`  — daftar LENGKAP, yang ditampilkan di layar (baris yang
   //                dilewati tetap kelihatan, cuma bertanda ⏭️).
-  // • `counted`  — yang BERLAKU hari ini, dasar semua angka. Kebiasaan yang
-  //                ditandai ✗ dikeluarkan supaya tidak menahan skor.
+  // • `counted`  — daftar tanpa baris yang ditandai ✗. Sekarang dipakai HANYA
+  //                untuk hitungan per sesi & memilih tab pembuka.
+  //
+  // ⚠️ Skor, area hidup, & streak TIDAK lagi memakai `counted` — lihat
+  // catatannya di atas `coreHabits` (lib/habits.ts). Ringkasnya: ✗ artinya
+  // "hari ini tidak saya kerjakan", dan itu bukan keberhasilan.
   const counted = countedHabits(habits, day.skipped);
   const countedBySlot = habitsBySlot(counted);
 
@@ -222,10 +225,10 @@ export function HabitsTab({
 
   // Ukuran keberhasilan hari ini: skor 0–10 + 5 area hidup yang terjaga —
   // bukan lagi "berapa dari 39 tercentang".
-  const score = dailyScore(counted, day.done);
-  const areas = areaProgress(counted, day.done);
+  const score = dailyScore(habits, day.done, day.skipped);
+  const areas = areaProgress(habits, day.done, day.skipped);
   const keptCount = areas.filter((a) => a.kept).length;
-  const coreAllDone = coreDone(counted, day.done);
+  const coreAllDone = coreDone(habits, day.done, day.skipped);
 
   // Streak 🔥 bisa jadi lengkap dari LUAR layar ini: olahraga dicentang di
   // fitur Fitness, lalu baris cerminnya di sini ikut tercentang tanpa ada
@@ -306,7 +309,7 @@ export function HabitsTab({
       // menunggu ke-39 semuanya tercentang (itu praktis mustahil).
       if (nextChecked) {
         const nextDone = { ...day.done, [habit.id]: true };
-        if (coreDone(counted, nextDone)) {
+        if (coreDone(habits, nextDone, day.skipped)) {
           await bumpStreak(user.uid, streak, dayId);
         }
       }
@@ -326,19 +329,14 @@ export function HabitsTab({
     const nextSkipped = !day.skipped[habit.id];
     try {
       await setHabitSkipped(user.uid, dayId, habit.id, nextSkipped);
-      // Kalau yang dilewati ini kebiasaan 🟢 Inti terakhir yang menggantung,
-      // sisa yang berlaku hari ini jadi beres semua → streak 🔥 ikut naik,
-      // supaya skor 10/10 tidak pernah tampil tanpa streaknya.
-      if (nextSkipped) {
-        const rest = countedHabits(habits, {
-          ...day.skipped,
-          [habit.id]: true,
-        });
-        const nextDone = { ...day.done, [habit.id]: false };
-        if (coreDone(rest, nextDone)) {
-          await bumpStreak(user.uid, streak, dayId);
-        }
-      }
+      // Melewati kebiasaan Inti TIDAK menaikkan streak.
+      //
+      // Dulu iya: kebiasaan yang ditandai ✗ dikeluarkan dari hitungan, jadi
+      // melewati satu-satunya yang tersisa membuat hari itu terbaca "beres
+      // semua" — streaknya naik tanpa satu pun kebiasaan intinya dikerjakan.
+      // Sekarang ✗ dihitung BELUM beres (lihat coreDone di lib/habits.ts),
+      // jadi tidak ada lagi yang perlu dinaikkan di sini. Membatalkan ✗-nya
+      // lalu mencentang barisnya tetap menaikkan streak lewat handleToggle.
     } catch {
       setError('Gagal menyimpan tanda lewati. Coba lagi.');
     }
@@ -357,10 +355,15 @@ export function HabitsTab({
     try {
       await setHabitNote(user.uid, dayId, habit.id, text);
       if (isNoteDrivenHabit(habit)) {
-        const selesai = habitNoteDone(text);
+        // 🙏 Bersyukur 3 Hal minta KETIGA butirnya terisi, bukan sekadar
+        // panjang tulisannya (lihat habitNoteFilled di lib/habits.ts).
+        const selesai = habitNoteFilled(habit, text);
         if (selesai !== !!day.done[habit.id]) {
           await setHabitDone(user.uid, dayId, habit.id, selesai);
-          if (selesai && coreDone(counted, { ...day.done, [habit.id]: true })) {
+          if (
+            selesai &&
+            coreDone(habits, { ...day.done, [habit.id]: true }, day.skipped)
+          ) {
             await bumpStreak(user.uid, streak, dayId);
           }
         }
@@ -539,7 +542,7 @@ export function HabitsTab({
                 {keptCount}/5
               </VixText>
               <VixText heading="label" additionalStyle={styles.heroRingSub}>
-                area terjaga
+                area streak🔥
               </VixText>
             </View>
           </View>
@@ -581,7 +584,11 @@ export function HabitsTab({
 
         {/* Lima area hidup hari ini — kelihatan mana yang masih bolong.
             Sekaligus SARINGAN: click satu area → daftar di bawah hanya berisi
-            area itu; click lagi area yang sama → saringannya lepas. */}
+            area itu; click lagi area yang sama → saringannya lepas.
+
+            TIGA keadaan, bukan dua: hijau = terjaga, netral = belum selesai
+            (masih bisa berubah sampai tengah malam), MERAH = ada yang ditandai
+            ✗ hari ini — itu sudah jadi keputusan, bukan lagi "belum". */}
         <View style={styles.areaRow}>
           {areas.map((a) => {
             const meta = areaMeta(a.area);
@@ -592,6 +599,7 @@ export function HabitsTab({
                 style={[
                   styles.areaChip,
                   a.kept && styles.areaChipKept,
+                  a.skipped && styles.areaChipSkipped,
                   picked && styles.areaChipPicked,
                 ]}
                 onPress={() =>
@@ -605,9 +613,11 @@ export function HabitsTab({
                   additionalStyle={
                     picked
                       ? styles.areaTextPicked
-                      : a.kept
-                        ? styles.areaTextKept
-                        : styles.areaText
+                      : a.skipped
+                        ? styles.areaTextSkipped
+                        : a.kept
+                          ? styles.areaTextKept
+                          : styles.areaText
                   }>
                   {a.total === 0 ? '—' : `${a.done}/${a.total}`}
                 </VixText>
@@ -670,7 +680,11 @@ export function HabitsTab({
             // tercentang (tanda done-nya memang ikut dilepas saat di-skip).
             const skipped = !!day.skipped[habit.id];
             const checked = !skipped && !!day.done[habit.id];
-            const tier = habitTier(habit);
+            // Kebiasaan INTI = yang menentukan streak 🔥. Penandanya sekarang
+            // tulisannya sendiri yang TEBAL — dulu lambang berwarna 🟢🟡⚪ di
+            // depan tiap baris, dan arti ketiganya harus dihafal dulu sebelum
+            // berguna. Tebal/tidak tebal langsung terbaca tanpa kunci apa pun.
+            const inti = isCoreHabit(habit);
             // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
             // dapat keterangan kecil + click yang langsung ke sana.
             const rawLink = habitLink(habit);
@@ -704,8 +718,6 @@ export function HabitsTab({
                     styles.row,
                     checked && styles.rowDone,
                     skipped && styles.rowSkipped,
-                    // Opsional diredupkan sedikit: bonus, bukan tuntutan.
-                    tier === 'optional' && styles.rowOptional,
                   ]}>
                   {/* Getaran "berhasil" khusus saat MENCENTANG — melepas
                       centang cukup click biasa. Yang sudah dilewati tidak
@@ -738,12 +750,12 @@ export function HabitsTab({
                     onPress={() => link && openHabitLink(link, habit)}
                     disabled={!link}>
                     <VixText
-                      heading="paragraph"
+                      heading={inti ? 'bold' : 'paragraph'}
                       additionalStyle={[
                         styles.habitText,
                         (checked || skipped) && styles.habitTextDone,
                       ]}>
-                      {tierMeta(tier).emoji} {habit.label}
+                      {habit.label}
                     </VixText>
                     {link && (
                       <VixText
@@ -853,21 +865,25 @@ export function HabitsTab({
               editable={!busy}
             />
 
-            {/* Tingkat menentukan streak & skor — inilah pengganti "39/39" */}
-            <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Tingkat (yang 🟢 Inti menentukan streak 🔥)
-            </VixText>
-            <View style={styles.pickRow}>
-              {HABIT_TIERS.map((t) => (
-                <Chip
-                  key={t.key}
-                  label={`${t.emoji} ${t.label}`}
-                  active={fTier === t.key}
-                  onPress={() => setFTier(t.key)}
-                  additionalStyle={styles.pickChip}
-                />
-              ))}
-            </View>
+            {/* SATU centang, bukan tiga pilihan. Dulu Inti/Pendukung/Opsional,
+                dan dua yang terakhir sama saja dalam pemakaian: tidak
+                menentukan apa pun. Yang benar-benar perlu diputuskan cuma
+                "ini wajib atau tidak". */}
+            <PressableScale
+              style={styles.coreToggle}
+              onPress={() => setFTier(fTier === 'core' ? 'support' : 'core')}
+              haptic={fTier === 'core' ? 'light' : 'success'}>
+              <CheckCircle checked={fTier === 'core'} size={24} />
+              <View style={styles.coreToggleMain}>
+                <VixText heading="bold" additionalStyle={styles.coreToggleTitle}>
+                  Kebiasaan inti
+                </VixText>
+                <VixText heading="label">
+                  Yang inti menentukan streak 🔥 & skor harian. Di daftar,
+                  namanya ditulis tebal.
+                </VixText>
+              </View>
+            </PressableScale>
 
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
               Area hidup
@@ -955,7 +971,13 @@ export function HabitsTab({
             BADAN-mu, dan tinggi badan cuma bisa diubah di satu tempat: Profile
             → 🧍 Data Tubuh. Dulu angkanya muncul begitu saja tanpa memberi
             tahu dari mana asalnya — kalau tingginya keliru, tidak ada petunjuk
-            ke mana harus membetulkannya. */}
+            ke mana harus membetulkannya.
+
+            DUA BARIS, bukan satu kalimat panjang: angkanya (rentang + tinggi)
+            dan ajakannya adalah dua hal berbeda, dan disambung jadi satu baris
+            ia melewati lebar dialognya lalu terbaca terpotong. Masing-masing
+            baris sekarang membungkus sendiri — sepanjang apa pun angkanya,
+            tidak ada lagi yang keluar dari kotaknya. */}
         <PressableScale
           style={styles.targetHint}
           onPress={() => {
@@ -963,8 +985,11 @@ export function HabitsTab({
             router.push({ pathname: '/profile', params: { tab: 'body' } });
           }}>
           <VixText heading="label" additionalStyle={styles.targetHintText}>
-            🧍 Sehat {formatDecimal(range.min)}–{formatDecimal(range.max)} kg
-            untuk {formatDecimal(profile.heightCm)} cm · ubah di Profile ›
+            🏋️ Sehat {formatDecimal(range.min)}–{formatDecimal(range.max)} kg
+            untuk {formatDecimal(profile.heightCm)} cm
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.targetHintLink}>
+            🧍 Ubah di Profile › Data Tubuh ›
           </VixText>
         </PressableScale>
         <FormInput
@@ -1152,6 +1177,13 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN,
     backgroundColor: Color.MAIN_TRANSPARENT,
   },
+  // Ada yang ditandai ✗ di area ini — merah samar, pasangan sejajar dari hijau
+  // samar milik area terjaga. Warnanya sama persis dengan baris yang dilewati
+  // di daftar bawah, jadi jelas dari mana merahnya datang.
+  areaChipSkipped: {
+    borderColor: Color.DANGER,
+    backgroundColor: Color.DANGER_TRANSPARENT,
+  },
   // Area yang sedang dipakai menyaring — sengaja PEKAT, bukan pucat seperti
   // "terjaga", supaya "sedang menyaring" tidak tertukar dengan "sudah beres".
   areaChipPicked: {
@@ -1161,6 +1193,7 @@ const styles = StyleSheet.create({
   areaEmoji: { fontSize: 16, lineHeight: 20 },
   areaText: { color: Color.TEXT_PLACEHOLDER },
   areaTextKept: { color: Color.MAIN_DARK },
+  areaTextSkipped: { color: Color.DANGER },
   areaTextPicked: { color: Color.TEXT_REVERSE },
   // Kartu penataan sekali jalan (hilang sendiri setelah semua beres).
   targetCard: {
@@ -1202,8 +1235,21 @@ const styles = StyleSheet.create({
     backgroundColor: Color.FINANCE_EXPENSE,
     borderColor: Color.DANGER,
   },
-  // ⚪ Opsional — bonus, jadi tampilannya sengaja lebih kalem.
-  rowOptional: { opacity: 0.7 },
+  // Centang "Kebiasaan inti" di sheet tambah kebiasaan.
+  coreToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 14,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  coreToggleMain: { flex: 1, gap: 1 },
+  coreToggleTitle: { color: Color.TEXT_TITLE },
   // Catatan singkat di bawah kebiasaan refleksi/syukur/rhema.
   // Pratinjau catatan di daftar — bentuknya sama persis dengan kolom isian
   // yang dulu ada di sini (tinggi minimum, jarak, garis tepi), jadi daftarnya
@@ -1319,7 +1365,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     marginBottom: 10,
+    gap: 2,
   },
-  targetHintText: { color: Color.MAIN_DARK },
+  targetHintText: { color: Color.ACCENT_DARK },
+  // Baris kedua = ajakannya, jadi warnanya warna aksi (bukan warna keterangan).
+  targetHintLink: { color: Color.MAIN_DARK },
   deleteText: { color: Color.DANGER, textAlign: 'center', marginTop: 12 },
 });

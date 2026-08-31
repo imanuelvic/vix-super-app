@@ -3,7 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import {
+  BottomTabs,
+  withBadge,
+  type BottomTab,
+} from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -13,7 +17,16 @@ import { PlanTab } from '@/components/device/PlanTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import {
+  subscribeSubcategories,
+  subsOf,
+  type SubcategoryMap,
+} from '@/lib/budgets';
+import {
   DEVICE_EXPENSE_CATEGORIES,
+  DEVICE_EXPENSE_CATEGORY,
+  deviceNeedsTopUp,
+  deviceSubKeys,
+  isDeviceExpense,
   subscribeDataPlans,
   type DataPlan,
 } from '@/lib/device';
@@ -50,6 +63,9 @@ export default function DeviceScreen() {
 
   const [plans, setPlans] = useState<DataPlan[] | null>(null);
   const [expenses, setExpenses] = useState<Transaction[] | null>(null);
+  // Daftar sub-kategori Finance — dipakai mengenali mana yang sub "Mobile".
+  // Dokumen yang sama sudah dibaca layar Finance, jadi tak ada bentuk data baru.
+  const [subcats, setSubcats] = useState<SubcategoryMap | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Jam berjalan: sisa hari paket ikut berganti sendiri lewat tengah malam,
@@ -74,10 +90,29 @@ export default function DeviceScreen() {
         setExpenses,
         fail,
       ),
+      subscribeSubcategories(user.uid, setSubcats, fail),
     ]);
   }, [user]);
 
-  const memuat = tab === 'log' ? expenses === null : plans === null;
+  // Yang masuk tab Log CUMA sub "Mobile". Kategori Mobile, Data &
+  // Administration juga menampung Admin Bank, Cost/Taxes & Subscriptions —
+  // dan tak satu pun dari mereka biaya perangkat (lihat lib/device.ts).
+  const subKeys = deviceSubKeys(
+    subsOf(subcats ?? {}, 'expense', DEVICE_EXPENSE_CATEGORY),
+  );
+  const biayaPerangkat = (expenses ?? []).filter((t) =>
+    isDeviceExpense(t, subKeys),
+  );
+
+  // Badge H-1: paket perangkat itu habis besok atau hari ini. Angkanya SAMA
+  // dengan badge tile Device di Home — satu aturan, dua tempat.
+  const tabsBerbadge = withBadge(TABS, {
+    iphone: deviceNeedsTopUp(plans ?? [], 'iphone', now) ? 1 : 0,
+    ipad: deviceNeedsTopUp(plans ?? [], 'ipad', now) ? 1 : 0,
+  });
+
+  const memuat =
+    tab === 'log' ? expenses === null || subcats === null : plans === null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -93,13 +128,13 @@ export default function DeviceScreen() {
         {memuat ? (
           <LoadingCenter />
         ) : tab === 'log' ? (
-          <DeviceLogTab transactions={expenses ?? []} />
+          <DeviceLogTab transactions={biayaPerangkat} />
         ) : (
           <PlanTab device={tab} plans={plans ?? []} now={now} />
         )}
       </View>
 
-      <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
+      <BottomTabs tabs={tabsBerbadge} value={tab} onChange={onTabPress} />
     </SafeAreaView>
   );
 }

@@ -179,6 +179,7 @@ const styles = StyleSheet.create({
   valueRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     marginBottom: 6,
   },
   visionLabel: { color: Color.TEXT_LABEL },

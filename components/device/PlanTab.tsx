@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
 import { FormError } from '@/components/common/FormError';
@@ -23,10 +24,12 @@ import {
   isActivePlan,
   quotaLeft,
   quotaRatio,
+  renewedPlan,
   updateDataPlan,
   usagePerDay,
   type DataPlan,
   type DeviceKey,
+  type PlanInput,
 } from '@/lib/device';
 import { formatDate, groupDigits, parseAmount } from '@/lib/format';
 import { formatRupiah } from '@/lib/transactions';
@@ -70,6 +73,9 @@ export function PlanTab({
   const [fEnd, setFEnd] = useState(new Date());
   const [fNote, setFNote] = useState('');
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
+  // Konfirmasi salin — INLINE di dalam modal, bukan modal baru: modal di atas
+  // modal tidak muncul di iOS. Pola yang sama dengan tombol 📋 di Finance.
+  const [confirmCopy, setConfirmCopy] = useState(false);
 
   // Total biaya paket yang MULAI bulan ini — angka yang paling sering
   // ditanyakan sendiri: "bulan ini habis berapa buat kuota?"
@@ -82,8 +88,34 @@ export function PlanTab({
     })
     .reduce((sum, p) => sum + p.cost, 0);
 
+  /** Isian form apa adanya — dipakai Simpan maupun Salin. */
+  function formValues(): PlanInput {
+    return {
+      device,
+      name: fName.trim(),
+      provider: fProvider.trim(),
+      quotaGb: parseGb(fQuota),
+      usedGb: parseGb(fUsed),
+      cost: parseAmount(fCost),
+      startDate: fStart,
+      endDate: fEnd,
+      note: fNote.trim(),
+    };
+  }
+
+  /** Isian yang wajib benar sebelum disimpan — "" kalau sudah beres. */
+  function validate(): string {
+    if (!fName.trim()) return 'Nama paketnya diisi dulu ya.';
+    if (parseGb(fQuota) <= 0) return 'Kuotanya berapa GB? Isi angkanya dulu.';
+    if (fEnd.getTime() < fStart.getTime()) {
+      return 'Tanggal habisnya tidak boleh sebelum tanggal mulai.';
+    }
+    return '';
+  }
+
   function openAdd() {
     setEditing('new');
+    setConfirmCopy(false);
     setFName('');
     setFProvider('');
     setFQuota('');
@@ -97,6 +129,7 @@ export function PlanTab({
 
   function openEdit(item: DataPlan) {
     setEditing(item);
+    setConfirmCopy(false);
     setFName(item.name);
     setFProvider(item.provider);
     setFQuota(String(item.quotaGb).replace('.', ','));
@@ -110,35 +143,40 @@ export function PlanTab({
 
   async function handleSave() {
     if (!user || !editing || busy) return;
-    if (!fName.trim()) {
-      setFormError('Nama paketnya diisi dulu ya.');
+    const salah = validate();
+    if (salah) {
+      setFormError(salah);
       return;
     }
-    if (parseGb(fQuota) <= 0) {
-      setFormError('Kuotanya berapa GB? Isi angkanya dulu.');
-      return;
-    }
-    if (fEnd.getTime() < fStart.getTime()) {
-      setFormError('Tanggal habisnya tidak boleh sebelum tanggal mulai.');
-      return;
-    }
-    const data = {
-      device,
-      name: fName.trim(),
-      provider: fProvider.trim(),
-      quotaGb: parseGb(fQuota),
-      usedGb: parseGb(fUsed),
-      cost: parseAmount(fCost),
-      startDate: fStart,
-      endDate: fEnd,
-      note: fNote.trim(),
-    };
+    const data = formValues();
     await save(async () => {
       if (editing === 'new') {
         await addDataPlan(user.uid, data);
       } else {
         await updateDataPlan(user.uid, editing.id, data);
       }
+      setEditing(null);
+    });
+  }
+
+  /**
+   * Salin paket yang sedang dibuka jadi paket BARU untuk periode berikutnya —
+   * dipakai tiap kali paket yang sama diperpanjang. Isinya persis seperti yang
+   * tampil di modal, kecuali pemakaiannya kembali 0 & tanggalnya mulai hari ini
+   * (lihat renewedPlan di lib/device.ts). Paket aslinya tidak diubah sama
+   * sekali — riwayat bulan lalu tetap utuh.
+   */
+  async function handleCopy() {
+    if (!user || !editing || busy) return;
+    const salah = validate();
+    if (salah) {
+      setFormError(salah);
+      setConfirmCopy(false);
+      return;
+    }
+    await save(async () => {
+      await addDataPlan(user.uid, renewedPlan(formValues(), new Date()));
+      setConfirmCopy(false);
       setEditing(null);
     });
   }
@@ -241,7 +279,22 @@ export function PlanTab({
         visible={!!editing}
         title={editing === 'new' ? 'Catat Paket' : 'Edit Paket'}
         subtitle={`${meta.icon} ${meta.label}`}
-        onClose={() => setEditing(null)}>
+        onClose={() => setEditing(null)}
+        headerRight={
+          // 📋 hanya saat MENGUBAH paket yang sudah ada — menyalin paket yang
+          // belum tersimpan tidak ada gunanya (isinya masih di form).
+          editing && editing !== 'new' ? (
+            <CopyChip onPress={() => setConfirmCopy(true)} disabled={busy} />
+          ) : undefined
+        }>
+        {confirmCopy && (
+          <CopyConfirm
+            title="📋 Salin jadi paket baru?"
+            busy={busy}
+            onCancel={() => setConfirmCopy(false)}
+            onConfirm={handleCopy}
+          />
+        )}
         <FormInput
           style={styles.formGap}
           placeholder="Nama paket (mis. Super Seru Internet)"
@@ -343,6 +396,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 8,
   },
   cardTitle: { color: Color.TEXT_TITLE, flex: 1 },

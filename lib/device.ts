@@ -46,10 +46,42 @@ export function deviceMeta(key: DeviceKey) {
 /**
  * Kategori Finance yang dianggap "pengeluaran perangkat".
  *
- * Satu kategori saja untuk sekarang — Mobile, Data & Administration — karena
- * memang di situlah pulsa, paket data & biaya administrasi kartu tercatat.
+ * Satu kategori saja — Mobile, Data & Administration — karena memang di situlah
+ * pulsa, paket data & biaya administrasi kartu tercatat.
  */
-export const DEVICE_EXPENSE_CATEGORIES = ['mobile-data-admin'];
+export const DEVICE_EXPENSE_CATEGORY = 'mobile-data-admin';
+export const DEVICE_EXPENSE_CATEGORIES = [DEVICE_EXPENSE_CATEGORY];
+
+/**
+ * Sub-kategori mana di dalam kategori itu yang benar-benar soal PERANGKAT.
+ *
+ * Kategorinya menampung lebih dari urusan HP: Admin Bank, Cost/Taxes,
+ * Subscriptions & Lainnya juga tinggal di situ, dan tak satu pun dari mereka
+ * pengeluaran perangkat. Kalau semuanya ikut, angka "pengeluaran perangkat
+ * bulan ini" jadi mengaku-aku biaya transfer bank sebagai biaya HP.
+ *
+ * ⚠️ Dicocokkan lewat NAMANYA, bukan key tetap, dan itu memang satu-satunya
+ * jalan: sub-kategori di app ini kamu buat sendiri, jadi key-nya acak
+ * (mis. "mobile-a4f2") dan berbeda di tiap perangkat. Ganti nama sub "Mobile"
+ * jadi nama lain → tab Log ikut kosong; itu sebabnya kotak kosongnya
+ * menyebutkan nama yang dicarinya.
+ */
+export const DEVICE_SUB_MATCH = /^\s*(?:\p{Extended_Pictographic}|\s)*mobile\b/iu;
+
+/** Key sub-kategori "Mobile" dari daftar sub Finance ([] = belum ada). */
+export function deviceSubKeys(subs: { key: string; label: string }[]): string[] {
+  return subs.filter((s) => DEVICE_SUB_MATCH.test(s.label)).map((s) => s.key);
+}
+
+/** Transaksi ini pengeluaran perangkat? (kategorinya benar DAN subnya Mobile) */
+export function isDeviceExpense(
+  t: { category: string; sub?: string },
+  subKeys: string[],
+): boolean {
+  return (
+    t.category === DEVICE_EXPENSE_CATEGORY && !!t.sub && subKeys.includes(t.sub)
+  );
+}
 
 // ===================== Paket kuota / pulsa =====================
 
@@ -93,7 +125,7 @@ export function subscribeDataPlans(
   return liveList<DataPlan>(q, onChange, onError);
 }
 
-type PlanInput = {
+export type PlanInput = {
   device: DeviceKey;
   name: string;
   provider: string;
@@ -166,6 +198,53 @@ export function activePlanOf(
     .filter((p) => p.device === device && isActivePlan(p, now))
     .sort((a, b) => a.endDate.toMillis() - b.endDate.toMillis());
   return jalan[0] ?? null;
+}
+
+/**
+ * Salinan paket ini untuk periode BERIKUTNYA — dipakai tombol 📋 saat paket
+ * yang sama diperpanjang bulan depan (dan itu yang paling sering terjadi:
+ * nama, operator, kuota & harganya sama persis, cuma tanggalnya bergeser).
+ *
+ * Dua hal sengaja TIDAK ikut disalin apa adanya:
+ *   • `usedGb` kembali 0 — paket baru belum terpakai. Menyalin "28 GB
+ *     terpakai" akan membuat paket barunya lahir dalam keadaan habis.
+ *   • tanggalnya digeser: mulai HARI INI, berdurasi sama panjang dengan yang
+ *     lama. Menyalin tanggal lama akan melahirkan paket yang sudah kedaluwarsa.
+ */
+export function renewedPlan(data: PlanInput, now: Date): PlanInput {
+  const durasi = Math.max(0, daysBetween(data.startDate, data.endDate));
+  const habis = new Date(now);
+  habis.setDate(habis.getDate() + durasi);
+  return { ...data, usedGb: 0, startDate: new Date(now), endDate: habis };
+}
+
+/**
+ * Berapa perangkat yang paketnya sudah H-1 — angka badge sub-tab Device &
+ * tile Device di Home.
+ *
+ * H-1 berarti sisa 1 hari ATAU habis hari ini (0). Paket yang tanggalnya sudah
+ * LEWAT sengaja tidak ikut dihitung: badge-nya akan menyala selamanya sampai
+ * paket baru dicatat, dan badge yang tidak pernah bisa dipadamkan pelan-pelan
+ * berhenti dibaca. Jendela tagihannya memang dua hari itu — cukup untuk
+ * mengisi ulang sebelum benar-benar putus.
+ */
+export const PLAN_ALERT_DAYS = 1;
+
+export function devicesNeedingTopUp(plans: DataPlan[], now: Date): number {
+  return DEVICES.filter((d) => {
+    const aktif = activePlanOf(plans, d.key, now);
+    return aktif !== null && daysLeft(aktif, now) <= PLAN_ALERT_DAYS;
+  }).length;
+}
+
+/** Paket perangkat ini sudah H-1? — badge satu sub-tab. */
+export function deviceNeedsTopUp(
+  plans: DataPlan[],
+  device: DeviceKey,
+  now: Date,
+): boolean {
+  const aktif = activePlanOf(plans, device, now);
+  return aktif !== null && daysLeft(aktif, now) <= PLAN_ALERT_DAYS;
 }
 
 /**

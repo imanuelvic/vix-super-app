@@ -3,9 +3,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
-import { SummaryCard } from '@/components/common/SummaryCard';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { formatDate } from '@/lib/format';
+import { formatDate, monthLabel } from '@/lib/format';
 import {
   RESIDENCE_LOG_TYPES,
   type ResidenceLog,
@@ -53,13 +53,16 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
     <View style={styles.flex}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Ringkasan Log: total pengeluaran rumah (selain air/listrik) bulan ini */}
-        <SummaryCard
-          label="Pengeluaran rumah bulan ini"
-          value={formatRupiah(monthTotal)}
-        />
-
+        <SummaryCard>
+          <VixText heading="label" additionalStyle={summaryText.label}>
+            Pemakaian bulan {monthLabel(now)}
+          </VixText>
+          <VixText heading="bold" additionalStyle={summaryText.value}>
+            {formatRupiah(monthTotal)}
+          </VixText>
+        </SummaryCard>
         <VixText heading="label" additionalStyle={styles.source}>
-          💰 Data dari Finance — dicatat & diubah di sana.
+          💰 Data dari Finance
         </VixText>
 
         {logs.length === 0 ? (
@@ -96,6 +99,6 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  source: { color: Color.MAIN, marginTop: 12, marginBottom: 10 },
+  source: { color: Color.MAIN, marginTop: 8, marginBottom: 10 },
   empty: { textAlign: 'center', marginVertical: 10 },
 });

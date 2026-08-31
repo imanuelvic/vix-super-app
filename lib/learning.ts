@@ -583,6 +583,33 @@ export function weekComplete(steps: Record<string, boolean>): boolean {
   return stepsDone(steps) === LEARNING_STEPS.length;
 }
 
+// ===================== Langkah yang centangnya dari tulisan =====================
+// Aturan yang sama persis dengan kebiasaan "Daily Reflection Journal" di tab
+// Habits (lihat habitNoteDone di lib/habits.ts): buktinya BUKAN click,
+// melainkan tulisannya. Mencentang "Rangkum" tanpa menulis apa pun cuma
+// membuat angka mingguannya bohong — dan justru langkah inilah yang membuat
+// ilmunya nempel, jadi ia yang paling merugikan kalau dicentang kosong.
+
+/** Langkah yang centangnya ditentukan isi rangkumannya, bukan click. */
+export const NOTE_DRIVEN_STEP: LearningStep = 'summarize';
+
+/**
+ * Panjang minimal rangkuman supaya langkah "Rangkum" dihitung selesai.
+ *
+ * Angkanya SENGAJA sama dengan `HABIT_NOTE_MIN` di lib/habits.ts, tapi ditulis
+ * ulang di sini alih-alih diimpor: lib/habits.ts ikut membawa palet warna
+ * (untuk warna pintasan kebiasaan), dan menariknya ke sini cuma demi satu
+ * angka berarti modul data Learning mulai bergantung pada lapisan tampilan.
+ * Yang menjaga keduanya tetap sama bukan impor, melainkan tes yang
+ * membandingkan kedua angka itu langsung.
+ */
+export const LEARNING_NOTE_MIN = 10;
+
+/** Rangkuman ini sudah cukup untuk dihitung selesai? */
+export function learningNoteDone(text: string): boolean {
+  return text.trim().length >= LEARNING_NOTE_MIN;
+}
+
 // ===================== Firestore =====================
 
 export type LearningWeek = {

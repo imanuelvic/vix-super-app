@@ -89,7 +89,7 @@ export function UtilityTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.source}>
-          💰 Data dari Finance — dicatat & diubah di sana.
+          💰 Data dari Finance
         </VixText>
 
         {transactions.length === 0 ? (
@@ -133,7 +133,11 @@ export function UtilityTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  utilRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  utilRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
   quickCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

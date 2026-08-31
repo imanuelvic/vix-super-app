@@ -608,6 +608,7 @@ const styles = StyleSheet.create({
   catTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },

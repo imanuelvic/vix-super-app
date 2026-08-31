@@ -679,6 +679,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
   },
   weekTitle: { color: Color.TEXT_REVERSE, flexShrink: 1 },

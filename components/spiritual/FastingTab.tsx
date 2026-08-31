@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
+import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import {
   activeFasting,
   fastingDayNumber,
@@ -88,22 +89,15 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
                 {formatShortDate(dayIdToDate(p.endId))}
                 {upcoming ? ' · belum mulai' : ''}
               </VixText>
-              {p.prayer ? (
-                <VixText
-                  heading="label"
-                  numberOfLines={2}
-                  additionalStyle={styles.cardPrayer}>
-                  🙏 {p.prayer}
-                </VixText>
-              ) : null}
-              {p.answer ? (
-                <VixText
-                  heading="label"
-                  numberOfLines={2}
-                  additionalStyle={styles.cardAnswer}>
-                  ✨ {p.answer}
-                </VixText>
-              ) : null}
+              {/* Pokok doa utamanya TIDAK ditampilkan di sini: isinya perkara
+                  pribadi yang panjang, dan di daftar ia cuma jadi dua baris
+                  terpotong yang tidak terbaca utuh. Tempat membacanya di layar
+                  puasanya sendiri.
+
+                  Yang tampil JAWABAN doanya — satu kalimat, dan justru itulah
+                  yang pantas dibaca ulang dari daftar. Bentuknya sama dengan
+                  kutipan di daftar Catatan Khotbah. */}
+              {p.answer ? <QuoteBox text={p.answer} prefix="✨" lines={3} /> : null}
             </PressableScale>
           );
         })}
@@ -137,7 +131,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,
-    gap: 3,
+    // 3 → 6: kutipan jawaban doanya butuh sedikit ruang napas dari baris
+    // tanggal di atasnya, sama seperti kartu Catatan Khotbah.
+    gap: 6,
   },
   cardTop: {
     flexDirection: 'row',
@@ -148,6 +144,4 @@ const styles = StyleSheet.create({
   cardTitle: { color: Color.TEXT_TITLE, flexShrink: 1 },
   cardCount: { color: Color.MAIN },
   cardDate: { color: Color.SPIRITUAL_DARK },
-  cardPrayer: { color: Color.TEXT_LABEL },
-  cardAnswer: { color: Color.MAIN_DARK },
 });

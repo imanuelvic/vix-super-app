@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -10,10 +9,10 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
+import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DateField } from '@/components/common/DateField';
@@ -881,47 +880,20 @@ export function TransactionsTab({
         onClose={() => setEditing(null)}
         headerRight={
           // 📋 = salin jadi transaksi baru bertanggal hari ini (sama seperti
-          // tombol 📋 di sub-menu Budgeting).
-          <PressableScale
-            style={styles.copyChip}
+          // tombol 📋 di sub-menu Budgeting & di Edit Paket fitur Device).
+          <CopyChip
             onPress={() => setConfirmCopy(true)}
             disabled={copying || editSaving}
-            hitSlop={8}>
-            <VixText heading="label" additionalStyle={styles.copyChipText}>
-              📋
-            </VixText>
-          </PressableScale>
+          />
         }>
         {/* Konfirmasi salin — inline (bukan modal baru) supaya muncul di iOS */}
         {confirmCopy && (
-          <Animated.View
-            entering={FadeInDown.duration(200)}
-            style={styles.copyBox}>
-            <VixText heading="bold" additionalStyle={styles.copyBoxTitle}>
-              📋 Salin jadi transaksi baru?
-            </VixText>
-            <View style={styles.copyRow}>
-              <PressableScale
-                style={styles.copyCancel}
-                onPress={() => setConfirmCopy(false)}
-                disabled={copying}>
-                <VixText heading="bold">Batal</VixText>
-              </PressableScale>
-              <PressableScale
-                style={styles.copyConfirm}
-                onPress={handleCopy}
-                disabled={copying}
-                haptic="medium">
-                {copying ? (
-                  <ActivityIndicator color={Color.TEXT_REVERSE} />
-                ) : (
-                  <VixText heading="bold" additionalStyle={styles.copyChipText}>
-                    Ya, Salin
-                  </VixText>
-                )}
-              </PressableScale>
-            </View>
-          </Animated.View>
+          <CopyConfirm
+            title="📋 Salin jadi transaksi baru?"
+            busy={copying}
+            onCancel={() => setConfirmCopy(false)}
+            onConfirm={handleCopy}
+          />
         )}
         <MoneyInput
           placeholder="Nominal"
@@ -1035,6 +1007,7 @@ const styles = StyleSheet.create({
   collapsedRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
   },
   categoryField: {
@@ -1062,47 +1035,8 @@ const styles = StyleSheet.create({
   },
   inputRow: { flexDirection: 'row', gap: 10 },
   inputGap: { marginTop: 8 },
-  // Tombol 📋 salin di kanan judul modal edit — bentuknya disamakan persis
-  // dengan tombol 📋 di sub-menu Budgeting.
-  copyChip: {
-    backgroundColor: Color.MAIN,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    minWidth: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copyChipText: { color: Color.TEXT_REVERSE },
-  // Kotak konfirmasi salin (inline, di dalam modal edit).
-  copyBox: {
-    borderWidth: 1,
-    borderColor: Color.MAIN,
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 10,
-    gap: 6,
-  },
-  copyBoxTitle: { color: Color.MAIN_DARK },
-  copyRow: { flexDirection: 'row', gap: 8, marginTop: 2 },
-  copyCancel: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: Color.CONTAINER,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-  },
-  copyConfirm: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: Color.MAIN,
-  },
+  // Tombol 📋 & kotak konfirmasinya sekarang komponen bersama
+  // (components/common/CopyAction.tsx) — bentuknya ditulis sekali di sana.
   flexInput: { flex: 1 },
   // Kolom Liter di samping Nominal (hanya saat mencatat bensin).
   literInput: { width: 84 },

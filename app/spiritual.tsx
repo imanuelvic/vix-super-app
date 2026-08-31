@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +22,7 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { BibleReadingTab } from '@/components/spiritual/BibleReadingTab';
 import { FastingTab } from '@/components/spiritual/FastingTab';
+import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
 import { BIBLE_CATEGORY } from '@/lib/achievements';
@@ -31,6 +32,7 @@ import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
+  BIBLE_SESSIONS,
   bibleSessionNow,
   reviveHandledToday,
   setReviveSkipped,
@@ -39,6 +41,7 @@ import {
   subscribeReviveStreak,
   worshipVerseOfDay,
   type BibleReadingDay,
+  type BibleSession,
   type ReviveEntry,
   type ReviveStreak,
 } from '@/lib/spiritual';
@@ -61,6 +64,13 @@ export default function SpiritualScreen() {
   const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('revive', {
     tabs: TABS,
   });
+  // ?session=… — dioper layar Baca Alkitab sesudah "✅ Sudah baca", supaya
+  // arsipnya langsung terbuka di sesi yang barusan dicatat. Tanpa param ini
+  // (dibuka dari mana pun yang lain) sub-tabnya ikut jam sekarang seperti biasa.
+  const { session: sessionParam } = useLocalSearchParams<{ session?: string }>();
+  const sesiDituju = BIBLE_SESSIONS.some((s) => s.key === sessionParam)
+    ? (sessionParam as BibleSession)
+    : undefined;
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [bibleDays, setBibleDays] = useState<BibleReadingDay[]>([]);
@@ -176,9 +186,11 @@ export default function SpiritualScreen() {
                     📖 {todayEntry.passage}
                   </VixText>
                 ) : null}
-                <VixText heading="paragraph" additionalStyle={styles.todayRhema}>
-                  “{todayEntry.rhema}”
-                </VixText>
+                {/* Rhema-nya dibingkai jadi kutipan — "kartu di dalam kartu",
+                    bentuk yang sama dengan kutipan di daftar Catatan Khotbah.
+                    Latarnya krem di atas kartu ungu, jadi kalimat yang paling
+                    berharga di kartu ini tidak lagi menyatu dengan sisanya. */}
+                <QuoteBox text={todayEntry.rhema} accent={Color.SPIRITUAL_DARK} />
                 {todayEntry.reflection ? (
                   <VixText
                     heading="label"
@@ -219,7 +231,7 @@ export default function SpiritualScreen() {
         ) : tab === 'sermon' ? (
           <SermonTab sermons={sermons} />
         ) : tab === 'bible' ? (
-          <BibleReadingTab days={bibleDays} />
+          <BibleReadingTab days={bibleDays} openSession={sesiDituju} />
         ) : (
           <FastingTab plans={fastingPlans} />
         )}
@@ -258,6 +270,5 @@ const styles = StyleSheet.create({
   },
   todayTitle: { color: Color.TEXT_TITLE },
   todayPassage: { color: Color.SPIRITUAL_DARK },
-  todayRhema: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
   todayReflection: { color: Color.SPIRITUAL_DARK },
 });

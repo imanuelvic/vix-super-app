@@ -130,7 +130,23 @@ export default function BibleReadingScreen() {
         session,
         bibleDayComplete(today, session),
       );
-      router.back();
+      // Selesai mencatat → langsung ke arsipnya, di sub-tab sesi yang BARUSAN
+      // dicatat. Dulu `router.back()`: kembali ke tempat asal (Home / kartu
+      // reminder), dan bacaan yang barusan disimpan tak terlihat di mana pun
+      // sampai kamu sendiri membuka Spiritual › Bible Reading.
+      //
+      // `replace`, bukan `push`: layar ini sudah selesai tugasnya, jadi tombol
+      // kembali dari arsipnya menuju Home — bukan balik ke formulir yang isinya
+      // sudah tersimpan.
+      //
+      // Sesinya DIOPER apa adanya, bukan diambil ulang dari jam sekarang:
+      // mencatat bacaan Siang jam 23.00 itu wajar, dan yang harus terlihat
+      // adalah yang barusan kamu tulis — bukan sesi yang kebetulan sedang
+      // berjalan.
+      router.replace({
+        pathname: '/spiritual',
+        params: { tab: 'bible', session },
+      });
     } catch {
       setError(SAVE_ERROR);
     } finally {
@@ -388,6 +404,7 @@ const styles = StyleSheet.create({
   refTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },

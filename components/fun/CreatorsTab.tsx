@@ -19,15 +19,18 @@ import {
   type CreatorKind,
 } from '@/lib/youtube';
 
-// Tab Creators 🎬 — video TERBARU dari kanal hiburan & game yang diikuti
-// (MrBeast, Dude Perfect, Markiplier, dst).
+// Tab Creators 🎬 — video TERBARU dari kanal yang diikuti, dalam tiga
+// kelompok: Mr. Beast, Mountain, & Recreation (lihat CREATOR_KINDS).
 //
 // Judul + sampul + tautan saja; videonya sendiri dibuka di YouTube, karena
 // itulah milik pembuatnya. Tidak ada API key sama sekali — sumbernya feed
 // publik tiap kanal (lihat catatan panjangnya di lib/youtube.ts).
 export function CreatorsTab() {
   const { now } = useNow();
-  const [kind, setKind] = useState<CreatorKind>('all');
+  // Selalu ADA satu kelompok yang terpilih — tak ada lagi "Semua". Yang
+  // pertama jadi bawaannya, jadi menambah/menggeser kelompok di CREATOR_KINDS
+  // sudah cukup untuk mengubahnya.
+  const [kind, setKind] = useState<CreatorKind>(CREATOR_KINDS[0].key);
   const listRef = useRef<ScrollView>(null);
 
   const load = useCallback(() => fetchCreatorFeed(), []);
@@ -38,9 +41,7 @@ export function CreatorsTab() {
     reload,
   } = useAsyncData(load, YOUTUBE_ERROR, false);
 
-  const tampil = (videos ?? []).filter(
-    (v) => kind === 'all' || v.kind === kind,
-  );
+  const tampil = (videos ?? []).filter((v) => v.kind === kind);
 
   /** Chip yang SUDAH aktif ditekan lagi = muat ulang & balik ke atas. */
   function pilih(key: CreatorKind) {

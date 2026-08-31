@@ -471,6 +471,7 @@ const styles = StyleSheet.create({
   compTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },

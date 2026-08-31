@@ -21,7 +21,7 @@ export function ReminderCard({
   texts,
   onPress,
   onItemPress,
-  right,
+  action,
   children,
 }: {
   bg: string; // warna latar pastel
@@ -31,14 +31,20 @@ export function ReminderCard({
   onPress?: () => void;
   onItemPress?: (id: string) => void;
   /**
-   * Tombol kecil di sebelah judul, mis. 📤 bagikan kartunya jadi gambar.
+   * Tombol aksi di pojok kanan BAWAH kartu, mis. bagikan kartunya jadi gambar.
+   *
+   * Di BAWAH, bukan di samping judul: judulnya pendek ("🕊️ Reminder") tapi
+   * kalimatnya panjang, jadi tombol di atas menggantung sendirian jauh dari
+   * tulisan yang ia bagikan. Di kaki kartu ia jatuh tepat sesudah kalimat yang
+   * baru selesai dibaca — dan itu memang saat kamu memutuskan mau
+   * membagikannya.
    *
    * Ada = kartunya TIDAK lagi jadi satu tombol besar; yang bisa ditekan cuma
    * badan teksnya. Pressable bersarang di iOS bikin tombol di dalam ikut
-   * memicu tombol pembungkusnya — jadi keduanya sengaja bersebelahan, bukan
+   * memicu tombol pembungkusnya — jadi keduanya sengaja bersaudara, bukan
    * bertumpuk.
    */
-  right?: ReactNode;
+  action?: ReactNode;
   children?: ReactNode; // isi khusus (mis. kutipan yang di-clamp)
 }) {
   const color: StyleProp<TextStyle> = { color: fg };
@@ -98,16 +104,16 @@ export function ReminderCard({
     );
   }
 
-  // Ada tombol di sebelah judul → judul & tombolnya berdampingan, dan yang
-  // bisa ditekan cuma badan teksnya (tanpa Pressable bersarang).
-  if (right) {
+  // Ada tombol aksi → ia berdiri sendiri di kaki kartu, rata kanan, dan yang
+  // bisa ditekan cuma judul + badan teksnya (tanpa Pressable bersarang).
+  if (action) {
     return (
       <View style={cardStyle}>
-        <View style={styles.headRow}>
-          <View style={styles.headTitle}>{judul}</View>
-          {right}
-        </View>
-        <PressableScale onPress={onPress}>{isi}</PressableScale>
+        <PressableScale onPress={onPress}>
+          {judul}
+          {isi}
+        </PressableScale>
+        <View style={styles.actionRow}>{action}</View>
       </View>
     );
   }
@@ -131,9 +137,8 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   title: { color: Color.TEXT_TITLE },
-  // Baris judul saat kartunya punya tombol sendiri di kanan.
-  headRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headTitle: { flex: 1 },
+  // Kaki kartu saat ia punya tombol aksi sendiri — menempel ke kanan bawah.
+  actionRow: { alignItems: 'flex-end', marginTop: 4 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',

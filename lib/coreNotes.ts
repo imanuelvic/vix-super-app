@@ -73,7 +73,6 @@ export function noteLinksOf(
   return links[coreId] ?? [];
 }
 
-/** Catatan ini sudah tersambung ke acara itu? */
 export function isNoteLinked(
   links: CoreNoteLinks,
   coreId: string,

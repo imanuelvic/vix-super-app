@@ -19,7 +19,9 @@ import {
   canChangeWeekSkill,
   dueStep,
   LEARNING_STEPS,
+  learningNoteDone,
   learningStreakAlive,
+  NOTE_DRIVEN_STEP,
   setLearningNote,
   setLearningStep,
   setSkillDone,
@@ -77,36 +79,55 @@ export function WeekTab({
   // bolong, jadi angkanya tidak lagi ditampilkan seolah masih berjalan.
   const runningStreak = learningStreakAlive(streak, weekId) ? streak.count : 0;
 
+  /**
+   * Setel satu langkah + efek sampingnya. DUA jalan masuk memakainya: click
+   * centang biasa, dan langkah Rangkum yang centangnya datang dari tulisannya
+   * sendiri — jadi efek sampingnya (tanda skill selesai & streak) mustahil
+   * ikut di satu jalan tapi terlewat di jalan lain.
+   */
+  async function applyStep(step: LearningStep, done: boolean) {
+    if (!user || !!week.steps[step] === done) return;
+    const next = { ...week.steps, [step]: done };
+    await setLearningStep(user.uid, weekId, step, done);
+    // Empat langkah beres = skill-nya masuk daftar "sudah dipelajari".
+    // Kalau centangnya dilepas lagi, tandanya ikut dicabut — biar daftar
+    // Skills selalu jujur.
+    const wasComplete = weekComplete(week.steps);
+    const nowComplete = weekComplete(next);
+    if (nowComplete !== wasComplete) {
+      await setSkillDone(user.uid, skill.key, nowComplete ? weekId : null);
+    }
+    // Streak mingguan 🔥 naik saat minggu ini TUNTAS — dasar achievement
+    // Learning. Sengaja tidak diturunkan lagi kalau centangnya dilepas:
+    // minggu itu memang pernah kamu tuntaskan. Naiknya juga maksimal sekali
+    // per minggu (dijaga `bumpLearningStreak`).
+    if (nowComplete) {
+      await bumpLearningStreak(user.uid, streak, weekId);
+    }
+  }
+
   async function toggleStep(step: LearningStep) {
     if (!user) return;
     setError(null);
-    const next = { ...week.steps, [step]: !week.steps[step] };
     try {
-      await setLearningStep(user.uid, weekId, step, !week.steps[step]);
-      // Empat langkah beres = skill-nya masuk daftar "sudah dipelajari".
-      // Kalau centangnya dilepas lagi, tandanya ikut dicabut — biar daftar
-      // Skills selalu jujur.
-      const wasComplete = weekComplete(week.steps);
-      const nowComplete = weekComplete(next);
-      if (nowComplete !== wasComplete) {
-        await setSkillDone(user.uid, skill.key, nowComplete ? weekId : null);
-      }
-      // Streak mingguan 🔥 naik saat minggu ini TUNTAS — dasar achievement
-      // Learning. Sengaja tidak diturunkan lagi kalau centangnya dilepas:
-      // minggu itu memang pernah kamu tuntaskan. Naiknya juga maksimal sekali
-      // per minggu (dijaga `bumpLearningStreak`).
-      if (nowComplete) {
-        await bumpLearningStreak(user.uid, streak, weekId);
-      }
+      await applyStep(step, !week.steps[step]);
     } catch {
       setError(SAVE_ERROR);
     }
   }
 
+  /**
+   * Simpan rangkuman — SEKALIGUS menentukan centang langkah "Rangkum".
+   * Terisi cukup panjang → tercentang sendiri; dikosongkan lagi → centangnya
+   * ikut lepas. `week.steps` tetap satu-satunya sumber angka, jadi hitungan
+   * 4 langkah & streak-nya tidak mungkin berbeda dari yang terlihat.
+   */
   async function saveNote(text: string) {
     if (!user) return;
+    setError(null);
     try {
       await setLearningNote(user.uid, weekId, text);
+      await applyStep(NOTE_DRIVEN_STEP, learningNoteDone(text));
     } catch {
       setError(SAVE_ERROR);
     }
@@ -226,6 +247,9 @@ export function WeekTab({
         {LEARNING_STEPS.map((s) => {
           const checked = !!week.steps[s.key];
           const isDue = due?.key === s.key;
+          // Langkah Rangkum: centangnya ditentukan tulisannya, jadi
+          // lingkarannya dikunci — mencentang tanpa merangkum itu bohong.
+          const dariTulisan = s.key === NOTE_DRIVEN_STEP;
           return (
             <View key={s.key}>
               <View
@@ -236,9 +260,10 @@ export function WeekTab({
                 ]}>
                 <PressableScale
                   onPress={() => toggleStep(s.key)}
+                  disabled={dariTulisan}
                   hitSlop={8}
                   haptic={checked ? 'light' : 'success'}>
-                  <CheckCircle checked={checked} />
+                  <CheckCircle checked={checked} locked={dariTulisan} />
                 </PressableScale>
                 <View style={styles.stepMain}>
                   <VixText
@@ -261,6 +286,14 @@ export function WeekTab({
                   {isDue && !checked && (
                     <VixText heading="label" additionalStyle={styles.stepDue}>
                       👉 Ini giliranmu sekarang
+                    </VixText>
+                  )}
+                  {/* Lingkarannya dikunci, jadi harus ada yang memberi tahu
+                      kenapa — tanpa ini click yang tidak terjadi apa-apa cuma
+                      terasa rusak. */}
+                  {dariTulisan && !checked && (
+                    <VixText heading="label" additionalStyle={styles.stepLocked}>
+                      🔒 Tercentang sendiri begitu kotak di bawah terisi
                     </VixText>
                   )}
                 </View>
@@ -346,6 +379,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
   },
   heroWeek: { color: Color.LEARNING_DARK },
@@ -418,6 +452,7 @@ const styles = StyleSheet.create({
   // bukan sekadar keterangan tambahan.
   stepTime: { color: Color.LEARNING_DARK },
   stepDue: { color: Color.LEARNING_DARK },
+  stepLocked: { color: Color.TEXT_PLACEHOLDER },
   noteInput: {
     minHeight: 88,
     textAlignVertical: 'top',

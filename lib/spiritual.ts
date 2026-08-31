@@ -173,11 +173,9 @@ export const BIBLE_SESSIONS: {
   fromHour: number; // jendela mulai (inklusif)
   toHour: number; // jendela selesai (eksklusif)
 }[] = [
-  { key: 'morning', label: 'Pagi', title: 'Morning Bible Reading', emoji: DAYPART.morning, fromHour: 5, toHour: 10 },
-  // Siang sengaja SEMPIT (2 jam, jam makan siang) — jendela lebar bikin
-  // "nanti saja" berulang sampai jamnya habis sendiri.
-  { key: 'daytime', label: 'Siang', title: 'Midday Bible Reading', emoji: DAYPART.daytime, fromHour: 12, toHour: 14 },
-  { key: 'night', label: 'Malam', title: 'Night Bible Reading', emoji: DAYPART.night, fromHour: 21, toHour: 24 },
+  { key: 'morning', label: 'Pagi', title: 'Morning Reading', emoji: DAYPART.morning, fromHour: 5, toHour: 10 },
+  { key: 'daytime', label: 'Siang', title: 'Midday Reading', emoji: DAYPART.daytime, fromHour: 12, toHour: 14 },
+  { key: 'night', label: 'Malam', title: 'Night Reading', emoji: DAYPART.night, fromHour: 21, toHour: 24 },
 ];
 
 export function bibleSessionMeta(session: BibleSession) {
@@ -587,6 +585,136 @@ export function dailyReminder(todayId: string, salt = 'revive'): string {
   return pickOfDay(REMINDERS, todayId, salt);
 }
 
+// ===================== Reminder tulisanmu sendiri 📌 =====================
+// Rhema & Aplikasi yang kamu tulis di Revive bisa "dipasang" jadi salah satu
+// penyegar harian di Home — jadi firman yang merhema hari Senin masih menegur
+// kamu hari Kamis, bukan tenggelam di riwayat.
+//
+// SATU dokumen kecil untuk semuanya (users/{uid}/app/myReminders), pola yang
+// sama dengan arsip Fun: 1 listener, 1 read, tak peduli sudah terkumpul berapa
+// kalimat. Memasang & melepas menulis ulang array-nya.
+
+export type MyReminderKind = 'rhema' | 'application';
+
+export type MyReminder = {
+  /** `${day}-${kind}` — satu Rhema & satu Aplikasi per hari, tak bisa dobel. */
+  id: string;
+  text: string;
+  /** dayId Revive asalnya — dipakai Home untuk membuka catatannya kembali. */
+  day: string;
+  kind: MyReminderKind;
+};
+
+export type MyReminders = { items: MyReminder[] };
+
+export const EMPTY_MY_REMINDERS: MyReminders = { items: [] };
+
+/**
+ * Batas panjang kalimat yang dipasang.
+ *
+ * Bukan selera: kartu di Home dibaca sekilas, dan tombol 📤-nya menggambar
+ * kalimat itu ke kartu persegi 1080×1080 yang muat ±600 huruf (lihat
+ * lib/reminderImage.ts). Rhema yang ditulis panjang lebar — dan memang sering
+ * begitu, karena kolomnya besar — akan tumpah keluar gambarnya tanpa ada yang
+ * memberi tahu. Dipotong di sini, sekali, bukan di tiga tempat penampil.
+ */
+export const MY_REMINDER_MAX = 400;
+
+/** Potong kalimat yang kepanjangan di batas kata terdekat + "…". */
+export function clampReminder(text: string): string {
+  const isi = text.trim();
+  if (isi.length <= MY_REMINDER_MAX) return isi;
+  const potong = isi.slice(0, MY_REMINDER_MAX);
+  const spasi = potong.lastIndexOf(' ');
+  return `${(spasi > MY_REMINDER_MAX - 60 ? potong.slice(0, spasi) : potong).trimEnd()}…`;
+}
+
+export function myReminderId(day: string, kind: MyReminderKind): string {
+  return `${day}-${kind}`;
+}
+
+/** Kalimat dari hari & bagian itu sudah dipasang jadi reminder? */
+export function myReminderOn(
+  items: MyReminder[],
+  day: string,
+  kind: MyReminderKind,
+): boolean {
+  const id = myReminderId(day, kind);
+  return items.some((m) => m.id === id);
+}
+
+function myRemindersDoc(uid: string) {
+  return doc(db, 'users', uid, 'app', 'myReminders');
+}
+
+/** Dengarkan seluruh reminder yang kamu pasang sendiri (1 dokumen). */
+export function subscribeMyReminders(
+  uid: string,
+  onChange: (items: MyReminder[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    myRemindersDoc(uid),
+    (snapshot) => {
+      const data = snapshot.exists()
+        ? (snapshot.data() as MyReminders)
+        : EMPTY_MY_REMINDERS;
+      onChange(data.items ?? []);
+    },
+    onError,
+  );
+}
+
+/** Tulis ulang seluruh daftar (dipakai memasang, melepas, & menyegarkan). */
+export function saveMyReminders(uid: string, items: MyReminder[]) {
+  return setDoc(myRemindersDoc(uid), { items });
+}
+
+/**
+ * Pasang kalimat ini jadi reminder — atau LEPAS lagi kalau memang sudah
+ * terpasang. Melepasnya permanen: barisnya benar-benar hilang dari daftar,
+ * bukan ditandai mati.
+ */
+export function toggleMyReminder(
+  uid: string,
+  items: MyReminder[],
+  entry: { day: string; kind: MyReminderKind; text: string },
+) {
+  const id = myReminderId(entry.day, entry.kind);
+  const sudah = items.some((m) => m.id === id);
+  const next = sudah
+    ? items.filter((m) => m.id !== id)
+    : [
+        ...items,
+        { id, day: entry.day, kind: entry.kind, text: clampReminder(entry.text) },
+      ];
+  return saveMyReminders(uid, next);
+}
+
+/**
+ * Segarkan kalimat reminder yang berasal dari Revive hari itu, supaya yang
+ * muncul di Home tidak ketinggalan dari tulisan yang barusan disimpan.
+ * TIDAK memasang apa pun yang belum pernah dipasang. `null` = tak ada yang
+ * berubah, jadi pemanggilnya tidak perlu menulis ke Firestore sama sekali.
+ */
+export function refreshMyReminders(
+  items: MyReminder[],
+  day: string,
+  text: { rhema: string; application: string },
+): MyReminder[] | null {
+  let berubah = false;
+  const next = items.map((m) => {
+    if (m.day !== day) return m;
+    const isi = clampReminder(
+      m.kind === 'rhema' ? text.rhema : text.application,
+    );
+    if (!isi || isi === m.text) return m;
+    berubah = true;
+    return { ...m, text: isi };
+  });
+  return berubah ? next : null;
+}
+
 // ===================== Penyegar acak di Home 🌤️ =====================
 // Kalimat yang sama juga muncul SENDIRI di Home beberapa kali sehari, di atas
 // kartu Doa Syafaat.
@@ -611,8 +739,13 @@ const NUDGE_SHOW_MINUTES = 60;
 /** Jeda minimal sesudah satu kartu hilang sebelum yang berikutnya muncul. */
 const NUDGE_GAP_MINUTES = 60;
 
-/** Satu kemunculan penyegar: `from`/`to` = menit sejak tengah malam. */
-export type Nudge = { from: number; to: number; text: string };
+/**
+ * Satu kemunculan penyegar: `from`/`to` = menit sejak tengah malam.
+ *
+ * `day` cuma terisi kalau kalimatnya datang dari Revive-mu sendiri — itulah
+ * yang membuat kartunya bisa di-click balik ke catatan asalnya.
+ */
+export type Nudge = { from: number; to: number; text: string; day?: string };
 
 /**
  * Angka 0–1 yang terasa acak, tapi selalu sama untuk kombinasi hari + kunci
@@ -680,8 +813,15 @@ export function worshipVerseOfDay(dayId: string): string {
  * saling menempel: sisa waktu di dalam jendela dibagi acak ke celah-celahnya,
  * sedangkan durasi tampil & jeda minimalnya sudah dipesan lebih dulu.
  * Kalimat tiap kemunculan dijamin BERBEDA satu sama lain.
+ *
+ * `mine` = kalimat yang kamu pasang sendiri dari Revive. Kalau ada, SATU dari
+ * ketiga giliran hari itu diganti dengan salah satunya (yang mana, diundi per
+ * hari juga). Sengaja mengganti giliran, bukan ikut diadu di satu kantong
+ * besar: tulisanmu sendiri jadi dijamin muncul tiap hari — kalau dicampur, satu
+ * kalimatmu cuma punya peluang 1 : 65 melawan daftar bawaan. Daftar kosong →
+ * hasilnya persis sama seperti sebelum fitur ini ada.
  */
-export function nudgeSchedule(dayId: string): Nudge[] {
+export function nudgeSchedule(dayId: string, mine: MyReminder[] = []): Nudge[] {
   const windowStart = NUDGE_FROM_HOUR * 60;
   const windowEnd = NUDGE_TO_HOUR * 60;
   const dipesan =
@@ -714,14 +854,34 @@ export function nudgeSchedule(dayId: string): Nudge[] {
     });
     cursor += NUDGE_SHOW_MINUTES + NUDGE_GAP_MINUTES;
   }
+
+  // Satu giliran diserahkan ke tulisanmu sendiri (kalau ada yang dipasang).
+  if (mine.length > 0) {
+    const giliran = Math.min(
+      Math.floor(seededUnit(dayId, 'punyaku') * NUDGE_COUNT),
+      NUDGE_COUNT - 1,
+    );
+    const pilih =
+      mine[
+        Math.min(
+          Math.floor(seededUnit(dayId, 'punyakuIsi') * mine.length),
+          mine.length - 1,
+        )
+      ];
+    out[giliran] = { ...out[giliran], text: pilih.text, day: pilih.day };
+  }
   return out;
 }
 
 /** Penyegar yang sedang tampil sekarang — null kalau bukan jamnya. */
-export function activeNudge(now: Date, dayId: string): string | null {
+export function activeNudge(
+  now: Date,
+  dayId: string,
+  mine: MyReminder[] = [],
+): Nudge | null {
   const menit = now.getHours() * 60 + now.getMinutes();
   return (
-    nudgeSchedule(dayId).find((n) => menit >= n.from && menit < n.to)?.text ??
+    nudgeSchedule(dayId, mine).find((n) => menit >= n.from && menit < n.to) ??
     null
   );
 }

@@ -596,6 +596,7 @@ const styles = StyleSheet.create({
   limitTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },
@@ -615,6 +616,7 @@ const styles = StyleSheet.create({
   slotHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
   },
   slotTitle: { color: Color.TEXT_TITLE },

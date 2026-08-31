@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
   tierRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     paddingVertical: 12,
     borderTopWidth: 1,

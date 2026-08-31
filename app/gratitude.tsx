@@ -41,6 +41,14 @@ export default function GratitudeScreen() {
   // id-nya lahir saat baris itu dibuat. Jadi dicari dari namanya, sama seperti
   // pintasan kebiasaan lain (lihat habitNoteLines di lib/habits.ts).
   const gratitude = habits?.find((h) => /bersyukur/i.test(h.label)) ?? null;
+  // Yang dipakai jadi dependency efek di bawah: ID-nya, BUKAN objeknya.
+  //
+  // `habits` datang dari Firestore, dan tiap snapshot melahirkan objek baru —
+  // termasuk saat isinya tidak berubah sama sekali. Dengan objeknya sebagai
+  // dependency, efeknya memutus lalu memasang ulang langganan tiap snapshot,
+  // dan tiap pemasangan ulang itu membaca sampai 120 dokumen habitDays lagi.
+  // Boros, dan daftarnya sempat kosong sekejap tiap kali.
+  const gratitudeId = gratitude?.id ?? null;
 
   useEffect(() => {
     if (!user) return;
@@ -50,13 +58,13 @@ export default function GratitudeScreen() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !gratitude) return;
+    if (!user || !gratitudeId) return;
     return unsubscribeAll([
-      subscribeHabitNotes(user.uid, gratitude.id, setDays, () =>
+      subscribeHabitNotes(user.uid, gratitudeId, setDays, () =>
         setError(LOAD_ERROR),
       ),
     ]);
-  }, [user, gratitude]);
+  }, [user, gratitudeId]);
 
   const isi = days ?? [];
   const { setPage, currentPage, pageCount, pageItems } = usePagination(isi);
@@ -87,12 +95,10 @@ export default function GratitudeScreen() {
           {belumAda ? (
             <VixText heading="label" additionalStyle={styles.empty}>
               Baris 🙏 Bersyukur 3 Hal belum ada di daftar kebiasaanmu.
-              Tambahkan dulu di Habits, lalu tulis tiga hal tiap malam 🌙
             </VixText>
           ) : isi.length === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Belum ada yang tercatat. Malam ini, tulis tiga hal yang kamu
-              syukuri di Habits → sesi Malam 🙏
+              Belum ada yang tercatat.
             </VixText>
           ) : (
             <>

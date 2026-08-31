@@ -6,6 +6,7 @@ import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
+import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import {
@@ -85,16 +86,7 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
                   </VixText>
                 ) : null}
               </View>
-              {s.quote ? (
-                <View style={styles.quoteBox}>
-                  <VixText
-                    heading="paragraph"
-                    numberOfLines={3}
-                    additionalStyle={styles.quoteText}>
-                    “{s.quote}”
-                  </VixText>
-                </View>
-              ) : null}
+              <QuoteBox text={s.quote} lines={3} />
               {/* Cuplikan saja — isi utuhnya dibaca di layar catatannya. */}
               {s.note ? (
                 <VixText
@@ -149,15 +141,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     overflow: 'hidden',
   },
-  quoteBox: {
-    backgroundColor: Color.BACKGROUND,
-    borderLeftWidth: 3,
-    borderLeftColor: Color.SPIRITUAL_DARK,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  quoteText: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
+  // Bentuk kutipannya sekarang komponen bersama <QuoteBox/> — dipakai juga
+  // oleh daftar Puasa & kartu Revive.
   snippet: { color: Color.TEXT_PARAGRAPH },
   lockChip: {
     backgroundColor: Color.CONTRAST_CONTAINER,

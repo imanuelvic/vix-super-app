@@ -1463,6 +1463,7 @@ const styles = StyleSheet.create({
   taskHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
   },
   taskHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },

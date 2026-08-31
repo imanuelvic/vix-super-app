@@ -59,7 +59,22 @@ function formatFinish(min: number): string {
 //                           soal tubuh & latihan, bukan rekreasi)
 // Datanya TETAP satu dokumen yang sama (users/{uid}/fun/data), jadi entri Race
 // lamamu tidak berpindah ke mana-mana — cuma tempat membacanya yang berubah.
-export function FunArchive({ category }: { category: FunCategory }) {
+export function FunArchive({
+  category,
+  accent,
+}: {
+  category: FunCategory;
+  /**
+   * Warna tombol & garis tepi kartu. Kosong = warna milik kategorinya sendiri.
+   *
+   * Ada karena Race sekarang tinggal di dalam Health 🍎: warna merahnya dulu
+   * milik daftar kategori Fun, dan di layar Health ia jadi satu-satunya sub-tab
+   * yang warnanya beda sendiri dari Steps/Diet/Check-up. Yang menentukan warna
+   * itu LAYAR tempatnya dipajang, bukan kategorinya — jadi layar yang memberi
+   * tahu, bukan tabel kategori yang ditulis ulang (Fun tidak ikut berubah).
+   */
+  accent?: string;
+}) {
   const { user } = useAuth();
 
   // Arsipnya dikunci ke pemiliknya: ganti akun → kosong lagi (loading), tak ada
@@ -115,6 +130,8 @@ export function FunArchive({ category }: { category: FunCategory }) {
   }, [user, setData]);
 
   const meta = funCategoryMeta(category);
+  // Satu warna untuk tombol, garis tepi kartu, & baris rinciannya.
+  const warna = accent ?? meta.fg;
 
   // Entri kategori terpilih, terbaru di atas.
   //
@@ -278,7 +295,7 @@ export function FunArchive({ category }: { category: FunCategory }) {
                 <PrimaryButton
                   label={`Tambah ${meta.label}`}
                   icon="plus"
-                  background={meta.fg}
+                  background={warna}
                   onPress={openAdd}
                 />
                 <FormError message={error} gap="top" />
@@ -294,7 +311,7 @@ export function FunArchive({ category }: { category: FunCategory }) {
             renderItem={({ item }) => (
               // Tekan kartu untuk mengedit. Border mengikuti warna kategori.
               <PressableScale
-                style={[styles.card, { borderColor: meta.fg }]}
+                style={[styles.card, { borderColor: warna }]}
                 onPress={() => openEdit(item)}>
                 <View style={styles.cardTop}>
                   {/* Emoji milik entri ITU SENDIRI, bukan milik tab — supaya
@@ -325,7 +342,7 @@ export function FunArchive({ category }: { category: FunCategory }) {
                 {item.detail ? (
                   <VixText
                     heading="label"
-                    additionalStyle={[styles.cardDetail, { color: meta.fg }]}>
+                    additionalStyle={[styles.cardDetail, { color: warna }]}>
                     {item.detail}
                   </VixText>
                 ) : null}
@@ -604,6 +621,7 @@ const styles = StyleSheet.create({
   budgetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
   },
   budgetLabel: { color: Color.TEXT_LABEL },
@@ -611,6 +629,7 @@ const styles = StyleSheet.create({
   budgetTotalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     marginTop: 6,
     paddingTop: 6,

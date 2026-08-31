@@ -344,6 +344,7 @@ const styles = StyleSheet.create({
   estRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 12,
     paddingVertical: 3,

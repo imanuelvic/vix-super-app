@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -21,8 +21,10 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { ShareWhatsAppButton } from '@/components/common/ShareWhatsAppButton';
 import { VixText } from '@/components/common/VixText';
 import { ConnectCoreButton } from '@/components/spiritual/ConnectCoreButton';
+import { PinReminderButton } from '@/components/spiritual/PinReminderButton';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useDraft } from '@/hooks/useDraft';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { formatFullDate } from '@/lib/format';
@@ -35,10 +37,17 @@ import {
   bumpReviveStreak,
   dailyReminder,
   deleteReviveEntry,
+  myReminderOn,
+  refreshMyReminders,
   rhemaPrompt,
+  saveMyReminders,
   saveReviveEntry,
+  subscribeMyReminders,
   subscribeReviveEntries,
   subscribeReviveStreak,
+  toggleMyReminder,
+  type MyReminder,
+  type MyReminderKind,
   type ReviveEntry,
 } from '@/lib/spiritual';
 import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
@@ -62,6 +71,12 @@ export default function ReviveEditorScreen() {
   const [streak, setStreak] = useState<DayStreak | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // 📌 Kalimat yang kamu pasang jadi reminder harian di Home — daftarnya utuh
+  // (semua hari), karena tombolnya perlu tahu Rhema/Aplikasi hari INI sudah
+  // terpasang atau belum, dan `handleSave` menyegarkan yang berasal dari sini.
+  const [mine, setMine] = useState<MyReminder[]>([]);
+  const pin = useBusyTask<MyReminderKind>();
 
   // Revive hari itu — null selama datanya belum sampai, atau kalau memang
   // belum pernah ditulis.
@@ -99,8 +114,26 @@ export default function ReviveEditorScreen() {
     return unsubscribeAll([
       subscribeReviveEntries(user.uid, setEntries, fail),
       subscribeReviveStreak(user.uid, setStreak, fail),
+      subscribeMyReminders(user.uid, setMine, fail),
     ]);
   }, [user]);
+
+  /**
+   * Pasang / lepas isi satu kolom sebagai reminder harian. Yang dipasang teks
+   * yang SEDANG terlihat di kolomnya — belum tersimpan pun boleh, karena
+   * `handleSave` menyegarkannya lagi begitu Revive-nya disimpan.
+   */
+  function togglePin(kind: MyReminderKind, text: string) {
+    const isi = text.trim();
+    if (!user || !isi) return;
+    return pin.run({
+      key: kind,
+      task: () =>
+        toggleMyReminder(user.uid, mine, { day: targetDay, kind, text: isi }),
+      fail: () => setFormError(SAVE_ERROR),
+      start: () => setFormError(null),
+    });
+  }
 
   async function handleSave() {
     if (!user || busy) return;
@@ -131,6 +164,14 @@ export default function ReviveEditorScreen() {
         reflection: fReflection.trim(),
         date: editingDate,
       });
+      // Reminder yang dipasang dari Revive ini ikut disegarkan, supaya yang
+      // muncul di Home tidak ketinggalan dari tulisan yang barusan diperbaiki.
+      // Gagal pun tidak membatalkan penyimpanannya — Revive-nya sudah aman.
+      const segar = refreshMyReminders(mine, targetDay, {
+        rhema: fRhema.trim(),
+        application: fReflection.trim(),
+      });
+      if (segar) saveMyReminders(user.uid, segar).catch(() => {});
       // Revive HARI INI pertama kali → streak naik 🔥
       if (targetDay === todayId) {
         await bumpReviveStreak(user.uid, streak, todayId);
@@ -152,6 +193,12 @@ export default function ReviveEditorScreen() {
       // ada tombol 🔗 yang menunjuk catatan yang sudah tiada. Gagal pun tidak
       // membatalkan penghapusannya — penampilnya sudah tahan sambungan yatim.
       purgeNoteLinks(user.uid, 'revive', targetDay).catch(() => {});
+      // Reminder yang lahir dari catatan ini ikut dilepas — kalau tidak, di
+      // Home masih ada kalimat yang click-nya membuka Revive kosong.
+      const sisa = mine.filter((m) => m.day !== targetDay);
+      if (sisa.length !== mine.length) {
+        saveMyReminders(user.uid, sisa).catch(() => {});
+      }
       router.back();
     } finally {
       setBusy(false);
@@ -210,8 +257,31 @@ export default function ReviveEditorScreen() {
 
           {/* Teksnya utuh — tidak dipotong, enter yang kamu ketik ikut
               terbaca sebagai ganti baris. Inilah gunanya layar penuh. */}
-          <BacaBlok label="✨ Rhema" text={entry.rhema} />
-          <BacaBlok label="🏃🏻‍➡️ Aplikasi" text={entry.reflection} />
+          {/* 📌 Justru di sinilah tombolnya paling berguna: catatan lama yang
+              sedang dibaca ulang bisa langsung dipasang jadi reminder harian
+              tanpa perlu menyalin tulisannya sendiri. */}
+          <BacaBlok
+            label="✨ Rhema"
+            text={entry.rhema}
+            right={
+              <PinReminderButton
+                active={myReminderOn(mine, targetDay, 'rhema')}
+                disabled={pin.busy !== null}
+                onPress={() => togglePin('rhema', entry.rhema)}
+              />
+            }
+          />
+          <BacaBlok
+            label="🏃🏻‍➡️ Aplikasi"
+            text={entry.reflection}
+            right={
+              <PinReminderButton
+                active={myReminderOn(mine, targetDay, 'application')}
+                disabled={pin.busy !== null}
+                onPress={() => togglePin('application', entry.reflection)}
+              />
+            }
+          />
 
           <ActionStack>
             <ShareWhatsAppButton onPress={shareToWhatsApp} />
@@ -222,11 +292,6 @@ export default function ReviveEditorScreen() {
               title={entry.title}
             />
           </ActionStack>
-
-          <VixText heading="label" additionalStyle={styles.lockNote}>
-            🔒 Catatan ini sudah jadi arsip — bisa dibaca, dibagikan, &
-            disambungkan ke acara CORE, tapi tidak bisa diubah lagi.
-          </VixText>
         </ScrollView>
       ) : (
         /* Keyboard iOS tidak lagi menutupi kolom Application */
@@ -262,9 +327,17 @@ export default function ReviveEditorScreen() {
                 editable={!busy}
               />
             </View>
-            <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              ✨ Rhema
-            </VixText>
+            {/* 📌 Tombolnya menempel di label kolomnya, bukan di bawah kedua
+                kolom: yang dipasang isi SATU kolom, jadi harus jelas yang mana.
+                Kolom kosong = tombolnya mati — tak ada yang bisa dipasang. */}
+            <View style={[styles.fieldHead, styles.fieldHeadGap]}>
+              <VixText heading="label">✨ Rhema</VixText>
+              <PinReminderButton
+                active={myReminderOn(mine, targetDay, 'rhema')}
+                disabled={!fRhema.trim() || pin.busy !== null}
+                onPress={() => togglePin('rhema', fRhema)}
+              />
+            </View>
             <FormInput
               style={styles.bigInput}
               placeholder={rhemaPrompt(targetDay)}
@@ -273,9 +346,14 @@ export default function ReviveEditorScreen() {
               multiline
               editable={!busy}
             />
-            <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              🏃🏻‍➡️ Aplikasi
-            </VixText>
+            <View style={[styles.fieldHead, styles.fieldHeadGap]}>
+              <VixText heading="label">🏃🏻‍➡️ Aplikasi</VixText>
+              <PinReminderButton
+                active={myReminderOn(mine, targetDay, 'application')}
+                disabled={!fReflection.trim() || pin.busy !== null}
+                onPress={() => togglePin('application', fReflection)}
+              />
+            </View>
             <FormInput
               style={styles.mediumInput}
               placeholder={applicationPrompt(targetDay)}
@@ -317,13 +395,25 @@ export default function ReviveEditorScreen() {
 }
 
 /** Satu blok bacaan di mode arsip — dilewati kalau memang kosong. */
-function BacaBlok({ label, text }: { label: string; text: string }) {
+function BacaBlok({
+  label,
+  text,
+  right,
+}: {
+  label: string;
+  text: string;
+  /** Tombol kecil di ujung kanan label, mis. 📌 jadikan reminder harian. */
+  right?: ReactNode;
+}) {
   if (!text.trim()) return null;
   return (
     <View style={styles.bacaBlok}>
-      <VixText heading="label" additionalStyle={styles.bacaLabel}>
-        {label}
-      </VixText>
+      <View style={styles.fieldHead}>
+        <VixText heading="label" additionalStyle={styles.bacaLabel}>
+          {label}
+        </VixText>
+        {right}
+      </View>
       <VixText heading="paragraph" additionalStyle={styles.bacaText}>
         {text}
       </VixText>
@@ -353,11 +443,22 @@ const styles = StyleSheet.create({
   bacaBlok: { marginTop: 12, gap: 2 },
   bacaLabel: { color: Color.TEXT_LABEL },
   bacaText: { color: Color.TEXT_PARAGRAPH },
-  lockNote: { color: Color.TEXT_LABEL, textAlign: 'center', marginTop: 14 },
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
+  // Label kolom + tombol 📌-nya. `flexWrap` supaya tombolnya TURUN ke baris
+  // berikutnya kalau tidak muat sebaris — bukan terpotong di tepi layar
+  // (label "🏃🏻‍➡️ Aplikasi" + "✅ Reminder harian" sudah dekat batasnya).
+  fieldHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    columnGap: 8,
+    rowGap: 4,
+  },
+  fieldHeadGap: { marginBottom: 6 },
   bigInput: {
     minHeight: 140,
     textAlignVertical: 'top',

@@ -149,11 +149,6 @@ export default function BookDetailScreen() {
             </PressableScale>
           );
         })}
-
-        <VixText heading="label" additionalStyle={styles.footer}>
-          ⚖️ Kalau bukunya masih berhak cipta, dukung penulisnya dengan membeli /
-          meminjam bukunya 🙏
-        </VixText>
       </ScrollView>
     </SafeAreaView>
   );
@@ -176,6 +171,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
   },
   progressTitle: { color: Color.TEXT_TITLE },
@@ -221,5 +217,4 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   chapterNum: { color: Color.TEXT_PLACEHOLDER },
-  footer: { color: Color.TEXT_LABEL, marginTop: 12, lineHeight: 19.5 },
 });

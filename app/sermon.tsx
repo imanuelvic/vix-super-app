@@ -333,8 +333,7 @@ export default function SermonScreen() {
               </PressableScale>
             ) : (
               <VixText heading="label" additionalStyle={styles.lockNote}>
-                🔒 Catatan ini sudah jadi arsip — bisa dibaca & dibagikan, tapi
-                tidak bisa diubah lagi.
+                🔒 Arsip
               </VixText>
             )}
           </ActionStack>

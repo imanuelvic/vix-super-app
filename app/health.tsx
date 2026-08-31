@@ -146,7 +146,9 @@ export default function HealthScreen() {
         ) : tab === 'steps' ? (
           <StepsTab profile={profile} stepDays={stepDays} weeks={weeks} />
         ) : tab === 'race' ? (
-          <FunArchive category="race" />
+          /* Warnanya ikut layar ini, bukan warna kategori Fun: di dalam Health
+             tombol & kartu Race sewarna Steps/Diet/Check-up (hijau MAIN). */
+          <FunArchive category="race" accent={Color.MAIN} />
         ) : tab === 'diet' ? (
           <DietTab day={diet} dayId={dayId} profile={profile} target={target} />
         ) : (

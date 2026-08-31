@@ -32,24 +32,46 @@ export type Creator = {
   channelId: string;
   emoji: string;
   /** Kelompok isinya — jadi chip saringan di layarnya. */
-  kind: 'entertainment' | 'game';
+  kind: CreatorKind;
 };
 
-export const CREATORS: Creator[] = [
-  { key: 'mrbeast', name: 'MrBeast', channelId: 'UCX6OQ3DkcsbYNE6H8uQQuVA', emoji: '🎁', kind: 'entertainment' },
-  { key: 'dudeperfect', name: 'Dude Perfect', channelId: 'UCRijo3ddMTht_IHyNSNXpNQ', emoji: '🎯', kind: 'entertainment' },
-  { key: 'ryantrahan', name: 'Ryan Trahan', channelId: 'UCnmGIkw-KdI0W5siakKPKog', emoji: '🚶', kind: 'entertainment' },
-  { key: 'markiplier', name: 'Markiplier', channelId: 'UC7_YxT-KID8kRbqZo7MyscQ', emoji: '🎮', kind: 'game' },
-  { key: 'jacksepticeye', name: 'Jacksepticeye', channelId: 'UCYzPXprvl5Y-Sf0g4vX-m6g', emoji: '🕹️', kind: 'game' },
-  { key: 'pewdiepie', name: 'PewDiePie', channelId: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw', emoji: '👊', kind: 'game' },
-];
-
-export type CreatorKind = 'all' | Creator['kind'];
+/**
+ * Tiga kelompok isi, dan ketiganya sengaja sejalan dengan fitur ini sendiri:
+ * Summit ⛰️ punya pasangan tontonannya (Mountain), Recreation 🏝️ juga
+ * (Recreation), dan Mr. Beast berdiri sendiri karena memang itu yang dicari.
+ *
+ * Tidak ada lagi chip "Semua": tiga kelompok ini isinya berbeda jauh, dan
+ * digabung jadi satu daftar yang paling sering menerbitkan video (kanal Beast)
+ * selalu menenggelamkan sisanya.
+ */
+export type CreatorKind = 'mrbeast' | 'mountain' | 'recreation';
 
 export const CREATOR_KINDS: { key: CreatorKind; label: string }[] = [
-  { key: 'all', label: 'Semua' },
-  { key: 'entertainment', label: 'Hiburan' },
-  { key: 'game', label: 'Game' },
+  { key: 'mrbeast', label: 'Mr. Beast' },
+  { key: 'mountain', label: 'Mountain' },
+  { key: 'recreation', label: 'Recreation' },
+];
+
+// ⚠️ Tiap `channelId` di bawah SUDAH DIBUKTIKAN: feed-nya diambil sungguhan
+// lalu nama pemiliknya (<author><name> di dalam feed) dicocokkan dengan nama
+// di sini. Ini bukan kehati-hatian berlebihan — id yang salah TIDAK
+// menimbulkan pesan galat apa pun (fetchCreatorFeed memakai allSettled), ia
+// cuma membuat satu kanal diam-diam menghilang dari daftar. Kalau nanti
+// menambah kanal, buktikan dengan cara yang sama.
+export const CREATORS: Creator[] = [
+  // --- Mr. Beast & saudara-saudara kanalnya ---
+  { key: 'mrbeast', name: 'MrBeast', channelId: 'UCX6OQ3DkcsbYNE6H8uQQuVA', emoji: '🎁', kind: 'mrbeast' },
+  { key: 'beastreacts', name: 'Beast Reacts', channelId: 'UCUaT_39o1x6qWjz7K2pWcgw', emoji: '😱', kind: 'mrbeast' },
+  { key: 'mrbeastgaming', name: 'MrBeast Gaming', channelId: 'UCIPPMRA040LQr5QPyJEbmXA', emoji: '🎮', kind: 'mrbeast' },
+  { key: 'beastphilanthropy', name: 'Beast Philanthropy', channelId: 'UCAiLfjNXkNv24uhpzUgPa6A', emoji: '💚', kind: 'mrbeast' },
+  // --- Gunung & pendakian ---
+  { key: 'kraigadams', name: 'Kraig Adams', channelId: 'UCpnuadQ_w3r6f4Q_NRlqd-w', emoji: '🏔️', kind: 'mountain' },
+  { key: 'chasemountains', name: 'Chase Mountains', channelId: 'UCTEopVgqNCUhJq57CxTc4aw', emoji: '🥾', kind: 'mountain' },
+  { key: 'homemadewanderlust', name: 'Homemade Wanderlust', channelId: 'UCQhqmV26773qZhzqJz4VFcw', emoji: '🎒', kind: 'mountain' },
+  // --- Jalan-jalan & rekreasi ---
+  { key: 'yestheory', name: 'Yes Theory', channelId: 'UCvK4bOhULCpmLabd2pDMtnA', emoji: '🌍', kind: 'recreation' },
+  { key: 'karaandnate', name: 'Kara and Nate', channelId: 'UC4ijq8Cg-8zQKx8OH12dUSw', emoji: '✈️', kind: 'recreation' },
+  { key: 'lostleblanc', name: 'Lost LeBlanc', channelId: 'UCt_NLJ4McJlCyYM-dSPRo7Q', emoji: '🏝️', kind: 'recreation' },
 ];
 
 export type Video = {
@@ -58,7 +80,7 @@ export type Video = {
   link: string;
   channel: string;
   emoji: string;
-  kind: Creator['kind'];
+  kind: CreatorKind;
   publishedAt: Date | null;
   /** Gambar sampulnya (dari feed; kalau tak ada, dibuat dari id videonya). */
   thumb: string;
@@ -129,8 +151,32 @@ export async function fetchCreatorVideos(c: Creator): Promise<Video[]> {
   });
 }
 
-/** Berapa video yang ditampilkan sesudah semua kanal digabung. */
-const VIDEO_LIMIT = 40;
+/**
+ * Berapa video yang disimpan PER KELOMPOK (bukan untuk seluruh daftar).
+ *
+ * Per kelompok, dan itu penting: kanal Beast menerbitkan jauh lebih sering
+ * daripada kanal gunung. Kalau batasnya dipasang pada daftar gabungan, video
+ * Beast yang lebih baru akan memakan seluruh jatahnya lebih dulu — dan chip
+ * Mountain bisa tampil KOSONG padahal kanalnya baik-baik saja. Dulu itu tak
+ * terasa karena masih ada chip "Semua"; sekarang tiap chip berdiri sendiri.
+ */
+const VIDEO_PER_KIND = 15;
+
+/**
+ * Ambil paling banyak `VIDEO_PER_KIND` video TIAP KELOMPOK, urutannya tetap
+ * seperti masukannya (terbaru dulu).
+ *
+ * Berdiri sendiri supaya bisa diuji tanpa jaringan — inilah satu-satunya
+ * bagian fetchCreatorFeed yang punya aturan, sisanya cuma mengambil & mengurut.
+ */
+export function capPerKind(videos: Video[]): Video[] {
+  const terpakai: Record<string, number> = {};
+  return videos.filter((v) => {
+    const n = (terpakai[v.kind] ?? 0) + 1;
+    terpakai[v.kind] = n;
+    return n <= VIDEO_PER_KIND;
+  });
+}
 
 /**
  * Video terbaru dari SEMUA kanal, digabung & diurutkan terbaru dulu.
@@ -147,12 +193,14 @@ export async function fetchCreatorFeed(): Promise<Video[]> {
       ? hasil[0].reason
       : new Error('semua kanal gagal');
   }
-  return hasil
-    .flatMap((h) => (h.status === 'fulfilled' ? h.value : []))
-    .sort(
-      (a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0),
-    )
-    .slice(0, VIDEO_LIMIT);
+  return capPerKind(
+    hasil
+      .flatMap((h) => (h.status === 'fulfilled' ? h.value : []))
+      .sort(
+        (a, b) =>
+          (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0),
+      ),
+  );
 }
 
 /** "4 jam lalu" / "2 hari lalu" — sama gayanya dengan fitur News. */

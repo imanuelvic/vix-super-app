@@ -34,12 +34,25 @@ import {
 // Dua sesi (🌅 Pagi & 🌙 Malam) dipisah supaya kelihatan mana yang rutin dan
 // mana yang bolong, plus pasal apa saja yang sering dibaca.
 // Catatan HARI INI masih bisa dibetulkan/dihapus; hari lalu jadi arsip.
-export function BibleReadingTab({ days }: { days: BibleReadingDay[] }) {
+export function BibleReadingTab({
+  days,
+  openSession,
+}: {
+  days: BibleReadingDay[];
+  /**
+   * Sesi yang harus terbuka duluan. Dioper layar Baca Alkitab sesudah menekan
+   * "✅ Sudah baca": yang harus terlihat adalah sesi yang BARUSAN dicatat, dan
+   * itu belum tentu sesi yang jendelanya sedang berjalan (mencatat bacaan
+   * Siang jam 23.00 itu wajar). Kosong = ikut jam sekarang.
+   */
+  openSession?: BibleSession;
+}) {
   const { user } = useAuth();
 
-  // Default ke sesi yang jendelanya sedang terbuka; di luar jam baca → Pagi.
+  // Default: sesi yang dituju; kalau tidak ada, sesi yang jendelanya sedang
+  // terbuka; di luar jam baca → Pagi.
   const [session, setSession] = useState<BibleSession>(
-    () => bibleSessionNow(new Date()) ?? 'morning',
+    () => openSession ?? bibleSessionNow(new Date()) ?? 'morning',
   );
 
   // Hari yang sedang diedit (hanya hari ini) + isi kotak teksnya.
@@ -243,6 +256,7 @@ const styles = StyleSheet.create({
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },
