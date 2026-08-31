@@ -19,13 +19,31 @@ import { formatFullDate, mergeDate } from '@/lib/format';
 export function DateField({
   value,
   onChange,
+  placeholder,
+  maximumDate,
+  minimumDate,
 }: {
-  value: Date;
+  /**
+   * null = BELUM diisi. Tanpa ini, kolom kosong terpaksa diberi tanggal hari
+   * ini sebagai nilai awal — dan di layar ia terbaca seolah tanggalnya sudah
+   * dipilih, padahal belum (mis. tanggal lahir yang belum diisi).
+   */
+  value: Date | null;
   onChange: (date: Date) => void;
+  /** Tulisan saat `value` null. Wajib ada kalau kolomnya boleh kosong. */
+  placeholder?: string;
+  /** Batas tanggal terjauh — mis. tanggal lahir tak boleh di masa depan. */
+  maximumDate?: Date;
+  minimumDate?: Date;
 }) {
   // Id, "tutup diri kalau picker lain dibuka", & sakelar buka/tutup diurus
   // hooks/usePickerSlot — blok yang sama persis dulu disalin di <TimeField>.
   const { open, toggle } = usePickerSlot();
+
+  // Roda picker harus selalu berdiri di suatu tanggal. Saat kolomnya masih
+  // kosong ia mulai dari batas terjauh yang diizinkan (kalau ada) — untuk
+  // tanggal lahir itu berarti hari ini, bukan tanggal acak di masa depan.
+  const shown = value ?? maximumDate ?? new Date();
 
   function handlePick(event: DateTimePickerEvent, selected?: Date) {
     // Android: dialog menutup sendiri; iOS: spinner tetap tampil.
@@ -34,15 +52,18 @@ export function DateField({
     // yang dulu ditulis di sini memang sudah tidak diperlukan.
     if (Platform.OS === 'android') closePickers();
     if (event.type !== 'dismissed' && selected) {
-      onChange(mergeDate(value, selected));
+      // Kolom yang masih kosong belum punya jam untuk dipertahankan.
+      onChange(value ? mergeDate(value, selected) : selected);
     }
   }
 
   return (
     <>
       <PressableScale style={styles.field} onPress={toggle}>
-        <VixText heading="paragraph" additionalStyle={styles.text}>
-          📅 {formatFullDate(value)}
+        <VixText
+          heading="paragraph"
+          additionalStyle={value ? styles.text : styles.placeholder}>
+          📅 {value ? formatFullDate(value) : (placeholder ?? 'Pilih tanggal')}
         </VixText>
         <IconSymbol
           name={open ? 'chevron.up' : 'chevron.down'}
@@ -52,7 +73,9 @@ export function DateField({
       </PressableScale>
       {open && (
         <DateTimePicker
-          value={value}
+          value={shown}
+          maximumDate={maximumDate}
+          minimumDate={minimumDate}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           // iOS: batasi lebar & tengahkan. Di layar lebar (iPad landscape)
@@ -84,6 +107,9 @@ const styles = StyleSheet.create({
     borderColor: Color.BORDER,
   },
   text: { color: Color.TEXT_TITLE },
+  // Sama redupnya dengan placeholder kolom isian & SelectField — supaya "belum
+  // diisi" terbaca sama di mana pun bentuk kolomnya.
+  placeholder: { color: Color.TEXT_PLACEHOLDER },
   // Spinner tanggal iOS — lebar dibatasi & ditengahkan (lihat catatan di atas).
   picker: { alignSelf: 'center', width: '100%', maxWidth: 320 },
 });

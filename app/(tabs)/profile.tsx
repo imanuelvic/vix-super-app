@@ -11,15 +11,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
+import { SelectField, textOptions } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BodyCard } from '@/components/health/BodyCard';
 import { PersonalityTab } from '@/components/profile/PersonalityTab';
 import { QuadrantTab, type Quadrant } from '@/components/profile/QuadrantTab';
@@ -27,7 +30,12 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { pickCompressedPhoto } from '@/lib/family';
-import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
+import { formatDate, parseLongDate } from '@/lib/format';
+import {
+  BLOOD_TYPES,
+  subscribeHealthProfile,
+  type HealthProfile,
+} from '@/lib/health';
 import {
   EMPTY_SELF_KNOWLEDGE,
   subscribeSelfKnowledge,
@@ -37,6 +45,9 @@ import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   EMPTY_PROFILE,
+  GENDERS,
+  MARITAL_STATUSES,
+  RELIGIONS,
   saveProfile,
   subscribeProfile,
   type Profile,
@@ -45,38 +56,68 @@ import {
 // Field teks profil (semua kecuali foto) — dipakai untuk form Edit & tampilan.
 type FieldKey = Exclude<keyof Profile, 'photo'>;
 
-const SECTIONS: {
-  title: string;
-  fields: {
-    key: FieldKey;
-    label: string;
-    placeholder?: string;
-    keyboard?: KeyboardTypeOptions;
-    multiline?: boolean;
-  }[];
-}[] = [
+// Bentuk isian tiap kolom. Kolom yang jawabannya terbatas TIDAK diketik
+// bebas — daftarnya sendiri yang jadi isian, jadi mustahil salah tulis dan
+// tidak ada lagi "Kristen" vs "Kristen Protestan" untuk hal yang sama.
+type FieldSpec = {
+  key: FieldKey;
+  label: string;
+  placeholder?: string;
+  keyboard?: KeyboardTypeOptions;
+  multiline?: boolean;
+  /** Panjangnya memang pasti (NIK 16 digit, dst.) → tak bisa kelebihan. */
+  maxLength?: number;
+  /** Kolom yang huruf besar otomatisnya justru merepotkan (email). */
+  lowercase?: boolean;
+  /** Jawabannya terbatas → daftar pilihan, bukan ketikan bebas. */
+  options?: readonly string[];
+  /** Tanggal → date picker. Nilainya tetap disimpan sebagai teks tampilan. */
+  date?: boolean;
+};
+
+const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
   {
     title: '🙋 Data Diri',
     fields: [
       { key: 'fullName', label: 'Nama lengkap' },
       { key: 'nickname', label: 'Nama panggilan' },
       { key: 'birthPlace', label: 'Tempat lahir' },
-      { key: 'birthDate', label: 'Tanggal lahir' },
-      { key: 'gender', label: 'Jenis kelamin' },
-      { key: 'religion', label: 'Agama' },
-      { key: 'bloodType', label: 'Golongan darah' },
-      { key: 'maritalStatus', label: 'Status perkawinan' },
+      { key: 'birthDate', label: 'Tanggal lahir', date: true },
+      { key: 'gender', label: 'Jenis kelamin', options: GENDERS },
+      { key: 'religion', label: 'Agama', options: RELIGIONS },
+      { key: 'bloodType', label: 'Golongan darah', options: BLOOD_TYPES },
+      {
+        key: 'maritalStatus',
+        label: 'Status perkawinan',
+        options: MARITAL_STATUSES,
+      },
       { key: 'nationality', label: 'Kewarganegaraan' },
     ],
   },
   {
     title: '📄 Identitas & Dokumen',
     fields: [
-      { key: 'nik', label: 'NIK (KTP)', keyboard: 'number-pad' },
-      { key: 'kk', label: 'No. Kartu Keluarga', keyboard: 'number-pad' },
+      // Panjang NIK, KK, & BPJS sudah dipatok penerbitnya, jadi batasnya bisa
+      // ikut dipatok — salah ketik kelebihan digit ketahuan saat diketik,
+      // bukan saat formulirnya ditolak. NPWP sengaja TIDAK dibatasi: sedang
+      // masa peralihan 15 → 16 digit (mengikuti NIK).
+      { key: 'nik', label: 'NIK (KTP)', keyboard: 'number-pad', maxLength: 16 },
+      {
+        key: 'kk',
+        label: 'No. Kartu Keluarga',
+        keyboard: 'number-pad',
+        maxLength: 16,
+      },
       { key: 'npwp', label: 'NPWP', keyboard: 'number-pad' },
+      // Paspor Indonesia berhuruf + berangka (mis. C1234567) → tetap ketikan
+      // biasa, bukan papan angka.
       { key: 'passport', label: 'No. Paspor' },
-      { key: 'bpjs', label: 'No. BPJS Kesehatan', keyboard: 'number-pad' },
+      {
+        key: 'bpjs',
+        label: 'No. BPJS Kesehatan',
+        keyboard: 'number-pad',
+        maxLength: 13,
+      },
     ],
   },
   {
@@ -84,7 +125,7 @@ const SECTIONS: {
     fields: [
       { key: 'address', label: 'Alamat', multiline: true },
       { key: 'phone', label: 'No. HP', keyboard: 'phone-pad' },
-      { key: 'email', label: 'Email', keyboard: 'email-address' },
+      { key: 'email', label: 'Email', keyboard: 'email-address', lowercase: true },
     ],
   },
   {
@@ -171,8 +212,11 @@ export default function ProfileScreen() {
   // Form edit (salinan profil saat modal dibuka).
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<Profile>(EMPTY_PROFILE);
-  const foto = useBusyTask<'foto'>();
-  const photoBusy = foto.busy !== null;
+  // Foto profil bisa diganti dari DUA tempat: lingkaran di atas nama (langsung
+  // tersimpan) & kotak di dalam modal Ubah (ikut tombol Simpan). Satu penanda
+  // sibuk, dua kunci — jadi yang berputar cuma yang sedang dipakai.
+  const foto = useBusyTask<'modal' | 'hero'>();
+  const photoBusy = foto.busy === 'modal';
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -201,12 +245,27 @@ export default function ProfileScreen() {
 
   function handlePickPhoto() {
     return foto.run({
-      key: 'foto',
+      key: 'modal',
       task: async () => {
         const photo = await pickCompressedPhoto();
         if (photo) setForm((prev) => ({ ...prev, photo }));
       },
       fail: () => setFormError(PHOTO_ERROR),
+    });
+  }
+
+  // Lingkaran foto di atas nama = tombolnya sendiri. Langsung tersimpan tanpa
+  // lewat modal Ubah: mengganti foto itu satu keputusan utuh, bukan bagian dari
+  // menyunting sembilan belas kolom identitas.
+  function handleHeroPhoto() {
+    if (!user || !profile) return;
+    return foto.run({
+      key: 'hero',
+      task: async () => {
+        const photo = await pickCompressedPhoto();
+        if (photo) await saveProfile(user.uid, { ...profile, photo });
+      },
+      fail: () => setError(PHOTO_ERROR),
     });
   }
 
@@ -313,17 +372,29 @@ export default function ProfileScreen() {
     if (!profile) return null; // sudah dijaga di atas; ini untuk TypeScript
     return (
       <ScrollView ref={mainScroll} contentContainerStyle={styles.content}>
-        {/* Hero: foto + nama + kewarganegaraan */}
+        {/* Hero: foto + nama + kewarganegaraan. Lingkaran fotonya = tombol
+            ganti foto, ditandai lencana 📷 di pojoknya — tanpa lencana itu tak
+            ada yang memberi tahu bahwa lingkarannya bisa ditekan. */}
         <View style={styles.hero}>
-          <View style={styles.avatar}>
-            {hasPhoto ? (
-              <Image
-                source={{ uri: `data:image/jpeg;base64,${profile.photo}` }}
-                style={styles.avatarImg}
-              />
-            ) : (
-              <VixText additionalStyle={styles.avatarEmoji}>🪪</VixText>
-            )}
+          <View style={styles.avatarWrap}>
+            <PressableScale
+              style={styles.avatar}
+              onPress={handleHeroPhoto}
+              disabled={foto.busy !== null}>
+              {foto.busy === 'hero' ? (
+                <ActivityIndicator color={Color.MAIN} />
+              ) : hasPhoto ? (
+                <Image
+                  source={{ uri: `data:image/jpeg;base64,${profile.photo}` }}
+                  style={styles.avatarImg}
+                />
+              ) : (
+                <VixText additionalStyle={styles.avatarEmoji}>🪪</VixText>
+              )}
+            </PressableScale>
+            <View style={styles.avatarBadge} pointerEvents="none">
+              <IconSymbol name="camera.fill" size={13} color={Color.MAIN_DARK} />
+            </View>
           </View>
           <VixText heading="subheader" additionalStyle={styles.heroName}>
             {profile.fullName}
@@ -339,6 +410,11 @@ export default function ProfileScreen() {
             </VixText>
           </View>
         </View>
+
+        {/* Gagal memuat / gagal mengganti foto. Dulu pesan ini cuma tergambar
+            selagi profilnya BELUM termuat, jadi kegagalan sesudah itu lewat
+            tanpa jejak sama sekali. */}
+        <FormError message={error} gap="none" additionalStyle={styles.contentError} />
 
         {/* Sepasang catatan hidup — sengaja DI SINI, bukan di grid Home:
             isinya paling pribadi (pertobatan, relasi, gaji) jadi tidak ikut
@@ -421,19 +497,50 @@ export default function ProfileScreen() {
               {section.title}
             </VixText>
             {section.fields.map((f) => (
-              <View key={f.key}>
+              <View key={f.key} style={styles.field}>
                 <VixText heading="label" additionalStyle={styles.fieldLabel}>
                   {f.label}
                 </VixText>
-                <FormInput
-                  style={[styles.input, f.multiline && styles.inputMultiline]}
-                  placeholder={f.placeholder}
-                  value={form[f.key]}
-                  onChangeText={(t) => setForm((prev) => ({ ...prev, [f.key]: t }))}
-                  keyboardType={f.keyboard}
-                  multiline={f.multiline}
-                  editable={!saving}
-                />
+                {f.date ? (
+                  // Tanggalnya tetap TERSIMPAN sebagai teks ("1 Januari 1998")
+                  // seperti dulu — cuma cara mengisinya yang berubah, jadi data
+                  // yang sudah ada tidak perlu dipindahkan sama sekali.
+                  <DateField
+                    value={parseLongDate(form[f.key])}
+                    placeholder="Pilih tanggal lahir"
+                    // Lahir di masa depan itu mustahil; rodanya pun jadi mulai
+                    // dari hari ini saat kolomnya masih kosong.
+                    maximumDate={new Date()}
+                    onChange={(d) =>
+                      setForm((prev) => ({ ...prev, [f.key]: formatDate(d) }))
+                    }
+                  />
+                ) : f.options ? (
+                  <SelectField
+                    value={form[f.key] || null}
+                    options={textOptions(f.options, form[f.key])}
+                    onChange={(v) =>
+                      setForm((prev) => ({ ...prev, [f.key]: v ?? '' }))
+                    }
+                    disabled={saving}
+                    clearable
+                  />
+                ) : (
+                  <FormInput
+                    style={f.multiline ? styles.inputMultiline : undefined}
+                    placeholder={f.placeholder}
+                    value={form[f.key]}
+                    onChangeText={(t) =>
+                      setForm((prev) => ({ ...prev, [f.key]: t }))
+                    }
+                    keyboardType={f.keyboard}
+                    multiline={f.multiline}
+                    maxLength={f.maxLength}
+                    autoCapitalize={f.lowercase ? 'none' : undefined}
+                    autoCorrect={f.lowercase ? false : undefined}
+                    editable={!saving}
+                  />
+                )}
               </View>
             ))}
           </View>
@@ -458,6 +565,8 @@ const styles = StyleSheet.create({
   headerWrap: { paddingHorizontal: 20, paddingTop: 12 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   error: { paddingHorizontal: 20, marginTop: 12 },
+  // Di dalam ScrollView yang sudah punya padding sendiri → tak perlu ditambah.
+  contentError: { marginBottom: 12 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -475,6 +584,10 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 12,
   },
+  // Lencana 📷 harus MENGGANTUNG di luar lingkaran, sedangkan lingkarannya
+  // sendiri memotong isinya (overflow hidden, biar fotonya bulat). Dua sifat
+  // yang bertabrakan → lencananya ditaruh di pembungkus, bukan di dalamnya.
+  avatarWrap: { marginBottom: 4 },
   avatar: {
     width: 96,
     height: 96,
@@ -485,7 +598,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    marginBottom: 4,
+  },
+  avatarBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Color.MAIN_LIGHT,
+    borderWidth: 2,
+    borderColor: Color.MAIN_DARK,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarImg: { width: '100%', height: '100%' },
   avatarEmoji: { fontSize: 44, lineHeight: 56 },
@@ -541,7 +666,10 @@ const styles = StyleSheet.create({
   photoPreview: { width: '100%', height: '100%' },
   photoHint: { textAlign: 'center' },
   editSection: { color: Color.MAIN_DARK, marginTop: 10, marginBottom: 8 },
+  // Jarak antar-kolom dipegang pembungkusnya, bukan margin milik kolomnya:
+  // satu baris bisa berisi kolom isian, daftar pilihan, ATAU date picker, dan
+  // ketiganya harus berjarak sama.
+  field: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
-  input: { marginBottom: 10 },
   inputMultiline: { minHeight: 80, textAlignVertical: 'top' },
 });

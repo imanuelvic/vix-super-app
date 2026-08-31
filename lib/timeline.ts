@@ -50,15 +50,35 @@ export type TimelineItem = {
   done: boolean;
 };
 
+/**
+ * Timeline ini punya SIAPA.
+ *
+ * `null`/tak diisi = punyaku sendiri (users/{uid}/timeline/{year}) — persis
+ * seperti sebelumnya, jadi wishlist yang sudah tersimpan tetap di tempatnya.
+ *
+ * Diisi id CORE Leader = timeline CL itu, disimpan terpisah di
+ * users/{uid}/coreTimeline/{leaderId}/years/{year}. Bentuknya sengaja sama
+ * persis dengan `coreWheel` (lihat lib/wheel.ts): tetap di dalam data pemilik
+ * app — aturan Firestore `users/{uid}/**` sudah menutupinya — tapi satu CL
+ * satu cabang sendiri, jadi mustahil tercampur dengan wishlist-ku.
+ */
+export type TimelineOwner = string | null | undefined;
+
+function timelineRef(uid: string, year: number, owner: TimelineOwner) {
+  return owner
+    ? doc(db, 'users', uid, 'coreTimeline', owner, 'years', String(year))
+    : doc(db, 'users', uid, 'timeline', String(year));
+}
+
 export function subscribeTimelineYear(
   uid: string,
   year: number,
   onChange: (items: TimelineItem[]) => void,
   onError?: (error: FirestoreError) => void,
+  owner?: TimelineOwner,
 ) {
-  const ref = doc(db, 'users', uid, 'timeline', String(year));
   return liveDoc(
-    ref,
+    timelineRef(uid, year, owner),
     (snapshot) => {
       onChange((snapshot.data()?.items as TimelineItem[]) ?? []);
     },
@@ -71,9 +91,9 @@ export function saveTimelineYear(
   uid: string,
   year: number,
   items: TimelineItem[],
+  owner?: TimelineOwner,
 ) {
-  const ref = doc(db, 'users', uid, 'timeline', String(year));
-  return setDoc(ref, { items });
+  return setDoc(timelineRef(uid, year, owner), { items });
 }
 
 /** Id unik untuk item baru. */

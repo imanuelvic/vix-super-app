@@ -18,7 +18,7 @@ import {
 import { type LoginStreak as DayStreak } from './achievements';
 import { db } from './firebase';
 import { liveDoc, liveList } from './liveDoc';
-import { daysBetween } from './format';
+import { dayId, daysBetween } from './format';
 import { alreadyCounted, nextStreak } from './streak';
 
 // ============================== Profil tubuh ==============================
@@ -341,9 +341,7 @@ export function idealWeightRange(heightCm: number): { min: number; max: number }
 
 /** "2026-07-23" — id dokumen ceklis harian (tanggal lokal perangkat). */
 export function dayDocId(d: Date): string {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
+  return dayId(d);
 }
 
 export type HabitDayMap = Record<string, boolean>;

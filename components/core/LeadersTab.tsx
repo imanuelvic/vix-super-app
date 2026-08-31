@@ -443,7 +443,6 @@ export function LeadersTab({
                   <VixText heading="label" additionalStyle={styles.followupLine}>
                     📱 {l.phone ? `+62${l.phone}` : 'belum ada nomor'}
                   </VixText>
-                  <StudyWorkLines person={l} />
                   <PersonalityBadges person={l} />
                 </View>
               </PressableScale>
@@ -469,7 +468,28 @@ export function LeadersTab({
                   />
                   <EditButton onPress={() => openEdit(l)} />
                 </View>
-                <EmojiButton emoji="🧍" onPress={() => setBodyOf(l)} />
+                {/* baris 2 · 📍 Timeline CL ini + 🧍 data tubuhnya.
+                    Timeline-nya LAYAR YANG SAMA dengan My Timeline di Profile,
+                    cuma datanya per CL — sama seperti 🎡 Wheel di atasnya.
+                    Tahun lahirnya ikut dioper supaya chip umurnya menghitung
+                    umur DIA, bukan umurku. */}
+                <View style={styles.cardActions}>
+                  <EmojiButton
+                    emoji="📍"
+                    onPress={() =>
+                      router.push({
+                        pathname: '/timeline',
+                        params: {
+                          leaderId: l.id,
+                          name: l.name,
+                          heart: l.heart,
+                          birthYear: String(l.birthYear),
+                        },
+                      })
+                    }
+                  />
+                  <EmojiButton emoji="🧍" onPress={() => setBodyOf(l)} />
+                </View>
                 {soon && (
                   <View style={styles.birthdayChip}>
                     <VixText heading="label" additionalStyle={styles.birthdayChipText}>
@@ -547,7 +567,6 @@ export function LeadersTab({
                   <VixText heading="label" additionalStyle={styles.followupLine}>
                     📱 {m.phone ? `+62${m.phone}` : 'belum ada nomor'}
                   </VixText>
-                  <StudyWorkLines person={m} />
                   <PersonalityBadges person={m} />
                 </View>
               </PressableScale>
@@ -1113,37 +1132,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
         {value}
       </VixText>
     </View>
-  );
-}
-
-// Dua baris pendidikan & pekerjaan di kartu daftar. Tidak menampilkan apa pun
-// selama datanya belum diisi — kartu yang kosong tidak perlu baris kosong.
-function StudyWorkLines({
-  person,
-}: {
-  person: {
-    school?: string | null;
-    major?: string | null;
-    job?: string | null;
-    workplace?: string | null;
-  };
-}) {
-  const belajar = studyLine(person);
-  const kerja = workLine(person);
-  if (!belajar && !kerja) return null;
-  return (
-    <>
-      {belajar ? (
-        <VixText heading="label" additionalStyle={styles.followupLine}>
-          {belajar}
-        </VixText>
-      ) : null}
-      {kerja ? (
-        <VixText heading="label" additionalStyle={styles.followupLine}>
-          {kerja}
-        </VixText>
-      ) : null}
-    </>
   );
 }
 

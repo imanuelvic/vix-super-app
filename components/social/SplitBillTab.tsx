@@ -90,7 +90,7 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
 
         {list.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada patungan. Habis makan bareng, foto notanya di sini 💸
+            Belum ada patungan.
           </VixText>
         ) : (
           <>

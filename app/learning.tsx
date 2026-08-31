@@ -111,7 +111,7 @@ export default function LearningScreen() {
             skillsDone={skillsDone}
           />
         ) : (
-          <DiscussionTab topicsDone={topicsDone} week={current} now={now} />
+          <DiscussionTab topicsDone={topicsDone} now={now} />
         )}
       </View>
 

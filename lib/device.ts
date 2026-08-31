@@ -28,16 +28,25 @@ import { daysBetween } from './format';
 
 export type DeviceKey = 'iphone' | 'ipad';
 
+/**
+ * Perangkat yang PUNYA sub-tab paket sendiri.
+ *
+ * iPad 10 sudah dikeluarkan dari daftar ini — tabletnya tak lagi berpaket data
+ * sendiri, jadi tabnya cuma menampilkan "Rp 0". Tapi `DeviceKey` sengaja tetap
+ * memuat 'ipad': paket iPad yang pernah tercatat masih tersimpan di Firestore,
+ * dan menyempitkan tipenya akan membuat catatan lama itu tak terbaca lagi.
+ *
+ * Ini juga yang membuat badge H-1 ikut menyempit sendiri (devicesNeedingTopUp
+ * di bawah menyapu daftar ini) — badge untuk perangkat yang tak punya tab
+ * adalah tagihan yang tak bisa dikerjakan dari mana pun.
+ */
 export const DEVICES: {
   key: DeviceKey;
   label: string;
   icon: string;
   /** Keterangan singkat di bawah judul tab. */
   sub: string;
-}[] = [
-  { key: 'iphone', label: 'iPhone 15', icon: '📱', sub: 'HP harian' },
-  { key: 'ipad', label: 'iPad 10th Gen', icon: '🖥️', sub: 'tablet' },
-];
+}[] = [{ key: 'iphone', label: 'iPhone 15', icon: '📱', sub: 'HP harian' }];
 
 export function deviceMeta(key: DeviceKey) {
   return DEVICES.find((d) => d.key === key) ?? DEVICES[0];

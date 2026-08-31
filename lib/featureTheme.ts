@@ -90,6 +90,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   car: 'car',
   residence: 'residence',
   news: 'news',
+  'news-saved': 'news',
   book: 'book',
   device: 'device',
   games: 'games',

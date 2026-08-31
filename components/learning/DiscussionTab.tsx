@@ -13,14 +13,10 @@ import { useAuth } from '@/contexts/auth';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   setTopicDone,
-  skillAreaMeta,
-  skillOf,
-  skillOfWeek,
   TOPIC_GROUPS,
   topicGroupMeta,
   TOPICS,
   topicsOfWeek,
-  type LearningWeek,
   type TopicsDone,
 } from '@/lib/learning';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -34,12 +30,9 @@ import { SAVE_ERROR } from '@/lib/messages';
 // dengan pasangan, teman CORE, atau keluarga.
 export function DiscussionTab({
   topicsDone,
-  week,
   now,
 }: {
   topicsDone: TopicsDone;
-  /** Minggu berjalan — untuk tahu ilmu apa yang jadi bahan utamanya. */
-  week: LearningWeek;
   now: Date;
 }) {
   const { user } = useAuth();
@@ -49,11 +42,6 @@ export function DiscussionTab({
 
   // Tekan chip kelompok yang sedang aktif LAGI → daftar balik ke paling atas.
   const { ref: scrollRef, toTop } = useScrollTop();
-
-  // Ilmu minggu ini — bahan diskusi UTAMA. Aturannya sama dengan sub-tab
-  // Target: hasil rotasi otomatis, kecuali kalau sudah diganti manual.
-  const skill = (week.skillKey ? skillOf(week.skillKey) : null) ?? skillOfWeek(now);
-  const area = skillAreaMeta(skill.area);
 
   // Ketiga topik giliran minggu ini — ditandai di daftar panjang ini juga.
   const weekly = topicsOfWeek(now);
@@ -90,23 +78,7 @@ export function DiscussionTab({
         <VixText heading="title" additionalStyle={styles.weeklyTitle}>
           Diskusi Dalam Minggu Ini
         </VixText>
-
-        {/* Bahan utama = ilmu minggu ini. Sengaja TANPA checkbox: "sudah
-            diceritakan atau belum" sudah dicatat langkah Minggu (Ceritakan)
-            di sub-tab Target — dua kotak untuk satu hal yang sama cuma bikin
-            bingung. */}
-        <View style={styles.mainTopicCard}>
-          <VixText heading="bold" additionalStyle={styles.mainTopicTitle}>
-            {area.emoji} {skill.title}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.mainTopicHint}>
-            Ilmu minggu ini — ceritakan pakai bahasamu sendiri, jangan baca
-            catatan.
-          </VixText>
-        </View>
-
-        {/* Tiga topik giliran minggu ini — pemantik kalau diskusinya masih mau
-            lanjut. Dicentang setelah benar-benar diobrolkan. */}
+        
         {weekly.map((t) => {
           const meta = topicGroupMeta(t.group);
           const checked = !!topicsDone[t.key];
@@ -203,18 +175,6 @@ const styles = StyleSheet.create({
   // ---- Blok "Diskusi Dalam Minggu Ini" (pindahan dari sub-tab Target) ----
   weeklyTitle: { marginTop: 4, marginBottom: 8 },
   allTitle: { marginTop: 14, marginBottom: 8 },
-  mainTopicCard: {
-    backgroundColor: Color.LEARNING,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.LEARNING_DARK,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
-    gap: 2,
-  },
-  mainTopicTitle: { color: Color.LEARNING_DARK },
-  mainTopicHint: { color: Color.LEARNING_DARK },
   topicCard: {
     flexDirection: 'row',
     alignItems: 'center',

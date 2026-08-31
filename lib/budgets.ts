@@ -11,6 +11,7 @@ import {
 
 import { FINANCE_CATEGORIES, type FinanceType } from './categories';
 import { db } from './firebase';
+import { monthId } from './format';
 import { RESIDENCE_LOG_TYPES } from './residence';
 import { liveDoc } from './liveDoc';
 
@@ -126,11 +127,6 @@ export async function purgeRemovedBudgets(uid: string): Promise<number> {
   return terhapus;
 }
 
-/** "2026-07" — id dokumen budget per bulan. `month` 0–11 seperti Date JS. */
-function monthDocId(year: number, month: number): string {
-  return `${year}-${String(month + 1).padStart(2, '0')}`;
-}
-
 export type BudgetDoc = {
   allocations: BudgetMap;
   copiedFromPrev: boolean; // pernah disamakan dengan bulan lalu (per bulan)
@@ -144,7 +140,7 @@ export function subscribeBudget(
   onChange: (data: BudgetDoc) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const ref = doc(db, 'users', uid, 'budgets', monthDocId(year, month));
+  const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
   return liveDoc(
     ref,
     (snapshot) => {
@@ -174,13 +170,13 @@ export async function copyBudgetFromPreviousMonth(
     'users',
     uid,
     'budgets',
-    monthDocId(prev.getFullYear(), prev.getMonth()),
+    monthId(prev.getFullYear(), prev.getMonth()),
   );
   const snapshot = await getDoc(prevRef);
   const allocations = (snapshot.data()?.allocations as BudgetMap) ?? {};
   if (Object.keys(allocations).length === 0) return false;
 
-  const ref = doc(db, 'users', uid, 'budgets', monthDocId(year, month));
+  const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
   // TANPA merge: alokasi bulan ini diganti utuh dengan template bulan lalu.
   await setDoc(ref, { allocations, copiedFromPrev: true });
   return true;
@@ -212,7 +208,7 @@ export function saveCategoryBudget(
   for (const subKey of removedSubKeys) {
     allocations[subBudgetKey(type, categoryKey, subKey)] = deleteField();
   }
-  const ref = doc(db, 'users', uid, 'budgets', monthDocId(year, month));
+  const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
   // merge: true supaya hanya key kategori ini yang berubah, alokasi lain tetap.
   return setDoc(ref, { allocations }, { merge: true });
 }

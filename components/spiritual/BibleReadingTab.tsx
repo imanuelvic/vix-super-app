@@ -21,7 +21,7 @@ import {
   BIBLE_VERSION_DEFAULT,
   bibleHasOther,
   bibleSessionMeta,
-  bibleSessionNow,
+  bibleSessionOfClock,
   deleteBibleReading,
   isBibleSkipped,
   openYouVersion,
@@ -49,10 +49,12 @@ export function BibleReadingTab({
 }) {
   const { user } = useAuth();
 
-  // Default: sesi yang dituju; kalau tidak ada, sesi yang jendelanya sedang
-  // terbuka; di luar jam baca → Pagi.
+  // Default: sesi yang dituju; kalau tidak ada, sesi yang JAM SEKARANG
+  // termasuk di dalamnya (lihat bibleSessionOfClock — pagi dari jam 1, siang
+  // dari 12, malam dari 21). Selalu ada jawabannya, jadi membuka arsip jam
+  // 17.00 tidak lagi jatuh ke Pagi.
   const [session, setSession] = useState<BibleSession>(
-    () => openSession ?? bibleSessionNow(new Date()) ?? 'morning',
+    () => openSession ?? bibleSessionOfClock(new Date()),
   );
 
   // Hari yang sedang diedit (hanya hari ini) + isi kotak teksnya.

@@ -33,6 +33,35 @@ export type Profile = {
   photo: string | null; // JPEG base64 kecil (tanpa prefix data:)
 };
 
+// ── Kolom yang jawabannya TERBATAS ───────────────────────────────────────
+// Ini bukan sekadar biar cepat mengisi: kolom ketikan bebas membuat isian yang
+// sama ditulis beda-beda ("Kristen" / "Protestan" / "Kristen Protestan"), dan
+// isi kolom ini nantinya disalin ke formulir resmi — jadi tulisannya memang
+// harus baku. Golongan darah TIDAK ditulis ulang di sini: daftarnya sudah ada
+// di lib/health (BLOOD_TYPES), dipakai bareng Data Tubuh 🧍.
+
+/** Enam agama yang diakui negara, plus Kepercayaan (boleh di KTP sejak 2017). */
+export const RELIGIONS = [
+  'Islam',
+  'Kristen Protestan',
+  'Katolik',
+  'Hindu',
+  'Buddha',
+  'Khonghucu',
+  'Kepercayaan',
+];
+
+/** Bahasa app ini santai, jadi bukan "Laki-laki / Perempuan". */
+export const GENDERS = ['Cowok', 'Cewek'];
+
+/** Empat status di KTP — tulisannya mengikuti yang tercetak di sana. */
+export const MARITAL_STATUSES = [
+  'Belum kawin',
+  'Kawin',
+  'Cerai hidup',
+  'Cerai mati',
+];
+
 // Default aman: hanya isi yang TIDAK sensitif (nama & kewarganegaraan). Data
 // identitas (NIK dsb.) sengaja kosong — diisi lewat modal Edit oleh pemiliknya.
 export const EMPTY_PROFILE: Profile = {

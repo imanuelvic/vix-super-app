@@ -64,7 +64,7 @@ const INTERCESSION_WEEK: IntercessionTopic[] = [
       'Kesehatan papa & mama — kekuatan, umur panjang & pemulihan',
       'Perlindungan seisi rumah dari penyakit & kecelakaan',
       'Pola makan, istirahat & olahraga tiap anggota keluarga',
-      'Kesehatan calon pasangan — fisik, jiwa & pikirannya',
+      'Kesehatan calon pasangan — kedewasaan, fisik, roh & jiwa',
     ],
   },
   // 2 — Selasa

@@ -248,9 +248,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 20,
-    // Beri nafas ke daftar di bawahnya — dengan 4 kartu transaksi teratas
-    // terasa menempel persis di bawah nama bulan.
-    paddingBottom: 12,
+    // Nafas ATAS & BAWAH kira-kira sama, jadi baris bulannya duduk di tengah
+    // celah antara pita header & daftar — bukan menempel ke pita seperti dulu
+    // (paddingTop-nya 0, jadi yang memisahkan cuma 6pt margin pita).
+    paddingTop: 10,
+    paddingBottom: 14,
     gap: 10,
   },
   monthRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

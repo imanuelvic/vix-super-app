@@ -14,6 +14,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { DeviceLogTab } from '@/components/device/DeviceLogTab';
 import { PlanTab } from '@/components/device/PlanTab';
+import { StuffTab } from '@/components/device/StuffTab';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import {
@@ -32,18 +33,24 @@ import {
 } from '@/lib/device';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
+import { subscribeStuff, stuffUnderWarranty, type StuffItem } from '@/lib/stuff';
 import {
   subscribeCategoryTransactions,
   type Transaction,
 } from '@/lib/transactions';
 
-type DeviceTab = 'log' | 'iphone' | 'ipad';
+type DeviceTab = 'log' | 'iphone' | 'stuff';
 
-// Log dulu (pengeluarannya), baru perangkatnya satu per satu.
+// Log dulu (pengeluarannya), lalu paket HP, lalu barang milik sendiri.
+//
+// Sub-tab iPad 10 DIHAPUS: tabletnya tidak lagi berpaket data sendiri, jadi
+// tabnya cuma menampilkan "Rp 0 · belum ada paket" setiap kali dibuka. Bentuk
+// datanya sengaja TIDAK ikut dibuang (lihat DeviceKey di lib/device.ts) supaya
+// paket iPad yang pernah tercatat tetap utuh di Firestore.
 const TABS: BottomTab<DeviceTab>[] = [
   { key: 'log', label: 'Log', icon: 'list.bullet' },
   { key: 'iphone', label: 'iPhone 15', icon: 'iphone' },
-  { key: 'ipad', label: 'iPad 10', icon: 'ipad' },
+  { key: 'stuff', label: 'Stuff', icon: 'shippingbox.fill' },
 ];
 
 // Device 📱 — perangkat harian & biayanya.
@@ -66,6 +73,8 @@ export default function DeviceScreen() {
   // Daftar sub-kategori Finance — dipakai mengenali mana yang sub "Mobile".
   // Dokumen yang sama sudah dibaca layar Finance, jadi tak ada bentuk data baru.
   const [subcats, setSubcats] = useState<SubcategoryMap | null>(null);
+  // Barang milik sendiri 📦 — daftar "My Stuff".
+  const [stuff, setStuff] = useState<StuffItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Jam berjalan: sisa hari paket ikut berganti sendiri lewat tengah malam,
@@ -91,6 +100,7 @@ export default function DeviceScreen() {
         fail,
       ),
       subscribeSubcategories(user.uid, setSubcats, fail),
+      subscribeStuff(user.uid, setStuff, fail),
     ]);
   }, [user]);
 
@@ -106,13 +116,19 @@ export default function DeviceScreen() {
 
   // Badge H-1: paket perangkat itu habis besok atau hari ini. Angkanya SAMA
   // dengan badge tile Device di Home — satu aturan, dua tempat.
+  // Badge Stuff = barang yang garansinya MASIH berlaku — satu-satunya hal di
+  // daftar itu yang punya tenggat, dan justru yang paling mudah terlewat.
   const tabsBerbadge = withBadge(TABS, {
     iphone: deviceNeedsTopUp(plans ?? [], 'iphone', now) ? 1 : 0,
-    ipad: deviceNeedsTopUp(plans ?? [], 'ipad', now) ? 1 : 0,
+    stuff: stuffUnderWarranty(stuff ?? [], now),
   });
 
   const memuat =
-    tab === 'log' ? expenses === null || subcats === null : plans === null;
+    tab === 'log'
+      ? expenses === null || subcats === null
+      : tab === 'stuff'
+        ? stuff === null
+        : plans === null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -129,6 +145,8 @@ export default function DeviceScreen() {
           <LoadingCenter />
         ) : tab === 'log' ? (
           <DeviceLogTab transactions={biayaPerangkat} />
+        ) : tab === 'stuff' ? (
+          <StuffTab items={stuff ?? []} />
         ) : (
           <PlanTab device={tab} plans={plans ?? []} now={now} />
         )}

@@ -30,6 +30,29 @@ export type SelectOption<T extends string> = {
   sub?: string; // keterangan kecil di bawah label
 };
 
+/**
+ * Daftar teks biasa → pilihan SelectField, PLUS isian lama yang tak ada di
+ * daftar.
+ *
+ * Tambahan itu bukan hiasan. Kolom yang dulunya ketikan bebas bisa berisi
+ * tulisan yang beda sedikit dari daftar bakunya ("Tidak kawin" vs "Belum
+ * kawin"). Tanpa ini kolomnya kembali ke "Pilih…" begitu daftarnya dibakukan —
+ * datanya sebenarnya masih tersimpan, tapi di layar terlihat hilang, dan sekali
+ * disimpan ia benar-benar hilang. Isian lamanya ikut ditampilkan (bertanda
+ * "isian lama") sampai kamu sendiri yang menggantinya.
+ */
+export function textOptions(
+  list: readonly string[],
+  current: string,
+): SelectOption<string>[] {
+  const pilihan: SelectOption<string>[] = list.map((o) => ({ key: o, label: o }));
+  const lama = current.trim();
+  if (lama && !list.includes(lama)) {
+    pilihan.push({ key: lama, label: lama, sub: 'isian lama' });
+  }
+  return pilihan;
+}
+
 export function SelectField<T extends string>({
   value,
   options,

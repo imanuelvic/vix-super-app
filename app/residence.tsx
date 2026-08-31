@@ -58,13 +58,17 @@ const TABS: BottomTab<ResidenceTab>[] = [
 export default function ResidenceScreen() {
   const { user } = useAuth();
 
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. Default di
-  // tengah (Air-Listrik).
-  // Masuk langsung ke Perawatan — sub-tab yang paling sering perlu dicek.
+  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  //
+  // Masuk langsung ke Token ⚡ — sub-tab yang paling sering DIISI, bukan cuma
+  // dilihat: meteran dicatat dua kali sehari (pagi & malam), sedangkan
+  // Perawatan cuma sesekali. Tagihan Perawatan tetap terlihat dari badge
+  // merahnya di tab bawah, jadi tak ada yang hilang dari pandangan.
+  //
   // `repress` = tombol Maintenance ditekan lagi saat sudah aktif → daftarnya
   // langsung melompat ke yang harus dibersihkan sekarang (isi badge merahnya).
   const { tab, scrollKey, repress, onTabPress } =
-    useTabScroll<ResidenceTab>('chores');
+    useTabScroll<ResidenceTab>('token');
   const [logs, setLogs] = useState<ResidenceLog[] | null>(null);
   const [utilityTx, setUtilityTx] = useState<Transaction[] | null>(null);
   const [chores, setChores] = useState<ChoreStatusMap | null>(null);

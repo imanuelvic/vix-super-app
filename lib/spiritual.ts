@@ -174,7 +174,7 @@ export const BIBLE_SESSIONS: {
   toHour: number; // jendela selesai (eksklusif)
 }[] = [
   { key: 'morning', label: 'Pagi', title: 'Morning Reading', emoji: DAYPART.morning, fromHour: 5, toHour: 10 },
-  { key: 'daytime', label: 'Siang', title: 'Midday Reading', emoji: DAYPART.daytime, fromHour: 12, toHour: 14 },
+  { key: 'daytime', label: 'Siang', title: 'Midday Reading', emoji: DAYPART.daytime, fromHour: 12, toHour: 15 },
   { key: 'night', label: 'Malam', title: 'Night Reading', emoji: DAYPART.night, fromHour: 21, toHour: 24 },
 ];
 
@@ -335,6 +335,41 @@ export function bibleSessionNow(now: Date): BibleSession | null {
   return (
     BIBLE_SESSIONS.find((s) => h >= s.fromHour && h < s.toHour)?.key ?? null
   );
+}
+
+/**
+ * Jam mulai tiap sesi UNTUK MEMILIH TAB arsip — sengaja BEDA dari `fromHour`
+ * jendela bacanya, dan bedanya penting.
+ *
+ * `fromHour` di BIBLE_SESSIONS itu jendela "terhitung tepat waktu": pagi baru
+ * mulai jam 5, siang jam 12, malam jam 21, dan di antaranya TIDAK ADA sesi
+ * yang berjalan. Itu benar untuk menagih, tapi tab arsip harus punya jawaban
+ * SETIAP saat — jam 11, jam 17, jam 20 pun tetap harus membuka sesuatu.
+ *
+ * Jadi di sini garisnya dibuat bersambung: begitu satu sesi lewat, sesi
+ * berikutnya yang terbuka sampai giliran sesudahnya tiba.
+ */
+export const BIBLE_TAB_HOURS: { key: BibleSession; fromHour: number }[] = [
+  { key: 'morning', fromHour: 1 },
+  { key: 'daytime', fromHour: 12 },
+  { key: 'night', fromHour: 21 },
+];
+
+/**
+ * Sesi yang jam sekarang termasuk di dalamnya — SELALU ada jawabannya.
+ *
+ * Dipakai memilih tab yang terbuka saat sub-tab Bible Reading dibuka. Dulu
+ * yang dipakai `bibleSessionNow`, dan di luar ketiga jendela bacanya ia
+ * mengembalikan null → tabnya jatuh ke Pagi. Akibatnya membuka arsip jam 17.00
+ * menampilkan bacaan PAGI, padahal yang barusan dijalani sesi Siang.
+ *
+ * Jam 00.00–00.59 masih ikut Malam: tengah malam itu ekor hari kemarin, bukan
+ * awal pagi berikutnya.
+ */
+export function bibleSessionOfClock(now: Date): BibleSession {
+  const h = now.getHours();
+  const cocok = [...BIBLE_TAB_HOURS].reverse().find((s) => h >= s.fromHour);
+  return cocok?.key ?? 'night';
 }
 
 function readSessions(data?: Record<string, unknown>): BibleReadingSessions {

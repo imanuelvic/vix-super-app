@@ -13,7 +13,7 @@ import {
 
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
-import { MONTH_NAMES, sameMonth } from './format';
+import { monthShort, sameMonth } from './format';
 import { dayDocId } from './health';
 
 // Pelacakan pemakaian fitur 📊 — berapa kali tiap tile/fitur DIBUKA per hari,
@@ -123,16 +123,20 @@ export function weekDayIds(now = new Date()): string[] {
   return ids;
 }
 
-/** Rentang minggu berjalan, mis. "10–16 Agustus" atau "29 September – 5 Oktober". */
+/**
+ * Rentang minggu berjalan, mis. "10–16 Agu" atau "29 Sep – 5 Okt".
+ *
+ * Nama bulannya 3 huruf: label ini tinggal di kartu SETENGAH LEBAR di tab
+ * System, dan dengan nama panjang "31 Agustus – 6 September" pecah jadi dua
+ * baris — mendorong keterangan di bawahnya sampai terpotong.
+ */
 export function formatWeekRange(now = new Date()): string {
   const start = weekStart(now);
   const end = new Date(start);
   end.setDate(end.getDate() + 6); // Minggu
-  const sm = MONTH_NAMES[start.getMonth()];
-  const em = MONTH_NAMES[end.getMonth()];
   return sameMonth(start, end)
-    ? `${start.getDate()}–${end.getDate()} ${sm}`
-    : `${start.getDate()} ${sm} – ${end.getDate()} ${em}`;
+    ? `${start.getDate()}–${end.getDate()} ${monthShort(start)}`
+    : `${start.getDate()} ${monthShort(start)} – ${end.getDate()} ${monthShort(end)}`;
 }
 
 /** Tanggal 1 bulan ini, 00:00 (waktu lokal). */
@@ -150,9 +154,9 @@ export function monthDayIds(now = new Date()): string[] {
   return ids;
 }
 
-/** Rentang bulan yang SUDAH berjalan, mis. "1–21 Agustus" (bukan 1–31). */
+/** Rentang bulan yang SUDAH berjalan, mis. "1–21 Agu" (bukan 1–31). */
 export function formatMonthRange(now = new Date()): string {
-  return `1–${now.getDate()} ${MONTH_NAMES[now.getMonth()]}`;
+  return `1–${now.getDate()} ${monthShort(now)}`;
 }
 
 /**

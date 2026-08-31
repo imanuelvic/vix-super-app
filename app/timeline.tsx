@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -41,10 +42,29 @@ const MIN_YEAR = 2026;
 export default function TimelineScreen() {
   const { user } = useAuth();
 
+  // Timeline siapa yang sedang dibuka — bentuknya sama persis dengan Wheel of
+  // Life: tanpa param = punyaku sendiri, dengan ?leaderId= = milik CL itu.
+  // Satu layar, dua pemilik; tidak ada layar kembar yang harus dirawat dua kali.
+  const params = useLocalSearchParams<{
+    leaderId?: string;
+    name?: string;
+    heart?: string;
+    birthYear?: string;
+  }>();
+  const owner = params.leaderId || null;
+  const orang = params.name?.trim() || 'CORE Leader';
+  // Umur dihitung dari tahun lahir PEMILIK timeline-nya. Tanpa param (punyaku
+  // sendiri) jatuh ke BIRTH_YEAR.
+  const birthYear = Number(params.birthYear) || BIRTH_YEAR;
+
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   // items = null → loading. Kosong sendiri tiap ganti tahun (lihat useKeyedData).
-  const { data: items, set: setItems } = useKeyedData<number, TimelineItem[]>(year);
+  // Kuncinya ikut memuat pemiliknya, jadi wishlist CL A mustahil sempat
+  // terlihat di layar CL B walau layarnya kebetulan dipakai ulang.
+  const { data: items, set: setItems } = useKeyedData<string, TimelineItem[]>(
+    `${owner ?? 'me'}/${year}`,
+  );
   const [error, setError] = useState<string | null>(null);
 
   // Form tambah/edit. 'new' = sedang menambah baru.
@@ -64,10 +84,11 @@ export default function TimelineScreen() {
         setError(null);
       },
       () => setError(LOAD_ERROR),
+      owner,
     );
-  }, [user, year, setItems]);
+  }, [user, year, owner, setItems]);
 
-  const age = year - BIRTH_YEAR; // ulang tahun 1 Januari → pas per tahun
+  const age = year - birthYear; // ulang tahun 1 Januari → pas per tahun
   const doneCount = items?.filter((i) => i.done).length ?? 0;
   const total = items?.length ?? 0;
   const isThisYear = year === now.getFullYear();
@@ -105,7 +126,7 @@ export default function TimelineScreen() {
       i.id === item.id ? { ...i, done: !i.done } : i,
     );
     try {
-      await saveTimelineYear(user.uid, year, next);
+      await saveTimelineYear(user.uid, year, next, owner);
     } catch {
       setError(SAVE_ERROR);
     }
@@ -129,7 +150,7 @@ export default function TimelineScreen() {
         ? [...items, data]
         : items.map((i) => (i.id === editing.id ? data : i));
     await save(async () => {
-      await saveTimelineYear(user.uid, year, next);
+      await saveTimelineYear(user.uid, year, next, owner);
       setEditing(null);
     });
   }
@@ -142,6 +163,7 @@ export default function TimelineScreen() {
         user.uid,
         year,
         items.filter((i) => i.id !== editing.id),
+        owner,
       );
     } finally {
       setEditing(null);
@@ -207,9 +229,15 @@ export default function TimelineScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
-        backLabel="Home"
-        title="My Timeline 📍"
-        subtitle="Wishlist & panggilan hidupku">
+        backLabel={owner ? 'CORE' : 'Home'}
+        title={
+          owner ? `Timeline ${params.heart ?? '📍'} ${orang}` : 'My Timeline 📍'
+        }
+        subtitle={
+          owner
+            ? `Wishlist & panggilan hidup ${orang}`
+            : 'Wishlist & panggilan hidupku'
+        }>
         {/* Navigasi tahun + umur */}
         <View style={styles.yearRow}>
           <PressableScale
@@ -266,7 +294,7 @@ export default function TimelineScreen() {
             </View>
             <VixText heading="label" additionalStyle={summaryText.label}>
               {total === 0
-                ? 'Belum ada wishlist tahun ini — mulai isi impianmu ✨'
+                ? 'Isi impianmu ✨'
                 : doneCount === total
                   ? 'Semua tercapai — luar biasa! 🎉'
                   : 'Kejar terus panggilanmu 💪'}

@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { MONTH_NAMES } from './format';
+import { MONTH_NAMES, monthIdOf } from './format';
 
 // Multiplikasi CORE 🌱 — satu CORE dibelah jadi dua.
 //
@@ -148,8 +148,7 @@ export function nextStep(m: Multiplication): MultiStep | null {
 
 /** Kunci pengelompokan timeline: "2026-05" → judul "Mei 2026". */
 export function stepMonthKey(step: MultiStep): string {
-  const d = step.date.toDate();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return monthIdOf(step.date.toDate());
 }
 
 export function monthKeyLabel(key: string): string {

@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { monthId } from './format';
 import { liveDoc } from './liveDoc';
 
 // Career 💼 — empat "topi" pekerjaan pemilik app:
@@ -196,7 +197,7 @@ export type InsuranceMonths = Record<string, InsuranceMonth>;
 
 /** "2026-07" — key bulan untuk map asuransi. */
 export function insuranceMonthKey(year: number, month: number): string {
-  return `${year}-${String(month + 1).padStart(2, '0')}`;
+  return monthId(year, month);
 }
 
 export function subscribeInsurance(

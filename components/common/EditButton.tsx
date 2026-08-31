@@ -1,4 +1,3 @@
-import { Color } from '@/assets/style/color';
 import { EmojiButton } from '@/components/common/EmojiButton';
 
 /**
@@ -11,9 +10,9 @@ import { EmojiButton } from '@/components/common/EmojiButton';
  *   · Multiplikasi → emoji ✏️ kuning di lingkaran abu.
  *   · Monthly → ikon pensil di lingkaran krem.
  *
- * Sekarang semuanya memakai yang ini — bentuknya persis tombol ✏️ di sub-tab
- * Monthly: lingkaran krem (latar = penanda "ini bisa ditekan") berisi ikon
- * pensil sewarna. Mau ganti rupa tombol edit? Cukup di berkas ini.
+ * Sekarang semuanya memakai yang ini: lingkaran pekat sewarna fitur tempatnya
+ * berdiri (latar = penanda "ini bisa ditekan") berisi ikon pensil putih. Mau
+ * ganti rupa tombol edit? Cukup di berkas ini.
  *
  * Ukurannya ikut EmojiButton (42×42) — sekalian memenuhi anjuran Apple soal
  * luas click minimum, karena sebelumnya beberapa hanya 16px ikon polos.
@@ -30,11 +29,6 @@ export function EditButton({
   disabled?: boolean;
 }) {
   return (
-    <EmojiButton
-      icon="pencil"
-      iconColor={Color.ACCENT_DARK}
-      onPress={onPress}
-      disabled={disabled}
-    />
+    <EmojiButton icon="pencil" onPress={onPress} disabled={disabled} />
   );
 }

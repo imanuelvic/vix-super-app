@@ -14,6 +14,15 @@ export function monthLabel(d = new Date()): string {
   return MONTH_NAMES[d.getMonth()];
 }
 
+/**
+ * Nama bulan 3 huruf, mis. "Agu". Untuk tempat sempit yang nama panjangnya
+ * membuat kalimatnya membungkus — kartu setengah lebar di tab System, rentang
+ * tanggal, & seluruh tanggal ringkas di bawah.
+ */
+export function monthShort(d: Date): string {
+  return MONTH_NAMES[d.getMonth()].slice(0, 3);
+}
+
 const DAY_NAMES = [
   'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu',
 ];
@@ -37,7 +46,7 @@ export function formatFullDateTime(d: Date): string {
 
 /** Jum, 24 Jul 2026 — nama hari & bulan sama-sama 3 huruf. */
 export function formatShortDayDate(d: Date): string {
-  return `${DAY_NAMES[d.getDay()].slice(0, 3)}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
+  return `${dayShort(d)}, ${d.getDate()} ${monthShort(d)} ${d.getFullYear()}`;
 }
 
 /**
@@ -47,7 +56,7 @@ export function formatShortDayDate(d: Date): string {
  */
 export function formatCompactDate(d: Date): string {
   const day = String(d.getDate()).padStart(2, '0');
-  const month = MONTH_NAMES[d.getMonth()].slice(0, 3);
+  const month = monthShort(d);
   const year = String(d.getFullYear()).slice(-2);
   return `${dayShort(d)}, ${day} ${month} ${year}`;
 }
@@ -78,7 +87,7 @@ export function formatCompactDateTime(d: Date): string {
 /** Rabu, 12 Agu 26 — "dddd, dd mmm yy" untuk baris sapaan (<GreetingHeader/>). */
 export function formatGreetingDate(d: Date): string {
   const day = String(d.getDate()).padStart(2, '0');
-  const month = MONTH_NAMES[d.getMonth()].slice(0, 3);
+  const month = monthShort(d);
   const year = String(d.getFullYear()).slice(-2);
   return `${DAY_NAMES[d.getDay()]}, ${day} ${month} ${year}`;
 }
@@ -174,6 +183,60 @@ export function daysBetween(from: Date, to: Date): number {
   );
 }
 
+/**
+ * Kebalikan `formatDate`: "1 Januari 1998" → Date. null kalau tak terbaca.
+ *
+ * Dipakai kolom yang MENYIMPAN tanggalnya sebagai teks tampilan (mis. tanggal
+ * lahir di Profil) tapi sekarang diisi lewat date picker: teks tersimpannya
+ * dibaca balik jadi tanggal untuk menyetel rodanya. Formatnya tidak diubah,
+ * jadi data yang sudah ada tidak perlu dipindahkan ke mana-mana.
+ *
+ * Tanggal yang tidak ada (mis. "31 Februari 2026") ditolak, bukan digeser
+ * diam-diam ke 3 Maret seperti kelakuan bawaan `new Date`.
+ */
+export function parseLongDate(text: string): Date | null {
+  const m = text.trim().match(/^(\d{1,2})\s+(\S+)\s+(\d{4})$/);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = MONTH_NAMES.findIndex(
+    (n) => n.toLowerCase() === m[2].toLowerCase(),
+  );
+  const year = Number(m[3]);
+  if (month === -1) return null;
+  const d = new Date(year, month, day);
+  return d.getDate() === day && d.getMonth() === month ? d : null;
+}
+
+// ── Id tanggal & bulan ───────────────────────────────────────────────────
+// Dua bentuk yang dipakai sebagai KUNCI di seluruh app: id dokumen harian
+// ("2026-07-24") & kunci bulanan ("2026-07").
+//
+// Dulu keduanya ditulis ulang di enam tempat (health, healthkit, budgets,
+// career, core, multiplication) — dan bentuknya HARUS sama persis, karena
+// inilah yang jadi nama dokumen Firestore. Satu saja yang lupa `padStart`,
+// "2026-7-4" tak akan pernah bertemu "2026-07-04": datanya masih ada, tapi
+// tak terbaca lagi. Karena itu tempatnya jadi satu.
+//
+// SELALU waktu lokal, bukan UTC — `toISOString()` menggeser tanggal untuk
+// siapa pun di timur Greenwich, termasuk WIB.
+
+/** "2026-07-24" — id harian. Dikenal juga sebagai `dayDocId` di lib/health. */
+export function dayId(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** "2026-07" — kunci bulanan. `month` 0–11, sama seperti `Date.getMonth()`. */
+export function monthId(year: number, month: number): string {
+  return `${year}-${String(month + 1).padStart(2, '0')}`;
+}
+
+/** "2026-07" dari sebuah tanggal. */
+export function monthIdOf(d: Date): string {
+  return monthId(d.getFullYear(), d.getMonth());
+}
+
 /** dayId "2026-07-24" → Date lokal (parse manual biar tidak geser zona waktu). */
 export function dayIdToDate(dayId: string): Date {
   const [y, m, d] = dayId.split('-').map(Number);
@@ -225,7 +288,7 @@ export function formatDate(d: Date): string {
 
 /** 22 Jul 2026 — tanggal ringkas (bulan 3 huruf, tanpa nama hari). */
 export function formatShortDate(d: Date): string {
-  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
+  return `${d.getDate()} ${monthShort(d)} ${d.getFullYear()}`;
 }
 
 /** Ganti tanggal tapi pertahankan jam-menit asli (agar urutan dalam 1 hari stabil). */

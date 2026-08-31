@@ -28,7 +28,12 @@ const FUN_TABS: BottomTab<FunTab>[] = [
 // YouTube yang kamu ikuti.
 export default function FunScreen() {
   // Hook bersama: ganti kategori + scroll ke atas tiap tab ditekan.
-  const { tab, scrollKey, onTabPress } = useTabScroll<FunTab>('summit', {
+  //
+  // Mendarat di Creators, bukan Summit: Summit & Recreation itu ARSIP — isinya
+  // berubah cuma saat kamu sendiri menambah catatan, jadi membukanya
+  // menampilkan hal yang sama persis dengan kemarin. Creators justru sebaliknya,
+  // isinya video baru tiap kali dibuka — dan itulah alasan fitur ini dibuka.
+  const { tab, scrollKey, onTabPress } = useTabScroll<FunTab>('creators', {
     tabs: FUN_TABS,
   });
 

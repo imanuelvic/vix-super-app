@@ -154,7 +154,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
         {shown.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
             {places.length === 0
-              ? 'Belum ada tempat. Simpan satu yang lagi kepingin dicoba 🍜'
+              ? 'Belum ada tempat.'
               : 'Tidak ada yang cocok dengan saringan ini.'}
           </VixText>
         )}

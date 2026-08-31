@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { monthIdOf } from './format';
 import { liveDoc, liveList } from './liveDoc';
 import { pickCompressedImage } from './photo';
 
@@ -1545,7 +1546,7 @@ export const MONTHLY_PRAYER_QUESTION =
 
 /** "2026-08" — id bulan berjalan (dasar dokumen pokok doa bulanan). */
 export function monthDocId(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return monthIdOf(d);
 }
 
 export function subscribeMonthlyPrayers(

@@ -294,6 +294,7 @@ export function pointGrowth(
 // penerbitnya, dibuka di browser lewat tautan aslinya.
 
 export type NewsSource =
+  | 'christian'
   | 'bloomberg'
   | 'world'
   | 'indonesia'
@@ -311,6 +312,7 @@ export const NEWS_SOURCES: {
   { key: 'indonesia', label: 'Indo', emoji: '🇮🇩', sub: 'Indonesia · dalam negeri' },
   { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },
   { key: 'bloomberg', label: 'Bisnis', emoji: '📈', sub: 'Bloomberg · bisnis & pasar' },
+  { key: 'christian', label: 'Kristen', emoji: '✝️', sub: 'gereja & kekristenan dunia' },
 ];
 
 /**
@@ -365,6 +367,19 @@ const NEWS_FEEDS: Record<NewsSource, Feed[]> = {
     // lib/prayerNews.ts). Ketiga kata ini sudah cukup tanpa dikutip.
     {
       url: 'https://news.google.com/rss/search?q=artificial+intelligence+OR+AI+OR+robotics+when:7d&hl=en-US&gl=US&ceid=US:en',
+    },
+  ],
+  // Kekristenan ✝️ — dua bahasa sengaja, karena yang dicari memang dua hal
+  // berbeda: kabar gereja & umat DI SINI (bahasa Indonesia), dan kabar
+  // kekristenan sedunia (bahasa Inggris; sumber Indonesia jarang memuatnya).
+  // Tanpa yang kedua, isinya cuma berita lokal; tanpa yang pertama, tidak ada
+  // satu pun kabar gereja Indonesia.
+  christian: [
+    {
+      url: 'https://news.google.com/rss/search?q=gereja+OR+kristen+OR+kristiani+when:7d&hl=id&gl=ID&ceid=ID:id',
+    },
+    {
+      url: 'https://news.google.com/rss/search?q=christian+OR+church+OR+christianity+when:7d&hl=en-US&gl=US&ceid=US:en',
     },
   ],
   dev: [
@@ -498,6 +513,105 @@ export async function fetchNews(source: NewsSource): Promise<NewsItem[]> {
     })
     .sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0))
     .slice(0, NEWS_LIMIT);
+}
+
+// ========================= Berita tersimpan 🔖 =========================
+// Berita yang kamu tandai sendiri, supaya bisa dibaca ulang & ditunjukkan lagi
+// kalau ada yang menanyakan. Daftar RSS-nya sendiri berumur pendek — judul yang
+// hari ini teratas besok sudah tergeser habis dan TIDAK bisa dicari balik dari
+// app ini. Jadi yang disimpan bukan penanda, melainkan salinan judul + tautan
+// + penerbitnya, cukup untuk membuka artikel aslinya kapan pun.
+//
+// SATU dokumen berisi array (bukan satu dokumen per berita): satu langganan,
+// satu baca, dan urutannya ikut apa adanya.
+
+export type NewsBookmark = {
+  title: string;
+  /** Tautan artikel asli — sekaligus JATI DIRInya (lihat bookmarkKey). */
+  link: string;
+  source: string;
+  /** Kapan beritanya terbit (ms), null kalau feed-nya tak menyebutkan. */
+  publishedAt: number | null;
+  /** Kapan kamu menyimpannya (ms) — dipakai mengurutkan yang terbaru dulu. */
+  savedAt: number;
+};
+
+/**
+ * Batas jumlah berita tersimpan. Satu dokumen Firestore maksimal 1 MB;
+ * 200 judul + tautan masih jauh di bawahnya, dan yang paling lama otomatis
+ * terlempar saat batas ini terlewat — jadi tidak akan pernah gagal simpan.
+ */
+export const BOOKMARK_MAX = 200;
+
+/**
+ * Jati diri satu berita = TAUTANNYA, bukan `id`-nya.
+ *
+ * `id` berita dirakit dari nama sumber + nomor urut di feed ("tech-0-3"), jadi
+ * ia berganti tiap kali daftarnya dimuat ulang. Kalau itu yang dipakai, berita
+ * yang sudah kamu simpan tidak akan dikenali lagi sesudah tarik-segarkan —
+ * penandanya padam dan berita yang sama bisa tersimpan dua kali.
+ */
+export function bookmarkKey(link: string): string {
+  return link.trim();
+}
+
+export function isBookmarked(items: NewsBookmark[], link: string): boolean {
+  const kunci = bookmarkKey(link);
+  return items.some((b) => bookmarkKey(b.link) === kunci);
+}
+
+/**
+ * Tambah kalau belum ada, buang kalau sudah — hasilnya daftar BARU, terbaru
+ * dulu. Tidak menyentuh Firestore; pemanggilnya yang menyimpan.
+ */
+export function toggleBookmark(
+  items: NewsBookmark[],
+  item: NewsItem,
+  now: Date,
+): NewsBookmark[] {
+  const kunci = bookmarkKey(item.link);
+  if (isBookmarked(items, item.link)) {
+    return items.filter((b) => bookmarkKey(b.link) !== kunci);
+  }
+  const baru: NewsBookmark = {
+    title: item.title,
+    link: item.link,
+    source: item.source,
+    publishedAt: item.publishedAt ? item.publishedAt.getTime() : null,
+    savedAt: now.getTime(),
+  };
+  return [baru, ...items].slice(0, BOOKMARK_MAX);
+}
+
+/** Buang satu berita tersimpan (dari layar daftarnya). */
+export function removeBookmark(
+  items: NewsBookmark[],
+  link: string,
+): NewsBookmark[] {
+  const kunci = bookmarkKey(link);
+  return items.filter((b) => bookmarkKey(b.link) !== kunci);
+}
+
+export function subscribeNewsBookmarks(
+  uid: string,
+  onChange: (items: NewsBookmark[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  // Jalurnya ikut koleksi `world` yang sudah ada — lihat catatan di atas soal
+  // nama koleksi yang sengaja tidak diganti.
+  const ref = doc(db, 'users', uid, 'world', 'bookmarks');
+  return liveDoc(
+    ref,
+    (snapshot) => {
+      const data = snapshot.data() as { items?: NewsBookmark[] } | undefined;
+      onChange(data?.items ?? []);
+    },
+    onError,
+  );
+}
+
+export function saveNewsBookmarks(uid: string, items: NewsBookmark[]) {
+  return setDoc(doc(db, 'users', uid, 'world', 'bookmarks'), { items });
 }
 
 /** "3 jam lalu" / "2 hari lalu" — umur berita, ringkas. */

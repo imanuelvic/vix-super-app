@@ -140,9 +140,11 @@ export default function ExLeadersScreen() {
                       bersaing dengan tombol kembalikan. Ditempel ke ATAS
                       (alignSelf) walau nama & tanggalnya jadi beberapa baris. */}
                   <View style={styles.deleteCorner}>
+                    {/* Merah penuh, tidak ikut warna fitur: hapus PERMANEN
+                        harus terbaca sama bahayanya di layar mana pun. */}
                     <EmojiButton
                       icon="xmark"
-                      iconColor={Color.DANGER}
+                      danger
                       onPress={() => setConfirmDelete(ex)}
                       busy={busyId === ex.id}
                       disabled={busyId !== null}

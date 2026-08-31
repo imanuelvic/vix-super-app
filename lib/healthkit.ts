@@ -1,7 +1,7 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
-import { startOfDay } from './format';
+import { dayId, startOfDay } from './format';
 
 // Wrapper Apple HealthKit (@kingstinct/react-native-healthkit).
 //
@@ -116,13 +116,6 @@ async function readActiveKcal(
   }
 }
 
-/** "YYYY-MM-DD" tanggal lokal (samakan format dengan dayDocId di lib/health). */
-function localDayId(d: Date): string {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-
 /**
  * Total langkah PER HARI untuk `days` hari terakhir yang SUDAH SELESAI (tidak
  * termasuk hari ini — hari ini belum final). Dipakai untuk mengisi rekor
@@ -143,7 +136,7 @@ export async function readRecentDailySteps(
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
     const steps = await readSteps(mod, dayStart, dayEnd);
-    if (steps != null) out.push({ dayId: localDayId(dayStart), steps });
+    if (steps != null) out.push({ dayId: dayId(dayStart), steps });
   }
   return out;
 }

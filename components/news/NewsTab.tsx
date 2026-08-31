@@ -5,26 +5,35 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { ChipRow } from '@/components/common/ChipRow';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
-import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
+import { NewsCard } from '@/components/news/NewsCard';
 import { useAuth } from '@/contexts/auth';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { openExternalUrl } from '@/lib/linking';
 import { subscribePrayerNews, type PrayerNews } from '@/lib/prayerNews';
 import {
   fetchNews,
-  newsAge,
+  isBookmarked,
   NEWS_ERROR,
   NEWS_SOURCE_DEFAULT,
   NEWS_SOURCES,
+  type NewsBookmark,
+  type NewsItem,
   type NewsSource,
 } from '@/lib/news';
 
 // Tab News 📰 — judul berita terbaru dari RSS publik (tanpa API key).
 // Hanya JUDUL + TAUTAN yang ditampilkan; isi artikel dibuka di browser lewat
 // tautan aslinya karena itu milik penerbitnya.
-export function NewsTab() {
+export function NewsTab({
+  bookmarks,
+  onToggleBookmark,
+}: {
+  bookmarks: NewsBookmark[];
+  /** Simpan/lepas satu berita — penyimpanannya diurus layar News. */
+  onToggleBookmark: (item: NewsItem) => void;
+}) {
   const { user } = useAuth();
   const [source, setSource] = useState<NewsSource>(NEWS_SOURCE_DEFAULT);
   // Kliping doa syafaat minggu ini — dibaca saja; yang menyegarkannya Home
@@ -160,24 +169,16 @@ export function NewsTab() {
             </VixText>
           )}
           {(items ?? []).map((n) => (
-            <PressableScale
+            <NewsCard
               key={n.id}
-              style={styles.card}
-              onPress={() => openExternalUrl(n.link)}>
-              <VixText heading="bold" additionalStyle={styles.cardTitle}>
-                {n.title}
-              </VixText>
-              <View style={styles.metaRow}>
-                <VixText heading="label" additionalStyle={styles.source}>
-                  📰 {n.source}
-                </VixText>
-                {n.publishedAt && (
-                  <VixText heading="label">
-                    {newsAge(n.publishedAt, now)}
-                  </VixText>
-                )}
-              </View>
-            </PressableScale>
+              title={n.title}
+              source={n.source}
+              publishedAt={n.publishedAt}
+              now={now}
+              saved={isBookmarked(bookmarks, n.link)}
+              onOpen={() => openExternalUrl(n.link)}
+              onToggleSave={() => onToggleBookmark(n)}
+            />
           ))}
         </ScrollView>
       )}
@@ -204,24 +205,6 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, textAlign: 'center' },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
   empty: { textAlign: 'center', marginTop: 20 },
-  card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
-    gap: 6,
-  },
-  cardTitle: { color: Color.TEXT_TITLE },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
-  source: { color: Color.NEWS_DARK, flexShrink: 1 },
   // Kliping doa syafaat — sengaja berwarna Spiritual (ungu), bukan World,
   // supaya langsung terbaca "ini bagian doa", bukan sekadar berita lain.
   prayerCard: {
