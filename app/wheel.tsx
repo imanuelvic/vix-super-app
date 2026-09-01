@@ -18,6 +18,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
+import { ReflectionBubbles } from '@/components/wheel/ReflectionBubbles';
 import { ScoreMeter } from '@/components/wheel/ScoreMeter';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
@@ -34,7 +35,9 @@ import {
   shiftQuarter,
   subscribeWheel,
   WHEEL_AREAS,
+  WHEEL_REFLECTIONS,
   WHEEL_TIPS,
+  withReflection,
   type WheelAreaKey,
   type WheelData,
   type WheelFocus,
@@ -350,6 +353,23 @@ export default function WheelScreen() {
             {area.question}
           </VixText>
 
+          {/* Pertanyaan refleksi 💭 — naik pelan sebelum kamu memilih angka.
+              Ditaruh DI ATAS deretan nilai, bukan di bawahnya: gunanya
+              menahan tangan sebentar supaya skornya dipikirkan, bukan
+              membenarkan skor yang sudah terlanjur dipilih. Sama untuk
+              assessment punyaku maupun punya CORE Leader — layarnya memang
+              satu. */}
+          <ReflectionBubbles
+            questions={WHEEL_REFLECTIONS[area.key]}
+            note={draftNotes[area.key] ?? ''}
+            onPick={(q) =>
+              setDraftNotes((prev) => ({
+                ...prev,
+                [area.key]: withReflection(prev[area.key] ?? '', q),
+              }))
+            }
+          />
+
           {/* Pilihan nilai 1–10 */}
           <View style={styles.scoreWrap}>
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
@@ -404,9 +424,7 @@ export default function WheelScreen() {
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <VixText heading="title">🎯 Fokus {quarterLabel(year, q)}</VixText>
           <VixText heading="label" additionalStyle={styles.focusHint}>
-            Pilih minimal {MIN_FOCUS} area untuk dikembangkan kuartal ini
-            (disarankan {MIN_FOCUS} saja biar fokus). Saran otomatis: area
-            dengan skor terendah.
+            Pilih minimal {MIN_FOCUS} area untuk dikembangkan kuartal ini.
           </VixText>
 
           <View style={styles.chipWrap}>

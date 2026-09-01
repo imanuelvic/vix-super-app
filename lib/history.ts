@@ -3,6 +3,7 @@ import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { BIRTH_YEAR } from './timeline';
+import { WHEEL_AREAS, type WheelAreaKey } from './wheel';
 
 // My History 📜 — perjalanan hidup yang SUDAH terjadi, versi app dari sheet
 // "MY LIFE JOURNEY". Pasangannya adalah My Timeline 📍 (rencana ke depan):
@@ -15,29 +16,26 @@ import { BIRTH_YEAR } from './timeline';
 // Semua entri BISA DIUBAH & DIHAPUS — daftar bawaan di bawah hanyalah "benih"
 // yang ditulis sekali saat kamu menekan tombol isi otomatis.
 
-export type HistoryCategoryKey =
-  | 'education'
-  | 'spirituality'
-  | 'family'
-  | 'ministry'
-  | 'career'
-  | 'finance'
-  | 'relationship'
-  | 'fun';
+export type HistoryCategoryKey = WheelAreaKey | 'education';
 
+/**
+ * Kategori kejadian = KEDELAPAN area Wheel of Life, ditambah "Education".
+ *
+ * Diambil langsung dari WHEEL_AREAS supaya satu daftar area hidup dipakai di
+ * seluruh app (Wheel, Timeline, History) — dulu Health tidak ada di sini,
+ * padahal sakit & pemulihan itu bagian besar perjalanan hidup.
+ *
+ * "Education" TETAP ada di ekornya: ia bukan area Wheel of Life, tapi
+ * kejadian lama sudah memakainya — dan sekolah memang tonggak sendiri di
+ * riwayat hidup, bukan bagian dari karier.
+ */
 export const HISTORY_CATEGORIES: {
   key: HistoryCategoryKey;
   label: string;
   icon: string;
 }[] = [
+  ...WHEEL_AREAS.map(({ key, label, icon }) => ({ key, label, icon })),
   { key: 'education', label: 'Education', icon: '🏫' },
-  { key: 'spirituality', label: 'Spirituality', icon: '✝️' },
-  { key: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦' },
-  { key: 'ministry', label: 'Ministry', icon: '🙏' },
-  { key: 'career', label: 'Career', icon: '💼' },
-  { key: 'finance', label: 'Finance', icon: '💵' },
-  { key: 'relationship', label: 'Relationship', icon: '🤝' },
-  { key: 'fun', label: 'Fun & Recreation', icon: '🎢' },
 ];
 
 export function historyCategoryMeta(key: HistoryCategoryKey) {

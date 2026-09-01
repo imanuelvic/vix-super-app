@@ -205,6 +205,11 @@ export const Color = {
   // Merek luar (tombol chat WhatsApp di fitur CORE, pintasan IG di Habits)
   WHATSAPP: '#25D366',
   INSTAGRAM: '#E1306C',
+  // Hijau Duolingo yang DIGELAPKAN. Hijau aslinya (#58CC02) cuma 2,1:1 di atas
+  // kartu putih — terbaca jelas sebagai logo besar, tapi tidak sebagai teks
+  // kecil "Buka Duolingo" di baris kebiasaan. Yang ini 5,2:1 (lolos WCAG AA)
+  // dan hijaunya masih hijau Duolingo, bukan hijau app.
+  DUOLINGO: '#437A00',
 
   // Status
   SUCCESS: '#1D8D7A',

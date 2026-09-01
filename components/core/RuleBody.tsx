@@ -78,8 +78,6 @@ export function RuleBody({ body }: { body: string }) {
               </VixText>
             );
           default:
-            // 'blank' — jaraknya sudah diatur margin, baris kosong tak perlu
-            // dicetak; kalau dicetak, dokumennya jadi berlubang-lubang.
             return null;
         }
       })}

@@ -2,16 +2,23 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   limit,
   orderBy,
   query,
   setDoc,
   Timestamp,
   type FirestoreError,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 
 import { type LoginStreak as DayStreak } from './achievements';
-import { usfmRef } from './bible';
+import {
+  isLastChapter,
+  nextChapterRef,
+  splitBibleRefs,
+  usfmRef,
+} from './bible';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc, liveList } from './liveDoc';
@@ -398,24 +405,122 @@ function readVersions(data?: Record<string, unknown>): BibleReadingVersions {
   };
 }
 
+/** Satu dokumen hari → satu baris riwayat. Dipakai langganan & sekali-ambil. */
+function bibleDayRow(d: QueryDocumentSnapshot): BibleReadingDay {
+  return {
+    id: d.id,
+    ...readSessions(d.data()),
+    date: d.data().date as Timestamp,
+    versions: readVersions(d.data()),
+  };
+}
+
+/** Kueri riwayat bacaan, terbaru → terlama. `n` = berapa HARI ke belakang. */
+function bibleDaysQuery(uid: string, n: number) {
+  // orderBy satu field saja → tidak butuh composite index.
+  return query(
+    collection(db, 'users', uid, 'bibleRead'),
+    orderBy('date', 'desc'),
+    limit(n),
+  );
+}
+
 /** Riwayat 90 hari terakhir — untuk tab Bible Reading di Spiritual. */
 export function subscribeBibleReadingDays(
   uid: string,
   onChange: (days: BibleReadingDay[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  // orderBy satu field saja → tidak butuh composite index.
-  const q = query(
-    collection(db, 'users', uid, 'bibleRead'),
-    orderBy('date', 'desc'),
-    limit(90),
+  return liveList<BibleReadingDay>(
+    bibleDaysQuery(uid, 90),
+    onChange,
+    onError,
+    bibleDayRow,
   );
-  return liveList<BibleReadingDay>(q, onChange, onError, (d) => ({
-    id: d.id,
-    ...readSessions(d.data()),
-    date: d.data().date as Timestamp,
-    versions: readVersions(d.data()),
-  }));
+}
+
+// =============== Rekomendasi bacaan berikutnya 💡 ===============
+// Baca Alkitab itu berurutan: kemarin Amsal 2, hari ini Amsal 3. Jadi kolom
+// "Bacaan 1" tidak perlu dimulai dari kosong — sambungan dari catatan
+// terakhirlah yang hampir selalu benar, dan kalau meleset tinggal diganti.
+//
+// TIAP SESI punya rantainya SENDIRI (pagi Amsal, siang Yesaya, malam
+// 1 Petrus itu tiga bacaan berbeda), jadi yang ditengok cuma kolom sesi itu.
+
+/**
+ * Berapa hari ke belakang yang ditengok saat mencari bacaan terakhir.
+ *
+ * Sebulan: cukup panjang untuk melewati minggu yang bolong, dan biayanya
+ * jelas — sekali buka layar catat bacaan = sekali kueri, bukan langganan yang
+ * hidup terus. Lebih lama dari itu, rekomendasinya sendiri sudah tidak
+ * relevan (bacaan sebulan lalu biasanya sudah ditinggalkan).
+ */
+export const BIBLE_SUGGEST_DAYS = 30;
+
+export type BibleSuggestion = {
+  /** Acuan terakhir yang tercatat di sesi ini, mis. "Amsal 2". */
+  last: string;
+  /** Kapan itu dibaca ("YYYY-MM-DD") — supaya jelas menyambung dari kapan. */
+  dayId: string;
+  /** Pasal berikutnya — null kalau kitabnya tamat / namanya tak dikenali. */
+  next: string | null;
+  /** Kitabnya sudah tamat (pasal terakhir) → waktunya pilih kitab baru. */
+  finished: boolean;
+  /** Terjemahan yang dipakai terakhir kali di sesi ini. */
+  version: string;
+};
+
+/**
+ * Sambungan dari catatan TERAKHIR sesi ini. `days` harus urut terbaru →
+ * terlama (seperti yang dikembalikan kueri di atas).
+ *
+ * Hari yang kosong & hari yang ditandai dilewati dilompati — keduanya bukan
+ * bacaan. Kalau satu hari mencatat beberapa kitab ("Amsal 30, Amsal 31"),
+ * yang jadi acuan yang TERAKHIR, karena itu yang paling jauh dibaca.
+ */
+export function bibleSuggestion(
+  days: BibleReadingDay[],
+  session: BibleSession,
+): BibleSuggestion | null {
+  for (const d of days) {
+    const isi = d[session];
+    if (!isi || isBibleSkipped(isi)) continue;
+    const refs = splitBibleRefs(isi);
+    const last = refs[refs.length - 1];
+    if (!last) continue;
+    return {
+      last,
+      dayId: d.id,
+      next: nextChapterRef(last),
+      finished: isLastChapter(last),
+      version: d.versions[session] || BIBLE_VERSION_DEFAULT,
+    };
+  }
+  return null;
+}
+
+/** Rekomendasi KETIGA sesi sekaligus (null = sesi itu belum punya riwayat). */
+export type BibleSuggestions = Record<BibleSession, BibleSuggestion | null>;
+
+/**
+ * Ambil rekomendasi — SEKALI JALAN, bukan langganan: saran tidak perlu ikut
+ * berubah selagi layarnya terbuka, dan sekali ambil jauh lebih murah daripada
+ * listener yang hidup selama layar itu dibuka.
+ *
+ * Ketiga sesi dihitung dari SATU kueri yang sama. Riwayatnya toh sudah di
+ * tangan, jadi memisahnya per sesi cuma akan jadi tiga kueri untuk dokumen
+ * yang sama persis.
+ */
+export async function fetchBibleSuggestions(
+  uid: string,
+): Promise<BibleSuggestions> {
+  const snapshot = await getDocs(bibleDaysQuery(uid, BIBLE_SUGGEST_DAYS));
+  const days = snapshot.docs.map(bibleDayRow);
+  return {
+    morning: bibleSuggestion(days, 'morning'),
+    daytime: bibleSuggestion(days, 'daytime'),
+    night: bibleSuggestion(days, 'night'),
+  };
 }
 
 /** HANYA hari ini — dipakai Dashboard (1 dokumen saja, hemat read). */

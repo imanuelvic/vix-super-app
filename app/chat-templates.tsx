@@ -210,11 +210,6 @@ export default function ChatTemplatesScreen() {
             onSend={handleSend}
           />
         ))}
-
-        <VixText heading="label" additionalStyle={styles.footNote}>
-          💡 Ucapan ulang tahun tidak ada di sini — tempatnya di kartu ulang
-          tahun sub-tab Follow Up, lengkap dengan doa & undangannya.
-        </VixText>
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );
@@ -365,5 +360,4 @@ const styles = StyleSheet.create({
   sendText: { color: Color.TEXT_REVERSE },
   variantText: { color: Color.TEXT_PARAGRAPH },
   warnText: { color: Color.WARNING },
-  footNote: { color: Color.TEXT_LABEL, marginTop: 6 },
 });

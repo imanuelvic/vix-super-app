@@ -281,7 +281,7 @@ export async function sharePng(
 }
 
 /**
- * Buka aplikasi Instagram.
+ * Buka Instagram.
  *
  * `story` membuka langsung kamera Story — di pojok kiri bawahnya ada pratinjau
  * foto TERBARU di galerimu, jadi gambar yang barusan disimpan tinggal

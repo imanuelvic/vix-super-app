@@ -15,6 +15,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SearchBar } from '@/components/common/SearchBar';
+import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -372,18 +373,22 @@ export default function HistoryScreen() {
           </View>
         </View>
 
+        {/* Dropdown, bentuk yang sama dengan modal di fitur CORE — sembilan
+            kategori sebagai chip memakan separuh modal sebelum kolom
+            "Kejadiannya" sempat terlihat. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Kategori
         </VixText>
-        <View style={styles.chipWrap}>
-          {HISTORY_CATEGORIES.map((c) => (
-            <Chip
-              key={c.key}
-              label={`${c.icon} ${c.label}`}
-              active={fCategory === c.key}
-              onPress={() => setFCategory(c.key)}
-            />
-          ))}
+        <View style={styles.formGap}>
+          <SelectField
+            value={fCategory}
+            options={HISTORY_CATEGORIES.map((c) => ({
+              key: c.key,
+              label: `${c.icon} ${c.label}`,
+            }))}
+            onChange={(k) => k && setFCategory(k)}
+            disabled={busy}
+          />
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>

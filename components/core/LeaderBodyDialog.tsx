@@ -65,7 +65,7 @@ export function LeaderBodyDialog({
 
           {!ada ? (
             <VixText heading="paragraph" additionalStyle={styles.empty}>
-              Belum ada data tubuh {leader.name}.
+              Belum ada data tubuh {leader.name}
             </VixText>
           ) : (
             <View style={styles.rows}>

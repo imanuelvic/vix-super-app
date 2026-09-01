@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,13 +15,19 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { useDraft } from '@/hooks/useDraft';
 import { useNow } from '@/hooks/useNow';
 import { BIBLE_CATEGORY } from '@/lib/achievements';
-import { formatFullDate, formatMinutesLeft } from '@/lib/format';
+import {
+  dayIdToDate,
+  formatFullDate,
+  formatMinutesLeft,
+  formatShortDayDate,
+} from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
-import { SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   BIBLE_SKIPPED,
   BIBLE_VERSION_DEFAULT,
@@ -33,6 +39,7 @@ import {
   bumpBibleStreaks,
   dailyReminder,
   EMPTY_BIBLE_STREAKS,
+  fetchBibleSuggestions,
   isBibleSkipped,
   saveBibleReading,
   subscribeBibleReadingToday,
@@ -76,27 +83,64 @@ export default function BibleReadingScreen() {
   }, [user, dayId]);
 
   // Sudah pernah diisi hari ini → tampilkan lagi supaya bisa ditambah/dibetulkan.
-  // Hari yang dilewati tidak punya acuan, jadi kolomnya dibiarkan kosong.
   const existing = today?.[session] ?? '';
   const skipped = isBibleSkipped(existing);
+  const tercatat = !!existing && !skipped;
+
+  // Rekomendasi bacaan berikutnya 💡 — sambungan dari catatan TERAKHIR sesi
+  // ini: kemarin Amsal 2, hari ini Amsal 3. Diambil sekali saat layar dibuka.
+  // Kalau gagal (mis. sedang offline) layarnya tetap jalan seperti biasa —
+  // ini bantuan mengetik, bukan isi, jadi galatnya sengaja tidak ditampilkan.
+  //
+  // Ketiganya diambil sekaligus & sesinya dipilih SESUDAHNYA, bukan ikut
+  // masuk ke dalam kuerinya: riwayat yang dibaca sama persis, jadi memisahnya
+  // per sesi cuma menambah kueri tanpa menambah data.
+  const muatSaran = useMemo(
+    () => (user ? () => fetchBibleSuggestions(user.uid) : null),
+    [user],
+  );
+  const { data: semuaSaran } = useAsyncData(muatSaran, LOAD_ERROR);
+  const saran = semuaSaran?.[session] ?? null;
 
   // Beberapa acuan sekaligus — kalau hari itu baca lebih dari satu kitab.
   // Isinya ikut catatan tersimpan SELAMA belum diketik (hook bersama useDraft),
   // jadi begitu datanya sampai kolomnya langsung terisi — tanpa efek yang
-  // menimpa ketikan yang sedang berjalan.
+  // menimpa ketikan yang sedang berjalan. Hal yang sama berlaku untuk
+  // rekomendasi: begitu sampai ia mengisi kolom yang masih kosong, tapi tidak
+  // pernah menimpa yang sudah kamu pilih sendiri.
   const [refs, setRefs] = useDraft<string[]>(
-    existing && !skipped ? existing.split(',').map((s) => s.trim()) : [''],
+    tercatat
+      ? existing.split(',').map((s) => s.trim())
+      : [saran?.next ?? ''],
   );
 
   // Terjemahan yang dibaca ("TB", "BIS", "NIV", …). Bebas diketik: daftar
   // terjemahan di YouVersion terlalu panjang untuk dijadikan pilihan, dan
   // yang kamu pakai sehari-hari cuma segelintir. Kosong = TB.
+  //
+  // Belum dicatat hari ini → ikut terjemahan yang dipakai TERAKHIR di sesi
+  // ini. Ganti terjemahan itu jarang, jadi menyalin TB terus-menerus padahal
+  // sebulan terakhir baca TSI cuma bikin catatannya keliru.
+  const versiTersimpan = versions?.[session] ?? BIBLE_VERSION_DEFAULT;
   const [version, setVersion] = useDraft<string>(
-    versions?.[session] ?? BIBLE_VERSION_DEFAULT,
+    tercatat ? versiTersimpan : (saran?.version ?? versiTersimpan),
   );
 
   const filled = refs.map((r) => r.trim()).filter(Boolean);
   const versiTerpakai = version.trim() || BIBLE_VERSION_DEFAULT;
+
+  // Keterangan kecil di kartu Bacaan 1: dari mana angka itu datang. Tanpa ini
+  // pasal yang tiba-tiba terisi bisa disangka catatan yang sudah tersimpan.
+  // Kitab yang tamat tidak disambung sendiri ke kitab berikutnya — memilih
+  // kitab baru itu keputusanmu, jadi yang muncul ucapan selamat, bukan tebakan.
+  const saranHint =
+    tercatat || !saran
+      ? null
+      : saran.next
+        ? `💡 Lanjutan dari ${saran.last} · ${formatShortDayDate(dayIdToDate(saran.dayId))}`
+        : saran.finished
+          ? `🎉 ${saran.last} — kitabnya tamat. Pilih kitab baru ya.`
+          : null;
 
   // Sisa waktu jendela sesi ini. ≤ 0 = sudah lewat; ≤ 30 menit = aba-aba merah.
   const minutesLeft = bibleMinutesLeft(session, now);
@@ -253,6 +297,11 @@ export default function BibleReadingScreen() {
                 </PressableScale>
               )}
             </View>
+            {i === 0 && saranHint ? (
+              <VixText heading="label" additionalStyle={styles.suggestHint}>
+                {saranHint}
+              </VixText>
+            ) : null}
             <BibleRefField
               value={ref}
               onChange={(next) => setRefAt(i, next)}
@@ -290,8 +339,11 @@ export default function BibleReadingScreen() {
 
         {filled.length > 0 && (
           <View style={styles.summaryCard}>
+            {/* Sebelum ditekan "Sudah baca" isinya belum tersimpan apa pun —
+                dan sekarang kolomnya bisa terisi sendiri dari rekomendasi,
+                jadi kalimatnya harus jujur menyebut mana yang mana. */}
             <VixText heading="label" additionalStyle={styles.summaryLabel}>
-              Tersimpan sebagai
+              {tercatat ? 'Tersimpan sebagai' : 'Akan tersimpan sebagai'}
             </VixText>
             <VixText heading="bold" additionalStyle={styles.summaryText}>
               {bibleRefWithVersion(filled.join(', '), versiTerpakai)}
@@ -410,6 +462,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   refTitle: { color: Color.SPIRITUAL_DARK },
+  // Sedikit lebih gelap dari judul kartunya: keterangan, bukan judul kedua.
+  suggestHint: { color: Color.SPIRITUAL_DEEP },
   removeText: { color: Color.DANGER },
   addButton: {
     alignItems: 'center',

@@ -50,18 +50,33 @@ export default function GratitudeScreen() {
   // Boros, dan daftarnya sempat kosong sekejap tiap kali.
   const gratitudeId = gratitude?.id ?? null;
 
+  // Galatnya DIBERSIHKAN tiap data baru sampai — bukan cuma dipasang saat
+  // gagal. Tanpa itu, satu kegagalan sekejap (mis. sinyal putus sedetik saat
+  // layar dibuka) menempel selamanya: pesan "Gagal memuat data" tetap terpampang
+  // di atas daftar syukur yang sebenarnya sudah tampil lengkap di bawahnya.
   useEffect(() => {
     if (!user) return;
-    return subscribeHabitSchedule(user.uid, setHabits, () =>
-      setError(LOAD_ERROR),
+    return subscribeHabitSchedule(
+      user.uid,
+      (next) => {
+        setHabits(next);
+        setError(null);
+      },
+      () => setError(LOAD_ERROR),
     );
   }, [user]);
 
   useEffect(() => {
     if (!user || !gratitudeId) return;
     return unsubscribeAll([
-      subscribeHabitNotes(user.uid, gratitudeId, setDays, () =>
-        setError(LOAD_ERROR),
+      subscribeHabitNotes(
+        user.uid,
+        gratitudeId,
+        (next) => {
+          setDays(next);
+          setError(null);
+        },
+        () => setError(LOAD_ERROR),
       ),
     ]);
   }, [user, gratitudeId]);

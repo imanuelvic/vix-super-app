@@ -533,6 +533,7 @@ export default function TasksScreen() {
         <>
           {/* Ganti kategori = ganti to-do list. Ref tiap chip untuk drop drag. */}
           <ChipRow
+            activeIndex={TASK_CATEGORIES.findIndex((c) => c.key === category)}
             additionalStyle={styles.chipScroll}
             contentStyle={styles.chipRow}>
             {TASK_CATEGORIES.map((c) => {

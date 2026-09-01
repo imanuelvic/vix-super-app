@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -8,10 +8,8 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
 import { NewsCard } from '@/components/news/NewsCard';
-import { useAuth } from '@/contexts/auth';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { openExternalUrl } from '@/lib/linking';
-import { subscribePrayerNews, type PrayerNews } from '@/lib/prayerNews';
 import {
   fetchNews,
   isBookmarked,
@@ -34,19 +32,10 @@ export function NewsTab({
   /** Simpan/lepas satu berita — penyimpanannya diurus layar News. */
   onToggleBookmark: (item: NewsItem) => void;
 }) {
-  const { user } = useAuth();
   const [source, setSource] = useState<NewsSource>(NEWS_SOURCE_DEFAULT);
-  // Kliping doa syafaat minggu ini — dibaca saja; yang menyegarkannya Home
-  // (sekali seminggu, lihat lib/prayerNews.ts).
-  const [prayerNews, setPrayerNews] = useState<PrayerNews | null>(null);
   // Daftar beritanya — dipegang supaya bisa digulung balik ke atas saat chip
   // sumber yang sedang aktif ditekan lagi.
   const listRef = useRef<ScrollView>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribePrayerNews(user.uid, setPrayerNews);
-  }, [user]);
 
   // Ganti sumber = permintaan baru (fungsinya ikut berganti). Gagal ambil →
   // daftarnya ikut dikosongkan, biar "Coba lagi" mulai dari layar bersih.
@@ -59,11 +48,6 @@ export function NewsTab({
   } = useAsyncData(load, NEWS_ERROR, false);
 
   const now = new Date();
-  // Gereja dulu, baru negara — urutan yang sama dengan jadwal syafaatnya
-  // (Sabtu ⛪, lalu Minggu 🇮🇩).
-  const prayerPoints = prayerNews
-    ? [...prayerNews.points.church, ...prayerNews.points.nation]
-    : [];
   const aktif = NEWS_SOURCES.find((s) => s.key === source)!;
 
   /**
@@ -86,21 +70,19 @@ export function NewsTab({
 
   return (
     <View style={styles.flex}>
-      {/* Pemilih sumber — kelimanya harus terlihat SEKALIGUS, tanpa ada yang
-          terpotong di tepi.
+      {/* Pemilih sumber — satu baris yang digeser, sama seperti kategori di
+          Reminder.
 
-          Emojinya sudah pindah ke baris keterangan di bawah (tiap emoji +
-          spasinya makan ±20 pt; kelimanya saja seperlima baris), dan dua nama
-          dipendekkan — Indonesia → Indo, Bloomberg → Bisnis. Itu membuat
-          kelimanya muat 323 pt di ruang 353 pt iPhone 15.
-
-          Tapi 30 pt sisa itu tipis, dan yang menghabiskannya bukan cuma
-          namanya: ukuran huruf sistem bisa diperbesar sendiri oleh pembacanya.
-          Karena itu barisnya TIDAK lagi digeser, melainkan `fit="wrap"` —
-          chip yang tidak muat turun ke baris berikutnya. Baris yang digeser
-          menyembunyikan pilihan di luar layar; baris yang turun tidak pernah
-          menyembunyikan apa pun, berapa pun besar hurufnya. */}
-      <ChipRow fit="wrap" contentStyle={styles.sourceRow}>
+          Sempat dibuat turun baris supaya keenamnya terlihat sekaligus, tapi
+          baris keduanya tertimpa keterangan di bawahnya sampai chip terakhir
+          ("Kristen") terpotong separuh. Nama dua sumber tetap dipendekkan
+          (Indonesia → Indo, Bloomberg → Bisnis) & emojinya pindah ke baris
+          keterangan, jadi yang perlu digeser tinggal sedikit — dan sumber yang
+          sedang dipilih selalu ditarik ke dalam layar sendiri (`activeIndex`),
+          jadi tak ada yang hilang di luar tepi. */}
+      <ChipRow
+        activeIndex={NEWS_SOURCES.findIndex((s) => s.key === source)}
+        contentStyle={styles.sourceRow}>
         {NEWS_SOURCES.map((s) => (
           <Chip
             key={s.key}
@@ -138,31 +120,6 @@ export function NewsTab({
               tintColor={Color.NEWS_DARK}
             />
           }>
-          {/* Kliping doa syafaat minggu ini 🙏 — hanya di tab Indonesia, karena
-              isinya memang berita gereja & dalam negeri. Judul yang sama ini
-              muncul lagi sebagai pokok doa tambahan di kartu Doa Syafaat
-              (Sabtu ⛪ Gereja & Minggu 🇮🇩 Negara). Diperbarui sekali seminggu,
-              tiap Senin. */}
-          {source === 'indonesia' && prayerPoints.length > 0 && (
-            <View style={styles.prayerCard}>
-              <VixText heading="bold" additionalStyle={styles.prayerTitle}>
-                🙏 Doa Syafaat Minggu Ini
-              </VixText>
-              {prayerPoints.map((p) => (
-                <VixText
-                  key={p}
-                  heading="label"
-                  additionalStyle={styles.prayerPoint}>
-                  • {p}
-                </VixText>
-              ))}
-              <VixText heading="label" additionalStyle={styles.prayerFoot}>
-                Muncul juga di kartu Doa Syafaat — Sabtu ⛪ Gereja & Minggu 🇮🇩
-                Negara.
-              </VixText>
-            </View>
-          )}
-
           {(items ?? []).length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
               Belum ada berita yang masuk. Tarik ke bawah untuk muat ulang 📰
@@ -205,17 +162,4 @@ const styles = StyleSheet.create({
   error: { color: Color.DANGER, textAlign: 'center' },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
   empty: { textAlign: 'center', marginTop: 20 },
-  // Kliping doa syafaat — sengaja berwarna Spiritual (ungu), bukan World,
-  // supaya langsung terbaca "ini bagian doa", bukan sekadar berita lain.
-  prayerCard: {
-    backgroundColor: Color.SPIRITUAL,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    gap: 4,
-  },
-  prayerTitle: { color: Color.SPIRITUAL_DARK },
-  prayerPoint: { color: Color.SPIRITUAL_DARK },
-  prayerFoot: { color: Color.SPIRITUAL_DARK, marginTop: 4, opacity: 0.8 },
 });

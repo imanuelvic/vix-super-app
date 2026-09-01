@@ -104,6 +104,96 @@ export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
   ],
 };
 
+// ===================== Pertanyaan refleksi 💭 =====================
+// Satu pertanyaan inti per area (lihat `question` di WHEEL_AREAS) terlalu
+// sedikit untuk benar-benar berpikir: "Apakah kamu peduli kesehatanmu?" hampir
+// selalu dijawab "ya, peduli" — lalu skornya ditebak.
+//
+// Yang di bawah ini pertanyaan TAMBAHAN yang muncul selagi kamu menilai:
+// masing-masing menagih BUKTI dari satu tips di WHEEL_TIPS di atas, dalam
+// bahasa sehari-hari. Urutannya sengaja disamakan dengan urutan tips-nya
+// supaya sepasang — pertanyaannya menyadarkan, tips-nya memberi jalan keluar.
+//
+// Tidak wajib dijawab: memaksa 40 jawaban (8 area × 5) cuma membuat assessment
+// ditinggalkan di tengah. Yang wajib tetap satu — skor 1–10.
+export const WHEEL_REFLECTIONS: Record<WheelAreaKey, string[]> = {
+  spirituality: [
+    '📖 Kapan terakhir kamu saat teduh tanpa buru-buru?',
+    '⛪ Bulan ini ibadah & CORE-mu bolong berapa kali?',
+    '✍️ Pergumulan apa yang belum kamu ceritakan ke Tuhan?',
+    '🧠 Ayat apa yang lagi kamu pegang minggu ini?',
+    '🙇 Kalau HP-mu diambil sehari, doamu jadi panjang atau hilang?',
+  ],
+  health: [
+    '😴 Jam berapa kamu benar-benar tidur, bukan rebahan sambil scroll?',
+    '🏃 Minggu ini badanmu gerak berapa kali?',
+    '💧 Hari ini kamu minum air lebih banyak atau minuman manis?',
+    '🥗 Kapan terakhir piringmu ada sayur atau buahnya?',
+    '🩺 Ada keluhan badan yang kamu tunda cek dari dulu?',
+  ],
+  family: [
+    '📞 Kapan terakhir kamu telepon orang tua, bukan cuma chat?',
+    '🍽️ Waktu ngobrol bareng keluarga, HP-mu di tangan atau di meja?',
+    '🎁 Momen penting siapa di keluarga yang kamu lupa tahun ini?',
+    '🤝 Kebutuhan keluarga apa yang kamu tahu tapi kamu diamkan?',
+    '🙏 Siapa anggota keluargamu yang paling jarang kamu doakan?',
+  ],
+  finance: [
+    '🧾 Kamu tahu uangmu habis ke mana bulan ini?',
+    '💰 Kamu nabung di AWAL gajian, atau dari sisa?',
+    '🚨 Kalau pemasukanmu berhenti hari ini, kamu kuat berapa bulan?',
+    '💳 Ada cicilan atau paylater yang diam-diam makan gajimu?',
+    '📊 Langganan apa yang kamu bayar tiap bulan tapi jarang dipakai?',
+  ],
+  ministry: [
+    '📅 Pelayanan dapat jadwal tetap, atau cuma sisa waktumu?',
+    '💬 CL atau member mana yang belum kamu follow up minggu ini?',
+    '📝 Materi sharing terakhir kamu siapkan, atau dadakan?',
+    '🌱 Siapa satu orang yang lagi kamu muridkan sekarang?',
+    '🙏 Kamu melayani karena cinta, atau karena terlanjur ditugaskan?',
+  ],
+  career: [
+    '🎯 Target kerjamu minggu ini apa — bisa kamu sebut sekarang?',
+    '📚 Skill apa yang kamu pelajari 3 bulan terakhir?',
+    '🗣️ Kapan terakhir kamu minta feedback jujur soal kerjamu?',
+    '⏰ Deadline mana yang kamu tunda sampai mepet?',
+    '🤝 Kalau besok cari kerja, siapa yang siap merekomendasikanmu?',
+  ],
+  relationship: [
+    '👋 Siapa teman dekat yang lama tidak kamu sapa?',
+    '👂 Ngobrol terakhir, kamu lebih banyak dengar atau menghakimi?',
+    '🕊️ Ada yang masih kamu pendam & belum kamu bereskan?',
+    '🍿 Hangout terakhirmu nyambung, atau sibuk sendiri-sendiri?',
+    '🌟 Relasi mana yang bikin kamu bertumbuh, mana yang menguras?',
+  ],
+  fun: [
+    '🎢 Kapan terakhir kamu senang tanpa mikirin kerjaan?',
+    '🎨 Ada hobi yang kamu tinggalkan padahal dulu bikin hidup?',
+    '📵 Scroll HP itu istirahat buatmu, atau cuma pelarian?',
+    '🏝️ Liburan terakhirmu kapan — beneran libur, bukan pindah tempat kerja?',
+    '😄 Kamu masih merasa bersalah tiap kali santai?',
+  ],
+};
+
+/**
+ * Tempelkan satu pertanyaan refleksi ke catatan area itu, sebagai baris
+ * sendiri — supaya jawabannya tinggal ditulis di bawahnya.
+ *
+ * Sudah ada di dalamnya → catatannya dikembalikan APA ADANYA. Gelembungnya
+ * lewat berkali-kali, dan click kedua tidak boleh menggandakan pertanyaan yang
+ * sama (apalagi sesudah jawabannya terlanjur ditulis).
+ */
+export function withReflection(note: string, question: string): string {
+  if (hasReflection(note, question)) return note;
+  const isi = note.trimEnd();
+  return isi ? `${isi}\n• ${question}\n` : `• ${question}\n`;
+}
+
+/** Pertanyaan ini sudah diambil ke catatan? (gelembungnya ditandai ✓) */
+export function hasReflection(note: string, question: string): boolean {
+  return note.includes(question);
+}
+
 export type WheelFocus = {
   area: WheelAreaKey;
   targetScore: number; // 1–10

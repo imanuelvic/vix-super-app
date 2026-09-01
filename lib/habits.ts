@@ -85,7 +85,20 @@ export type ScheduledHabit = {
 // di sini, saat daftarnya DIBACA — datanya sendiri tidak ditulis ulang, dan
 // centang harian tetap aman karena kuncinya id, bukan nama.
 
-const HABIT_RENAMES: { match: RegExp; label: string }[] = [
+type HabitRename = {
+  match: RegExp;
+  /** Ganti SELURUH namanya. */
+  label?: string;
+  /**
+   * …atau buang POTONGANNYA saja. Dipakai kalau yang mengganggu cuma ekornya
+   * (jam di belakang nama): emoji & tulisan yang kamu pilih sendiri tetap
+   * seperti apa adanya, jadi tidak perlu menebak-nebak emoji apa yang dulu
+   * kamu pakai — dan mengubah namanya nanti tidak membatalkan aturan ini.
+   */
+  drop?: RegExp;
+};
+
+const HABIT_RENAMES: HabitRename[] = [
   // Dulu "1 kalimat rhema", lalu "✍️ 1 Rhema before Activities". Sekarang jadi
   // jurnal refleksi harian — tulisannya yang sama, tapi namanya tidak lagi
   // mengunci isinya ke satu kalimat ayat saja.
@@ -106,11 +119,24 @@ const HABIT_RENAMES: { match: RegExp; label: string }[] = [
   // menggantinya dengan "Instagram" penuh pun aman, tapi membuangnya berarti
   // barisnya diam-diam kehilangan pintunya.
   { match: /revive \+ ig story/i, label: '📱 Share Revive ke IG Story' },
+  // Jamnya dibuang dari nama — alasan yang sama dengan Drink Creatine di atas.
+  // Kedua baris ini memang tinggal di sesi 🌤️ Siang, dan sesinya sudah
+  // menyebut waktunya; jam di dalam nama cuma membuat barisnya membungkus ke
+  // baris kedua tanpa memberi tahu apa pun yang baru.
+  {
+    match: /eat mindfully|take fish oil/i,
+    // "- Pk. 12.00" & "- 12.30" — "Pk." opsional, titik/titik dua sama saja.
+    drop: /\s*[-–]\s*(pk\.?\s*)?\d{1,2}[.:]\d{2}\s*$/i,
+  },
 ];
 
 function renamedHabit(h: ScheduledHabit): ScheduledHabit {
   const ganti = HABIT_RENAMES.find((r) => r.match.test(h.label));
-  return ganti ? { ...h, label: ganti.label } : h;
+  if (!ganti) return h;
+  if (ganti.label) return { ...h, label: ganti.label };
+  // `drop` boleh tidak menemukan apa-apa (namanya sudah bersih) — hasilnya
+  // sama saja, jadi tak perlu diperiksa dulu.
+  return { ...h, label: h.label.replace(ganti.drop!, '').trim() };
 }
 
 // ===================== Kebiasaan yang centangnya dari catatan =====================
@@ -577,9 +603,22 @@ export const HABIT_LINKS: HabitLink[] = [
     // "instastory" & "insta story" ikut dikenali — nama barisnya boleh
     // berbunyi "Share Revive ke Instastory" tanpa kehilangan pintasannya.
     match: /\b(ig|instagram|instastory|insta story)\b/i,
-    note: 'Buka aplikasi Instagram',
+    note: 'Buka Instagram',
     color: Color.INSTAGRAM,
     external: { scheme: 'instagram://app', web: 'https://www.instagram.com/' },
+  },
+  // 🦉 Play Duolingo → aplikasi Duolingo. Sama seperti Instagram: pintunya
+  // aplikasi luar, jadi centangnya TETAP di-click sendiri — membuka Duolingo
+  // belum tentu menyelesaikan pelajarannya, dan angka harian yang dicentang
+  // sendiri lebih jujur daripada yang tercentang cuma karena app terbuka.
+  //
+  // Punya pintasan = baris ini otomatis WAJIB (lihat `isFixedHabit`): boleh
+  // diurutkan & dilewati sehari (✗), tapi tombol hapusnya tidak ada.
+  {
+    match: /duolingo/i,
+    note: 'Buka Duolingo',
+    color: Color.DUOLINGO,
+    external: { scheme: 'duolingo://', web: 'https://www.duolingo.com/learn' },
   },
   {
     // `wag?` = "WA" maupun "WAG" — nama barisnya boleh berbunyi "Share Revive

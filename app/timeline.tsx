@@ -6,34 +6,41 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { Chip } from '@/components/common/Chip';
 import { EditButton } from '@/components/common/EditButton';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   BIRTH_YEAR,
+  fetchTimelineAll,
   newTimelineId,
   saveTimelineYear,
   subscribeTimelineYear,
+  timelineGroups,
+  timelineTotals,
   TIMELINE_CATEGORIES,
   TIMELINE_CATEGORY_META,
   type TimelineCategoryKey,
   type TimelineItem,
+  type TimelineYear,
 } from '@/lib/timeline';
+import { shareTimelinePdf } from '@/lib/timelinePdf';
 
 // Tahun paling awal = tahun aplikasi dibuat (2026). Tidak ada data sebelumnya,
 // jadi navigasi tahun mentok di sini (tidak bisa mundur ke 2025 dan sebelumnya).
@@ -73,6 +80,12 @@ export default function TimelineScreen() {
   const [fCategory, setFCategory] = useState<TimelineCategoryKey>('future');
   const [fMonth, setFMonth] = useState<number | null>(null);
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
+
+  // Rekap & PDF sama-sama butuh SELURUH tahun, bukan cuma tahun yang sedang
+  // dibuka — jadi keduanya memakai satu pengambilan yang sama.
+  const tugas = useBusyTask<'pdf' | 'rekap'>();
+  const [semua, setSemua] = useState<TimelineYear[] | null>(null);
+  const [rekapOpen, setRekapOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -171,6 +184,48 @@ export default function TimelineScreen() {
     }
   }
 
+  /**
+   * Ambil seluruh tahun sekali jalan. Dipakai rekap MAUPUN PDF, dan hasilnya
+   * disimpan supaya membuka rekap lalu menekan share tidak membaca dua kali.
+   *
+   * Sengaja diambil ulang tiap ditekan (bukan sekali seumur layar): wishlist
+   * yang barusan kamu tambah di tahun ini harus ikut, bukan rekap basi.
+   */
+  async function muatSemua(): Promise<TimelineYear[]> {
+    if (!user) return [];
+    const isi = await fetchTimelineAll(user.uid, owner);
+    setSemua(isi);
+    return isi;
+  }
+
+  // Cetak SELURUH wishlist (tahun berlalu & mendatang) jadi PDF garis waktu,
+  // lalu buka share sheet — WhatsApp ada di situ. Bentuknya sama dengan tombol
+  // share di Wheel of Life.
+  function handleShare() {
+    void tugas.run({
+      key: 'pdf',
+      start: () => setError(null),
+      task: async () =>
+        shareTimelinePdf(
+          await muatSemua(),
+          owner ? { name: orang, heart: params.heart ?? '📍' } : null,
+        ),
+      fail: () => setError('Gagal membuat PDF Timeline. Coba lagi.'),
+    });
+  }
+
+  function openRekap() {
+    setRekapOpen(true);
+    void tugas.run({
+      key: 'rekap',
+      start: () => setError(null),
+      task: async () => {
+        await muatSemua();
+      },
+      fail: () => setError(LOAD_ERROR),
+    });
+  }
+
   // Baris satu item wishlist (dipakai di target tahunan & bulanan).
   function renderItem(item: TimelineItem) {
     const meta = TIMELINE_CATEGORY_META[item.category];
@@ -237,6 +292,17 @@ export default function TimelineScreen() {
           owner
             ? `Wishlist & panggilan hidup ${orang}`
             : 'Wishlist & panggilan hidupku'
+        }
+        // Selalu ada, tidak menunggu tahun ini terisi: yang dicetak SELURUH
+        // tahun, jadi tahun berjalan yang kebetulan kosong bukan berarti tak
+        // ada apa-apa untuk dibagikan.
+        right={
+          <EmojiButton
+            icon="square.and.arrow.up"
+            onPress={handleShare}
+            busy={tugas.busy === 'pdf'}
+            disabled={tugas.busy !== null}
+          />
         }>
         {/* Navigasi tahun + umur */}
         <View style={styles.yearRow}>
@@ -294,10 +360,10 @@ export default function TimelineScreen() {
             </View>
             <VixText heading="label" additionalStyle={summaryText.label}>
               {total === 0
-                ? 'Isi impianmu ✨'
+                ? 'Isi kerinduanmu ✨'
                 : doneCount === total
-                  ? 'Semua tercapai — luar biasa! 🎉'
-                  : 'Kejar terus panggilanmu 💪'}
+                  ? 'Semua tercapai, kamu luar biasa! 🎉'
+                  : 'Kejar terus kerinduanmu! 💪'}
             </VixText>
           </SummaryCard>
 
@@ -307,6 +373,17 @@ export default function TimelineScreen() {
             onPress={() => openAdd(null)}
             additionalStyle={styles.addButton}
           />
+
+          {/* Rekap cepat — SEMUA tahun sekaligus, bukan cuma tahun yang sedang
+              dibuka. Layar ini bekerja setahun demi setahun (murah & fokus),
+              jadi tanpa ini tidak ada satu pun tempat untuk melihat "apa saja
+              yang sudah aku tulis, dan berapa yang tercapai". */}
+          <PressableScale style={styles.recapRow} onPress={openRekap}>
+            <VixText heading="bold" additionalStyle={styles.recapText}>
+              📋 Rekap Semua Wishlist
+            </VixText>
+            <IconSymbol name="chevron.right" size={16} color={Color.MAIN} />
+          </PressableScale>
 
           {/* Target tahunan (tanpa bulan) */}
           <View style={styles.yearCard}>
@@ -389,37 +466,46 @@ export default function TimelineScreen() {
           editable={!busy}
         />
 
+        {/* Kategori & Waktu jadi dropdown — bentuk yang sama dengan modal di
+            fitur CORE. Sembilan kategori & tiga belas pilihan waktu sebagai
+            chip membuat modalnya penuh duluan sebelum kolom judulnya sempat
+            terbaca; dropdown menyisakan pilihan yang panjang di dalam laci. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Kategori
         </VixText>
-        <View style={styles.chipWrap}>
-          {TIMELINE_CATEGORIES.map((c) => (
-            <Chip
-              key={c.key}
-              label={`${c.icon} ${c.label}`}
-              active={fCategory === c.key}
-              onPress={() => setFCategory(c.key)}
-            />
-          ))}
+        <View style={styles.formGap}>
+          <SelectField
+            value={fCategory}
+            options={TIMELINE_CATEGORIES.map((c) => ({
+              key: c.key,
+              label: `${c.icon} ${c.label}`,
+            }))}
+            onChange={(k) => k && setFCategory(k)}
+            disabled={busy}
+          />
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           Waktu
         </VixText>
-        <View style={styles.chipWrap}>
-          <Chip
-            label="🎯 Tahunan"
-            active={fMonth === null}
-            onPress={() => setFMonth(null)}
+        <View style={styles.formGap}>
+          {/* "Tahunan" disimpan sebagai `month: null`, jadi di dropdown ia
+              diwakili kunci teks sendiri — SelectField memakai null untuk
+              "belum dipilih", dan di sini tak ada keadaan begitu. */}
+          <SelectField
+            value={fMonth === null ? 'tahunan' : String(fMonth)}
+            options={[
+              { key: 'tahunan', label: '🎯 Target Tahunan' },
+              ...MONTH_NAMES.map((name, m) => ({
+                key: String(m),
+                label: name,
+              })),
+            ]}
+            onChange={(k) =>
+              setFMonth(k === null || k === 'tahunan' ? null : Number(k))
+            }
+            disabled={busy}
           />
-          {MONTH_NAMES.map((name, m) => (
-            <Chip
-              key={name}
-              label={name.slice(0, 3)}
-              active={fMonth === m}
-              onPress={() => setFMonth(m)}
-            />
-          ))}
         </View>
 
         <ScreenError message={formError} />
@@ -433,6 +519,69 @@ export default function TimelineScreen() {
         />
       </SheetModal>
 
+      {/* Rekap semua tahun — daftar cepat "apa saja yang sudah kutulis". */}
+      <SheetModal
+        visible={rekapOpen}
+        title="📋 Rekap Semua Wishlist"
+        subtitle={owner ? orang : 'Semua tahun yang pernah kamu isi'}
+        onClose={() => setRekapOpen(false)}>
+        {semua === null ? (
+          <LoadingCenter />
+        ) : semua.length === 0 ? (
+          <VixText heading="label" additionalStyle={styles.recapEmpty}>
+            Belum ada wishlist yang tercatat di tahun mana pun.
+          </VixText>
+        ) : (
+          <>
+            <View style={styles.recapTotal}>
+              <VixText heading="subheader" additionalStyle={styles.recapTotalValue}>
+                {timelineTotals(semua).done}
+                <VixText heading="label" additionalStyle={styles.recapTotalLabel}>
+                  {' '}
+                  dari {timelineTotals(semua).total} tercapai
+                </VixText>
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.recapTotalLabel}>
+                {semua.length} tahun · {semua[0].year} –{' '}
+                {semua[semua.length - 1].year}
+              </VixText>
+            </View>
+
+            {semua.map((t) => (
+              <View key={t.year} style={styles.recapYear}>
+                <View style={styles.recapYearHead}>
+                  <VixText heading="bold" additionalStyle={styles.recapYearText}>
+                    {t.year}
+                  </VixText>
+                  <VixText heading="label">
+                    {t.items.filter((i) => i.done).length}/{t.items.length}
+                  </VixText>
+                </View>
+                {timelineGroups(t.items).map((g) => (
+                  <View key={g.month === null ? 'y' : g.month}>
+                    <VixText heading="label" additionalStyle={styles.recapMonth}>
+                      {g.month === null ? '🎯 Tahunan' : MONTH_NAMES[g.month]}
+                    </VixText>
+                    {g.items.map((i) => (
+                      <VixText
+                        key={i.id}
+                        heading="paragraph"
+                        additionalStyle={[
+                          styles.recapItem,
+                          i.done && styles.recapItemDone,
+                        ]}>
+                        {i.done ? '✅' : '⬜'}{' '}
+                        {TIMELINE_CATEGORY_META[i.category]?.icon ?? '📍'}{' '}
+                        {i.title}
+                      </VixText>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            ))}
+          </>
+        )}
+      </SheetModal>
     </SafeAreaView>
   );
 }
@@ -541,10 +690,49 @@ const styles = StyleSheet.create({
   },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
-  chipWrap: {
+  // Pintu ke rekap semua tahun — sengaja bergaris putus-putus seperti tombol
+  // "Tambah kitab lain" di Baca Alkitab: pintu tambahan, bukan tombol utama.
+  recapRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Color.MAIN,
+    marginBottom: 12,
+  },
+  recapText: { color: Color.MAIN_DARK },
+  recapEmpty: { textAlign: 'center', marginVertical: 12 },
+  recapTotal: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 2,
+    marginBottom: 12,
+  },
+  recapTotalValue: { color: Color.MAIN_DARK },
+  recapTotalLabel: { color: Color.TEXT_LABEL },
+  recapYear: {
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    paddingTop: 10,
     marginBottom: 10,
+  },
+  recapYearHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  recapYearText: { color: Color.MAIN_DARK },
+  recapMonth: { color: Color.TEXT_LABEL, marginTop: 6 },
+  recapItem: { color: Color.TEXT_TITLE, marginTop: 2 },
+  recapItemDone: {
+    color: Color.TEXT_PLACEHOLDER,
+    textDecorationLine: 'line-through',
   },
 });

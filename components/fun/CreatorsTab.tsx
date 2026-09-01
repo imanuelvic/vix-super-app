@@ -55,7 +55,11 @@ export function CreatorsTab() {
 
   return (
     <View style={styles.flex}>
-      <ChipRow fit="wrap" contentStyle={styles.kindRow}>
+      {/* Digeser ke samping, sama seperti kategori Reminder & sumber News —
+          dan yang sedang dipilih selalu ditarik utuh ke dalam layar. */}
+      <ChipRow
+        activeIndex={CREATOR_KINDS.findIndex((k) => k.key === kind)}
+        contentStyle={styles.kindRow}>
         {CREATOR_KINDS.map((k) => (
           <Chip
             key={k.key}

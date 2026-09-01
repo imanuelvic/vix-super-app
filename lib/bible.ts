@@ -143,6 +143,42 @@ export function parseBibleRef(text: string): {
   };
 }
 
+/**
+ * Pasal SESUDAH acuan ini — dasar rekomendasi "lanjut dari yang terakhir
+ * dibaca": "Amsal 2" → "Amsal 3", "Amsal 3:5-6" → "Amsal 4".
+ *
+ * Ayatnya sengaja dibuang: yang direkomendasikan satu pasal utuh, dan ayat
+ * yang kemarin disorot tidak ada hubungannya dengan bacaan berikutnya.
+ *
+ * `null` kalau kitabnya tak dikenali ATAU pasalnya sudah pasal terakhir.
+ * Kitab yang tamat SENGAJA tidak dilanjutkan sendiri ke kitab berikutnya:
+ * memilih kitab baru itu keputusanmu, bukan urutan daftar — dan menebak
+ * salah lalu tersimpan sebagai catatan bacaan jauh lebih merugikan daripada
+ * sehari tanpa rekomendasi.
+ */
+export function nextChapterRef(text: string): string | null {
+  const { book, chapter } = parseBibleRef(text);
+  const meta = book ? bibleBook(book) : undefined;
+  if (!meta) return null;
+  // Tercatat tanpa pasal ("Yakobus") → belum ada pasal yang selesai, jadi
+  // yang disarankan pasal 1, bukan pasal 2.
+  if (!chapter) return `${book} 1`;
+  const pasal = Number(chapter);
+  if (pasal < 1 || pasal >= meta.chapters) return null;
+  return `${book} ${pasal + 1}`;
+}
+
+/**
+ * Acuan ini sudah pasal TERAKHIR kitabnya? Dipakai membedakan dua sebab
+ * `nextChapterRef` kosong: kitabnya tamat (layak diberi selamat & diminta
+ * pilih kitab baru) vs namanya tidak dikenali (diam saja).
+ */
+export function isLastChapter(text: string): boolean {
+  const { book, chapter } = parseBibleRef(text);
+  const meta = book ? bibleBook(book) : undefined;
+  return !!meta && !!chapter && Number(chapter) >= meta.chapters;
+}
+
 // ===================== Kode USFM (untuk YouVersion) =====================
 // YouVersion menunjuk kitab dengan kode USFM tiga huruf yang sama di semua
 // bahasa — "Amsal" di sana tetap `PRO`, "Kisah Para Rasul" tetap `ACT`. Jadi

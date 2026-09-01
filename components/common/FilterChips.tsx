@@ -32,7 +32,16 @@ export function FilterChips<T extends string>({
   onRepress?: () => void;
 }) {
   return (
-    <ChipRow contentStyle={styles.row}>
+    // "ALL" itu chip ke-0, sisanya menyusul — jadi indeks aktifnya bergeser
+    // satu. Tanpa ini, filter yang sedang menyala bisa tinggal terlihat
+    // separuh di tepi kiri (persis yang terjadi di Reminder Prioritas &
+    // Riwayat Visitasi).
+    <ChipRow
+      activeIndex={
+        value === null ? 0 : options.findIndex((o) => o.key === value) + 1
+      }
+      additionalStyle={styles.scroll}
+      contentStyle={styles.row}>
       <Chip
         label={allLabel}
         active={value === null}
@@ -57,5 +66,14 @@ export function FilterChips<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  row: { paddingRight: 4, paddingBottom: 12 },
+  // Barisnya MENEMBUS padding layarnya (ketujuh pemakainya sama-sama memberi
+  // 20pt) lalu memasang 20pt-nya sendiri di dalam.
+  //
+  // Hasilnya sama persis dengan baris kategori di Reminder: chip pertama tetap
+  // sejajar kartu di bawahnya, tapi geserannya sampai ke TEPI LAYAR. Sebelum
+  // ini barisnya terkurung di dalam kotak 20pt — chip-nya terpotong 20pt
+  // sebelum tepi layar, dan potongan yang menggantung di tengah-tengah itu
+  // terbaca seperti kesalahan, bukan seperti "masih ada lagi di sebelah".
+  scroll: { marginHorizontal: -20 },
+  row: { paddingHorizontal: 20, paddingBottom: 12 },
 });

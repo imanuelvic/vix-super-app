@@ -41,7 +41,7 @@ export function formatTime(d: Date): string {
 
 /** Rabu, 22 Juli 2026 · 14.05 */
 export function formatFullDateTime(d: Date): string {
-  return `${formatFullDate(d)} · ${formatTime(d)}`;
+  return `${formatFullDate(d)} · 🕒 ${formatTime(d)}`;
 }
 
 /** Jum, 24 Jul 2026 — nama hari & bulan sama-sama 3 huruf. */
@@ -66,7 +66,7 @@ export function formatCompactDate(d: Date): string {
  * Cap waktu paling ringkas, mis. "Update terakhir" di tab System.
  */
 export function formatShortDayDateTime(d: Date): string {
-  return `${formatCompactDate(d)}, Pk. ${formatTime(d)}`;
+  return `${formatCompactDate(d)}, 🕒 ${formatTime(d)}`;
 }
 
 /**
