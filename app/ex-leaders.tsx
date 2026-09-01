@@ -183,7 +183,7 @@ export default function ExLeadersScreen() {
       <ConfirmDialog
         visible={confirmRestore !== null}
         title={`Kembalikan ${confirmRestore?.name ?? ''} jadi CORE Leader?`}
-        detail={`${confirmRestore?.name ?? 'Dia'} akan masuk lagi ke daftar CORE Leader dan ikut giliran follow up mingguan. Catatan alasan & tanggal dilepasnya akan dihapus dari arsip.`}
+        detail={`${confirmRestore?.name ?? 'Dia'} akan masuk lagi ke daftar CORE Leader..`}
         confirmLabel="Ya, kembalikan"
         danger={false}
         busy={busyId !== null && busyId === confirmRestore?.id}
@@ -194,7 +194,7 @@ export default function ExLeadersScreen() {
       <ConfirmDialog
         visible={confirmDelete !== null}
         title="Hapus permanen dari arsip?"
-        detail={`${confirmDelete?.name ?? ''} akan hilang selamanya — catatan alasan & tanggal dilepasnya ikut terhapus dan tidak bisa dikembalikan.`}
+        detail={`Data ${confirmDelete?.name ?? ''} akan hilang selamanya.`}
         confirmLabel="Hapus permanen"
         busy={busyId !== null && busyId === confirmDelete?.id}
         onCancel={() => setConfirmDelete(null)}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -19,6 +20,7 @@ import { useFormSave } from '@/hooks/useFormSave';
 import {
   addDataPlan,
   daysLeft,
+  PLAN_ALERT_DAYS,
   deleteDataPlan,
   deviceMeta,
   isActivePlan,
@@ -221,6 +223,12 @@ export function PlanTab({
               key={p.id}
               style={[styles.card, aktif && styles.cardActive]}
               onPress={() => openEdit(p)}>
+              {/* Paket AKTIF yang sudah H-1 = yang dihitung badge merah tile
+                  Device & sub-tabnya (PLAN_ALERT_DAYS). Ambangnya diambil dari
+                  lib yang sama supaya tak pernah beda dari angka badge-nya. */}
+              {aktif && sisaHari <= PLAN_ALERT_DAYS && (
+                <AttentionMark style={styles.cardMark} />
+              )}
               <View style={styles.cardTop}>
                 <VixText heading="bold" additionalStyle={styles.cardTitle}>
                   {p.name}
@@ -375,6 +383,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginTop: 12, marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
+  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

@@ -1,14 +1,14 @@
 import { useEffect, type ComponentProps } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import Animated, {
+import {
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  ZoomIn,
 } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
+import { Badge } from '@/components/common/Badge';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -102,13 +102,10 @@ export function EmojiButton({
           <VixText additionalStyle={styles.emoji}>{emoji}</VixText>
         )}
       </PressableScale>
-      {badge > 0 && (
-        <Animated.View entering={ZoomIn.duration(220)} style={styles.badge}>
-          <VixText heading="label" additionalStyle={styles.badgeText}>
-            {badge > 9 ? '9+' : badge}
-          </VixText>
-        </Animated.View>
-      )}
+      {/* Bentuknya milik <Badge> — angka yang sama dengan tile Home & sub-tab,
+          jadi bentuknya pun harus sama. Tepinya krem karena tombol ini
+          berdiri di atas pita header, bukan di tab bar putih. */}
+      <Badge count={badge} ring={Color.BACKGROUND} style={styles.badge} />
     </View>
   );
 }
@@ -124,19 +121,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emoji: { fontSize: 19, lineHeight: 25 },
-  // Ukuran & warnanya disamakan persis dengan badge di BottomTabs.
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -6,
-    minWidth: 18,
-    paddingHorizontal: 5,
-    borderRadius: 9,
-    backgroundColor: Color.DANGER,
-    borderWidth: 1.5,
-    borderColor: Color.BACKGROUND,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { color: Color.TEXT_REVERSE, fontSize: 11, lineHeight: 16 },
+  badge: { position: 'absolute', top: -4, right: -6 },
 });

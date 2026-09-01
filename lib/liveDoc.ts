@@ -1,12 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   onSnapshot,
+  queryEqual,
   Timestamp,
   type DocumentData,
   type DocumentReference,
   type FirestoreError,
   type Query,
   type QueryDocumentSnapshot,
+  type QuerySnapshot,
 } from 'firebase/firestore';
 
 // Lapisan bersama untuk semua langganan DOKUMEN Firestore. Dua masalah yang
@@ -168,6 +170,13 @@ export async function clearLiveCache(): Promise<void> {
     e.stop?.();
   });
   entries.clear();
+  // Langganan KOLEKSI ikut dilepas — kalau tidak, daftar akun lama masih
+  // mengalir ke layar sesudah akun berikutnya masuk.
+  lists.forEach((e) => {
+    if (e.idle) clearTimeout(e.idle);
+    e.stop?.();
+  });
+  lists.length = 0;
   try {
     const list = await loadIndex();
     await AsyncStorage.multiRemove([
@@ -279,13 +288,20 @@ export function liveDoc(
  *     onError,
  *   );
  *
- * ── ⚠️ BUKAN saudara kembar `liveDoc` ─────────────────────────────────────
- * Namanya mirip, kelakuannya TIDAK. `liveDoc` menggabungkan listener dokumen
- * yang sama & menyimpan isinya ke disk; yang ini murni PEMBUNGKUS BENTUK —
- * tanpa cache, tanpa penggabungan. Memasangnya dua kali untuk kueri yang sama
- * tetap dua koneksi & dua kali biaya baca, persis seperti `onSnapshot` biasa.
- * Ditaruh di berkas ini supaya keduanya berdampingan, bukan karena mesinnya
- * sama.
+ * ── Digabung, sama seperti `liveDoc` ──────────────────────────────────────
+ * Kueri yang SAMA hanya dipasang sekali walau diminta beberapa layar. Ini
+ * penting justru untuk koleksi: `tasks` didengarkan Home, Dashboard, DAN layar
+ * Reminder sekaligus — dan karena tab tetap terpasang setelah dibuka,
+ * ketiganya hidup berbarengan. Tanpa penggabungan itu 3 koneksi & 3× biaya
+ * baca untuk isi yang persis sama; makin banyak task, makin mahal.
+ *
+ * Yang dibagikan snapshot MENTAHnya, bukan hasil jadinya: tiap pemanggil tetap
+ * memakai `row`-nya sendiri, jadi dua layar boleh membentuk barisnya berbeda
+ * dari kueri yang sama.
+ *
+ * Bedanya dengan `liveDoc`: TANPA cache disk. Isi koleksi tidak bisa disimpan
+ * apa adanya seperti satu dokumen (jumlahnya tak tentu & bisa besar), dan
+ * itulah yang membuat daftar masih sempat kosong sekejap saat app dibuka.
  *
  * `row` mengubah satu dokumen jadi satu barisnya. Bawaannya `{ id, ...data }`
  * — bentuk yang dipakai sepuluh langganan. Yang datanya perlu dirapikan dulu
@@ -305,24 +321,78 @@ export function liveList<T>(
   onError?: (error: FirestoreError) => void,
   row?: (d: QueryDocumentSnapshot) => T,
 ): () => void {
-  return onSnapshot(
-    q,
-    (snapshot) =>
-      onChange(
-        // `id` ditaruh SESUDAH sebaran isinya, bukan sebelum. Kalau sebelum,
-        // dokumen yang kebetulan menyimpan field bernama `id` akan menimpa id
-        // dokumen aslinya — dan baris itu lalu menyamar jadi baris lain, jadi
-        // menghapus/mengubahnya bisa mengenai dokumen yang salah.
-        //
-        // Hari ini tak ada koleksi yang menyimpannya (tiap penulisan sudah
-        // membuang `id` lebih dulu), jadi urutan ini tidak mengubah apa pun
-        // sekarang — ia menjaga supaya penulisan berikutnya yang lupa membuang
-        // `id` tidak diam-diam merusak daftarnya.
-        snapshot.docs.map(row ?? ((d) => ({ ...d.data(), id: d.id }) as T)),
-      ),
-    onError,
-  );
+  // `id` ditaruh SESUDAH sebaran isinya, bukan sebelum. Kalau sebelum, dokumen
+  // yang kebetulan menyimpan field bernama `id` akan menimpa id dokumen
+  // aslinya — dan baris itu lalu menyamar jadi baris lain, jadi
+  // menghapus/mengubahnya bisa mengenai dokumen yang salah.
+  //
+  // Hari ini tak ada koleksi yang menyimpannya (tiap penulisan sudah membuang
+  // `id` lebih dulu), jadi urutan ini tidak mengubah apa pun sekarang — ia
+  // menjaga supaya penulisan berikutnya yang lupa membuang `id` tidak
+  // diam-diam merusak daftarnya.
+  const bentuk = row ?? ((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id }) as T);
+  const terima = (snapshot: QuerySnapshot) => onChange(snapshot.docs.map(bentuk));
+
+  // queryEqual = perbandingan resmi Firestore (koleksi + where + orderBy +
+  // limit). Dipakai supaya "kueri yang sama" berarti sama menurut Firestore,
+  // bukan menurut tebakan kita sendiri atas isi objeknya.
+  let e = lists.find((x) => queryEqual(x.q, q));
+  if (!e) {
+    e = { q, subs: new Set(), errs: new Set(), stop: null, last: null, idle: null };
+    lists.push(e);
+  }
+  const entry = e;
+
+  if (entry.idle) {
+    clearTimeout(entry.idle);
+    entry.idle = null;
+  }
+  entry.subs.add(terima);
+  if (onError) entry.errs.add(onError);
+
+  // Layar lain sudah memegang hasilnya → langsung pakai, tanpa baca apa pun.
+  if (entry.last) terima(entry.last);
+
+  if (!entry.stop) {
+    entry.stop = onSnapshot(
+      q,
+      (snapshot) => {
+        entry.last = snapshot;
+        entry.subs.forEach((fn) => fn(snapshot));
+      },
+      (error) => entry.errs.forEach((fn) => fn(error)),
+    );
+  }
+
+  return () => {
+    entry.subs.delete(terima);
+    if (onError) entry.errs.delete(onError);
+    if (entry.subs.size > 0 || entry.idle) return;
+    // Pemakai terakhir pergi — tunggu sebentar, siapa tahu cuma pindah layar.
+    entry.idle = setTimeout(() => {
+      if (entry.subs.size > 0) return;
+      entry.stop?.();
+      const at = lists.indexOf(entry);
+      if (at >= 0) lists.splice(at, 1);
+    }, IDLE_MS);
+  };
 }
+
+/**
+ * Langganan koleksi yang sedang hidup. Array, bukan Map: kuncinya sebuah
+ * Query yang cuma bisa dibandingkan lewat `queryEqual`, bukan string. Isinya
+ * belasan sekaligus paling banyak, jadi pencarian lurus sudah cukup.
+ */
+type ListEntry = {
+  q: Query;
+  subs: Set<(snapshot: QuerySnapshot) => void>;
+  errs: Set<(error: FirestoreError) => void>;
+  stop: (() => void) | null;
+  last: QuerySnapshot | null;
+  idle: ReturnType<typeof setTimeout> | null;
+};
+
+const lists: ListEntry[] = [];
 
 /**
  * Lepaskan sekumpulan langganan sekaligus — dipakai sebagai nilai kembalian

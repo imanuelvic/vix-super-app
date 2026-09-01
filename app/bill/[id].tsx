@@ -23,7 +23,7 @@ import { useAuth } from '@/contexts/auth';
 import { formatCompactDate, groupDigits, parseAmount } from '@/lib/format';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { DELETE_ERROR, LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
-import { pickPhotoToRead } from '@/lib/photo';
+import { photoUri, pickPhotoToRead } from '@/lib/photo';
 import { canScanReceipt, scanReceipt } from '@/lib/receiptOcr';
 import {
   billShares,
@@ -347,7 +347,7 @@ export default function BillScreen() {
         </VixText>
         {photo ? (
           <Image
-            source={{ uri: `data:image/jpeg;base64,${photo}` }}
+            source={{ uri: photoUri(photo) }}
             style={styles.photo}
             resizeMode="contain"
           />

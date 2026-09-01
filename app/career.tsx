@@ -8,7 +8,6 @@ import { AffiliateTab } from '@/components/career/AffiliateTab';
 import { BusinessTab } from '@/components/career/BusinessTab';
 import { FreelanceTab } from '@/components/career/FreelanceTab';
 import { FulltimeTab } from '@/components/career/FulltimeTab';
-import { InsuranceTab } from '@/components/career/InsuranceTab';
 import {
   BottomTabs,
   withBadge,
@@ -28,33 +27,25 @@ import {
   effectiveRoadmap,
   freelanceReminderWindow,
   subscribeFreelance,
-  subscribeInsurance,
   subscribeRoadmap,
   type FreelanceProject,
-  type InsuranceMonths,
   type RoadmapItem,
 } from '@/lib/career';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type CareerTab =
-  | 'fulltime'
-  | 'freelance'
-  | 'affiliate'
-  | 'insurance'
-  | 'business';
+type CareerTab = 'fulltime' | 'freelance' | 'affiliate' | 'business';
 
 // Tab bar bawah di dalam layar Career.
 const TABS: BottomTab<CareerTab>[] = [
   { key: 'fulltime', label: 'Fulltime', icon: 'laptopcomputer' },
   { key: 'freelance', label: 'Freelance', icon: 'globe' },
   { key: 'affiliate', label: 'Affiliate', icon: 'megaphone.fill' },
-  { key: 'insurance', label: 'Insurance', icon: 'shield.fill' },
   { key: 'business', label: 'Business', icon: 'cart.fill' },
 ];
 
-// Career 💼 — lima topi pekerjaan: engineer NDC, freelancer, content creator /
-// affiliate, agent Manulife, dan (nanti) bisnis kuliner Manado.
+// Career 💼 — empat topi pekerjaan: engineer NDC, freelancer, content creator /
+// affiliate, dan (nanti) bisnis kuliner Manado.
 export default function CareerScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -78,7 +69,6 @@ export default function CareerScreen() {
 
   const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
   const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);
-  const [insurance, setInsurance] = useState<InsuranceMonths | null>(null);
   const [ideas, setIdeas] = useState<ContentIdea[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,7 +85,6 @@ export default function CareerScreen() {
         fail,
       ),
       subscribeFreelance(user.uid, setFreelance, fail),
-      subscribeInsurance(user.uid, setInsurance, fail),
       subscribeAffiliateIdeas(user.uid, setIdeas, fail),
     ]);
   }, [user]);
@@ -105,16 +94,13 @@ export default function CareerScreen() {
       <ScreenHeader
         backLabel="Home"
         title="Career 💼"
-        subtitle="Empat topi, satu panggilan"
+        subtitle="Kerjakan segenap hati, hasilnya menyusul"
       />
 
       <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
-        {roadmap === null ||
-        freelance === null ||
-        insurance === null ||
-        ideas === null ? (
+        {roadmap === null || freelance === null || ideas === null ? (
           <LoadingCenter />
         ) : tab === 'fulltime' ? (
           <FulltimeTab
@@ -130,8 +116,6 @@ export default function CareerScreen() {
           />
         ) : tab === 'affiliate' ? (
           <AffiliateTab ideas={ideas} />
-        ) : tab === 'insurance' ? (
-          <InsuranceTab months={insurance} />
         ) : (
           <BusinessTab />
         )}

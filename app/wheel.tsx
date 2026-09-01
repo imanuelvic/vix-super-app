@@ -754,7 +754,9 @@ export default function WheelScreen() {
             <VixText heading="label" additionalStyle={styles.tipDialogSub}>
               💡 Ide & tips menaikkan skor
             </VixText>
-            <ScrollView style={styles.tipDialogList}>
+            <ScrollView
+              style={styles.tipDialogList}
+              showsVerticalScrollIndicator={false}>
               {WHEEL_TIPS[tipArea].map((t) => (
                 <View key={t} style={styles.tipRow}>
                   <VixText heading="paragraph" additionalStyle={styles.tipRowText}>

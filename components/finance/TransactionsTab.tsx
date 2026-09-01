@@ -848,7 +848,9 @@ export function TransactionsTab({
         visible={pickerOpen}
         title={`Kategori ${FINANCE_TYPE_LABEL[type]}`}
         onClose={() => setPickerOpen(false)}>
-        <ScrollView style={styles.pickerScroll}>
+        <ScrollView
+          style={styles.pickerScroll}
+          showsVerticalScrollIndicator={false}>
           <View style={styles.pickerWrap}>
             {activeCategories(type).map((c) => (
               <Chip

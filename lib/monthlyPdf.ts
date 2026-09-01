@@ -7,6 +7,7 @@ import {
   pdfShellHtml,
   sharePdf,
 } from './pdfDoc';
+import { photoUri } from './photo';
 
 // Notulen Mentoring Bulanan → PDF. Kop, logo, kartu keterangan, & kaki
 // dokumennya dipinjam dari kerangka bersama (lib/pdfDoc.ts) — berkas ini
@@ -91,7 +92,7 @@ function buildHtml(m: MonthlyMeeting): string {
         </div>
         <div class="foto-grid${fotoBersih.length === 1 ? ' tunggal' : ''}">
           ${fotoBersih
-            .map((p) => `<img src="data:image/jpeg;base64,${p}" alt="" />`)
+            .map((p) => `<img src="${photoUri(p)}" alt="" />`)
             .join('')}
         </div>
       </section>`

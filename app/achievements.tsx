@@ -562,7 +562,7 @@ export default function AchievementsScreen() {
       <ConfirmDialog
         visible={confirmReset}
         title="Reset semua achievement?"
-        detail="Semua streak & rekor (doa, Revive, baca Alkitab, kebiasaan, gym, langkah) kembali ke 0. Permanen, tidak bisa dibatalkan. Saldo Self-Reward tidak ikut terhapus."
+        detail="Semua streak & rekor kembali ke 0."
         confirmLabel="Ya, Reset"
         busy={resetting}
         onCancel={() => setConfirmReset(false)}

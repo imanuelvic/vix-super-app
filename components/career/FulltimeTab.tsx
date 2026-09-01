@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -284,6 +285,13 @@ export function FulltimeTab({
                 mustMove && styles.cardMustMove,
               ]}
               onPress={() => openEdit(item)}>
+              {/* P1 yang belum selesai = yang dihitung badge merah tile Career
+                  & sub-tab Fulltime. Prioritasnya sudah EFEKTIF (yang masuk
+                  H-7 dipaksa P1), jadi angka di sini dan angka di badge-nya
+                  selalu sama. */}
+              {item.status !== 'done' && item.priority === 1 && (
+                <AttentionMark style={styles.cardMark} />
+              )}
               <View>
                 <View style={styles.cardTop}>
                   <PriorityBadge priority={item.priority} />
@@ -450,6 +458,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },
+  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

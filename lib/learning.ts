@@ -534,7 +534,7 @@ export function discussionWindowNow(now = new Date()): boolean {
  * pendapat. Langkah yang harinya belum tiba sengaja tidak ditagih, dan yang
  * kelewat tetap muncul sampai dikerjakan (tidak hangus di tengah minggu).
  */
-function overdueSteps(
+export function overdueSteps(
   steps: Record<string, boolean>,
   now: Date,
 ): typeof LEARNING_STEPS {

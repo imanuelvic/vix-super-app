@@ -402,7 +402,6 @@ const styles = StyleSheet.create({
     borderTopColor: Color.BORDER,
   },
   msLabel: { color: Color.TEXT_PLACEHOLDER },
-  msLabelOn: { color: Color.TEXT_TITLE },
   msValue: { color: Color.TEXT_PLACEHOLDER },
   msValueOn: { color: Color.SUCCESS },
   hint: { marginTop: 8 },

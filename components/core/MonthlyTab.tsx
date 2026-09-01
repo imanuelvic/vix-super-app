@@ -41,6 +41,7 @@ import {
 import { formatCompactDateTime, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, PHOTO_ERROR } from '@/lib/messages';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
+import { photoUri } from '@/lib/photo';
 
 // Sub-tab 🗒️ Monthly — notulen Mentoring Bulanan dari gereja.
 // Susunan agendanya selalu 5 poin yang sama (MENTORSHIP · LEADER'S MESSAGE ·
@@ -247,7 +248,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             {m.photos.map((photo, i) => (
               <Image
                 key={`${i}-${photo.slice(0, 16)}`}
-                source={{ uri: `data:image/jpeg;base64,${photo}` }}
+                source={{ uri: photoUri(photo) }}
                 style={styles.cardPhoto}
                 resizeMode="cover"
               />
@@ -413,7 +414,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           {fPhotos.map((photo, i) => (
             <View key={`${i}-${photo.slice(0, 16)}`} style={styles.photoBox}>
               <Image
-                source={{ uri: `data:image/jpeg;base64,${photo}` }}
+                source={{ uri: photoUri(photo) }}
                 style={styles.photoFill}
                 resizeMode="cover"
               />

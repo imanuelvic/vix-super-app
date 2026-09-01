@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { deadlineBorder } from '@/components/common/Deadline';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -276,6 +277,10 @@ export function VisitationTab({
     const perluKirim = needsPdfShare(v, today, todayId);
     return (
       <View key={v.id} style={[styles.card, deadlineBorder(tone)]}>
+      {/* Acara yang panduannya perlu dikirim hari ini = yang dihitung badge
+          merah tile CORE & sub-tab Visitation (needsPdfShare). Aturannya
+          dipanggil dari lib yang sama dengan badge-nya. */}
+      {perluKirim && <AttentionMark style={styles.cardMark} />}
       <View style={styles.cardRow}>
       {/* Tekan bagian ini untuk edit / tandai selesai. Tombol share sengaja
           jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin click
@@ -586,6 +591,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   empty: { textAlign: 'center', marginBottom: 8 },
+  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

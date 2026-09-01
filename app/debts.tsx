@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
+import { AttentionMark } from '@/components/common/Badge';
 import {
   BottomTabs,
   withBadge,
@@ -36,6 +37,7 @@ import {
   debtDaysUntil,
   debtPaid,
   debtTone,
+  debtUrgent,
   debtUrgentCount,
   debtRemaining,
   deleteDebt,
@@ -321,6 +323,12 @@ export default function DebtsScreen() {
                 ]}
                 onLayout={(e) => setRowY(d.id, e.nativeEvent.layout.y)}
                 onPress={() => openEdit(d)}>
+                {/* Pinjaman yang sudah H-1 = yang dihitung badge merah tile
+                    Finance, tombol 🤝 di headernya, dan sub-tab di layar ini
+                    (debtUrgent). Titik berdenyut = "ini penyebabnya". */}
+                {debtUrgent(d, today) && (
+                  <AttentionMark style={styles.cardMark} />
+                )}
                 <View style={styles.cardTop}>
                   <VixText heading="bold" additionalStyle={styles.cardPerson}>
                     {isMine ? '➡️' : '⬅️'} {d.person}
@@ -400,7 +408,10 @@ export default function DebtsScreen() {
         subtitle={isMine ? 'Pinjaman Saya' : 'Pinjaman Orang'}
         scroll={false}
         onClose={() => setEditing(null)}>
-        <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.formScroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
             {personLabel}
           </VixText>
@@ -522,7 +533,10 @@ export default function DebtsScreen() {
         }
         scroll={false}
         onClose={() => setPaying(null)}>
-        <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.formScroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
             Nominal pembayaran
           </VixText>
@@ -614,6 +628,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardDone: { opacity: 0.6 },
+  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',

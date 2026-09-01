@@ -40,7 +40,7 @@ import {
   type FundDirection,
   type FundEntry,
 } from '@/lib/funds';
-import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, loadErrorOf, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Daftar kosong TETAP (bukan `[]` baru tiap render). Dipakai selagi mutasinya
@@ -123,7 +123,7 @@ export default function FundScreen() {
         setEntries(next);
         setError(null);
       },
-      () => setError('Gagal memuat mutasi. Cek koneksi internet.'),
+      () => setError(loadErrorOf('mutasi')),
     );
   }, [user, key, setEntries]);
 

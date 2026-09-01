@@ -45,7 +45,15 @@ export function Chip({
     <PressableScale
       style={[styles.chip, skin, additionalStyle]}
       onPress={onPress}>
-      <VixText heading="label" numberOfLines={1} additionalStyle={styles.text}>
+      {/* adjustsFontSizeToFit hanya MENGECILKAN yang tak muat. Baris chip biasa
+          melebar mengikuti isinya jadi tak pernah terpicu; yang butuh ini baris
+          "muat sebaris" (ChipRow fit) — di sana lebar chip dipatok sama rata,
+          dan tanpa ini label terpanjang berakhir jadi "Kriste…". */}
+      <VixText
+        heading="label"
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        additionalStyle={styles.text}>
         {label}
       </VixText>
     </PressableScale>
@@ -62,5 +70,5 @@ const styles = StyleSheet.create({
     borderColor: Color.BORDER,
     backgroundColor: Color.CONTAINER,
   },
-  text: { color: Color.TEXT_TITLE },
+  text: { color: Color.TEXT_TITLE, textAlign: 'center' },
 });

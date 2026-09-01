@@ -55,6 +55,10 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     { key: 'preloved', label: 'Preloved', icon: '🎒', active: true },
     { key: 'trading-crypto', label: 'Trading Cryptocurrency', icon: '🪙', active: true },
     { key: 'ndc-bonus', label: 'NDC Bonus', icon: '🧧', active: true },
+    // Dua pemasukan di luar NDC — sejalan dengan tab Career: Freelance /
+    // Affiliate masuk Side Hustle, bisnis kuliner Manado masuk Business.
+    { key: 'side-hustle', label: 'Side Hustle', icon: '🖥️', active: true },
+    { key: 'business', label: 'Business', icon: '💎', active: true },
   ],
   expense: [
     { key: 'food-drink', label: 'Food Drink', icon: '🍛', active: true },

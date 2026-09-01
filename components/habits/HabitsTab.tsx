@@ -68,7 +68,7 @@ import {
   type WeightTarget,
 } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
-import { SAVE_ERROR } from '@/lib/messages';
+import { deleteErrorOf, saveErrorOf, SAVE_ERROR } from '@/lib/messages';
 
 export function HabitsTab({
   habits,
@@ -265,7 +265,7 @@ export function HabitsTab({
     try {
       await saveHabits(user.uid, next);
     } catch {
-      setError('Gagal menyimpan kebiasaan. Coba lagi.');
+      setError(saveErrorOf('kebiasaan'));
     }
   }
 
@@ -308,7 +308,7 @@ export function HabitsTab({
         }
       }
     } catch {
-      setError('Gagal menyimpan centang. Coba lagi.');
+      setError(saveErrorOf('centang'));
     }
   }
 
@@ -332,7 +332,7 @@ export function HabitsTab({
       // jadi tidak ada lagi yang perlu dinaikkan di sini. Membatalkan ✗-nya
       // lalu mencentang barisnya tetap menaikkan streak lewat handleToggle.
     } catch {
-      setError('Gagal menyimpan tanda lewati. Coba lagi.');
+      setError(saveErrorOf('tanda lewati'));
     }
   }
 
@@ -363,7 +363,7 @@ export function HabitsTab({
         }
       }
     } catch {
-      setError('Gagal menyimpan catatan. Coba lagi.');
+      setError(saveErrorOf('catatan'));
     }
   }
 
@@ -485,7 +485,7 @@ export function HabitsTab({
       await clearWeightTarget(user.uid);
       setTargetOpen(false);
     } catch {
-      setTargetError('Gagal menghapus target. Coba lagi.');
+      setTargetError(deleteErrorOf('target'));
     } finally {
       setSavingTarget(false);
     }
@@ -1257,7 +1257,6 @@ const styles = StyleSheet.create({
   // Pilihan tingkat & area di modal ubah kebiasaan.
   fieldLabel: { marginTop: 14, marginBottom: 6 },
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pickChip: { flex: 1 },
   rowMain: { flex: 1 },
   rowActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // ✗ lewati hari ini — ukuran & bentuknya disamakan persis dengan tombol ✏️

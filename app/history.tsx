@@ -518,10 +518,4 @@ const styles = StyleSheet.create({
   yearField: { flex: 1 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
-  chipWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
-  },
 });

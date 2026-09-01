@@ -64,8 +64,12 @@ function tahunHtml(t: TimelineYear, now: Date, terakhirSekali: boolean): string 
   const kelompok = timelineGroups(t.items);
   const beres = t.items.filter((i) => i.done).length;
 
+  // Kolom "kapan" sengaja DIKOSONGKAN di baris tahun. Angka tahunnya sudah
+  // berdiri besar di sebelah kanan bulatan; menulisnya lagi di kiri membuat
+  // satu tonggak menampilkan tahun yang sama dua kali — ramai, dan mata jadi
+  // ragu mana judulnya.
   const kepala = `<div class="baris tahun">
-    <div class="kapan"><b>${t.year}</b></div>
+    <div class="kapan"></div>
     <div class="rel"><i class="garis"></i><span class="titik besar"></span></div>
     <div class="isi-baris">
       <div class="tahun-judul">${t.year}</div>
@@ -100,7 +104,6 @@ const EXTRA_CSS = `
     font-size: 10.5px; font-weight: 700; color: #8A6B3E; line-height: 1.35;
   }
   .kapan small { display: block; font-weight: 400; color: #9AA79F; font-size: 9.5px; }
-  .kapan b { font-size: 13px; color: ${TITIK}; }
 
   /* Kolom tengah: garisnya sendiri + bulatan tonggaknya. */
   .rel { width: 18px; flex: none; position: relative; }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -27,6 +28,7 @@ import {
   setSkillDone,
   setWeekSkill,
   skillAreaMeta,
+  overdueSteps,
   skillOf,
   skillOfWeek,
   SKILLS,
@@ -72,6 +74,8 @@ export function WeekTab({
   const doneCount = stepsDone(week.steps);
   const complete = weekComplete(week.steps);
   const due = dueStep(week.steps, now);
+  // Semua yang tertagih (bukan cuma yang terdepan) — sumber angka badge-nya.
+  const terlambat = overdueSteps(week.steps, now);
   // Ganti topik SENIN saja — lihat alasannya di canChangeWeekSkill.
   const bisaGanti = canChangeWeekSkill(now);
   // Streak yang MASIH hidup: tercatat minggu ini, atau minggu lalu (belum
@@ -247,6 +251,11 @@ export function WeekTab({
         {LEARNING_STEPS.map((s) => {
           const checked = !!week.steps[s.key];
           const isDue = due?.key === s.key;
+          // Tertagih = harinya sudah tiba & belum dicentang. Inilah yang
+          // dihitung badge merah tile Learning & sub-tab Week — `due` cuma
+          // yang PALING depan, jadi kalau dua langkah kelewat, menandai `due`
+          // saja masih menyisakan satu yang tak terjelaskan.
+          const tertagih = terlambat.some((x) => x.key === s.key);
           // Langkah Rangkum: centangnya ditentukan tulisannya, jadi
           // lingkarannya dikunci — mencentang tanpa merangkum itu bohong.
           const dariTulisan = s.key === NOTE_DRIVEN_STEP;
@@ -264,6 +273,7 @@ export function WeekTab({
                   hitSlop={8}
                   haptic={checked ? 'light' : 'success'}>
                   <CheckCircle checked={checked} locked={dariTulisan} />
+                  {tertagih && <AttentionMark size={8} style={styles.stepMark} />}
                 </PressableScale>
                 <View style={styles.stepMain}>
                   <VixText
@@ -424,6 +434,7 @@ const styles = StyleSheet.create({
   bookTitle: { color: Color.TEXT_TITLE },
   bookSub: { color: Color.TEXT_LABEL },
   sectionTitle: { marginTop: 4, marginBottom: 8 },
+  stepMark: { position: 'absolute', top: -2, right: -2 },
   stepRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -458,39 +469,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginTop: -2,
     marginBottom: 8,
-  },
-  // Bahan diskusi utama — warna Learning supaya beda dari topik pemantik di
-  // bawahnya, dan langsung kebaca "ini ilmu yang lagi kupelajari".
-  mainTopicCard: {
-    backgroundColor: Color.LEARNING,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.LEARNING_DARK,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
-    gap: 2,
-  },
-  mainTopicTitle: { color: Color.LEARNING_DARK },
-  mainTopicHint: { color: Color.LEARNING_DARK },
-  topicCard: {
-    flexDirection: 'row',
-    // Isinya tinggal SATU baris (keterangan kelompoknya dibuang), jadi
-    // lingkaran centangnya disejajarkan ke tengah — 'flex-start' bikin
-    // lingkaran 26 px itu terlihat menggantung di atas judulnya.
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-  },
-  topicCardDone: {
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderColor: Color.MAIN_LIGHT,
   },
   error: { marginTop: 10 },
 });

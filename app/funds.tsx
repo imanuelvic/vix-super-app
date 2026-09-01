@@ -11,6 +11,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { FUNDS, subscribeFundBalances, type FundBalances } from '@/lib/funds';
+import { loadErrorOf } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Daftar Saku + saldo tersimpan tiap dompet.
@@ -31,7 +32,7 @@ export default function FundsScreen() {
         setBalances(next);
         setError(null);
       },
-      () => setError('Gagal memuat saldo. Cek koneksi internet.'),
+      () => setError(loadErrorOf('saldo')),
     );
     return unsubscribe;
   }, [user]);

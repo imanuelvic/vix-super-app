@@ -70,18 +70,23 @@ export function NewsTab({
 
   return (
     <View style={styles.flex}>
-      {/* Pemilih sumber — satu baris yang digeser, sama seperti kategori di
-          Reminder.
+      {/* Pemilih sumber — keenamnya MUAT SEBARIS, lebarnya dibagi rata & nama
+          sumbernya rata tengah. Jadi tak ada satu pun yang terpotong di tepi
+          layar, dan semuanya terlihat sekaligus tanpa perlu digeser dulu.
 
-          Sempat dibuat turun baris supaya keenamnya terlihat sekaligus, tapi
-          baris keduanya tertimpa keterangan di bawahnya sampai chip terakhir
-          ("Kristen") terpotong separuh. Nama dua sumber tetap dipendekkan
-          (Indonesia → Indo, Bloomberg → Bisnis) & emojinya pindah ke baris
-          keterangan, jadi yang perlu digeser tinggal sedikit — dan sumber yang
-          sedang dipilih selalu ditarik ke dalam layar sendiri (`activeIndex`),
-          jadi tak ada yang hilang di luar tepi. */}
+          Dua percobaan sebelumnya gagal karena alasan yang berbeda: dibuat
+          turun baris → baris keduanya tertimpa keterangan di bawahnya; dibuat
+          bisa digeser → chip terakhir ("Kristen") selalu tergantung separuh di
+          tepi kanan sampai barisnya disentuh.
+
+          Nama dua sumber memang sudah dipendekkan (Indonesia → Indo,
+          Bloomberg → Bisnis) & emojinya pindah ke baris keterangan, jadi
+          keenamnya cukup. `fit={6}`: kalau nanti sumbernya bertambah jadi
+          tujuh, barisnya balik jadi baris geser dengan sendirinya — chip yang
+          dipaksa muat terus-menerus akhirnya cuma jadi titik tak terbaca. */}
       <ChipRow
         activeIndex={NEWS_SOURCES.findIndex((s) => s.key === source)}
+        fit={6}
         contentStyle={styles.sourceRow}>
         {NEWS_SOURCES.map((s) => (
           <Chip

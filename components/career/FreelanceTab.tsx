@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -12,6 +13,7 @@ import { VixText } from '@/components/common/VixText';
 import { useEditParam } from '@/hooks/useEditParam';
 import {
   deadlineDaysUntil,
+  freelanceReminderWindow,
   invoiceTotal,
   type FreelanceProject,
 } from '@/lib/career';
@@ -103,6 +105,13 @@ export function FreelanceTab({
             // Tombol ✏️ jadi SAUDARA area click, bukan anaknya — Pressable
             // bersarang di iOS bikin click tombolnya ikut membuka kartunya.
             <View key={p.id} style={[styles.card, deadlineBorder(tone)]}>
+              {/* Proyek belum selesai yang deadline-nya sudah H-7 = yang
+                  dihitung badge merah tile Career & sub-tab Freelance
+                  (freelanceReminderWindow) — aturannya dipanggil dari lib yang
+                  sama, bukan ditebak ulang dari `tone`. */}
+              {freelanceReminderWindow(p, today) && (
+                <AttentionMark style={styles.cardMark} />
+              )}
               <PressableScale
                 style={styles.cardTap}
                 onPress={() => openDetail(p)}>
@@ -169,6 +178,7 @@ const styles = StyleSheet.create({
   // Kartu hero-nya persis <SummaryCard> bawaan — tak perlu gaya sendiri.
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },
+  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     flexDirection: 'row',
     // 'flex-start': tombol ✏️ menempel di pojok kanan ATAS kartu, tidak ikut

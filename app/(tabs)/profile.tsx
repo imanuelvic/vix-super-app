@@ -43,6 +43,7 @@ import {
 } from '@/lib/selfKnowledge';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { photoUri } from '@/lib/photo';
 import {
   EMPTY_PROFILE,
   GENDERS,
@@ -300,8 +301,6 @@ export default function ProfileScreen() {
     );
   }
 
-  const hasPhoto = !!profile.photo && profile.photo.length > 0;
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Judul + subtab: Profile · Personality · Ikigai · SWOT */}
@@ -383,9 +382,9 @@ export default function ProfileScreen() {
               disabled={foto.busy !== null}>
               {foto.busy === 'hero' ? (
                 <ActivityIndicator color={Color.MAIN} />
-              ) : hasPhoto ? (
+              ) : profile.photo ? (
                 <Image
-                  source={{ uri: `data:image/jpeg;base64,${profile.photo}` }}
+                  source={{ uri: photoUri(profile.photo) }}
                   style={styles.avatarImg}
                 />
               ) : (
@@ -481,7 +480,7 @@ export default function ProfileScreen() {
             <ActivityIndicator color={Color.MAIN} />
           ) : form.photo ? (
             <Image
-              source={{ uri: `data:image/jpeg;base64,${form.photo}` }}
+              source={{ uri: photoUri(form.photo) }}
               style={styles.photoPreview}
             />
           ) : (

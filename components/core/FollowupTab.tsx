@@ -488,7 +488,9 @@ export function FollowupTab({
           <VixText heading="label" additionalStyle={styles.modalSub}>
             🙏 Pokok doa bulan ini
           </VixText>
-          <ScrollView style={styles.modalScroll}>
+          <ScrollView
+            style={styles.modalScroll}
+            showsVerticalScrollIndicator={false}>
             {pmPts.length > 0 ? (
               pmPts.map((p, i) => (
                 <View key={i} style={styles.modalPointBox}>
@@ -553,7 +555,9 @@ export function FollowupTab({
           <VixText heading="label" additionalStyle={styles.modalSub}>
             {fmTopic.icon} {fmTopic.label}
           </VixText>
-          <ScrollView style={styles.modalScroll}>
+          <ScrollView
+            style={styles.modalScroll}
+            showsVerticalScrollIndicator={false}>
             {/* Pertanyaan follow up */}
             <View style={styles.questionBox}>
               <VixText heading="paragraph" additionalStyle={styles.questionText}>
@@ -854,9 +858,4 @@ const styles = StyleSheet.create({
   modalClose: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
   modalCloseText: { color: Color.TEXT_LABEL },
   doneText: { color: Color.SUCCESS },
-  emptyText: { textAlign: 'center', marginBottom: 12 },
-  // Idea For CORE pindah ke layarnya sendiri (app/core-ideas.tsx) — gayanya
-  // ikut ke sana, tidak ada yang tertinggal menganggur di sini.
-  fieldLabel: { marginBottom: 6 },
-  formGap: { marginBottom: 10 },
 });

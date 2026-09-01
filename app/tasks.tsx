@@ -20,6 +20,7 @@ import {
   withBadge,
   type BottomTab,
 } from '@/components/common/BottomTabs';
+import { AttentionMark } from '@/components/common/Badge';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -41,7 +42,7 @@ import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { SAVE_ERROR } from '@/lib/messages';
+import { loadErrorOf, saveErrorOf, SAVE_ERROR } from '@/lib/messages';
 import {
   addRecurringTasks,
   addTask,
@@ -205,7 +206,7 @@ export default function TasksScreen() {
         setLoading(false);
       },
       () => {
-        setError('Gagal memuat task. Cek koneksi internet.');
+        setError(loadErrorOf('task'));
         setLoading(false);
       },
     );
@@ -215,7 +216,7 @@ export default function TasksScreen() {
   useEffect(() => {
     if (!user) return;
     return subscribeOtherTasks(user.uid, setOtherTasks, () =>
-      setError('Gagal memuat catatan. Cek koneksi internet.'),
+      setError(loadErrorOf('catatan')),
     );
   }, [user]);
 
@@ -263,7 +264,7 @@ export default function TasksScreen() {
     try {
       await setTaskDone(user.uid, item.id, !item.done);
     } catch {
-      setError('Gagal menyimpan perubahan. Coba lagi.');
+      setError(saveErrorOf('perubahan'));
     }
   }
 
@@ -623,14 +624,24 @@ export default function TasksScreen() {
                       dragTask ? styles.dayBlockDrop : null,
                     ]}>
                     <View style={styles.dayHeader}>
-                      <VixText
-                        heading="bold"
-                        additionalStyle={
-                          isToday ? styles.dayTitleToday : styles.dayTitle
-                        }>
-                        {formatDayMonth(date)}
-                        {isToday ? ' • HARI INI' : ''}
-                      </VixText>
+                      <View style={styles.dayTitleRow}>
+                        <VixText
+                          heading="bold"
+                          additionalStyle={
+                            isToday ? styles.dayTitleToday : styles.dayTitle
+                          }>
+                          {formatDayMonth(date)}
+                          {isToday ? ' • HARI INI' : ''}
+                        </VixText>
+                        {/* Task HARI INI yang belum selesai = yang dihitung
+                            badge merah tile Reminder & sub-tab Harian.
+                            Ditandai SEKALI di kepala harinya, bukan di tiap
+                            barisnya — sepuluh titik berdenyut sekaligus tidak
+                            menunjuk apa pun, ia cuma jadi bising. */}
+                        {isToday && dayTasks.some((t) => !t.done) && (
+                          <AttentionMark size={8} />
+                        )}
+                      </View>
                       <PressableScale onPress={() => openAdd(date)} hitSlop={10}>
                         <IconSymbol name="plus" size={18} color={Color.MAIN} />
                       </PressableScale>
@@ -963,6 +974,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
+  },
+  // Tanggal + titik penanda menempel jadi satu, jadi space-between di atas
+  // tetap cuma memisahkan "tanggal" dari tombol +.
+  dayTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
   },
   dayTitle: { color: Color.TEXT_TITLE },
   dayTitleToday: { color: Color.MAIN_DARK },

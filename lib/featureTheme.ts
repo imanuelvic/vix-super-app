@@ -48,6 +48,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   'bible-reading': 'spiritual',
   'bible-story': 'spiritual',
   fasting: 'spiritual',
+  'fasting-days': 'spiritual',
   gratitude: 'spiritual',
   'morning-prayer': 'spiritual',
   'reflection-feed': 'spiritual',

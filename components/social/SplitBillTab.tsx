@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { FormError } from '@/components/common/FormError';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -104,6 +105,13 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
                   onPress={() =>
                     router.push({ pathname: '/bill/[id]', params: { id: bill.id } })
                   }>
+                  {/* Tagihan yang masih ada orang belum setor = yang dihitung
+                      badge merah tile Social & sub-tab Split Bill
+                      (billUnsettled). Ambangnya sengaja dipanggil dari lib
+                      yang sama, bukan ditebak ulang di sini. */}
+                  {billUnsettled(bill) && (
+                    <AttentionMark style={styles.cardMark} />
+                  )}
                   <View style={styles.cardMain}>
                     <VixText heading="bold" additionalStyle={styles.cardTitle}>
                       {bill.title.trim() || 'Tanpa judul'}
@@ -161,6 +169,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
+  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

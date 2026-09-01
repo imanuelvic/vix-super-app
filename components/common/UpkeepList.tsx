@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
@@ -165,6 +166,13 @@ export function UpkeepList({
                   </VixText>
                   <DeadlineTag tone={row.tone} label={row.toneLabel} />
                 </View>
+                {/* Baris JATUH TEMPO = yang dihitung badge merah tab & tile
+                    Home. Titik berdenyut di pojoknya menjawab "yang mana?"
+                    tanpa perlu membaca seluruh daftar dulu. Ambangnya persis
+                    sama dengan yang dipakai badge-nya (deadlineDue). */}
+                {deadlineDue(row.tone) && (
+                  <AttentionMark style={styles.rowMark} />
+                )}
                 <VixText heading="label">{row.tip}</VixText>
                 <VixText heading="label" additionalStyle={styles.dateLine}>
                   {row.dateLine}
@@ -247,6 +255,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowLabel: { flex: 1, color: Color.TEXT_TITLE },
+  rowMark: { position: 'absolute', top: -4, right: -4 },
   dateLine: { color: Color.TEXT_PLACEHOLDER },
   // Judul + tombol "sekarang" sebaris; judul boleh memanjang, tombol tetap
   // menempel di kanan atas.

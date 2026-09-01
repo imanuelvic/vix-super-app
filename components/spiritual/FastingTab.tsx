@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import {
   activeFasting,
@@ -28,6 +29,11 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
 
   function open(id?: string) {
     router.push(id ? { pathname: '/fasting', params: { id } } : '/fasting');
+  }
+
+  /** Checklist hariannya — layar sendiri, tak perlu lewat Edit Puasa dulu. */
+  function openDays(id: string) {
+    router.push({ pathname: '/fasting-days', params: { id } });
   }
 
   return (
@@ -54,6 +60,23 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
           </PressableScale>
         )}
 
+        {/* Tombolnya di LUAR kartu, bukan di dalamnya: PressableScale bersarang
+            tidak andal di iOS — yang di dalam sering tak menerima tekanan. */}
+        {active && (
+          <PressableScale
+            style={styles.daysButton}
+            onPress={() => openDays(active.id)}>
+            <VixText heading="bold" additionalStyle={styles.daysText}>
+              📆 Lihat Hari per Hari
+            </VixText>
+            <IconSymbol
+              name="chevron.right"
+              size={16}
+              color={Color.SPIRITUAL_DARK}
+            />
+          </PressableScale>
+        )}
+
         <PrimaryButton
           label="Tambah Puasa Baru"
           icon="plus"
@@ -72,33 +95,44 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
           const { done, total } = fastingProgress(p);
           const upcoming = p.startId > todayId;
           return (
-            <PressableScale
-              key={p.id}
-              style={styles.card}
-              onPress={() => open(p.id)}>
-              <View style={styles.cardTop}>
+            /* Dua tujuan, dua tombol BERSEBELAHAN (bukan bersarang — di iOS
+               Pressable di dalam Pressable sering tak menerima tekanan):
+               📆 di depan → checklist hariannya; kartunya → keterangannya. */
+            <View key={p.id} style={styles.row}>
+              <PressableScale
+                style={styles.daysIcon}
+                onPress={() => openDays(p.id)}>
+                <VixText additionalStyle={styles.daysIconText}>📆</VixText>
+                <VixText heading="label" additionalStyle={styles.daysIconSub}>
+                  {done}/{total}
+                </VixText>
+              </PressableScale>
+              <PressableScale
+                style={styles.card}
+                onPress={() => open(p.id)}>
+                {/* Angka {done}/{total} pindah ke tombol 📆 di depannya —
+                    di situlah tempat ia bisa di-click untuk dilihat. */}
                 <VixText heading="bold" additionalStyle={styles.cardTitle}>
                   {p.title}
                 </VixText>
-                <VixText heading="bold" additionalStyle={styles.cardCount}>
-                  {done}/{total}
+                <VixText heading="label" additionalStyle={styles.cardDate}>
+                  📆 {formatShortDate(dayIdToDate(p.startId))} –{' '}
+                  {formatShortDate(dayIdToDate(p.endId))}
+                  {upcoming ? ' · belum mulai' : ''}
                 </VixText>
-              </View>
-              <VixText heading="label" additionalStyle={styles.cardDate}>
-                📆 {formatShortDate(dayIdToDate(p.startId))} –{' '}
-                {formatShortDate(dayIdToDate(p.endId))}
-                {upcoming ? ' · belum mulai' : ''}
-              </VixText>
-              {/* Pokok doa utamanya TIDAK ditampilkan di sini: isinya perkara
-                  pribadi yang panjang, dan di daftar ia cuma jadi dua baris
-                  terpotong yang tidak terbaca utuh. Tempat membacanya di layar
-                  puasanya sendiri.
+                {/* Pokok doa utamanya TIDAK ditampilkan di sini: isinya
+                    perkara pribadi yang panjang, dan di daftar ia cuma jadi
+                    dua baris terpotong yang tidak terbaca utuh. Tempat
+                    membacanya di layar puasanya sendiri.
 
-                  Yang tampil JAWABAN doanya — satu kalimat, dan justru itulah
-                  yang pantas dibaca ulang dari daftar. Bentuknya sama dengan
-                  kutipan di daftar Catatan Khotbah. */}
-              {p.answer ? <QuoteBox text={p.answer} prefix="✨" lines={3} /> : null}
-            </PressableScale>
+                    Yang tampil JAWABAN doanya — satu kalimat, dan justru
+                    itulah yang pantas dibaca ulang dari daftar. Bentuknya sama
+                    dengan kutipan di daftar Catatan Khotbah. */}
+                {p.answer ? (
+                  <QuoteBox text={p.answer} prefix="✨" lines={3} />
+                ) : null}
+              </PressableScale>
+            </View>
           );
         })}
       </ScrollView>
@@ -124,24 +158,47 @@ const styles = StyleSheet.create({
   addButton: { marginBottom: 14 },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {
+    flex: 1,
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Color.BORDER,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 8,
     // 3 → 6: kutipan jawaban doanya butuh sedikit ruang napas dari baris
     // tanggal di atasnya, sama seperti kartu Catatan Khotbah.
     gap: 6,
   },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-  },
   cardTitle: { color: Color.TEXT_TITLE, flexShrink: 1 },
-  cardCount: { color: Color.MAIN },
   cardDate: { color: Color.SPIRITUAL_DARK },
+  // Satu baris daftar = tombol 📆 + kartunya, bersebelahan.
+  row: { flexDirection: 'row', alignItems: 'stretch', gap: 8, marginBottom: 8 },
+  // Tombol checklist harian di DEPAN tiap puasa. Lebarnya tetap supaya
+  // kartu-kartu di kanannya tetap sejajar, berapa pun angkanya.
+  daysIcon: {
+    width: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.SPIRITUAL_DARK,
+  },
+  daysIconText: { fontSize: 20, lineHeight: 24 },
+  daysIconSub: { color: Color.SPIRITUAL_DARK },
+  // Tombol checklist untuk puasa yang SEDANG berjalan (di bawah kartu besarnya).
+  daysButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Color.SPIRITUAL_DARK,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  daysText: { color: Color.SPIRITUAL_DARK },
 });

@@ -9,6 +9,19 @@ import * as ImagePicker from 'expo-image-picker';
 // 1 MB per dokumen, dan base64 masih menggelembungkan ±33% lagi. Makin kecil
 // fotonya, makin murah & cepat pula tiap kali daftarnya dibaca ulang.
 
+/**
+ * Foto tersimpan (base64 polos) → alamat yang bisa dipasang di `<Image>` atau
+ * `<img>`.
+ *
+ * Prefiksnya dulu diketik ulang di sepuluh tempat. Satu huruf meleset —
+ * `image/jpg` alih-alih `image/jpeg`, koma hilang — dan fotonya tidak muncul
+ * sama sekali, tanpa pesan galat apa pun: `<Image>` hanya diam. Jadi bentuk
+ * alamatnya ditulis SEKALI di sini.
+ */
+export function photoUri(base64: string): string {
+  return `data:image/jpeg;base64,${base64}`;
+}
+
 /** Pilih 1 foto dari galeri lalu kompres → JPEG base64 (tanpa prefix `data:`). */
 export async function pickCompressedImage({
   width,

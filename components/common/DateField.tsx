@@ -22,6 +22,7 @@ export function DateField({
   placeholder,
   maximumDate,
   minimumDate,
+  disabled,
 }: {
   /**
    * null = BELUM diisi. Tanpa ini, kolom kosong terpaksa diberi tanggal hari
@@ -35,6 +36,12 @@ export function DateField({
   /** Batas tanggal terjauh — mis. tanggal lahir tak boleh di masa depan. */
   maximumDate?: Date;
   minimumDate?: Date;
+  /**
+   * Baca-saja: tanggalnya tetap TERBACA seperti biasa, cuma picker-nya tidak
+   * bisa dibuka. Sengaja tidak diredupkan — yang dikunci itu mengubahnya,
+   * bukan membacanya, dan tanggal puasa yang memudar jadi sulit dibaca ulang.
+   */
+  disabled?: boolean;
 }) {
   // Id, "tutup diri kalau picker lain dibuka", & sakelar buka/tutup diurus
   // hooks/usePickerSlot — blok yang sama persis dulu disalin di <TimeField>.
@@ -59,19 +66,26 @@ export function DateField({
 
   return (
     <>
-      <PressableScale style={styles.field} onPress={toggle}>
+      <PressableScale
+        style={styles.field}
+        onPress={toggle}
+        disabled={disabled}>
         <VixText
           heading="paragraph"
           additionalStyle={value ? styles.text : styles.placeholder}>
           📅 {value ? formatFullDate(value) : (placeholder ?? 'Pilih tanggal')}
         </VixText>
-        <IconSymbol
-          name={open ? 'chevron.up' : 'chevron.down'}
-          size={18}
-          color={Color.TEXT_LABEL}
-        />
+        {/* Panahnya hilang saat terkunci — tanda "ini tidak bisa dibuka" yang
+            terbaca sebelum jarinya sempat mencoba. */}
+        {!disabled && (
+          <IconSymbol
+            name={open ? 'chevron.up' : 'chevron.down'}
+            size={18}
+            color={Color.TEXT_LABEL}
+          />
+        )}
       </PressableScale>
-      {open && (
+      {open && !disabled && (
         <DateTimePicker
           value={shown}
           maximumDate={maximumDate}

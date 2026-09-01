@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { AchievementButton } from '@/components/common/AchievementButton';
+import { AttentionMark } from '@/components/common/Badge';
 import {
   BottomTabs,
   withBadge,
@@ -208,11 +209,17 @@ export default function SpiritualScreen() {
                 additionalStyle={styles.skippedGap}
               />
             ) : (
-              <PrimaryButton
-                label="✍️ Tulis Revive Hari Ini"
-                onPress={() => router.push('/revive')}
-                additionalStyle={styles.writeButton}
-              />
+              // INI penyebab badge merah di tile Spiritual & di sub-tab Revive.
+              // Titik berdenyut di pojoknya = "yang ini yang menyalakannya" —
+              // tanpa itu, angka merah di Home menyuruh masuk tapi begitu
+              // sampai tak ada yang menunjuk ke mana.
+              <View style={styles.writeWrap}>
+                <PrimaryButton
+                  label="✍️ Tulis Revive Hari Ini"
+                  onPress={() => router.push('/revive')}
+                />
+                <AttentionMark style={styles.writeMark} />
+              </View>
             )}
 
             {/* ⏭️ Lewati hari ini — badge harian Revive ikut hilang. Tidak
@@ -257,7 +264,8 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  writeButton: { marginTop: 4 },
+  writeWrap: { marginTop: 4 },
+  writeMark: { position: 'absolute', top: -3, right: -3 },
   // Bentuk kartu & tombolnya ada di components/common/SkipToday.tsx.
   skippedGap: { marginTop: 4 },
   todayCard: {

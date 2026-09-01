@@ -33,6 +33,7 @@ import { useFormSave } from '@/hooks/useFormSave';
 import { currentAge, nextBirthday } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, PHOTO_ERROR } from '@/lib/messages';
+import { photoUri } from '@/lib/photo';
 import {
   childrenOf,
   countGenerations,
@@ -74,7 +75,6 @@ function Avatar({
   // saat diisi, margin horizontal dimatikan & nama dibatasi selebar kolom.
   colWidth?: number;
 }) {
-  const hasPhoto = !!m.photo && m.photo.length > 0;
   return (
     <PressableScale
       style={[
@@ -91,9 +91,9 @@ function Avatar({
           highlighted && styles.avatarSelected,
           m.deceased && styles.avatarDeceased,
         ]}>
-        {hasPhoto ? (
+        {m.photo ? (
           <Image
-            source={{ uri: `data:image/jpeg;base64,${m.photo}` }}
+            source={{ uri: photoUri(m.photo) }}
             style={[styles.avatarPhoto, m.deceased && styles.photoDeceased]}
           />
         ) : (
@@ -681,7 +681,8 @@ export default function FamilyScreen() {
         }}>
         <ScrollView
           style={styles.formScroll}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
           {/* Foto — dikompres sangat kecil tapi tetap jelas */}
           <PressableScale
             style={styles.photoPicker}
@@ -691,7 +692,7 @@ export default function FamilyScreen() {
               <ActivityIndicator color={Color.MAIN} />
             ) : fPhoto ? (
               <Image
-                source={{ uri: `data:image/jpeg;base64,${fPhoto}` }}
+                source={{ uri: photoUri(fPhoto) }}
                 style={styles.photoPreview}
               />
             ) : (

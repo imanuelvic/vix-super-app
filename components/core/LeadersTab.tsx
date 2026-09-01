@@ -650,7 +650,10 @@ export function LeadersTab({
             />
           )
         }>
-        <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.formScroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
           {archiving && editing !== 'new' && editing !== null ? (
             <>
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -804,7 +807,10 @@ export function LeadersTab({
         title={editingMT === 'new' ? 'Tambah Main Team' : 'Edit Main Team'}
         scroll={false}
         onClose={() => setEditingMT(null)}>
-        <ScrollView style={styles.formScroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.formScroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
         <FormInput
           style={styles.formGap}
           placeholder="Nama"

@@ -10,14 +10,16 @@
 // ============================================================================
 import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { Badge } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { Greeting } from '@/components/common/Greeting';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
@@ -504,9 +506,7 @@ export default function HomeScreen() {
   if (login === undefined) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.loadingCenter}>
-          <ActivityIndicator size="large" color={Color.MAIN} />
-        </View>
+        <LoadingCenter size="large" />
       </SafeAreaView>
     );
   }
@@ -818,7 +818,7 @@ export default function HomeScreen() {
                 ]}
                 onPress={() =>
                   router.push({
-                    pathname: '/fasting',
+                    pathname: '/fasting-days',
                     params: { id: fastingDue.id, day: todayId },
                   })
                 }
@@ -869,14 +869,12 @@ export default function HomeScreen() {
                       Baru digambar setelah SEMUA sumbernya tiba (badgesReady),
                       lalu seluruh badge memudar masuk bersamaan — bukan
                       bermunculan satu per satu sambil data menetes. */}
-                  {badgesReady && badge > 0 && (
-                    <Animated.View
-                      entering={FadeIn.duration(260)}
-                      style={styles.badge}>
-                      <VixText heading="label" additionalStyle={styles.badgeText}>
-                        {badge > 9 ? '9+' : badge}
-                      </VixText>
-                    </Animated.View>
+                  {badgesReady && (
+                    <Badge
+                      count={badge}
+                      ring={Color.BACKGROUND}
+                      style={styles.badge}
+                    />
                   )}
                   {/* Judul berlatar pil sewarna tile-nya: separuh atas menyatu
                       dengan tile, separuh bawah menggantung di latar krem —
@@ -914,7 +912,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  loadingCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   brandRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1045,18 +1042,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   tileLabel: { textAlign: 'center' },
-  badge: {
-    position: 'absolute',
-    top: -6,
-    right: -4,
-    minWidth: 22,
-    paddingHorizontal: 6,
-    borderRadius: 11,
-    backgroundColor: Color.DANGER,
-    borderWidth: 2,
-    borderColor: Color.BACKGROUND,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { color: Color.TEXT_REVERSE },
+  badge: { position: 'absolute', top: -6, right: -4 },
 });

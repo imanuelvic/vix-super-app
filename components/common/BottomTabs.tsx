@@ -7,10 +7,10 @@ import Animated, {
   withSequence,
   withSpring,
   withTiming,
-  ZoomIn,
 } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
+import { Badge } from '@/components/common/Badge';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -147,13 +147,9 @@ function Tab<T extends string>({
             color={active ? fg : Color.TEXT_LABEL}
           />
         </Animated.View>
-        {!!tab.badge && tab.badge > 0 && (
-          <Animated.View entering={ZoomIn.duration(220)} style={styles.badge}>
-            <VixText heading="label" additionalStyle={styles.badgeText}>
-              {tab.badge > 9 ? '9+' : tab.badge}
-            </VixText>
-          </Animated.View>
-        )}
+        {/* Bentuk & aturan angkanya milik <Badge> — sama persis dengan badge
+            tile di Home, karena memang angka yang sama. */}
+        <Badge count={tab.badge ?? 0} style={styles.badge} />
       </View>
       {/* Label panjang (mis. "Multiplication" di layar CORE yang punya 5 tab)
           mengecil sendiri agar tetap satu baris — tanpa ini ia terpotong dan
@@ -190,18 +186,5 @@ const styles = StyleSheet.create({
     right: -14,
     borderRadius: 999,
   },
-  badge: {
-    position: 'absolute',
-    top: -6,
-    right: -10,
-    minWidth: 18,
-    paddingHorizontal: 5,
-    borderRadius: 9,
-    backgroundColor: Color.DANGER,
-    borderWidth: 1.5,
-    borderColor: Color.CONTAINER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { color: Color.TEXT_REVERSE, fontSize: 11, lineHeight: 16 },
+  badge: { position: 'absolute', top: -6, right: -10 },
 });

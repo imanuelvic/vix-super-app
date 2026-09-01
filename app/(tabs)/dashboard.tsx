@@ -29,15 +29,11 @@ import {
 import {
   deadlineDaysUntil,
   freelanceReminderWindow,
-  insuranceMonthKey,
-  insuranceRemaining,
   roadmapDaysUntil,
   roadmapReminderWindow,
   subscribeFreelance,
-  subscribeInsurance,
   subscribeRoadmap,
   type FreelanceProject,
-  type InsuranceMonths,
   type RoadmapItem,
 } from '@/lib/career';
 import {
@@ -221,7 +217,6 @@ export default function DashboardScreen() {
   const [coreIdeas, setCoreIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
   const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
-  const [insurance, setInsurance] = useState<InsuranceMonths>({});
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
   // Perawatan mobil 🚗 & rumah 🏠 — sumber badge di tile Home, ditampilkan juga
   // sebagai kartu reminder di sini.
@@ -276,7 +271,6 @@ export default function DashboardScreen() {
       subscribeCoreIdeas(user.uid, setCoreIdeas),
       subscribeDonor(user.uid, setDonor),
       subscribeFreelance(user.uid, setFreelance),
-      subscribeInsurance(user.uid, setInsurance),
       subscribeFun(user.uid, setFun),
       subscribePartStatus(user.uid, setCarParts),
       subscribeChoreStatus(user.uid, setResidenceChores),
@@ -626,7 +620,7 @@ export default function DashboardScreen() {
 
   // Fallback PRODUKTIVITAS: kalau tidak ada reminder aksi & bukan jam pagi,
   // munculkan "apa yang bisa dikerjakan biar menghasilkan uang" — dari
-  // Freelance (proyek aktif) & Insurance (target bulan ini).
+  // Freelance (proyek aktif yang deadline-nya paling dekat).
   const productivity: { id: string; tab: string; text: string }[] = [];
   for (const p of [...freelance]
     .filter((p) => !p.done)
@@ -640,32 +634,10 @@ export default function DashboardScreen() {
       )})`,
     });
   }
-  const insM = insurance[insuranceMonthKey(now.getFullYear(), now.getMonth())];
-  if (insM) {
-    const rem = insuranceRemaining(insM);
-    if (rem.pitch > 0)
-      productivity.push({
-        id: 'pi-pitch',
-        tab: 'insurance',
-        text: `☂️ Pitching ${rem.pitch} orang lagi bulan ini`,
-      });
-    if (rem.close > 0)
-      productivity.push({
-        id: 'pi-close',
-        tab: 'insurance',
-        text: `🤝 Closing ${rem.close} polis lagi bulan ini`,
-      });
-    if (rem.premi > 0)
-      productivity.push({
-        id: 'pi-premi',
-        tab: 'insurance',
-        text: `💰 Kejar premi ${formatRupiah(rem.premi)} lagi`,
-      });
-  }
   if (productivity.length === 0) {
     productivity.push(
       { id: 'pg-1', tab: 'freelance', text: '🌐 Cari / follow up 1 proyek freelance baru' },
-      { id: 'pg-2', tab: 'insurance', text: '☂️ Prospek 1 calon nasabah asuransi' },
+      { id: 'pg-2', tab: 'affiliate', text: '📣 Bikin 1 ide konten affiliate baru' },
       { id: 'pg-3', tab: 'business', text: '🍧 Kembangkan ide bisnis (es cendol & roa)' },
     );
   }
@@ -1001,7 +973,7 @@ export default function DashboardScreen() {
               )} dari ${fastingProgress(fastingNow).total}`}
               onPress={() =>
                 router.push({
-                  pathname: '/fasting',
+                  pathname: '/fasting-days',
                   params: { id: fastingNow.id },
                 })
               }>

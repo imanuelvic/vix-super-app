@@ -2,6 +2,7 @@ import { Children, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import {
   ScrollView,
   StyleSheet,
+  View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -45,6 +46,7 @@ const EDGE = 14;
 export function ChipRow({
   children,
   activeIndex,
+  fit,
   additionalStyle,
   contentStyle,
 }: {
@@ -62,6 +64,16 @@ export function ChipRow({
    * menekan chip tidak membuat barisnya melompat-lompat sendiri.
    */
   activeIndex?: number;
+  /**
+   * Batas "masih muat sebaris": kalau chip-nya SEBANYAK ini atau kurang,
+   * barisnya tidak digeser sama sekali — lebarnya dibagi rata & rata tengah,
+   * jadi tak ada satu pun yang terpotong di tepi layar.
+   *
+   * Dipakai baris yang jumlahnya memang tetap & sedikit (sumber News: 6).
+   * Lewat dari angka ini ia kembali jadi baris geser biasa — chip yang
+   * dipaksa muat terus-menerus akhirnya cuma jadi titik-titik tak terbaca.
+   */
+  fit?: number;
   /** Jarak kiri/kanan barisnya — biasanya `paddingHorizontal: 20` layarnya. */
   additionalStyle?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
@@ -95,29 +107,50 @@ export function ChipRow({
     if (activeIndex !== undefined) tampakkan(activeIndex);
   }, [activeIndex, tampakkan]);
 
+  const anak = Children.toArray(children).filter((x) => x != null);
+  const masukPelan = (i: number) =>
+    FadeInRight.delay(Math.min(i, 8) * 45).duration(280).springify().damping(14);
+
+  // ── Muat sebaris: tak ada yang perlu digeser, jadi tak ada yang terpotong ──
+  // Lebarnya dibagi rata (flex: 1) — bukan sekadar dirapatkan — supaya baris
+  // yang isinya tetap terbaca sebagai satu deret utuh, bukan tumpukan pil
+  // dengan sisa ruang menganga di kanan.
+  if (fit !== undefined && anak.length <= fit) {
+    return (
+      <View style={[styles.scroll, additionalStyle]}>
+        <View style={[styles.row, contentStyle]}>
+          {anak.map((child, i) => (
+            <Animated.View
+              key={i}
+              style={styles.bagian}
+              entering={masukPelan(i)}>
+              {child}
+            </Animated.View>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
   // Chip-nya masuk berurutan dari kanan dengan pantulan kecil — pola yang sama
   // dengan tile Home (berurutan, bukan berkedip sekaligus), cuma arahnya
   // menyamping mengikuti arah barisnya. Jedanya dibatasi 8 chip pertama supaya
   // baris panjang tidak terasa lambat.
-  const isi = Children.map(children, (child, i) =>
-    child == null ? null : (
-      <Animated.View
-        onLayout={(e) => {
-          const { x, width } = e.nativeEvent.layout;
-          tempat.current[i] = { x, w: width };
-          // Letaknya baru diketahui SESUDAH digambar — saat layar pertama kali
-          // dibuka, efek di atas sudah lewat sebelum ukurannya ada. Jadi
-          // geseran awalnya dihitung di sini.
-          if (i === activeIndex) tampakkan(i);
-        }}
-        entering={FadeInRight.delay(Math.min(i, 8) * 45)
-          .duration(280)
-          .springify()
-          .damping(14)}>
-        {child}
-      </Animated.View>
-    ),
-  );
+  const isi = anak.map((child, i) => (
+    <Animated.View
+      key={i}
+      onLayout={(e) => {
+        const { x, width } = e.nativeEvent.layout;
+        tempat.current[i] = { x, w: width };
+        // Letaknya baru diketahui SESUDAH digambar — saat layar pertama kali
+        // dibuka, efek di atas sudah lewat sebelum ukurannya ada. Jadi
+        // geseran awalnya dihitung di sini.
+        if (i === activeIndex) tampakkan(i);
+      }}
+      entering={masukPelan(i)}>
+      {child}
+    </Animated.View>
+  ));
 
   return (
     <ScrollView
@@ -141,4 +174,6 @@ export function ChipRow({
 const styles = StyleSheet.create({
   scroll: { flexGrow: 0 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Mode muat-sebaris: tiap chip mengambil bagian yang sama dari lebar baris.
+  bagian: { flex: 1 },
 });

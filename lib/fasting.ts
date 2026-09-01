@@ -106,6 +106,53 @@ export function fastingDayNumber(plan: FastingPlan, dayId: string): number {
   return fastingDayIds(plan.startId, plan.endId).indexOf(dayId) + 1;
 }
 
+// ===================== Kunci sesudah selesai 🔒 =====================
+// Catatan puasa itu KESAKSIAN, bukan daftar tugas. Kalau bisa diubah kapan
+// saja, hari yang dulu gagal bisa dicentang berhasil berbulan-bulan kemudian —
+// dan angkanya berhenti berarti apa-apa.
+//
+// Tapi menguncinya PERSIS di hari terakhir juga keliru: hari terakhir baru
+// bisa dinilai malamnya, dan jawaban doa sering baru terasa sehari-dua hari
+// sesudahnya. Jadi ada masa tenggang.
+
+/** Berapa hari SESUDAH tanggal selesai catatannya masih boleh diubah. */
+export const FASTING_GRACE_DAYS = 3;
+
+/** Hari terakhir puasa ini masih bisa diedit ("YYYY-MM-DD"). */
+export function fastingEditableUntil(plan: FastingPlan): string {
+  if (!plan.endId) return '';
+  const batas = dayIdToDate(plan.endId);
+  batas.setDate(batas.getDate() + FASTING_GRACE_DAYS);
+  return dayDocId(batas);
+}
+
+/**
+ * Sudah dikunci? Sekali true, SELAMANYA true — tanggalnya cuma maju.
+ *
+ * Puasa yang belum punya tanggal selesai (masih dibuat) tidak pernah terkunci.
+ */
+export function fastingLocked(plan: FastingPlan, now: Date): boolean {
+  const batas = fastingEditableUntil(plan);
+  return !!batas && dayDocId(now) > batas;
+}
+
+/**
+ * Sisa hari sebelum terkunci — 0 berarti hari ini hari terakhirnya.
+ * `null` = belum selesai puasanya, atau sudah telanjur terkunci.
+ */
+export function fastingLockDaysLeft(
+  plan: FastingPlan,
+  now: Date,
+): number | null {
+  const batas = fastingEditableUntil(plan);
+  if (!batas) return null;
+  const today = dayDocId(now);
+  if (today > batas || today <= plan.endId) return null;
+  return Math.round(
+    (dayIdToDate(batas).getTime() - dayIdToDate(today).getTime()) / 86_400_000,
+  );
+}
+
 // ===================== Kartu centang malam 🍽️ =====================
 // Puasa dinilai SESUDAH harinya dijalani, bukan di tengahnya — jadi tagihannya
 // muncul malam: jam 20.00 sampai tengah malam. Sesudah tengah malam harinya

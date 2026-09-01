@@ -73,7 +73,7 @@ export function LinkedNotesButton({
         {memuat ? (
           <LoadingCenter />
         ) : (
-          <ScrollView style={styles.scroll}>
+          <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
             {tersambung.map((l) => {
               const meta = NOTE_KIND_META[l.kind];
               const revive =

@@ -41,6 +41,7 @@ import {
   PHOTO_ERROR,
   SAVE_ERROR,
 } from '@/lib/messages';
+import { photoUri } from '@/lib/photo';
 import { formatRupiah } from '@/lib/transactions';
 
 /** Format waktu tempuh race: "1j 5m" kalau ≥ 60 menit, selain itu "X menit". */
@@ -408,7 +409,7 @@ export function FunArchive({
                 {item.category === 'race' && item.medalPhoto ? (
                   <Image
                     source={{
-                      uri: `data:image/jpeg;base64,${item.medalPhoto}`,
+                      uri: photoUri(item.medalPhoto),
                     }}
                     style={styles.medalThumb}
                     resizeMode="cover"
@@ -544,7 +545,7 @@ export function FunArchive({
                 <ActivityIndicator color={Color.MAIN} />
               ) : medalPhoto ? (
                 <Image
-                  source={{ uri: `data:image/jpeg;base64,${medalPhoto}` }}
+                  source={{ uri: photoUri(medalPhoto) }}
                   style={styles.medalPreview}
                   resizeMode="cover"
                 />

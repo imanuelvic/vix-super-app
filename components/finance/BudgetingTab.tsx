@@ -35,6 +35,7 @@ import {
   type FinanceType,
 } from '@/lib/categories';
 import { groupDigits, parseAmount } from '@/lib/format';
+import { saveErrorOf } from '@/lib/messages';
 import { formatRupiah, type Transaction } from '@/lib/transactions';
 
 type BudgetRow = {
@@ -236,7 +237,7 @@ export function BudgetingTab({
         removedSubs,
       );
     } catch {
-      setError('Gagal menyimpan budget. Coba lagi.');
+      setError(saveErrorOf('budget'));
     } finally {
       setEditing(null);
       setSaving(false);
@@ -377,7 +378,10 @@ export function BudgetingTab({
           </View>
 
           {subDraft.length > 0 && (
-            <ScrollView style={styles.subScroll} nestedScrollEnabled>
+            <ScrollView
+              style={styles.subScroll}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={false}>
               {subDraft.map((s) => {
                 const real = editing
                   ? (subRealization.get(

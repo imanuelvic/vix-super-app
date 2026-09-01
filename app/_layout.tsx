@@ -9,28 +9,26 @@ import {
 import { DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { MorningPrayerWatcher } from '@/components/spiritual/MorningPrayerWatcher';
 import { AuthProvider, useAuth } from '@/contexts/auth';
 
 function LoadingView() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: Color.BACKGROUND,
-      }}>
-      <ActivityIndicator size="large" color={Color.MAIN} />
-    </View>
-  );
+  return <LoadingCenter size="large" style={styles.boot} />;
 }
+
+const styles = StyleSheet.create({
+  // Latar diberi warna app: layar ini muncul sebelum apa pun tergambar, jadi
+  // tanpa ini kilas putih bawaan sistem sempat terlihat.
+  boot: { backgroundColor: Color.BACKGROUND },
+  root: { flex: 1 },
+});
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -89,6 +87,9 @@ function RootNavigator() {
         {/* Refleksi harian → gambar Instagram Feed (vixtory.archive) */}
         <Stack.Screen name="reflection-feed" />
         <Stack.Screen name="fasting" />
+        {/* Checklist hari per hari satu puasa — layar sendiri, bukan ekor
+            layar Edit Puasa (yang diatur sekali ≠ yang dibuka tiap malam). */}
+        <Stack.Screen name="fasting-days" />
         <Stack.Screen name="learning" />
 
         <Stack.Screen name="health" />
@@ -158,7 +159,7 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <AuthProvider>
           <ThemeProvider value={navigationTheme}>

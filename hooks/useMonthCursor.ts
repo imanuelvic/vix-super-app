@@ -4,8 +4,7 @@ import { useState } from 'react';
  * Bulan yang sedang DILIHAT di sebuah layar — pasangan `year` + `month` (0–11)
  * beserta cara menggesernya.
  *
- * Tiga layar menulis blok yang persis sama (Finance 💰, Reminder 🔔, dan
- * Career → Insurance 🛡️):
+ * Beberapa layar menulis blok yang persis sama (Finance 💰 & Reminder 🔔):
  *
  *     const now = new Date();
  *     const [year, setYear] = useState(now.getFullYear());

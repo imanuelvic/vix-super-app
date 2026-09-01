@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -386,6 +387,13 @@ export function ExerciseTab({
                       skipped={exSkipped}
                       locked={!isToday}
                     />
+                    {/* Gerakan HARI INI yang belum dicentang = yang dihitung
+                        badge merah tile Fitness & sub-tab Exercise
+                        (fitPendingToday). Hari lain tidak ditandai — ia tidak
+                        pernah ikut ke badge-nya. */}
+                    {isToday && !exSkipped && !checked && (
+                      <AttentionMark size={8} style={styles.exMark} />
+                    )}
                   </PressableScale>
 
                   <View style={styles.exMain}>
@@ -601,6 +609,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
+  exMark: { position: 'absolute', top: -2, right: -2 },
   exCardDone: {
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
