@@ -67,10 +67,21 @@ const DENYUT_MS = 900;
 export function AttentionMark({
   style,
   size = 10,
+  corner = false,
 }: {
   style?: StyleProp<ViewStyle>;
   /** Titiknya. Baris daftar 10; chip & tombol kecil boleh 8. */
   size?: number;
+  /**
+   * Tempel di pojok kanan-atas kartunya, SEDIKIT MASUK ke dalam.
+   *
+   * Dulu tiap layar menaruhnya sendiri di `top: -4, right: -4` — menggantung
+   * di luar garis tepi kartu, dan di kartu bergaris merah (Car › Parts) titik
+   * merah yang menggantung di luar kotak merah terbaca seperti gambar yang
+   * meleset, bukan seperti penanda. Sekarang angkanya satu, di sini, jadi
+   * kesembilan tempat tidak mungkin lagi berbeda sendiri-sendiri.
+   */
+  corner?: boolean;
 }) {
   const denyut = useSharedValue(0);
 
@@ -98,6 +109,7 @@ export function AttentionMark({
       style={[
         styles.mark,
         { width: size, height: size, borderRadius: size / 2 },
+        corner && styles.corner,
         style,
       ]}>
       {/* Gelombang yang melebar & memudar — di belakang titiknya, dan
@@ -126,6 +138,11 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: Color.TEXT_REVERSE, fontSize: 11, lineHeight: 16 },
   mark: { backgroundColor: Color.DANGER },
+  // 6pt dari tiap tepi: kartu-kartu di app ini ber-radius 14–20, dan lengkung
+  // pojoknya menjorok ±0,29 × radius ke dalam. Di angka ini titiknya duduk
+  // TEPAT di dalam lengkungan — masih jelas di pojok, tapi tidak ada lagi
+  // bagian yang menggantung di luar kartunya.
+  corner: { position: 'absolute', top: 6, right: 6, zIndex: 1 },
   riak: {
     position: 'absolute',
     top: 0,

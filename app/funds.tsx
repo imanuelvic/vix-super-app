@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -90,14 +91,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 10,
     gap: 12,
   },

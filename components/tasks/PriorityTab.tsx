@@ -17,6 +17,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { daysBetween, formatDate } from '@/lib/format';
@@ -93,6 +94,14 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     });
   const activeCount = items.filter((i) => !i.done).length;
 
+  // Buka sub-tab ini → daftarnya langsung datang ke P1 pertama yang belum
+  // selesai, yaitu isi badge merahnya. ScrollView-nya sudah punya ref sendiri
+  // (useScrollTop), jadi ref itu yang dioper — bukan dipasang ref kedua.
+  const { setRowY, onContentSizeChange } = useDueJump(
+    sorted.find((i) => !i.done && i.priority === 1)?.id ?? null,
+    scrollRef,
+  );
+
   function openAdd() {
     setEditing('new');
     setFTitle('');
@@ -161,7 +170,10 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
 
   return (
     <View style={styles.flex}>
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollRef}
+        onContentSizeChange={onContentSizeChange}
+        contentContainerStyle={styles.content}>
         <SummaryCard style={styles.heroCard}>
           <VixText heading="label" additionalStyle={summaryText.label}>
             📌 Reminder Prioritas
@@ -210,13 +222,14 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
           return (
             <View
               key={item.id}
-              style={[styles.card, item.done && styles.cardDone]}>
+              style={[styles.card, item.done && styles.cardDone]}
+              onLayout={(e) => setRowY(item.id, e.nativeEvent.layout.y)}>
               {/* P1 yang belum selesai = yang dihitung badge merah tile
                   Reminder & sub-tab Prioritas. Termasuk yang OTOMATIS naik P1
                   karena deadline-nya sudah H-7 — makanya prioritasnya dibaca
                   dari `item` yang sudah efektif, bukan dari angka tersimpan. */}
               {!item.done && item.priority === 1 && (
-                <AttentionMark style={styles.cardMark} />
+                <AttentionMark corner />
               )}
               {/* Lingkaran = tandai selesai */}
               <PressableScale onPress={() => handleToggle(item)} hitSlop={8}>
@@ -370,7 +383,6 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
-  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   cardDone: { opacity: 0.6 },
   cardMain: { flex: 1, gap: 4 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -244,12 +245,7 @@ const styles = StyleSheet.create({
   cadenceChip: { flex: 1 },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     marginBottom: 8,
     gap: 4,
   },

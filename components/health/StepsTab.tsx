@@ -1,9 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
+import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { WeekTargetCard } from '@/components/health/WeekTargetCard';
@@ -13,9 +17,14 @@ import { useHealthToday } from '@/hooks/useHealthToday';
 import { formatDecimal, groupDigits, MONTH_NAMES } from '@/lib/format';
 import {
   dayDocId,
+  manualInDays,
   monthDayIds,
   recordStepDays,
   recordStepWeeks,
+  setManualSteps,
+  STEP_MANUAL_MAX,
+  subscribeManualSteps,
+  type StepManualMap,
   WEEK_GYM_GOAL,
   WEEK_STEP_GOAL,
   weekStartId,
@@ -32,6 +41,7 @@ import {
   type StepDaysMap,
 } from '@/lib/health';
 import { readRecentDailySteps } from '@/lib/healthkit';
+import { SAVE_ERROR } from '@/lib/messages';
 
 // Tab Steps 👣 — langkah hari ini dari Apple Health, plus akumulasi MINGGUAN
 // (Senin–Minggu) dan BULANAN ala tantangan Strava. Jarak dipakai supaya
@@ -89,24 +99,45 @@ export function StepsTab({
     recordStepWeeks(user.uid, stepDays, weeks).catch(() => {});
   }, [user, stepDays, weeks]);
 
+  // Langkah yang dicatat sendiri (jalan tanpa HP — jam tangan Huawei tidak
+  // tersambung ke Apple Health). Dokumennya SAMA dengan langganan langkah di
+  // atas, jadi liveDoc menggabungkannya jadi satu listener: nol baca tambahan.
+  const [manual, setManual] = useState<StepManualMap>({});
+  useEffect(() => {
+    if (!user) return;
+    return subscribeManualSteps(user.uid, setManual);
+  }, [user]);
+
+  // `bukaKe` naik tiap modal tambah-manual dibuka, dan dipakai sebagai `key`
+  // modalnya — jadi tiap dibuka isinya segar lagi. Sengaja TIDAK ikut berubah
+  // saat ditutup, supaya animasi turunnya tidak terpotong oleh remount.
+  const [tambahBuka, setTambahBuka] = useState(false);
+  const [bukaKe, setBukaKe] = useState(0);
+
   const now = new Date();
   const height = profile.heightCm;
+  const todayId = dayDocId(now);
+  const manualToday = manual[todayId] ?? 0;
 
-  // Langkah hari ini: pakai angka live Apple Health kalau ada, kalau tidak
-  // pakai yang sudah tercatat (biar akumulasi tetap masuk akal).
-  const todaySteps = hk?.steps ?? 0;
+  // Langkah hari ini: angka live Apple Health, DITAMBAH yang kamu catat
+  // sendiri. Keduanya dijumlah, tidak saling menimpa.
+  const todaySteps = (hk?.steps ?? 0) + manualToday;
 
   // Angka hari ini yang dipakai: yang paling besar antara data live Apple
   // Health dan yang sudah tersimpan (sinkron bisa tertinggal beberapa jam).
-  const todayId = dayDocId(now);
-  const todayDelta = Math.max(todaySteps, stepDays[todayId] ?? 0) - (stepDays[todayId] ?? 0);
+  const todayDelta =
+    Math.max(hk?.steps ?? 0, stepDays[todayId] ?? 0) - (stepDays[todayId] ?? 0);
 
   // Minggu berjalan (Senin–Minggu). Begitu ganti Senin, daftar dayId-nya ikut
   // bergeser → akumulasinya otomatis mulai dari 0 lagi.
-  const weekTotal = stepsInDays(stepDays, weekDayIds(now)) + todayDelta;
+  const hariMinggu = weekDayIds(now);
+  const hariBulan = monthDayIds(now);
+  const weekTotal =
+    stepsInDays(stepDays, hariMinggu) + manualInDays(manual, hariMinggu) + todayDelta;
   const weekKm = stepsToKm(weekTotal, height);
 
-  const monthTotal = stepsInDays(stepDays, monthDayIds(now)) + todayDelta;
+  const monthTotal =
+    stepsInDays(stepDays, hariBulan) + manualInDays(manual, hariBulan) + todayDelta;
   const monthKm = stepsToKm(monthTotal, height);
 
   // Hari strength training minggu ini — dicatat dari fitur Fitness.
@@ -131,15 +162,28 @@ export function StepsTab({
           <VixText heading="label" additionalStyle={summaryText.label}>
             👣 Langkah hari ini
           </VixText>
-          {hkStatus === 'ok' && (
-            <PressableScale onPress={loadHk} hitSlop={10} disabled={hkBusy}>
-              <IconSymbol
-                name="arrow.triangle.2.circlepath"
-                size={20}
-                color={hkBusy ? Color.TEXT_PLACEHOLDER : Color.MAIN}
-              />
+          <View style={styles.heroActions}>
+            {/* Tambah sendiri — untuk jalan yang tidak terbawa HP. Selalu ada,
+                tidak bergantung izin Apple Health: justru saat Apple Health
+                tidak mencatat apa-apa inilah tombol ini paling dibutuhkan. */}
+            <PressableScale
+              onPress={() => {
+                setBukaKe((n) => n + 1);
+                setTambahBuka(true);
+              }}
+              hitSlop={10}>
+              <IconSymbol name="plus" size={20} color={Color.MAIN} />
             </PressableScale>
-          )}
+            {hkStatus === 'ok' && (
+              <PressableScale onPress={loadHk} hitSlop={10} disabled={hkBusy}>
+                <IconSymbol
+                  name="arrow.triangle.2.circlepath"
+                  size={20}
+                  color={hkBusy ? Color.TEXT_PLACEHOLDER : Color.MAIN}
+                />
+              </PressableScale>
+            )}
+          </View>
         </View>
         <VixText heading="header" additionalStyle={summaryText.value}>
           {groupDigits(String(todaySteps))}
@@ -148,10 +192,30 @@ export function StepsTab({
           ≈ {formatDecimal(todayKm)} km
           {dayHit ? `  ·  ${dayHit.emoji} ${dayHit.label}` : ''}
         </VixText>
+        {/* Bagian yang kamu catat sendiri disebut terpisah — angka gabungan
+            yang tidak bisa diurai lagi asal-usulnya cuma jadi angka yang tak
+            berani kamu percaya. */}
+        {manualToday > 0 && (
+          <VixText heading="label" additionalStyle={summaryText.label}>
+            ✍️ termasuk {groupDigits(String(manualToday))} langkah dicatat sendiri
+          </VixText>
+        )}
         <VixText heading="label" additionalStyle={summaryText.label}>
           {RESET_HARIAN}
         </VixText>
       </SummaryCard>
+
+      <ManualStepsModal
+        key={bukaKe}
+        visible={tambahBuka}
+        current={manualToday}
+        onClose={() => setTambahBuka(false)}
+        onSave={(jumlah) =>
+          user
+            ? setManualSteps(user.uid, todayId, jumlah)
+            : Promise.reject(new Error('belum masuk'))
+        }
+      />
 
       {/* ===== Target MINGGUAN milikmu sendiri =====
           Ditaruh paling atas sesudah angka hari ini: inilah yang dikejar,
@@ -238,6 +302,117 @@ export function StepsTab({
       </View>
 
     </ScrollView>
+  );
+}
+
+/**
+ * Tambah langkah yang tidak tercatat Apple Health — jalan tanpa HP, langkah
+ * dari jam tangan yang tidak tersambung ke sini.
+ *
+ * Yang diisi TOTAL tambahan hari ini, bukan selisihnya. Bedanya besar: kolom
+ * "tambah lagi" membuat menekan simpan dua kali menghitung dua kali, dan salah
+ * ketik tidak bisa diperbaiki kecuali dengan menghitung mundur sendiri. Dengan
+ * total, isian selalu memperlihatkan keadaan sekarang dan bisa dibetulkan
+ * kapan saja — termasuk dikembalikan ke 0.
+ *
+ * Angka ini ikut ke rekap mingguan, bulanan, dan pencapaianmu. Itu sebabnya
+ * validasinya ketat: yang salah ketik di sini tidak cuma salah hari ini, tapi
+ * ikut terbawa ke semua angka yang kamu pakai untuk menilai dirimu sendiri.
+ */
+function ManualStepsModal({
+  visible,
+  current,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  /** Tambahan yang sudah tercatat hari ini (0 = belum ada). */
+  current: number;
+  onClose: () => void;
+  onSave: (steps: number) => Promise<void>;
+}) {
+  // Kolomnya berisi keadaan SEKARANG, bukan kolom kosong yang menyesatkan.
+  // Diisi lewat nilai awal, bukan efek penyelaras: pemanggilnya memasang
+  // `key` yang berganti tiap modal ini DIBUKA, jadi tiap pembukaan memang
+  // mulai dari mount yang baru. Menyelaraskannya dengan useEffect akan
+  // memaksa satu render tambahan tiap kali — dan itulah yang dilarang aturan
+  // `set-state-in-effect`.
+  const [teks, setTeks] = useState(current > 0 ? String(current) : '');
+  const [galat, setGalat] = useState<string | null>(null);
+  const [sibuk, setSibuk] = useState(false);
+
+  async function simpan() {
+    const bersih = teks.trim();
+    // Kosong = hapus tambahan hari ini. Disamakan dengan 0 supaya tidak perlu
+    // tombol hapus tersendiri untuk satu angka.
+    if (bersih === '') {
+      await kirim(0);
+      return;
+    }
+    // Hanya angka bulat. `Number()` menerima "1e5", " 12 ", dan "0x10" —
+    // ketiganya bukan yang kamu maksud saat mengetik jumlah langkah.
+    if (!/^\d+$/.test(bersih)) {
+      setGalat('Isi angka saja, tanpa titik atau huruf. Contoh: 3500');
+      return;
+    }
+    const jumlah = Number(bersih);
+    if (jumlah > STEP_MANUAL_MAX) {
+      setGalat(
+        `Maksimal ${groupDigits(String(STEP_MANUAL_MAX))} langkah sekali catat. Kalau memang sebanyak itu, bagi per hari ya.`,
+      );
+      return;
+    }
+    await kirim(jumlah);
+  }
+
+  async function kirim(jumlah: number) {
+    setSibuk(true);
+    setGalat(null);
+    try {
+      await onSave(jumlah);
+      onClose();
+    } catch {
+      setGalat(SAVE_ERROR);
+    } finally {
+      setSibuk(false);
+    }
+  }
+
+  return (
+    <SheetModal
+      visible={visible}
+      title="✍️ Catat Langkah Sendiri"
+      subtitle="Untuk jalan yang tidak terbawa HP"
+      onClose={onClose}>
+      <VixText heading="label" additionalStyle={styles.modalHint}>
+        Isi TOTAL langkah tambahan hari ini — angka yang kamu lihat di jam
+        tanganmu, dikurangi yang sudah masuk sendiri ke Apple Health. Angka ini
+        ikut ke rekap mingguan, bulanan & pencapaianmu, jadi isi apa adanya.
+      </VixText>
+      <FormInput
+        placeholder="mis. 3500"
+        value={teks}
+        onChangeText={(v) => {
+          setTeks(v);
+          setGalat(null);
+        }}
+        keyboardType="number-pad"
+        editable={!sibuk}
+      />
+      {current > 0 && (
+        <VixText heading="label" additionalStyle={styles.modalHint}>
+          Sekarang tercatat {groupDigits(String(current))} langkah. Kosongkan
+          kolomnya untuk menghapus tambahan hari ini.
+        </VixText>
+      )}
+      <FormError message={galat} gap="top" />
+      <DualButtons
+        confirmLabel="Simpan"
+        busy={sibuk}
+        onCancel={onClose}
+        onConfirm={simpan}
+      />
+    </SheetModal>
   );
 }
 
@@ -338,6 +513,8 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
   heroCard: { gap: 2, marginBottom: 14 },
+  heroActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  modalHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   // Judul kartu + tombol muat-ulang Apple Health di ujung kanannya.
   heroTop: {
     flexDirection: 'row',

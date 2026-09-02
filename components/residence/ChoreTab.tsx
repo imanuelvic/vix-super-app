@@ -25,14 +25,7 @@ const TONE_LABEL: Record<ChoreTone, string> = {
 //
 // Tampilan & dialognya milik bersama <UpkeepList> — persis yang dipakai Car →
 // Parts; di sini tinggal merakit barisnya dari data rumah.
-export function ChoreTab({
-  status,
-  focusDue,
-}: {
-  status: ChoreStatusMap;
-  /** Tab Maintenance ditekan 2× → lompat ke yang harus dibersihkan sekarang. */
-  focusDue?: boolean;
-}) {
+export function ChoreTab({ status }: { status: ChoreStatusMap }) {
   const { user } = useAuth();
 
   const now = new Date();
@@ -84,7 +77,6 @@ export function ChoreTab({
       }}
       groups={groups}
       dialogHint="Kapan terakhir dibersihkan / dikerjakan?"
-      focusDue={focusDue}
       noteOf={(key) => status[key]?.note ?? ''}
       dueNowOf={(key) => status[key]?.dueNow === true}
       // `user` selalu ada di sini (layar Residence cuma terbuka setelah login).

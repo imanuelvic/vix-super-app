@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -334,15 +335,10 @@ const styles = StyleSheet.create({
   },
   areaCount: { color: Color.TEXT_LABEL },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   rowDone: {
@@ -391,14 +387,9 @@ const styles = StyleSheet.create({
   // ---- Isi modal arsip ----
   archiveEmpty: { color: Color.TEXT_PARAGRAPH },
   noteCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     borderLeftWidth: 3,
     borderLeftColor: Color.LEARNING_DARK,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
     gap: 3,
   },

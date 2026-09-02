@@ -425,31 +425,59 @@ export function setHabitSkipped(
 
 export type HabitNoteDay = { dayId: string; text: string };
 
+export type HabitNotes = {
+  /** Hari yang catatannya terisi, terbaru dulu. */
+  days: HabitNoteDay[];
+  /** true = jendelanya penuh, jadi mungkin masih ada hari yang lebih lama. */
+  more: boolean;
+};
+
+/**
+ * Berapa hari dibaca sekali angkat. Bukan batas penyimpanan — catatanmu
+ * tersimpan selamanya, satu dokumen per hari; ini cuma sejauh apa yang
+ * ditarik dalam satu tarikan.
+ */
+export const HABIT_NOTES_PAGE = 120;
+
 /**
  * Riwayat catatan SATU kebiasaan — hari terbaru dulu, hari yang catatannya
  * kosong tidak ikut. Dipakai layar Riwayat Syukur 🙏.
  *
  * Diurutkan lewat `documentId()` karena id dokumennya sendiri "YYYY-MM-DD":
  * urutan abjadnya = urutan tanggalnya, jadi tidak perlu field `date` tambahan
- * dan tidak perlu composite index. Dibatasi 120 hari — kira-kira empat bulan
- * terakhir; catatan lamanya tetap tersimpan, cuma tidak ikut dibaca sekaligus.
+ * dan tidak perlu composite index.
+ *
+ * `max` sengaja bisa DINAIKKAN pemanggilnya, bukan angka mati. Membaca seluruh
+ * riwayat tiap layar dibuka berarti biayanya naik terus selama app dipakai —
+ * padahal yang hampir selalu dilihat cuma yang terbaru. Jadi: bacanya sejendela
+ * dulu, dan `more` memberi tahu layarnya apakah masih ada yang lebih lama untuk
+ * ditawarkan. Tidak ada catatan yang hilang — cuma belum ditarik.
  */
 export function subscribeHabitNotes(
   uid: string,
   habitId: string,
-  onChange: (days: HabitNoteDay[]) => void,
+  onChange: (notes: HabitNotes) => void,
   onError?: (error: FirestoreError) => void,
+  max = HABIT_NOTES_PAGE,
 ) {
   const q = query(
     collection(db, 'users', uid, 'habitDays'),
     orderBy(documentId(), 'desc'),
-    limit(120),
+    limit(max),
   );
   // Penyaringannya di DAFTAR (hari tanpa catatan dibuang), pemetaannya per
   // baris — dua urusan berbeda, jadi ditulis di dua tempat berbeda.
+  //
+  // `more` dihitung dari jumlah SEBELUM disaring: hari tanpa catatan tetap
+  // memakan jatah jendelanya, jadi daftar yang tinggal 3 baris pun bisa saja
+  // sudah menyentuh batas.
   return liveList<HabitNoteDay>(
     q,
-    (days) => onChange(days.filter((d) => d.text.trim().length > 0)),
+    (days) =>
+      onChange({
+        days: days.filter((d) => d.text.trim().length > 0),
+        more: days.length >= max,
+      }),
     onError,
     (d) => {
       const notes = (d.data().notes as Record<string, string>) ?? {};
@@ -830,6 +858,63 @@ export function recordStepDays(
   const days: StepDaysMap = {};
   for (const e of entries) days[e.dayId] = e.steps;
   return setDoc(doc(db, 'users', uid, 'health', 'steps'), { days }, { merge: true });
+}
+
+// ===================== Langkah yang dicatat SENDIRI =====================
+// Tidak semua jalan kaki lewat iPhone. Jam tangan Huawei tidak tersambung ke
+// Apple Health, jadi langkah dari jalan tanpa HP hilang begitu saja.
+//
+// Angkanya disimpan TERPISAH dari `days`, bukan ditambahkan ke dalamnya, dan
+// itu bukan sekadar kerapian: tiap kali layar Steps dibuka, riwayat 60 hari
+// dari Apple Health ditulis ulang ke `days` (recordStepDays). Kalau tambahan
+// manualnya menumpang di sana, ia terhapus diam-diam pada sinkron berikutnya —
+// dan yang paling buruk, terhapusnya tanpa jejak. Terpisah begini, angka Apple
+// Health tetap murni angka Apple Health, dan tambahanmu tetap tambahanmu.
+//
+// Dokumennya sama (`health/steps`), jadi langganan keduanya digabung jadi satu
+// listener oleh liveDoc — tidak ada pembacaan Firestore tambahan sama sekali.
+
+/** dayId → langkah yang kamu tambahkan sendiri hari itu. */
+export type StepManualMap = Record<string, number>;
+
+/** Batas satu kali tambah. Bukan curiga — pagar supaya salah ketik nol
+ *  (90000 padahal 9000) tidak diam-diam merusak semua rekapmu. */
+export const STEP_MANUAL_MAX = 60_000;
+
+export function subscribeManualSteps(
+  uid: string,
+  onChange: (manual: StepManualMap) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const ref = doc(db, 'users', uid, 'health', 'steps');
+  return liveDoc(
+    ref,
+    (snapshot) => {
+      onChange((snapshot.data()?.manual as StepManualMap) ?? {});
+    },
+    onError,
+  );
+}
+
+/**
+ * Tetapkan jumlah langkah manual hari itu. Yang ditulis TOTALNYA, bukan
+ * selisihnya — jadi salah ketik cukup diperbaiki dengan mengisi ulang, dan
+ * menekan simpan dua kali tidak pernah menghitung dua kali.
+ *
+ * 0 = tambahan hari itu dihapus (hard delete, sama seperti hapus di mana pun
+ * di app ini — angkanya benar-benar hilang, bukan disembunyikan).
+ */
+export function setManualSteps(uid: string, dayId: string, steps: number) {
+  return setDoc(
+    doc(db, 'users', uid, 'health', 'steps'),
+    { manual: { [dayId]: Math.max(0, Math.round(steps)) } },
+    { merge: true },
+  );
+}
+
+/** Jumlah langkah manual pada sekumpulan hari — untuk rekap minggu & bulan. */
+export function manualInDays(manual: StepManualMap, ids: string[]): number {
+  return ids.reduce((n, id) => n + (manual[id] ?? 0), 0);
 }
 
 /** Tier tertinggi yang dicapai `steps` (null kalau di bawah tier terendah). */

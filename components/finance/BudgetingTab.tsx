@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -547,12 +548,7 @@ const styles = StyleSheet.create({
   summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },
   summaryValue: { color: Color.TEXT_REVERSE },
   row: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     marginBottom: 10,
     gap: 8,
   },

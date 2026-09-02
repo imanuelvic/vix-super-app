@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -149,16 +150,11 @@ const styles = StyleSheet.create({
   source: { color: Color.MAIN, marginBottom: 10 },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 10,
   },
   rowLeft: { flex: 1, gap: 2 },

@@ -45,15 +45,13 @@ export function Chip({
     <PressableScale
       style={[styles.chip, skin, additionalStyle]}
       onPress={onPress}>
-      {/* adjustsFontSizeToFit hanya MENGECILKAN yang tak muat. Baris chip biasa
-          melebar mengikuti isinya jadi tak pernah terpicu; yang butuh ini baris
-          "muat sebaris" (ChipRow fit) — di sana lebar chip dipatok sama rata,
-          dan tanpa ini label terpanjang berakhir jadi "Kriste…". */}
-      <VixText
-        heading="label"
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        additionalStyle={styles.text}>
+      {/* Hurufnya TIDAK boleh mengecil sendiri. `adjustsFontSizeToFit` sempat
+          dipasang di sini demi baris "muat sebaris" yang lebar chip-nya dipatok
+          sama rata — dan akibatnya justru satu baris berisi enam ukuran huruf
+          berbeda ("Tech" besar, "Kristen" kecil), yang terbaca seperti
+          kesalahan cetak. Sekarang ukurannya sama untuk semua, dan KOTAKNYA
+          yang mengikuti hurufnya. */}
+      <VixText heading="label" numberOfLines={1} additionalStyle={styles.text}>
         {label}
       </VixText>
     </PressableScale>

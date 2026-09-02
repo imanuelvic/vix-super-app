@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -914,7 +915,7 @@ export function HabitsTab({
           </View>
         )}
 
-        {/* Kebiasaan berpintasan (Fitness, Diet, Baca Alkitab) itu WAJIB —
+        {/* Kebiasaan berpintasan (Fitness, Revive, Baca Alkitab) itu WAJIB —
             tidak ada tombol hapusnya, cuma bisa diurutkan naik/turun. Kalau
             dihapus, daftarnya berhenti cocok dengan isi app. */}
         {editing !== 'new' && editing && isFixedHabit(editing) ? (
@@ -1182,14 +1183,9 @@ const styles = StyleSheet.create({
   // Blok sesi aktif
   slotBlock: { marginBottom: 16 },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
     gap: 12,
   },
@@ -1209,16 +1205,11 @@ const styles = StyleSheet.create({
   },
   // Centang "Kebiasaan inti" di sheet tambah kebiasaan.
   coreToggle: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     marginTop: 14,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
   },
   coreToggleMain: { flex: 1, gap: 1 },
   coreToggleTitle: { color: Color.TEXT_TITLE },
@@ -1227,16 +1218,11 @@ const styles = StyleSheet.create({
   // yang dulu ada di sini (tinggi minimum, jarak, garis tepi), jadi daftarnya
   // tidak bergeser sama sekali; bedanya sekarang ia tombol, bukan kolom.
   noteBox: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
     minHeight: 64,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginTop: -2,
     marginBottom: 8,
   },

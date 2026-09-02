@@ -17,6 +17,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import { useEditParam } from '@/hooks/useEditParam';
 import { useFormSave } from '@/hooks/useFormSave';
 import {
@@ -131,6 +132,13 @@ export function FulltimeTab({
     ).length;
   const column = columnOf(board);
 
+  // Buka sub-tab ini → papan yang sedang terbuka langsung datang ke kartu P1
+  // pertama yang belum selesai, yaitu isi badge merahnya. Kalau P1-nya ada di
+  // kolom lain, kolom ini memang tidak punya yang perlu dilompati.
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    column.find((i) => i.status !== 'done' && i.priority === 1)?.id ?? null,
+  );
+
   function openAdd() {
     setEditing('new');
     setFTitle('');
@@ -203,7 +211,10 @@ export function FulltimeTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={listRef}
+        onContentSizeChange={onContentSizeChange}
+        contentContainerStyle={styles.content}>
         {/* Ringkasan roadmap */}
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>
@@ -284,13 +295,14 @@ export function FulltimeTab({
                 item.status === 'done' && styles.cardDone,
                 mustMove && styles.cardMustMove,
               ]}
+              onLayout={(e) => setRowY(item.id, e.nativeEvent.layout.y)}
               onPress={() => openEdit(item)}>
               {/* P1 yang belum selesai = yang dihitung badge merah tile Career
                   & sub-tab Fulltime. Prioritasnya sudah EFEKTIF (yang masuk
                   H-7 dipaksa P1), jadi angka di sini dan angka di badge-nya
                   selalu sama. */}
               {item.status !== 'done' && item.priority === 1 && (
-                <AttentionMark style={styles.cardMark} />
+                <AttentionMark corner />
               )}
               <View>
                 <View style={styles.cardTop}>
@@ -458,7 +470,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },
-  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

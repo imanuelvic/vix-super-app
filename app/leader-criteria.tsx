@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CardActionButton } from '@/components/common/CardActionButton';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -189,12 +190,7 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: 18, marginBottom: 2 },
   sectionNote: { marginBottom: 8 },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     gap: 10,
   },
   // Bagian PERINGATAN: merah samar + garis tepi merah. Bukan sekadar hiasan —

@@ -280,7 +280,7 @@ export function VisitationTab({
       {/* Acara yang panduannya perlu dikirim hari ini = yang dihitung badge
           merah tile CORE & sub-tab Visitation (needsPdfShare). Aturannya
           dipanggil dari lib yang sama dengan badge-nya. */}
-      {perluKirim && <AttentionMark style={styles.cardMark} />}
+      {perluKirim && <AttentionMark corner />}
       <View style={styles.cardRow}>
       {/* Tekan bagian ini untuk edit / tandai selesai. Tombol share sengaja
           jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin click
@@ -591,7 +591,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   empty: { textAlign: 'center', marginBottom: 8 },
-  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

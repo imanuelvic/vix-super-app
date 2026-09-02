@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AchievementButton } from '@/components/common/AchievementButton';
 import { BibleRefField } from '@/components/common/BibleRefField';
@@ -397,7 +398,13 @@ export default function BibleReadingScreen() {
               onPress={() =>
                 router.push({
                   pathname: '/bible-story',
-                  params: { session, refs: filled.join(', ') },
+                  // Terjemahannya ikut dioper — yang membaca Story-mu tidak
+                  // punya cara lain untuk tahu "Amsal 1:4" itu versi yang mana.
+                  params: {
+                    session,
+                    refs: filled.join(', '),
+                    version: versiTerpakai,
+                  },
                 })
               }>
               <VixText heading="bold" additionalStyle={styles.storyText}>
@@ -485,12 +492,7 @@ const styles = StyleSheet.create({
   // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
   versionInput: { flex: 1, maxWidth: 140 },
   summaryCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     gap: 2,
     marginBottom: 12,
   },

@@ -58,6 +58,10 @@ function fromCache(id: string, data: DocData): DocLike {
 // Gunanya supaya pindah-pindah layar tidak memasang & melepas terus-menerus.
 const IDLE_MS = 30_000;
 
+// Jeda pemasangan ulang sesudah listener mati — lihat `pulihkan` di bawah.
+// Tiga kali, makin lebar; sesudah itu galatnya baru dilaporkan ke layar.
+const RETRY_MS = [1_000, 4_000, 10_000];
+
 const CACHE_PREFIX = 'fs1:';
 const INDEX_KEY = 'fs1:index';
 // Batas jumlah dokumen yang disimpan di disk. Dokumen harian (habitDays,
@@ -167,6 +171,7 @@ export async function clearLiveCache(): Promise<void> {
   // Lepas dulu listener-nya, jangan cuma dibuang dari peta (nanti menggantung).
   entries.forEach((e) => {
     if (e.idle) clearTimeout(e.idle);
+    if (e.retry) clearTimeout(e.retry);
     e.stop?.();
   });
   entries.clear();
@@ -174,6 +179,7 @@ export async function clearLiveCache(): Promise<void> {
   // mengalir ke layar sesudah akun berikutnya masuk.
   lists.forEach((e) => {
     if (e.idle) clearTimeout(e.idle);
+    if (e.retry) clearTimeout(e.retry);
     e.stop?.();
   });
   lists.length = 0;
@@ -190,12 +196,54 @@ export async function clearLiveCache(): Promise<void> {
   }
 }
 
-// ===================== Langganan bersama =====================
+// ===================== Listener yang mati =====================
+// `onSnapshot` memanggil callback galatnya paling banyak SEKALI: sesudah itu
+// listenernya selesai dan tidak pernah menyala lagi sendiri. Dua akibatnya
+// dulu tak tertangani:
+//
+//   • Pesan "Gagal memuat data. Coba lagi." menempel SELAMANYA. Satu kedipan
+//     sinyal — atau token yang kebetulan kedaluwarsa persis saat sinyal
+//     hilang — sudah cukup, dan karena tak ada lagi data yang datang, tak ada
+//     lagi yang menghapus pesannya. Pesan merah itu lalu terpampang di atas
+//     data yang sebenarnya sudah tampil lengkap di bawahnya.
+//   • Mayatnya ikut tersimpan di sini. `stop` masih terisi, jadi layar yang
+//     dibuka sesudahnya mengira listenernya masih hidup dan tidak memasang
+//     yang baru — sekali mati, mati untuk semua.
+//
+// Jadi sekarang listener yang mati DIPASANG ULANG, tiga kali, jaraknya makin
+// lebar. Galatnya baru dilaporkan ke layar kalau ketiganya gagal juga.
+// Batasnya penting: galat yang memang menetap (aturan Firestore menolak,
+// kuota habis) tidak boleh jadi pemasangan ulang tanpa henti — itu justru
+// yang menghabiskan kuota baca.
 
-type Entry = {
-  subs: Set<(snapshot: DocLike) => void>;
+/** Bagian Entry/ListEntry yang dipakai `pulihkan` — sengaja seminimal itu. */
+type Pulih = {
   errs: Set<(error: FirestoreError) => void>;
   stop: (() => void) | null;
+  /** Berapa kali berturut-turut listenernya mati. Nol lagi begitu data datang. */
+  gagal: number;
+  retry: ReturnType<typeof setTimeout> | null;
+};
+
+function pulihkan(e: Pulih, error: FirestoreError, pasang: () => void) {
+  e.stop = null;
+  const jeda = RETRY_MS[e.gagal];
+  e.gagal += 1;
+  if (jeda === undefined) {
+    // Jatah habis — sekarang barulah layar berhak bilang gagal.
+    e.errs.forEach((fn) => fn(error));
+    return;
+  }
+  e.retry = setTimeout(() => {
+    e.retry = null;
+    pasang();
+  }, jeda);
+}
+
+// ===================== Langganan bersama =====================
+
+type Entry = Pulih & {
+  subs: Set<(snapshot: DocLike) => void>;
   last: DocLike | null;
   /** true = sudah pernah dapat data dari SERVER (bukan sekadar dari disk). */
   live: boolean;
@@ -203,6 +251,21 @@ type Entry = {
 };
 
 const entries = new Map<string, Entry>();
+
+/** Pasang listener dokumennya. Dipanggil sekali di awal, lalu tiap coba-lagi. */
+function pasangDoc(path: string, ref: DocumentReference, e: Entry) {
+  e.stop = onSnapshot(
+    ref,
+    (snapshot) => {
+      e.gagal = 0;
+      e.last = snapshot;
+      e.live = true;
+      writeCache(path, snapshot.exists() ? snapshot.data() : undefined);
+      e.subs.forEach((fn) => fn(snapshot));
+    },
+    (error) => pulihkan(e, error, () => pasangDoc(path, ref, e)),
+  );
+}
 
 /**
  * Langganan satu dokumen — pengganti langsung `onSnapshot(ref, …)`.
@@ -220,7 +283,16 @@ export function liveDoc(
   const path = ref.path;
   let entry = entries.get(path);
   if (!entry) {
-    entry = { subs: new Set(), errs: new Set(), stop: null, last: null, live: false, idle: null };
+    entry = {
+      subs: new Set(),
+      errs: new Set(),
+      stop: null,
+      last: null,
+      live: false,
+      gagal: 0,
+      retry: null,
+      idle: null,
+    };
     entries.set(path, entry);
   }
   const e = entry;
@@ -248,17 +320,13 @@ export function liveDoc(
       .catch(() => {});
   }
 
-  if (!e.stop) {
-    e.stop = onSnapshot(
-      ref,
-      (snapshot) => {
-        e.last = snapshot;
-        e.live = true;
-        writeCache(path, snapshot.exists() ? snapshot.data() : undefined);
-        e.subs.forEach((fn) => fn(snapshot));
-      },
-      (error) => e.errs.forEach((fn) => fn(error)),
-    );
+  // `e.retry` = pemasangan ulang sedang dijadwalkan; jangan pasang yang kedua.
+  // Kalau jatah coba-laginya sudah habis (stop & retry sama-sama kosong),
+  // kedatangan pemakai baru mengisinya penuh lagi — membuka layarnya lagi
+  // memang wajar diartikan "coba lagi".
+  if (!e.stop && !e.retry) {
+    e.gagal = 0;
+    pasangDoc(path, ref, e);
   }
 
   return () => {
@@ -268,6 +336,7 @@ export function liveDoc(
     // Pemakai terakhir pergi — tunggu sebentar, siapa tahu cuma pindah layar.
     e.idle = setTimeout(() => {
       if (e.subs.size > 0) return;
+      if (e.retry) clearTimeout(e.retry);
       e.stop?.();
       entries.delete(path);
     }, IDLE_MS);
@@ -338,7 +407,16 @@ export function liveList<T>(
   // bukan menurut tebakan kita sendiri atas isi objeknya.
   let e = lists.find((x) => queryEqual(x.q, q));
   if (!e) {
-    e = { q, subs: new Set(), errs: new Set(), stop: null, last: null, idle: null };
+    e = {
+      q,
+      subs: new Set(),
+      errs: new Set(),
+      stop: null,
+      last: null,
+      gagal: 0,
+      retry: null,
+      idle: null,
+    };
     lists.push(e);
   }
   const entry = e;
@@ -353,15 +431,11 @@ export function liveList<T>(
   // Layar lain sudah memegang hasilnya → langsung pakai, tanpa baca apa pun.
   if (entry.last) terima(entry.last);
 
-  if (!entry.stop) {
-    entry.stop = onSnapshot(
-      q,
-      (snapshot) => {
-        entry.last = snapshot;
-        entry.subs.forEach((fn) => fn(snapshot));
-      },
-      (error) => entry.errs.forEach((fn) => fn(error)),
-    );
+  // Sama seperti `liveDoc`: listener yang mati dipasang ulang, dan pemakai
+  // baru mengembalikan jatah coba-laginya.
+  if (!entry.stop && !entry.retry) {
+    entry.gagal = 0;
+    pasangList(entry);
   }
 
   return () => {
@@ -371,6 +445,7 @@ export function liveList<T>(
     // Pemakai terakhir pergi — tunggu sebentar, siapa tahu cuma pindah layar.
     entry.idle = setTimeout(() => {
       if (entry.subs.size > 0) return;
+      if (entry.retry) clearTimeout(entry.retry);
       entry.stop?.();
       const at = lists.indexOf(entry);
       if (at >= 0) lists.splice(at, 1);
@@ -383,16 +458,27 @@ export function liveList<T>(
  * Query yang cuma bisa dibandingkan lewat `queryEqual`, bukan string. Isinya
  * belasan sekaligus paling banyak, jadi pencarian lurus sudah cukup.
  */
-type ListEntry = {
+type ListEntry = Pulih & {
   q: Query;
   subs: Set<(snapshot: QuerySnapshot) => void>;
-  errs: Set<(error: FirestoreError) => void>;
-  stop: (() => void) | null;
   last: QuerySnapshot | null;
   idle: ReturnType<typeof setTimeout> | null;
 };
 
 const lists: ListEntry[] = [];
+
+/** Pasang listener kuerinya. Dipanggil sekali di awal, lalu tiap coba-lagi. */
+function pasangList(e: ListEntry) {
+  e.stop = onSnapshot(
+    e.q,
+    (snapshot) => {
+      e.gagal = 0;
+      e.last = snapshot;
+      e.subs.forEach((fn) => fn(snapshot));
+    },
+    (error) => pulihkan(e, error, () => pasangList(e)),
+  );
+}
 
 /**
  * Lepaskan sekumpulan langganan sekaligus — dipakai sebagai nilai kembalian

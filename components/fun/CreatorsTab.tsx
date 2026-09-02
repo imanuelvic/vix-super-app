@@ -57,8 +57,11 @@ export function CreatorsTab() {
     <View style={styles.flex}>
       {/* Digeser ke samping, sama seperti kategori Reminder & sumber News —
           dan yang sedang dipilih selalu ditarik utuh ke dalam layar. */}
+      {/* Sama seperti Reminder & News: tingginya dipatok supaya chip-nya tidak
+          menindih kartu video di bawahnya. */}
       <ChipRow
         activeIndex={CREATOR_KINDS.findIndex((k) => k.key === kind)}
+        additionalStyle={styles.kindScroll}
         contentStyle={styles.kindRow}>
         {CREATOR_KINDS.map((k) => (
           <Chip
@@ -136,6 +139,7 @@ export function CreatorsTab() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  kindScroll: { height: 56 },
   kindRow: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
   center: { alignItems: 'center', gap: 12, paddingTop: 40, paddingHorizontal: 20 },

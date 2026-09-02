@@ -630,12 +630,11 @@ export const HABIT_LINKS: HabitLink[] = [
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/spiritual', params: { tab: 'revive' } },
   },
-  {
-    match: /(protein.*fiber)|micronutrien/i,
-    note: 'Buka Health › Diet',
-    color: Color.DANGER,
-    route: { pathname: '/health', params: { tab: 'diet' } },
-  },
+  // Baris sarapan (protein + fiber + mikronutrien) dulu berpintasan ke
+  // Health › Diet. Tabnya sudah dihapus, jadi pintasannya ikut dibuang —
+  // pintu yang mendarat di tempat yang tidak ada lebih buruk daripada tidak
+  // ada pintu. Barisnya sendiri tetap ada di daftar kebiasaan, cuma sekarang
+  // dicentang sendiri seperti kebiasaan biasa.
   // Baca berita — langsung mendarat di tab Berita fitur News 📰, dan barisnya
   // ikut tercentang saat itu juga (lihat `doneOnOpen`).
   {
@@ -715,7 +714,7 @@ export function withMiddayBible(
 
 /**
  * Kebiasaan berpintasan itu WAJIB: ia mencerminkan sesuatu yang dikerjakan di
- * layar lain (Fitness, Diet, Baca Alkitab), jadi menghapusnya cuma bikin
+ * layar lain (Fitness, Revive, Baca Alkitab), jadi menghapusnya cuma bikin
  * daftarnya tidak lagi cocok dengan isi app. Boleh diurutkan naik/turun, boleh
  * dilewati sehari (✗), tapi tombol hapusnya sengaja tidak ada.
  */

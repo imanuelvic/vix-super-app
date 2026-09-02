@@ -8,7 +8,7 @@ import { formatGreetingDate } from '@/lib/format';
 /**
  * Teks sapaan sesuai jam perangkat (pagi/siang/sore/malam).
  *
- * Lambangnya ikut DAYPART supaya sama dengan sesi di Habits, Diet & Bacaan
+ * Lambangnya ikut DAYPART supaya sama dengan sesi di Habits & Bacaan
  * Alkitab. Sore memang bukan salah satu sesi itu, jadi tetap 🌇.
  */
 export function greetingText(): string {

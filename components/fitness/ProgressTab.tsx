@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -174,15 +175,10 @@ const styles = StyleSheet.create({
   bodyValue: { color: Color.TEXT_TITLE },
   sectionTitle: { marginTop: 16, marginBottom: 10 },
   card: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   cardIcon: { fontSize: 24, lineHeight: 30 },

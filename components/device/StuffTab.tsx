@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
@@ -16,6 +18,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import {
   dayId,
   dayIdToDate,
@@ -78,6 +81,16 @@ export function StuffTab({ items }: { items: StuffItem[] }) {
   const tampil = useMemo(
     () => sortStuff(filter ? items.filter((i) => i.category === filter) : items),
     [items, filter],
+  );
+
+  // Buka sub-tab ini → daftar 61 barang langsung datang ke barang bergaransi
+  // pertama (isi badge merahnya). Tanpa ini titik merahnya bisa saja ada di
+  // layar keempat, dan badge-nya cuma bikin menggulung sambil menebak.
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    tampil.find((i) => {
+      const sisa = stuffWarrantyDays(i, now);
+      return !i.goneDay && sisa !== null && sisa >= 0;
+    })?.id ?? null,
   );
 
   function openNew() {
@@ -158,7 +171,10 @@ export function StuffTab({ items }: { items: StuffItem[] }) {
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={listRef}
+        onContentSizeChange={onContentSizeChange}
+        contentContainerStyle={styles.content}>
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>
             📦 Barang dimiliki
@@ -217,7 +233,15 @@ export function StuffTab({ items }: { items: StuffItem[] }) {
                 // bersarang di iOS bikin tombolnya ikut memicu pembungkusnya.
                 <View
                   key={item.id}
-                  style={[styles.card, !!item.goneDay && styles.cardGone]}>
+                  style={[styles.card, !!item.goneDay && styles.cardGone]}
+                  onLayout={(e) => setRowY(item.id, e.nativeEvent.layout.y)}>
+                  {/* INI yang menyalakan badge sub-tab Stuff: barang yang
+                      garansinya masih berlaku — ambang yang sama persis
+                      dengan `stuffUnderWarranty` (sisa hari ≥ 0), jadi
+                      angkanya & titiknya tidak mungkin berbeda pendapat. */}
+                  {!item.goneDay && garansi !== null && garansi >= 0 && (
+                    <AttentionMark corner />
+                  )}
                   <View style={styles.cardMain}>
                     <View style={styles.titleRow}>
                       <VixText
@@ -436,15 +460,10 @@ const styles = StyleSheet.create({
   emptyBox: { gap: 12, marginTop: 8 },
   empty: { textAlign: 'center', marginVertical: 10 },
   card: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   // Barang yang sudah dilepas tetap ada di daftar tapi diredupkan — riwayatnya

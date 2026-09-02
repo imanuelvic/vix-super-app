@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -110,36 +111,21 @@ const styles = StyleSheet.create({
   sectionTitle: { marginTop: 8, marginBottom: 10 },
   profileNote: { color: Color.TEXT_LABEL, marginBottom: 10 },
   rangeCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     marginBottom: 8,
     gap: 4,
   },
   rangeValue: { color: Color.MAIN },
   rangeTip: { color: Color.TEXT_PARAGRAPH },
   qnaCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     marginBottom: 8,
     gap: 2,
   },
   question: { color: Color.TEXT_TITLE },
   answer: { color: Color.MAIN, fontWeight: '700' },
   tipsCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     gap: 10,
   },
   tip: { color: Color.TEXT_PARAGRAPH },

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -14,6 +15,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import { BOOKS } from '@/lib/books';
 import {
   bumpLearningStreak,
@@ -76,6 +78,13 @@ export function WeekTab({
   const due = dueStep(week.steps, now);
   // Semua yang tertagih (bukan cuma yang terdepan) — sumber angka badge-nya.
   const terlambat = overdueSteps(week.steps, now);
+
+  // Buka sub-tab ini → daftarnya langsung datang ke langkah tertagih pertama,
+  // yaitu isi badge merahnya. Kartu ringkasan di atasnya tetap bisa digulung
+  // balik ke atas seperti biasa.
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    terlambat[0]?.key ?? null,
+  );
   // Ganti topik SENIN saja — lihat alasannya di canChangeWeekSkill.
   const bisaGanti = canChangeWeekSkill(now);
   // Streak yang MASIH hidup: tercatat minggu ini, atau minggu lalu (belum
@@ -149,7 +158,10 @@ export function WeekTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={listRef}
+        onContentSizeChange={onContentSizeChange}
+        contentContainerStyle={styles.content}>
         {/* ===== Topik minggu ini ===== */}
         <View style={styles.hero}>
           <View style={styles.heroTop}>
@@ -260,7 +272,9 @@ export function WeekTab({
           // lingkarannya dikunci — mencentang tanpa merangkum itu bohong.
           const dariTulisan = s.key === NOTE_DRIVEN_STEP;
           return (
-            <View key={s.key}>
+            <View
+              key={s.key}
+              onLayout={(e) => setRowY(s.key, e.nativeEvent.layout.y)}>
               <View
                 style={[
                   styles.stepRow,
@@ -417,34 +431,24 @@ const styles = StyleSheet.create({
   },
   changeText: { color: Color.LEARNING_DARK },
   bookCard: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     borderLeftWidth: 3,
     borderLeftColor: Color.MAIN,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 12,
   },
   bookMain: { flex: 1, gap: 2 },
   bookTitle: { color: Color.TEXT_TITLE },
   bookSub: { color: Color.TEXT_LABEL },
   sectionTitle: { marginTop: 4, marginBottom: 8 },
-  stepMark: { position: 'absolute', top: -2, right: -2 },
+  stepMark: { position: 'absolute', top: 3, right: 3 },
   stepRow: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   stepRowDone: {

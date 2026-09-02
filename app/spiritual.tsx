@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -35,6 +35,7 @@ import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
   BIBLE_SESSIONS,
   bibleSessionNow,
+  bumpReviveStreak,
   reviveHandledToday,
   setReviveSkipped,
   subscribeBibleReadingDays,
@@ -106,6 +107,30 @@ export default function SpiritualScreen() {
   const todayEntry = entries?.find((e) => e.id === todayId) ?? null;
   // Hari ini sengaja dilewati? (tandanya menempel di dokumen streak yang sama)
   const skippedToday = reviveStreak?.skippedDayId === todayId;
+
+  // Satu-satunya penentu badge Revive — di Home, di sub-tab bawah, dan di
+  // gerbang doa pagi. Sengaja HANYA `reviveHandledToday`: layar ini dulu
+  // menambahkan `todayEntry ||` sendiri, dan di situlah kebingunganmu lahir.
+  // Home tidak membaca daftar Revive (mahal), jadi kalau catatannya tersimpan
+  // tapi streaknya tidak ikut tercatat, Home menyalakan badge sementara di
+  // dalam fiturnya tidak ada satu pun tanda — angka merah yang menyuruh masuk
+  // lalu tidak menunjuk ke mana-mana.
+  const reviveBeres = reviveHandledToday(reviveStreak, todayId);
+
+  // …dan kalau ketidakcocokan itu memang terjadi, DIPERBAIKI, bukan ditutupi:
+  // catatan hari ini ada = streaknya memang seharusnya sudah tercatat (itu
+  // yang dilakukan layar Revive saat menyimpan; bisa gagal kalau sinyal putus
+  // tepat sesudah catatannya tersimpan). Sekali tulis, lalu keduanya cocok
+  // lagi selamanya. `alreadyCounted` di dalamnya menjaga streaknya tidak naik
+  // dua kali.
+  const diperbaiki = useRef(false);
+  useEffect(() => {
+    if (!user || !todayEntry || reviveBeres || diperbaiki.current) return;
+    diperbaiki.current = true;
+    bumpReviveStreak(user.uid, reviveStreak, todayId).catch(() => {
+      diperbaiki.current = false;
+    });
+  }, [user, todayEntry, reviveBeres, reviveStreak, todayId]);
 
   async function toggleSkip() {
     if (!user || skipBusy) return;
@@ -218,7 +243,7 @@ export default function SpiritualScreen() {
                   label="✍️ Tulis Revive Hari Ini"
                   onPress={() => router.push('/revive')}
                 />
-                <AttentionMark style={styles.writeMark} />
+                <AttentionMark corner />
               </View>
             )}
 
@@ -245,13 +270,10 @@ export default function SpiritualScreen() {
       </View>
 
       {/* Badge Revive = 1 kalau Revive hari ini belum ditulis DAN belum
-          ditandai dilewati — aturan yang sama persis dengan badge tile
-          Spiritual di Home. */}
+          ditandai dilewati — angka yang PERSIS sama dengan badge tile
+          Spiritual di Home, karena keduanya memanggil fungsi yang sama. */}
       <BottomTabs
-        tabs={withBadge(TABS, {
-          revive:
-            todayEntry || reviveHandledToday(reviveStreak, todayId) ? 0 : 1,
-        })}
+        tabs={withBadge(TABS, { revive: reviveBeres ? 0 : 1 })}
         value={tab}
         onChange={onTabPress}
       />
@@ -265,7 +287,6 @@ const styles = StyleSheet.create({
   // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   writeWrap: { marginTop: 4 },
-  writeMark: { position: 'absolute', top: -3, right: -3 },
   // Bentuk kartu & tombolnya ada di components/common/SkipToday.tsx.
   skippedGap: { marginTop: 4 },
   todayCard: {

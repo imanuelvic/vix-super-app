@@ -12,33 +12,36 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { CheckupTab } from '@/components/health/CheckupTab';
-import { DietTab } from '@/components/health/DietTab';
 import { FunArchive } from '@/components/fun/FunArchive';
 import { StepsTab } from '@/components/health/StepsTab';
 import { useAuth } from '@/contexts/auth';
-import { useNow } from '@/hooks/useNow';
-import { EMPTY_DIET_DAY, subscribeDietDay, type DietDay } from '@/lib/diet';
 import {
   subscribeCheckups,
   subscribeHealthProfile,
   subscribeStepDays,
   subscribeWeekStats,
-  subscribeWeightTarget,
   type Checkup,
   type HealthProfile,
   type StepDaysMap,
   type WeekStatsMap,
-  type WeightTarget,
 } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 
-type HealthTab = 'steps' | 'race' | 'diet' | 'checkup';
+type HealthTab = 'steps' | 'race' | 'checkup';
 
 // Tab bar bawah di dalam layar Health.
-// Kebiasaan harian TIDAK lagi di sini — pindah ke tab besar Habits ✅
+// Kebiasaan harian TIDAK lagi di sini — pindah ke tab besar Habits 📋
 // (app/(tabs)/habits.tsx). Yang tinggal di sini semuanya soal tubuh:
-// langkah kaki, makan, dan pemeriksaan.
+// langkah kaki, lomba, dan pemeriksaan.
+//
+// Diet 🥗 DIHAPUS (2 Sep 2026) — beserta layarnya, daftar makanannya, dan
+// seluruh hitungan kalori/protein/gulanya. Mencatat tiap makanan tiap hari
+// menuntut ketelitian yang tak pernah benar-benar dijalani, dan angka yang
+// setengah terisi lebih menyesatkan daripada tidak ada angka sama sekali.
+// Yang menjaga tubuh sekarang: langkah kaki, latihan di Fitness, berat badan
+// di Check-up, dan air putih di kartu sapaan Home.
+//
 // Race pindah ke sini dari Fun (30 Agu 2026) & ditaruh TEPAT di kanan Steps:
 // keduanya soal kaki yang sama — Steps mencatat latihannya sehari-hari, Race
 // mencatat hasilnya. Entrinya tidak berpindah dokumen; yang berubah cuma
@@ -46,7 +49,6 @@ type HealthTab = 'steps' | 'race' | 'diet' | 'checkup';
 const TABS: BottomTab<HealthTab>[] = [
   { key: 'steps', label: 'Steps', icon: 'figure.walk' },
   { key: 'race', label: 'Race', icon: 'figure.run' },
-  { key: 'diet', label: 'Diet', icon: 'fork.knife' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
 
@@ -57,10 +59,11 @@ export default function HealthScreen() {
 
   // Default masuk ke tab Steps; reminder Dashboard bisa mengarahkan ke tab lain.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  // `?tab=diet` sengaja TIDAK dikenali lagi — tabnya sudah tidak ada, dan
+  // pintasan lama yang mengarah ke sana mendarat di Steps, bukan di layar
+  // kosong.
   const { tab, scrollKey, onTabPress } = useTabScroll<HealthTab>(
-    tabParam === 'checkup' || tabParam === 'diet' || tabParam === 'race'
-      ? tabParam
-      : 'steps',
+    tabParam === 'checkup' || tabParam === 'race' ? tabParam : 'steps',
   );
 
   // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab
@@ -69,15 +72,7 @@ export default function HealthScreen() {
   const [checkups, setCheckups] = useState<Checkup[] | null>(null);
   const [stepDays, setStepDays] = useState<StepDaysMap>({});
   const [weeks, setWeeks] = useState<WeekStatsMap>({});
-  const [diet, setDiet] = useState<DietDay>(EMPTY_DIET_DAY);
-  // Target berat (dipasang di tab Habits) — dipakai Diet untuk menentukan
-  // defisit/surplus kalorinya, biar satu tujuan dengan tab Habits.
-  const [target, setTarget] = useState<WeightTarget | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Lewat tengah malam id harinya ikut berganti sendiri — catatan makan hari
-  // ini kembali kosong tanpa restart (lihat hooks/useNow.ts).
-  const { todayId: dayId } = useNow();
 
   useEffect(() => {
     if (!user) return;
@@ -94,10 +89,8 @@ export default function HealthScreen() {
       subscribeCheckups(user.uid, setCheckups, fail),
       subscribeStepDays(user.uid, setStepDays, fail),
       subscribeWeekStats(user.uid, setWeeks, fail),
-      subscribeDietDay(user.uid, dayId, setDiet, fail),
-      subscribeWeightTarget(user.uid, setTarget, fail),
     ]);
-  }, [user, dayId]);
+  }, [user]);
 
   // Air putih 💧 tidak diurus dari layar ini lagi — pencatatannya cuma di
   // kartu sapaan Home (satu tombol, satu angka, satu streak).
@@ -107,14 +100,14 @@ export default function HealthScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Tombol kanan atas menyesuaikan sub-tab yang sedang dibuka:
-          Steps → rekor langkah · Check-up → info kesehatan.
+          Steps → rekor langkah · sisanya → info kesehatan.
           Di sebelahnya 🔥 achievement milik sub-tab itu:
             Steps → 📅 Target Mingguan (aerobik + strength) — angkanya tak
                     tampil di mana pun selain di modal itu, beda dengan
                     patokan jarak yang sudah ✅/❌ satu per satu di tab ini.
-            Diet  → 💧 Air Putih (penghitung gelasnya sendiri di kartu sapaan
-                    Home; ini cuma pintu ke pencapaiannya).
-            Check-up belum punya pencapaian → tak ada tombol 🔥. */}
+            Race & Check-up belum punya pencapaian → tak ada tombol 🔥.
+          💧 Air Putih dulu digantung di sub-tab Diet; sesudah Diet dihapus
+          pencapaiannya tetap utuh & terbuka dari layar Achievement 🏆. */}
       <ScreenHeader
         backLabel="Home"
         title="Health 🍎"
@@ -129,11 +122,7 @@ export default function HealthScreen() {
                 onPress={() => router.push('/health-info')}
               />
             )}
-            {tab === 'steps' ? (
-              <AchievementButton category="week" />
-            ) : tab === 'diet' ? (
-              <AchievementButton category="water" />
-            ) : null}
+            {tab === 'steps' ? <AchievementButton category="week" /> : null}
           </>
         }
       />
@@ -147,10 +136,8 @@ export default function HealthScreen() {
           <StepsTab profile={profile} stepDays={stepDays} weeks={weeks} />
         ) : tab === 'race' ? (
           /* Warnanya ikut layar ini, bukan warna kategori Fun: di dalam Health
-             tombol & kartu Race sewarna Steps/Diet/Check-up (hijau MAIN). */
+             tombol & kartu Race sewarna Steps/Check-up (hijau MAIN). */
           <FunArchive category="race" accent={Color.MAIN} />
-        ) : tab === 'diet' ? (
-          <DietTab day={diet} dayId={dayId} profile={profile} target={target} />
         ) : (
           <CheckupTab checkups={checkups} />
         )}

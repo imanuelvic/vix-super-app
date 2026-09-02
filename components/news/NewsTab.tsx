@@ -70,23 +70,23 @@ export function NewsTab({
 
   return (
     <View style={styles.flex}>
-      {/* Pemilih sumber — keenamnya MUAT SEBARIS, lebarnya dibagi rata & nama
-          sumbernya rata tengah. Jadi tak ada satu pun yang terpotong di tepi
-          layar, dan semuanya terlihat sekaligus tanpa perlu digeser dulu.
+      {/* Pemilih sumber — bentuknya sama persis dengan kategori Reminder:
+          hurufnya seukuran, kotaknya selebar namanya, dan yang tidak muat
+          digeser ke samping. Chip yang sedang aktif selalu ditarik utuh ke
+          dalam layar (activeIndex), jadi tak ada yang tergantung separuh di
+          tepi kanan.
 
-          Dua percobaan sebelumnya gagal karena alasan yang berbeda: dibuat
-          turun baris → baris keduanya tertimpa keterangan di bawahnya; dibuat
-          bisa digeser → chip terakhir ("Kristen") selalu tergantung separuh di
-          tepi kanan sampai barisnya disentuh.
+          Sempat dicoba "muat sebaris" (lebar dibagi rata) supaya keenamnya
+          terlihat sekaligus — tapi lebar yang dipatok sama rata menuntut
+          hurufnya yang mengalah, dan satu baris berakhir dengan enam ukuran
+          huruf berbeda. Terlihat semua, terbaca seperti kesalahan cetak.
 
-          Nama dua sumber memang sudah dipendekkan (Indonesia → Indo,
-          Bloomberg → Bisnis) & emojinya pindah ke baris keterangan, jadi
-          keenamnya cukup. `fit={6}`: kalau nanti sumbernya bertambah jadi
-          tujuh, barisnya balik jadi baris geser dengan sendirinya — chip yang
-          dipaksa muat terus-menerus akhirnya cuma jadi titik tak terbaca. */}
+          Tingginya dipatok seperti Reminder: ScrollView horizontal pernah
+          salah mengukur tinggi kontennya sendiri sampai chip-nya menindih
+          keterangan di bawahnya. */}
       <ChipRow
         activeIndex={NEWS_SOURCES.findIndex((s) => s.key === source)}
-        fit={6}
+        additionalStyle={styles.sourceScroll}
         contentStyle={styles.sourceRow}>
         {NEWS_SOURCES.map((s) => (
           <Chip
@@ -150,6 +150,10 @@ export function NewsTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  // Angka 52 = tinggi chip (teks label + padding 8 atas-bawah + garis tepi)
+  // ditambah nafas 8pt di atasnya. Sama alasannya dengan Reminder, cuma tanpa
+  // ruang badge — baris ini tidak punya angka di pojok chip-nya.
+  sourceScroll: { height: 52 },
   sourceRow: { paddingHorizontal: 20, paddingTop: 8 },
   sourceSub: {
     paddingHorizontal: 20,

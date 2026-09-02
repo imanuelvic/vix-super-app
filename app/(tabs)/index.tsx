@@ -449,7 +449,7 @@ export default function HomeScreen() {
         (r) => r.status !== 'done' && effectiveRoadmap(r, now).priority === 1,
       ).length +
       freelance.filter((p) => freelanceReminderWindow(p, now)).length,
-    // Kebiasaan harian pindah ke tab Habits ✅ — badge-nya ikut ke sana,
+    // Kebiasaan harian pindah ke tab Habits 📋 — badge-nya ikut ke sana,
     // jadi tile Health tidak lagi punya angka (isinya Steps & Check-up).
     // Tagihan CORE hari ini — dihitung SEKALI di lib/core.ts (coreAttention)
     // lalu dipakai bersama badge sub-tab Visitation & Follow Up di dalam

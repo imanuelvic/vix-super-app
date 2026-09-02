@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -615,15 +616,10 @@ const styles = StyleSheet.create({
   countText: { color: Color.TEXT_LABEL },
   // Baris pencapaian / reward.
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   rowLocked: { opacity: 0.55 },

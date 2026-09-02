@@ -76,7 +76,7 @@ export default function DebtsScreen() {
 
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. `repress` =
   // tab yang sama ditekan lagi → lompat ke pinjaman yang jatuh tempo.
-  const { tab, scrollKey, repress, onTabPress } = useTabScroll<Tab>('theirs');
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('theirs');
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,7 +128,6 @@ export default function DebtsScreen() {
     list.find((d) => !d.done && deadlineDue(debtTone(d, today))) ?? null;
   const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
     firstDue?.id ?? null,
-    repress,
   );
 
   const isMine = tab === 'mine';
@@ -327,7 +326,7 @@ export default function DebtsScreen() {
                     Finance, tombol 🤝 di headernya, dan sub-tab di layar ini
                     (debtUrgent). Titik berdenyut = "ini penyebabnya". */}
                 {debtUrgent(d, today) && (
-                  <AttentionMark style={styles.cardMark} />
+                  <AttentionMark corner />
                 )}
                 <View style={styles.cardTop}>
                   <VixText heading="bold" additionalStyle={styles.cardPerson}>
@@ -628,7 +627,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardDone: { opacity: 0.6 },
-  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -162,15 +163,10 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   empty: { textAlign: 'center', marginVertical: 14 },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   rowIcon: { fontSize: 26, lineHeight: 32 },

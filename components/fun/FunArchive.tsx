@@ -70,7 +70,7 @@ export function FunArchive({
    *
    * Ada karena Race sekarang tinggal di dalam Health 🍎: warna merahnya dulu
    * milik daftar kategori Fun, dan di layar Health ia jadi satu-satunya sub-tab
-   * yang warnanya beda sendiri dari Steps/Diet/Check-up. Yang menentukan warna
+   * yang warnanya beda sendiri dari Steps/Check-up. Yang menentukan warna
    * itu LAYAR tempatnya dipajang, bukan kategorinya — jadi layar yang memberi
    * tahu, bukan tabel kategori yang ditulis ulang (Fun tidak ikut berubah).
    */

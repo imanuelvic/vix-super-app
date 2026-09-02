@@ -30,7 +30,11 @@ import {
   savePngToPhotos,
   SHARE_DESIGNS,
 } from '@/lib/shareImage';
-import { bibleSessionMeta, bibleSessionOf } from '@/lib/spiritual';
+import {
+  BIBLE_VERSION_DEFAULT,
+  bibleSessionMeta,
+  bibleSessionOf,
+} from '@/lib/spiritual';
 
 // Ayat Alkitab 📖 → Story Instagram 9:16.
 //
@@ -38,13 +42,23 @@ import { bibleSessionMeta, bibleSessionOf } from '@/lib/spiritual';
 // "Mazmur 23:1-6, Yohanes 3:16") — jadi Story bisa dibuat SEBELUM bacaannya
 // disimpan sekalipun, dan layar ini tidak perlu membaca Firestore sama sekali.
 export default function BibleStoryScreen() {
-  const { session: sessionParam, refs: refsParam } = useLocalSearchParams<{
+  const {
+    session: sessionParam,
+    refs: refsParam,
+    version: versionParam,
+  } = useLocalSearchParams<{
     session?: string;
     refs?: string;
+    version?: string;
   }>();
   const session = bibleSessionOf(sessionParam);
   const meta = bibleSessionMeta(session);
   const refs = storyRefs(typeof refsParam === 'string' ? refsParam : '');
+  // Terjemahan yang sedang diketik di layar catat bacaan, dioper apa adanya.
+  // Kosong (mis. Story dibuka dari pintu lama) → TB, sama seperti di sana.
+  const version =
+    (typeof versionParam === 'string' ? versionParam.trim() : '') ||
+    BIBLE_VERSION_DEFAULT;
 
   const { width } = useWindowDimensions();
   const { now, todayId } = useNow();
@@ -178,6 +192,7 @@ export default function BibleStoryScreen() {
                   ref={svgRef}
                   verse={verse}
                   reference={reference}
+                  version={version}
                   sessionLabel={meta.title.toUpperCase()}
                   design={design}
                   dateLabel={formatFullDate(now)}
@@ -218,8 +233,7 @@ export default function BibleStoryScreen() {
 
             {saved === `${design.key}|${reference}|${verse}` && (
               <VixText heading="label" additionalStyle={styles.savedNote}>
-                ✅ Tersimpan di Foto — di kamera Story, dia foto yang paling
-                baru.
+                ✅ Tersimpan di Photos
               </VixText>
             )}
           </ActionStack>

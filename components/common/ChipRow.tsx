@@ -2,7 +2,6 @@ import { Children, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import {
   ScrollView,
   StyleSheet,
-  View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
@@ -13,14 +12,18 @@ import Animated, { FadeInRight } from 'react-native-reanimated';
 // seterusnya. Semuanya dulu menulis `<ScrollView horizontal>`-nya sendiri;
 // sekarang satu bentuk, satu tempat memperbaikinya.
 //
-// SATU bentuk saja, sengaja. Dulu ada dua pilihan lain — `spread` (melebar
-// kalau muat) & `wrap` (turun baris kalau tidak muat) — dan keduanya dibuang:
-//   • `wrap` (sumber News & kreator Fun) memang menampilkan semua chip
-//     sekaligus, tapi baris KEDUA-nya tertimpa isi di bawahnya sampai chip
-//     terakhir ("Kristen") terpotong separuh. Barisnya juga jadi satu-satunya
-//     baris chip di app yang bentuknya beda sendiri.
-//   • `spread` tidak dipakai satu layar pun.
-// Sekarang semua baris chip berkelakuan sama persis seperti di Reminder.
+// SATU bentuk saja, sengaja — dan tiga percobaan lain sudah dibuang karena
+// masing-masing merusak barisnya dengan caranya sendiri:
+//   • `wrap` (turun baris) — baris KEDUA-nya tertimpa isi di bawahnya sampai
+//     chip terakhir ("Kristen") terpotong separuh.
+//   • `spread` (melebar kalau muat) — tidak dipakai satu layar pun.
+//   • `fit` (muat sebaris, lebar dibagi rata) — supaya keenam sumber News
+//     terlihat sekaligus tanpa digeser. Tapi lebar yang dipatok sama rata
+//     menuntut hurufnya yang mengalah: satu baris jadi berisi enam ukuran
+//     huruf berbeda, dan yang terpanjang tetap paling kecil. Chip yang benar
+//     itu KOTAKNYA yang mengikuti hurufnya, bukan sebaliknya.
+// Sekarang semua baris chip berkelakuan sama persis seperti di Reminder:
+// hurufnya seukuran, kotaknya selebar isinya, dan yang tidak muat digeser.
 //
 // ── Kenapa `flexGrow: 0` itu WAJIB, bukan selera ──────────────────────────
 // ScrollView bawaan React Native memasang `flexGrow: 1` pada dirinya sendiri
@@ -46,7 +49,6 @@ const EDGE = 14;
 export function ChipRow({
   children,
   activeIndex,
-  fit,
   additionalStyle,
   contentStyle,
 }: {
@@ -64,16 +66,6 @@ export function ChipRow({
    * menekan chip tidak membuat barisnya melompat-lompat sendiri.
    */
   activeIndex?: number;
-  /**
-   * Batas "masih muat sebaris": kalau chip-nya SEBANYAK ini atau kurang,
-   * barisnya tidak digeser sama sekali — lebarnya dibagi rata & rata tengah,
-   * jadi tak ada satu pun yang terpotong di tepi layar.
-   *
-   * Dipakai baris yang jumlahnya memang tetap & sedikit (sumber News: 6).
-   * Lewat dari angka ini ia kembali jadi baris geser biasa — chip yang
-   * dipaksa muat terus-menerus akhirnya cuma jadi titik-titik tak terbaca.
-   */
-  fit?: number;
   /** Jarak kiri/kanan barisnya — biasanya `paddingHorizontal: 20` layarnya. */
   additionalStyle?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
@@ -110,27 +102,6 @@ export function ChipRow({
   const anak = Children.toArray(children).filter((x) => x != null);
   const masukPelan = (i: number) =>
     FadeInRight.delay(Math.min(i, 8) * 45).duration(280).springify().damping(14);
-
-  // ── Muat sebaris: tak ada yang perlu digeser, jadi tak ada yang terpotong ──
-  // Lebarnya dibagi rata (flex: 1) — bukan sekadar dirapatkan — supaya baris
-  // yang isinya tetap terbaca sebagai satu deret utuh, bukan tumpukan pil
-  // dengan sisa ruang menganga di kanan.
-  if (fit !== undefined && anak.length <= fit) {
-    return (
-      <View style={[styles.scroll, additionalStyle]}>
-        <View style={[styles.row, contentStyle]}>
-          {anak.map((child, i) => (
-            <Animated.View
-              key={i}
-              style={styles.bagian}
-              entering={masukPelan(i)}>
-              {child}
-            </Animated.View>
-          ))}
-        </View>
-      </View>
-    );
-  }
 
   // Chip-nya masuk berurutan dari kanan dengan pantulan kecil — pola yang sama
   // dengan tile Home (berurutan, bukan berkedip sekaligus), cuma arahnya
@@ -174,6 +145,4 @@ export function ChipRow({
 const styles = StyleSheet.create({
   scroll: { flexGrow: 0 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  // Mode muat-sebaris: tiap chip mengambil bagian yang sama dari lebar baris.
-  bagian: { flex: 1 },
 });

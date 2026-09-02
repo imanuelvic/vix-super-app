@@ -198,7 +198,7 @@ export const Color = {
 
   // Hijau lembut serba-guna — BUKAN warna fitur. Dulu ini warna tile Fun;
   // saat Fun pindah ke fuchsia, hijaunya tetap dibutuhkan sebagai "cukup /
-  // sehat" (ring kalori & paket sarapan di Diet, kartu Temperamen di Profile).
+  // sehat" (kartu Temperamen di Profile).
   GREEN_SOFT: '#C7E9C0',
   GREEN_SOFT_DARK: '#3E7A3A',
 

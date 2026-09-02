@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -152,15 +153,10 @@ const styles = StyleSheet.create({
   sourceLink: { color: Color.NEWS_DARK },
   sectionTitle: { marginTop: 14, marginBottom: 10 },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   rowMain: { flex: 1, gap: 1 },

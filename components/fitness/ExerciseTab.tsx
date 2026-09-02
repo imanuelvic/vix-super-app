@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -18,6 +19,7 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import { weekDayIds } from '@/lib/health';
@@ -138,6 +140,16 @@ export function ExerciseTab({
   // sesi yang sudah selesai tidak bisa "dilewati" (kalau bisa, streak yang
   // baru saja naik malah ikut hangus).
   const canSkip = isToday && (skipped || !allDone);
+
+  // Buka sub-tab ini → daftar gerakan langsung datang ke gerakan HARI INI yang
+  // belum dicentang, yaitu isi badge merahnya. Hari lain tidak pernah punya
+  // tujuan lompatan: ia memang tidak ikut ke badge-nya.
+  const { setRowY, onContentSizeChange } = useDueJump(
+    isToday && !daySkipped
+      ? (session.exercises.find((e) => !done[e.id])?.id ?? null)
+      : null,
+    scrollRef,
+  );
 
   async function toggle(ex: Exercise) {
     if (!user || !isToday || busy || skipped) return;
@@ -296,7 +308,10 @@ export function ExerciseTab({
         )}
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollRef}
+        onContentSizeChange={onContentSizeChange}
+        contentContainerStyle={styles.content}>
         {/* Hero sesi — warna oranye Fitness sesuai grid Home */}
         <View style={styles.hero}>
               <View style={styles.heroMain}>
@@ -375,7 +390,8 @@ export function ExerciseTab({
                     styles.exCard,
                     checked && styles.exCardDone,
                     exSkipped && styles.exCardSkipped,
-                  ]}>
+                  ]}
+                  onLayout={(e) => setRowY(ex.id, e.nativeEvent.layout.y)}>
                   <PressableScale
                     onPress={() => toggle(ex)}
                     disabled={!isToday || exSkipped}
@@ -609,7 +625,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  exMark: { position: 'absolute', top: -2, right: -2 },
+  // Titik kecil di baris gerakan — masuk ke dalam barisnya, sama seperti
+  // penanda di kartu (lihat `corner` di components/common/Badge.tsx).
+  exMark: { position: 'absolute', top: 3, right: 3 },
   exCardDone: {
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
@@ -640,14 +658,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   videoText: { color: Color.TEXT_LABEL },
-  tipRow: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
+  tipRow: CARD,
   tipText: { color: Color.TEXT_TITLE },
   modalTitle: { color: Color.TEXT_TITLE, marginBottom: 4 },
 });

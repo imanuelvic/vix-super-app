@@ -64,11 +64,7 @@ export default function ResidenceScreen() {
   // dilihat: meteran dicatat dua kali sehari (pagi & malam), sedangkan
   // Perawatan cuma sesekali. Tagihan Perawatan tetap terlihat dari badge
   // merahnya di tab bawah, jadi tak ada yang hilang dari pandangan.
-  //
-  // `repress` = tombol Maintenance ditekan lagi saat sudah aktif → daftarnya
-  // langsung melompat ke yang harus dibersihkan sekarang (isi badge merahnya).
-  const { tab, scrollKey, repress, onTabPress } =
-    useTabScroll<ResidenceTab>('token');
+  const { tab, scrollKey, onTabPress } = useTabScroll<ResidenceTab>('token');
   const [logs, setLogs] = useState<ResidenceLog[] | null>(null);
   const [utilityTx, setUtilityTx] = useState<Transaction[] | null>(null);
   const [chores, setChores] = useState<ChoreStatusMap | null>(null);
@@ -150,7 +146,7 @@ export default function ResidenceScreen() {
           chores === null ? (
             <LoadingCenter />
           ) : (
-            <ChoreTab status={chores} focusDue={repress} />
+            <ChoreTab status={chores} />
           )
         ) : (
           <InfoTab />

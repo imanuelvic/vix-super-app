@@ -14,11 +14,12 @@ import { useCallback, useEffect, useState } from 'react';
 // selalu mulai dari paling atas. Satu mekanisme, tanpa ref di tiap tab, dan
 // tanpa tambahan baca Firestore (data tetap dilangganani di level layar).
 //
-// `repress` = tekanan barusan mengenai tab yang SUDAH aktif (jadi tekanan
-// kedua). Tab yang daftarnya bertenggat memakainya untuk langsung melompat ke
-// baris yang jatuh tempo — pola yang sama dengan tab sesi di Habits. Karena
-// kontennya memang re-mount tiap tekan, nilai ini terbaca saat mount: tidak
-// perlu isyarat tambahan.
+// Lompatan ke baris yang menyalakan badge TIDAK butuh isyarat dari sini:
+// karena kontennya memang re-mount tiap tekan, hook `useDueJump` cukup
+// melompat saat mount. Dulu ada `repress` (tanda "tab yang sudah aktif ditekan
+// lagi") dan lompatannya menunggu tekanan kedua — syarat yang cuma diketahui
+// penulis kodenya; bagi siapa pun yang lain, tekanan pertama sekadar terasa
+// tidak melakukan apa-apa.
 //
 // ── Membuka sub-tab tertentu lewat ?tab=… ────────────────────────────────
 // Enam layar (Profile, Career, CORE, Learning, News, Spiritual) bisa dituju
@@ -61,7 +62,6 @@ export function useTabScroll<T extends string>(
 
   const [tab, setTab] = useState<T>(fromParam ?? initial);
   const [scrollKey, setScrollKey] = useState(0);
-  const [repress, setRepress] = useState(false);
 
   // Datang LAGI ke layar yang masih hidup dengan param berbeda → ikut pindah.
   // Tanpa ini, reminder Dashboard cuma bekerja saat layarnya baru dibuka.
@@ -86,12 +86,11 @@ export function useTabScroll<T extends string>(
 
   const onTabPress = useCallback(
     (next: T) => {
-      setRepress(next === tab);
       setTab(next);
       setScrollKey((n) => n + 1); // naikkan tiap ditekan → konten re-mount ke atas
     },
-    [tab],
+    [],
   );
 
-  return { tab, setTab, scrollKey, repress, onTabPress };
+  return { tab, setTab, scrollKey, onTabPress };
 }

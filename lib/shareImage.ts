@@ -58,27 +58,27 @@ export type ShareDesign = {
 export const SHARE_DESIGNS: ShareDesign[] = [
   {
     key: 'paper',
-    label: 'Paper',
+    label: 'Morning🌅',
     paper: Color.BACKGROUND,
     ink: Color.TEXT_TITLE,
     muted: Color.TEXT_LABEL,
     rule: Color.BORDER,
   },
   {
-    key: 'ink',
-    label: 'Ink',
-    paper: '#12211C',
-    ink: '#F3EFE6',
-    muted: '#8FA79C',
-    rule: '#2C3F38',
-  },
-  {
     key: 'sage',
-    label: 'Sage',
+    label: 'Midday🌤️',
     paper: '#E8EFE9',
     ink: Color.MAIN_DARK,
     muted: '#5F7A70',
     rule: '#C9DACE',
+  },
+  {
+    key: 'ink',
+    label: 'Night🌙',
+    paper: '#12211C',
+    ink: '#F3EFE6',
+    muted: '#8FA79C',
+    rule: '#2C3F38',
   },
 ];
 

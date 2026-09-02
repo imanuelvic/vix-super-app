@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -316,15 +317,10 @@ const styles = StyleSheet.create({
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
   card: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 10,
   },
   // Sudah pernah didatangi → diredupkan, karena yang perlu diputuskan itu

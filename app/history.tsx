@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { EditButton } from '@/components/common/EditButton';
@@ -485,18 +486,13 @@ const styles = StyleSheet.create({
   yearText: { color: Color.ACCENT_DARK },
   ageText: { color: Color.TEXT_LABEL },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     // Garis kiri = "rel" perjalanan, biar terbaca seperti garis waktu.
     borderLeftWidth: 3,
     borderLeftColor: Color.MAIN_LIGHT,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   rowMain: { flex: 1, gap: 2 },

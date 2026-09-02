@@ -10,6 +10,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
+import { useDueJump } from '@/hooks/useDueJump';
 import { useEditParam } from '@/hooks/useEditParam';
 import {
   deadlineDaysUntil,
@@ -61,9 +62,18 @@ export function FreelanceTab({
   const active = projects.filter((p) => !p.done);
   const activeFee = active.reduce((sum, p) => sum + p.fee, 0);
 
+  // Buka sub-tab ini → daftarnya langsung datang ke proyek yang menyalakan
+  // badge merahnya (belum selesai & sudah H-7).
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    sorted.find((p) => freelanceReminderWindow(p, today))?.id ?? null,
+  );
+
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={listRef}
+        onContentSizeChange={onContentSizeChange}
+        contentContainerStyle={styles.content}>
         {/* Ringkasan usaha freelance */}
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>
@@ -104,13 +114,16 @@ export function FreelanceTab({
           return (
             // Tombol ✏️ jadi SAUDARA area click, bukan anaknya — Pressable
             // bersarang di iOS bikin click tombolnya ikut membuka kartunya.
-            <View key={p.id} style={[styles.card, deadlineBorder(tone)]}>
+            <View
+              key={p.id}
+              style={[styles.card, deadlineBorder(tone)]}
+              onLayout={(e) => setRowY(p.id, e.nativeEvent.layout.y)}>
               {/* Proyek belum selesai yang deadline-nya sudah H-7 = yang
                   dihitung badge merah tile Career & sub-tab Freelance
                   (freelanceReminderWindow) — aturannya dipanggil dari lib yang
                   sama, bukan ditebak ulang dari `tone`. */}
               {freelanceReminderWindow(p, today) && (
-                <AttentionMark style={styles.cardMark} />
+                <AttentionMark corner />
               )}
               <PressableScale
                 style={styles.cardTap}
@@ -178,7 +191,6 @@ const styles = StyleSheet.create({
   // Kartu hero-nya persis <SummaryCard> bawaan — tak perlu gaya sendiri.
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 8 },
-  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     flexDirection: 'row',
     // 'flex-start': tombol ✏️ menempel di pojok kanan ATAS kartu, tidak ikut

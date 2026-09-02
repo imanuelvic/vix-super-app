@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
@@ -94,6 +96,11 @@ export function DiscussionTab({
                   {meta.emoji} {t.label}
                 </VixText>
               </View>
+              {/* INI yang menyalakan badge sub-tab Topics — aturannya sama
+                  persis dengan `pendingTopicsOfWeek`: topik giliran minggu ini
+                  yang belum diobrolkan. Jadi titiknya mustahil menyala di
+                  baris yang tidak ikut dihitung. */}
+              {!checked && <AttentionMark corner />}
             </PressableScale>
           );
         })}
@@ -155,15 +162,10 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   barWrap: { marginTop: -4, marginBottom: 10 },
   row: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   rowDone: {
@@ -176,15 +178,10 @@ const styles = StyleSheet.create({
   weeklyTitle: { marginTop: 4, marginBottom: 8 },
   allTitle: { marginTop: 14, marginBottom: 8 },
   topicCard: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   topicCardDone: {

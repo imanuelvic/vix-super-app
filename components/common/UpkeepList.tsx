@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -51,7 +52,6 @@ export function UpkeepList({
   onSave,
   dueNowOf,
   onDueNow,
-  focusDue = false,
 }: {
   /** Kartu ringkasan paling atas. */
   summary: { label: string; value: string; sub: string };
@@ -69,13 +69,6 @@ export function UpkeepList({
    * Mengarang tanggal cuma bikin jadwal berikutnya ikut salah.
    */
   onDueNow: (key: string, dueNow: boolean) => Promise<void>;
-  /**
-   * Langsung gulung ke baris jatuh tempo pertama begitu daftarnya tergambar.
-   * Diisi dari `repress` useTabScroll = sub-tab-nya ditekan untuk kedua kali.
-   * Kalau tidak ada yang jatuh tempo (badge-nya kosong), daftarnya tetap di
-   * paling atas seperti biasa.
-   */
-  focusDue?: boolean;
 }) {
   const [editing, setEditing] = useState<UpkeepRow | null>(null);
   const [fDate, setFDate] = useState(new Date());
@@ -87,10 +80,7 @@ export function UpkeepList({
   // yang dihitung badge tab (🔴 sekarang / 🟡 besok).
   const firstDue =
     groups.flatMap((g) => g.rows).find((r) => deadlineDue(r.tone)) ?? null;
-  const { ref, setRowY, onContentSizeChange } = useDueJump(
-    firstDue?.key ?? null,
-    focusDue,
-  );
+  const { ref, setRowY, onContentSizeChange } = useDueJump(firstDue?.key ?? null);
 
   function openEdit(row: UpkeepRow) {
     setEditing(row);
@@ -171,7 +161,7 @@ export function UpkeepList({
                     tanpa perlu membaca seluruh daftar dulu. Ambangnya persis
                     sama dengan yang dipakai badge-nya (deadlineDue). */}
                 {deadlineDue(row.tone) && (
-                  <AttentionMark style={styles.rowMark} />
+                  <AttentionMark corner />
                 )}
                 <VixText heading="label">{row.tip}</VixText>
                 <VixText heading="label" additionalStyle={styles.dateLine}>
@@ -239,12 +229,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   groupTitle: { marginTop: 14, marginBottom: 8 },
   row: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     marginBottom: 8,
     gap: 4,
   },
@@ -255,7 +240,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowLabel: { flex: 1, color: Color.TEXT_TITLE },
-  rowMark: { position: 'absolute', top: -4, right: -4 },
   dateLine: { color: Color.TEXT_PLACEHOLDER },
   // Judul + tombol "sekarang" sebaris; judul boleh memanjang, tombol tetap
   // menempel di kanan atas.

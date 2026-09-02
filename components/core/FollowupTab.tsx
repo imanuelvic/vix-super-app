@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
@@ -10,6 +11,7 @@ import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import {
   birthdayGroupText,
   birthdayPersonalText,
@@ -157,6 +159,15 @@ export function FollowupTab({
     canDrawWeeklyFocus(new Date()) && leaders.length > WEEKLY_FOCUS_COUNT;
   const [drawing, setDrawing] = useState(false);
 
+  // Buka sub-tab ini → langsung ke penyebab badge merahnya. Ulang tahun
+  // didahulukan karena ia hangus hari itu juga; follow up masih bisa dikejar
+  // sampai akhir minggu.
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    birthdays.today.find((b) => greets[b.key] !== dayId)?.key ??
+      weekLeaders.find((l) => l.lastFollowupDayId !== dayId)?.id ??
+      null,
+  );
+
   async function handleDrawWeekly() {
     if (!user || drawing) return;
     setDrawing(true);
@@ -260,6 +271,7 @@ export function FollowupTab({
       <PressableScale
         key={id}
         style={[styles.prayerRow, done && styles.prayerRowDone]}
+        onLayout={(e) => setRowY(id, e.nativeEvent.layout.y)}
         onPress={() => setFollowupModal({ id, title, phone, person })}>
         <View style={styles.followMain}>
           <VixText heading="bold" additionalStyle={styles.leaderName}>
@@ -278,6 +290,11 @@ export function FollowupTab({
             </VixText>
           </PressableScale>
         )}
+        {/* Salah satu dari dua penyusun badge sub-tab Follow Up: CL fokus
+            minggu ini yang belum di-follow up (`followupDue` di lib/core.ts).
+            Yang satunya lagi ulang tahun yang belum diucapkan — ditandai di
+            kartu ulang tahunnya sendiri. */}
+        {!done && <AttentionMark corner />}
       </PressableScale>
     );
   }
@@ -332,7 +349,10 @@ export function FollowupTab({
 
   return (
     <>
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView
+      ref={listRef}
+      onContentSizeChange={onContentSizeChange}
+      contentContainerStyle={styles.content}>
       <GreetingHeader />
 
       <FormError message={error} />
@@ -342,7 +362,14 @@ export function FollowupTab({
       {birthdays.today
         .filter((b) => greets[b.key] !== dayId)
         .map((b) => (
-          <View key={b.key} style={styles.birthdayCard}>
+          <View
+            key={b.key}
+            style={styles.birthdayCard}
+            onLayout={(e) => setRowY(b.key, e.nativeEvent.layout.y)}>
+            {/* Penyusun kedua badge sub-tab Follow Up (`birthdayDue`).
+                Kartunya memang hanya digambar selama ucapannya belum dikirim,
+                jadi selama ia terlihat, ia memang sedang menagih. */}
+            <AttentionMark corner />
             <VixText heading="title" additionalStyle={styles.birthdayTitle}>
               🎂 {b.label} ulang tahun HARI INI!
             </VixText>

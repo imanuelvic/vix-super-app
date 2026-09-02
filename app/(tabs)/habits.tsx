@@ -1,9 +1,10 @@
 // ============================================================================
-// TAB HABITS ✅ — menggantikan tab Tournament (yang kini jadi tile di grid Home).
+// TAB HABITS 📋 — menggantikan tab Tournament (yang kini jadi tile di grid Home).
 // Isinya kebiasaan harian Pagi/Siang/Malam, pindahan dari fitur Health.
 //
-// Diet 🥗 TIDAK di sini — itu soal tubuh, jadi tinggal di fitur Health
-// bersama Steps & Check-up (app/health.tsx).
+// Diet 🥗 sudah dihapus seluruhnya (2 Sep 2026) — alasannya ditulis di
+// app/health.tsx. Yang menjaga tubuh sekarang: Steps, Fitness, Check-up, dan
+// air putih di kartu sapaan Home.
 // ============================================================================
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -214,7 +215,7 @@ export default function HabitsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <VixText heading="header" additionalStyle={styles.title}>
-          Habits ✅
+          Habits 📋
         </VixText>
         {/* Angka di pil ini = streak kebiasaan, jadi yang dibuka pun kategori
             "🍎 Kebiasaan Sehat" — bukan daftar semua kategori. */}

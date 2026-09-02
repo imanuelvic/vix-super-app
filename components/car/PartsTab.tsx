@@ -24,14 +24,7 @@ const TONE_LABEL: Record<PartTone, string> = {
 //
 // Tampilan & dialognya milik bersama <UpkeepList> (dipakai juga Residence →
 // Maintenance); di sini tinggal merakit barisnya dari data mobil.
-export function PartsTab({
-  status,
-  focusDue,
-}: {
-  status: PartStatusMap;
-  /** Tab Parts ditekan 2× → lompat ke bagian yang jatuh tempo. */
-  focusDue?: boolean;
-}) {
+export function PartsTab({ status }: { status: PartStatusMap }) {
   const { user } = useAuth();
 
   const now = new Date();
@@ -86,7 +79,6 @@ export function PartsTab({
       }}
       groups={groups}
       dialogHint="Kapan terakhir diganti / dicek?"
-      focusDue={focusDue}
       noteOf={(key) => status[key]?.note ?? ''}
       dueNowOf={(key) => status[key]?.dueNow === true}
       // `user` selalu ada di sini (layar Car cuma terbuka setelah login);

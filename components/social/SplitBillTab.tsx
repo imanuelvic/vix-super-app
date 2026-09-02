@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AttentionMark } from '@/components/common/Badge';
 import { FormError } from '@/components/common/FormError';
@@ -12,6 +13,7 @@ import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import { usePagination } from '@/hooks/usePagination';
 import { formatCompactDate } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -45,6 +47,14 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
   const belumSetor = bills.filter(billUnsettled).length;
   const tertunggak = outstandingTotal(bills);
 
+  // Buka sub-tab ini → daftarnya langsung datang ke tagihan pertama yang
+  // menyalakan badge merahnya. Halaman lain tidak ditarik: kalau semua yang
+  // belum lunas ada di halaman berikutnya, tidak ada yang perlu dilompati di
+  // halaman ini.
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    pageItems.find(billUnsettled)?.id ?? null,
+  );
+
   /** Buat tagihan kosong lalu langsung buka rinciannya — di sanalah isinya. */
   async function handleAdd() {
     if (!user || busy) return;
@@ -65,6 +75,8 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
     <View style={styles.flex}>
       <ScrollView
         key={currentPage}
+        ref={listRef}
+        onContentSizeChange={onContentSizeChange}
         contentContainerStyle={styles.content}>
         <SummaryCard
           label={
@@ -102,6 +114,7 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
                 <PressableScale
                   key={bill.id}
                   style={[styles.card, lunas && styles.cardDone]}
+                  onLayout={(e) => setRowY(bill.id, e.nativeEvent.layout.y)}
                   onPress={() =>
                     router.push({ pathname: '/bill/[id]', params: { id: bill.id } })
                   }>
@@ -110,7 +123,7 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
                       (billUnsettled). Ambangnya sengaja dipanggil dari lib
                       yang sama, bukan ditebak ulang di sini. */}
                   {billUnsettled(bill) && (
-                    <AttentionMark style={styles.cardMark} />
+                    <AttentionMark corner />
                   )}
                   <View style={styles.cardMain}>
                     <VixText heading="bold" additionalStyle={styles.cardTitle}>
@@ -169,17 +182,11 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
-  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 10,
   },
   // Sudah lunas semua → diredupkan hijau. Tetap ada sebagai catatan, tapi

@@ -83,8 +83,7 @@ const MAPPING = {
   // Burung — satu-satunya ikon burung di Material Icons ("flutter-dash").
   // Dipakai tile Spiritual 🕊️ supaya gayanya sama dengan tile lain.
   'bird.fill': 'flutter-dash',
-  // Sub-tab fitur Health: Diet 🥗.
-  'fork.knife': 'restaurant',
+
   // Sub-menu fitur Games 🎮 (Snake & Tetris).
   'gamecontroller.fill': 'sports-esports',
   'square.grid.3x3.fill': 'grid-on',

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,7 +17,9 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -33,7 +35,7 @@ import {
   subscribeFastingPlans,
   type FastingPlan,
 } from '@/lib/fasting';
-import { dayIdToDate } from '@/lib/format';
+import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
@@ -81,6 +83,15 @@ export default function FastingScreen() {
   // Lewat masa tenggang → catatannya baca-saja SELAMANYA (lihat lib/fasting.ts).
   const terkunci = plan ? fastingLocked(plan, today) : false;
   const sisaKunci = plan ? fastingLockDaysLeft(plan, today) : null;
+
+  // Pil keadaan di kartu atas. Tiga saja, dan ketiganya menjawab pertanyaan
+  // yang sama: hari ini aku masih puasa atau tidak?
+  const todayId = dayDocId(today);
+  const keadaan = terkunci
+    ? { label: '🔒 Terkunci', gaya: styles.pillLocked }
+    : plan && todayId >= plan.startId && todayId <= plan.endId
+      ? { label: '🔥 Berjalan', gaya: styles.pillLive }
+      : { label: '✅ Selesai', gaya: styles.pillDone };
 
   async function handleSaveInfo() {
     if (!user || busy || terkunci) return;
@@ -145,68 +156,148 @@ export default function FastingScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
-          {/* ===== Keterangan periode puasa ===== */}
-          {/* Label PERTAMA tanpa marginTop — jarak ke subjudul layar sudah
-              dipegang header + paddingTop daftar. Dengan marginTop-nya, kolom
-              pertama menggantung jauh dari judulnya. */}
-          <VixText
-            heading="label"
-            additionalStyle={[styles.fieldLabel, styles.firstLabel]}>
-            Nama puasa
-          </VixText>
-          <FormInput
-            placeholder="Nama Puasa"
-            value={title}
-            onChangeText={setTitle}
-            editable={!busy && !terkunci}
-          />
+          {/* ===== Kartu keadaan =====
+              Yang paling ingin kamu tahu begitu layar ini terbuka bukan kolom
+              isian, tapi: puasa ini sedang apa, dan sudah sejauh mana. Dulu
+              jawabannya harus dikumpulkan sendiri dari enam kolom yang
+              berderet. */}
+          {plan && (
+            <SummaryCard style={styles.hero}>
+              <View style={styles.heroTop}>
+                <VixText heading="label" additionalStyle={summaryText.label}>
+                  🍽️ Puasa berhasil
+                </VixText>
+                <View style={[styles.pill, keadaan.gaya]}>
+                  <VixText heading="label" additionalStyle={styles.pillText}>
+                    {keadaan.label}
+                  </VixText>
+                </View>
+              </View>
+              <VixText heading="header" additionalStyle={summaryText.value}>
+                {progress.done}
+                <VixText heading="title" additionalStyle={styles.heroTotal}>
+                  {' '}
+                  / {progress.total} hari
+                </VixText>
+              </VixText>
+              <ProgressBar
+                value={progress.done}
+                total={progress.total}
+                color={Color.SPIRITUAL}
+                track={Color.OVERLAY}
+              />
+              <VixText heading="label" additionalStyle={summaryText.label}>
+                📆 {formatShortDayDate(startDate)} → {formatShortDayDate(endDate)}
+              </VixText>
+            </SummaryCard>
+          )}
 
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            🙏 Pokok doa utama
-          </VixText>
-          <FormInput
-            placeholder="Apa yang kamu doakan sepanjang puasa ini?"
-            value={prayer}
-            onChangeText={setPrayer}
-            editable={!busy && !terkunci}
-            multiline
-            style={styles.textArea}
-          />
+          {/* ===== Pintu ke checklist harian =====
+              Naik ke atas: inilah yang dibuka tiap malam, sedangkan kolom di
+              bawahnya diisi sekali di awal lalu jarang disentuh lagi. */}
+          {plan && (
+            <PressableScale
+              style={styles.daysLink}
+              onPress={() =>
+                router.push({
+                  pathname: '/fasting-days',
+                  params: { id: plan.id },
+                })
+              }>
+              <View style={styles.daysMain}>
+                <VixText heading="bold" additionalStyle={styles.daysTitle}>
+                  📆 Lihat Hari per Hari
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.daysSub}>
+                  Centang puasamu tiap malam di sini
+                </VixText>
+              </View>
+              <IconSymbol
+                name="chevron.right"
+                size={18}
+                color={Color.SPIRITUAL_DARK}
+              />
+            </PressableScale>
+          )}
 
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            📜 Peraturan puasa saya
-          </VixText>
-          <FormInput
-            placeholder="mis. makan hanya jam 18.00–20.00"
-            value={rules}
-            onChangeText={setRules}
-            editable={!busy && !terkunci}
-            multiline
-            style={styles.textArea}
-          />
+          {/* ===== Tentang puasanya ===== */}
+          <Bagian judul="📝 Tentang Puasa">
+            <Kolom label="Nama puasa">
+              <FormInput
+                placeholder="mis. Puasa 6 Hari Agustus"
+                value={title}
+                onChangeText={setTitle}
+                editable={!busy && !terkunci}
+              />
+            </Kolom>
+            <Kolom label="🙏 Pokok doa utama">
+              <FormInput
+                placeholder="Apa yang kamu doakan sepanjang puasa ini?"
+                value={prayer}
+                onChangeText={setPrayer}
+                editable={!busy && !terkunci}
+                multiline
+                style={styles.textArea}
+              />
+            </Kolom>
+            <Kolom label="📜 Peraturan puasa saya">
+              <FormInput
+                placeholder="mis. makan hanya jam 18.00–20.00"
+                value={rules}
+                onChangeText={setRules}
+                editable={!busy && !terkunci}
+                multiline
+                style={styles.textArea}
+              />
+            </Kolom>
+          </Bagian>
 
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Mulai puasa
-          </VixText>
-          <DateField
-            value={startDate}
-            onChange={setStartDate}
-            disabled={terkunci}
-          />
+          {/* ===== Rentangnya ===== */}
+          <Bagian judul="📆 Periode">
+            <Kolom label="Mulai puasa">
+              <DateField
+                value={startDate}
+                onChange={setStartDate}
+                disabled={terkunci}
+              />
+            </Kolom>
+            <Kolom label="Selesai puasa">
+              <DateField
+                value={endDate}
+                onChange={setEndDate}
+                disabled={terkunci}
+              />
+            </Kolom>
+          </Bagian>
 
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Selesai puasa
-          </VixText>
-          <DateField
-            value={endDate}
-            onChange={setEndDate}
-            disabled={terkunci}
-          />
+          {/* ===== Hasil keseluruhan =====
+              Hanya untuk puasa yang sudah tersimpan: menanyakan jawaban doa
+              sebelum puasanya dimulai tidak ada gunanya. */}
+          {plan && (
+            <Bagian judul="✨ Jawaban Doa">
+              <FormInput
+                placeholder="Apa yang Tuhan kerjakan lewat puasa ini?"
+                value={answer}
+                onChangeText={setAnswer}
+                editable={!busy && !terkunci}
+                multiline
+                style={styles.textArea}
+              />
+            </Bagian>
+          )}
 
           <FormError message={error} gap="none" additionalStyle={styles.error} />
 
-          {/* Terkunci → tombol simpannya HILANG, bukan sekadar mati: tombol
-              mati yang tetap terpampang cuma mengundang ditekan berulang. */}
+          {/* ===== SATU tombol simpan, di paling bawah =====
+              Dulu ada dua — "Simpan Perubahan" di tengah layar dan "Simpan
+              Jawaban Doa" di bawah — padahal keduanya memanggil fungsi yang
+              sama persis dan menyimpan keenam kolomnya sekaligus. Dua tombol
+              untuk satu perbuatan bukan cuma memenuhi layar; ia membuat orang
+              mengira jawaban doanya disimpan terpisah, dan ragu apakah yang
+              di atas sudah ikut tersimpan atau belum.
+
+              Terkunci → tombolnya HILANG, bukan sekadar mati: tombol mati yang
+              tetap terpampang cuma mengundang ditekan berulang. */}
           {terkunci ? (
             <VixText heading="label" additionalStyle={styles.locked}>
               🔒 Puasa ini sudah selesai lebih dari {FASTING_GRACE_DAYS} hari
@@ -218,6 +309,7 @@ export default function FastingScreen() {
               busy={busy}
               onPress={handleSaveInfo}
               additionalStyle={styles.saveButton}
+              background={Color.SPIRITUAL_DARK}
             />
           )}
 
@@ -230,72 +322,50 @@ export default function FastingScreen() {
             </VixText>
           )}
 
-          {/* ===== Pintu ke checklist harian ===== */}
-          {plan ? (
-            <>
-              <PressableScale
-                style={styles.daysLink}
-                onPress={() =>
-                  router.push({
-                    pathname: '/fasting-days',
-                    params: { id: plan.id },
-                  })
-                }>
-                <View style={styles.daysMain}>
-                  <VixText heading="bold" additionalStyle={styles.daysTitle}>
-                    📆 Lihat Hari per Hari
-                  </VixText>
-                  <VixText heading="label" additionalStyle={styles.daysSub}>
-                    🍽️ Puasa berhasil {progress.done} dari {progress.total} hari
-                  </VixText>
-                </View>
-                <IconSymbol
-                  name="chevron.right"
-                  size={18}
-                  color={Color.SPIRITUAL_DARK}
-                />
-              </PressableScale>
-
-              {/* ===== Hasil keseluruhan ===== */}
-              <VixText heading="title" additionalStyle={styles.sectionTitle}>
-                ✨ Jawaban Doa
-              </VixText>
-              <FormInput
-                placeholder="Apa yang Tuhan kerjakan lewat puasa ini?"
-                value={answer}
-                onChangeText={setAnswer}
-                editable={!busy && !terkunci}
-                multiline
-                style={styles.textArea}
-              />
-              {!terkunci && (
-                <PrimaryButton
-                  label="💾 Simpan Jawaban Doa"
-                  busy={busy}
-                  onPress={handleSaveInfo}
-                  additionalStyle={styles.saveButton}
-                />
-              )}
-
-              {/* Hapus TETAP ada walau terkunci. Yang dikunci itu MENGUBAH
-                  catatannya — mencentang hari yang dulu gagal jadi berhasil.
-                  Membuang seluruh catatan yang salah masuk itu perkara lain,
-                  dan tanpa ini catatan salah ketik tertinggal selamanya. */}
-              <InlineDelete
-                label="Hapus puasa ini…"
-                busy={busy}
-                onDelete={handleDeletePlan}
-              />
-            </>
-          ) : (
-            <VixText heading="label" additionalStyle={styles.hint}>
-              Simpan maka daftar hari per hari muncul otomatis
-              sesuai tanggal mulai & selesai 📆
-            </VixText>
+          {/* Hapus TETAP ada walau terkunci. Yang dikunci itu MENGUBAH
+              catatannya — mencentang hari yang dulu gagal jadi berhasil.
+              Membuang seluruh catatan yang salah masuk itu perkara lain, dan
+              tanpa ini catatan salah ketik tertinggal selamanya. */}
+          {plan && (
+            <InlineDelete
+              label="Hapus puasa ini…"
+              busy={busy}
+              onDelete={handleDeletePlan}
+            />
           )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * Satu kelompok isian dalam kartunya sendiri.
+ *
+ * Enam kolom yang berderet lurus tanpa jeda terbaca sebagai satu formulir
+ * panjang yang harus dihabiskan. Dikelompokkan begini, layarnya jadi tiga
+ * urusan yang jelas — tentang puasanya, kapan, dan hasilnya — dan mata punya
+ * tempat berhenti di antara ketiganya.
+ */
+function Bagian({ judul, children }: { judul: string; children: ReactNode }) {
+  return (
+    <View style={styles.bagian}>
+      <VixText heading="title" additionalStyle={styles.bagianJudul}>
+        {judul}
+      </VixText>
+      {children}
+    </View>
+  );
+}
+
+function Kolom({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <View style={styles.kolom}>
+      <VixText heading="label" additionalStyle={styles.kolomLabel}>
+        {label}
+      </VixText>
+      {children}
+    </View>
   );
 }
 
@@ -304,15 +374,48 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   // paddingTop 4 = sama dengan layar berisian lain (mis. Template Chat).
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
-  fieldLabel: { marginTop: 12, marginBottom: 6 },
-  firstLabel: { marginTop: 0 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
   error: { marginTop: 10 },
   // Jarak tombol aksi dari isian di atasnya — sama dengan layar Spiritual lain.
   saveButton: { marginTop: ACTION_TOP },
-  hint: { marginTop: 16, textAlign: 'center' },
   locked: { color: Color.TEXT_LABEL, marginTop: ACTION_TOP },
-  sectionTitle: { marginTop: 18, marginBottom: 4 },
+
+  // ── Kartu keadaan ──────────────────────────────────────────────────────
+  hero: { gap: 8, marginBottom: 14 },
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  // Angka besar "6" diikuti "/ 6 hari" yang lebih kecil — penyebutnya konteks,
+  // bukan berita, jadi tidak perlu sebesar yang dicapai.
+  heroTotal: { color: Color.TEXT_REVERSE, opacity: 0.75 },
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  pillText: { color: Color.TEXT_REVERSE },
+  pillLive: { backgroundColor: Color.SPIRITUAL_DARK, borderColor: Color.SPIRITUAL },
+  pillDone: { backgroundColor: 'transparent', borderColor: Color.SPIRITUAL },
+  pillLocked: { backgroundColor: 'transparent', borderColor: Color.BORDER },
+
+  // ── Kelompok isian ─────────────────────────────────────────────────────
+  bagian: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 16,
+    marginTop: 14,
+    gap: 12,
+  },
+  bagianJudul: { marginBottom: 2 },
+  kolom: { gap: 6 },
+  kolomLabel: { color: Color.TEXT_LABEL },
+
   // Pintu ke checklist harian — kartu ungu muda, bentuk yang sama dengan
   // kartu "Sedang Puasa" di daftarnya.
   daysLink: {
@@ -325,7 +428,6 @@ const styles = StyleSheet.create({
     borderColor: Color.SPIRITUAL_DARK,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginTop: 18,
   },
   daysMain: { flex: 1, gap: 2 },
   daysTitle: { color: Color.TEXT_TITLE },

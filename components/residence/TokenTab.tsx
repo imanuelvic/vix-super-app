@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -640,26 +641,16 @@ const styles = StyleSheet.create({
   hintTight: { color: Color.TEXT_LABEL, marginBottom: 10 },
   splitRow: { flexDirection: 'row', gap: 8 },
   splitBox: {
+    ...CARD,
     flex: 1,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     gap: 2,
   },
   splitValue: { color: Color.HOUSE_DARK },
   spanRow: {
+    ...CARD,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     marginBottom: 8,
   },
   // Selang saat di rumah diberi warna Residence — supaya dua jenis selang
@@ -671,12 +662,7 @@ const styles = StyleSheet.create({
   spanRate: { color: Color.TEXT_PLACEHOLDER },
   spanKwh: { color: Color.HOUSE_DARK },
   readingRow: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    ...CARD,
     marginBottom: 8,
   },
   fieldLabel: { marginBottom: 6 },

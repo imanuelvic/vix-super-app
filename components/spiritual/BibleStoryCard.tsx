@@ -34,6 +34,13 @@ export const BibleStoryCard = forwardRef<
     verse: string;
     /** Acuan bacaannya, mis. "Mazmur 23:1-6". */
     reference: string;
+    /**
+     * Singkatan terjemahannya, mis. "TB". Ikut dicetak di sebelah acuannya
+     * karena acuan tanpa terjemahan itu setengah keterangan: "Amsal 1:4" di TB
+     * dan di TSI bunyinya bisa jauh berbeda, dan yang membaca Story-mu tidak
+     * punya cara lain untuk tahu yang mana.
+     */
+    version: string;
     /** Kop kecil di atas, mis. "MORNING BIBLE READING". */
     sessionLabel: string;
     design: ShareDesign;
@@ -45,12 +52,25 @@ export const BibleStoryCard = forwardRef<
     width: number;
   }
 >(function BibleStoryCard(
-  { verse, reference, sessionLabel, design, dateLabel, archiveLabel, width },
+  {
+    verse,
+    reference,
+    version,
+    sessionLabel,
+    design,
+    dateLabel,
+    archiveLabel,
+    width,
+  },
   ref,
 ) {
+  // "Amsal 1:4 (TB)". Terjemahan kosong tidak menyisakan kurung menganga.
+  const versi = version.trim();
+  const acuan = versi ? `${reference} (${versi})` : reference;
   // Tanpa bunyi ayat, ACUANNYA yang naik jadi tulisan utama — jadi kartunya
-  // tetap punya isi, bukan kotak kosong bertanggal.
-  const hero = verse.trim() || reference;
+  // tetap punya isi, bukan kotak kosong bertanggal. Terjemahannya ikut naik:
+  // justru di sinilah acuan itu satu-satunya keterangan yang ada.
+  const hero = verse.trim() || acuan;
   const layout = layoutStory(hero);
   const height = (width * STORY_H) / STORY_W;
   const kanan = STORY_W - STORY_MARGIN;
@@ -128,7 +148,7 @@ export const BibleStoryCard = forwardRef<
           fontSize={34}
           fontFamily="Inter_600SemiBold"
           letterSpacing={2}>
-          — {reference}
+          — {acuan}
         </SvgText>
       ) : null}
 

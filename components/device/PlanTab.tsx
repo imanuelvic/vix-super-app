@@ -16,6 +16,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useDueJump } from '@/hooks/useDueJump';
 import { useFormSave } from '@/hooks/useFormSave';
 import {
   addDataPlan,
@@ -64,6 +65,14 @@ export function PlanTab({
   const { user } = useAuth();
   const meta = deviceMeta(device);
   const milik = plans.filter((p) => p.device === device);
+
+  // Buka sub-tab ini → daftarnya langsung datang ke paket yang menyalakan
+  // badge merahnya (aktif & sudah H-1). Ambangnya sama dengan penandanya.
+  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+    milik.find(
+      (p) => isActivePlan(p, now) && daysLeft(p, now) <= PLAN_ALERT_DAYS,
+    )?.id ?? null,
+  );
 
   const [editing, setEditing] = useState<DataPlan | 'new' | null>(null);
   const [fName, setFName] = useState('');
@@ -191,7 +200,10 @@ export function PlanTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={listRef}
+        onContentSizeChange={onContentSizeChange}
+        contentContainerStyle={styles.content}>
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>
             {meta.icon} Paket {meta.label} bulan ini
@@ -222,12 +234,13 @@ export function PlanTab({
             <PressableScale
               key={p.id}
               style={[styles.card, aktif && styles.cardActive]}
+              onLayout={(e) => setRowY(p.id, e.nativeEvent.layout.y)}
               onPress={() => openEdit(p)}>
               {/* Paket AKTIF yang sudah H-1 = yang dihitung badge merah tile
                   Device & sub-tabnya (PLAN_ALERT_DAYS). Ambangnya diambil dari
                   lib yang sama supaya tak pernah beda dari angka badge-nya. */}
               {aktif && sisaHari <= PLAN_ALERT_DAYS && (
-                <AttentionMark style={styles.cardMark} />
+                <AttentionMark corner />
               )}
               <View style={styles.cardTop}>
                 <VixText heading="bold" additionalStyle={styles.cardTitle}>
@@ -383,7 +396,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginTop: 12, marginBottom: 12 },
   empty: { textAlign: 'center', marginVertical: 10 },
-  cardMark: { position: 'absolute', top: -4, right: -4, zIndex: 1 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
