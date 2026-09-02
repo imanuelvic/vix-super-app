@@ -281,13 +281,17 @@ export function WeekTab({
                   checked && styles.stepRowDone,
                   isDue && styles.stepRowDue,
                 ]}>
+                {/* Penandanya duduk di pojok kanan-atas KARTUNYA, sama seperti
+                    seluruh app (`corner` di components/common/Badge.tsx). Dulu
+                    ia menempel di lingkaran centang, jadi di sini saja letaknya
+                    berbeda dari fitur lain. */}
+                {tertagih && <AttentionMark corner />}
                 <PressableScale
                   onPress={() => toggleStep(s.key)}
                   disabled={dariTulisan}
                   hitSlop={8}
                   haptic={checked ? 'light' : 'success'}>
                   <CheckCircle checked={checked} locked={dariTulisan} />
-                  {tertagih && <AttentionMark size={8} style={styles.stepMark} />}
                 </PressableScale>
                 <View style={styles.stepMain}>
                   <VixText
@@ -443,7 +447,6 @@ const styles = StyleSheet.create({
   bookTitle: { color: Color.TEXT_TITLE },
   bookSub: { color: Color.TEXT_LABEL },
   sectionTitle: { marginTop: 4, marginBottom: 8 },
-  stepMark: { position: 'absolute', top: 3, right: 3 },
   stepRow: {
     ...CARD,
     flexDirection: 'row',

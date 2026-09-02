@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { groupDigits, parseAmount } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 import {
   newPlaceId,
   placeKindMeta,
@@ -120,7 +120,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
       await savePlaces(user.uid, places.filter((p) => p.id !== editing.id));
       setEditing(null);
     } catch {
-      setFormError(SAVE_ERROR);
+      setFormError(DELETE_ERROR);
     } finally {
       setBusy(false);
     }

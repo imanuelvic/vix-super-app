@@ -218,8 +218,8 @@ export const CRITERIA_SHEETS: Record<
   { title: string; tab: string; sections: CriteriaSection[]; count: number }
 > = {
   calon: {
-    title: 'Pedoman Mengajukan Calon CORE Leader',
-    tab: '🧭 Calon CL',
+    title: 'Pedoman Ajuin Calon CORE Leader',
+    tab: '📄 Calon CL',
     sections: LEADER_CRITERIA,
     count: LEADER_CRITERIA_COUNT,
   },

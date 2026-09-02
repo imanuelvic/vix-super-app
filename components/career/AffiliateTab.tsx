@@ -30,7 +30,7 @@ import {
   type IdeaStage,
 } from '@/lib/affiliate';
 import { openExternalUrl } from '@/lib/linking';
-import { SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { Timestamp } from 'firebase/firestore';
 
 // Tab Affiliate 🤝 — topi kelima: Influencer / Content Creator.
@@ -130,7 +130,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
       );
       setEditing(null);
     } catch {
-      setFormError(SAVE_ERROR);
+      setFormError(DELETE_ERROR);
     } finally {
       setBusy(false);
     }

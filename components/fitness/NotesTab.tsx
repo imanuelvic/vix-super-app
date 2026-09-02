@@ -21,7 +21,7 @@ import {
 } from '@/lib/fitNotes';
 import { useFormSave } from '@/hooks/useFormSave';
 import { openExternalUrl } from '@/lib/linking';
-import { SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 
 // Sub-tab Notes 📝 — kumpulan tautan & catatan latihan.
 //
@@ -85,7 +85,7 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
       await saveFitNotes(user.uid, notes.filter((n) => n.id !== editing.id));
       setEditing(null);
     } catch {
-      setFormError(SAVE_ERROR);
+      setFormError(DELETE_ERROR);
     } finally {
       setBusy(false);
     }

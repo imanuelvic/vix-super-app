@@ -50,6 +50,18 @@ export function formatShortDayDate(d: Date): string {
 }
 
 /**
+ * Senin, 31 Agu 2026 — nama hari UTUH, bulan 3 huruf, tahun 4 angka.
+ *
+ * Tiga tetangganya cuma beda satu bagian, jadi gampang salah ambil:
+ *   formatFullDate      → Senin, 31 Agustus 2026  (bulannya utuh)
+ *   formatShortDayDate  → Sen, 31 Agu 2026        (harinya disingkat)
+ *   formatGreetingDate  → Senin, 31 Agu 26        (tahunnya 2 angka)
+ */
+export function formatDayDate(d: Date): string {
+  return `${DAY_NAMES[d.getDay()]}, ${formatShortDate(d)}`;
+}
+
+/**
  * Sab, 16 Agu 26 — "ddd, dd mmm yy". Tanggal paling ringkas: hari & bulan
  * 3 huruf, tanggal 2 digit, tahun 2 digit. Untuk kartu sempit yang tanggalnya
  * tidak boleh sampai membungkus ke baris berikutnya.

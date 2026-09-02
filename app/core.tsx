@@ -150,7 +150,7 @@ export default function CoreScreen() {
         // Visitation → 📜 Rules & Suggestions + 🕘 riwayat visitasi ·
         // Follow Up → 💬 template chat + 🙏 pokok doa bulanan ·
         // Leaders → 🗂️ Ex CORE Leader (yang sudah tidak dipegang) ·
-        // Multiplication → 🧭 Pedoman Calon CORE Leader.
+        // Multiplication → 📄 Pedoman Calon CORE Leader.
         // Monthly belum punya halaman pendamping.
         right={
           tab === 'visitation' ? (
@@ -187,12 +187,12 @@ export default function CoreScreen() {
           ) : tab === 'leaders' ? (
             <EmojiButton emoji="🗂️" onPress={() => router.push('/ex-leaders')} />
           ) : tab === 'multiplication' ? (
-            /* Pedoman 🧭 — dua lembar sekaligus: syarat calon CORE Leader
+            /* Pedoman 📄 — dua lembar sekaligus: syarat calon CORE Leader
                baru, dan tugas yang dipegangnya setelah memimpin. Tempatnya di
                sini karena keduanya dibaca tiap kali menyiapkan siapa yang akan
                memimpin CORE hasil pemekaran. */
             <EmojiButton
-              emoji="🧭"
+              emoji="📄"
               onPress={() => router.push('/leader-criteria')}
             />
           ) : undefined

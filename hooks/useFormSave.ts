@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 /**
  * Keadaan bersama untuk form di dalam sheet/modal: penanda sibuk + pesan gagal,
@@ -72,22 +72,35 @@ export function useFormSave(): {
    * memang hanya boleh tertutup saat berhasil.
    */
   save: (task: () => Promise<void>) => Promise<void>;
+  /**
+   * Sama persis dengan `save`, HANYA bunyi pesan gagalnya yang beda:
+   * "Gagal menghapus" (DELETE_ERROR), bukan "Gagal menyimpan".
+   *
+   * Dipisah karena tombol 🗑️ yang memakai `save` akan berkata "Gagal
+   * menyimpan" saat penghapusannya gagal — kalimat yang menunjuk perbuatan
+   * yang tidak sedang kamu lakukan, jadi kamu mengira isianmu yang hilang
+   * padahal barangnya yang masih ada.
+   */
+  remove: (task: () => Promise<void>) => Promise<void>;
 } {
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  async function save(task: () => Promise<void>) {
+  async function jalankan(task: () => Promise<void>, gagal: string) {
     if (busy) return;
     setBusy(true);
     setFormError(null);
     try {
       await task();
     } catch {
-      setFormError(SAVE_ERROR);
+      setFormError(gagal);
     } finally {
       setBusy(false);
     }
   }
 
-  return { busy, setBusy, formError, setFormError, save };
+  const save = (task: () => Promise<void>) => jalankan(task, SAVE_ERROR);
+  const remove = (task: () => Promise<void>) => jalankan(task, DELETE_ERROR);
+
+  return { busy, setBusy, formError, setFormError, save, remove };
 }

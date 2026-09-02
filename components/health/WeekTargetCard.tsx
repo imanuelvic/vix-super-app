@@ -33,7 +33,7 @@ export function WeekTargetCard({ km }: { km: number }) {
   const [target, setTarget] = useState<WeekDistanceTarget | null>(null);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const { busy, formError, setFormError, save } = useFormSave();
+  const { busy, formError, setFormError, save, remove } = useFormSave();
 
   useEffect(() => {
     if (!user) return;
@@ -63,7 +63,7 @@ export function WeekTargetCard({ km }: { km: number }) {
 
   async function hapus() {
     if (!user || busy) return;
-    await save(async () => {
+    await remove(async () => {
       await clearWeekTarget(user.uid);
       setOpen(false);
     });
@@ -114,10 +114,6 @@ export function WeekTargetCard({ km }: { km: number }) {
       <CenterDialog visible={open} onClose={() => setOpen(false)}>
         <VixText heading="title" additionalStyle={styles.dialogTitle}>
           🎯 Target Langkah Mingguan
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.dialogSub}>
-          Berapa km yang mau kamu kejar dalam seminggu? Hitungannya mulai dari
-          nol lagi tiap Senin.
         </VixText>
         <FormInput
           placeholder="mis. 25"
@@ -177,7 +173,6 @@ const styles = StyleSheet.create({
   left: { color: Color.MAIN_DARK },
   done: { color: Color.SUCCESS },
   dialogTitle: { marginBottom: 4 },
-  dialogSub: { color: Color.TEXT_LABEL, marginBottom: 10 },
   clearButton: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
   clearText: { color: Color.DANGER },
 });

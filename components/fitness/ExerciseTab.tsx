@@ -392,6 +392,13 @@ export function ExerciseTab({
                     exSkipped && styles.exCardSkipped,
                   ]}
                   onLayout={(e) => setRowY(ex.id, e.nativeEvent.layout.y)}>
+                  {/* Gerakan HARI INI yang belum dicentang = yang dihitung
+                      badge merah tile Fitness & sub-tab Exercise
+                      (fitPendingToday). Hari lain tidak ditandai — ia tidak
+                      pernah ikut ke badge-nya. Letaknya pojok kanan-atas
+                      kartu, sama seperti seluruh app (`corner` di
+                      components/common/Badge.tsx). */}
+                  {isToday && !exSkipped && !checked && <AttentionMark corner />}
                   <PressableScale
                     onPress={() => toggle(ex)}
                     disabled={!isToday || exSkipped}
@@ -403,13 +410,6 @@ export function ExerciseTab({
                       skipped={exSkipped}
                       locked={!isToday}
                     />
-                    {/* Gerakan HARI INI yang belum dicentang = yang dihitung
-                        badge merah tile Fitness & sub-tab Exercise
-                        (fitPendingToday). Hari lain tidak ditandai — ia tidak
-                        pernah ikut ke badge-nya. */}
-                    {isToday && !exSkipped && !checked && (
-                      <AttentionMark size={8} style={styles.exMark} />
-                    )}
                   </PressableScale>
 
                   <View style={styles.exMain}>
@@ -625,9 +625,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  // Titik kecil di baris gerakan — masuk ke dalam barisnya, sama seperti
-  // penanda di kartu (lihat `corner` di components/common/Badge.tsx).
-  exMark: { position: 'absolute', top: 3, right: 3 },
   exCardDone: {
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,

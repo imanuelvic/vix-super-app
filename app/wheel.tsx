@@ -24,7 +24,7 @@ import { ScoreMeter } from '@/components/wheel/ScoreMeter';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
-import { formatDecimal, formatFullDateTime } from '@/lib/format';
+import { formatDayDate, formatDecimal } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   MIN_FOCUS,
@@ -38,7 +38,6 @@ import {
   WHEEL_AREAS,
   WHEEL_REFLECTIONS,
   WHEEL_TIPS,
-  withReflection,
   type WheelAreaKey,
   type WheelData,
   type WheelFocus,
@@ -357,19 +356,10 @@ export default function WheelScreen() {
           {/* Pertanyaan refleksi 💭 — naik pelan sebelum kamu memilih angka.
               Ditaruh DI ATAS deretan nilai, bukan di bawahnya: gunanya
               menahan tangan sebentar supaya skornya dipikirkan, bukan
-              membenarkan skor yang sudah terlanjur dipilih. Sama untuk
-              assessment punyaku maupun punya CORE Leader — layarnya memang
-              satu. */}
-          <ReflectionBubbles
-            questions={WHEEL_REFLECTIONS[area.key]}
-            note={draftNotes[area.key] ?? ''}
-            onPick={(q) =>
-              setDraftNotes((prev) => ({
-                ...prev,
-                [area.key]: withReflection(prev[area.key] ?? '', q),
-              }))
-            }
-          />
+              membenarkan skor yang sudah terlanjur dipilih. BACA SAJA —
+              tidak ada yang bisa diklik di situ. Sama untuk assessment
+              punyaku maupun punya CORE Leader — layarnya memang satu. */}
+          <ReflectionBubbles questions={WHEEL_REFLECTIONS[area.key]} />
 
           {/* Pilihan nilai 1–10 */}
           <View style={styles.scoreWrap}>
@@ -551,6 +541,26 @@ export default function WheelScreen() {
                     </VixText>
                   )}
                 </View>
+
+                {/* Sebaran nada — sekaligus keterangan arti warnanya */}
+                <View style={styles.legendRow}>
+                  <View style={[styles.legendPill, styles.pillOk]}>
+                    <VixText heading="label" additionalStyle={styles.toneOk}>
+                      {okCount} sehat
+                    </VixText>
+                  </View>
+                  <View style={[styles.legendPill, styles.pillWarn]}>
+                    <VixText heading="label" additionalStyle={styles.toneWarn}>
+                      {warnCount} perlu naik
+                    </VixText>
+                  </View>
+                  <View style={[styles.legendPill, styles.pillDanger]}>
+                    <VixText heading="label" additionalStyle={styles.toneDanger}>
+                      {dangerCount} darurat
+                    </VixText>
+                  </View>
+                </View>
+
                 <PressableScale
                   style={styles.editButton}
                   onPress={startFocus}
@@ -640,19 +650,22 @@ export default function WheelScreen() {
                 })
               )}
 
-              {/* Kapan kuartal ini mulai diisi & terakhir disentuh. Keduanya
-                  ikut tercetak di PDF-nya juga. */}
+              {/* Kapan kuartal ini mulai diisi & terakhir disentuh. Di layar
+                  cukup TANGGALNYA — isian kuartalan disentuh beberapa kali per
+                  tiga bulan, jamnya tidak menjawab apa pun. PDF-nya tetap
+                  memakai cap lengkap berikut jam (lib/wheelPdf.ts): itu
+                  dokumen arsip, dan di situ ketepatannya baru berguna. */}
               {(data.createdAt || data.updatedAt) && (
                 <View style={styles.stampBox}>
                   {data.createdAt && (
                     <VixText heading="label" additionalStyle={styles.updatedLabel}>
-                      🆕 Dibuat: {formatFullDateTime(data.createdAt.toDate())}
+                      🆕 Dibuat: {formatDayDate(data.createdAt.toDate())}
                     </VixText>
                   )}
                   {data.updatedAt && (
                     <VixText heading="label" additionalStyle={styles.updatedLabel}>
                       🕒 Terakhir diubah:{' '}
-                      {formatFullDateTime(data.updatedAt.toDate())}
+                      {formatDayDate(data.updatedAt.toDate())}
                     </VixText>
                   )}
                 </View>
@@ -662,24 +675,6 @@ export default function WheelScreen() {
               <VixText heading="title" additionalStyle={styles.sectionTitle}>
                 📋 Skor per Area
               </VixText>
-              {/* Sebaran nada — sekaligus keterangan arti warnanya */}
-              <View style={styles.legendRow}>
-                <View style={[styles.legendPill, styles.pillOk]}>
-                  <VixText heading="label" additionalStyle={styles.toneOk}>
-                    {okCount} sehat
-                  </VixText>
-                </View>
-                <View style={[styles.legendPill, styles.pillWarn]}>
-                  <VixText heading="label" additionalStyle={styles.toneWarn}>
-                    {warnCount} perlu naik
-                  </VixText>
-                </View>
-                <View style={[styles.legendPill, styles.pillDanger]}>
-                  <VixText heading="label" additionalStyle={styles.toneDanger}>
-                    {dangerCount} darurat
-                  </VixText>
-                </View>
-              </View>
               {WHEEL_AREAS.map((a) => {
                 const score = data.scores[a.key] ?? 0;
                 const note = data.notes[a.key];

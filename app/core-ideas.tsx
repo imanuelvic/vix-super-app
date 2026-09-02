@@ -41,7 +41,7 @@ export default function CoreIdeasScreen() {
 
   const [ideas, setIdeas] = useState<CoreIdeasData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { busy, formError, setFormError, save } = useFormSave();
+  const { busy, formError, setFormError, save, remove } = useFormSave();
 
   const [editing, setEditing] = useState<CoreIdea | 'new' | null>(null);
   const [fText, setFText] = useState('');
@@ -111,7 +111,7 @@ export default function CoreIdeasScreen() {
   /** Hapus PERMANEN — daftarnya ditulis ulang tanpa ide ini. */
   async function handleDelete() {
     if (!user || !editing || editing === 'new' || busy) return;
-    await save(async () => {
+    await remove(async () => {
       await saveCoreIdeas(user.uid, {
         ...data,
         ideas: data.ideas.filter((i) => i.id !== editing.id),

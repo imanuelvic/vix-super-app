@@ -86,8 +86,8 @@ export function ProgramTab({ weights }: { weights: FitWeights }) {
           🚶 Rabu & Minggu — Jalan Pagi
         </VixText>
         <VixText heading="label" additionalStyle={styles.restText}>
-          Bukan bolos: otot dibangun saat istirahat. Jalan pagi boleh dicentang
-          sebagai bonus, tapi tidak pernah memutus streak 🔥.
+          Otot dibangun saat istirahat. Jalan pagi boleh dicentang
+          sebagai bonus, tapi tidak pernah memutus streak 🔥
         </VixText>
       </View>
     </ScrollView>

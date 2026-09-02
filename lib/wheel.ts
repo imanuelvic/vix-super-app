@@ -175,24 +175,10 @@ export const WHEEL_REFLECTIONS: Record<WheelAreaKey, string[]> = {
   ],
 };
 
-/**
- * Tempelkan satu pertanyaan refleksi ke catatan area itu, sebagai baris
- * sendiri — supaya jawabannya tinggal ditulis di bawahnya.
- *
- * Sudah ada di dalamnya → catatannya dikembalikan APA ADANYA. Gelembungnya
- * lewat berkali-kali, dan click kedua tidak boleh menggandakan pertanyaan yang
- * sama (apalagi sesudah jawabannya terlanjur ditulis).
- */
-export function withReflection(note: string, question: string): string {
-  if (hasReflection(note, question)) return note;
-  const isi = note.trimEnd();
-  return isi ? `${isi}\n• ${question}\n` : `• ${question}\n`;
-}
-
-/** Pertanyaan ini sudah diambil ke catatan? (gelembungnya ditandai ✓) */
-export function hasReflection(note: string, question: string): boolean {
-  return note.includes(question);
-}
+// withReflection & hasReflection DIHAPUS (2 Sep 2026) bersama fitur click
+// gelembungnya: keduanya cuma melayani "pertanyaan turun ke kolom catatan",
+// dan gelembungnya sekarang baca-saja. Catatan tiap area tetap ada &
+// tersimpan seperti biasa — yang hilang cuma jalan pintas mengisinya.
 
 export type WheelFocus = {
   area: WheelAreaKey;

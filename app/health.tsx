@@ -42,13 +42,17 @@ type HealthTab = 'steps' | 'race' | 'checkup';
 // Yang menjaga tubuh sekarang: langkah kaki, latihan di Fitness, berat badan
 // di Check-up, dan air putih di kartu sapaan Home.
 //
-// Race pindah ke sini dari Fun (30 Agu 2026) & ditaruh TEPAT di kanan Steps:
+// Race pindah ke sini dari Fun (30 Agu 2026) & berdampingan dengan Steps:
 // keduanya soal kaki yang sama — Steps mencatat latihannya sehari-hari, Race
 // mencatat hasilnya. Entrinya tidak berpindah dokumen; yang berubah cuma
 // tempat membacanya (lihat FunArchive).
+//
+// Urutannya Race dulu, baru Steps (2 Sep 2026). Yang masuk duluan BUKAN yang
+// paling kiri: layar ini tetap terbuka di Steps — lihat nilai awal
+// useTabScroll di bawah, dan jangan disamakan dengan urutan di sini.
 const TABS: BottomTab<HealthTab>[] = [
-  { key: 'steps', label: 'Steps', icon: 'figure.walk' },
   { key: 'race', label: 'Race', icon: 'figure.run' },
+  { key: 'steps', label: 'Steps', icon: 'figure.walk' },
   { key: 'checkup', label: 'Check-up', icon: 'stethoscope' },
 ];
 

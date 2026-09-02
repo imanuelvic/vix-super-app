@@ -19,10 +19,10 @@ import {
 } from '@/lib/leaderCriteria';
 import { shareCriteriaPdf } from '@/lib/leaderCriteriaPdf';
 
-// Pedoman CORE Leader 🧭 — dibuka dari tombol pojok kanan atas di
+// Pedoman CORE Leader 📄 — dibuka dari tombol pojok kanan atas di
 // CORE › Multiplication. DUA lembar pedoman NDC milikmu:
 //
-//   🧭 Calon CL — syarat menimbang siapa yang layak diajukan
+//   📄 Calon CL — syarat menimbang siapa yang layak diajukan
 //   📋 Tugas CL — pekerjaan yang dipegang setelah dia jadi CORE Leader
 //
 // Keduanya di SATU layar dengan segmen di atas, bukan dua tombol di pojok
@@ -62,7 +62,7 @@ export default function LeaderCriteriaScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Pedoman CL 🧭"
+        title="Pedoman CL 📄"
         subtitle={
           sheet === 'calon'
             ? `${count} butir sebelum mengajukan calon`
@@ -112,7 +112,7 @@ export default function LeaderCriteriaScreen() {
             berkasnya persis judul lembar itu. */}
         <CardActionButton
           icon="square.and.arrow.up"
-          label={`Share PDF · ${CRITERIA_SHEETS[sheet].title}`}
+          label={`${CRITERIA_SHEETS[sheet].title}`}
           variant="filled"
           onPress={handleShare}
           busy={pdf.busy === sheet}
@@ -123,12 +123,6 @@ export default function LeaderCriteriaScreen() {
         {sections.map((section) => (
           <Section key={section.title} section={section} />
         ))}
-
-        <VixText heading="label" additionalStyle={styles.footer}>
-          {sheet === 'calon'
-            ? 'Dipakai saat menimbang calon CORE Leader baru — baca ulang sebelum mengisi form pengajuan ke NDC 🙏'
-            : 'Diserahkan ke CORE Leader baru begitu dia mulai memimpin — ini gambaran utuh pekerjaannya 🙏'}
-        </VixText>
       </ScrollView>
     </SafeAreaView>
   );
@@ -205,5 +199,4 @@ const styles = StyleSheet.create({
   pointNumber: { color: Color.MAIN, minWidth: 16 },
   pointNumberWarn: { color: Color.DANGER },
   pointText: { flex: 1, color: Color.TEXT_PARAGRAPH },
-  footer: { textAlign: 'center', marginTop: 20 },
 });

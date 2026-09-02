@@ -35,7 +35,6 @@ import {
   RUN_WEEK_MILESTONES,
   stepsInDays,
   stepsToKm,
-  strideMeters,
   weekDayIds,
   type HealthProfile,
   type StepDaysMap,
@@ -294,11 +293,6 @@ export function StepsTab({
             </View>
           ))
         )}
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Jarak diperkirakan dari langkah × panjang langkah (±
-          {formatDecimal(strideMeters(profile.heightCm) * 100)} cm untuk tinggi{' '}
-          {profile.heightCm} cm).
-        </VixText>
       </View>
 
     </ScrollView>
@@ -381,14 +375,9 @@ function ManualStepsModal({
   return (
     <SheetModal
       visible={visible}
-      title="✍️ Catat Langkah Sendiri"
+      title="✍️ Catat Manual Steps"
       subtitle="Untuk jalan yang tidak terbawa HP"
       onClose={onClose}>
-      <VixText heading="label" additionalStyle={styles.modalHint}>
-        Isi TOTAL langkah tambahan hari ini — angka yang kamu lihat di jam
-        tanganmu, dikurangi yang sudah masuk sendiri ke Apple Health. Angka ini
-        ikut ke rekap mingguan, bulanan & pencapaianmu, jadi isi apa adanya.
-      </VixText>
       <FormInput
         placeholder="mis. 3500"
         value={teks}
@@ -401,8 +390,7 @@ function ManualStepsModal({
       />
       {current > 0 && (
         <VixText heading="label" additionalStyle={styles.modalHint}>
-          Sekarang tercatat {groupDigits(String(current))} langkah. Kosongkan
-          kolomnya untuk menghapus tambahan hari ini.
+          Sekarang tercatat {groupDigits(String(current))} langkah.
         </VixText>
       )}
       <FormError message={galat} gap="top" />
@@ -581,5 +569,4 @@ const styles = StyleSheet.create({
   msLabel: { color: Color.TEXT_PLACEHOLDER },
   msValue: { color: Color.TEXT_PLACEHOLDER },
   msValueOn: { color: Color.SUCCESS },
-  hint: { marginTop: 8 },
 });

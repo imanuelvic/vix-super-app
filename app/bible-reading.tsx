@@ -263,8 +263,8 @@ export default function BibleReadingScreen() {
             </VixText>
             <VixText heading="label" additionalStyle={styles.countdownSub}>
               {minutesLeft > 0
-                ? `Jendela ${meta.emoji} ${meta.label} tutup jam ${meta.toHour}.00. Lewat itu kartunya hilang dari Home & hari ini terlewat.`
-                : `Jam ${meta.fromHour}.00–${meta.toHour}.00 sudah habis. Masih boleh dicatat sekarang — yang hilang cuma kartunya di Home.`}
+                ? `Jendela ${meta.label} ${meta.emoji} akan tutup jam ${meta.toHour}.00.`
+                : `Jam ${meta.fromHour}.00–${meta.toHour}.00 sudah habis. Hilang streak.`}
             </VixText>
           </View>
         )}
