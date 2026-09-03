@@ -23,6 +23,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
+import { IconGlyph } from '@/components/ui/icon-glyph';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
@@ -874,13 +875,12 @@ export default function HomeScreen() {
                       if (user) logFeatureUse(user.uid, feature.key, feature.label);
                       router.push(feature.route);
                     }}>
-                    {/* Emoji hanya untuk tile yang lambangnya tidak ada di SF
-                        Symbols (Friends 🤝 — jabat tangan). Ukurannya disamakan
-                        dengan ikon di sebelahnya supaya barisnya tetap rata. */}
-                    {feature.emoji ? (
-                      <VixText additionalStyle={styles.tileEmoji}>
-                        {feature.emoji}
-                      </VixText>
+                    {/* IconGlyph hanya untuk tile yang lambangnya tidak ada di
+                        SF Symbols (Friends — jabat tangan, Married — cincin).
+                        Ukuran & pewarnaannya sama persis dengan IconSymbol di
+                        bawahnya, jadi seluruh barisnya tetap rata. */}
+                    {feature.glyph ? (
+                      <IconGlyph name={feature.glyph} size={30} color={feature.fg} />
                     ) : feature.icon ? (
                       <IconSymbol name={feature.icon} size={30} color={feature.fg} />
                     ) : null}
@@ -1052,9 +1052,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Sepadan dengan ikon 30pt di tile lain — emoji digambar lebih kecil dari
-  // kotak hurufnya, jadi angkanya sedikit lebih besar supaya bobotnya sama.
-  tileEmoji: { fontSize: 32, lineHeight: 40 },
   // Judul ditarik naik setengah baris → separuh atasnya menumpang di bagian
   // bawah tile (lineHeight label 19.5 ÷ 2 ≈ 10). Judul digambar SETELAH tile,
   // jadi otomatis berada di atasnya.

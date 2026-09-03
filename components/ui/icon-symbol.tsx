@@ -90,17 +90,15 @@ const MAPPING = {
   // Tombol kendali Tetris: putar balok & jatuhkan langsung ke dasar.
   'arrow.clockwise': 'rotate-right',
   'arrow.down.to.line': 'vertical-align-bottom',
-  // Tile Married 💍 di Home — berlian cincin (Material Icons tidak punya ikon
-  // cincin; "diamond" yang paling mendekati).
-  'diamond.fill': 'diamond',
   // Sub-tab Affiliate 🤝 di Career — toa/pengeras suara (content creator).
   'megaphone.fill': 'campaign',
   // Sub-tab Notes 📝 di Fitness — kumpulan tautan & catatan latihan.
   'note.text': 'sticky-note-2',
   // Sub-tab Token ⚡ di Residence — listrik prabayar.
   'bolt.circle.fill': 'offline-bolt',
-  // Fitur Friends 🤝 — sub-tab Split Bill & Places. (Tile Home-nya sendiri
-  // memakai emoji 🤝: SF Symbols tidak punya ikon jabat tangan sama sekali.)
+  // Fitur Friends 🤝 — sub-tab Split Bill & Places. (Tile Home-nya sendiri —
+  // dan tile Married — tidak lewat sini sama sekali: SF Symbols tak punya
+  // jabat tangan maupun cincin, jadi keduanya dilayani IconGlyph.)
   'receipt.fill': 'receipt-long',
   'cup.and.saucer.fill': 'local-cafe',
   // Fitur Device 📱 — tile Home + kedua sub-tab perangkatnya.

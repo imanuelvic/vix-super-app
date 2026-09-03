@@ -1,6 +1,7 @@
 import { type Href } from 'expo-router';
 
 import { Color } from '@/assets/style/color';
+import { type GlyphName } from '@/components/ui/icon-glyph';
 
 // Grid fitur di Home 🏠 — SATU sumber urutan & warnanya.
 //
@@ -17,16 +18,15 @@ export type HomeFeature = {
   key: string;
   label: string;
   /**
-   * Emoji sebagai ganti `icon`.
+   * Lambang di luar SF Symbols — lihat `components/ui/icon-glyph.tsx`.
    *
-   * Dipakai SATU tile saja — Friends 🤝 — dan itu bukan selera, tapi
-   * keterbatasan: SF Symbols tidak punya ikon jabat tangan sama sekali (yang
-   * ada cuma tangan melambai, bertepuk, & terangkat), sedangkan jabat tangan
-   * itulah lambang fiturnya. Salah satu dari keduanya harus mengalah, dan
-   * lambang yang benar lebih penting daripada rupa yang seragam.
+   * Dipakai dua tile: Friends (jabat tangan) & Married (cincin). Keduanya tidak
+   * ada di katalog Apple padahal justru itulah lambang fiturnya, jadi glifnya
+   * diambil dari @expo/vector-icons. Tetap satu warna & seukuran ikon lain —
+   * jadi barisnya rata, tidak seperti emoji yang warnanya diatur sistem.
    */
-  emoji?: string;
-  /** Wajib kalau `emoji` tidak diisi. */
+  glyph?: GlyphName;
+  /** Wajib kalau `glyph` tidak diisi. */
   icon?:
     | 'checklist'
     | 'banknote'
@@ -47,7 +47,6 @@ export type HomeFeature = {
     | 'bird.fill'
     | 'trophy.fill'
     | 'graduationcap.fill'
-    | 'diamond.fill'
     | 'iphone';
   route: Href;
   /** Latar pastel tile — dipakai lagi jadi pita header & pil tab di dalam fitur. */
@@ -90,10 +89,10 @@ export const HOME_FEATURES: HomeFeature[] = [
   { key: 'device', label: 'Device', icon: 'iphone', route: '/device', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
   { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },
   // Friends 🤝 — futsal rutin, patungan (Split Bill) & tempat nongkrong.
-  { key: 'friends', label: 'Friends', emoji: '🤝', route: '/friends', bg: Color.FRIENDS, fg: Color.FRIENDS_DARK, deep: Color.FRIENDS_DEEP },
+  { key: 'friends', label: 'Friends', glyph: 'handshake', route: '/friends', bg: Color.FRIENDS, fg: Color.FRIENDS_DARK, deep: Color.FRIENDS_DEEP },
   // Married 💍 — masih Coming Soon. Ditaruh paling belakang supaya urutan tile
   // yang sudah kamu hafal tidak bergeser sama sekali.
-  { key: 'married', label: 'Married', icon: 'diamond.fill', route: '/married', bg: Color.MARRIED, fg: Color.MARRIED_DARK, deep: Color.MARRIED_DEEP },
+  { key: 'married', label: 'Married', glyph: 'ring', route: '/married', bg: Color.MARRIED, fg: Color.MARRIED_DARK, deep: Color.MARRIED_DEEP },
 ];
 
 /**
