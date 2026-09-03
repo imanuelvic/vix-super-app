@@ -285,7 +285,7 @@ export async function sharePng(
  *
  * `story` membuka langsung kamera Story — di pojok kiri bawahnya ada pratinjau
  * foto TERBARU di galerimu, jadi gambar yang barusan disimpan tinggal
- * di-click sekali. `app` membuka Instagram apa adanya (untuk Feed, karena
+ * di-klik sekali. `app` membuka Instagram apa adanya (untuk Feed, karena
  * unggahan Feed memang lewat tombol + di dalam app-nya).
  *
  * iOS tidak mengizinkan aplikasi lain menyuntikkan gambar ke dalam Instagram

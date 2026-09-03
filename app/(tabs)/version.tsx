@@ -1,7 +1,6 @@
-import Constants from 'expo-constants';
-import * as Updates from 'expo-updates';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -11,13 +10,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import { useScrollTop } from '@/hooks/useScrollTop';
-import {
-  dayIdToDate,
-  formatFullDate,
-  formatShortDayDate,
-  formatShortDayDateTime,
-  monthLabel,
-} from '@/lib/format';
+import { dayIdToDate, formatShortDayDate, monthLabel } from '@/lib/format';
 import {
   aggregateDays,
   dayTotal,
@@ -32,15 +25,13 @@ import {
   type UsageDay,
 } from '@/lib/usage';
 
-type Message = { kind: 'info' | 'success' | 'error'; text: string };
-
-// Hari lahir aplikasi ini: Selasa, 21 Juli 2026 🎂
-const APP_BIRTHDAY = new Date(2026, 6, 21);
-
+// Tab System ⚙️ — laporan pemakaian fitur.
+//
+// Versi app & tombol update PINDAH ke layar sendiri (app/app-version.tsx),
+// pintunya pil "📱 Aplikasi" di pojok kanan judul.
 export default function VersionScreen() {
   const { user } = useAuth();
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<Message | null>(null);
+  const router = useRouter();
 
   // Tekan tab System lagi saat halamannya sedang dibuka → balik ke paling atas.
   const { ref: scrollRef } = useScrollTop();
@@ -54,7 +45,7 @@ export default function VersionScreen() {
   // Dua untungnya: render jadi murni (React Compiler tidak lagi menandainya),
   // dan lewat tengah malam `todayId` ikut berganti sendiri, jadi layar ini
   // tidak menampilkan angka kemarin kalau dibiarkan terbuka semalaman.
-  const { now, todayId } = useNow();
+  const { todayId } = useNow();
   const thisMonth = monthLabel();
   const monthRangeLabel = formatMonthRange();
   const weekRangeLabel = formatWeekRange();
@@ -88,53 +79,26 @@ export default function VersionScreen() {
   const weekTop = topFeatures(aggregateDays(weekMerged), 1)[0] ?? null;
   const weekTotal = weekMerged.reduce((sum, d) => sum + dayTotal(d), 0);
 
-  // Versi app dari app.json — ini yang jadi runtimeVersion (policy appVersion).
-  const appVersion = Constants.expoConfig?.version ?? '-';
-
-  // Umur aplikasi sejak pertama dibuat.
-  const appAgeDays =
-    Math.floor((now.getTime() - APP_BIRTHDAY.getTime()) / 86_400_000) + 1;
-
-  async function handleCheckUpdate() {
-    if (busy) return;
-    // Di Expo Go / mode development, OTA update tidak aktif —
-    // checkForUpdateAsync() akan reject. Beri tahu user, jangan error.
-    if (__DEV__ || !Updates.isEnabled) {
-      setMessage({
-        kind: 'info',
-        text: 'Update OTA hanya berfungsi di build EAS (bukan Expo Go / development).',
-      });
-      return;
-    }
-    setBusy(true);
-    setMessage({ kind: 'info', text: 'Memeriksa update…' });
-    try {
-      const check = await Updates.checkForUpdateAsync();
-      if (!check.isAvailable) {
-        setMessage({ kind: 'success', text: 'Aplikasi sudah versi terbaru ✅' });
-        return;
-      }
-      setMessage({ kind: 'info', text: 'Update ditemukan — mengunduh…' });
-      await Updates.fetchUpdateAsync();
-      setMessage({ kind: 'info', text: 'Memasang update…' });
-      // Restart app dengan bundle baru — layar akan reload sendiri.
-      await Updates.reloadAsync();
-    } catch {
-      setMessage({
-        kind: 'error',
-        text: 'Gagal memeriksa update. Cek koneksi internet lalu coba lagi.',
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
-        <VixText heading="header" additionalStyle={styles.title}>
-          System ⚙️
-        </VixText>
+        {/* Judul + pintu ke layar Version 📱 (versi terpasang & tarik update).
+            Isinya dulu menempel di ujung bawah layar ini, terkubur di bawah
+            laporan pemakaian — justru saat paling dibutuhkan. */}
+        <View style={styles.titleRow}>
+          <VixText heading="header" additionalStyle={styles.title}>
+            System ⚙️
+          </VixText>
+          <PressableScale
+            style={styles.appButton}
+            onPress={() => router.push('/app-version')}
+            hitSlop={8}>
+            <IconSymbol name="iphone" size={16} color={Color.MAIN_DARK} />
+            <VixText heading="bold" additionalStyle={styles.appButtonText}>
+              Aplikasi
+            </VixText>
+          </PressableScale>
+        </View>
 
         {/* ===== Fitur paling sering: minggu ini (kiri) & bulan ini (kanan) =====
             Sebelahan, bukan bertumpuk — keduanya menjawab pertanyaan yang sama
@@ -156,9 +120,6 @@ export default function VersionScreen() {
             <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
               🗓️ {weekRangeLabel}
             </VixText>
-            <VixText heading="label" additionalStyle={styles.usageHeroFoot}>
-              Sen–Min
-            </VixText>
           </View>
 
           <View style={styles.usageHero}>
@@ -173,9 +134,6 @@ export default function VersionScreen() {
             </VixText>
             <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
               🗓️ {monthRangeLabel}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.usageHeroFoot}>
-              reset tiap tanggal 1
             </VixText>
           </View>
         </View>
@@ -234,92 +192,34 @@ export default function VersionScreen() {
           )}
         </View>
 
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Aplikasi
-        </VixText>
-
-        {/* Kartu versi terpasang */}
-        <View style={styles.versionCard}>
-          <VixText heading="label" additionalStyle={styles.versionLabel}>
-            Versi Aplikasi
-          </VixText>
-          <VixText heading="header" additionalStyle={styles.versionValue}>
-            v{appVersion}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.versionLabel}>
-            🎂 Hari ke-{appAgeDays} sejak dibuat
-          </VixText>
-        </View>
-
-        {/* Detail teknis — berguna saat cek kenapa update tidak masuk */}
-        <View style={styles.detailCard}>
-          <DetailRow label="Dibuat" value={formatFullDate(APP_BIRTHDAY)} />
-          <DetailRow
-            label="Update terakhir"
-            value={
-              Updates.isEmbeddedLaunch || !Updates.createdAt
-                ? 'Belum ada — bundle build'
-                : formatShortDayDateTime(Updates.createdAt)
-            }
-          />
-          <DetailRow label="Runtime" value={Updates.runtimeVersion ?? '-'} />
-          <DetailRow label="Channel" value={Updates.channel ?? 'development'} />
-          <DetailRow
-            label="Update ID"
-            value={Updates.updateId ? Updates.updateId.slice(0, 8) : '-'}
-          />
-        </View>
-
-        <PressableScale
-          style={[styles.updateButton, busy && styles.updateButtonBusy]}
-          onPress={handleCheckUpdate}
-          disabled={busy}>
-          {busy ? (
-            <ActivityIndicator color={Color.TEXT_REVERSE} />
-          ) : (
-            <IconSymbol
-              name="arrow.triangle.2.circlepath"
-              size={20}
-              color={Color.TEXT_REVERSE}
-            />
-          )}
-          <VixText heading="bold" additionalStyle={styles.updateButtonText}>
-            Update Terbaru
-          </VixText>
-        </PressableScale>
-
-        {message && (
-          <VixText
-            heading="label"
-            additionalStyle={[
-              styles.message,
-              message.kind === 'success' && styles.messageSuccess,
-              message.kind === 'error' && styles.messageError,
-            ]}>
-            {message.text}
-          </VixText>
-        )}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-// Baris label–nilai di kartu detail.
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.detailRow}>
-      <VixText heading="label">{label}</VixText>
-      <VixText heading="bold" additionalStyle={styles.detailValue}>
-        {value}
-      </VixText>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
   title: { color: Color.MAIN, marginBottom: 16 },
+  // Pil "📱 Aplikasi" di pojok kanan judul — pintu ke layar Version.
+  appButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Color.MAIN,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 16,
+  },
+  appButtonText: { color: Color.MAIN_DARK },
   sectionTitle: { marginTop: 6, marginBottom: 10 },
   // Laporan pemakaian 📊
   // Dua kartu sebelahan; `alignItems: 'stretch'` (bawaan) menyamakan tingginya
@@ -336,9 +236,6 @@ const styles = StyleSheet.create({
   },
   usageHeroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   usageHeroValue: { color: Color.TEXT_REVERSE },
-  // Baris terakhir (keterangan rentang) didorong ke DASAR kartu, jadi kedua
-  // kartu punya garis bawah yang sejajar walau isinya beda tinggi.
-  usageHeroFoot: { color: Color.TEXT_ON_DARK_MUTED, marginTop: 'auto' },
   usageCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

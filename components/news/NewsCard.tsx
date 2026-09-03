@@ -13,7 +13,7 @@ import { newsAge } from '@/lib/news';
 // keduanya jadi prop: daftar tersimpan menambahkan baris "kapan disimpan", dan
 // di sana lambangnya selalu terisi karena semua isinya memang sudah tersimpan.
 //
-// Tombol penandanya BERSAUDARA dengan area click kartunya, bukan anaknya —
+// Tombol penandanya BERSAUDARA dengan area klik kartunya, bukan anaknya —
 // Pressable bersarang di iOS bikin tombol di dalam ikut memicu pembungkusnya,
 // jadi menyimpan berita malah membuka browser.
 export function NewsCard({

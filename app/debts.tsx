@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import {
   BottomTabs,
   withBadge,
@@ -319,6 +319,7 @@ export default function DebtsScreen() {
                   styles.card,
                   deadlineBorder(tone),
                   d.done && styles.cardDone,
+                  attentionBorder(debtUrgent(d, today)),
                 ]}
                 onLayout={(e) => setRowY(d.id, e.nativeEvent.layout.y)}
                 onPress={() => openEdit(d)}>

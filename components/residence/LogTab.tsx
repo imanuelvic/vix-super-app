@@ -3,8 +3,10 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
+import { Pagination } from '@/components/common/Pagination';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
+import { usePagination } from '@/hooks/usePagination';
 import { formatDate, monthLabel, sameMonth } from '@/lib/format';
 import {
   RESIDENCE_LOG_TYPES,
@@ -43,9 +45,12 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
     [logs],
   );
 
+  // 10 baris per halaman — catatan pengeluaran rumah menumpuk terus tiap bulan.
+  const { currentPage, pageCount, pageItems, setPage } = usePagination(logs);
+
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
         {/* Ringkasan Log: total pengeluaran rumah (selain air/listrik) bulan ini */}
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>
@@ -65,7 +70,7 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
             kategori 🏠 Residence, nanti otomatis muncul di sini.
           </VixText>
         ) : (
-          logs.map((item) => {
+          pageItems.map((item) => {
             const meta = TYPE_META[item.type];
             return (
               // `active={false}` + `disabled` = baris baca-saja, rupanya sama
@@ -85,6 +90,8 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
             );
           })
         )}
+
+        <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
       </ScrollView>
     </View>
   );

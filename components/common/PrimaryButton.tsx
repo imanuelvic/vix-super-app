@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react';
 import {
-  ActivityIndicator,
-  StyleSheet,
-  type StyleProp,
-  type ViewStyle,
+    ActivityIndicator,
+    StyleSheet,
+    type StyleProp,
+    type ViewStyle,
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -42,7 +42,7 @@ export function PrimaryButton({
       ]}
       onPress={onPress}
       disabled={busy}
-      // Aksi utama terasa lebih "berbobot" daripada click kartu biasa.
+      // Aksi utama terasa lebih "berbobot" daripada klik kartu biasa.
       haptic="medium">
       {busy ? (
         <ActivityIndicator color={textColor} />

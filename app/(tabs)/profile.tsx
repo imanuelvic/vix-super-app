@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  View,
-  type KeyboardTypeOptions,
+    ActivityIndicator,
+    Image,
+    ScrollView,
+    StyleSheet,
+    View,
+    type KeyboardTypeOptions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,37 +22,37 @@ import { SelectField, textOptions } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BodyCard } from '@/components/health/BodyCard';
 import { PersonalityTab } from '@/components/profile/PersonalityTab';
 import { QuadrantTab, type Quadrant } from '@/components/profile/QuadrantTab';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { pickCompressedPhoto } from '@/lib/family';
 import { formatDate, parseLongDate } from '@/lib/format';
 import {
-  BLOOD_TYPES,
-  subscribeHealthProfile,
-  type HealthProfile,
+    BLOOD_TYPES,
+    subscribeHealthProfile,
+    type HealthProfile,
 } from '@/lib/health';
-import {
-  EMPTY_SELF_KNOWLEDGE,
-  subscribeSelfKnowledge,
-  type SelfKnowledge,
-} from '@/lib/selfKnowledge';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { photoUri } from '@/lib/photo';
 import {
-  EMPTY_PROFILE,
-  GENDERS,
-  MARITAL_STATUSES,
-  RELIGIONS,
-  saveProfile,
-  subscribeProfile,
-  type Profile,
+    EMPTY_PROFILE,
+    GENDERS,
+    MARITAL_STATUSES,
+    RELIGIONS,
+    saveProfile,
+    subscribeProfile,
+    type Profile,
 } from '@/lib/profile';
+import {
+    EMPTY_SELF_KNOWLEDGE,
+    subscribeSelfKnowledge,
+    type SelfKnowledge,
+} from '@/lib/selfKnowledge';
 
 // Field teks profil (semua kecuali foto) — dipakai untuk form Edit & tampilan.
 type FieldKey = Exclude<keyof Profile, 'photo'>;
@@ -418,7 +418,7 @@ export default function ProfileScreen() {
         {/* Sepasang catatan hidup — sengaja DI SINI, bukan di grid Home:
             isinya paling pribadi (pertobatan, relasi, gaji) jadi tidak ikut
             terpampang saat app dibuka atau ditunjukkan ke orang lain, tapi
-            tetap cuma 2 click untuk dipantau rutin.
+            tetap cuma 2 klik untuk dipantau rutin.
               📜 History  = masa lalu, biar ingat dari mana kamu datang
               📍 Timeline = masa depan, biar tahu mau ke mana */}
         <View style={styles.lifeRow}>

@@ -3,37 +3,37 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOutDown,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  type SharedValue,
+    FadeIn,
+    FadeInDown,
+    FadeOutDown,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
+    type SharedValue,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import {
-  BottomTabs,
-  withBadge,
-  type BottomTab,
-} from '@/components/common/BottomTabs';
 import { AttentionMark } from '@/components/common/Badge';
-import { EditDelete } from '@/components/common/EditDelete';
-import { FormError } from '@/components/common/FormError';
-import { LoadingCenter } from '@/components/common/LoadingCenter';
-import { useTabScroll } from '@/components/common/useTabScroll';
+import {
+    BottomTabs,
+    withBadge,
+    type BottomTab,
+} from '@/components/common/BottomTabs';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { ChipRow } from '@/components/common/ChipRow';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { PriorityTab } from '@/components/tasks/PriorityTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -42,24 +42,24 @@ import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { loadErrorOf, saveErrorOf, SAVE_ERROR } from '@/lib/messages';
+import { loadErrorOf, SAVE_ERROR, saveErrorOf } from '@/lib/messages';
 import {
-  addRecurringTasks,
-  addTask,
-  deleteTask,
-  effectiveOtherTask,
-  generateRecurringDays,
-  MAX_RECURRING,
-  pruneOrphanTasks,
-  rolloverTasks,
-  setTaskDone,
-  subscribeOtherTasks,
-  subscribeTasks,
-  TASK_CATEGORIES,
-  updateTask,
-  type OtherTask,
-  type Task,
-  type TaskCategory,
+    addRecurringTasks,
+    addTask,
+    deleteTask,
+    effectiveOtherTask,
+    generateRecurringDays,
+    MAX_RECURRING,
+    pruneOrphanTasks,
+    rolloverTasks,
+    setTaskDone,
+    subscribeOtherTasks,
+    subscribeTasks,
+    TASK_CATEGORIES,
+    updateTask,
+    type OtherTask,
+    type Task,
+    type TaskCategory,
 } from '@/lib/tasks';
 
 type MainTab = 'daily' | 'priority';
@@ -120,7 +120,7 @@ export default function TasksScreen() {
     tabParam === 'priority' ? 'priority' : 'daily',
   );
 
-  // Param kategori berubah (mis. click task lain di Dashboard) → pindah kategori.
+  // Param kategori berubah (mis. klik task lain di Dashboard) → pindah kategori.
   useEffect(() => {
     if (validCategory) {
       setCategory(validCategory);
@@ -708,7 +708,7 @@ export default function TasksScreen() {
         </Animated.View>
       )}
 
-      {/* Backdrop transparan: click di luar menutup speed-dial.
+      {/* Backdrop transparan: klik di luar menutup speed-dial.
           Sengaja Pressable biasa — area penutup tidak perlu animasi tekan. */}
       {mainTab === 'daily' && fabOpen && (
         <Pressable

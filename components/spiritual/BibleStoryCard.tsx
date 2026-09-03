@@ -27,20 +27,26 @@ import { ARCHIVE_NAME, lineY, type ShareDesign } from '@/lib/shareImage';
 // memenuhi kanvas karena Instagram menaruh tombolnya di pita atas & bawah.
 // Susunannya tetap satu keluarga — kop kecil, tulisan RATA KIRI, dan kaki
 // berisi tanggal + vixtory.archive.
+//
+// Dipakai DUA layar, dan itu memang satu kartu yang sama:
+//   • Bagikan Ayat 📖  → kop "MIDDAY READING", teksnya ayat, ada acuannya.
+//   • Pause & Pray 🙏  → kop "PAUSE & PRAY", teksnya doa singkat, TANPA acuan.
+// Karena itu acuan & terjemahannya opsional: tanpa keduanya, baris "— acuan"
+// tidak digambar sama sekali (bukan tanda hubung yang menggantung).
 export const BibleStoryCard = forwardRef<
   Svg,
   {
-    /** Bunyi ayatnya (boleh kosong — acuannya yang jadi tokoh utama). */
+    /** Tulisan utamanya — bunyi ayat, atau doa singkat. */
     verse: string;
-    /** Acuan bacaannya, mis. "Mazmur 23:1-6". */
-    reference: string;
+    /** Acuan bacaannya, mis. "Mazmur 23:1-6". Kosong untuk kartu doa. */
+    reference?: string;
     /**
      * Singkatan terjemahannya, mis. "TB". Ikut dicetak di sebelah acuannya
      * karena acuan tanpa terjemahan itu setengah keterangan: "Amsal 1:4" di TB
      * dan di TSI bunyinya bisa jauh berbeda, dan yang membaca Story-mu tidak
      * punya cara lain untuk tahu yang mana.
      */
-    version: string;
+    version?: string;
     /** Kop kecil di atas, mis. "MORNING BIBLE READING". */
     sessionLabel: string;
     design: ShareDesign;
@@ -54,8 +60,8 @@ export const BibleStoryCard = forwardRef<
 >(function BibleStoryCard(
   {
     verse,
-    reference,
-    version,
+    reference = '',
+    version = '',
     sessionLabel,
     design,
     dateLabel,
@@ -64,9 +70,11 @@ export const BibleStoryCard = forwardRef<
   },
   ref,
 ) {
-  // "Amsal 1:4 (TB)". Terjemahan kosong tidak menyisakan kurung menganga.
+  // "Amsal 1:4 (TB)". Terjemahan kosong tidak menyisakan kurung menganga, dan
+  // acuan kosong (kartu doa) tidak menyisakan kurung tanpa isi.
   const versi = version.trim();
-  const acuan = versi ? `${reference} (${versi})` : reference;
+  const rujukan = reference.trim();
+  const acuan = rujukan && versi ? `${rujukan} (${versi})` : rujukan;
   // Tanpa bunyi ayat, ACUANNYA yang naik jadi tulisan utama — jadi kartunya
   // tetap punya isi, bukan kotak kosong bertanggal. Terjemahannya ikut naik:
   // justru di sinilah acuan itu satu-satunya keterangan yang ada.
@@ -139,8 +147,9 @@ export const BibleStoryCard = forwardRef<
 
       {/* Acuannya. Kalau tadi acuannya sendiri yang jadi tulisan utama
           (ayatnya belum diketik), baris ini tidak digambar lagi — percuma
-          menulis hal yang sama dua kali. */}
-      {verse.trim() ? (
+          menulis hal yang sama dua kali. Kartu doa tak punya acuan sama
+          sekali, jadi barisnya pun tidak ada. */}
+      {verse.trim() && acuan ? (
         <SvgText
           x={STORY_MARGIN}
           y={STORY_REF_Y}

@@ -15,8 +15,8 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import {
-  VisitationCardBody,
-  VisitationStatus,
+    VisitationCardBody,
+    VisitationStatus,
 } from '@/components/core/VisitationCardBody';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { useAuth } from '@/contexts/auth';
@@ -25,22 +25,22 @@ import { usePagination } from '@/hooks/usePagination';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
-  MEETING_KINDS,
-  saveVisitations,
-  subscribeCoreLeaders,
-  subscribeExLeaders,
-  subscribeVisitations,
-  visitDaysUntil,
-  type CoreLeader,
-  type MeetingKind,
-  type Visitation,
+    MEETING_KINDS,
+    saveVisitations,
+    subscribeCoreLeaders,
+    subscribeExLeaders,
+    subscribeVisitations,
+    visitDaysUntil,
+    type CoreLeader,
+    type MeetingKind,
+    type Visitation,
 } from '@/lib/core';
 import { deadlineTone } from '@/lib/deadline';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
 
 // Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
-// Click kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
+// Klik kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
 // hapus PERMANEN dari Firestore (benar-benar hilang, bukan nonaktif).
 export default function VisitationsScreen() {
   const { user } = useAuth();
@@ -173,7 +173,7 @@ export default function VisitationsScreen() {
             // Warna & label dari aturan bersama (lihat lib/deadline.ts).
             const tone = v.done ? 'unknown' : deadlineTone(days);
             return (
-              // Click → edit status/tanggal/catatan atau hapus permanen.
+              // Klik → edit status/tanggal/catatan atau hapus permanen.
               <PressableScale
                 key={v.id}
                 style={[styles.card, deadlineBorder(tone)]}

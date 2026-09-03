@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -230,18 +230,22 @@ export function PlanTab({
           const aktif = isActivePlan(p, now);
           const sisaHari = daysLeft(p, now);
           const perHari = usagePerDay(p, now);
+          // Penyebab badge-nya — dihitung sekali, dipakai garis merah & titik.
+          const perluIsi = aktif && sisaHari <= PLAN_ALERT_DAYS;
           return (
             <PressableScale
               key={p.id}
-              style={[styles.card, aktif && styles.cardActive]}
+              style={[
+                styles.card,
+                aktif && styles.cardActive,
+                attentionBorder(perluIsi),
+              ]}
               onLayout={(e) => setRowY(p.id, e.nativeEvent.layout.y)}
               onPress={() => openEdit(p)}>
               {/* Paket AKTIF yang sudah H-1 = yang dihitung badge merah tile
                   Device & sub-tabnya (PLAN_ALERT_DAYS). Ambangnya diambil dari
                   lib yang sama supaya tak pernah beda dari angka badge-nya. */}
-              {aktif && sisaHari <= PLAN_ALERT_DAYS && (
-                <AttentionMark corner />
-              )}
+              {perluIsi && <AttentionMark corner />}
               <View style={styles.cardTop}>
                 <VixText heading="bold" additionalStyle={styles.cardTitle}>
                   {p.name}

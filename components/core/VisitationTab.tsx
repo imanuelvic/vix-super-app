@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { deadlineBorder } from '@/components/common/Deadline';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -18,8 +18,8 @@ import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { LinkedNotesButton } from '@/components/core/LinkedNotesButton';
 import {
-  VisitationCardBody,
-  VisitationStatus,
+    VisitationCardBody,
+    VisitationStatus,
 } from '@/components/core/VisitationCardBody';
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -31,24 +31,24 @@ import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
 import {
-  markVisitationPdfSent,
-  MEETING_KINDS,
-  meetingKindLabels,
-  meetingKindMeta,
-  meetingLeaderNames,
-  needsPdfShare,
-  newVisitationId,
-  saveVisitations,
-  VISIT_TIPS,
-  visitDaysUntil,
-  type CoreLeader,
-  type MeetingKind,
-  type Visitation,
+    markVisitationPdfSent,
+    MEETING_KINDS,
+    meetingKindLabels,
+    meetingKindMeta,
+    meetingLeaderNames,
+    needsPdfShare,
+    newVisitationId,
+    saveVisitations,
+    VISIT_TIPS,
+    visitDaysUntil,
+    type CoreLeader,
+    type MeetingKind,
+    type Visitation,
 } from '@/lib/core';
 import {
-  EMPTY_CORE_NOTE_LINKS,
-  subscribeCoreNoteLinks,
-  type CoreNoteLinks,
+    EMPTY_CORE_NOTE_LINKS,
+    subscribeCoreNoteLinks,
+    type CoreNoteLinks,
 } from '@/lib/coreNotes';
 import { subscribeCoreRules, type CoreRule } from '@/lib/coreRules';
 import { deadlineTone } from '@/lib/deadline';
@@ -276,14 +276,16 @@ export function VisitationTab({
     const tone = v.done ? 'unknown' : deadlineTone(days);
     const perluKirim = needsPdfShare(v, today, todayId);
     return (
-      <View key={v.id} style={[styles.card, deadlineBorder(tone)]}>
+      <View
+        key={v.id}
+        style={[styles.card, deadlineBorder(tone), attentionBorder(perluKirim)]}>
       {/* Acara yang panduannya perlu dikirim hari ini = yang dihitung badge
           merah tile CORE & sub-tab Visitation (needsPdfShare). Aturannya
           dipanggil dari lib yang sama dengan badge-nya. */}
       {perluKirim && <AttentionMark corner />}
       <View style={styles.cardRow}>
       {/* Tekan bagian ini untuk edit / tandai selesai. Tombol share sengaja
-          jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin click
+          jadi SAUDARA, bukan anak — Pressable bersarang di iOS bikin klik
           tombolnya ikut membuka modal edit. */}
       <PressableScale style={styles.cardTapArea} onPress={() => openEdit(v)}>
         <VisitationCardBody visitation={v} leaders={namaLeaders} />
@@ -600,7 +602,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     gap: 3,
   },
-  // Isi kartu (area click) + tombol kirim PDF di kanan ATAS-nya.
+  // Isi kartu (area klik) + tombol kirim PDF di kanan ATAS-nya.
   // 'flex-start' menahan tombolnya tetap di ujung atas walau kartunya
   // memanjang karena agenda yang berbaris-baris.
   // 'stretch' → kolom kanan setinggi kartunya, jadi isinya bisa dipisah:

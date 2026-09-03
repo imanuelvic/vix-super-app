@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -13,10 +13,10 @@ import { VixText } from '@/components/common/VixText';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useEditParam } from '@/hooks/useEditParam';
 import {
-  deadlineDaysUntil,
-  freelanceReminderWindow,
-  invoiceTotal,
-  type FreelanceProject,
+    deadlineDaysUntil,
+    freelanceReminderWindow,
+    invoiceTotal,
+    type FreelanceProject,
 } from '@/lib/career';
 import { deadlineLabel, deadlineTone } from '@/lib/deadline';
 import { formatDate } from '@/lib/format';
@@ -25,8 +25,8 @@ import { formatRupiah } from '@/lib/transactions';
 // Tab Freelance 🌐: proyek website & aplikasi — siapa client-nya,
 // deadline kapan, requirement apa, dan fee-nya berapa.
 //
-// Di sini HANYA daftarnya. Click kartu → halaman rincian proyek (baca-saja),
-// click ✏️ → langsung ke halaman isian. Dulu kartunya membuka modal isian
+// Di sini HANYA daftarnya. Klik kartu → halaman rincian proyek (baca-saja),
+// klik ✏️ → langsung ke halaman isian. Dulu kartunya membuka modal isian
 // panjang; isian sepanjang itu (termasuk rincian biaya belasan baris) memang
 // bukan pekerjaan modal.
 export function FreelanceTab({
@@ -112,11 +112,15 @@ export function FreelanceTab({
           // rinciannya sudah terisi.
           const nilai = p.fee > 0 ? p.fee : invoiceTotal(items);
           return (
-            // Tombol ✏️ jadi SAUDARA area click, bukan anaknya — Pressable
-            // bersarang di iOS bikin click tombolnya ikut membuka kartunya.
+            // Tombol ✏️ jadi SAUDARA area klik, bukan anaknya — Pressable
+            // bersarang di iOS bikin klik tombolnya ikut membuka kartunya.
             <View
               key={p.id}
-              style={[styles.card, deadlineBorder(tone)]}
+              style={[
+                styles.card,
+                deadlineBorder(tone),
+                attentionBorder(freelanceReminderWindow(p, today)),
+              ]}
               onLayout={(e) => setRowY(p.id, e.nativeEvent.layout.y)}>
               {/* Proyek belum selesai yang deadline-nya sudah H-7 = yang
                   dihitung badge merah tile Career & sub-tab Freelance

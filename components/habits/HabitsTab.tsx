@@ -32,10 +32,10 @@ import {
   countedHabits,
   dailyScore,
   defaultSlot,
+  filledNoteLines,
   HABIT_AREAS,
   HABIT_SLOTS,
   habitArea,
-  filledNoteLines,
   habitLink,
   habitNoteFilled,
   habitNoteLines,
@@ -46,9 +46,9 @@ import {
   isNoteDrivenHabit,
   joinNoteLines,
   newHabitId,
-  splitNoteLines,
   saveHabits,
   slotMeta,
+  splitNoteLines,
   type HabitArea,
   type HabitLink,
   type HabitSlot,
@@ -69,7 +69,7 @@ import {
   type WeightTarget,
 } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
-import { deleteErrorOf, saveErrorOf, SAVE_ERROR } from '@/lib/messages';
+import { deleteErrorOf, SAVE_ERROR, saveErrorOf } from '@/lib/messages';
 
 export function HabitsTab({
   habits,
@@ -168,7 +168,7 @@ export function HabitsTab({
 
   const range = idealWeightRange(profile.heightCm);
   const grouped = habitsBySlot(habits);
-  // Saringan area hidup (click ikonnya di atas). null = tampilkan semua.
+  // Saringan area hidup (klik ikonnya di atas). null = tampilkan semua.
   // Berlaku BERSAMA tab sesi: yang tampil = area ini, di sesi yang sedang
   // dibuka. Sengaja tidak ikut kereset saat pindah sesi — supaya bisa menyusuri
   // satu area dari Pagi ke Malam tanpa memilih ulang.
@@ -277,14 +277,14 @@ export function HabitsTab({
   /**
    * Buka tempat kebiasaan ini dikerjakan: layar lain di dalam app, atau
    * aplikasi luar. Kalau aplikasinya belum terpasang, jatuh ke alamat webnya —
-   * jangan sampai click-nya terasa mati begitu saja.
+   * jangan sampai klik-nya terasa mati begitu saja.
    */
   function openHabitLink(link: HabitLink, habit?: ScheduledHabit) {
-    // `doneOnOpen` (mis. "Reading the News"): click-nya berarti "sekarang saya
+    // `doneOnOpen` (mis. "Reading the News"): klik-nya berarti "sekarang saya
     // kerjakan", jadi barisnya dicentang saat itu juga lalu layarnya dibuka.
     // Dicentang DULU supaya centangnya sudah terpasang begitu kembali dari
     // sana; kalau gagal menulis, pesannya muncul & layarnya tetap dibuka —
-    // menahan perpindahannya cuma bikin click-nya terasa mati.
+    // menahan perpindahannya cuma bikin klik-nya terasa mati.
     if (link.doneOnOpen && habit && !day.done[habit.id] && !day.skipped[habit.id]) {
       void handleToggle(habit);
     }
@@ -350,7 +350,7 @@ export function HabitsTab({
     try {
       await setHabitNote(user.uid, dayId, habit.id, text);
       if (isNoteDrivenHabit(habit)) {
-        // 🙏 Bersyukur 3 Hal minta KETIGA butirnya terisi, bukan sekadar
+        // 🙏 Bersyukur 3 Hal minta KETIGA poinnya terisi, bukan sekadar
         // panjang tulisannya (lihat habitNoteFilled di lib/habits.ts).
         const selesai = habitNoteFilled(habit, text);
         if (selesai !== !!day.done[habit.id]) {
@@ -564,8 +564,8 @@ export function HabitsTab({
         </View>
 
         {/* Lima area hidup hari ini — kelihatan mana yang masih bolong.
-            Sekaligus SARINGAN: click satu area → daftar di bawah hanya berisi
-            area itu; click lagi area yang sama → saringannya lepas.
+            Sekaligus SARINGAN: klik satu area → daftar di bawah hanya berisi
+            area itu; klik lagi area yang sama → saringannya lepas.
 
             TIGA keadaan, bukan dua: hijau = terjaga, netral = belum selesai
             (masih bisa berubah sampai tengah malam), MERAH = ada yang ditandai
@@ -663,7 +663,7 @@ export function HabitsTab({
             const checked = !skipped && !!day.done[habit.id];
             const inti = isCoreHabit(habit);
             // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
-            // dapat keterangan kecil + click yang langsung ke sana.
+            // dapat keterangan kecil + klik yang langsung ke sana.
             const rawLink = habitLink(habit);
             // Pintasan bertanda `whenDone` (📓 Jurnal → Instagram Feed) baru
             // muncul sesudah barisnya tercentang: feed-nya dibuat DARI tulisan
@@ -697,7 +697,7 @@ export function HabitsTab({
                     skipped && styles.rowSkipped,
                   ]}>
                   {/* Getaran "berhasil" khusus saat MENCENTANG — melepas
-                      centang cukup click biasa. Yang sudah dilewati tidak
+                      centang cukup klik biasa. Yang sudah dilewati tidak
                       bisa dicentang: batalkan ✗ dulu. */}
                   {/* Baris cermin yang perkaranya SUDAH SELESAI — tercentang
                       (mis. Bible Reading-nya sudah diisi) atau ✗ karena jendela
@@ -721,7 +721,7 @@ export function HabitsTab({
                   </PressableScale>
                   {/* Nama kebiasaan tidak bisa ditekan — ubah/urutkan/hapus
                       lewat tombol ✏️. KECUALI yang punya pintasan: di situ
-                      click membawa ke tempat kebiasaannya dikerjakan. */}
+                      klik membawa ke tempat kebiasaannya dikerjakan. */}
                   <PressableScale
                     style={styles.rowMain}
                     onPress={() => link && openHabitLink(link, habit)}
@@ -775,7 +775,7 @@ export function HabitsTab({
                     key={`${habit.id}-${dayId}`}
                     placeholder={habit.notePrompt ?? 'Tulis singkat saja…'}
                     value={day.notes[habit.id] ?? ''}
-                    // "🙏 Bersyukur 3 Hal" minta TIGA butir, bukan satu
+                    // "🙏 Bersyukur 3 Hal" minta TIGA poin, bukan satu
                     // paragraf — lihat habitNoteLines di lib/habits.ts.
                     lines={habitNoteLines(habit)}
                     onSave={(t) => handleNote(habit, t)}
@@ -1000,25 +1000,6 @@ export function HabitsTab({
   );
 }
 
-// Catatan di bawah kebiasaan yang memintanya (refleksi, syukur, rhema).
-//
-// Dulu kolom isian LANGSUNG di dalam daftar, dan itu tidak enak dipakai:
-// barisnya ada di tengah daftar yang panjang, sedangkan bagian atas (sapaan +
-// ringkasan + tab sesi) menempel di atas dan tab bawah menempel di bawah —
-// begitu keyboard iOS naik, sisa ruang untuk mengetik tinggal beberapa baris
-// dan tulisannya sendiri sering ketutupan.
-//
-// Sekarang barisnya cuma PRATINJAU yang bisa di-click; menulisnya di dalam
-// SheetModal, yang sudah punya penghindar keyboard sendiri dan bisa dibuat
-// selega yang dibutuhkan. Cara menyimpannya tidak berubah: sekali saat
-// selesai (tekan Simpan), bukan tiap huruf.
-// `lines` > 0 → catatannya BUKAN satu paragraf, melainkan daftar berbutir
-// sebanyak itu (mis. "🙏 Bersyukur 3 Hal" → 3 kotak kecil bernomor). Satu
-// kotak besar untuk tiga hal terbukti jadi satu kalimat panjang; tiga kotak
-// bernomor menagih tiga hal dengan sendirinya, tanpa perlu aturan apa pun.
-//
-// Yang tersimpan tetap SATU teks dipisah baris — tidak ada bentuk data baru
-// dan tidak ada migrasi (lihat splitNoteLines/joinNoteLines di lib/habits.ts).
 function HabitNote({
   placeholder,
   value,
@@ -1032,19 +1013,19 @@ function HabitNote({
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(value);
-  const [butir, setButir] = useState<string[]>(() =>
+  const [poin, setPoin] = useState<string[]>(() =>
     splitNoteLines(value, Math.max(lines, 1)),
   );
 
-  const berbutir = lines > 0;
-  // Pratinjau baris: butirannya dirangkai jadi satu baris pendek supaya kartu
+  const berpoin = lines > 0;
+  // Pratinjau baris: poinnya dirangkai jadi satu baris pendek supaya kartu
   // kebiasaannya tidak memanjang tiga kali lipat.
-  const pratinjau = berbutir
+  const pratinjau = berpoin
     ? filledNoteLines(value).join(' · ')
     : value;
 
   function simpan() {
-    const isi = berbutir ? joinNoteLines(butir) : text.trim();
+    const isi = berpoin ? joinNoteLines(poin) : text.trim();
     if (isi !== value) onSave(isi);
     setOpen(false);
   }
@@ -1056,7 +1037,7 @@ function HabitNote({
         onPress={() => {
           // selalu mulai dari yang tersimpan
           setText(value);
-          setButir(splitNoteLines(value, Math.max(lines, 1)));
+          setPoin(splitNoteLines(value, Math.max(lines, 1)));
           setOpen(true);
         }}>
         <VixText
@@ -1081,8 +1062,8 @@ function HabitNote({
             onConfirm={simpan}
           />
         }>
-        {berbutir ? (
-          butir.map((isi, i) => (
+        {berpoin ? (
+          poin.map((isi, i) => (
             <View key={i} style={styles.noteLineBox}>
               <VixText heading="label" additionalStyle={styles.noteLineLabel}>
                 {i + 1}.
@@ -1092,7 +1073,7 @@ function HabitNote({
                 placeholder={`Hal ke-${i + 1}`}
                 value={isi}
                 onChangeText={(t) =>
-                  setButir((lama) => lama.map((v, j) => (j === i ? t : v)))
+                  setPoin((lama) => lama.map((v, j) => (j === i ? t : v)))
                 }
                 autoFocus={i === 0}
               />
@@ -1231,7 +1212,7 @@ const styles = StyleSheet.create({
   noteHint: { color: Color.TEXT_LABEL },
   // Kolom isian DI DALAM modal — dibuat lega, karena di sinilah menulisnya.
   noteSheetInput: { minHeight: 180, textAlignVertical: 'top' },
-  // Tiga kotak kecil bernomor — bentuk untuk catatan yang isinya butiran.
+  // Tiga kotak kecil bernomor — bentuk untuk catatan yang isinya poinnya.
   noteLineBox: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -65,8 +65,8 @@ export default function LeaderCriteriaScreen() {
         title="Pedoman CL 📄"
         subtitle={
           sheet === 'calon'
-            ? `${count} butir sebelum mengajukan calon`
-            : `${count} butir tugas seorang CORE Leader`
+            ? `${count} poin sebelum mengajukan calon`
+            : `${count} poin tugas seorang CORE Leader`
         }
       />
 
@@ -99,7 +99,7 @@ export default function LeaderCriteriaScreen() {
             tabs={(['calon', 'tugas'] as CriteriaSheet[]).map((key) => ({
               key,
               label: CRITERIA_SHEETS[key].tab,
-              sub: `${CRITERIA_SHEETS[key].count} butir`,
+              sub: `${CRITERIA_SHEETS[key].count} poin`,
             }))}
             value={sheet}
             onChange={setSheet}
@@ -128,7 +128,7 @@ export default function LeaderCriteriaScreen() {
   );
 }
 
-/** Satu bagian pedoman: judul + kartu berisi butir bernomor. */
+/** Satu bagian pedoman: judul + kartu berisi poin bernomor. */
 function Section({ section }: { section: CriteriaSection }) {
   const warn = section.tone === 'warn';
   return (
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     borderColor: Color.DANGER,
   },
   pointRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  // Nomor butir dibuat lebar tetap supaya teksnya rata walau nomornya 2 digit.
+  // Nomor poin dibuat lebar tetap supaya teksnya rata walau nomornya 2 digit.
   pointNumber: { color: Color.MAIN, minWidth: 16 },
   pointNumberWarn: { color: Color.DANGER },
   pointText: { flex: 1, color: Color.TEXT_PARAGRAPH },

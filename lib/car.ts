@@ -33,8 +33,7 @@ export const CAR_INFO = {
   ownerName: 'Rendie Ferdinand Rumayar', // nama di STNK
   productionYear: 'Desember 2015',
   fuel: 'Pertamax (RON 92)',
-  handedOver: '26 Desember 2025', // diserahkan ke Imanuel
-  // STNK diperpanjang tiap tanggal 8 Maret.
+  handedOver: '26 Desember 2025',
   stnkMonth: 2, // 0–11 seperti Date JS (2 = Maret)
   stnkDay: 8,
 } as const;

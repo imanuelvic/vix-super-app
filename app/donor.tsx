@@ -21,22 +21,22 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
-  daysUntilEligible,
-  DONOR_REQUIREMENTS,
-  DONOR_TIPS,
-  EMPTY_DONOR,
-  newDonorScheduleId,
-  nextEligibleDate,
-  saveDonor,
-  scheduleDaysUntil,
-  subscribeDonor,
-  type DonorData,
-  type DonorSchedule,
+    daysUntilEligible,
+    DONOR_REQUIREMENTS,
+    DONOR_TIPS,
+    EMPTY_DONOR,
+    newDonorScheduleId,
+    nextEligibleDate,
+    saveDonor,
+    scheduleDaysUntil,
+    subscribeDonor,
+    type DonorData,
+    type DonorSchedule,
 } from '@/lib/donor';
 import { formatFullDate, formatMonthsDays } from '@/lib/format';
+import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
-import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
 
 // Donor Darah 🩸 — jadwal & tempat donor, hitung mundur boleh donor lagi,
 // catatan pribadi, plus syarat & tips donor.
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   },
   notesText: { color: Color.TEXT_PARAGRAPH },
   notesEmpty: { color: Color.TEXT_PLACEHOLDER },
-  // Butir syarat/tips di dalam modal — jaraknya dipegang tiap butir sendiri
+  // Poin syarat/tips di dalam modal — jaraknya dipegang tiap poin sendiri
   // (dulu oleh `gap` kartu dropdown yang sudah tidak ada lagi).
   infoItem: { color: Color.TEXT_PARAGRAPH, marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },

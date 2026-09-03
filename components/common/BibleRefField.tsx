@@ -16,6 +16,49 @@ import {
   type BibleTestament,
 } from '@/lib/bible';
 
+/** Satu kelompok kitab (Perjanjian Lama / Baru) beserta isinya. */
+type BookGroup = { t: BibleTestament; books: typeof BIBLE_BOOKS };
+
+// Daftar kitabnya sendiri — sama persis di kedua rupa pemilih (dialog tengah
+// layar & panel yang mengembang di tempat), jadi ditulis sekali di sini.
+function BookList({
+  grouped,
+  picked,
+  onPick,
+}: {
+  grouped: BookGroup[];
+  picked: string;
+  onPick: (name: string) => void;
+}) {
+  return (
+    <>
+      {grouped.map((g) => (
+        <View key={g.t}>
+          <VixText heading="label" additionalStyle={styles.groupTitle}>
+            {TESTAMENT_LABEL[g.t]}
+          </VixText>
+          {g.books.map((b) => (
+            <PressableScale
+              key={b.name}
+              style={[styles.bookRow, b.name === picked && styles.bookRowActive]}
+              onPress={() => onPick(b.name)}>
+              <VixText heading="bold" additionalStyle={styles.bookRowText}>
+                {b.name}
+              </VixText>
+              <VixText heading="label">{b.chapters} pasal</VixText>
+            </PressableScale>
+          ))}
+        </View>
+      ))}
+      {grouped.length === 0 && (
+        <VixText heading="label" additionalStyle={styles.empty}>
+          Kitab tidak ditemukan.
+        </VixText>
+      )}
+    </>
+  );
+}
+
 // Kolom acuan Alkitab: PILIH kitab dari daftar 66 kitab, lalu ketik pasal &
 // ayat (dari–sampai). Hasilnya satu teks rapi seperti "Galatia 4:4-7" yang
 // dikirim balik lewat `onChange` — jadi penyimpanannya tetap string biasa.
@@ -23,10 +66,21 @@ export function BibleRefField({
   value,
   onChange,
   editable = true,
+  inlinePicker = false,
 }: {
   value: string;
   onChange: (ref: string) => void;
   editable?: boolean;
+  /**
+   * Daftar kitabnya mengembang DI TEMPAT, bukan sebagai dialog tengah layar.
+   *
+   * Wajib dinyalakan kalau kolom ini dipakai di dalam modal (mis. sheet edit
+   * catatan bacaan): dialog pemilih kitab itu sendiri sebuah Modal, dan modal
+   * di atas modal tidak andal di iOS — persis alasan layar Baca Alkitab dibuat
+   * halaman penuh, bukan sheet. Di halaman penuh biarkan mati: dialog tengah
+   * layar memberi daftar yang jauh lebih lega.
+   */
+  inlinePicker?: boolean;
 }) {
   // Keempat bagiannya DITURUNKAN dari `value`, tidak disimpan lagi sebagai
   // state sendiri. Tiap perubahan memang langsung dikirim ke atas lewat
@@ -51,13 +105,17 @@ export function BibleRefField({
   }
 
   function pickBook(name: string) {
-    setPickerOpen(false);
-    setQuery('');
+    tutupPemilih();
     emit({ book: name });
   }
 
+  function tutupPemilih() {
+    setPickerOpen(false);
+    setQuery('');
+  }
+
   const meta = bibleBook(book);
-  const grouped = useMemo(() => {
+  const grouped: BookGroup[] = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = q
       ? BIBLE_BOOKS.filter((b) => b.name.toLowerCase().includes(q))
@@ -72,7 +130,9 @@ export function BibleRefField({
       {/* Pilih kitab */}
       <PressableScale
         style={styles.bookButton}
-        onPress={() => editable && setPickerOpen(true)}
+        onPress={() =>
+          editable && (pickerOpen ? tutupPemilih() : setPickerOpen(true))
+        }
         disabled={!editable}>
         <VixText
           heading="bold"
@@ -80,9 +140,28 @@ export function BibleRefField({
           📖 {book || 'Pilih kitab…'}
         </VixText>
         <VixText heading="label" additionalStyle={styles.bookChevron}>
-          ›
+          {inlinePicker && pickerOpen ? '⌄' : '›'}
         </VixText>
       </PressableScale>
+
+      {/* Daftar kitab yang mengembang di tempat — dipakai di dalam modal,
+          tempat dialog tengah layar tidak bisa dipanggil. */}
+      {inlinePicker && pickerOpen && (
+        <View style={styles.inlinePanel}>
+          <SearchBar
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Cari kitab…"
+          />
+          <ScrollView
+            style={styles.inlineList}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            <BookList grouped={grouped} picked={book} onPick={pickBook} />
+          </ScrollView>
+        </View>
+      )}
 
       {/* Pasal & ayat */}
       <View style={styles.numberRow}>
@@ -133,11 +212,8 @@ export function BibleRefField({
 
       {/* Daftar 66 kitab — bisa dicari */}
       <CenterDialog
-        visible={pickerOpen}
-        onClose={() => {
-          setPickerOpen(false);
-          setQuery('');
-        }}>
+        visible={!inlinePicker && pickerOpen}
+        onClose={tutupPemilih}>
         <VixText heading="title" additionalStyle={styles.modalTitle}>
           📖 Pilih Kitab
         </VixText>
@@ -147,29 +223,7 @@ export function BibleRefField({
           placeholder="Cari kitab…"
         />
         <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-          {grouped.map((g) => (
-            <View key={g.t}>
-              <VixText heading="label" additionalStyle={styles.groupTitle}>
-                {TESTAMENT_LABEL[g.t]}
-              </VixText>
-              {g.books.map((b) => (
-                <PressableScale
-                  key={b.name}
-                  style={[styles.bookRow, b.name === book && styles.bookRowActive]}
-                  onPress={() => pickBook(b.name)}>
-                  <VixText heading="bold" additionalStyle={styles.bookRowText}>
-                    {b.name}
-                  </VixText>
-                  <VixText heading="label">{b.chapters} pasal</VixText>
-                </PressableScale>
-              ))}
-            </View>
-          ))}
-          {grouped.length === 0 && (
-            <VixText heading="label" additionalStyle={styles.empty}>
-              Kitab tidak ditemukan.
-            </VixText>
-          )}
+          <BookList grouped={grouped} picked={book} onPick={pickBook} />
         </ScrollView>
       </CenterDialog>
     </View>
@@ -193,6 +247,18 @@ const styles = StyleSheet.create({
   bookText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   bookPlaceholder: { color: Color.TEXT_PLACEHOLDER, flexShrink: 1 },
   bookChevron: { color: Color.TEXT_LABEL },
+  // Panel mengembang: dibingkai supaya jelas ia MILIK tombol di atasnya, bukan
+  // bagian baru dari formulir. Tingginya dipatok — 66 kitab tak boleh mendorong
+  // kolom Pasal & ayat keluar dari layar.
+  inlinePanel: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 10,
+    gap: 8,
+  },
+  inlineList: { maxHeight: 240 },
   numberRow: { flexDirection: 'row', gap: 8 },
   numberBox: { flex: 1, gap: 4 },
   numberLabel: { marginLeft: 2 },

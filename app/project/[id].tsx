@@ -14,10 +14,10 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import {
-  deadlineDaysUntil,
-  invoiceTotal,
-  subscribeFreelance,
-  type FreelanceProject,
+    deadlineDaysUntil,
+    invoiceTotal,
+    subscribeFreelance,
+    type FreelanceProject,
 } from '@/lib/career';
 import { deadlineLabel, deadlineTone } from '@/lib/deadline';
 import { formatDate } from '@/lib/format';
@@ -30,7 +30,7 @@ import { formatRupiah } from '@/lib/transactions';
 // Dulu menekan kartu proyek langsung membuka modal isian; sekarang yang muncul
 // halaman ini. Bedanya bukan cuma rasa: yang paling sering kamu lakukan adalah
 // MELIHAT (deadline kapan, client siapa, tagihannya berapa) — bukan mengetik.
-// Mengubah datanya sekali click lagi, lewat tombol ✏️ di kanan atas.
+// Mengubah datanya sekali klik lagi, lewat tombol ✏️ di kanan atas.
 export default function ProjectScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -177,7 +177,7 @@ export default function ProjectScreen() {
               Belum ada rincian biaya
             </VixText>
             <VixText heading="label" additionalStyle={styles.estHint}>
-              Click ✏️ di kanan atas untuk menambah. Ini perkiraan tarif yang
+              Klik ✏️ di kanan atas untuk menambah. Ini perkiraan tarif yang
               dipakai app — angkanya masih bisa diubah per proyek:
             </VixText>
             {INVOICE_PRESETS.map((p) => (

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 
-// Getaran halus (haptic) saat menyentuh sesuatu — inilah yang bikin click
+// Getaran halus (haptic) saat menyentuh sesuatu — inilah yang bikin klik
 // terasa "nyata", bukan sekadar gambar yang berkedip. Ini juga yang bikin app
 // seperti Instagram/TikTok terasa mahal walau animasinya sederhana.
 //
@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 // di sini TIDAK butuh build EAS baru — cukup `eas update`.
 
 export type HapticKind =
-  | 'light' // click biasa: kartu, chip, tab, tombol kecil
+  | 'light' // klik biasa: kartu, chip, tab, tombol kecil
   | 'medium' // aksi berbobot: tombol aksi utama, konfirmasi
   | 'success' // berhasil: kebiasaan tercentang, data tersimpan
   | 'warning' // hati-hati: membuka konfirmasi hapus

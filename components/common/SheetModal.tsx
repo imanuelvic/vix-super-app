@@ -1,31 +1,31 @@
 import {
-  Children,
-  isValidElement,
-  useEffect,
-  useState,
-  type ReactNode,
+    Children,
+    isValidElement,
+    useEffect,
+    useState,
+    type ReactNode,
 } from 'react';
 import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
+    Gesture,
+    GestureDetector,
+    GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
@@ -111,7 +111,7 @@ export function SheetModal({
   }));
 
   // Seret gagang/judul ke bawah untuk menutup. activeOffsetY(12) supaya
-  // click biasa tidak langsung dianggap menyeret.
+  // klik biasa tidak langsung dianggap menyeret.
   const pan = Gesture.Pan()
     .activeOffsetY(12)
     .onUpdate((e) => {

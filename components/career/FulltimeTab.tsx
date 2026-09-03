@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -294,6 +294,7 @@ export function FulltimeTab({
                 styles.card,
                 item.status === 'done' && styles.cardDone,
                 mustMove && styles.cardMustMove,
+                attentionBorder(item.status !== 'done' && item.priority === 1),
               ]}
               onLayout={(e) => setRowY(item.id, e.nativeEvent.layout.y)}
               onPress={() => openEdit(item)}>

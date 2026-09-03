@@ -140,7 +140,7 @@ function renamedHabit(h: ScheduledHabit): ScheduledHabit {
 }
 
 // ===================== Kebiasaan yang centangnya dari catatan =====================
-// Sebagian kebiasaan buktinya BUKAN click, melainkan tulisannya. Daily
+// Sebagian kebiasaan buktinya BUKAN klik, melainkan tulisannya. Daily
 // Reflection Journal contohnya: mencentang tanpa menulis apa pun cuma bikin
 // angkanya bohong. Jadi centangnya dikunci & ditentukan panjang catatannya.
 
@@ -155,19 +155,19 @@ export function habitNoteDone(text: string): boolean {
  * Catatan kebiasaan INI sudah cukup untuk dihitung selesai?
  *
  * Aturannya beda menurut bentuk catatannya, dan bedanya bukan main-main:
- *   • berbutir (🙏 Bersyukur 3 Hal) → SEMUA butirnya harus terisi. Namanya
- *     sendiri menyebut tiga; tercentang dengan satu butir cuma bikin angkanya
+ *   • poin (🙏 Bersyukur 3 Hal) → SEMUA poin harus terisi. Namanya
+ *     sendiri menyebut tiga; tercentang dengan satu poin cuma bikin angkanya
  *     bohong, persis alasan centangnya dikunci.
  *   • satu paragraf (📓 Jurnal)     → cukup panjangnya (HABIT_NOTE_MIN).
  */
 export function habitNoteFilled(h: ScheduledHabit, text: string): boolean {
-  const butir = habitNoteLines(h);
-  if (butir > 0) return filledNoteLines(text).length >= butir;
+  const poin = habitNoteLines(h);
+  if (poin > 0) return filledNoteLines(text).length >= poin;
   return habitNoteDone(text);
 }
 
 /**
- * Centangnya ditentukan catatan, bukan click (sekarang: Daily Reflection
+ * Centangnya ditentukan catatan, bukan klik (sekarang: Daily Reflection
  * Journal).
  *
  * "rhema" TETAP dikenali: nama tersimpannya di Firestore masih yang lama, dan
@@ -179,7 +179,7 @@ export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
   return /rhema|reflection journal|bersyukur/i.test(h.label);
 }
 
-// ===================== Catatan yang isinya BUTIRAN =====================
+// ===================== Catatan yang isinya POIN =====================
 // Sebagian catatan harian bukan satu paragraf, tapi daftar pendek dengan
 // jumlah yang sudah tertentu. "🙏 Bersyukur 3 Hal" contohnya: namanya sendiri
 // sudah menyebut TIGA, tapi kolomnya cuma satu kotak besar — jadi yang
@@ -188,26 +188,26 @@ export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
 //
 // Yang disimpan TETAP satu teks di `habitDays/{hari}.notes[id]`, dipisah
 // baris. Tidak ada bentuk data baru, tidak ada migrasi: catatan lama yang
-// terlanjur satu kalimat terbaca sebagai butir pertama, dua sisanya kosong.
+// terlanjur satu kalimat terbaca sebagai poin pertama, dua sisanya kosong.
 
-/** Berapa butir yang diminta baris "Bersyukur 3 Hal". */
+/** Berapa poin yang diminta baris "Bersyukur 3 Hal". */
 export const GRATITUDE_LINES = 3;
 
-/** Baris yang catatannya daftar berbutir — 0 = satu kotak biasa. */
+/** Baris yang catatannya daftar poin — 0 = satu kotak biasa. */
 export function habitNoteLines(h: ScheduledHabit): number {
   return /bersyukur/i.test(h.label) ? GRATITUDE_LINES : 0;
 }
 
-/** Pecah catatan jadi tepat `lines` butir (kurang → dikosongkan). */
+/** Pecah catatan jadi tepat `lines` poin (kurang → dikosongkan). */
 export function splitNoteLines(text: string, lines: number): string[] {
   const isi = text.split('\n');
   return Array.from({ length: lines }, (_, i) => isi[i]?.trim() ?? '');
 }
 
 /**
- * Gabung butiran jadi satu teks simpanan. Butir kosong DI TENGAH tetap
- * disimpan sebagai baris kosong — kalau tidak, mengosongkan butir ke-2 akan
- * membuat butir ke-3 naik ke tempatnya, dan apa yang kamu tulis pindah baris
+ * Gabung poin jadi satu teks simpanan. Poin kosong DI TENGAH tetap
+ * disimpan sebagai baris kosong — kalau tidak, mengosongkan poin ke-2 akan
+ * membuat poin ke-3 naik ke tempatnya, dan apa yang kamu tulis pindah baris
  * sendiri. Baris kosong di EKOR dibuang supaya catatan yang benar-benar
  * kosong tetap terbaca kosong.
  */
@@ -217,7 +217,7 @@ export function joinNoteLines(lines: string[]): string {
   return bersih.join('\n');
 }
 
-/** Butir yang benar-benar terisi — untuk pratinjau & daftar riwayat. */
+/** Poin yang benar-benar terisi — untuk pratinjau & daftar riwayat. */
 export function filledNoteLines(text: string): string[] {
   return text
     .split('\n')
@@ -478,7 +478,7 @@ export const FITNESS_HABIT_ID = 'fitness-link';
 // ===================== Pintasan kebiasaan =====================
 // Sebagian kebiasaan sebenarnya DIKERJAKAN di layar lain (atau di aplikasi
 // lain). Daripada mengingat sendiri harus buka apa, baris-baris itu diberi
-// keterangan kecil + click yang langsung membawa ke tempatnya.
+// keterangan kecil + klik yang langsung membawa ke tempatnya.
 //
 // Warnanya sengaja mengikuti warna ubin fitur tujuannya di Home (atau warna
 // merek aplikasi luar), jadi tujuannya sudah kebaca sebelum teksnya dibaca.
@@ -488,7 +488,7 @@ export const FITNESS_HABIT_ID = 'fitness-link';
  *
  * Baris begini tidak bisa dicentang manual di Habits — buktinya ada di layar
  * lain, dan mencentangnya sendiri di sini cuma bikin angka hariannya bohong.
- * Lingkarannya dikunci abu-abu, dan click-nya membuka layar tujuannya.
+ * Lingkarannya dikunci abu-abu, dan klik-nya membuka layar tujuannya.
  *
  * Aturan "sudah"-nya masing-masing:
  *   fitness       → semua gerakan sesi hari ini beres (lib/fitness.ts)
@@ -530,8 +530,8 @@ export type HabitLink = {
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
   external?: { scheme: string; web: string };
   /**
-   * Ada = centangnya TIDAK di-click di Habits, melainkan ikut layar tujuan.
-   * Baris begini dikunci: lingkarannya abu-abu & click-nya membuka tujuan.
+   * Ada = centangnya TIDAK di-klik di Habits, melainkan ikut layar tujuan.
+   * Baris begini dikunci: lingkarannya abu-abu & klik-nya membuka tujuan.
    */
   mirrorOf?: HabitMirror;
   /**
@@ -540,8 +540,8 @@ export type HabitLink = {
    * Bedanya dengan `mirrorOf`: di sana centangnya menunggu bukti di layar
    * tujuan (bacaan tercatat, latihan beres). Di sini tidak ada yang bisa
    * dijadikan bukti — membaca berita tak meninggalkan jejak — jadi yang
-   * dihitung adalah keputusannya: click = "sekarang saya baca", dan app
-   * langsung membawanya ke sana. Lingkarannya tetap bisa di-click sendiri,
+   * dihitung adalah keputusannya: klik = "sekarang saya baca", dan app
+   * langsung membawanya ke sana. Lingkarannya tetap bisa di-klik sendiri,
    * jadi centangnya masih bisa dibatalkan kalau ternyata batal membaca.
    */
   doneOnOpen?: boolean;
@@ -608,7 +608,7 @@ export const HABIT_LINKS: HabitLink[] = [
     external: { scheme: 'instagram://app', web: 'https://www.instagram.com/' },
   },
   // 🦉 Play Duolingo → aplikasi Duolingo. Sama seperti Instagram: pintunya
-  // aplikasi luar, jadi centangnya TETAP di-click sendiri — membuka Duolingo
+  // aplikasi luar, jadi centangnya TETAP di-klik sendiri — membuka Duolingo
   // belum tentu menyelesaikan pelajarannya, dan angka harian yang dicentang
   // sendiri lebih jujur daripada yang tercentang cuma karena app terbuka.
   //
@@ -655,7 +655,7 @@ export const HABIT_LINKS: HabitLink[] = [
     mirrorOf: 'priority',
   },
   // Baca Alkitab pagi, siang & malam — tujuannya layar yang sama dengan kartu
-  // di Home, jadi click dari mana pun mendarat di tempat yang sama. Ketiganya
+  // di Home, jadi klik dari mana pun mendarat di tempat yang sama. Ketiganya
   // ikut catatan bacaannya: tercentang sesudah "✅ Sudah baca" di sana.
   {
     match: /morning bible reading/i,

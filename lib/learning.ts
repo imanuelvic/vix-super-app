@@ -1,17 +1,17 @@
 import {
-  collection,
-  deleteField,
-  doc,
-  onSnapshot,
-  setDoc,
-  type FirestoreError,
+    collection,
+    deleteField,
+    doc,
+    onSnapshot,
+    setDoc,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { type LoginStreak as WeekStreak } from './achievements';
 import { db } from './firebase';
 import { dayIdToDate } from './format';
-import { liveDoc } from './liveDoc';
 import { dayDocId } from './health';
+import { liveDoc } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 import { weekStart } from './usage';
 
@@ -585,12 +585,12 @@ export function weekComplete(steps: Record<string, boolean>): boolean {
 
 // ===================== Langkah yang centangnya dari tulisan =====================
 // Aturan yang sama persis dengan kebiasaan "Daily Reflection Journal" di tab
-// Habits (lihat habitNoteDone di lib/habits.ts): buktinya BUKAN click,
+// Habits (lihat habitNoteDone di lib/habits.ts): buktinya BUKAN klik,
 // melainkan tulisannya. Mencentang "Rangkum" tanpa menulis apa pun cuma
 // membuat angka mingguannya bohong — dan justru langkah inilah yang membuat
 // ilmunya nempel, jadi ia yang paling merugikan kalau dicentang kosong.
 
-/** Langkah yang centangnya ditentukan isi rangkumannya, bukan click. */
+/** Langkah yang centangnya ditentukan isi rangkumannya, bukan klik. */
 export const NOTE_DRIVEN_STEP: LearningStep = 'summarize';
 
 /**

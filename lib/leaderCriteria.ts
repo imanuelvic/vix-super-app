@@ -7,7 +7,7 @@
 // Tidak ada satu pun pembacaan Firestore untuk layar ini.
 //
 // Kalimatnya tidak diubah maknanya. Satu-satunya perbaikan: salah ketik
-// "dihakmi" → "dihakimi" di butir pertama 1 Timotius.
+// "dihakmi" → "dihakimi" di poin pertama 1 Timotius.
 
 /** Visi yang jadi payung seluruh pedoman ini. */
 export const NDC_VISION =
@@ -30,7 +30,7 @@ export type CriteriaSection = {
   /**
    * 'warn' = bagian PERINGATAN: kartunya bernuansa merah samar. Yang di sini
    * bukan daftar tugas, melainkan hal yang bisa merugikan CORE kalau
-   * dilanggar — jadi tampilannya memang harus beda, bukan sekadar butir ke-43.
+   * dilanggar — jadi tampilannya memang harus beda, bukan sekadar poin ke-43.
    */
   tone?: 'warn';
   points: string[];
@@ -196,12 +196,12 @@ export const LEADER_DUTIES: CriteriaSection[] = [
   },
 ];
 
-/** Jumlah butir sebuah lembar pedoman — dipakai subjudul & keterangan tabnya. */
+/** Jumlah poin sebuah lembar pedoman — dipakai subjudul & keterangan tabnya. */
 export function criteriaCount(sections: CriteriaSection[]): number {
   return sections.reduce((sum, s) => sum + s.points.length, 0);
 }
 
-/** Jumlah seluruh butir — dipakai subjudul layarnya. */
+/** Jumlah seluruh poin — dipakai subjudul layarnya. */
 export const LEADER_CRITERIA_COUNT = criteriaCount(LEADER_CRITERIA);
 export const LEADER_DUTIES_COUNT = criteriaCount(LEADER_DUTIES);
 

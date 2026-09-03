@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { LinkedNotesButton } from '@/components/core/LinkedNotesButton';
 import { DateField } from '@/components/common/DateField';
 import { EditButton } from '@/components/common/EditButton';
 import { EditFooter } from '@/components/common/EditFooter';
@@ -17,6 +16,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { StickyTop } from '@/components/common/StickyTop';
 import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
+import { LinkedNotesButton } from '@/components/core/LinkedNotesButton';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
@@ -24,19 +24,19 @@ import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import {
-  deleteMonthlyMeeting,
-  emptyMonthlyPoints,
-  MAX_MEETING_PHOTOS,
-  MONTHLY_AGENDA_POINTS,
-  newMonthlyMeetingId,
-  pickMeetingPhoto,
-  saveMonthlyMeeting,
-  type MonthlyMeeting,
+    deleteMonthlyMeeting,
+    emptyMonthlyPoints,
+    MAX_MEETING_PHOTOS,
+    MONTHLY_AGENDA_POINTS,
+    newMonthlyMeetingId,
+    pickMeetingPhoto,
+    saveMonthlyMeeting,
+    type MonthlyMeeting,
 } from '@/lib/core';
 import {
-  EMPTY_CORE_NOTE_LINKS,
-  subscribeCoreNoteLinks,
-  type CoreNoteLinks,
+    EMPTY_CORE_NOTE_LINKS,
+    subscribeCoreNoteLinks,
+    type CoreNoteLinks,
 } from '@/lib/coreNotes';
 import { formatCompactDateTime, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, PHOTO_ERROR } from '@/lib/messages';
@@ -192,8 +192,8 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
       <View key={m.id} style={styles.card}>
         {/* Semua tombol ada DI ATAS, sebaris dengan judul — tak perlu
             menggulung notulen yang panjang dulu untuk bisa mengubah atau
-            mengirimnya. Tombolnya sengaja jadi SAUDARA dari area click, bukan
-            anaknya: Pressable bersarang di iOS bikin click tombolnya ikut
+            mengirimnya. Tombolnya sengaja jadi SAUDARA dari area klik, bukan
+            anaknya: Pressable bersarang di iOS bikin klik tombolnya ikut
             membuka/menutup kartu.
             Panah buka/tutup tidak dipakai lagi — seluruh blok judul memang
             sudah jadi sakelarnya, jadi panahnya cuma memakan tempat. */}
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 10,
   },
-  // Judul (area click buka/tutup) + tombol-tombolnya, semua di baris paling
+  // Judul (area klik buka/tutup) + tombol-tombolnya, semua di baris paling
   // atas. 'flex-start' menahan tombol tetap di KANAN ATAS walau judulnya
   // memanjang jadi beberapa baris.
   cardHeader: {

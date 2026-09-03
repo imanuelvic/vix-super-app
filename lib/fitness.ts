@@ -10,7 +10,6 @@ import { type LoginStreak as DayStreak } from './achievements';
 import { pickOfDay, weekIndex } from './core';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
 import { dayIdToDate, formatDecimal } from './format';
 import { FITNESS_HABIT_ID } from './habits';
 import {
@@ -24,6 +23,7 @@ import {
   type HealthProfile,
   type WeightTarget,
 } from './health';
+import { liveDoc } from './liveDoc';
 import { EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Fitness 💪 — program LEAN-ATLETIS: menaikkan otot dada, lengan & perut
@@ -51,7 +51,7 @@ import { EMPTY_DAY_STREAK, nextStreak } from './streak';
 // Catatan: ini panduan latihan umum, bukan nasihat medis. Kalau ada keluhan
 // sendi/jantung atau cedera, konsultasi ke dokter atau pelatih dulu.
 
-export type FitBlock = 'A' | 'B';
+export type FitBlock = 'A' | 'B' | 'C';
 
 /**
  * Jenis sesi — menentukan perlakuan streak 🔥:
@@ -296,14 +296,126 @@ const BLOCK_B: FitSession[] = [
   WALK_SUN,
 ];
 
+// ============ BLOK C — bisep & persiapan race 🏁 ============
+//
+// Bedanya dari A & B ada dua:
+//   1. BISEP dapat porsi utama — dilatih tiga hari (Senin, Kamis, Sabtu),
+//      bukan sekali seminggu sebagai gerakan penutup.
+//   2. MINGGU berubah dari jalan santai jadi LONG RUN persiapan race — hari
+//      terpenting kalau sedang menyiapkan lomba (lihat sub-tab Race di Health).
+//
+// ⚠️ Akibat yang disengaja: di blok ini Minggu jadi hari INTI (`kind: 'run'`),
+// jadi sesinya MENAIKKAN streak 🔥 kalau beres dan MEMUTUSNYA kalau dilewati.
+// Di blok A & B, Minggu tidak pernah menyentuh streak sama sekali. Long run
+// persiapan race memang bukan bonus yang boleh dilewatkan begitu saja.
+//
+// Beban tersimpan ikut id gerakannya, jadi gerakan yang idnya sama dengan blok
+// A/B (barbellcurl, hammercurl, …) langsung memakai beban yang sudah kamu
+// setel di sana — bukan mulai dari saran awal lagi.
+
+const BLOCK_C: FitSession[] = [
+  {
+    weekday: 1,
+    kind: 'strength',
+    emoji: '💪',
+    title: 'Bisep & Punggung',
+    focus: 'Bisep porsi utama, lats, perut bawah',
+    minutes: 50,
+    exercises: [
+      { id: 'barbellcurl', emoji: '💪', name: 'Barbell Curl', sets: 4, reps: '8–10', weight: 15 },
+      { id: 'inclinecurl', emoji: '🔥', name: 'Incline Dumbbell Curl', sets: 3, reps: '10–12', weight: 8 },
+      { id: 'hammercurl', emoji: '⚡', name: 'Hammer Curls', sets: 3, reps: '12', weight: 10, video: 'https://youtu.be/L1bDrPlfu1Q' },
+      { id: 'barbellrow', emoji: '🏋️', name: 'Barbell Row (bungkuk)', sets: 3, reps: '8–10', weight: 20 },
+      { id: 'dbrow', emoji: '💥', name: 'Single-Arm Dumbbell Row', sets: 3, reps: '12 / lengan', weight: 8, video: 'https://youtu.be/6KNmHxw-SpE' },
+      { id: 'reversecrunch', emoji: '😥', name: 'Reverse Crunch', sets: 3, reps: '15', weight: null, core: true },
+    ],
+  },
+  {
+    weekday: 2,
+    kind: 'run',
+    emoji: '🏃',
+    title: 'Lari Mudah + Core',
+    focus: 'Menumpuk jarak tanpa menguras tenaga untuk long run',
+    minutes: 45,
+    exercises: [
+      { id: 'warmupwalk', emoji: '🚶', name: 'Jalan cepat pemanasan', sets: 1, reps: '5 menit', weight: null, cardio: true },
+      { id: 'easyrun', emoji: '🏃', name: 'Lari santai — masih sanggup ngobrol', sets: 1, reps: '30 menit', weight: null, cardio: true },
+      { id: 'plank', emoji: '🧘', name: 'Plank', sets: 3, reps: '45 detik', weight: null, video: 'https://youtu.be/Fcbw82ykBvY', core: true },
+      { id: 'hollowhold', emoji: '⚡', name: 'Hollow Body Hold', sets: 3, reps: '40 detik', weight: null, core: true },
+    ],
+  },
+  WALK_WED,
+  {
+    weekday: 4,
+    kind: 'strength',
+    emoji: '💥',
+    title: 'Dada, Bahu & Bisep',
+    focus: 'Dorongan atas badan, ditutup bisep satu tangan',
+    minutes: 50,
+    exercises: [
+      { id: 'dbbench', emoji: '💪', name: 'Dumbbell Bench Press', sets: 4, reps: '10–12', weight: 12 },
+      { id: 'shoulderpress', emoji: '⚡', name: 'Dumbbell Shoulder Press', sets: 3, reps: '10–12', weight: 14, video: 'https://youtu.be/qEwKCR5JCog' },
+      { id: 'lateralraise', emoji: '🏋️', name: 'Lateral Raises', sets: 3, reps: '12–15', weight: 5 },
+      { id: 'overheadext', emoji: '💥', name: 'Overhead Triceps Extension', sets: 3, reps: '10–12', weight: 8 },
+      { id: 'concentrationcurl', emoji: '💪', name: 'Concentration Curl', sets: 3, reps: '12 / lengan', weight: 8 },
+      { id: 'crunches', emoji: '🚀', name: 'Crunches', sets: 3, reps: '20', weight: null, video: 'https://youtu.be/5ER5Of4MOPI', core: true },
+    ],
+  },
+  {
+    weekday: 5,
+    kind: 'run',
+    emoji: '⚡',
+    title: 'Lari Tempo Persiapan Race',
+    focus: 'Membiasakan kecepatan race, bukan lari santai',
+    minutes: 45,
+    exercises: [
+      { id: 'warmupjog', emoji: '🚶', name: 'Jogging pemanasan', sets: 1, reps: '8 menit', weight: null, cardio: true },
+      { id: 'temporun', emoji: '⚡', name: 'Tempo — kecepatan targetmu di race', sets: 1, reps: '25 menit', weight: null, cardio: true },
+      { id: 'cooldownwalk', emoji: '🚶', name: 'Jalan pendinginan', sets: 1, reps: '5 menit', weight: null, cardio: true },
+      { id: 'russiantwist', emoji: '💥', name: 'Russian Twists', sets: 3, reps: '20', weight: 4, video: 'https://youtu.be/DJQGX2J4IVw', core: true },
+    ],
+  },
+  {
+    weekday: 6,
+    kind: 'strength',
+    emoji: '🦵',
+    title: 'Kaki & Bisep',
+    focus: 'Paha & betis penopang lari, ditutup bisep',
+    minutes: 50,
+    exercises: [
+      { id: 'gobletsquat', emoji: '🦵', name: 'Goblet Squat', sets: 4, reps: '12', weight: 14, video: 'https://youtu.be/42bFodPahBU' },
+      { id: 'rdl', emoji: '🏋️', name: 'Romanian Deadlift', sets: 3, reps: '10–12', weight: 12, video: 'https://youtu.be/eDFAAb6vJH4' },
+      { id: 'calfraise', emoji: '⚡', name: 'Calf Raises', sets: 4, reps: '20', weight: 10, video: 'https://youtu.be/GQa_N7wft7M' },
+      { id: 'zottmancurl', emoji: '🔥', name: 'Zottman Curl', sets: 3, reps: '12', weight: 8 },
+      { id: 'spidercurl', emoji: '💪', name: 'Spider Curl (tengkurap di bangku miring)', sets: 3, reps: '12', weight: 7 },
+      { id: 'plankwalkout', emoji: '🚀', name: 'Plank Walkouts', sets: 3, reps: '40 detik', weight: null, core: true },
+    ],
+  },
+  {
+    weekday: 0,
+    kind: 'run',
+    emoji: '🏁',
+    title: 'Long Run Persiapan Race',
+    focus: 'Jarak terjauh minggu ini — modal utama menuju hari race',
+    minutes: 75,
+    exercises: [
+      { id: 'warmupjog', emoji: '🚶', name: 'Jogging pemanasan', sets: 1, reps: '8 menit', weight: null, cardio: true },
+      { id: 'longrun', emoji: '🏁', name: 'Long run pelan — tambah ±10% tiap minggu', sets: 1, reps: '50 menit', weight: null, cardio: true },
+      { id: 'cooldownwalk', emoji: '🚶', name: 'Jalan pendinginan', sets: 1, reps: '7 menit', weight: null, cardio: true },
+      { id: 'stretching', emoji: '🧘', name: 'Stretching seluruh badan', sets: 1, reps: '10 menit', weight: null, cardio: true },
+    ],
+  },
+];
+
 export const FIT_PROGRAM: Record<FitBlock, FitSession[]> = {
   A: BLOCK_A,
   B: BLOCK_B,
+  C: BLOCK_C,
 };
 
 // Jam latihan BEBAS — pagi atau sore. Pengingat & badge menyala di dua jendela
 // saja supaya Dashboard tidak ditagih sepanjang jam kerja.
-export const FIT_TIME_LABEL = 'pagi / sore — bebas';
+export const FIT_TIME_LABEL = 'olahraga pagi';
 const FIT_MORNING_FROM = 5;
 const FIT_MORNING_TO = 9;
 const FIT_EVENING_FROM = 16;
@@ -313,7 +425,7 @@ const FIT_EVENING_TO = 21;
 export const FIT_DAY_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 /** Urutan giliran blok. Satu-satunya sumber daftar blok — tab Program ikut ini. */
-export const FIT_BLOCK_ORDER: FitBlock[] = ['A', 'B'];
+export const FIT_BLOCK_ORDER: FitBlock[] = ['A', 'B', 'C'];
 
 /** Blok yang berlaku pada tanggal ini — berganti tiap 2 minggu (A→B→A…). */
 export function fitBlockOf(d: Date): FitBlock {
@@ -611,7 +723,7 @@ export function setFitExerciseDone(
 // ikut sendiri, jadi tidak ada lagi centang dobel.
 //
 // Keduanya sengaja dipisah jadi dua fungsi (bukan satu yang menulis dua-duanya
-// sekaligus) supaya tiap click cuma memicu SATU tulis Firestore. Click
+// sekaligus) supaya tiap klik cuma memicu SATU tulis Firestore. Klik
 // gerakan terjadi berkali-kali tiap sesi; tanda lewati jarang.
 //
 // Sengaja tidak melempar error ke pemanggil: gagal menyinkronkan baris cermin

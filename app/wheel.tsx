@@ -528,21 +528,26 @@ export default function WheelScreen() {
                 )}
               </View>
 
-              {/* Fokus kuartal */}
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeadMain}>
-                  <VixText heading="title">🎯 Fokus Kuartal</VixText>
-                  {data.focus.length > 0 && (
-                    <VixText heading="label">
-                      {data.focus.length} area ·{' '}
-                      {focusGap > 0
-                        ? `kurang ${focusGap} poin lagi`
-                        : 'semua target tercapai 🎉'}
-                    </VixText>
+              {/* Sebaran nada kedelapan area — batang proporsi + keterangan
+                  arti warnanya. Tempatnya TEPAT di bawah grafiknya: ini
+                  ringkasan roda yang barusan kamu lihat, dan angkanya (3+4+1)
+                  menghitung KEDELAPAN area. Kalau ditaruh di dalam kepala
+                  "🎯 Fokus Kuartal" di bawahnya, angkanya jadi terbaca seolah
+                  tentang 4 area fokus itu saja. */}
+              <View style={styles.spreadBox}>
+                <View style={styles.spreadBar}>
+                  {okCount > 0 && (
+                    <View style={[styles.spreadFill, styles.fillOk, { flex: okCount }]} />
+                  )}
+                  {warnCount > 0 && (
+                    <View style={[styles.spreadFill, styles.fillWarn, { flex: warnCount }]} />
+                  )}
+                  {dangerCount > 0 && (
+                    <View
+                      style={[styles.spreadFill, styles.fillDanger, { flex: dangerCount }]}
+                    />
                   )}
                 </View>
-
-                {/* Sebaran nada — sekaligus keterangan arti warnanya */}
                 <View style={styles.legendRow}>
                   <View style={[styles.legendPill, styles.pillOk]}>
                     <VixText heading="label" additionalStyle={styles.toneOk}>
@@ -559,6 +564,25 @@ export default function WheelScreen() {
                       {dangerCount} darurat
                     </VixText>
                   </View>
+                </View>
+              </View>
+
+              {/* Fokus kuartal.
+                  Judul & tombolnya SATU baris berdua saja. Pil sebaran tadi
+                  sempat ikut berdiri di baris ini — lebar mininya mendorong
+                  judulnya sampai selebar 0, dan "Fokus Kuartal" menumpuk satu
+                  huruf per baris. Barang selebar itu tidak boleh masuk sini. */}
+              <View style={styles.sectionHeader}>
+                <View style={styles.sectionHeadMain}>
+                  <VixText heading="title">🎯 Fokus Kuartal</VixText>
+                  {data.focus.length > 0 && (
+                    <VixText heading="label">
+                      {data.focus.length} area ·{' '}
+                      {focusGap > 0
+                        ? `kurang ${focusGap} poin lagi`
+                        : 'semua target tercapai 🎉'}
+                    </VixText>
+                  )}
                 </View>
 
                 <PressableScale
@@ -867,7 +891,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   focusEmoji: { fontSize: 22, lineHeight: 28 },
-  focusHeadMain: { flex: 1, gap: 1 },
+  focusHeadMain: { flex: 1, minWidth: 0, gap: 1 },
   // Pil sisa poin di kanan: "+2" (masih dikejar) atau "✓ tercapai".
   deltaPill: {
     borderRadius: 999,
@@ -946,7 +970,10 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 10,
   },
-  sectionHeadMain: { flex: 1, gap: 1 },
+  // minWidth 0: tanpa ini `flex: 1` masih bisa dipaksa mengecil di bawah lebar
+  // hurufnya sendiri oleh tetangga yang lebar — itu yang dulu membuat judulnya
+  // menumpuk satu huruf per baris.
+  sectionHeadMain: { flex: 1, minWidth: 0, gap: 1 },
   // "Ubah / Pilih" jadi pil bergaris — lebih kelihatan bisa ditekan
   // daripada teks polos.
   editButton: {
@@ -962,8 +989,25 @@ const styles = StyleSheet.create({
   stampBox: { marginTop: 2, marginBottom: 4, gap: 1 },
   updatedLabel: { color: Color.TEXT_LABEL },
   sectionTitle: { marginTop: 10, marginBottom: 10 },
-  // Sebaran nada skor di atas daftar area.
-  legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+  // ===== Sebaran nada kedelapan area =====
+  spreadBox: { marginBottom: 14, gap: 8 },
+  // Batang proporsi: lebar tiap ruas = BANYAKNYA area bernada itu (flex diisi
+  // angkanya langsung), jadi perbandingannya kebaca tanpa membaca angkanya
+  // dulu. Nada yang kosong tidak digambar sama sekali — bukan ruas setipis
+  // rambut yang cuma jadi kotoran di batangnya.
+  spreadBar: {
+    flexDirection: 'row',
+    gap: 3,
+    height: 8,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  spreadFill: { borderRadius: 999 },
+  fillOk: { backgroundColor: Color.SUCCESS },
+  fillWarn: { backgroundColor: Color.WARNING },
+  fillDanger: { backgroundColor: Color.DANGER },
+  // Pil di bawah batangnya = keterangan warna sekaligus angkanya.
+  legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   legendPill: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
   areaRow: {
     ...CARD,

@@ -7,25 +7,27 @@ import { EditButton } from '@/components/common/EditButton';
 import { EditFooter } from '@/components/common/EditFooter';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
-import {
-  newFitNoteId,
-  saveFitNotes,
-  tidyUrl,
-  urlHost,
-  type FitNote,
-} from '@/lib/fitNotes';
 import { useFormSave } from '@/hooks/useFormSave';
+import { usePagination } from '@/hooks/usePagination';
+import {
+    newFitNoteId,
+    saveFitNotes,
+    tidyUrl,
+    urlHost,
+    type FitNote,
+} from '@/lib/fitNotes';
 import { openExternalUrl } from '@/lib/linking';
 import { DELETE_ERROR } from '@/lib/messages';
 
 // Sub-tab Notes 📝 — kumpulan tautan & catatan latihan.
 //
-// Click kartunya = LANGSUNG buka tautannya (itu yang paling sering dilakukan).
+// Klik kartunya = LANGSUNG buka tautannya (itu yang paling sering dilakukan).
 // Mengubah/menghapus lewat tombol ✏️ di sebelahnya, yang sengaja jadi SAUDARA
 // kartunya — Pressable bersarang tidak andal di iOS.
 export function NotesTab({ notes }: { notes: FitNote[] }) {
@@ -91,9 +93,12 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
     }
   }
 
+  // 10 catatan per halaman — daftarnya menumpuk terus tiap kali menyimpan link.
+  const { currentPage, pageCount, pageItems, setPage } = usePagination(notes);
+
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
         <PrimaryButton
           label="Tambah Catatan"
           icon="plus"
@@ -108,12 +113,12 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
           </VixText>
         )}
 
-        {notes.map((n) => {
+        {pageItems.map((n) => {
           const host = urlHost(n.url);
           return (
             <View key={n.id} style={styles.card}>
               {/* Area utama = buka tautannya. Kalau tidak ada tautannya,
-                  click itu tidak melakukan apa-apa — jadi dimatikan supaya
+                  klik itu tidak melakukan apa-apa — jadi dimatikan supaya
                   tidak terasa rusak. */}
               <PressableScale
                 style={styles.cardMain}
@@ -142,6 +147,8 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
             </View>
           );
         })}
+
+        <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
       </ScrollView>
 
       <SheetModal

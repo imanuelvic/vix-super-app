@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -31,9 +31,6 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
 import { currentAge, nextBirthday } from '@/lib/core';
-import { MONTH_NAMES } from '@/lib/format';
-import { LOAD_ERROR, PHOTO_ERROR } from '@/lib/messages';
-import { photoUri } from '@/lib/photo';
 import {
   childrenOf,
   countGenerations,
@@ -49,6 +46,9 @@ import {
   type FamilyCircle,
   type FamilyMember,
 } from '@/lib/family';
+import { MONTH_NAMES } from '@/lib/format';
+import { LOAD_ERROR, PHOTO_ERROR } from '@/lib/messages';
+import { photoUri } from '@/lib/photo';
 
 // ================= Avatar (module-scope, identitas stabil) =================
 // PENTING: komponen ini WAJIB di luar FamilyScreen. Kalau didefinisikan di
@@ -134,7 +134,7 @@ const VConnector = () => <View style={styles.vConnector} />;
 
 // ============ Picker nama anggota (buka-tutup) — module-scope ============
 // Dipakai untuk memilih Orang tua & Pasangan. Default ringkas 1 baris berisi
-// nama terpilih (tak menumpuk walau anggota banyak); di-click → daftar nama
+// nama terpilih (tak menumpuk walau anggota banyak); di-klik → daftar nama
 // muncul untuk dicentang. Tidak pakai modal-di-atas-modal (bermasalah di iOS).
 function MemberPicker({
   label,
@@ -246,7 +246,7 @@ function childRowSizes(windowWidth: number) {
 }
 
 // Family Tree 👨‍👩‍👧‍👦 — silsilah ala The Sims: pohon 3 generasi yang
-// berpusat pada orang yang dipilih; click siapa pun → pohon pindah ke dia.
+// berpusat pada orang yang dipilih; klik siapa pun → pohon pindah ke dia.
 export default function FamilyScreen() {
   const { user } = useAuth();
   // Lebar layar SAAT INI — ikut berubah kalau jendela iPad diubah ukurannya.
@@ -491,7 +491,7 @@ export default function FamilyScreen() {
               </VixText>
               <VixText heading="label" additionalStyle={styles.emptyText}>
                 Tambahkan dirimu dulu, lalu orang tua, pasangan, anak, dan
-                seterusnya. Click siapa pun di pohon untuk berpindah seperti di
+                seterusnya. Klik siapa pun di pohon untuk berpindah seperti di
                 The Sims 🎮
               </VixText>
             </View>
@@ -644,7 +644,7 @@ export default function FamilyScreen() {
               </View>
               {query === '' ? (
                 <VixText heading="label" additionalStyle={styles.searchHint}>
-                  Ketik nama untuk mencari anggota
+                  Cari nama untuk mencari anggota
                 </VixText>
               ) : searchResults.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.searchHint}>

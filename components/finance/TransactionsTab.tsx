@@ -786,7 +786,7 @@ export function TransactionsTab({
                 ? query.trim()
                   ? 'Tidak ada transaksi yang cocok 🔍'
                   : `Belum ada transaksi ${FINANCE_TYPE_LABEL[type]} bulan ini.`
-                : `Belum ada transaksi ${FINANCE_TYPE_LABEL[type]} bulan ini. Tambahkan di atas 👆`}
+                : `Belum ada transaksi ${FINANCE_TYPE_LABEL[type]} bulan ini.`}
             </VixText>
           </View>
         }

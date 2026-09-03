@@ -30,7 +30,7 @@ export function RuleBody({ body }: { body: string }) {
                 <VixText heading="bold" additionalStyle={styles.warnText}>
                   ⚠️ {line.text}
                 </VixText>
-                {/* Butir milik blok ini ikut MASUK ke dalam kotaknya */}
+                {/* Poin milik blok ini ikut MASUK ke dalam kotaknya */}
                 {(line.children ?? []).map((k, j) => (
                   <View key={`${j}-${k.type}`} style={styles.warnRow}>
                     {k.type === 'bullet' || k.type === 'num' ? (

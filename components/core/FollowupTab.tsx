@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
@@ -12,41 +12,41 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
+import { todayName } from '@/lib/chatTemplates';
 import {
-  birthdayGroupText,
-  birthdayPersonalText,
-  canDrawWeeklyFocus,
-  drawWeeklyFocus,
-  focusLeaders,
-  followupMessage,
-  isCurrentMonthPrayers,
-  isPrayerFollowupDay,
-  markBirthdayGreeted,
-  markPrayerFollowed,
-  monthlyPointsFor,
-  monthlyPrayersFilled,
-  nextBirthday,
-  personalityTips,
-  prayerChainMessage,
-  prayerFollowupLeaders,
-  saveCoreLeaders,
-  saveWeeklyFocus,
-  subscribeBirthdayGreets,
-  WEEKLY_FOCUS_COUNT,
-  weeklyFollowupTopic,
-  type BirthdayGreets,
-  type CoreLeader,
-  type MainTeamMember,
-  type MonthlyPrayers,
-  type WeeklyFocus,
+    birthdayGroupText,
+    birthdayPersonalText,
+    canDrawWeeklyFocus,
+    drawWeeklyFocus,
+    focusLeaders,
+    followupMessage,
+    isCurrentMonthPrayers,
+    isPrayerFollowupDay,
+    markBirthdayGreeted,
+    markPrayerFollowed,
+    monthlyPointsFor,
+    monthlyPrayersFilled,
+    nextBirthday,
+    personalityTips,
+    prayerChainMessage,
+    prayerFollowupLeaders,
+    saveCoreLeaders,
+    saveWeeklyFocus,
+    subscribeBirthdayGreets,
+    WEEKLY_FOCUS_COUNT,
+    weeklyFollowupTopic,
+    type BirthdayGreets,
+    type CoreLeader,
+    type MainTeamMember,
+    type MonthlyPrayers,
+    type WeeklyFocus,
 } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
-import { todayName } from '@/lib/chatTemplates';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
-  openWhatsAppChat,
-  shareTextToWhatsApp,
-  WHATSAPP_ERROR,
+    openWhatsAppChat,
+    shareTextToWhatsApp,
+    WHATSAPP_ERROR,
 } from '@/lib/whatsapp';
 
 // Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
@@ -84,7 +84,7 @@ export function FollowupTab({
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
   // Modal tengah: pokok doa 1 CL (follow up), dan ide pendekatan 1 CL.
   const [prayerModal, setPrayerModal] = useState<CoreLeader | null>(null);
-  // Modal follow up mingguan (mirip Doa Rantai): click kartu CL → lihat
+  // Modal follow up mingguan (mirip Doa Rantai): klik kartu CL → lihat
   // pertanyaan + ide pendekatan, ganti pertanyaan di dalamnya. Menandai
   // "selesai" lewat tombol kecil di kartu (di luar modal).
   const [followupModal, setFollowupModal] = useState<{
@@ -243,7 +243,7 @@ export function FollowupTab({
     markBirthdayGreeted(user.uid, personId, dayId).catch(() => {});
   }
 
-  // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: click untuk buka
+  // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: klik untuk buka
   // modal (pertanyaan + ide pendekatan). Tombol "Selesai" kecil di kartu (di
   // luar modal) untuk menandai sudah follow up hari ini.
   function renderFollowCard({
@@ -270,7 +270,11 @@ export function FollowupTab({
     return (
       <PressableScale
         key={id}
-        style={[styles.prayerRow, done && styles.prayerRowDone]}
+        style={[
+          styles.prayerRow,
+          done && styles.prayerRowDone,
+          attentionBorder(!done),
+        ]}
         onLayout={(e) => setRowY(id, e.nativeEvent.layout.y)}
         onPress={() => setFollowupModal({ id, title, phone, person })}>
         <View style={styles.followMain}>
@@ -299,7 +303,7 @@ export function FollowupTab({
     );
   }
 
-  // Kartu ringkas 1 CL untuk follow up pokok doa (Selasa & Kamis). Di-click →
+  // Kartu ringkas 1 CL untuk follow up pokok doa (Selasa & Kamis). Di-klik →
   // modal tengah berisi seluruh pokok doa + tombol WA.
   //
   // Bentuknya DUA KOLOM (lihat `prayerGrid`): satu baris per CL bikin blok Doa
@@ -364,7 +368,7 @@ export function FollowupTab({
         .map((b) => (
           <View
             key={b.key}
-            style={styles.birthdayCard}
+            style={[styles.birthdayCard, attentionBorder(true)]}
             onLayout={(e) => setRowY(b.key, e.nativeEvent.layout.y)}>
             {/* Penyusun kedua badge sub-tab Follow Up (`birthdayDue`).
                 Kartunya memang hanya digambar selama ucapannya belum dikirim,
@@ -627,7 +631,7 @@ export function FollowupTab({
           {/* Pengingat Motivational Word 🔥 — ditaruh persis di atas tombol
               Chat WA, karena di sinilah WhatsApp dibuka. Follow up itu urusan
               satu orang; Motivational Word urusan GRUP dan gampang terlewat
-              justru pada pagi yang sibuk mengejar follow up. Click-nya
+              justru pada pagi yang sibuk mengejar follow up. Klik-nya
               membawa ke Template Chat, yang memang sudah membuka kategori
               Motivational Words dengan pilihan hari ini tersorot. */}
           <PressableScale

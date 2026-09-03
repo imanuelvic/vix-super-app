@@ -19,13 +19,13 @@ import {
   splitBibleRefs,
   usfmRef,
 } from './bible';
+import { hashString, pickOfDay } from './core';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
-import { liveDoc, liveList } from './liveDoc';
 import { dayIdToDate } from './format';
 import { yesterdayId } from './health';
-import { hashString, pickOfDay } from './core';
 import { openExternalUrl } from './linking';
+import { liveDoc, liveList } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Spiritual ✝️ — Revive harian (mengikuti struktur renungan NDC:
@@ -883,7 +883,7 @@ const NUDGE_GAP_MINUTES = 60;
  * Satu kemunculan penyegar: `from`/`to` = menit sejak tengah malam.
  *
  * `day` cuma terisi kalau kalimatnya datang dari Revive-mu sendiri — itulah
- * yang membuat kartunya bisa di-click balik ke catatan asalnya.
+ * yang membuat kartunya bisa di-klik balik ke catatan asalnya.
  */
 export type Nudge = { from: number; to: number; text: string; day?: string };
 

@@ -21,12 +21,12 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
 import {
-  invoiceTotal,
-  newCareerId,
-  saveFreelance,
-  subscribeFreelance,
-  type FreelanceProject,
-  type InvoiceItem,
+    invoiceTotal,
+    newCareerId,
+    saveFreelance,
+    subscribeFreelance,
+    type FreelanceProject,
+    type InvoiceItem,
 } from '@/lib/career';
 import { formatShortRupiah, groupDigits, parseAmount } from '@/lib/format';
 import { INVOICE_PRESETS, presetPrice } from '@/lib/invoice';
@@ -246,7 +246,7 @@ export default function ProjectEditScreen() {
             <View style={styles.invoiceSection}>
               <VixText heading="title">🧾 Rincian Biaya</VixText>
               <VixText heading="label" additionalStyle={styles.invoiceHint}>
-                Click item di bawah — harganya terisi otomatis dari perkiraan,
+                Klik item di bawah — harganya terisi otomatis dari perkiraan,
                 tinggal dibetulkan kalau proyeknya beda.
               </VixText>
               <View style={styles.presetWrap}>

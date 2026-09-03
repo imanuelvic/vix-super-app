@@ -51,7 +51,7 @@ export function NewsTab({
   const aktif = NEWS_SOURCES.find((s) => s.key === source)!;
 
   /**
-   * Click chip sumber. Menekan sumber yang SUDAH aktif = minta yang terbaru:
+   * Klik chip sumber. Menekan sumber yang SUDAH aktif = minta yang terbaru:
    * daftarnya diambil ulang dan digulung balik ke paling atas.
    *
    * Pola yang sama dengan tab bawah di seluruh app (useTabScroll): tekan lagi

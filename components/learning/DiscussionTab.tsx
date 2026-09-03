@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
@@ -87,7 +87,11 @@ export function DiscussionTab({
           return (
             <PressableScale
               key={`weekly-${t.key}`}
-              style={[styles.topicCard, checked && styles.topicCardDone]}
+              style={[
+                styles.topicCard,
+                checked && styles.topicCardDone,
+                attentionBorder(!checked),
+              ]}
               onPress={() => toggle(t.key, checked)}
               haptic={checked ? 'light' : 'success'}>
               <CheckCircle checked={checked} />

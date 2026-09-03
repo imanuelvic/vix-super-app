@@ -14,6 +14,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { PlacesTab } from '@/components/social/PlacesTab';
 import { SplitBillTab } from '@/components/social/SplitBillTab';
+import { SportTab } from '@/components/social/SportTab';
 import { useAuth } from '@/contexts/auth';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
@@ -24,26 +25,39 @@ import {
   type Bill,
   type Place,
 } from '@/lib/social';
+import {
+  EMPTY_SPORT,
+  sportAttention,
+  subscribeSport,
+  type SportData,
+} from '@/lib/sport';
 
-type SocialTab = 'bills' | 'places';
+type SocialTab = 'sport' | 'bills' | 'places';
 
+// Sport paling kiri DAN jadi bawaan: dari ketiganya, cuma ini yang menuntut
+// tindakan berjadwal (booking lapangan, menagih iuran). Split Bill & Places
+// dibuka saat dibutuhkan; futsal rutin harus DIINGATKAN, bukan dicari.
 const TABS: BottomTab<SocialTab>[] = [
+  { key: 'sport', label: 'Sport', icon: 'figure.run' },
   { key: 'bills', label: 'Split Bill', icon: 'receipt.fill' },
   { key: 'places', label: 'Places', icon: 'cup.and.saucer.fill' },
 ];
 
-// Social 🥂 — yang terjadi saat bergaul dengan teman.
+// Social 🤝 — yang terjadi saat bergaul dengan teman.
 //
-// Split Bill 💸 menjawab bagian paling merepotkan setelah makan bareng: siapa
-// makan apa, berapa bagiannya setelah pajak & service, dan siapa yang belum
-// setor. Places 🍜 menjawab pertanyaan yang selalu paling lama dijawab di grup:
+// Sport ⚽ mengurus futsal rutin dua geng (CORE & NDC F3): jadwal, lapangan,
+// skuad, iuran siapa yang belum setor, dan skor tiap game. Split Bill 💸
+// menjawab bagian paling merepotkan setelah makan bareng: siapa makan apa,
+// berapa bagiannya setelah pajak & service, dan siapa yang belum setor.
+// Places 🍜 menjawab pertanyaan yang selalu paling lama dijawab di grup:
 // "besok ngumpul di mana?"
 export default function SocialScreen() {
   const { user } = useAuth();
-  const { tab, scrollKey, onTabPress } = useTabScroll<SocialTab>('bills');
+  const { tab, scrollKey, onTabPress } = useTabScroll<SocialTab>('sport');
 
   const [bills, setBills] = useState<Bill[] | null>(null);
   const [places, setPlaces] = useState<Place[] | null>(null);
+  const [sport, setSport] = useState<SportData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,6 +66,7 @@ export default function SocialScreen() {
     return unsubscribeAll([
       subscribeBills(user.uid, setBills, fail),
       subscribePlaces(user.uid, setPlaces, fail),
+      subscribeSport(user.uid, setSport, fail),
     ]);
   }, [user]);
 
@@ -59,15 +74,17 @@ export default function SocialScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Home"
-        title="Social 🥂"
-        subtitle="Patungan & tempat nongkrong bareng teman"
+        title="Social 🤝"
+        subtitle="Futsal rutin, patungan & tempat nongkrong"
       />
 
       <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
-        {bills === null || places === null ? (
+        {bills === null || places === null || sport === null ? (
           <LoadingCenter />
+        ) : tab === 'sport' ? (
+          <SportTab data={sport} />
         ) : tab === 'bills' ? (
           <SplitBillTab bills={bills} />
         ) : (
@@ -75,12 +92,14 @@ export default function SocialScreen() {
         )}
       </View>
 
-      {/* Badge = tagihan yang masih ada orang belum setor. Angka yang sama
-          dipakai badge tile Social di Home, jadi keduanya tidak mungkin
-          berbeda pendapat. */}
+      {/* Badge tile Social di Home = JUMLAH kedua angka di bawah ini, jadi
+          tile-nya tidak pernah lebih kecil dari apa yang menunggu di dalam.
+          Aturannya tinggal di lib masing-masing (billUnsettled &
+          sessionNeedsAttention), bukan ditulis ulang di sini. */}
       <BottomTabs
         tabs={withBadge(TABS, {
           bills: (bills ?? []).filter(billUnsettled).length,
+          sport: sportAttention(sport ?? EMPTY_SPORT, new Date()),
         })}
         value={tab}
         onChange={onTabPress}

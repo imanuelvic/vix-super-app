@@ -4,10 +4,10 @@ import { Color } from '@/assets/style/color';
 import { DeadlineTag } from '@/components/common/Deadline';
 import { VixText } from '@/components/common/VixText';
 import {
-  meetingKindLabels,
-  meetingLeaderNames,
-  type CoreLeader,
-  type Visitation,
+    meetingKindLabels,
+    meetingLeaderNames,
+    type CoreLeader,
+    type Visitation,
 } from '@/lib/core';
 import { deadlineLabel, type DeadlineTone } from '@/lib/deadline';
 import { formatCompactDateTime } from '@/lib/format';
@@ -21,7 +21,7 @@ import { formatCompactDateTime } from '@/lib/format';
 //
 // Yang TIDAK di sini: bungkus kartunya. Riwayat memakai satu PressableScale
 // polos, sedangkan tab Visitation menaruh tombol share sebagai SAUDARA dari
-// area click (Pressable bersarang tidak andal di iOS). Jadi bungkusnya tetap
+// area klik (Pressable bersarang tidak andal di iOS). Jadi bungkusnya tetap
 // milik masing-masing layar.
 //
 // Status/hitung mundurnya juga BUKAN di sini — lihat <VisitationStatus> di

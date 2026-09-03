@@ -2,14 +2,14 @@ import { UpkeepList, type UpkeepGroup } from '@/components/common/UpkeepList';
 import { useAuth } from '@/contexts/auth';
 import { formatDate } from '@/lib/format';
 import {
-  choreCondition,
-  choreIntervalLabel,
-  CHORE_GROUPS,
-  countResidenceAttention,
-  setChoreDate,
-  setChoreDueNow,
-  type ChoreStatusMap,
-  type ChoreTone,
+    CHORE_GROUPS,
+    choreCondition,
+    choreIntervalLabel,
+    countResidenceAttention,
+    setChoreDate,
+    setChoreDueNow,
+    type ChoreStatusMap,
+    type ChoreTone,
 } from '@/lib/residence';
 
 const TONE_LABEL: Record<ChoreTone, string> = {
@@ -73,7 +73,7 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
         sub:
           unknownCount > 0
             ? `${unknownCount} item belum pernah dicatat.`
-            : 'Click item mana pun untuk memperbarui tanggalnya.',
+            : 'Klik item mana pun untuk memperbarui tanggalnya.',
       }}
       groups={groups}
       dialogHint="Kapan terakhir dibersihkan / dikerjakan?"

@@ -19,173 +19,191 @@ import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { type LoginStreak } from '@/lib/achievements';
 import {
-  carAttentionList,
-  subscribePartStatus,
-  type PartStatusMap,
+    carAttentionList,
+    subscribePartStatus,
+    type PartStatusMap,
 } from '@/lib/car';
 import {
-  deadlineDaysUntil,
-  freelanceReminderWindow,
-  roadmapDaysUntil,
-  roadmapReminderWindow,
-  subscribeFreelance,
-  subscribeRoadmap,
-  type FreelanceProject,
-  type RoadmapItem,
+    deadlineDaysUntil,
+    freelanceReminderWindow,
+    roadmapDaysUntil,
+    roadmapReminderWindow,
+    subscribeFreelance,
+    subscribeRoadmap,
+    type FreelanceProject,
+    type RoadmapItem,
 } from '@/lib/career';
 import {
-  EMPTY_CORE_IDEAS,
-  EMPTY_MONTHLY_PRAYERS,
-  IDEA_CADENCE_LABEL,
-  ideaReminderDue,
-  isPrayerFollowupDay,
-  meetingKindMeta,
-  EMPTY_WEEKLY_FOCUS,
-  followupDue,
-  meetingLeaderNames,
-  needsPdfShare,
-  monthlyPointsFor,
-  monthlyPrayerStartReminder,
-  nextBirthday,
-  prayerFollowupLeaders,
-  subscribeCoreIdeas,
-  subscribeCoreLeaders,
-  subscribeMainTeam,
-  subscribeMonthlyPrayers,
-  subscribeVisitations,
-  subscribeWeeklyFocus,
-  visitDaysUntil,
-  visitReminderWindow,
-  type CoreIdeasData,
-  type CoreLeader,
-  type MainTeamMember,
-  type MonthlyPrayers,
-  type Visitation,
-  type WeeklyFocus,
+    EMPTY_CORE_IDEAS,
+    EMPTY_MONTHLY_PRAYERS,
+    EMPTY_WEEKLY_FOCUS,
+    followupDue,
+    IDEA_CADENCE_LABEL,
+    ideaReminderDue,
+    isPrayerFollowupDay,
+    meetingKindMeta,
+    meetingLeaderNames,
+    monthlyPointsFor,
+    monthlyPrayerStartReminder,
+    needsPdfShare,
+    nextBirthday,
+    prayerFollowupLeaders,
+    subscribeCoreIdeas,
+    subscribeCoreLeaders,
+    subscribeMainTeam,
+    subscribeMonthlyPrayers,
+    subscribeVisitations,
+    subscribeWeeklyFocus,
+    visitDaysUntil,
+    visitReminderWindow,
+    type CoreIdeasData,
+    type CoreLeader,
+    type MainTeamMember,
+    type MonthlyPrayers,
+    type Visitation,
+    type WeeklyFocus,
 } from '@/lib/core';
 import {
-  debtDaysUntil,
-  debtRemaining,
-  debtReminderWindow,
-  subscribeDebts,
-  type Debt,
+    debtDaysUntil,
+    debtRemaining,
+    debtReminderWindow,
+    subscribeDebts,
+    type Debt,
 } from '@/lib/debts';
 import {
-  daysUntilEligible,
-  donorReminderDue,
-  donorScheduleReminders,
-  EMPTY_DONOR,
-  nextEligibleDate,
-  scheduleDaysUntil,
-  subscribeDonor,
-  type DonorData,
+    daysUntilEligible,
+    donorReminderDue,
+    donorScheduleReminders,
+    EMPTY_DONOR,
+    nextEligibleDate,
+    scheduleDaysUntil,
+    subscribeDonor,
+    type DonorData,
 } from '@/lib/donor';
-import { subscribeFamily, type FamilyMember } from '@/lib/family';
 import {
-  fitWindowLabel,
-  FIT_RECOVERY,
-  fitQuote,
-  fitSessionFor,
-  fitPendingToday,
-  subscribeFitDay,
-  EMPTY_FIT_DAY,
-  type FitDay,
+    devicesNeedingTopUp,
+    subscribeDataPlans,
+    type DataPlan,
+} from '@/lib/device';
+import { subscribeFamily, type FamilyMember } from '@/lib/family';
+import { billUnsettled, subscribeBills, type Bill } from '@/lib/social';
+import {
+    EMPTY_SPORT,
+    sportAttention,
+    subscribeSport,
+    type SportData,
+} from '@/lib/sport';
+import {
+    stuffUnderWarranty,
+    subscribeStuff,
+    type StuffItem,
+} from '@/lib/stuff';
+import { anyBadgeReminder, BadgeReminders } from '@/components/dashboard/BadgeReminders';
+import {
+    activeFasting,
+    fastingDay,
+    fastingDayNumber,
+    fastingProgress,
+    subscribeFastingPlans,
+    type FastingPlan,
+} from '@/lib/fasting';
+import {
+    EMPTY_FIT_DAY,
+    FIT_RECOVERY,
+    fitPendingToday,
+    fitQuote,
+    fitSessionFor,
+    fitWindowLabel,
+    subscribeFitDay,
+    type FitDay,
 } from '@/lib/fitness';
 import {
-  daysBetween,
-  formatDate,
-  formatMonthsDays,
-  formatShortDayDate,
-  MONTH_NAMES,
-  whenLabel,
+    daysBetween,
+    formatDate,
+    formatMonthsDays,
+    formatShortDayDate,
+    MONTH_NAMES,
+    whenLabel,
 } from '@/lib/format';
 import {
-  daysSinceLastFun,
-  EMPTY_FUN,
-  funIdeasToday,
-  funReminderDue,
-  subscribeFun,
-  type FunData,
+    daysSinceLastFun,
+    EMPTY_FUN,
+    funIdeasToday,
+    funReminderDue,
+    subscribeFun,
+    type FunData,
 } from '@/lib/fun';
 import {
-  countedHabits,
-  currentOpenSlot,
-  slotMeta,
-  subscribeHabitSchedule,
-  type ScheduledHabit,
+    countedHabits,
+    currentOpenSlot,
+    slotMeta,
+    subscribeHabitSchedule,
+    type ScheduledHabit,
 } from '@/lib/habits';
 import {
-  dueStep,
-  EMPTY_WEEK,
-  pendingTopicsOfWeek,
-  skillOf,
-  skillOfWeek,
-  subscribeLearningWeek,
-  subscribeTopicsDone,
-  topicGroupMeta,
-  weekDocId,
-  type LearningWeek,
-  type TopicsDone,
-} from '@/lib/learning';
-import { useNow } from '@/hooks/useNow';
-import {
-  activeStreak,
-  checkupDueReminders,
-  needsWeighIn,
-  subscribeCheckups,
-  subscribeHabitDay,
-  subscribeHealthProfile,
-  subscribeStreak,
-  type Checkup,
-  type HabitDay,
-  type HealthProfile,
-  type Streak,
+    activeStreak,
+    checkupDueReminders,
+    needsWeighIn,
+    subscribeCheckups,
+    subscribeHabitDay,
+    subscribeHealthProfile,
+    subscribeStreak,
+    type Checkup,
+    type HabitDay,
+    type HealthProfile,
+    type Streak,
 } from '@/lib/health';
-import {
-  residenceAttentionList,
-  subscribeChoreStatus,
-  type ChoreStatusMap,
-} from '@/lib/residence';
-import {
-  currentSundayId,
-  sermonReminderActive,
-  subscribeSermons,
-  type SermonNote,
-} from '@/lib/sermon';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { subscribeReviveStreak } from '@/lib/spiritual';
-import {
-  activeFasting,
-  fastingDay,
-  fastingDayNumber,
-  fastingProgress,
-  subscribeFastingPlans,
-  type FastingPlan,
-} from '@/lib/fasting';
 import { intercessionToday } from '@/lib/intercession';
 import {
-  otherTaskDaysUntil,
-  otherTaskUrgent,
-  setTaskDone,
-  subscribeOtherTasks,
-  subscribeTasks,
-  TASK_CATEGORIES,
-  type OtherTask,
-  type Task,
+    dueStep,
+    EMPTY_WEEK,
+    pendingTopicsOfWeek,
+    skillOf,
+    skillOfWeek,
+    subscribeLearningWeek,
+    subscribeTopicsDone,
+    topicGroupMeta,
+    weekDocId,
+    type LearningWeek,
+    type TopicsDone,
+} from '@/lib/learning';
+import { unsubscribeAll } from '@/lib/liveDoc';
+import {
+    residenceAttentionList,
+    subscribeChoreStatus,
+    type ChoreStatusMap,
+} from '@/lib/residence';
+import {
+    currentSundayId,
+    sermonReminderActive,
+    subscribeSermons,
+    type SermonNote,
+} from '@/lib/sermon';
+import { subscribeReviveStreak } from '@/lib/spiritual';
+import {
+    otherTaskDaysUntil,
+    otherTaskUrgent,
+    setTaskDone,
+    subscribeOtherTasks,
+    subscribeTasks,
+    TASK_CATEGORIES,
+    type OtherTask,
+    type Task,
 } from '@/lib/tasks';
 import { formatRupiah } from '@/lib/transactions';
 import {
-  quarterDocId,
-  quarterLabel,
-  quarterOf,
-  subscribeWheel,
-  wheelFocusReminderActive,
-  wheelFocusReminders,
-  wheelHasScores,
-  type WheelData,
+    quarterDocId,
+    quarterLabel,
+    quarterOf,
+    subscribeWheel,
+    wheelFocusReminderActive,
+    wheelFocusReminders,
+    wheelHasScores,
+    type WheelData,
 } from '@/lib/wheel';
 
 export default function DashboardScreen() {
@@ -207,6 +225,11 @@ export default function DashboardScreen() {
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
+  // Sumber badge Social 🥂 & Device 📱 (lihat `badgeCounts` di bawah).
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
+  const [stuff, setStuff] = useState<StuffItem[]>([]);
+  const [sport, setSport] = useState<SportData>(EMPTY_SPORT);
   const [checkups, setCheckups] = useState<Checkup[]>([]);
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
@@ -248,6 +271,12 @@ export default function DashboardScreen() {
     return unsubscribeAll([
       subscribeLearningWeek(user.uid, weekId, setLearningWeek),
       subscribeTopicsDone(user.uid, setTopicsDone),
+      // Sumber badge Social & Device — dua badge yang belum punya kartunya
+      // sendiri di sini (lihat components/dashboard/BadgeReminders.tsx).
+      subscribeBills(user.uid, setBills),
+      subscribeDataPlans(user.uid, setDataPlans),
+      subscribeStuff(user.uid, setStuff),
+      subscribeSport(user.uid, setSport),
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
       subscribeFitDay(user.uid, todayId, setFitDay),
@@ -596,6 +625,15 @@ export default function DashboardScreen() {
       text: `${p.label} — ${whenLabel(daysBetween(now, p.dueDate))}`,
     }));
 
+  // Badge yang belum punya kartu khususnya di sini. Angkanya dihitung dengan
+  // aturan yang SAMA PERSIS dengan badge tile Home & sub-tabnya — dipanggil
+  // dari lib yang sama, bukan ditebak ulang, jadi mustahil ada kartu yang
+  // muncul tanpa badge (atau sebaliknya).
+  const badgeCounts: Record<string, number> = {
+    social: bills.filter(billUnsettled).length + sportAttention(sport, now),
+    device: devicesNeedingTopUp(dataPlans, now) + stuffUnderWarranty(stuff, now),
+  };
+
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
   // memutuskan apakah perlu memunculkan fallback produktivitas).
   const hasActionReminder =
@@ -616,7 +654,8 @@ export default function DashboardScreen() {
     carReminders.length > 0 ||
     gymDayDue ||
     slotUndone.length > 0 ||
-    todayUndone > 0;
+    todayUndone > 0 ||
+    anyBadgeReminder(badgeCounts);
 
   // Fallback PRODUKTIVITAS: kalau tidak ada reminder aksi & bukan jam pagi,
   // munculkan "apa yang bisa dikerjakan biar menghasilkan uang" — dari
@@ -845,7 +884,7 @@ export default function DashboardScreen() {
               fg={Color.ACCENT_DARK}
               title="🎂 Reminder Family Birthday"
               texts={famBirthdays}
-              // Click satu nama → buka Family & pusatkan pohon ke orang itu.
+              // Klik satu nama → buka Family & pusatkan pohon ke orang itu.
               onItemPress={(id) =>
                 router.push({ pathname: '/family', params: { focus: id } })
               }
@@ -1290,6 +1329,10 @@ export default function DashboardScreen() {
               ))}
             </ReminderCard>
           )}
+
+          {/* Badge yang belum punya kartunya sendiri (Social & Device).
+              Warnanya ikut tile-nya di Home — lihat components/dashboard. */}
+          <BadgeReminders counts={badgeCounts} />
         </View>
       </ScrollView>
 
@@ -1324,7 +1367,7 @@ const styles = StyleSheet.create({
   },
   // paddingVertical + marginVertical negatif yang SAMA BESAR dengan padding
   // kartunya: tampilannya tidak bergeser sepiksel pun, tapi area yang bisa
-  // di-click ikut mencakup padding atas-bawah kartu — persis seperti saat
+  // di-klik ikut mencakup padding atas-bawah kartu — persis seperti saat
   // seluruh kartu masih satu tombol.
   streakItem: {
     flex: 1,

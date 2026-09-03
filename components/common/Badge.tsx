@@ -64,6 +64,24 @@ export function Badge({
 
 const DENYUT_MS = 900;
 
+/**
+ * Garis tepi MERAH untuk baris yang sedang menyalakan badge — dipakai bersama
+ * `<AttentionMark corner />`, tidak pernah sendirian.
+ *
+ * Titik kecil di pojok saja masih gampang terlewat kalau daftarnya panjang dan
+ * kamu menggulung cepat; seluruh kartu yang bergaris merah kelihatan dari
+ * ujung mata. Dua penanda pada satu baris yang sama, bukan dua aturan berbeda:
+ * keduanya dipasang dari syarat yang PERSIS SAMA di tiap layar.
+ *
+ * Dipakai dengan disebar ke gaya kartunya, dan taruh PALING BELAKANG supaya
+ * menang atas garis tepi lain (mis. `deadlineBorder`):
+ *
+ *   <View style={[styles.card, deadlineBorder(tone), attentionBorder(perlu)]}>
+ */
+export function attentionBorder(on: boolean): StyleProp<ViewStyle> {
+  return on ? styles.attention : null;
+}
+
 export function AttentionMark({
   style,
   size = 10,
@@ -138,6 +156,10 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: Color.TEXT_REVERSE, fontSize: 11, lineHeight: 16 },
   mark: { backgroundColor: Color.DANGER },
+  // Tebalnya sengaja TIDAK diubah — kartunya sudah punya `borderWidth` sendiri
+  // (1 di daftar biasa, 1.5 di beberapa kartu). Kalau ikut ditebalkan di sini,
+  // barisnya akan bergeser sedikit saat badge-nya menyala & padam.
+  attention: { borderColor: Color.DANGER },
   // 6pt dari tiap tepi: kartu-kartu di app ini ber-radius 14–20, dan lengkung
   // pojoknya menjorok ±0,29 × radius ke dalam. Di angka ini titiknya duduk
   // TEPAT di dalam lengkungan — masih jelas di pojok, tapi tidak ada lagi

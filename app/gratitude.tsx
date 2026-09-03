@@ -13,14 +13,14 @@ import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import {
-  filledNoteLines,
-  subscribeHabitSchedule,
-  type ScheduledHabit,
+    filledNoteLines,
+    subscribeHabitSchedule,
+    type ScheduledHabit,
 } from '@/lib/habits';
 import {
-  HABIT_NOTES_PAGE,
-  subscribeHabitNotes,
-  type HabitNotes,
+    HABIT_NOTES_PAGE,
+    subscribeHabitNotes,
+    type HabitNotes,
 } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
@@ -42,7 +42,7 @@ export default function GratitudeScreen() {
 
   const [habits, setHabits] = useState<ScheduledHabit[] | null>(null);
   const [notes, setNotes] = useState<HabitNotes | null>(null);
-  // Sejauh mana riwayatnya ditarik. Naik sejendela tiap tombolnya di-click.
+  // Sejauh mana riwayatnya ditarik. Naik sejendela tiap tombolnya di-klik.
   const [jendela, setJendela] = useState(HABIT_NOTES_PAGE);
   const [menarik, setMenarik] = useState(false);
   const [error, setError] = useState<string | null>(null);

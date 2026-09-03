@@ -5,32 +5,34 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
-import { FormError } from '@/components/common/FormError';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
+import { usePagination } from '@/hooks/usePagination';
 import {
-  addCarLog,
-  CAR_LOG_TYPES,
-  deleteCarLog,
-  updateCarLog,
-  type CarLog,
-  type CarLogType,
+    addCarLog,
+    CAR_LOG_TYPES,
+    deleteCarLog,
+    updateCarLog,
+    type CarLog,
+    type CarLogType,
 } from '@/lib/car';
 import {
-  formatDate,
-  formatDecimal,
-  groupDigits,
-  parseAmount,
-  parseDecimal,
-  sameMonth,
+    formatDate,
+    formatDecimal,
+    groupDigits,
+    parseAmount,
+    parseDecimal,
+    sameMonth,
 } from '@/lib/format';
-import { useFormSave } from '@/hooks/useFormSave';
 import { formatRupiah } from '@/lib/transactions';
 
 const TYPE_META = Object.fromEntries(
@@ -129,9 +131,12 @@ export function LogTab({ items }: { items: CarLog[] }) {
     }
   }
 
+  // 10 baris per halaman — catatan pengeluaran mobil menumpuk terus.
+  const { currentPage, pageCount, pageItems, setPage } = usePagination(items);
+
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
         {/* Ringkasan total */}
         <SummaryCard
           label="Total pengeluaran mobil"
@@ -168,7 +173,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
           </VixText>
         )}
 
-        {items.map((item) => {
+        {pageItems.map((item) => {
           const meta = TYPE_META[item.type];
           const subParts = [item.location, item.note].filter(Boolean);
           const perLiter =
@@ -180,7 +185,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
             // di sini — sumbernya transaksi Finance, biar tidak beda data.
             //
             // Garis tepi HIJAU = baris ini bisa ditekan. Garis tepi krem biasa
-            // = datang dari Finance, jadi memang tidak menanggapi click —
+            // = datang dari Finance, jadi memang tidak menanggapi klik —
             // supaya tidak ada baris yang kelihatan bisa ditekan tapi diam.
             <ExpenseRow
               key={item.id}
@@ -208,6 +213,8 @@ export function LogTab({ items }: { items: CarLog[] }) {
             </ExpenseRow>
           );
         })}
+
+        <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
       </ScrollView>
 
       {/* Bottom sheet tambah/edit */}

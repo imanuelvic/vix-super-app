@@ -305,15 +305,22 @@ export function FunArchive({
             ListEmptyComponent={
               <View style={styles.center}>
                 <VixText heading="label" additionalStyle={styles.emptyText}>
-                  Belum ada {meta.label} yang tercatat. Tambahkan di atas 👆
+                  Belum ada {meta.label} yang tercatat.
                 </VixText>
               </View>
             }
-            renderItem={({ item }) => (
-              // Tekan kartu untuk mengedit. Border mengikuti warna kategori.
-              <PressableScale
-                style={[styles.card, { borderColor: warna }]}
-                onPress={() => openEdit(item)}>
+            renderItem={({ item }) => {
+              // Race berfoto medali → isinya jadi DUA KOLOM: keterangan di kiri
+              // (2 bagian), fotonya di kanan (1 bagian, sepertiga lebar kartu).
+              // Dulu fotonya melintang penuh setinggi 170 di bawah tulisan, jadi
+              // satu kartu memakan hampir satu layar dan daftar race-nya tidak
+              // bisa dibandingkan sekilas.
+              const medali =
+                item.category === 'race' && item.medalPhoto
+                  ? photoUri(item.medalPhoto)
+                  : null;
+              const keterangan = (
+                <>
                 <View style={styles.cardTop}>
                   {/* Emoji milik entri ITU SENDIRI, bukan milik tab — supaya
                       entri Refleksi 🧘 lama yang menumpang di Rekreasi tetap
@@ -405,18 +412,28 @@ export function FunArchive({
                       .join('   ·   ')}
                   </VixText>
                 ) : null}
-                {/* Foto medali (kalau ada) */}
-                {item.category === 'race' && item.medalPhoto ? (
-                  <Image
-                    source={{
-                      uri: photoUri(item.medalPhoto),
-                    }}
-                    style={styles.medalThumb}
-                    resizeMode="cover"
-                  />
-                ) : null}
-              </PressableScale>
-            )}
+                </>
+              );
+              // Tekan kartu untuk mengedit. Border mengikuti warna kategori.
+              return (
+                <PressableScale
+                  style={[styles.card, { borderColor: warna }]}
+                  onPress={() => openEdit(item)}>
+                  {medali ? (
+                    <View style={styles.medalRow}>
+                      <View style={styles.medalMain}>{keterangan}</View>
+                      <Image
+                        source={{ uri: medali }}
+                        style={styles.medalThumb}
+                        resizeMode="cover"
+                      />
+                    </View>
+                  ) : (
+                    keterangan
+                  )}
+                </PressableScale>
+              );
+            }}
           />
         )}
       </View>
@@ -639,12 +656,17 @@ const styles = StyleSheet.create({
   },
   budgetTotalLabel: { color: Color.TEXT_TITLE },
   budgetTotalValue: { color: Color.MAIN_DARK },
-  // Thumbnail foto medali di kartu.
+  // Kartu race berfoto: keterangan 2 bagian di kiri, foto 1 bagian di kanan.
+  medalRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  // minWidth 0 supaya judul panjang membungkus, bukan memaksa kolomnya melebar
+  // sampai fotonya terdesak keluar kartu.
+  medalMain: { flex: 2, minWidth: 0, gap: 6 },
+  // Persegi: tinggi ikut lebarnya sendiri, jadi tidak ada angka tinggi tetap
+  // yang meleset saat lebar layarnya berbeda.
   medalThumb: {
-    width: '100%',
-    height: 170,
+    flex: 1,
+    aspectRatio: 1,
     borderRadius: 10,
-    marginTop: 4,
     backgroundColor: Color.BORDER,
   },
   inputGap: { marginTop: 8 },

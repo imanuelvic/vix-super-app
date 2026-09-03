@@ -1,13 +1,13 @@
 import {
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  setDoc,
-  Timestamp,
-  type FirestoreError,
+    collection,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    orderBy,
+    query,
+    setDoc,
+    Timestamp,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
@@ -32,7 +32,7 @@ export type MultiStep = {
   id: string;
   date: Timestamp;
   title: string;
-  /** Butir-butir kecil di bawah judulnya (yang di sheet ditulis pakai "*"). */
+  /** Poin-poin kecil di bawah judulnya (yang di sheet ditulis pakai "*"). */
   notes: string[];
   done: boolean;
   /**

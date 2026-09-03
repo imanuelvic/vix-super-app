@@ -157,9 +157,14 @@ export default function SpiritualScreen() {
         //   Revive  → 📖 riwayat + 🔥 "Doa Pagi" (Revive memang langkah 1
         //             gerbang pagi — kategori "Revive Rohani" sengaja dihapus
         //             dulu karena pemicunya sama persis, lihat lib/achievements)
-        //   Bible   → 🔥 sesi yang JENDELANYA sedang berjalan (di luar jam
-        //             baca mana pun, jatuh ke pagi 🌅 sebagai patokan)
-        //   Sermon & Fasting belum punya pencapaian → tak ada tombol 🔥.
+        //   Bible   → ⏸️ Pause & Pray + 🔥 sesi yang JENDELANYA sedang berjalan
+        //             (di luar jam baca mana pun, jatuh ke pagi 🌅 sebagai
+        //             patokan)
+        //   Sermon & Fasting belum punya pencapaian → ⏸️ saja.
+        //
+        // ⏸️ Pause & Pray sengaja TIDAK ikut di tab Revive: pojok itu sudah
+        // berisi tiga tombol (📖 🙏 🔥 = 142pt) dan judul "Spiritual ✝️"
+        // menghabiskan sisanya — tombol keempat memaksa judulnya pecah baris.
         right={
           tab === 'revive' ? (
             <>
@@ -176,11 +181,22 @@ export default function SpiritualScreen() {
               />
               <AchievementButton category="login" />
             </>
-          ) : tab === 'bible' ? (
-            <AchievementButton
-              category={BIBLE_CATEGORY[bibleSessionNow(now) ?? 'morning']}
-            />
-          ) : undefined
+          ) : (
+            <>
+              {/* ⏸️ Doa singkat → Story Instagram. Sekeluarga dengan "Bagikan
+                  ayatnya" di layar Baca Alkitab: kartunya sama persis, cuma
+                  kopnya yang berganti jadi PAUSE & PRAY. */}
+              <EmojiButton
+                emoji="⏸️"
+                onPress={() => router.push('/pause-pray')}
+              />
+              {tab === 'bible' && (
+                <AchievementButton
+                  category={BIBLE_CATEGORY[bibleSessionNow(now) ?? 'morning']}
+                />
+              )}
+            </>
+          )
         }
       />
 

@@ -20,36 +20,36 @@ import { VixText } from '@/components/common/VixText';
 import { LeaderBodyDialog } from '@/components/core/LeaderBodyDialog';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import {
-  archiveCoreLeader,
-  currentAge,
-  DISC_OPTIONS,
-  EMPTY_LEADER_BODY,
-  EMPTY_STUDY_WORK,
-  GENDER_OPTIONS,
-  HEARTS,
-  leaderBodyOf,
-  leaderBodyPayload,
-  LOVE_LANG_OPTIONS,
-  loveLangLabel,
-  MBTI_TYPES,
-  newCoreLeaderId,
-  newMainTeamId,
-  nextBirthday,
-  normalizePhone,
-  saveCoreLeaders,
-  saveMainTeam,
-  studyLine,
-  studyWorkOf,
-  studyWorkPayload,
-  workLine,
-  type CoreLeader,
-  type Gender,
-  type LeaderBody,
-  type MainTeamMember,
-  type StudyWork,
-} from '@/lib/core';
 import { useFormSave } from '@/hooks/useFormSave';
+import {
+    archiveCoreLeader,
+    currentAge,
+    DISC_OPTIONS,
+    EMPTY_LEADER_BODY,
+    EMPTY_STUDY_WORK,
+    GENDER_OPTIONS,
+    HEARTS,
+    leaderBodyOf,
+    leaderBodyPayload,
+    LOVE_LANG_OPTIONS,
+    loveLangLabel,
+    MBTI_TYPES,
+    newCoreLeaderId,
+    newMainTeamId,
+    nextBirthday,
+    normalizePhone,
+    saveCoreLeaders,
+    saveMainTeam,
+    studyLine,
+    studyWorkOf,
+    studyWorkPayload,
+    workLine,
+    type CoreLeader,
+    type Gender,
+    type LeaderBody,
+    type MainTeamMember,
+    type StudyWork,
+} from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -58,8 +58,8 @@ import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
  * Yang sedang DILIHAT (bukan diubah) di modal baca-saja.
  *
  * Dulu menekan barisnya langsung membuka form edit — sekali salah pencet saat
- * cuma ingin mengintip nomor WA-nya, satu click lagi sudah bisa mengubah
- * data. Sekarang click baris = lihat saja; mengubah harus lewat tombol ✏️.
+ * cuma ingin mengintip nomor WA-nya, satu klik lagi sudah bisa mengubah
+ * data. Sekarang klik baris = lihat saja; mengubah harus lewat tombol ✏️.
  */
 type Viewing = {
   emoji: string;
@@ -416,11 +416,11 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(l, today);
           const soon = daysUntil <= 30;
           return (
-            // Tombol 🎡 & ✏️ jadi SAUDARA area click, bukan anaknya —
-            // Pressable bersarang di iOS bikin click tombolnya ikut
+            // Tombol 🎡 & ✏️ jadi SAUDARA area klik, bukan anaknya —
+            // Pressable bersarang di iOS bikin klik tombolnya ikut
             // membuka modal barisnya.
             <View key={l.id} style={styles.card}>
-              {/* Click baris = LIHAT data CL (baca-saja), bukan mengubahnya. */}
+              {/* Klik baris = LIHAT data CL (baca-saja), bukan mengubahnya. */}
               <PressableScale
                 style={styles.cardLeft}
                 onPress={() =>
@@ -540,7 +540,7 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(m, today);
           const soon = daysUntil <= 30;
           return (
-            // Sama seperti kartu CL: click baris = lihat, ✏️ = ubah.
+            // Sama seperti kartu CL: klik baris = lihat, ✏️ = ubah.
             <View key={m.id} style={styles.card}>
               <PressableScale
                 style={styles.cardLeft}
@@ -593,7 +593,7 @@ export function LeadersTab({
       {/* Data tubuh CL 🧍 — juga BACA-SAJA, aturan yang sama. */}
       <LeaderBodyDialog leader={bodyOf} onClose={() => setBodyOf(null)} />
 
-      {/* Modal BACA-SAJA — muncul saat barisnya di-click. Tidak ada satu pun
+      {/* Modal BACA-SAJA — muncul saat barisnya di-klik. Tidak ada satu pun
           kolom yang bisa diubah di sini; mengubah lewat tombol ✏️ di kartunya. */}
       <SheetModal
         visible={viewing !== null}
@@ -929,7 +929,7 @@ function GenderField({
   );
 }
 
-// Input kepribadian: pilih 1 tiap kategori, click lagi untuk mengosongkan.
+// Input kepribadian: pilih 1 tiap kategori, klik lagi untuk mengosongkan.
 function PersonalityFields({
   disc,
   setDisc,

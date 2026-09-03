@@ -276,7 +276,7 @@ export default function BibleReadingScreen() {
             kalimat yang sama persis. */}
         {/* Begitu bacaannya diisi, tombolnya tidak lagi cuma "buka app": ia
             membuka PASAL ITU. Acuan pertama yang dipakai — kalau ada beberapa
-            kitab, sisanya tinggal di-click dari riwayatnya. */}
+            kitab, sisanya tinggal di-klik dari riwayatnya. */}
         <SpiritualIntro
           reminder={dailyReminder(dayId, `baca-${session}`)}
           app="youversion"

@@ -8,7 +8,7 @@ import {
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -21,20 +21,19 @@ import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useScrollTop } from '@/hooks/useScrollTop';
-import { formatDecimal, parseDecimal } from '@/lib/format';
-import { weekDayIds } from '@/lib/health';
+import { type LoginStreak } from '@/lib/achievements';
 import {
   breakFitStreak,
   EMPTY_FIT_DAY,
   fetchFitDays,
+  FIT_DAY_SHORT,
+  FIT_RECOVERY,
+  FIT_TIME_LABEL,
   fitBlockOf,
   fitDayComplete,
   fitQuote,
   fitSessionMinutes,
   fitSessionOfWeekday,
-  FIT_DAY_SHORT,
-  FIT_RECOVERY,
-  FIT_TIME_LABEL,
   saveFitWeight,
   setFitDaySkipped,
   setFitExerciseDone,
@@ -45,7 +44,8 @@ import {
   type FitDay,
   type FitWeights,
 } from '@/lib/fitness';
-import { type LoginStreak } from '@/lib/achievements';
+import { formatDecimal, parseDecimal } from '@/lib/format';
+import { weekDayIds } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
 
 // Tab Exercise 💪 — deretan hari (ala BetterMe) + sesi hari yang dipilih.
@@ -126,7 +126,7 @@ export function ExerciseTab({
     ? day
     : (weekDays[weekIdOf(weekday)] ?? EMPTY_FIT_DAY);
   const done = viewDay.done;
-  // Hari yang dilewati ✕ dianggap tidak ada centangnya sama sekali.
+  // Hari yang dilewati ❌ dianggap tidak ada centangnya sama sekali.
   const daySkipped = viewDay.skipped;
   const doneCount = daySkipped
     ? 0
@@ -178,7 +178,7 @@ export function ExerciseTab({
   }
 
   /**
-   * Lewati latihan HARI INI. Semua gerakan langsung bertanda ✕, badge Exercise
+   * Lewati latihan HARI INI. Semua gerakan langsung bertanda ❌, badge Exercise
    * & kartu reminder Dashboard ikut hilang, dan streak 🔥 diputus ke 0.
    */
   async function handleSkip() {
@@ -186,7 +186,7 @@ export function ExerciseTab({
     setBusy(true);
     try {
       await setFitDaySkipped(user.uid, dayId, true);
-      // Baris di Habits ikut bertanda ✕ — keluar dari skor harian, bukan
+      // Baris di Habits ikut bertanda ❌ — keluar dari skor harian, bukan
       // menggantung sebagai kebiasaan yang belum dikerjakan.
       await syncFitnessHabitSkipped(user.uid, dayId, true);
       // Jalan pagi tidak pernah menyentuh streak — melewatinya pun tidak.
@@ -209,7 +209,7 @@ export function ExerciseTab({
     setBusy(true);
     try {
       await setFitDaySkipped(user.uid, dayId, false);
-      // Tanda ✕ di Habits ikut dicabut; centangnya kembali mengikuti
+      // Tanda ❌ di Habits ikut dicabut; centangnya kembali mengikuti
       // gerakan yang sudah/belum beres hari ini.
       await syncFitnessHabitSkipped(user.uid, dayId, false);
       await syncFitnessHabit(
@@ -345,13 +345,13 @@ export function ExerciseTab({
               <SkipNotice
                 title={
                   isWalkDay
-                    ? '✕ Jalan pagi hari ini dilewati'
-                    : '✕ Latihan hari ini dilewati'
+                    ? '❌ Jalan pagi hari ini dilewati'
+                    : '❌ Latihan hari ini dilewati'
                 }
                 detail={
                   isWalkDay
-                    ? 'Hari jalan pagi memang bonus — streak 🔥 tidak terpengaruh sama sekali.'
-                    : '🔥 Streak sudah kembali ke 0.'
+                    ? 'Streak hanya untuk strength workout'
+                    : 'Streak kembali ke 0.'
                 }
               />
             ) : isToday ? (
@@ -369,16 +369,16 @@ export function ExerciseTab({
                       cuma sudah terkunci. Deretan harinya ikut berganti sendiri
                       tiap Senin, jadi tandanya mulai kosong lagi tiap pekan. */}
                   {!sudahLewat
-                    ? '👀 Pratinjau — yang bisa dicentang hanya latihan hari ini.'
+                    ? '👀 Pratinjau'
                     : daySkipped
-                      ? '✕ Hari itu dilewati — tercatat apa adanya, tidak bisa diubah lagi.'
-                      : '🔒 Sudah berlalu — centangnya terkunci. Deretan hari ini kereset tiap Senin.'}
+                      ? '❌ Hari dilewati'
+                      : '🔒 Sudah berlalu'}
                 </VixText>
               </View>
             )}
 
             {session.exercises.map((ex) => {
-              // ✕ menang atas centang: hari yang dilewati tidak pernah tampil
+              // ❌ menang atas centang: hari yang dilewati tidak pernah tampil
               // tercentang, walau centangnya tersimpan sebelum ditandai lewati.
               const exSkipped = daySkipped;
               const checked = !exSkipped && !!done[ex.id];
@@ -390,6 +390,7 @@ export function ExerciseTab({
                     styles.exCard,
                     checked && styles.exCardDone,
                     exSkipped && styles.exCardSkipped,
+                    attentionBorder(isToday && !exSkipped && !checked),
                   ]}
                   onLayout={(e) => setRowY(ex.id, e.nativeEvent.layout.y)}>
                   {/* Gerakan HARI INI yang belum dicentang = yang dihitung
@@ -432,7 +433,7 @@ export function ExerciseTab({
                           Gerakan berat badan → angkanya IKUT fitur Health dan
                           tidak bisa diubah di sini (berat badan cuma berubah
                           lewat pengingat timbang tiap Minggu di Health).
-                          Gerakan berbeban → click untuk ubah bebannya. */}
+                          Gerakan berbeban → klik untuk ubah bebannya. */}
                       {ex.cardio ? null : ex.weight === null ? (
                         <View style={styles.weightChip}>
                           <VixText heading="label" additionalStyle={styles.weightText}>
@@ -519,8 +520,8 @@ export function ExerciseTab({
         title={isWalkDay ? 'Lewati jalan pagi hari ini?' : 'Lewati latihan hari ini?'}
         detail={
           isWalkDay
-            ? `${session.emoji} ${session.title} ditandai ✕.\n\n🔥 Streak tidak terpengaruh — hari jalan pagi memang tidak pernah dihitung sebagai sesi latihan.`
-            : `${session.emoji} ${session.title} ditandai ✕ — semua gerakan dianggap tidak dikerjakan.\n\n🔥 Streak kembali ke 0 dan TIDAK bisa dikembalikan. Rekor terbaik & total sesimu tetap aman.`
+            ? `${session.emoji} ${session.title} ditandai ❌.\n\n🔥 Streak tidak terpengaruh — hari jalan pagi memang tidak pernah dihitung sebagai sesi latihan.`
+            : `${session.emoji} ${session.title} ditandai ❌ — semua gerakan dianggap tidak dikerjakan.\n\n🔥 Streak kembali ke 0 dan TIDAK bisa dikembalikan. Rekor terbaik & total sesimu tetap aman.`
         }
         confirmLabel="Ya, Lewati"
         busy={busy}
@@ -629,7 +630,7 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderColor: Color.MAIN_LIGHT,
   },
-  // Dilewati ✕ — warnanya sama dengan baris kebiasaan yang dilewati di Habits.
+  // Dilewati ❌ — warnanya sama dengan baris kebiasaan yang dilewati di Habits.
   exCardSkipped: {
     backgroundColor: Color.DANGER_TRANSPARENT,
     borderColor: Color.DANGER,

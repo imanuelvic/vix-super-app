@@ -1,10 +1,10 @@
 import { RULE_ISI_CSS } from './coreRulesPdf';
 import { formatFullDate } from './format';
 import {
-  CRITERIA_SHEETS,
-  NDC_VISION,
-  type CriteriaSection,
-  type CriteriaSheet,
+    CRITERIA_SHEETS,
+    NDC_VISION,
+    type CriteriaSection,
+    type CriteriaSheet,
 } from './leaderCriteria';
 import { escapeHtml, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
 
@@ -36,10 +36,10 @@ const VISI_CSS = `
 
 /** Satu bagian pedoman → HTML. Bagian PERINGATAN memakai kotak ⚠️ bersama. */
 function sectionHtml(section: CriteriaSection): string {
-  const butir = section.points
+  const poin = section.points
     .map(
       (p, i) =>
-        `<div class="butir angka">` +
+        `<div class="poin angka">` +
         `<span class="tanda">${i + 1}.</span>` +
         `<span class="teks">${escapeHtml(p)}</span></div>`,
     )
@@ -48,12 +48,12 @@ function sectionHtml(section: CriteriaSection): string {
   if (section.tone === 'warn') {
     // Kotak kuning yang sama dengan blok "⚠️ Penting" di panduan CORE —
     // isinya memang setara: hal yang merugikan kalau dilanggar.
-    return `<div class="penting"><b>⚠️ ${escapeHtml(section.title)}</b>${butir}</div>`;
+    return `<div class="penting"><b>⚠️ ${escapeHtml(section.title)}</b>${poin}</div>`;
   }
   const judul =
     escapeHtml(`${section.icon} ${section.title}`) +
     (section.note ? ` — ${escapeHtml(section.note)}` : '');
-  return `<h2>${judul}</h2>${butir}`;
+  return `<h2>${judul}</h2>${poin}`;
 }
 
 /** Judul lembar = nama berkas PDF-nya. */
@@ -72,7 +72,7 @@ export function shareCriteriaPdf(sheet: CriteriaSheet): Promise<void> {
     title,
     subtitle: 'CARE · OPEN · REACH · EQUIP',
     chips: [
-      { label: 'Jumlah butir', value: `${count} butir` },
+      { label: 'Jumlah poin', value: `${count} poin` },
       { label: 'Bagian', value: `${sections.length} bagian` },
     ],
     bodyHtml:

@@ -9,6 +9,7 @@ import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -16,6 +17,7 @@ import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { usePagination } from '@/hooks/usePagination';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { groupDigits, parseAmount } from '@/lib/format';
 import { DELETE_ERROR } from '@/lib/messages';
@@ -126,6 +128,10 @@ export function PlacesTab({ places }: { places: Place[] }) {
     }
   }
 
+  // 10 tempat per halaman — daftar nongkrong menumpuk terus.
+  const { currentPage, pageCount, pageItems, setPage } =
+    usePagination(shown);
+
   return (
     <View style={styles.flex}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
@@ -160,7 +166,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
           </VixText>
         )}
 
-        {shown.map((p) => {
+        {pageItems.map((p) => {
           const meta = placeKindMeta(p.kind);
           return (
             <PressableScale
@@ -195,6 +201,19 @@ export function PlacesTab({ places }: { places: Place[] }) {
             </PressableScale>
           );
         })}
+
+        {/* Ganti halaman → balik ke atas lewat REF, bukan `key={currentPage}`
+            seperti daftar lain: ScrollView di sini memegang ref bersama
+            (useScrollTop, dipakai juga chip saringan), dan me-remount-nya akan
+            memutus ref itu. */}
+        <Pagination
+          page={currentPage}
+          pageCount={pageCount}
+          onChange={(p) => {
+            setPage(p);
+            toTop();
+          }}
+        />
       </ScrollView>
 
       <SheetModal

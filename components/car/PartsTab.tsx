@@ -70,12 +70,12 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
         label: 'Kondisi perawatan',
         value:
           needsAttention === 0
-            ? 'Semua terkendali 🙌'
+            ? 'Semua terkendali 👍'
             : `${needsAttention} bagian perlu perhatian ⚠️`,
         sub:
           unknownCount > 0
             ? `${unknownCount} bagian belum pernah dicatat.`
-            : 'Click bagian mana pun untuk memperbarui tanggalnya.',
+            : 'Klik bagian mana pun untuk memperbarui tanggalnya.',
       }}
       groups={groups}
       dialogHint="Kapan terakhir diganti / dicek?"

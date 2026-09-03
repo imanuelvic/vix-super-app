@@ -5,13 +5,13 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import {
-  activeFasting,
-  fastingDayNumber,
-  fastingProgress,
-  type FastingPlan,
+    activeFasting,
+    fastingDayNumber,
+    fastingProgress,
+    type FastingPlan,
 } from '@/lib/fasting';
 import { dayIdToDate, formatShortDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
@@ -111,7 +111,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
                 style={styles.card}
                 onPress={() => open(p.id)}>
                 {/* Angka {done}/{total} pindah ke tombol 📆 di depannya —
-                    di situlah tempat ia bisa di-click untuk dilihat. */}
+                    di situlah tempat ia bisa di-klik untuk dilihat. */}
                 <VixText heading="bold" additionalStyle={styles.cardTitle}>
                   {p.title}
                 </VixText>

@@ -32,7 +32,7 @@ export function ExpenseRow({
   /**
    * true = garis tepi HIJAU, penanda barisnya bisa ditekan. Dipakai Car untuk
    * membedakan catatan miliknya sendiri dari catatan yang datang dari Finance
-   * (yang memang tidak menanggapi click) — supaya tidak ada baris yang
+   * (yang memang tidak menanggapi klik) — supaya tidak ada baris yang
    * kelihatan bisa ditekan tapi diam.
    */
   active?: boolean;

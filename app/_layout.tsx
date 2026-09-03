@@ -84,6 +84,8 @@ function RootNavigator() {
         <Stack.Screen name="bible-reading" />
         {/* Ayat yang dibaca → gambar Instagram Story (vixtory.archive) */}
         <Stack.Screen name="bible-story" />
+        {/* Doa singkat → gambar Instagram Story, kartu yang sama persis */}
+        <Stack.Screen name="pause-pray" />
         {/* Refleksi harian → gambar Instagram Feed (vixtory.archive) */}
         <Stack.Screen name="reflection-feed" />
         <Stack.Screen name="fasting" />
@@ -129,6 +131,12 @@ function RootNavigator() {
         <Stack.Screen name="history" />
         <Stack.Screen name="timeline" />
         <Stack.Screen name="achievements" />
+
+        {/* Version 📱 — versi terpasang & tarik update, dari pojok kanan System */}
+        <Stack.Screen name="app-version" />
+
+        {/* Rincian satu sesi futsal ⚽ — skuad, setoran, & skor tiap game */}
+        <Stack.Screen name="sport/[id]" />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}

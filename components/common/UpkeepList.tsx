@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { DateField } from '@/components/common/DateField';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
@@ -141,10 +141,14 @@ export function UpkeepList({
               {group.label}
             </VixText>
             {group.rows.map((row) => (
-              // Click = tandai baru dikerjakan (atau pilih tanggalnya).
+              // Klik = tandai baru dikerjakan (atau pilih tanggalnya).
               <PressableScale
                 key={row.key}
-                style={[styles.row, deadlineBorder(row.tone)]}
+                style={[
+                  styles.row,
+                  deadlineBorder(row.tone),
+                  attentionBorder(deadlineDue(row.tone)),
+                ]}
                 onLayout={(e) => setRowY(row.key, e.nativeEvent.layout.y)}
                 onPress={() => openEdit(row)}>
                 <View style={styles.rowTop}>

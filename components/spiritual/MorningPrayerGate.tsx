@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   prayerText: { color: Color.TEXT_TITLE, lineHeight: 24 },
   // Sumber ayat — sewarna judul fitur Spiritual, rata kanan seperti kutipan.
   verseRef: { color: Color.SPIRITUAL_DARK, textAlign: 'right', marginTop: 8 },
-  // Butir pokok doa syafaat — sedikit lebih rapat dari teks Bapa Kami.
+  // Poin pokok doa syafaat — sedikit lebih rapat dari teks Bapa Kami.
   pointText: { color: Color.TEXT_TITLE, lineHeight: 22 },
   // Kartu pokok doa 1 CORE Leader di dalam langkah Doa Rantai.
   chainCard: {

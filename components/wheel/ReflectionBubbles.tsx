@@ -23,10 +23,10 @@ import { VixText } from '@/components/common/VixText';
 // Efeknya juga menutupi maksud lain: layar penilaian ini tadinya sepi, dan
 // kesepian itu bikin skornya ditebak cepat-cepat.
 //
-// BACA SAJA — bukan tombol (2 Sep 2026). Dulu satu click menurunkan
+// BACA SAJA — bukan tombol (2 Sep 2026). Dulu satu klik menurunkan
 // pertanyaannya ke kolom catatan; sekarang tidak ada lagi yang bisa diklik di
 // sini. Gunanya cuma jadi bahan perenungan selagi angkanya dipilih. Sasaran
-// yang mengambang memang sulit dikenai, dan click yang meleset terasa seperti
+// yang mengambang memang sulit dikenai, dan klik yang meleset terasa seperti
 // app-nya rusak — padahal yang dibutuhkan cuma dibaca.
 
 /** Tinggi kolam gelembungnya. Muat ±3 gelembung sekaligus tanpa berdesakan. */

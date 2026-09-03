@@ -1,11 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,28 +27,28 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useDraft } from '@/hooks/useDraft';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
-import { formatFullDate } from '@/lib/format';
 import { purgeNoteLinks } from '@/lib/coreNotes';
+import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
-  applicationPrompt,
-  bumpReviveStreak,
-  dailyReminder,
-  deleteReviveEntry,
-  myReminderOn,
-  refreshMyReminders,
-  rhemaPrompt,
-  saveMyReminders,
-  saveReviveEntry,
-  subscribeMyReminders,
-  subscribeReviveEntries,
-  subscribeReviveStreak,
-  toggleMyReminder,
-  type MyReminder,
-  type MyReminderKind,
-  type ReviveEntry,
+    applicationPrompt,
+    bumpReviveStreak,
+    dailyReminder,
+    deleteReviveEntry,
+    myReminderOn,
+    refreshMyReminders,
+    rhemaPrompt,
+    saveMyReminders,
+    saveReviveEntry,
+    subscribeMyReminders,
+    subscribeReviveEntries,
+    subscribeReviveStreak,
+    toggleMyReminder,
+    type MyReminder,
+    type MyReminderKind,
+    type ReviveEntry,
 } from '@/lib/spiritual';
 import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
@@ -194,7 +194,7 @@ export default function ReviveEditorScreen() {
       // membatalkan penghapusannya — penampilnya sudah tahan sambungan yatim.
       purgeNoteLinks(user.uid, 'revive', targetDay).catch(() => {});
       // Reminder yang lahir dari catatan ini ikut dilepas — kalau tidak, di
-      // Home masih ada kalimat yang click-nya membuka Revive kosong.
+      // Home masih ada kalimat yang klik-nya membuka Revive kosong.
       const sisa = mine.filter((m) => m.day !== targetDay);
       if (sisa.length !== mine.length) {
         saveMyReminders(user.uid, sisa).catch(() => {});

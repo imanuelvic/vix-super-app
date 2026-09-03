@@ -19,20 +19,20 @@ import { useAuth } from '@/contexts/auth';
 import { formatFullDate, formatShortDayDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
-  applyWinner,
-  createTournament,
-  deleteTournament,
-  hasStarted,
-  reshuffle,
-  roundLabel,
-  roundsOf,
-  saveTournament,
-  subscribeTournaments,
-  tournamentDate,
-  withDetails,
-  type BracketSize,
-  type Match,
-  type Tournament,
+    applyWinner,
+    createTournament,
+    deleteTournament,
+    hasStarted,
+    reshuffle,
+    roundLabel,
+    roundsOf,
+    saveTournament,
+    subscribeTournaments,
+    tournamentDate,
+    withDetails,
+    type BracketSize,
+    type Match,
+    type Tournament,
 } from '@/lib/tournament';
 
 const SIZES: BracketSize[] = [4, 8, 16];
@@ -228,7 +228,7 @@ export function TournamentTab() {
             <VixText heading="subheader" additionalStyle={styles.heroName}>
               {selected.name}
             </VixText>
-            {/* Click barisnya untuk membetulkan nama & tanggal. Dulu tanggal
+            {/* Klik barisnya untuk membetulkan nama & tanggal. Dulu tanggal
                 cuma bisa diisi sekali saat turnamen dibuat — kalau salah,
                 satu-satunya jalan adalah menghapus turnamennya (dan bracket
                 yang sudah jalan ikut hilang). */}
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   heroKicker: { color: Color.TOURNAMENT, letterSpacing: 1 },
   heroName: { color: Color.TEXT_REVERSE },
   heroDate: { color: Color.TEXT_ON_DARK_MUTED, marginTop: 2 },
-  // Area click sebesar tulisannya saja — tanpa padding, jadi tinggi hero tetap.
+  // Area klik sebesar tulisannya saja — tanpa padding, jadi tinggi hero tetap.
   heroDateBtn: { alignSelf: 'flex-start' },
   progressWrap: { gap: 4, marginTop: 8 },
   progressTrack: {

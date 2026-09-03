@@ -20,18 +20,18 @@ export const RULE_ISI_CSS = `
   .isi h2:first-child { margin-top: 0; }
   .isi p { margin: 0 0 8px; color: #2E3B35; }
 
-  /* Butir daftar: bulatan mint kecil, menjorok rapi */
-  .isi .butir {
+  /* Poin daftar: bulatan mint kecil, menjorok rapi */
+  .isi .poin {
     display: flex; gap: 9px;
     margin: 0 0 6px; padding-left: 2px;
     page-break-inside: avoid;
   }
-  .isi .butir .tanda {
+  .isi .poin .tanda {
     flex: none; color: #4FBFA6; font-weight: 700; line-height: 1.6;
   }
-  .isi .butir .teks { flex: 1; color: #2E3B35; }
-  /* Butir bernomor pakai angka hijau tua, bukan bulatan */
-  .isi .butir.angka .tanda { color: #0C5C50; min-width: 14px; }
+  .isi .poin .teks { flex: 1; color: #2E3B35; }
+  /* Poin bernomor pakai angka hijau tua, bukan bulatan */
+  .isi .poin.angka .tanda { color: #0C5C50; min-width: 14px; }
 
   /* Blok ⚠️ Penting — kartu kuning lembut biar tak mungkin terlewat */
   .isi .penting {
@@ -44,11 +44,11 @@ export const RULE_ISI_CSS = `
     page-break-inside: avoid;
   }
   .isi .penting b { color: #8A6410; display: block; }
-  /* Butir & paragraf yang berada DI DALAM kotak penting */
+  /* Poin & paragraf yang berada DI DALAM kotak penting */
   .isi .penting p { margin: 6px 0 0; color: #6B4E12; }
-  .isi .penting .butir { margin: 6px 0 0; }
-  .isi .penting .butir .tanda { color: #C9962B; }
-  .isi .penting .butir .teks { color: #6B4E12; }
+  .isi .penting .poin { margin: 6px 0 0; }
+  .isi .penting .poin .tanda { color: #C9962B; }
+  .isi .penting .poin .teks { color: #6B4E12; }
 
   .isi hr {
     border: 0;
@@ -70,11 +70,11 @@ export function ruleBodyHtml(body: string): string {
         out.push(`<h2>${t}</h2>`);
         break;
       case 'warn': {
-        // Butir milik blok ini ikut MASUK ke dalam kotaknya.
+        // Poin milik blok ini ikut MASUK ke dalam kotaknya.
         const isi = (line.children ?? [])
           .map((k) =>
             k.type === 'bullet' || k.type === 'num'
-              ? `<div class="butir"><span class="tanda">${
+              ? `<div class="poin"><span class="tanda">${
                   k.type === 'num' ? escapeHtml(`${k.marker}.`) : '•'
                 }</span><span class="teks">${escapeHtml(k.text)}</span></div>`
               : `<p>${escapeHtml(k.text)}</p>`,
@@ -85,12 +85,12 @@ export function ruleBodyHtml(body: string): string {
       }
       case 'bullet':
         out.push(
-          `<div class="butir"><span class="tanda">•</span><span class="teks">${t}</span></div>`,
+          `<div class="poin"><span class="tanda">•</span><span class="teks">${t}</span></div>`,
         );
         break;
       case 'num':
         out.push(
-          `<div class="butir angka">` +
+          `<div class="poin angka">` +
             `<span class="tanda">${escapeHtml(line.marker ?? '')}.</span>` +
             `<span class="teks">${t}</span></div>`,
         );

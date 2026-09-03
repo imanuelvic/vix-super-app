@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -18,28 +18,28 @@ import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
 import { BOOKS } from '@/lib/books';
 import {
-  bumpLearningStreak,
-  canChangeWeekSkill,
-  dueStep,
-  LEARNING_STEPS,
-  learningNoteDone,
-  learningStreakAlive,
-  NOTE_DRIVEN_STEP,
-  setLearningNote,
-  setLearningStep,
-  setSkillDone,
-  setWeekSkill,
-  skillAreaMeta,
-  overdueSteps,
-  skillOf,
-  skillOfWeek,
-  SKILLS,
-  stepsDone,
-  weekComplete,
-  type LearningStep,
-  type LearningWeek,
-  type SkillsDone,
-  type WeekStreak,
+    bumpLearningStreak,
+    canChangeWeekSkill,
+    dueStep,
+    LEARNING_STEPS,
+    learningNoteDone,
+    learningStreakAlive,
+    NOTE_DRIVEN_STEP,
+    overdueSteps,
+    setLearningNote,
+    setLearningStep,
+    setSkillDone,
+    setWeekSkill,
+    skillAreaMeta,
+    skillOf,
+    skillOfWeek,
+    SKILLS,
+    stepsDone,
+    weekComplete,
+    type LearningStep,
+    type LearningWeek,
+    type SkillsDone,
+    type WeekStreak,
 } from '@/lib/learning';
 import { SAVE_ERROR } from '@/lib/messages';
 import { formatWeekRange } from '@/lib/usage';
@@ -93,7 +93,7 @@ export function WeekTab({
   const runningStreak = learningStreakAlive(streak, weekId) ? streak.count : 0;
 
   /**
-   * Setel satu langkah + efek sampingnya. DUA jalan masuk memakainya: click
+   * Setel satu langkah + efek sampingnya. DUA jalan masuk memakainya: klik
    * centang biasa, dan langkah Rangkum yang centangnya datang dari tulisannya
    * sendiri — jadi efek sampingnya (tanda skill selesai & streak) mustahil
    * ikut di satu jalan tapi terlewat di jalan lain.
@@ -280,6 +280,7 @@ export function WeekTab({
                   styles.stepRow,
                   checked && styles.stepRowDone,
                   isDue && styles.stepRowDue,
+                  attentionBorder(tertagih),
                 ]}>
                 {/* Penandanya duduk di pojok kanan-atas KARTUNYA, sama seperti
                     seluruh app (`corner` di components/common/Badge.tsx). Dulu
@@ -317,7 +318,7 @@ export function WeekTab({
                     </VixText>
                   )}
                   {/* Lingkarannya dikunci, jadi harus ada yang memberi tahu
-                      kenapa — tanpa ini click yang tidak terjadi apa-apa cuma
+                      kenapa — tanpa ini klik yang tidak terjadi apa-apa cuma
                       terasa rusak. */}
                   {dariTulisan && !checked && (
                     <VixText heading="label" additionalStyle={styles.stepLocked}>

@@ -15,21 +15,21 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RuleBody } from '@/components/core/RuleBody';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
 import { MEETING_KINDS } from '@/lib/core';
 import {
-  deleteCoreRule,
-  emptyCoreRule,
-  ruleFullTitle,
-  saveCoreRule,
-  seedCoreRules,
-  sortCoreRules,
-  subscribeCoreRules,
-  type CoreRule,
+    deleteCoreRule,
+    emptyCoreRule,
+    ruleFullTitle,
+    saveCoreRule,
+    seedCoreRules,
+    sortCoreRules,
+    subscribeCoreRules,
+    type CoreRule,
 } from '@/lib/coreRules';
 import { shareRulePdf } from '@/lib/coreRulesPdf';
 import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
@@ -356,7 +356,7 @@ export default function CoreRulesScreen() {
           📜 Isi panduan
         </VixText>
         <VixText heading="label" additionalStyle={styles.hint}>
-          Catatan: Baris berawalan * atau - jadi butir, ⚠️ jadi kotak
+          Catatan: Baris berawalan * atau - jadi poin, ⚠️ jadi kotak
           penting, dan baris ━━━ jadi garis pemisah.
         </VixText>
         <FormInput

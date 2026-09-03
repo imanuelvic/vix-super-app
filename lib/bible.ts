@@ -222,7 +222,7 @@ export function usfmOf(book: string): string | null {
  *   "Sesuatu"       → null          (kitabnya tak dikenali)
  *
  * Acuan ganda ("Yakobus 3, Amsal 14") sengaja TIDAK diurus di sini — yang
- * memanggil memecahnya dulu, supaya tiap acuan bisa di-click sendiri-sendiri.
+ * memanggil memecahnya dulu, supaya tiap acuan bisa di-klik sendiri-sendiri.
  */
 export function usfmRef(text: string): string | null {
   const { book, chapter, verseFrom } = parseBibleRef(text);

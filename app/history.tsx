@@ -25,18 +25,18 @@ import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
-  ageAtYear,
-  historyCategoryMeta,
-  HISTORY_CATEGORIES,
-  historyYears,
-  newHistoryId,
-  saveHistory,
-  seededHistory,
-  SEED_HISTORY,
-  subscribeHistory,
-  yearLabel,
-  type HistoryCategoryKey,
-  type HistoryItem,
+    ageAtYear,
+    HISTORY_CATEGORIES,
+    historyCategoryMeta,
+    historyYears,
+    newHistoryId,
+    saveHistory,
+    SEED_HISTORY,
+    seededHistory,
+    subscribeHistory,
+    yearLabel,
+    type HistoryCategoryKey,
+    type HistoryItem,
 } from '@/lib/history';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 
@@ -303,7 +303,7 @@ export default function HistoryScreen() {
                   {yearItems.map((item) => {
                     const meta = historyCategoryMeta(item.category);
                     return (
-                      // Tombol ✏️ jadi SAUDARA area click, bukan anaknya —
+                      // Tombol ✏️ jadi SAUDARA area klik, bukan anaknya —
                       // Pressable bersarang tidak andal di iOS.
                       <View key={item.id} style={styles.row}>
                         <PressableScale

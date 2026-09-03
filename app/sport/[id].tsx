@@ -1,0 +1,593 @@
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { CARD } from '@/assets/style/card';
+import { Color } from '@/assets/style/color';
+import { CheckCircle } from '@/components/common/CheckCircle';
+import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
+import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
+import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { PressableScale } from '@/components/common/PressableScale';
+import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
+import { VixText } from '@/components/common/VixText';
+import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
+import { dayIdToDate, formatDayDate } from '@/lib/format';
+import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import {
+  EMPTY_SPORT,
+  gangMeta,
+  newSportId,
+  positionMeta,
+  saveSport,
+  sessionDueTotal,
+  sessionPaidTotal,
+  sessionTotal,
+  subscribeSport,
+  type SportData,
+  type SportGame,
+  type SportMember,
+  type SportSession,
+} from '@/lib/sport';
+import { formatRupiah } from '@/lib/transactions';
+import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
+
+// Rincian satu sesi futsal ⚽ — ruang kerja managernya.
+//
+// Tiga hal yang cuma bisa diurus di sini, dan sengaja TIDAK ditaruh di daftar
+// sub-tab Sport supaya daftarnya tetap enteng dibaca:
+//   1. Skuad & setoran — siapa jadi ikut, siapa yang sudah bayar.
+//   2. Uang — total, yang masuk, dan sisa yang masih nyangkut di orang.
+//   3. Skor tiap game + siapa yang mencetak golnya (dasar papan top skor).
+export default function SportSessionScreen() {
+  const { user } = useAuth();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const [data, setData] = useState<SportData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { busy, formError, setFormError, save, remove } = useFormSave();
+
+  // Form game.
+  const [gameOpen, setGameOpen] = useState(false);
+  const [editGame, setEditGame] = useState<SportGame | null>(null);
+  const [fTimA, setFTimA] = useState('Rompi');
+  const [fTimB, setFTimB] = useState('Non-Rompi');
+  const [fSkorA, setFSkorA] = useState('0');
+  const [fSkorB, setFSkorB] = useState('0');
+  const [fPencetak, setFPencetak] = useState<string[]>([]);
+
+  // Form catatan.
+  const [catatanOpen, setCatatanOpen] = useState(false);
+  const [fCatatan, setFCatatan] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    return subscribeSport(user.uid, setData, () => {
+      setData(EMPTY_SPORT);
+      setError(LOAD_ERROR);
+    });
+  }, [user]);
+
+  const sesi = data?.sessions.find((s) => s.id === id) ?? null;
+
+  if (data === null) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScreenHeader backLabel="Social" title="Futsal ⚽" />
+        <LoadingCenter />
+      </SafeAreaView>
+    );
+  }
+
+  if (!sesi) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScreenHeader backLabel="Social" title="Futsal ⚽" />
+        <ScreenError message={error} />
+        <VixText heading="label" additionalStyle={styles.empty}>
+          Jadwal ini sudah tidak ada.
+        </VixText>
+      </SafeAreaView>
+    );
+  }
+
+  const meta = gangMeta(sesi.gang);
+  const anggota = data.members.filter((m) => m.gang === sesi.gang);
+  const total = sessionTotal(sesi);
+  const masuk = sessionPaidTotal(sesi);
+  const kurang = sessionDueTotal(sesi);
+
+  /**
+   * Tulis ulang sesi ini di dalam dokumen bersamanya.
+   *
+   * Penjagaan `!data || !sesi` diulang di sini walau di atas sudah dijaga:
+   * TypeScript tidak membawa penyempitan itu masuk ke dalam fungsi, dan
+   * memaksanya dengan `!` berarti membuang jaring pengaman yang sesungguhnya
+   * (dokumennya bisa terhapus dari perangkat lain selagi layar ini terbuka).
+   */
+  async function simpanSesi(ubah: (s: SportSession) => SportSession) {
+    if (!user || !data || !sesi) return;
+    const berikutnya = ubah(sesi);
+    await saveSport(user.uid, {
+      ...data,
+      sessions: data.sessions.map((s) =>
+        s.id === berikutnya.id ? berikutnya : s,
+      ),
+    });
+  }
+
+  /** Ikut / tidak ikut main. Yang dicabut dari skuad ikut lepas dari setoran. */
+  async function toggleIkut(m: SportMember) {
+    if (!sesi) return;
+    const ikut = sesi.squad.includes(m.id);
+    try {
+      await simpanSesi((s) => ({
+        ...s,
+        squad: ikut ? s.squad.filter((x) => x !== m.id) : [...s.squad, m.id],
+        paid: ikut ? s.paid.filter((x) => x !== m.id) : s.paid,
+      }));
+    } catch {
+      setError(SAVE_ERROR);
+    }
+  }
+
+  /** Sudah setor / belum. Yang tidak ikut main tidak bisa ditandai lunas. */
+  async function toggleLunas(m: SportMember) {
+    if (!sesi || !sesi.squad.includes(m.id)) return;
+    const lunas = sesi.paid.includes(m.id);
+    try {
+      await simpanSesi((s) => ({
+        ...s,
+        paid: lunas ? s.paid.filter((x) => x !== m.id) : [...s.paid, m.id],
+      }));
+    } catch {
+      setError(SAVE_ERROR);
+    }
+  }
+
+  function tagih(m: SportMember) {
+    if (!sesi) return;
+    if (!m.phone) {
+      setError('Nomor HP-nya belum diisi — isi dulu di daftar anggota.');
+      return;
+    }
+    const pesan =
+      `Halo ${m.name} 👋 Iuran futsal ${meta.label} ` +
+      `${formatDayDate(dayIdToDate(sesi.dayId))} di ${sesi.venue} ` +
+      `sebesar ${formatRupiah(sesi.fee)} belum masuk ya. Makasih! ⚽`;
+    openWhatsAppChat(m.phone, pesan, () => setError(WHATSAPP_ERROR));
+  }
+
+  // ===================== Game =====================
+
+  function bukaGameBaru() {
+    setEditGame(null);
+    setFTimA('Rompi');
+    setFTimB('Non-Rompi');
+    setFSkorA('0');
+    setFSkorB('0');
+    setFPencetak([]);
+    setFormError(null);
+    setGameOpen(true);
+  }
+
+  function bukaGameUbah(g: SportGame) {
+    setEditGame(g);
+    setFTimA(g.teamA);
+    setFTimB(g.teamB);
+    setFSkorA(String(g.scoreA));
+    setFSkorB(String(g.scoreB));
+    setFPencetak(g.scorers);
+    setFormError(null);
+    setGameOpen(true);
+  }
+
+  /** Satu click = satu gol. Click lagi = gol berikutnya untuk orang yang sama. */
+  function tambahGol(m: SportMember) {
+    setFPencetak((list) => [...list, m.id]);
+  }
+
+  function kurangiGol(m: SportMember) {
+    setFPencetak((list) => {
+      const i = list.lastIndexOf(m.id);
+      return i === -1 ? list : [...list.slice(0, i), ...list.slice(i + 1)];
+    });
+  }
+
+  async function simpanGame() {
+    if (!user || busy) return;
+    const isi: SportGame = {
+      id: editGame?.id ?? newSportId(new Date()),
+      teamA: fTimA.trim() || 'Tim A',
+      teamB: fTimB.trim() || 'Tim B',
+      scoreA: Math.max(0, parseInt(fSkorA, 10) || 0),
+      scoreB: Math.max(0, parseInt(fSkorB, 10) || 0),
+      scorers: fPencetak,
+    };
+    await save(async () => {
+      await simpanSesi((s) => ({
+        ...s,
+        games: editGame
+          ? s.games.map((g) => (g.id === editGame.id ? isi : g))
+          : [...s.games, isi],
+      }));
+      setGameOpen(false);
+    });
+  }
+
+  async function hapusGame() {
+    if (!user || !editGame || busy) return;
+    await remove(async () => {
+      await simpanSesi((s) => ({
+        ...s,
+        games: s.games.filter((g) => g.id !== editGame.id),
+      }));
+      setGameOpen(false);
+    });
+  }
+
+  async function simpanCatatan() {
+    if (!user || busy) return;
+    await save(async () => {
+      await simpanSesi((s) => ({ ...s, note: fCatatan.trim() }));
+      setCatatanOpen(false);
+    });
+  }
+
+  // Berapa gol orang ini di game yang sedang diisi.
+  const golDi = (id: string) => fPencetak.filter((x) => x === id).length;
+  // Total gol yang sudah ditandai vs skor yang diketik — kalau beda, papan top
+  // skornya lebih kecil dari skor sebenarnya.
+  const golDitandai = fPencetak.length;
+  const golDiketik =
+    (parseInt(fSkorA, 10) || 0) + (parseInt(fSkorB, 10) || 0);
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader
+        backLabel="Social"
+        title={`${meta.emoji} ${meta.label}`}
+        subtitle={`${formatDayDate(dayIdToDate(sesi.dayId))} · ${sesi.time}`}
+      />
+
+      <ScreenError message={error} />
+
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* ===== Uang ===== */}
+        <SummaryCard>
+          <VixText heading="label" additionalStyle={summaryText.label}>
+            📍 {sesi.venue || 'Lapangan belum ditentukan'}
+          </VixText>
+          <VixText heading="subheader" additionalStyle={summaryText.value}>
+            {formatRupiah(masuk)} / {formatRupiah(total)}
+          </VixText>
+          <VixText heading="label" additionalStyle={summaryText.label}>
+            {kurang > 0
+              ? `Kurang ${formatRupiah(kurang)} dari ${
+                  sesi.squad.filter((x) => !sesi.paid.includes(x)).length
+                } orang`
+              : sesi.squad.length > 0
+                ? 'Semua sudah setor ✅'
+                : 'Belum ada yang ikut main'}
+          </VixText>
+        </SummaryCard>
+
+        {/* ===== Skuad & setoran ===== */}
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          👥 Skuad & Setoran
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.hint}>
+          Lingkaran kiri = ikut main. Lingkaran kanan = sudah setor. Yang belum
+          setor bisa langsung ditagih lewat WhatsApp 💬
+        </VixText>
+
+        {anggota.length === 0 ? (
+          <VixText heading="label" additionalStyle={styles.empty}>
+            Belum ada anggota {meta.label} — tambahkan dulu di sub-tab Sport.
+          </VixText>
+        ) : (
+          anggota.map((m) => {
+            const ikut = sesi.squad.includes(m.id);
+            const lunas = sesi.paid.includes(m.id);
+            const pos = positionMeta(m.position);
+            return (
+              <View
+                key={m.id}
+                style={[styles.row, !ikut && styles.rowOff, lunas && styles.rowPaid]}>
+                <PressableScale
+                  onPress={() => toggleIkut(m)}
+                  hitSlop={6}
+                  haptic={ikut ? 'light' : 'success'}>
+                  <CheckCircle checked={ikut} />
+                </PressableScale>
+
+                <View style={styles.rowMain}>
+                  <VixText heading="bold" additionalStyle={styles.rowName}>
+                    {pos.emoji} {m.name}
+                  </VixText>
+                  <VixText heading="label">
+                    {ikut
+                      ? lunas
+                        ? `✅ Sudah setor ${formatRupiah(sesi.fee)}`
+                        : `💸 Belum setor ${formatRupiah(sesi.fee)}`
+                      : 'Tidak ikut main kali ini'}
+                  </VixText>
+                </View>
+
+                {ikut && !lunas && (
+                  <PressableScale
+                    style={styles.tagih}
+                    onPress={() => tagih(m)}
+                    hitSlop={6}>
+                    <VixText heading="label" additionalStyle={styles.tagihText}>
+                      💬
+                    </VixText>
+                  </PressableScale>
+                )}
+                {ikut && (
+                  <PressableScale
+                    onPress={() => toggleLunas(m)}
+                    hitSlop={6}
+                    haptic={lunas ? 'light' : 'success'}>
+                    <CheckCircle checked={lunas} />
+                  </PressableScale>
+                )}
+              </View>
+            );
+          })
+        )}
+
+        {/* ===== Game & skor ===== */}
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          ⚽ Game & Skor
+        </VixText>
+        {sesi.games.length === 0 ? (
+          <VixText heading="label" additionalStyle={styles.empty}>
+            Belum ada game tercatat. Catat skornya biar ada yang dikenang —
+            dan biar papan top skor gengnya jalan 🥇
+          </VixText>
+        ) : (
+          sesi.games.map((g, i) => (
+            <PressableScale
+              key={g.id}
+              style={styles.gameCard}
+              onPress={() => bukaGameUbah(g)}>
+              <VixText heading="label" additionalStyle={styles.gameNo}>
+                Game {i + 1}
+              </VixText>
+              <View style={styles.gameRow}>
+                <VixText heading="bold" additionalStyle={styles.gameTim}>
+                  {g.teamA}
+                </VixText>
+                <VixText heading="subheader" additionalStyle={styles.gameSkor}>
+                  {g.scoreA} – {g.scoreB}
+                </VixText>
+                <VixText heading="bold" additionalStyle={styles.gameTimKanan}>
+                  {g.teamB}
+                </VixText>
+              </View>
+              {g.scorers.length > 0 && (
+                <VixText heading="label" additionalStyle={styles.gamePencetak}>
+                  ⚽{' '}
+                  {[...new Set(g.scorers)]
+                    .map((sid) => {
+                      const orang = anggota.find((m) => m.id === sid);
+                      const n = g.scorers.filter((x) => x === sid).length;
+                      return orang
+                        ? `${orang.name}${n > 1 ? ` ×${n}` : ''}`
+                        : null;
+                    })
+                    .filter(Boolean)
+                    .join(' · ')}
+                </VixText>
+              )}
+            </PressableScale>
+          ))
+        )}
+        <PrimaryButton
+          label="Catat Game"
+          icon="plus"
+          onPress={bukaGameBaru}
+          additionalStyle={styles.addButton}
+        />
+
+        {/* ===== Catatan ===== */}
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          📝 Catatan
+        </VixText>
+        <PressableScale
+          style={styles.noteCard}
+          onPress={() => {
+            setFCatatan(sesi.note);
+            setFormError(null);
+            setCatatanOpen(true);
+          }}>
+          <VixText
+            heading="label"
+            additionalStyle={sesi.note ? styles.noteText : styles.notePlaceholder}>
+            {sesi.note || 'Belum ada catatan. Click untuk menulis.'}
+          </VixText>
+        </PressableScale>
+      </ScrollView>
+
+      {/* ===== Sheet game ===== */}
+      <SheetModal
+        visible={gameOpen}
+        title={editGame ? 'Ubah Game' : 'Catat Game'}
+        subtitle="Skor & pencetak golnya"
+        onClose={() => setGameOpen(false)}
+        footer={
+          <DualButtons
+            confirmLabel="Simpan"
+            busy={busy}
+            onCancel={() => setGameOpen(false)}
+            onConfirm={simpanGame}
+          />
+        }>
+        <View style={styles.timRow}>
+          <View style={styles.timKolom}>
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              Tim kiri
+            </VixText>
+            <FormInput value={fTimA} onChangeText={setFTimA} editable={!busy} />
+            <FormInput
+              style={styles.formGap}
+              keyboardType="number-pad"
+              value={fSkorA}
+              onChangeText={(t) => setFSkorA(t.replace(/[^0-9]/g, ''))}
+              editable={!busy}
+            />
+          </View>
+          <View style={styles.timKolom}>
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              Tim kanan
+            </VixText>
+            <FormInput value={fTimB} onChangeText={setFTimB} editable={!busy} />
+            <FormInput
+              style={styles.formGap}
+              keyboardType="number-pad"
+              value={fSkorB}
+              onChangeText={(t) => setFSkorB(t.replace(/[^0-9]/g, ''))}
+              editable={!busy}
+            />
+          </View>
+        </View>
+
+        <VixText heading="label" additionalStyle={[styles.fieldLabel, styles.formGap]}>
+          Pencetak gol — click namanya sekali per gol
+        </VixText>
+        <View style={styles.pencetakRow}>
+          {anggota
+            .filter((m) => sesi.squad.includes(m.id))
+            .map((m) => {
+              const n = golDi(m.id);
+              return (
+                <PressableScale
+                  key={m.id}
+                  style={[styles.pencetak, n > 0 && styles.pencetakOn]}
+                  onPress={() => tambahGol(m)}
+                  onLongPress={() => kurangiGol(m)}>
+                  <VixText
+                    heading="label"
+                    additionalStyle={n > 0 ? styles.pencetakOnText : styles.pencetakText}>
+                    {m.name}
+                    {n > 0 ? ` ⚽${n}` : ''}
+                  </VixText>
+                </PressableScale>
+              );
+            })}
+        </View>
+        <VixText heading="label" additionalStyle={styles.hint}>
+          Tekan lama untuk mengurangi satu gol. {golDitandai} gol ditandai dari{' '}
+          {golDiketik} yang diketik
+          {golDitandai !== golDiketik
+            ? ' — sisanya tidak masuk papan top skor.'
+            : ' ✅'}
+        </VixText>
+
+        <FormError message={formError} gap="top" />
+        {editGame && (
+          <InlineDelete
+            key={editGame.id}
+            label="Hapus game ini"
+            busy={busy}
+            onDelete={hapusGame}
+          />
+        )}
+      </SheetModal>
+
+      {/* ===== Sheet catatan ===== */}
+      <SheetModal
+        visible={catatanOpen}
+        title="Catatan Sesi"
+        onClose={() => setCatatanOpen(false)}
+        footer={
+          <DualButtons
+            confirmLabel="Simpan"
+            busy={busy}
+            onCancel={() => setCatatanOpen(false)}
+            onConfirm={simpanCatatan}
+          />
+        }>
+        <FormInput
+          placeholder="mis. bawa rompi, parkir di basement, Andre bawa bola"
+          value={fCatatan}
+          onChangeText={setFCatatan}
+          editable={!busy}
+          multiline
+          style={styles.noteInput}
+        />
+        <FormError message={formError} gap="top" />
+      </SheetModal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  sectionTitle: { marginTop: 16, marginBottom: 6 },
+  hint: { color: Color.TEXT_LABEL, marginBottom: 8 },
+  empty: { textAlign: 'center', marginVertical: 10 },
+  addButton: { marginTop: 8 },
+  // Baris satu pemain: ikut · nama · tagih · lunas.
+  row: {
+    ...CARD,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  rowOff: { opacity: 0.5 },
+  rowPaid: { backgroundColor: Color.MAIN_TRANSPARENT, borderColor: Color.MAIN_LIGHT },
+  rowMain: { flex: 1, minWidth: 0, gap: 1 },
+  rowName: { color: Color.TEXT_TITLE },
+  // Tombol tagih: garis tepi hijau WhatsApp — sudah ada di palet, jadi tak
+  // perlu warna baru untuk satu tombol.
+  tagih: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Color.WHATSAPP,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  tagihText: { color: Color.WHATSAPP },
+  // Kartu satu game.
+  gameCard: { ...CARD, marginBottom: 8, gap: 4 },
+  gameNo: { color: Color.TEXT_PLACEHOLDER },
+  gameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  gameTim: { flex: 1, minWidth: 0, color: Color.TEXT_TITLE },
+  gameTimKanan: { flex: 1, minWidth: 0, color: Color.TEXT_TITLE, textAlign: 'right' },
+  gameSkor: { color: Color.SOCIAL_DARK },
+  gamePencetak: { color: Color.TEXT_LABEL },
+  // Catatan.
+  noteCard: { ...CARD },
+  noteText: { color: Color.TEXT_TITLE },
+  notePlaceholder: { color: Color.TEXT_PLACEHOLDER },
+  noteInput: { minHeight: 100, textAlignVertical: 'top' },
+  // Form game.
+  timRow: { flexDirection: 'row', gap: 10 },
+  timKolom: { flex: 1, minWidth: 0 },
+  fieldLabel: { marginBottom: 6 },
+  formGap: { marginTop: 10 },
+  pencetakRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pencetak: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.CONTAINER,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  pencetakOn: { backgroundColor: Color.SOCIAL, borderColor: Color.SOCIAL_DARK },
+  pencetakText: { color: Color.TEXT_TITLE },
+  pencetakOnText: { color: Color.SOCIAL_DARK },
+});

@@ -8,6 +8,7 @@ import { EditFooter } from '@/components/common/EditFooter';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -15,19 +16,20 @@ import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { usePagination } from '@/hooks/usePagination';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
-  AFFILIATE_PLATFORMS,
-  IDEA_STAGES,
-  newIdeaId,
-  platformMeta,
-  saveAffiliateIdeas,
-  sortedIdeas,
-  stageCounts,
-  stageMeta,
-  type AffiliatePlatform,
-  type ContentIdea,
-  type IdeaStage,
+    AFFILIATE_PLATFORMS,
+    IDEA_STAGES,
+    newIdeaId,
+    platformMeta,
+    saveAffiliateIdeas,
+    sortedIdeas,
+    stageCounts,
+    stageMeta,
+    type AffiliatePlatform,
+    type ContentIdea,
+    type IdeaStage,
 } from '@/lib/affiliate';
 import { openExternalUrl } from '@/lib/linking';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -41,7 +43,7 @@ import { Timestamp } from 'firebase/firestore';
 //
 // Tahapnya bisa diubah LANGSUNG dari kartunya (tanpa buka modal) — memindahkan
 // tahap itu hal yang paling sering dilakukan, dan yang paling sering dilakukan
-// harus jadi yang paling sedikit click-nya.
+// harus jadi yang paling sedikit klik-nya.
 export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
   const { user } = useAuth();
   const { ref: scrollRef, toTop } = useScrollTop();
@@ -152,6 +154,10 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
     }
   }
 
+  // 10 ide per halaman — daftarnya menumpuk terus tiap kali menulis ide.
+  const { currentPage, pageCount, pageItems, setPage } =
+    usePagination(shown);
+
   return (
     <View style={styles.flex}>
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
@@ -193,7 +199,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
           </VixText>
         )}
 
-        {shown.map((i) => {
+        {pageItems.map((i) => {
           const stage = stageMeta(i.stage);
           const tayang = i.stage === 'posted';
           return (
@@ -254,6 +260,18 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
             </View>
           );
         })}
+
+        {/* Balik ke atas lewat REF (bukan `key={currentPage}`): ScrollView ini
+            memegang ref bersama useScrollTop yang juga dipakai chip saringan —
+            me-remount-nya akan memutus ref itu. */}
+        <Pagination
+          page={currentPage}
+          pageCount={pageCount}
+          onChange={(p) => {
+            setPage(p);
+            toTop();
+          }}
+        />
       </ScrollView>
 
       <SheetModal

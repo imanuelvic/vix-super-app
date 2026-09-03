@@ -21,12 +21,12 @@ import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
 import { formatDate } from '@/lib/format';
 import {
-  addCheckup,
-  CHECKUP_TYPES,
-  deleteCheckup,
-  updateCheckup,
-  type Checkup,
-  type CheckupType,
+    addCheckup,
+    CHECKUP_TYPES,
+    deleteCheckup,
+    updateCheckup,
+    type Checkup,
+    type CheckupType,
 } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
 
@@ -166,7 +166,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             Dulu dua kartu panjang berjajar ke bawah dan memakan hampir
             seluruh layar: tombol "Catat Pemeriksaan" & riwayatnya harus
             digulung jauh dulu. Sekarang ringkas — keterangan lengkapnya
-            (nilai normal, tips, jadwal berikutnya) satu click di halaman
+            (nilai normal, tips, jadwal berikutnya) satu klik di halaman
             sendiri. Titik ⚠️ muncul kalau ada yang di luar normal atau sudah
             waktunya dicek lagi, jadi yang penting tetap terlihat dari sini. */}
         <PressableScale
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     borderColor: Color.FINANCE_EXPENSE_DARK,
   },
   navTextDonor: { color: Color.DANGER },
-  // Kotak ringkas hasil terakhir — dua angka berdampingan, satu click ke
+  // Kotak ringkas hasil terakhir — dua angka berdampingan, satu klik ke
   // halaman keterangan lengkapnya.
   summaryCard: {
     backgroundColor: Color.CONTAINER,

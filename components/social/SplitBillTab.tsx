@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { FormError } from '@/components/common/FormError';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -113,7 +113,11 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
               return (
                 <PressableScale
                   key={bill.id}
-                  style={[styles.card, lunas && styles.cardDone]}
+                  style={[
+                    styles.card,
+                    lunas && styles.cardDone,
+                    attentionBorder(billUnsettled(bill)),
+                  ]}
                   onLayout={(e) => setRowY(bill.id, e.nativeEvent.layout.y)}
                   onPress={() =>
                     router.push({ pathname: '/bill/[id]', params: { id: bill.id } })

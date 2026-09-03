@@ -2,32 +2,35 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { BibleRefField } from '@/components/common/BibleRefField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
+import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { usePagination } from '@/hooks/usePagination';
 import { splitBibleRefs, usfmRef } from '@/lib/bible';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR } from '@/lib/messages';
 import {
-  BIBLE_SESSIONS,
-  BIBLE_VERSION_DEFAULT,
-  bibleHasOther,
-  bibleSessionMeta,
-  bibleSessionOfClock,
-  deleteBibleReading,
-  isBibleSkipped,
-  openYouVersion,
-  saveBibleReading,
-  type BibleReadingDay,
-  type BibleSession,
+    BIBLE_SESSIONS,
+    BIBLE_VERSION_DEFAULT,
+    bibleHasOther,
+    bibleSessionMeta,
+    bibleSessionOfClock,
+    deleteBibleReading,
+    isBibleSkipped,
+    openYouVersion,
+    saveBibleReading,
+    type BibleReadingDay,
+    type BibleSession,
 } from '@/lib/spiritual';
 
 // Tab Bible Reading 📖 — riwayat bacaan Alkitab harian yang dicatat dari Home.
@@ -57,9 +60,11 @@ export function BibleReadingTab({
     () => openSession ?? bibleSessionOfClock(new Date()),
   );
 
-  // Hari yang sedang diedit (hanya hari ini) + isi kotak teksnya.
+  // Hari yang sedang diedit (hanya hari ini) + isi formulirnya. Acuannya
+  // disimpan sebagai DAFTAR, sama seperti layar Baca Alkitab: satu hari boleh
+  // berisi beberapa kitab ("Yesaya 5, Amsal 3").
   const [editing, setEditing] = useState<BibleReadingDay | null>(null);
-  const [text, setText] = useState('');
+  const [refs, setRefs] = useState<string[]>([]);
   const [version, setVersion] = useState(BIBLE_VERSION_DEFAULT);
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
@@ -72,24 +77,47 @@ export function BibleReadingTab({
   const meta = bibleSessionMeta(session);
   const todayId = dayDocId(new Date());
 
+  // 10 kartu per halaman — arsip ini menumpuk terus tiap hari, jadi tanpa
+  // paginasi daftarnya jadi gulungan tanpa ujung. `key={currentPage}` di
+  // ScrollView-nya membuat tiap ganti halaman balik ke atas.
+  const { currentPage, pageCount, pageItems, setPage } = usePagination(list);
+
+  // Acuan yang benar-benar terisi — dipakai untuk menyimpan & untuk menjaga
+  // tombol Perbarui tidak menyimpan catatan kosong.
+  const filled = refs.map((r) => r.trim()).filter(Boolean);
+
   function openEdit(d: BibleReadingDay) {
     setEditing(d);
     // Yang dilewati tidak pernah masuk daftar, jadi isinya pasti acuan asli —
-    // penanda "__skip__" tak mungkin nyasar ke kotak teks ini.
-    setText(d[session]);
+    // penanda "__skip__" tak mungkin nyasar ke pemilih kitab ini. Dipecah
+    // dengan pemisah yang sama dengan kartunya, jadi "Amsal 3:5-6" tetap utuh.
+    setRefs(splitBibleRefs(d[session]));
     setVersion(d.versions[session]);
     setFormError(null);
   }
 
+  function setRefAt(index: number, ref: string) {
+    setRefs((list) => list.map((r, i) => (i === index ? ref : r)));
+  }
+
+  function removeRefAt(index: number) {
+    setRefs((list) => list.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
-    const value = text.trim();
     if (!user || !editing || busy) return;
-    if (!value) {
-      setFormError('Isi kitab & pasalnya dulu, atau hapus catatannya.');
+    if (filled.length === 0) {
+      setFormError('Pilih kitab & pasalnya dulu, atau hapus catatannya.');
       return;
     }
     await save(async () => {
-      await saveBibleReading(user.uid, editing.id, session, value, version);
+      await saveBibleReading(
+        user.uid,
+        editing.id,
+        session,
+        filled.join(', '),
+        version.trim() || BIBLE_VERSION_DEFAULT,
+      );
       setEditing(null);
     });
   }
@@ -116,7 +144,7 @@ export function BibleReadingTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
         <SegmentTabs
           tabs={BIBLE_SESSIONS.map((s) => ({
             key: s.key,
@@ -134,7 +162,7 @@ export function BibleReadingTab({
           </VixText>
         )}
 
-        {list.map((d) => {
+        {pageItems.map((d) => {
           const editable = d.id === todayId;
           return (
             <View key={d.id} style={styles.card}>
@@ -155,7 +183,7 @@ export function BibleReadingTab({
                   Catatan lama yang belum punya kolom terjemahan tampil (TB),
                   dan itu memang benar: semuanya dibuat dari Terjemahan Baru.
 
-                  Tiap acuan bisa di-click SENDIRI-SENDIRI → membuka pasal itu
+                  Tiap acuan bisa di-klik SENDIRI-SENDIRI → membuka pasal itu
                   di YouVersion. Baris "Yakobus 3, Amsal 14" jadi dua tombol,
                   bukan satu: yang mau dibaca ulang biasanya cuma salah satunya.
                   Terjemahannya ikut, jadi yang terbuka bacaan yang sama persis
@@ -186,6 +214,8 @@ export function BibleReadingTab({
             </View>
           );
         })}
+
+        <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
       </ScrollView>
 
       {/* Sheet edit/hapus catatan hari ini */}
@@ -202,30 +232,61 @@ export function BibleReadingTab({
             onConfirm={handleSave}
           />
         }>
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Kitab, pasal & ayat
-        </VixText>
-        <FormInput
-          placeholder="Alkitab"
-          value={text}
-          onChangeText={setText}
-          editable={!busy}
-          multiline
-          style={styles.input}
-        />
+        {/* Bentuknya SAMA PERSIS dengan layar Baca Alkitab: pilih kitab dari
+            daftar 66, lalu pasal & ayat dari–sampai. Jadi acuan yang tersimpan
+            selalu terbaca YouVersion — mengetik "yesaya 5" dengan huruf kecil
+            atau salah eja dulu bisa lolos ke sini, dan pil di kartunya berhenti
+            bisa di-klik tanpa penjelasan apa pun.
 
-        <VixText heading="label" additionalStyle={styles.fieldLabelTop}>
-          Terjemahan
-        </VixText>
-        <FormInput
-          placeholder={BIBLE_VERSION_DEFAULT}
-          value={version}
-          onChangeText={setVersion}
-          editable={!busy}
-          autoCapitalize="characters"
-          maxLength={12}
-          style={styles.versionInput}
-        />
+            `inlinePicker` — daftar kitabnya mengembang di tempat, bukan sebagai
+            dialog tengah layar: sheet ini sendiri sudah sebuah modal, dan modal
+            di atas modal tidak andal di iOS. */}
+        {refs.map((ref, i) => (
+          <View key={i} style={styles.refCard}>
+            <View style={styles.refTop}>
+              <VixText heading="bold" additionalStyle={styles.refTitle}>
+                Bacaan {i + 1}
+              </VixText>
+              {refs.length > 1 && (
+                <PressableScale onPress={() => removeRefAt(i)} hitSlop={10}>
+                  <VixText heading="label" additionalStyle={styles.removeText}>
+                    Hapus
+                  </VixText>
+                </PressableScale>
+              )}
+            </View>
+            <BibleRefField
+              value={ref}
+              onChange={(next) => setRefAt(i, next)}
+              editable={!busy}
+              inlinePicker
+            />
+          </View>
+        ))}
+
+        {/* Baca lebih dari satu kitab hari itu? Tambah baris baru. */}
+        <PressableScale
+          style={styles.addButton}
+          onPress={() => setRefs((list) => [...list, ''])}>
+          <VixText heading="bold" additionalStyle={styles.addText}>
+            ➕ Tambah kitab lain
+          </VixText>
+        </PressableScale>
+
+        <View style={styles.versionRow}>
+          <VixText heading="label" additionalStyle={styles.versionLabel}>
+            Terjemahan
+          </VixText>
+          <FormInput
+            placeholder={BIBLE_VERSION_DEFAULT}
+            value={version}
+            onChangeText={setVersion}
+            editable={!busy}
+            autoCapitalize="characters"
+            maxLength={12}
+            style={styles.versionInput}
+          />
+        </View>
 
         <FormError message={formError} gap="top" />
 
@@ -265,7 +326,7 @@ const styles = StyleSheet.create({
   cardDate: { color: Color.SPIRITUAL_DARK },
   editText: { color: Color.MAIN },
   cardText: { color: Color.TEXT_TITLE },
-  // Acuan yang bisa di-click tampil sebagai pil ungu muda — beda jelas dari
+  // Acuan yang bisa di-klik tampil sebagai pil ungu muda — beda jelas dari
   // teks biasa, jadi kelihatan mana yang membuka YouVersion dan mana yang
   // cuma tulisan (kitab yang namanya tidak dikenali tetap tampil apa adanya).
   refRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
@@ -278,9 +339,38 @@ const styles = StyleSheet.create({
   refChipPlain: { backgroundColor: 'transparent', paddingHorizontal: 0 },
   refChipText: { color: Color.SPIRITUAL_DARK },
   cardVersion: { color: Color.TEXT_LABEL },
-  fieldLabel: { marginBottom: 6 },
-  fieldLabelTop: { marginTop: 12, marginBottom: 6 },
-  input: { minHeight: 88, textAlignVertical: 'top' },
+  // Kartu "Bacaan N" di dalam sheet edit — bentuk & warnanya disamakan dengan
+  // layar Baca Alkitab, jadi mengubah catatan terasa seperti mengisinya lagi.
+  refCard: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: Color.SPIRITUAL_DARK,
+    padding: 14,
+    gap: 10,
+    marginBottom: 10,
+  },
+  refTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+  },
+  refTitle: { color: Color.SPIRITUAL_DARK },
+  removeText: { color: Color.DANGER },
+  addButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Color.SPIRITUAL_DARK,
+    marginBottom: 12,
+  },
+  addText: { color: Color.SPIRITUAL_DARK },
+  versionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  versionLabel: { color: Color.TEXT_LABEL },
   // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
-  versionInput: { maxWidth: 140 },
+  versionInput: { flex: 1, maxWidth: 140 },
 });

@@ -51,6 +51,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   'fasting-days': 'spiritual',
   gratitude: 'spiritual',
   'morning-prayer': 'spiritual',
+  'pause-pray': 'spiritual',
   'reflection-feed': 'spiritual',
   'reminder-share': 'spiritual',
 
@@ -97,6 +98,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   games: 'games',
   social: 'social',
   bill: 'social',
+  sport: 'social',
   married: 'married',
 };
 

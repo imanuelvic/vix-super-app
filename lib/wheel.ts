@@ -104,29 +104,17 @@ export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
   ],
 };
 
-// ===================== Pertanyaan refleksi 💭 =====================
-// Satu pertanyaan inti per area (lihat `question` di WHEEL_AREAS) terlalu
-// sedikit untuk benar-benar berpikir: "Apakah kamu peduli kesehatanmu?" hampir
-// selalu dijawab "ya, peduli" — lalu skornya ditebak.
-//
-// Yang di bawah ini pertanyaan TAMBAHAN yang muncul selagi kamu menilai:
-// masing-masing menagih BUKTI dari satu tips di WHEEL_TIPS di atas, dalam
-// bahasa sehari-hari. Urutannya sengaja disamakan dengan urutan tips-nya
-// supaya sepasang — pertanyaannya menyadarkan, tips-nya memberi jalan keluar.
-//
-// Tidak wajib dijawab: memaksa 40 jawaban (8 area × 5) cuma membuat assessment
-// ditinggalkan di tengah. Yang wajib tetap satu — skor 1–10.
 export const WHEEL_REFLECTIONS: Record<WheelAreaKey, string[]> = {
   spirituality: [
     '📖 Kapan terakhir kamu saat teduh tanpa buru-buru?',
     '⛪ Bulan ini ibadah & CORE-mu bolong berapa kali?',
-    '✍️ Pergumulan apa yang belum kamu ceritakan ke Tuhan?',
-    '🧠 Ayat apa yang lagi kamu pegang minggu ini?',
+    '✍️ Seberapa jujur kamu cerita ke Tuhan?',
+    '🧠 Firman apa yang kamu imankan saat ini?',
     '🙇 Kalau HP-mu diambil sehari, doamu jadi panjang atau hilang?',
   ],
   health: [
-    '😴 Jam berapa kamu benar-benar tidur, bukan rebahan sambil scroll?',
-    '🏃 Minggu ini badanmu gerak berapa kali?',
+    '😴 Jam berapa kebiasaan kamu tidur?',
+    '🏃 Minggu ini langkah kakimu sudah berapa?',
     '💧 Hari ini kamu minum air lebih banyak atau minuman manis?',
     '🥗 Kapan terakhir piringmu ada sayur atau buahnya?',
     '🩺 Ada keluhan badan yang kamu tunda cek dari dulu?',
@@ -144,41 +132,38 @@ export const WHEEL_REFLECTIONS: Record<WheelAreaKey, string[]> = {
     '🚨 Kalau pemasukanmu berhenti hari ini, kamu kuat berapa bulan?',
     '💳 Ada cicilan atau paylater yang diam-diam makan gajimu?',
     '📊 Langganan apa yang kamu bayar tiap bulan tapi jarang dipakai?',
+    '💵 Apakah kamu ada side income?',
   ],
   ministry: [
-    '📅 Pelayanan dapat jadwal tetap, atau cuma sisa waktumu?',
-    '💬 CL atau member mana yang belum kamu follow up minggu ini?',
+    '📅 Pelayanan sengaja dirutinkan, atau hanya sisa waktumu?',
+    '💬 Anggota mana yang belum kamu follow up minggu ini?',
     '📝 Materi sharing terakhir kamu siapkan, atau dadakan?',
     '🌱 Siapa satu orang yang lagi kamu muridkan sekarang?',
-    '🙏 Kamu melayani karena cinta, atau karena terlanjur ditugaskan?',
+    '🙏 Kamu melayani karena cinta, atau karena rutinitas?',
   ],
   career: [
     '🎯 Target kerjamu minggu ini apa — bisa kamu sebut sekarang?',
     '📚 Skill apa yang kamu pelajari 3 bulan terakhir?',
     '🗣️ Kapan terakhir kamu minta feedback jujur soal kerjamu?',
+    '✨ Seberapa enjoy/passion kamu bekerja di tempat sekarang?',
     '⏰ Deadline mana yang kamu tunda sampai mepet?',
-    '🤝 Kalau besok cari kerja, siapa yang siap merekomendasikanmu?',
   ],
   relationship: [
     '👋 Siapa teman dekat yang lama tidak kamu sapa?',
     '👂 Ngobrol terakhir, kamu lebih banyak dengar atau menghakimi?',
     '🕊️ Ada yang masih kamu pendam & belum kamu bereskan?',
     '🍿 Hangout terakhirmu nyambung, atau sibuk sendiri-sendiri?',
-    '🌟 Relasi mana yang bikin kamu bertumbuh, mana yang menguras?',
+    '🌟 Jika kamu ada masalah, kamu cerita ke siapa?',
+    '💖 Bagaimana hubungan-mu dengan pasangan?',
   ],
   fun: [
     '🎢 Kapan terakhir kamu senang tanpa mikirin kerjaan?',
     '🎨 Ada hobi yang kamu tinggalkan padahal dulu bikin hidup?',
-    '📵 Scroll HP itu istirahat buatmu, atau cuma pelarian?',
-    '🏝️ Liburan terakhirmu kapan — beneran libur, bukan pindah tempat kerja?',
+    '🏆 Apa self-reward yang biasa kamu nikmati dan kejar?',
+    '🏝️ Cuti dipakai dengan baik, atau dibiarkan?',
     '😄 Kamu masih merasa bersalah tiap kali santai?',
   ],
 };
-
-// withReflection & hasReflection DIHAPUS (2 Sep 2026) bersama fitur click
-// gelembungnya: keduanya cuma melayani "pertanyaan turun ke kolom catatan",
-// dan gelembungnya sekarang baca-saja. Catatan tiap area tetap ada &
-// tersimpan seperti biasa — yang hilang cuma jalan pintas mengisinya.
 
 export type WheelFocus = {
   area: WheelAreaKey;

@@ -28,23 +28,23 @@ import { useAuth } from '@/contexts/auth';
 import { formatFullDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
-  deleteMultiplication,
-  membersOf,
-  multiProgress,
-  multiStatus,
-  multiStatusLabel,
-  newMemberId,
-  newStepId,
-  nextStep,
-  saveMultiplication,
-  sideLabel,
-  SIDE_META,
-  stepsByMonth,
-  subscribeMultiplications,
-  type Multiplication,
-  type MultiMember,
-  type MultiSide,
-  type MultiStep,
+    deleteMultiplication,
+    membersOf,
+    multiProgress,
+    multiStatus,
+    multiStatusLabel,
+    newMemberId,
+    newStepId,
+    nextStep,
+    saveMultiplication,
+    SIDE_META,
+    sideLabel,
+    stepsByMonth,
+    subscribeMultiplications,
+    type MultiMember,
+    type Multiplication,
+    type MultiSide,
+    type MultiStep,
 } from '@/lib/multiplication';
 
 type DetailTab = 'timeline' | 'members';
@@ -140,7 +140,7 @@ export default function MultiplicationDetailScreen() {
       id: editStep === 'new' ? newStepId() : editStep.id,
       date: Timestamp.fromDate(sDate),
       title: sTitle.trim(),
-      // Satu baris = satu butir; baris kosong dibuang.
+      // Satu baris = satu poin; baris kosong dibuang.
       notes: sNotes
         .split('\n')
         .map((n) => n.trim())
@@ -168,7 +168,7 @@ export default function MultiplicationDetailScreen() {
     setEditStep(null);
   }
 
-  /** Click lingkaran status → ✅ ⇄ ⏳ (yang ❌ batal tidak ikut, harus lewat sheet). */
+  /** Klik lingkaran status → ✅ ⇄ ⏳ (yang ❌ batal tidak ikut, harus lewat sheet). */
   function toggleStep(step: MultiStep) {
     if (!m || step.cancelled) return;
     save({
@@ -386,7 +386,7 @@ export default function MultiplicationDetailScreen() {
                             mark === 'cancel' && styles.stepCancel,
                             isNext && styles.stepNext,
                           ]}>
-                          {/* Click lambangnya = tandai beres / batalkan */}
+                          {/* Klik lambangnya = tandai beres / batalkan */}
                           <PressableScale
                             onPress={() => toggleStep(step)}
                             disabled={mark === 'cancel'}

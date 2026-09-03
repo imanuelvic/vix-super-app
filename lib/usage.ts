@@ -1,27 +1,27 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  increment,
-  query,
-  setDoc,
-  where,
-  writeBatch,
-  type FirestoreError,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    increment,
+    query,
+    setDoc,
+    where,
+    writeBatch,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { liveDoc } from './liveDoc';
 import { monthShort, sameMonth } from './format';
 import { dayDocId } from './health';
+import { liveDoc } from './liveDoc';
 
 // Pelacakan pemakaian fitur 📊 — berapa kali tiap tile/fitur DIBUKA per hari,
 // untuk laporan "aku paling sering pakai apa". SATU dokumen kecil per hari:
 // users/{uid}/usage/{YYYY-MM-DD} → { dayId, counts:{key:n}, labels:{key:label} }.
 //
 // Anti-spam & hemat biaya: tiap fitur dihitung MAKSIMAL sekali per COOLDOWN
-// (mencegah double-click / bolak-balik cepat membanjiri hitungan & tulisan
+// (mencegah double-klik / bolak-balik cepat membanjiri hitungan & tulisan
 // Firestore). Cooldown disimpan di memori (reset saat app dimulai ulang — cukup).
 
 export type UsageDay = {

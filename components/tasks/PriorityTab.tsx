@@ -5,7 +5,7 @@ import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { FormError } from '@/components/common/FormError';
@@ -222,7 +222,11 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
           return (
             <View
               key={item.id}
-              style={[styles.card, item.done && styles.cardDone]}
+              style={[
+                styles.card,
+                item.done && styles.cardDone,
+                attentionBorder(!item.done && item.priority === 1),
+              ]}
               onLayout={(e) => setRowY(item.id, e.nativeEvent.layout.y)}>
               {/* P1 yang belum selesai = yang dihitung badge merah tile
                   Reminder & sub-tab Prioritas. Termasuk yang OTOMATIS naik P1

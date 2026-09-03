@@ -401,7 +401,7 @@ export default function FundScreen() {
                 <VixText heading="label">
                   {searchMode
                     ? 'Tidak ada mutasi yang cocok.'
-                    : 'Belum ada mutasi. Tambahkan di atas 👆'}
+                    : 'Belum ada mutasi.'}
                 </VixText>
               </View>
             }

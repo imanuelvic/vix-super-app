@@ -56,7 +56,7 @@ export function SkipButton({
   additionalStyle?: StyleProp<ViewStyle>;
 }) {
   return (
-    // Getaran "warning": ini jalur yang mengorbankan streak, bukan click
+    // Getaran "warning": ini jalur yang mengorbankan streak, bukan klik
     // biasa — sama seperti tombol ✗ di Habits.
     <PressableScale
       style={[styles.button, additionalStyle]}

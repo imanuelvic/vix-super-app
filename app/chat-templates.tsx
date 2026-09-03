@@ -32,7 +32,7 @@ import {
 
 // Template Chat 💬 — kata-kata siap kirim untuk CORE Leader & grup CORE.
 //
-// Alurnya sengaja sependek mungkin: isi nama (atau click chip CL-nya) → buka
+// Alurnya sengaja sependek mungkin: isi nama (atau klik chip CL-nya) → buka
 // kategorinya → baca ketiga pilihannya → tekan "Kirim". WhatsApp terbuka dengan
 // teksnya sudah terisi, tinggal pilih mau ke chat siapa atau ke grup.
 //

@@ -140,8 +140,8 @@ export type RuleLineKind =
   | 'sep' // garis pemisah
   | 'head' // judul bagian
   | 'warn' // blok ⚠️ Penting
-  | 'bullet' // butir daftar
-  | 'num' // butir bernomor
+  | 'bullet' // poin daftar
+  | 'num' // poin bernomor
   | 'text' // paragraf biasa
   | 'blank'; // jeda
 
@@ -182,8 +182,8 @@ export function parseRuleBody(body: string): RuleLine[] {
       out.push(line);
       continue;
     }
-    // Di dokumen aslinya "⚠️Penting:" diikuti butir-butir miliknya lalu baris
-    // kosong. Butir itu ditarik MASUK ke dalam blok — kalau tidak, kotak
+    // Di dokumen aslinya "⚠️Penting:" diikuti poin-poin miliknya lalu baris
+    // kosong. Poin itu ditarik MASUK ke dalam blok — kalau tidak, kotak
     // peringatannya cuma berisi label dan isinya tercecer di luar.
     const children: RuleLine[] = [];
     while (

@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AttentionMark } from '@/components/common/Badge';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
@@ -12,6 +12,7 @@ import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { MoneyInput } from '@/components/common/MoneyInput';
+import { Pagination } from '@/components/common/Pagination';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SelectField, textOptions } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -26,6 +27,7 @@ import {
   groupDigits,
   parseAmount,
 } from '@/lib/format';
+import { usePagination } from '@/hooks/usePagination';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   conditionMeta,
@@ -38,6 +40,7 @@ import {
   STUFF_LOCATIONS,
   stuffOwned,
   stuffTotalValue,
+  stuffUnderWarranty,
   stuffUseLabel,
   stuffWarrantyDays,
   type StuffCondition,
@@ -67,6 +70,8 @@ export function StuffTab({ items }: { items: StuffItem[] }) {
 
   const dimiliki = stuffOwned(items);
   const total = stuffTotalValue(items);
+  // Angka badge sub-tab Stuff — juga yang ikut ke tile Device di Home.
+  const masihGaransi = stuffUnderWarranty(items, now);
 
   // Kategori yang BENAR-BENAR dipakai saja yang jadi chip — daftar 14 kategori
   // penuh membuat separuhnya selalu kosong dan barisnya jadi panjang percuma.
@@ -169,6 +174,10 @@ export function StuffTab({ items }: { items: StuffItem[] }) {
     }
   }
 
+  // 10 barang per halaman — daftarnya menumpuk terus tiap kali mencatat.
+  const { currentPage, pageCount, pageItems, setPage } =
+    usePagination(tampil);
+
   return (
     <View style={styles.flex}>
       <ScrollView
@@ -224,24 +233,44 @@ export function StuffTab({ items }: { items: StuffItem[] }) {
               />
             )}
 
-            {tampil.map((item) => {
+            {/* Arti badge merahnya + apa yang harus dilakukan. Cuma muncul
+                selama badge-nya memang menyala, jadi bukan kalimat hiasan
+                yang menetap. Angkanya dari `stuffUnderWarranty` — sumber yang
+                sama dengan badge sub-tab & tile Device di Home. */}
+            {masihGaransi > 0 && (
+              <View style={styles.badgeNote}>
+                <VixText heading="label" additionalStyle={styles.badgeNoteText}>
+                  🔴 {masihGaransi} barang masih bergaransi — kartunya bergaris
+                  merah di bawah. Selama tandanya masih ada dan barangnya rusak,
+                  KLAIM dulu: jangan buru-buru servis bayar sendiri atau beli
+                  baru. Tandanya hilang sendiri begitu garansinya habis.
+                </VixText>
+              </View>
+            )}
+
+            {pageItems.map((item) => {
               const kondisi = conditionMeta(item.condition);
               const lama = stuffUseLabel(item, now);
               const garansi = stuffWarrantyDays(item, now);
+              // Masih bergaransi = penyebab badge-nya. Dihitung SEKALI di sini
+              // lalu dipakai garis merah & titiknya sekaligus.
+              const bergaransi = !item.goneDay && garansi !== null && garansi >= 0;
               return (
                 // Tombol ✏️ jadi SAUDARA barisnya, bukan anaknya — Pressable
                 // bersarang di iOS bikin tombolnya ikut memicu pembungkusnya.
                 <View
                   key={item.id}
-                  style={[styles.card, !!item.goneDay && styles.cardGone]}
+                  style={[
+                    styles.card,
+                    !!item.goneDay && styles.cardGone,
+                    attentionBorder(bergaransi),
+                  ]}
                   onLayout={(e) => setRowY(item.id, e.nativeEvent.layout.y)}>
-                  {/* INI yang menyalakan badge sub-tab Stuff: barang yang
-                      garansinya masih berlaku — ambang yang sama persis
-                      dengan `stuffUnderWarranty` (sisa hari ≥ 0), jadi
-                      angkanya & titiknya tidak mungkin berbeda pendapat. */}
-                  {!item.goneDay && garansi !== null && garansi >= 0 && (
-                    <AttentionMark corner />
-                  )}
+                  {/* INI yang menyalakan badge sub-tab Stuff & ikut ke tile
+                      Device di Home — ambang yang sama persis dengan
+                      `stuffUnderWarranty` (sisa hari ≥ 0), jadi angkanya,
+                      titiknya, & garis merahnya tidak mungkin berbeda. */}
+                  {bergaransi && <AttentionMark corner />}
                   <View style={styles.cardMain}>
                     <View style={styles.titleRow}>
                       <VixText
@@ -290,6 +319,19 @@ export function StuffTab({ items }: { items: StuffItem[] }) {
                 Tidak ada barang di kategori itu.
               </VixText>
             )}
+
+            {/* Balik ke atas lewat REF (bukan `key={currentPage}`): ScrollView
+                ini memegang ref useDueJump — me-remount-nya bukan cuma memutus
+                refnya, tapi juga memicu ulang lompatan ke barang bergaransi
+                tiap kali kamu pindah halaman. */}
+            <Pagination
+              page={currentPage}
+              pageCount={pageCount}
+              onChange={(p) => {
+                setPage(p);
+                listRef.current?.scrollTo({ y: 0, animated: true });
+              }}
+            />
           </>
         )}
       </ScrollView>
@@ -457,6 +499,15 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   addButton: { marginBottom: 12 },
+  // Keterangan arti badge merah — latar merah samar, sewarna penandanya.
+  badgeNote: {
+    backgroundColor: Color.DANGER_TRANSPARENT,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  badgeNoteText: { color: Color.TEXT_TITLE },
   emptyBox: { gap: 12, marginTop: 8 },
   empty: { textAlign: 'center', marginVertical: 10 },
   card: {

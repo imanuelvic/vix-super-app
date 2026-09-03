@@ -25,6 +25,9 @@ import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useNow } from '@/hooks/useNow';
+import { useReadyGate } from '@/hooks/useReadyGate';
+import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   prayerDeadlinePassed,
   prayerDoneToday,
@@ -64,18 +67,56 @@ import {
 } from '@/lib/core';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import {
+  devicesNeedingTopUp,
+  subscribeDataPlans,
+  type DataPlan,
+} from '@/lib/device';
+import { OWNER_NAME } from '@/lib/family';
+import {
+  EMPTY_SPORT,
+  sportAttention,
+  subscribeSport,
+  type SportData,
+} from '@/lib/sport';
+import {
+  stuffUnderWarranty,
+  subscribeStuff,
+  type StuffItem,
+} from '@/lib/stuff';
+import {
   fastingCheckDue,
   fastingDayNumber,
   subscribeFastingPlans,
   type FastingPlan,
 } from '@/lib/fasting';
-import { OWNER_NAME } from '@/lib/family';
 import {
   EMPTY_FIT_DAY,
   fitPendingToday,
   subscribeFitDay,
   type FitDay,
 } from '@/lib/fitness';
+import { formatShortDayDate } from '@/lib/format';
+import {
+  habitNoteDone,
+  isNoteDrivenHabit,
+  rhemaWindowNow,
+  subscribeHabitSchedule,
+  type ScheduledHabit,
+} from '@/lib/habits';
+import {
+  bumpWaterStreak,
+  setWater,
+  subscribeHabitDay,
+  subscribeWaterStreak,
+  WATER_GOAL,
+  type HabitDay,
+} from '@/lib/health';
+import { HOME_FEATURES } from '@/lib/homeGrid';
+import {
+  intercessionNightWindow,
+  intercessionToday,
+  isChainTopic,
+} from '@/lib/intercession';
 import {
   discussionWindowNow,
   EMPTY_WEEK,
@@ -88,39 +129,7 @@ import {
   type LearningWeek,
   type TopicsDone,
 } from '@/lib/learning';
-import { formatShortDayDate } from '@/lib/format';
-import { useNow } from '@/hooks/useNow';
-import { useReadyGate } from '@/hooks/useReadyGate';
-import { useScrollTop } from '@/hooks/useScrollTop';
-import {
-  bumpWaterStreak,
-  setWater,
-  subscribeHabitDay,
-  subscribeWaterStreak,
-  WATER_GOAL,
-  type HabitDay,
-} from '@/lib/health';
-import {
-  habitNoteDone,
-  isNoteDrivenHabit,
-  rhemaWindowNow,
-  subscribeHabitSchedule,
-  type ScheduledHabit,
-} from '@/lib/habits';
-import {
-  intercessionNightWindow,
-  intercessionToday,
-  isChainTopic,
-} from '@/lib/intercession';
-import { HOME_FEATURES } from '@/lib/homeGrid';
-import {
-  EMPTY_PRIORITY,
-  priorityBadgeText,
-  subscribePriorityDay,
-  type PriorityItem,
-} from '@/lib/priority';
 import { unsubscribeAll } from '@/lib/liveDoc';
-import { subscribeFeedGenerated } from '@/lib/reflectionFeed';
 import {
   refreshPrayerNews,
   subscribePrayerNews,
@@ -128,10 +137,12 @@ import {
   type PrayerNews,
 } from '@/lib/prayerNews';
 import {
-  devicesNeedingTopUp,
-  subscribeDataPlans,
-  type DataPlan,
-} from '@/lib/device';
+  EMPTY_PRIORITY,
+  priorityBadgeText,
+  subscribePriorityDay,
+  type PriorityItem,
+} from '@/lib/priority';
+import { subscribeFeedGenerated } from '@/lib/reflectionFeed';
 import {
   countResidenceAttention,
   subscribeChoreStatus,
@@ -168,7 +179,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 19;
+const BADGE_SOURCES = 21;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -236,7 +247,7 @@ export default function HomeScreen() {
   );
   // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
   const [intercessionOpen, setIntercessionOpen] = useState(false);
-  // Kalimat penyegar yang barusan di-click "sudah dibaca" (null = belum ada).
+  // Kalimat penyegar yang barusan di-klik "sudah dibaca" (null = belum ada).
   const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
   // Rhema & Aplikasi yang kamu pasang sendiri dari Revive 📌 — salah satunya
   // menggantikan satu giliran penyegar hari ini (lihat nudgeSchedule).
@@ -248,6 +259,10 @@ export default function HomeScreen() {
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   // Paket kuota — untuk badge tile Device 📱 saat paketnya sudah H-1.
   const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
+  // Barang bergaransi — ikut menghitung badge tile Device 📱 (lihat `badges`).
+  const [stuff, setStuff] = useState<StuffItem[]>([]);
+  // Futsal rutin — ikut menghitung badge tile Social 🤝.
+  const [sport, setSport] = useState<SportData>(EMPTY_SPORT);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
   // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
@@ -290,6 +305,8 @@ export default function HomeScreen() {
       subscribeFitDay(user.uid, todayId, mark('fitDay', setFitDay)),
       subscribeDebts(user.uid, mark('debts', setDebts)),
       subscribeDataPlans(user.uid, mark('dataPlans', setDataPlans)),
+      subscribeStuff(user.uid, mark('stuff', setStuff)),
+      subscribeSport(user.uid, mark('sport', setSport)),
       // --- Sisanya mengisi kartu & sapaan, bukan badge ---
       subscribeLoginStreak(user.uid, setLogin),
       subscribeHabitDay(user.uid, todayId, setDay),
@@ -347,7 +364,7 @@ export default function HomeScreen() {
   // Pagi sudah jadi langkah wajib di Morning Gateway; kartu ini pengingatnya
   // sepanjang hari, dan mulai jam 18.00 berubah jadi ajakan mendoakan lagi.
   // Ditampilkan RINGKAS (1 baris) supaya grid fitur tetap muat sekali layar —
-  // pokok doanya baru terbuka saat kartunya di-click.
+  // pokok doanya baru terbuka saat kartunya di-klik.
   // Hari Gereja ⛪ (Sabtu) & Negara 🇮🇩 (Minggu) pokok doanya ditambah kliping
   // berita sepekan terakhir — biar yang didoakan ikut yang sedang terjadi,
   // bukan cuma daftar tetap. Hari lain tidak berubah sama sekali.
@@ -424,11 +441,11 @@ export default function HomeScreen() {
   const sermonDue = badgesReady ? sermonShareDue(sermons, now) : null;
 
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
-  // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
+  // Kalau sudah di-klik, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
   // beda, jadi cukup dibandingkan teksnya — tak perlu menyimpan jam).
   // Kalau kamu sudah memasang Rhema/Aplikasi sendiri dari Revive 📌, SATU dari
   // ketiga giliran hari ini jadi milik tulisanmu — dan giliran itu ingat asal
-  // catatannya, jadi kartunya bisa di-click balik ke Revive-nya.
+  // catatannya, jadi kartunya bisa di-klik balik ke Revive-nya.
   const nudge = activeNudge(now, todayId, myReminders);
   const showNudge = nudge !== null && nudge.text !== nudgeSeen;
 
@@ -476,13 +493,18 @@ export default function HomeScreen() {
     // Pinjaman yang jatuh temponya sudah H-1 (termasuk hari ini & yang
     // kelewat). Angkanya sama dengan badge tombol 🤝 di header Finance.
     finance: debtUrgentCount(debts, now),
-    // Patungan yang masih ada orang belum setor — angka yang sama dipakai
-    // badge sub-tab Split Bill di dalam fitur Social.
-    social: bills.filter(billUnsettled).length,
-    // Perangkat yang paket kuotanya sudah H-1 (habis besok atau hari ini) —
-    // waktunya isi ulang. Angkanya sama persis dengan badge sub-tab di dalam
-    // layar Device, karena aturannya satu (lihat lib/device.ts).
-    device: devicesNeedingTopUp(dataPlans, now),
+    // Social = JUMLAH kedua sub-tab berbadge di dalamnya:
+    //   Split Bill → patungan yang masih ada orang belum setor
+    //   Sport      → futsal ≤ 2 hari lagi, atau yang sudah lewat tapi
+    //                iurannya belum lunas
+    social: bills.filter(billUnsettled).length + sportAttention(sport, now),
+    // Device = JUMLAH kedua sub-tab berbadge di dalamnya, jadi tile Home tidak
+    // pernah lebih kecil dari apa yang menunggumu di dalam:
+    //   Plan  → paket kuota yang sudah H-1 (habis besok atau hari ini)
+    //   Stuff → barang yang garansinya masih berlaku
+    // Aturan tiap angkanya tinggal di lib-nya masing-masing (device.ts &
+    // stuff.ts) dan dipakai ulang oleh badge sub-tabnya, jadi mustahil beda.
+    device: devicesNeedingTopUp(dataPlans, now) + stuffUnderWarranty(stuff, now),
   };
 
   // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).
@@ -616,7 +638,7 @@ export default function HomeScreen() {
               nudgeSchedule di lib/spiritual.ts), tiap kali dengan kalimat yang
               berbeda, lalu hilang sendiri sesudah satu jam. Sengaja di ATAS
               Doa Syafaat: syafaat wajib tiap hari, yang ini kejutan kecil.
-              Di-click = "sudah dibaca" → hilang sampai giliran berikutnya. */}
+              Di-klik = "sudah dibaca" → hilang sampai giliran berikutnya. */}
           {showNudge && (
             <Animated.View
               entering={FadeInDown.duration(350)}
@@ -626,7 +648,7 @@ export default function HomeScreen() {
                 fg={Color.MAIN_DARK}
                 title={nudge.day ? '🕊️ Reminder dari Revive-mu' : '🕊️ Reminder'}
                 texts={[nudge.text]}
-                // Kalimat bawaan: click = "sudah dibaca", kartunya pergi.
+                // Kalimat bawaan: klik = "sudah dibaca", kartunya pergi.
                 // Kalimat TULISANMU sendiri: selain itu, ia juga membuka
                 // catatan Revive asalnya — di situlah kalimatnya utuh, lengkap
                 // dengan bacaan & judulnya.
@@ -664,7 +686,7 @@ export default function HomeScreen() {
           )}
 
           {/* Follow Up Mingguan 🎯 — cuma jam 09.00–09.30, dan cuma kalau
-              masih ada yang belum di-follow up hari ini. Click → CORE ›
+              masih ada yang belum di-follow up hari ini. Klik → CORE ›
               Follow Up, tempat tombol Chat WA-nya. Sepanjang sisa hari
               tagihannya tetap terlihat di badge & di Dashboard. */}
           {showFollowup && (
@@ -689,7 +711,7 @@ export default function HomeScreen() {
           )}
 
           {/* Kirim Catatan Khotbah 📤 — cuma KAMIS jam 12.00–14.00, dan cuma
-              kalau catatan Minggu kemarin memang sudah ditulis. Click →
+              kalau catatan Minggu kemarin memang sudah ditulis. Klik →
               halaman catatannya, tempat tombol "💬 Share ke WhatsApp"-nya
               berada. Catatannya sudah jadi arsip sejak Selasa, jadi yang
               dibagikan pasti versi finalnya. */}
@@ -744,7 +766,7 @@ export default function HomeScreen() {
 
           {/* Doa Syafaat 🙏 — pokok doa tetap sesuai hari dalam seminggu.
               Hari Doa Rantai CL (Selasa & Kamis) kartunya menuju CORE Follow
-              Up; hari lain di-click untuk membuka/menutup pokok doanya. */}
+              Up; hari lain di-klik untuk membuka/menutup pokok doanya. */}
           <Animated.View
             entering={FadeInDown.delay(40).duration(350)}
             style={styles.intercessionCard}>
@@ -767,7 +789,7 @@ export default function HomeScreen() {
           </Animated.View>
 
           {/* Refleksi Hari Ini 📓 — yang kamu tulis tadi pagi, dibaca ulang
-              siang (12–13), sore (17–18), & malam (21–22). Click tulisannya →
+              siang (12–13), sore (17–18), & malam (21–22). Klik tulisannya →
               tab Habits, langsung tergulung ke barisnya (?focus=rhema).
 
               Baris "🖼️ Generate Feed" TETAP ADA selama feed hari itu belum
@@ -803,7 +825,7 @@ export default function HomeScreen() {
           )}
 
           {/* Puasa 🍽️ — cuma malam (20.00–24.00) & cuma kalau hari ini belum
-              dijawab. Click → layar puasanya dengan modal HARI INI sudah
+              dijawab. Klik → layar puasanya dengan modal HARI INI sudah
               terbuka, jadi tinggal centang & tulis jawaban doanya. */}
           {fastingDue && (
             <Animated.View
@@ -828,7 +850,7 @@ export default function HomeScreen() {
 
           {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00.
               Hanya muncul di dalam jendela jamnya & selama sesi itu belum
-              diisi. Click → layar catat bacaan (pilih kitab + pasal & ayat). */}
+              diisi. Klik → layar catat bacaan (pilih kitab + pasal & ayat). */}
           {bibleReadingDue && bibleMeta && bibleSession && (
             <Animated.View entering={FadeInDown.delay(60).duration(350)}>
               <PressableScale

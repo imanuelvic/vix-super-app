@@ -8,7 +8,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 // Kotak pencarian standar: ikon 🔍 + input + tombol hapus (✕) saat ada teks.
 // Reusable untuk daftar mana pun yang butuh cari cepat.
 // `autoFocus` → langsung terfokus & keyboard muncul begitu kotaknya dipasang
-// (dipakai saat mode cari dibuka lewat tombol, biar tak perlu click dua kali).
+// (dipakai saat mode cari dibuka lewat tombol, biar tak perlu klik dua kali).
 export function SearchBar({
   value,
   onChangeText,
