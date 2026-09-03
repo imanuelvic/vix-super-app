@@ -79,11 +79,6 @@ import {
   type SportData,
 } from '@/lib/sport';
 import {
-  stuffUnderWarranty,
-  subscribeStuff,
-  type StuffItem,
-} from '@/lib/stuff';
-import {
   fastingCheckDue,
   fastingDayNumber,
   subscribeFastingPlans,
@@ -153,7 +148,7 @@ import {
   subscribeSermons,
   type SermonNote,
 } from '@/lib/sermon';
-import { billUnsettled, subscribeBills, type Bill } from '@/lib/social';
+import { billUnsettled, subscribeBills, type Bill } from '@/lib/friends';
 import {
   activeNudge,
   bibleSessionMeta,
@@ -179,7 +174,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 21;
+const BADGE_SOURCES = 20;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -220,7 +215,7 @@ export default function HomeScreen() {
   const [learningWeek, setLearningWeek] = useState<LearningWeek>(EMPTY_WEEK);
   // Topik diskusi yang sudah diobrolkan — ikut menghitung badge Learning.
   const [topicsDone, setTopicsDone] = useState<TopicsDone>({});
-  // Patungan Split Bill — untuk badge tile Social 🥂.
+  // Patungan Split Bill — untuk badge tile Friends 🤝.
   const [bills, setBills] = useState<Bill[]>([]);
   // Pinjaman 🤝 — untuk badge tile Finance saat ada yang sudah H-1.
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -259,9 +254,7 @@ export default function HomeScreen() {
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   // Paket kuota — untuk badge tile Device 📱 saat paketnya sudah H-1.
   const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
-  // Barang bergaransi — ikut menghitung badge tile Device 📱 (lihat `badges`).
-  const [stuff, setStuff] = useState<StuffItem[]>([]);
-  // Futsal rutin — ikut menghitung badge tile Social 🤝.
+  // Futsal rutin — ikut menghitung badge tile Friends 🤝.
   const [sport, setSport] = useState<SportData>(EMPTY_SPORT);
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
@@ -305,7 +298,6 @@ export default function HomeScreen() {
       subscribeFitDay(user.uid, todayId, mark('fitDay', setFitDay)),
       subscribeDebts(user.uid, mark('debts', setDebts)),
       subscribeDataPlans(user.uid, mark('dataPlans', setDataPlans)),
-      subscribeStuff(user.uid, mark('stuff', setStuff)),
       subscribeSport(user.uid, mark('sport', setSport)),
       // --- Sisanya mengisi kartu & sapaan, bukan badge ---
       subscribeLoginStreak(user.uid, setLogin),
@@ -493,18 +485,15 @@ export default function HomeScreen() {
     // Pinjaman yang jatuh temponya sudah H-1 (termasuk hari ini & yang
     // kelewat). Angkanya sama dengan badge tombol 🤝 di header Finance.
     finance: debtUrgentCount(debts, now),
-    // Social = JUMLAH kedua sub-tab berbadge di dalamnya:
+    // Friends = JUMLAH kedua sub-tab berbadge di dalamnya:
     //   Split Bill → patungan yang masih ada orang belum setor
     //   Sport      → futsal ≤ 2 hari lagi, atau yang sudah lewat tapi
     //                iurannya belum lunas
-    social: bills.filter(billUnsettled).length + sportAttention(sport, now),
-    // Device = JUMLAH kedua sub-tab berbadge di dalamnya, jadi tile Home tidak
-    // pernah lebih kecil dari apa yang menunggumu di dalam:
-    //   Plan  → paket kuota yang sudah H-1 (habis besok atau hari ini)
-    //   Stuff → barang yang garansinya masih berlaku
-    // Aturan tiap angkanya tinggal di lib-nya masing-masing (device.ts &
-    // stuff.ts) dan dipakai ulang oleh badge sub-tabnya, jadi mustahil beda.
-    device: devicesNeedingTopUp(dataPlans, now) + stuffUnderWarranty(stuff, now),
+    friends: bills.filter(billUnsettled).length + sportAttention(sport, now),
+    // Device = paket kuota yang sudah H-1 (habis besok atau hari ini).
+    // Aturannya tinggal di lib/device.ts dan dipakai ulang oleh badge
+    // sub-tabnya, jadi mustahil beda.
+    device: devicesNeedingTopUp(dataPlans, now),
   };
 
   // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).
@@ -885,7 +874,16 @@ export default function HomeScreen() {
                       if (user) logFeatureUse(user.uid, feature.key, feature.label);
                       router.push(feature.route);
                     }}>
-                    <IconSymbol name={feature.icon} size={30} color={feature.fg} />
+                    {/* Emoji hanya untuk tile yang lambangnya tidak ada di SF
+                        Symbols (Friends 🤝 — jabat tangan). Ukurannya disamakan
+                        dengan ikon di sebelahnya supaya barisnya tetap rata. */}
+                    {feature.emoji ? (
+                      <VixText additionalStyle={styles.tileEmoji}>
+                        {feature.emoji}
+                      </VixText>
+                    ) : feature.icon ? (
+                      <IconSymbol name={feature.icon} size={30} color={feature.fg} />
+                    ) : null}
                   </PressableScale>
                   {/* Badge merah: tugas harian fitur ini yang belum selesai.
                       Baru digambar setelah SEMUA sumbernya tiba (badgesReady),
@@ -1054,6 +1052,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Sepadan dengan ikon 30pt di tile lain — emoji digambar lebih kecil dari
+  // kotak hurufnya, jadi angkanya sedikit lebih besar supaya bobotnya sama.
+  tileEmoji: { fontSize: 32, lineHeight: 40 },
   // Judul ditarik naik setengah baris → separuh atasnya menumpang di bagian
   // bawah tile (lineHeight label 19.5 ÷ 2 ≈ 10). Judul digambar SETELAH tile,
   // jadi otomatis berada di atasnya.

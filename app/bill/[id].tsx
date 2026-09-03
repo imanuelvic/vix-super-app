@@ -40,7 +40,7 @@ import {
   unsharedItems,
   type Bill,
   type BillItem,
-} from '@/lib/social';
+} from '@/lib/friends';
 import { formatRupiah } from '@/lib/transactions';
 
 // Rincian satu patungan 💸 — di sinilah pekerjaan Split Bill yang sebenarnya.
@@ -48,7 +48,7 @@ import { formatRupiah } from '@/lib/transactions';
 // Alurnya: foto nota → item terisi (bisa dibetulkan) → tulis siapa saja yang
 // ikut → centang siapa makan apa → tiap orang muncul jumlah setorannya.
 //
-// Aturan pembagiannya ada di lib/social.ts: tiap orang bayar APA YANG DIA
+// Aturan pembagiannya ada di lib/friends.ts: tiap orang bayar APA YANG DIA
 // MAKAN, lalu pajak & service dibagi PROPORSIONAL — bukan dibagi rata. Yang
 // cuma pesan es teh tidak ikut menanggung pajak steak orang lain.
 export default function BillScreen() {
@@ -110,7 +110,7 @@ export default function BillScreen() {
   if (bill === undefined) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader backLabel="Social" title="Split Bill 💸" />
+        <ScreenHeader backLabel="Friends" title="Split Bill 💸" />
         <LoadingCenter />
       </SafeAreaView>
     );
@@ -119,7 +119,7 @@ export default function BillScreen() {
   if (bill === null) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader backLabel="Social" title="Split Bill 💸" />
+        <ScreenHeader backLabel="Friends" title="Split Bill 💸" />
         <VixText heading="label" additionalStyle={styles.empty}>
           Tagihan ini sudah tidak ada.
         </VixText>
@@ -173,7 +173,7 @@ export default function BillScreen() {
       const foto = await pickPhotoToRead({ fromCamera });
       if (!foto) return;
       const hasil = await scanReceipt(foto.scanUri);
-      // Fotonya disimpan di dokumen TERPISAH (lihat lib/social) supaya daftar
+      // Fotonya disimpan di dokumen TERPISAH (lihat lib/friends) supaya daftar
       // tagihan & badge Home tidak ikut mengunduhnya tiap kali.
       if (foto.base64) await saveBillPhoto(user!.uid, b.id, foto.base64);
       const next: Bill = { ...b, hasPhoto: !!foto.base64 };
@@ -316,7 +316,7 @@ export default function BillScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
-        backLabel="Social"
+        backLabel="Friends"
         title="Split Bill 💸"
         subtitle={b.title.trim() || 'Tanpa judul'}
       />

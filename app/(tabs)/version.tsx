@@ -95,7 +95,7 @@ export default function VersionScreen() {
             hitSlop={8}>
             <IconSymbol name="iphone" size={16} color={Color.MAIN_DARK} />
             <VixText heading="bold" additionalStyle={styles.appButtonText}>
-              Aplikasi
+              Version
             </VixText>
           </PressableScale>
         </View>
@@ -260,44 +260,4 @@ const styles = StyleSheet.create({
   usageName: { color: Color.TEXT_TITLE, flex: 1 },
   usageCount: { color: Color.MAIN_DARK },
   usageEmpty: { color: Color.TEXT_PLACEHOLDER, flex: 1, paddingVertical: 4 },
-  versionCard: {
-    backgroundColor: Color.MAIN_DARK,
-    borderRadius: 20,
-    padding: 22,
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 14,
-  },
-  versionLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
-  versionValue: { color: Color.TEXT_REVERSE },
-  detailCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  detailValue: { color: Color.TEXT_TITLE, flexShrink: 1, textAlign: 'right' },
-  updateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    backgroundColor: Color.MAIN,
-    borderRadius: 14,
-    paddingVertical: 14,
-  },
-  updateButtonBusy: { opacity: 0.7 },
-  updateButtonText: { color: Color.TEXT_REVERSE },
-  message: { textAlign: 'center', marginTop: 12 },
-  messageSuccess: { color: Color.SUCCESS },
-  messageError: { color: Color.DANGER },
 });

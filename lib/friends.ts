@@ -13,7 +13,7 @@ import {
 import { db } from './firebase';
 import { liveDoc, liveList } from './liveDoc';
 
-// Social 🥂 — fitur untuk yang terjadi SAAT bergaul dengan teman.
+// Friends 🤝 — fitur untuk yang terjadi SAAT bergaul dengan teman.
 //
 // Dua bagian:
 //   • Split Bill — patungan setelah makan bareng: siapa makan apa, berapa
@@ -23,6 +23,8 @@ import { liveDoc, liveList } from './liveDoc';
 // Penyimpanannya sengaja BEDA bentuk untuk keduanya:
 //   users/{uid}/bills/{id}        → satu dokumen per tagihan (ada foto nota!)
 //   users/{uid}/social/places     → SATU dokumen berisi array tempat
+//     (nama koleksinya tetap `social` walau fiturnya kini bernama Friends —
+//      mengganti id koleksi berarti seluruh data lama tidak terbaca lagi)
 // Alasannya batas keras Firestore 1 MB per dokumen: foto nota menumpuk cepat,
 // sedangkan daftar tempat cuma teks dan jauh lebih hemat jadi satu dokumen.
 

@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,19 +20,19 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
-import { dayIdToDate, formatDayDate } from '@/lib/format';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { useSportData } from '@/hooks/useSportData';
+import { dayIdToDate, formatDayDate, formatShortDayDate } from '@/lib/format';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
-  EMPTY_SPORT,
   gangMeta,
   newSportId,
   positionMeta,
   saveSport,
+  sessionCashIn,
   sessionDueTotal,
   sessionPaidTotal,
   sessionTotal,
-  subscribeSport,
-  type SportData,
+  type SportCashEntry,
   type SportGame,
   type SportMember,
   type SportSession,
@@ -51,8 +51,7 @@ export default function SportSessionScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [data, setData] = useState<SportData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, setError } = useSportData();
   const { busy, formError, setFormError, save, remove } = useFormSave();
 
   // Form game.
@@ -68,20 +67,12 @@ export default function SportSessionScreen() {
   const [catatanOpen, setCatatanOpen] = useState(false);
   const [fCatatan, setFCatatan] = useState('');
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeSport(user.uid, setData, () => {
-      setData(EMPTY_SPORT);
-      setError(LOAD_ERROR);
-    });
-  }, [user]);
-
   const sesi = data?.sessions.find((s) => s.id === id) ?? null;
 
   if (data === null) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader backLabel="Social" title="Futsal ⚽" />
+        <ScreenHeader backLabel="Friends" title="Futsal ⚽" />
         <LoadingCenter />
       </SafeAreaView>
     );
@@ -90,7 +81,7 @@ export default function SportSessionScreen() {
   if (!sesi) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader backLabel="Social" title="Futsal ⚽" />
+        <ScreenHeader backLabel="Friends" title="Futsal ⚽" />
         <ScreenError message={error} />
         <VixText heading="label" additionalStyle={styles.empty}>
           Jadwal ini sudah tidak ada.
@@ -104,6 +95,11 @@ export default function SportSessionScreen() {
   const total = sessionTotal(sesi);
   const masuk = sessionPaidTotal(sesi);
   const kurang = sessionDueTotal(sesi);
+  // Berapa dari uang yang sudah terkumpul itu SUDAH tercatat di kas geng, dan
+  // berapa yang belum. Tombol setornya cuma menawarkan selisihnya — jadi yang
+  // telat bayar tetap bisa disusulkan, tanpa satu rupiah pun terhitung dua kali.
+  const keKas = sessionCashIn(data, sesi.id);
+  const belumKeKas = masuk - keKas;
 
   /**
    * Tulis ulang sesi ini di dalam dokumen bersamanya.
@@ -234,6 +230,31 @@ export default function SportSessionScreen() {
     });
   }
 
+  /**
+   * Pindahkan iuran yang sudah terkumpul ke kas geng.
+   *
+   * Barisnya ditandai `sessionId`, dan yang ditulis cuma SELISIH terhadap yang
+   * sudah pernah disetor — dua penjagaan untuk satu masalah yang sama: uang
+   * yang sama tidak boleh masuk kas dua kali, sekalipun tombolnya ditekan lagi
+   * setelah ada yang telat bayar.
+   */
+  async function setorKeKas() {
+    if (!user || !data || !sesi || busy || belumKeKas <= 0) return;
+    const baris: SportCashEntry = {
+      id: newSportId(new Date()),
+      gang: sesi.gang,
+      dayId: sesi.dayId,
+      title: `Iuran main ${formatShortDayDate(dayIdToDate(sesi.dayId))}`,
+      direction: 'in',
+      amount: belumKeKas,
+      note: sesi.venue,
+      sessionId: sesi.id,
+    };
+    await save(async () => {
+      await saveSport(user.uid, { ...data, cash: [...data.cash, baris] });
+    });
+  }
+
   async function simpanCatatan() {
     if (!user || busy) return;
     await save(async () => {
@@ -244,16 +265,11 @@ export default function SportSessionScreen() {
 
   // Berapa gol orang ini di game yang sedang diisi.
   const golDi = (id: string) => fPencetak.filter((x) => x === id).length;
-  // Total gol yang sudah ditandai vs skor yang diketik — kalau beda, papan top
-  // skornya lebih kecil dari skor sebenarnya.
-  const golDitandai = fPencetak.length;
-  const golDiketik =
-    (parseInt(fSkorA, 10) || 0) + (parseInt(fSkorB, 10) || 0);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
-        backLabel="Social"
+        backLabel="Friends"
         title={`${meta.emoji} ${meta.label}`}
         subtitle={`${formatDayDate(dayIdToDate(sesi.dayId))} · ${sesi.time}`}
       />
@@ -280,13 +296,33 @@ export default function SportSessionScreen() {
           </VixText>
         </SummaryCard>
 
+        {/* Uang yang sudah terkumpul masih ada di tanganmu sampai dipindahkan
+            ke kas geng. Tanpa tombol ini kamu harus mengetik ulang angkanya di
+            halaman Kas — dan angka yang diketik ulang itulah yang biasanya
+            meleset. */}
+        {masuk > 0 && (
+          <>
+            {belumKeKas > 0 ? (
+              <PressableScale
+                style={styles.kasButton}
+                onPress={setorKeKas}
+                disabled={busy}>
+                <VixText heading="bold" additionalStyle={styles.kasButtonText}>
+                  💰 Setor {formatRupiah(belumKeKas)} ke Kas {meta.label}
+                </VixText>
+              </PressableScale>
+            ) : (
+              <VixText heading="label" additionalStyle={styles.kasDone}>
+                ✅ {formatRupiah(keKas)} dari sesi ini sudah masuk kas {meta.label}.
+              </VixText>
+            )}
+            <FormError message={formError} gap="top" />
+          </>
+        )}
+
         {/* ===== Skuad & setoran ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
           👥 Skuad & Setoran
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Lingkaran kiri = ikut main. Lingkaran kanan = sudah setor. Yang belum
-          setor bisa langsung ditagih lewat WhatsApp 💬
         </VixText>
 
         {anggota.length === 0 ? (
@@ -351,8 +387,7 @@ export default function SportSessionScreen() {
         </VixText>
         {sesi.games.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada game tercatat. Catat skornya biar ada yang dikenang —
-            dan biar papan top skor gengnya jalan 🥇
+            Belum ada game tercatat.
           </VixText>
         ) : (
           sesi.games.map((g, i) => (
@@ -413,7 +448,7 @@ export default function SportSessionScreen() {
           <VixText
             heading="label"
             additionalStyle={sesi.note ? styles.noteText : styles.notePlaceholder}>
-            {sesi.note || 'Belum ada catatan. Click untuk menulis.'}
+            {sesi.note || 'Belum ada catatan.'}
           </VixText>
         </PressableScale>
       </ScrollView>
@@ -462,7 +497,7 @@ export default function SportSessionScreen() {
         </View>
 
         <VixText heading="label" additionalStyle={[styles.fieldLabel, styles.formGap]}>
-          Pencetak gol — click namanya sekali per gol
+          Pencetak gol
         </VixText>
         <View style={styles.pencetakRow}>
           {anggota
@@ -485,13 +520,6 @@ export default function SportSessionScreen() {
               );
             })}
         </View>
-        <VixText heading="label" additionalStyle={styles.hint}>
-          Tekan lama untuk mengurangi satu gol. {golDitandai} gol ditandai dari{' '}
-          {golDiketik} yang diketik
-          {golDitandai !== golDiketik
-            ? ' — sisanya tidak masuk papan top skor.'
-            : ' ✅'}
-        </VixText>
 
         <FormError message={formError} gap="top" />
         {editGame && (
@@ -535,10 +563,19 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
   sectionTitle: { marginTop: 16, marginBottom: 6 },
-  hint: { color: Color.TEXT_LABEL, marginBottom: 8 },
   empty: { textAlign: 'center', marginVertical: 10 },
+  // Setor ke kas: garis saja, bukan tombol penuh — memindahkan uang ke kas itu
+  // langkah lanjutan, bukan tindakan utama layar ini.
+  kasButton: {
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.FRIENDS_DARK,
+    paddingVertical: 11,
+  },
+  kasButtonText: { color: Color.FRIENDS_DARK },
+  kasDone: { color: Color.SUCCESS, textAlign: 'center' },
   addButton: { marginTop: 8 },
-  // Baris satu pemain: ikut · nama · tagih · lunas.
   row: {
     ...CARD,
     flexDirection: 'row',
@@ -566,7 +603,7 @@ const styles = StyleSheet.create({
   gameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   gameTim: { flex: 1, minWidth: 0, color: Color.TEXT_TITLE },
   gameTimKanan: { flex: 1, minWidth: 0, color: Color.TEXT_TITLE, textAlign: 'right' },
-  gameSkor: { color: Color.SOCIAL_DARK },
+  gameSkor: { color: Color.FRIENDS_DARK },
   gamePencetak: { color: Color.TEXT_LABEL },
   // Catatan.
   noteCard: { ...CARD },
@@ -587,7 +624,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  pencetakOn: { backgroundColor: Color.SOCIAL, borderColor: Color.SOCIAL_DARK },
+  pencetakOn: { backgroundColor: Color.FRIENDS, borderColor: Color.FRIENDS_DARK },
   pencetakText: { color: Color.TEXT_TITLE },
-  pencetakOnText: { color: Color.SOCIAL_DARK },
+  pencetakOnText: { color: Color.FRIENDS_DARK },
 });

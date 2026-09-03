@@ -12,9 +12,9 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { PlacesTab } from '@/components/social/PlacesTab';
-import { SplitBillTab } from '@/components/social/SplitBillTab';
-import { SportTab } from '@/components/social/SportTab';
+import { PlacesTab } from '@/components/friends/PlacesTab';
+import { SplitBillTab } from '@/components/friends/SplitBillTab';
+import { SportTab } from '@/components/friends/SportTab';
 import { useAuth } from '@/contexts/auth';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
@@ -24,7 +24,7 @@ import {
   subscribePlaces,
   type Bill,
   type Place,
-} from '@/lib/social';
+} from '@/lib/friends';
 import {
   EMPTY_SPORT,
   sportAttention,
@@ -32,28 +32,31 @@ import {
   type SportData,
 } from '@/lib/sport';
 
-type SocialTab = 'sport' | 'bills' | 'places';
+type FriendsTab = 'sport' | 'bills' | 'places';
 
-// Sport paling kiri DAN jadi bawaan: dari ketiganya, cuma ini yang menuntut
-// tindakan berjadwal (booking lapangan, menagih iuran). Split Bill & Places
-// dibuka saat dibutuhkan; futsal rutin harus DIINGATKAN, bukan dicari.
-const TABS: BottomTab<SocialTab>[] = [
-  { key: 'sport', label: 'Sport', icon: 'figure.run' },
+// Fun Sport duduk di TENGAH, tapi tetap jadi BAWAAN: dari ketiganya, cuma ini
+// yang menuntut tindakan berjadwal (booking lapangan, menagih iuran). Split
+// Bill & Places dibuka saat dibutuhkan; futsal rutin harus DIINGATKAN, bukan
+// dicari. Urutan tab dan tab mana yang terbuka duluan memang dua hal berbeda —
+// lihat useTabScroll di bawah.
+const TABS: BottomTab<FriendsTab>[] = [
   { key: 'bills', label: 'Split Bill', icon: 'receipt.fill' },
+  { key: 'sport', label: 'Fun Sport', icon: 'figure.run' },
   { key: 'places', label: 'Places', icon: 'cup.and.saucer.fill' },
 ];
 
-// Social 🤝 — yang terjadi saat bergaul dengan teman.
+// Friends 🤝 — yang terjadi saat bergaul dengan teman.
 //
-// Sport ⚽ mengurus futsal rutin dua geng (CORE & NDC F3): jadwal, lapangan,
-// skuad, iuran siapa yang belum setor, dan skor tiap game. Split Bill 💸
+// Fun Sport ⚽ mengurus futsal rutin dua geng (CORE & NDC F3): jadwal,
+// lapangan, skuad, kas tim, iuran siapa yang belum setor, dan skor tiap game.
+// Split Bill 💸
 // menjawab bagian paling merepotkan setelah makan bareng: siapa makan apa,
 // berapa bagiannya setelah pajak & service, dan siapa yang belum setor.
 // Places 🍜 menjawab pertanyaan yang selalu paling lama dijawab di grup:
 // "besok ngumpul di mana?"
-export default function SocialScreen() {
+export default function FriendsScreen() {
   const { user } = useAuth();
-  const { tab, scrollKey, onTabPress } = useTabScroll<SocialTab>('sport');
+  const { tab, scrollKey, onTabPress } = useTabScroll<FriendsTab>('sport');
 
   const [bills, setBills] = useState<Bill[] | null>(null);
   const [places, setPlaces] = useState<Place[] | null>(null);
@@ -74,7 +77,7 @@ export default function SocialScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Home"
-        title="Social 🤝"
+        title="Friends 🤝"
         subtitle="Futsal rutin, patungan & tempat nongkrong"
       />
 
@@ -92,7 +95,7 @@ export default function SocialScreen() {
         )}
       </View>
 
-      {/* Badge tile Social di Home = JUMLAH kedua angka di bawah ini, jadi
+      {/* Badge tile Friends di Home = JUMLAH kedua angka di bawah ini, jadi
           tile-nya tidak pernah lebih kecil dari apa yang menunggu di dalam.
           Aturannya tinggal di lib masing-masing (billUnsettled &
           sessionNeedsAttention), bukan ditulis ulang di sini. */}

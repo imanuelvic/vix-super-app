@@ -16,7 +16,18 @@ import { Color } from '@/assets/style/color';
 export type HomeFeature = {
   key: string;
   label: string;
-  icon:
+  /**
+   * Emoji sebagai ganti `icon`.
+   *
+   * Dipakai SATU tile saja — Friends 🤝 — dan itu bukan selera, tapi
+   * keterbatasan: SF Symbols tidak punya ikon jabat tangan sama sekali (yang
+   * ada cuma tangan melambai, bertepuk, & terangkat), sedangkan jabat tangan
+   * itulah lambang fiturnya. Salah satu dari keduanya harus mengalah, dan
+   * lambang yang benar lebih penting daripada rupa yang seragam.
+   */
+  emoji?: string;
+  /** Wajib kalau `emoji` tidak diisi. */
+  icon?:
     | 'checklist'
     | 'banknote'
     | 'heart.fill'
@@ -37,8 +48,7 @@ export type HomeFeature = {
     | 'trophy.fill'
     | 'graduationcap.fill'
     | 'diamond.fill'
-    | 'iphone'
-    | 'wineglass.fill';
+    | 'iphone';
   route: Href;
   /** Latar pastel tile — dipakai lagi jadi pita header & pil tab di dalam fitur. */
   bg: string;
@@ -79,8 +89,8 @@ export const HOME_FEATURES: HomeFeature[] = [
   // Device 📱 — paket kuota iPhone/iPad & seluruh biaya perangkat.
   { key: 'device', label: 'Device', icon: 'iphone', route: '/device', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
   { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },
-  // Social 🥂 — patungan (Split Bill) & tempat nongkrong bareng teman.
-  { key: 'social', label: 'Social', icon: 'wineglass.fill', route: '/social', bg: Color.SOCIAL, fg: Color.SOCIAL_DARK, deep: Color.SOCIAL_DEEP },
+  // Friends 🤝 — futsal rutin, patungan (Split Bill) & tempat nongkrong.
+  { key: 'friends', label: 'Friends', emoji: '🤝', route: '/friends', bg: Color.FRIENDS, fg: Color.FRIENDS_DARK, deep: Color.FRIENDS_DEEP },
   // Married 💍 — masih Coming Soon. Ditaruh paling belakang supaya urutan tile
   // yang sudah kamu hafal tidak bergeser sama sekali.
   { key: 'married', label: 'Married', icon: 'diamond.fill', route: '/married', bg: Color.MARRIED, fg: Color.MARRIED_DARK, deep: Color.MARRIED_DEEP },

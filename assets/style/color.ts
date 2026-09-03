@@ -187,9 +187,9 @@ export const Color = {
   TOURNAMENT_DEEP: '#573C00',
 
   // Social 🥂 — persik hangat, suasana kumpul-kumpul.
-  SOCIAL: '#FFCBB0',
-  SOCIAL_DARK: '#8F4218',
-  SOCIAL_DEEP: '#7A3913',
+  FRIENDS: '#FFCBB0',
+  FRIENDS_DARK: '#8F4218',
+  FRIENDS_DEEP: '#7A3913',
 
   // Married 💍 — mawar lembut.
   MARRIED: '#F3BDCC',

@@ -6,8 +6,8 @@ import type { ScrollView } from 'react-native';
 // Dipakai SEMUA sub-tab berbadge. Badge merah di tab bar cuma bilang "ada",
 // dan titik berdenyut (AttentionMark) baru menjawab "yang mana" — tapi hanya
 // kalau barisnya kebetulan terlihat. Di daftar panjang (Car → Parts 20 baris,
-// Stuff 61 barang) titiknya bisa ada di layar ketiga, dan kamu tetap harus
-// menggulung sambil menebak. Jadi begitu sub-tabnya dibuka, daftarnya sendiri
+// CORE → Follow-up puluhan orang) titiknya bisa ada di layar ketiga, dan kamu
+// tetap harus menggulung sambil menebak. Jadi begitu sub-tabnya dibuka, daftarnya sendiri
 // yang datang ke titiknya.
 //
 // Pemicunya MOUNT: konten memang di-mount ulang tiap tab ditekan (lihat

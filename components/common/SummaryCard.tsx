@@ -6,7 +6,7 @@ import { VixText } from '@/components/common/VixText';
 import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 
 // Kartu ringkasan gelap — dipakai banyak tab (Car, Finance, Career, Book,
-// Device, Residence, Social, dll). Satu tempat mengatur warna & bentuknya biar
+// Device, Residence, Friends, dll). Satu tempat mengatur warna & bentuknya biar
 // SERAGAM.
 //
 // Warnanya IKUT FITUR tempat kartunya berdiri: versi tergelap dari warna tile

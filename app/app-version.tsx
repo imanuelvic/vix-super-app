@@ -139,16 +139,7 @@ export default function AppVersionScreen() {
             {message.text}
           </VixText>
         )}
-
-        {/* Kenapa "Runtime" itu yang penting: update OTA hanya sampai ke HP
-            yang runtime-nya sama persis. Beda sedikit = update-nya diam saja
-            tanpa pesan apa pun, dan itu pertanyaan pertama tiap kali update
-            terasa tidak masuk. */}
-        <VixText heading="label" additionalStyle={styles.note}>
-          💡 Update hanya sampai kalau <VixText heading="bold">Runtime</VixText>{' '}
-          di atas sama dengan runtime rilisnya. Kalau ada modul native baru,
-          runtime-nya berubah — dan yang dibutuhkan build baru, bukan update.
-        </VixText>
+        
       </ScrollView>
     </SafeAreaView>
   );
@@ -209,5 +200,4 @@ const styles = StyleSheet.create({
   message: { textAlign: 'center', marginTop: 12 },
   messageSuccess: { color: Color.SUCCESS },
   messageError: { color: Color.DANGER },
-  note: { color: Color.TEXT_LABEL, marginTop: 18 },
 });

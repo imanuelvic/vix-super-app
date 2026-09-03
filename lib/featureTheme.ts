@@ -96,9 +96,11 @@ const ROUTE_FEATURE: Record<string, string> = {
   book: 'book',
   device: 'device',
   games: 'games',
-  social: 'social',
-  bill: 'social',
-  sport: 'social',
+  friends: 'friends',
+  bill: 'friends',
+  sport: 'friends',
+  'sport-cash': 'friends',
+  'sport-schedule': 'friends',
   married: 'married',
 };
 

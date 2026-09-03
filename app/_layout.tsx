@@ -137,6 +137,10 @@ function RootNavigator() {
 
         {/* Rincian satu sesi futsal ⚽ — skuad, setoran, & skor tiap game */}
         <Stack.Screen name="sport/[id]" />
+        {/* Kas tim 💰 — saldo & mutasi uang bersama tiap geng */}
+        <Stack.Screen name="sport-cash" />
+        {/* Jadwal Main 📅 — semua pertandingan yang akan datang */}
+        <Stack.Screen name="sport-schedule" />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}

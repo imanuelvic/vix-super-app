@@ -28,7 +28,7 @@ import {
   savePlaces,
   sortedPlaces,
   type Place,
-} from '@/lib/social';
+} from '@/lib/friends';
 import { formatRupiah } from '@/lib/transactions';
 
 type Filter = 'wish' | 'been';

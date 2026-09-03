@@ -1104,12 +1104,14 @@ const styles = StyleSheet.create({
   },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  // Ring + rekap area berdampingan (bukan bertumpuk) → kartunya jadi pendek.
+  // Isinya tinggal RING saja — rekap areanya sudah pindah jadi deretan chip
+  // sendiri di bawah (lihat `areaRow`). Karena itu ring ditengahkan pada kedua
+  // sumbu: dulu kartunya baris berisi dua hal, jadi ring menempel ke kiri dan
+  // sisa ruang bekas rekap area menganga di kanannya.
   heroCard: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'center',
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
     paddingHorizontal: 14,

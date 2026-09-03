@@ -4,7 +4,7 @@ import { dayId, dayIdToDate } from './format';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
-// Sport ⚽ — pengurus futsal rutin (lihat components/social/SportTab.tsx).
+// Sport ⚽ — pengurus futsal rutin (lihat components/friends/SportTab.tsx).
 //
 // Ini bukan sekadar catatan olahraga: ini alat seorang MANAGER. Yang membuat
 // futsal rutin bubar hampir selalu tiga hal yang sama, dan ketiganya diurus di
@@ -42,14 +42,14 @@ export const SPORT_GANGS: SportGang[] = [
     key: 'core',
     label: 'CORE',
     emoji: '⛪',
-    desc: 'Teman komsel gereja',
-    repeatDays: 7,
+    desc: 'MCL Imanuel Victory',
+    repeatDays: 30,
   },
   {
     key: 'f3',
     label: 'NDC F3',
     emoji: '⚽',
-    desc: 'NDC Fulltimer Fun Futsal · rutin 2 minggu sekali',
+    desc: 'Fulltimer Fun Futsal',
     repeatDays: 14,
   },
 ];
@@ -120,9 +120,39 @@ export type SportSession = {
   note: string;
 };
 
-export type SportData = { members: SportMember[]; sessions: SportSession[] };
+/** Uang masuk / keluar dari kas geng. */
+export type SportCashDirection = 'in' | 'out';
 
-export const EMPTY_SPORT: SportData = { members: [], sessions: [] };
+/**
+ * Satu mutasi kas tim — bentuknya sama dengan Saku 👛 di Finance, tapi uangnya
+ * bukan uangmu: ini uang BERSAMA yang kamu pegang sebagai manager. Karena itu
+ * tiap barisnya wajib punya judul; "keluar Rp 300.000" tanpa keterangan adalah
+ * cara tercepat kehilangan kepercayaan satu geng.
+ */
+export type SportCashEntry = {
+  id: string;
+  gang: SportGangKey;
+  /** Tanggal mutasi, "YYYY-MM-DD". */
+  dayId: string;
+  title: string;
+  direction: SportCashDirection;
+  amount: number;
+  note: string;
+  /**
+   * Sesi asal uang ini — hanya diisi oleh tombol "Setor ke Kas" di layar sesi.
+   * Dipakai untuk tahu berapa dari iuran sesi itu yang SUDAH masuk kas, jadi
+   * uang yang sama tidak pernah tercatat dua kali.
+   */
+  sessionId?: string;
+};
+
+export type SportData = {
+  members: SportMember[];
+  sessions: SportSession[];
+  cash: SportCashEntry[];
+};
+
+export const EMPTY_SPORT: SportData = { members: [], sessions: [], cash: [] };
 
 /** Id baru — jam + acak, cukup unik untuk daftar sepanjang ini. */
 export function newSportId(now: Date): string {
@@ -151,7 +181,78 @@ export function sessionUnpaidCount(s: SportSession): number {
   return s.squad.filter((id) => !s.paid.includes(id)).length;
 }
 
+// ===================== Kas tim =====================
+
+/** Mutasi kas satu geng, TERBARU dulu. */
+export function gangCash(
+  data: SportData,
+  gang: SportGangKey,
+): SportCashEntry[] {
+  return data.cash
+    .filter((c) => c.gang === gang)
+    .sort((a, b) => b.dayId.localeCompare(a.dayId) || b.id.localeCompare(a.id));
+}
+
+/** Saldo kas satu geng: yang masuk dikurangi yang keluar. */
+export function cashBalance(data: SportData, gang: SportGangKey): number {
+  return data.cash.reduce(
+    (n, c) =>
+      c.gang === gang ? n + (c.direction === 'in' ? c.amount : -c.amount) : n,
+    0,
+  );
+}
+
+/** Kas SELURUH geng dijumlahkan — angka yang dicari saat buka halaman kas. */
+export function cashTotal(data: SportData): number {
+  return SPORT_GANGS.reduce((n, g) => n + cashBalance(data, g.key), 0);
+}
+
+/**
+ * Berapa rupiah dari iuran sesi ini yang SUDAH disetor ke kas.
+ *
+ * Dipakai supaya uang yang sama tak pernah masuk dua kali — dan supaya yang
+ * telat setor tetap bisa disusulkan: tombol setornya cuma menawarkan SELISIH
+ * antara yang sudah terkumpul di sesi dan yang sudah tercatat di kas.
+ */
+export function sessionCashIn(data: SportData, sessionId: string): number {
+  return data.cash.reduce(
+    (n, c) =>
+      c.sessionId === sessionId && c.direction === 'in' ? n + c.amount : n,
+    0,
+  );
+}
+
+// ===================== Anggota =====================
+
+/**
+ * Anggota satu geng, URUT ABJAD nama.
+ *
+ * Urutan tambah-nya sendiri tidak berarti apa-apa buat siapa pun; yang kamu
+ * lakukan di daftar ini selalu "cari si Anu", dan itu cuma cepat kalau
+ * urutannya bisa ditebak. `localeCompare` dengan locale id + sensitivity base
+ * → huruf besar/kecil & aksen tidak memisahkan nama yang sama.
+ */
+export function gangMembers(
+  data: SportData,
+  gang: SportGangKey,
+): SportMember[] {
+  return data.members
+    .filter((m) => m.gang === gang)
+    .sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
+}
+
 // ===================== Jadwal =====================
+
+/** SEMUA sesi yang belum lewat, paling dekat dulu. */
+export function upcomingSessions(
+  sessions: SportSession[],
+  gang: SportGangKey,
+  todayId: string,
+): SportSession[] {
+  return sessions
+    .filter((s) => s.gang === gang && s.dayId >= todayId)
+    .sort((a, b) => a.dayId.localeCompare(b.dayId));
+}
 
 /**
  * Sesi BERIKUTNYA satu geng — yang tanggalnya hari ini atau sesudahnya, paling
@@ -162,11 +263,7 @@ export function nextSession(
   gang: SportGangKey,
   todayId: string,
 ): SportSession | null {
-  return (
-    sessions
-      .filter((s) => s.gang === gang && s.dayId >= todayId)
-      .sort((a, b) => a.dayId.localeCompare(b.dayId))[0] ?? null
-  );
+  return upcomingSessions(sessions, gang, todayId)[0] ?? null;
 }
 
 /** Sesi yang sudah lewat, terbaru dulu. */
@@ -289,6 +386,8 @@ export function subscribeSport(
       onChange({
         members: d?.members ?? [],
         sessions: d?.sessions ?? [],
+        // Dokumen yang ditulis sebelum kas ada belum punya kolom ini.
+        cash: d?.cash ?? [],
       });
     },
     onError,

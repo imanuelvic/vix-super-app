@@ -99,8 +99,8 @@ const MAPPING = {
   'note.text': 'sticky-note-2',
   // Sub-tab Token ⚡ di Residence — listrik prabayar.
   'bolt.circle.fill': 'offline-bolt',
-  // Fitur Social 🥂 — tile Home + kedua sub-tabnya (Split Bill & Places).
-  'wineglass.fill': 'local-bar',
+  // Fitur Friends 🤝 — sub-tab Split Bill & Places. (Tile Home-nya sendiri
+  // memakai emoji 🤝: SF Symbols tidak punya ikon jabat tangan sama sekali.)
   'receipt.fill': 'receipt-long',
   'cup.and.saucer.fill': 'local-cafe',
   // Fitur Device 📱 — tile Home + kedua sub-tab perangkatnya.

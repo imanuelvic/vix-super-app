@@ -30,15 +30,15 @@ type Nota = {
 };
 
 const TANPA_KARTU: Record<string, Nota> = {
-  social: {
+  friends: {
     emoji: '🤝',
     apa: 'Futsal yang tinggal ≤ 2 hari lagi, atau iuran (futsal / patungan) yang belum masuk.',
     aksi: 'Pastikan lapangannya sudah dibooking & pemainnya cukup, lalu tagih yang belum setor.',
   },
   device: {
     emoji: '📱',
-    apa: 'Paket kuota yang habis besok/hari ini, plus barang yang masih bergaransi.',
-    aksi: 'Isi ulang paketnya. Barang bergaransi: kalau rusak, KLAIM dulu — jangan langsung servis bayar atau beli baru.',
+    apa: 'Paket kuota yang habis besok atau hari ini.',
+    aksi: 'Isi ulang paketnya sebelum kuotanya benar-benar habis.',
   },
 };
 

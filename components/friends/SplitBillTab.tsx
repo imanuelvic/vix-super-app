@@ -27,7 +27,7 @@ import {
   sortedBills,
   unpaidCount,
   type Bill,
-} from '@/lib/social';
+} from '@/lib/friends';
 import { formatRupiah } from '@/lib/transactions';
 
 // Sub-tab Split Bill 💸 — daftar patungan. Yang masih ada orang belum setor
@@ -123,7 +123,7 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
                     router.push({ pathname: '/bill/[id]', params: { id: bill.id } })
                   }>
                   {/* Tagihan yang masih ada orang belum setor = yang dihitung
-                      badge merah tile Social & sub-tab Split Bill
+                      badge merah tile Friends & sub-tab Split Bill
                       (billUnsettled). Ambangnya sengaja dipanggil dari lib
                       yang sama, bukan ditebak ulang di sini. */}
                   {billUnsettled(bill) && (
@@ -144,7 +144,7 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
                         : ''}
                       {/* Penanda notanya sudah difoto. Fotonya sendiri TIDAK
                           ikut diunduh di daftar ini — cuma penandanya (lihat
-                          catatan "Foto nota" di lib/social). */}
+                          catatan "Foto nota" di lib/friends). */}
                       {bill.hasPhoto ? ' · 📸' : ''}
                     </VixText>
                     {bill.people.length === 0 ? (

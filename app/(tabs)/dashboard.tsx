@@ -90,18 +90,13 @@ import {
     type DataPlan,
 } from '@/lib/device';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
-import { billUnsettled, subscribeBills, type Bill } from '@/lib/social';
+import { billUnsettled, subscribeBills, type Bill } from '@/lib/friends';
 import {
     EMPTY_SPORT,
     sportAttention,
     subscribeSport,
     type SportData,
 } from '@/lib/sport';
-import {
-    stuffUnderWarranty,
-    subscribeStuff,
-    type StuffItem,
-} from '@/lib/stuff';
 import { anyBadgeReminder, BadgeReminders } from '@/components/dashboard/BadgeReminders';
 import {
     activeFasting,
@@ -225,10 +220,9 @@ export default function DashboardScreen() {
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
-  // Sumber badge Social 🥂 & Device 📱 (lihat `badgeCounts` di bawah).
+  // Sumber badge Friends 🤝 & Device 📱 (lihat `badgeCounts` di bawah).
   const [bills, setBills] = useState<Bill[]>([]);
   const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
-  const [stuff, setStuff] = useState<StuffItem[]>([]);
   const [sport, setSport] = useState<SportData>(EMPTY_SPORT);
   const [checkups, setCheckups] = useState<Checkup[]>([]);
   const [profile, setProfile] = useState<HealthProfile | null>(null);
@@ -271,11 +265,10 @@ export default function DashboardScreen() {
     return unsubscribeAll([
       subscribeLearningWeek(user.uid, weekId, setLearningWeek),
       subscribeTopicsDone(user.uid, setTopicsDone),
-      // Sumber badge Social & Device — dua badge yang belum punya kartunya
+      // Sumber badge Friends & Device — dua badge yang belum punya kartunya
       // sendiri di sini (lihat components/dashboard/BadgeReminders.tsx).
       subscribeBills(user.uid, setBills),
       subscribeDataPlans(user.uid, setDataPlans),
-      subscribeStuff(user.uid, setStuff),
       subscribeSport(user.uid, setSport),
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
@@ -630,8 +623,8 @@ export default function DashboardScreen() {
   // dari lib yang sama, bukan ditebak ulang, jadi mustahil ada kartu yang
   // muncul tanpa badge (atau sebaliknya).
   const badgeCounts: Record<string, number> = {
-    social: bills.filter(billUnsettled).length + sportAttention(sport, now),
-    device: devicesNeedingTopUp(dataPlans, now) + stuffUnderWarranty(stuff, now),
+    friends: bills.filter(billUnsettled).length + sportAttention(sport, now),
+    device: devicesNeedingTopUp(dataPlans, now),
   };
 
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
@@ -1330,7 +1323,7 @@ export default function DashboardScreen() {
             </ReminderCard>
           )}
 
-          {/* Badge yang belum punya kartunya sendiri (Social & Device).
+          {/* Badge yang belum punya kartunya sendiri (Friends & Device).
               Warnanya ikut tile-nya di Home — lihat components/dashboard. */}
           <BadgeReminders counts={badgeCounts} />
         </View>

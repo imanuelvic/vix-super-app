@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
@@ -15,12 +14,15 @@ import { MoneyInput } from '@/components/common/MoneyInput';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { SectionToggle } from '@/components/common/SectionToggle';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
+import { SportSessionCard } from '@/components/friends/SportSessionCard';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
@@ -28,11 +30,12 @@ import {
   dayId as toDayId,
   dayIdToDate,
   formatDayDate,
-  formatShortDayDate,
   groupDigits,
   parseAmount,
 } from '@/lib/format';
 import {
+  cashBalance,
+  gangMembers,
   gangMeta,
   lastSession,
   nextSession,
@@ -41,12 +44,10 @@ import {
   positionMeta,
   repeatDayId,
   saveSport,
-  sessionNeedsAttention,
-  sessionScoreLine,
-  sessionUnpaidCount,
   SPORT_GANGS,
   SPORT_POSITIONS,
   topScorers,
+  upcomingSessions,
   type SportData,
   type SportGangKey,
   type SportMember,
@@ -88,17 +89,28 @@ export function SportTab({ data }: { data: SportData }) {
   const [fPosisi, setFPosisi] = useState<SportPosition>('flank');
   const [fCatatanOrang, setFCatatanOrang] = useState('');
 
-  const anggota = data.members.filter((m) => m.gang === gang);
+  // Daftar anggota bisa ditutup — kalau tidak, geng 15 orang mendorong papan
+  // skor & riwayat jauh ke bawah tiap kali sub-tab ini dibuka. Terbuka saat
+  // pertama kali karena inilah yang paling sering dilihat.
+  const [anggotaOpen, setAnggotaOpen] = useState(true);
+
+  const anggota = gangMembers(data, gang);
   const berikut = nextSession(data.sessions, gang, todayId);
+  const akanDatang = upcomingSessions(data.sessions, gang, todayId);
   const riwayat = pastSessions(data.sessions, gang, todayId);
   const terakhir = lastSession(data.sessions, gang);
   const papan = topScorers(data, gang).filter((r) => r.goals > 0 || r.caps > 0);
+  const kas = cashBalance(data, gang);
 
   const bukaRincian = (s: SportSession) =>
     router.push({ pathname: '/sport/[id]', params: { id: s.id } });
 
   // 10 riwayat per halaman — sesi menumpuk terus tiap dua minggu.
   const { currentPage, pageCount, pageItems, setPage } = usePagination(riwayat);
+  // Anggota punya paginasinya SENDIRI, dan sengaja tidak ikut ke dalam `key`
+  // ScrollView-nya: ganti halaman anggota tidak boleh melempar layar ke atas,
+  // karena daftar yang sedang kamu baca ada di tengah halaman.
+  const orang = usePagination(anggota);
 
   // ===================== Sesi =====================
 
@@ -236,6 +248,7 @@ export function SportTab({ data }: { data: SportData }) {
     if (!user || !editOrang || busy) return;
     await remove(async () => {
       await saveSport(user.uid, {
+        ...data,
         members: data.members.filter((m) => m.id !== editOrang.id),
         sessions: data.sessions.map((s) => ({
           ...s,
@@ -291,8 +304,7 @@ export function SportTab({ data }: { data: SportData }) {
                 Belum ada jadwal
               </VixText>
               <VixText heading="label" additionalStyle={summaryText.label}>
-                Futsal rutin bubar bukan karena orangnya malas, tapi karena
-                tanggalnya tidak pernah ditentukan. Tentukan sekarang ⚽
+                Tentukan jadwal sekarang ⚽
               </VixText>
             </>
           )}
@@ -309,20 +321,53 @@ export function SportTab({ data }: { data: SportData }) {
             style={styles.ulangButton}
             onPress={() => bukaSesiBaru(repeatDayId(terakhir.dayId, gang))}>
             <VixText heading="bold" additionalStyle={styles.ulangText}>
-              🔁 Ulangi {meta.repeatDays} hari dari main terakhir
+              🔁 Repeat (2 weeks)
             </VixText>
           </PressableScale>
         )}
 
         <FormError message={formError} gap="top" />
 
+        {/* ===== Kas tim ===== */}
+        {/* Uang bersama yang sedang kamu pegang. Ditaruh di atas, bukan di
+            dalam menu: saldo yang tak pernah terlihat itu saldo yang tak
+            pernah dicocokkan. Rincian & mutasinya di halaman sendiri. */}
+        <PressableScale
+          style={styles.kasCard}
+          onPress={() => router.push('/sport-cash')}>
+          <View style={styles.kasMain}>
+            <VixText heading="label" additionalStyle={styles.kasLabel}>
+              💰 Kas {meta.label}
+            </VixText>
+            <VixText
+              heading="subheader"
+              additionalStyle={kas < 0 ? styles.kasMinus : styles.kasNilai}>
+              {formatRupiah(kas)}
+            </VixText>
+          </View>
+          <IconSymbol name="chevron.right" size={20} color={Color.FRIENDS_DARK} />
+        </PressableScale>
+
         {/* ===== Akan datang ===== */}
         {berikut && (
           <>
-            <VixText heading="title" additionalStyle={styles.sectionTitle}>
-              📅 Akan Datang
-            </VixText>
-            <KartuSesi
+            <View style={styles.sectionRow}>
+              <VixText heading="title" additionalStyle={styles.sectionTitleFlat}>
+                📅 Akan Datang
+              </VixText>
+              {/* Yang dipajang di sini cuma yang PALING DEKAT — sisanya di
+                  halaman jadwalnya sendiri, supaya anggota & papan skor tidak
+                  terdorong jauh ke bawah. */}
+              <PressableScale
+                style={styles.miniButton}
+                onPress={() => router.push('/sport-schedule')}
+                hitSlop={8}>
+                <VixText heading="bold" additionalStyle={styles.miniButtonText}>
+                  Lihat semua{akanDatang.length > 1 ? ` (${akanDatang.length})` : ''}
+                </VixText>
+              </PressableScale>
+            </View>
+            <SportSessionCard
               s={berikut}
               now={now}
               onOpen={bukaRincian}
@@ -332,48 +377,57 @@ export function SportTab({ data }: { data: SportData }) {
         )}
 
         {/* ===== Anggota ===== */}
-        <View style={styles.sectionRow}>
-          <VixText heading="title" additionalStyle={styles.sectionTitleFlat}>
-            👥 Anggota ({anggota.length})
-          </VixText>
-          <PressableScale
-            style={styles.miniButton}
-            onPress={bukaOrangBaru}
-            hitSlop={8}>
-            <VixText heading="bold" additionalStyle={styles.miniButtonText}>
-              + Tambah
+        <SectionToggle
+          title={`👥 Anggota (${anggota.length})`}
+          open={anggotaOpen}
+          onToggle={() => setAnggotaOpen((v) => !v)}
+          right={
+            <PressableScale
+              style={styles.miniButton}
+              onPress={bukaOrangBaru}
+              hitSlop={8}>
+              <VixText heading="bold" additionalStyle={styles.miniButtonText}>
+                + Tambah
+              </VixText>
+            </PressableScale>
+          }>
+          {anggota.length === 0 ? (
+            <VixText heading="label" additionalStyle={styles.empty}>
+              Tambah anggota {meta.label}.
             </VixText>
-          </PressableScale>
-        </View>
-        {anggota.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada anggota {meta.label}. Isi dulu siapa saja yang biasa
-            ikut — daftar ini yang jadi skuad tiap kali kamu jadwalkan main.
-          </VixText>
-        ) : (
-          anggota.map((m) => {
-            const pos = positionMeta(m.position);
-            return (
-              <View key={m.id} style={styles.orangRow}>
-                <View style={styles.orangMain}>
-                  <VixText heading="bold" additionalStyle={styles.orangNama}>
-                    {pos.emoji} {m.name}
-                  </VixText>
-                  <VixText heading="label">
-                    {pos.label}
-                    {m.phone ? ` · ${m.phone}` : ' · nomor belum diisi'}
-                  </VixText>
-                  {m.note ? (
-                    <VixText heading="label" additionalStyle={styles.orangNote}>
-                      {m.note}
-                    </VixText>
-                  ) : null}
-                </View>
-                <EditButton onPress={() => bukaOrangUbah(m)} />
-              </View>
-            );
-          })
-        )}
+          ) : (
+            <>
+              {/* Urut abjad nama — lihat gangMembers di lib/sport.ts. */}
+              {orang.pageItems.map((m) => {
+                const pos = positionMeta(m.position);
+                return (
+                  <View key={m.id} style={styles.orangRow}>
+                    <View style={styles.orangMain}>
+                      <VixText heading="bold" additionalStyle={styles.orangNama}>
+                        {pos.emoji} {m.name}
+                      </VixText>
+                      <VixText heading="label">
+                        {pos.label}
+                        {m.phone ? ` · ${m.phone}` : ' · nomor belum diisi'}
+                      </VixText>
+                      {m.note ? (
+                        <VixText heading="label" additionalStyle={styles.orangNote}>
+                          {m.note}
+                        </VixText>
+                      ) : null}
+                    </View>
+                    <EditButton onPress={() => bukaOrangUbah(m)} />
+                  </View>
+                );
+              })}
+              <Pagination
+                page={orang.currentPage}
+                pageCount={orang.pageCount}
+                onChange={orang.setPage}
+              />
+            </>
+          )}
+        </SectionToggle>
 
         {/* ===== Papan top skor ===== */}
         {papan.length > 0 && (
@@ -409,7 +463,7 @@ export function SportTab({ data }: { data: SportData }) {
               🧾 Riwayat Main
             </VixText>
             {pageItems.map((s) => (
-              <KartuSesi
+              <SportSessionCard
                 key={s.id}
                 s={s}
                 now={now}
@@ -561,69 +615,6 @@ export function SportTab({ data }: { data: SportData }) {
   );
 }
 
-// Kartu satu sesi main. Di LUAR SportTab: komponen yang dibuat di dalam
-// komponen lain berganti identitas tiap render, jadi React membongkar-pasang
-// seluruh kartunya alih-alih memperbaruinya (dan React Compiler menolaknya).
-function KartuSesi({
-  s,
-  now,
-  onOpen,
-  onEdit,
-}: {
-  s: SportSession;
-  now: Date;
-  onOpen: (s: SportSession) => void;
-  onEdit: (s: SportSession) => void;
-}) {
-  const belum = sessionUnpaidCount(s);
-  const skor = sessionScoreLine(s);
-  const perlu = sessionNeedsAttention(s, now);
-  return (
-    <View style={[styles.sesiCard, attentionBorder(perlu)]}>
-      {/* Titik merah = sesi INI yang menyalakan badge Sport: mau main ≤ 2 hari
-          lagi, atau sudah lewat tapi masih ada yang belum setor. Syaratnya
-          dipanggil dari lib yang sama dengan angka badge-nya. */}
-      {perlu && <AttentionMark corner />}
-      <PressableScale style={styles.sesiMain} onPress={() => onOpen(s)}>
-        <VixText heading="bold" additionalStyle={styles.sesiTanggal}>
-          🗓️ {formatShortDayDate(dayIdToDate(s.dayId))} · {s.time}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.sesiVenue}>
-          📍 {s.venue || 'Lapangan belum ditentukan'}
-        </VixText>
-        <View style={styles.pilRow}>
-          <View style={styles.pil}>
-            <VixText heading="label" additionalStyle={styles.pilText}>
-              👥 {s.squad.length} main
-            </VixText>
-          </View>
-          {belum > 0 ? (
-            <View style={[styles.pil, styles.pilDue]}>
-              <VixText heading="label" additionalStyle={styles.pilDueText}>
-                💸 {belum} belum setor
-              </VixText>
-            </View>
-          ) : s.squad.length > 0 ? (
-            <View style={[styles.pil, styles.pilOk]}>
-              <VixText heading="label" additionalStyle={styles.pilOkText}>
-                ✅ Lunas semua
-              </VixText>
-            </View>
-          ) : null}
-          {skor ? (
-            <View style={[styles.pil, styles.pilSkor]}>
-              <VixText heading="label" additionalStyle={styles.pilSkorText}>
-                ⚽ {skor}
-              </VixText>
-            </View>
-          ) : null}
-        </View>
-      </PressableScale>
-      <EditButton onPress={() => onEdit(s)} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
@@ -635,11 +626,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Color.SOCIAL_DARK,
+    borderColor: Color.FRIENDS_DARK,
     paddingVertical: 10,
     marginBottom: 4,
   },
-  ulangText: { color: Color.SOCIAL_DARK },
+  ulangText: { color: Color.FRIENDS_DARK },
   sectionTitle: { marginTop: 14, marginBottom: 8 },
   sectionRow: {
     flexDirection: 'row',
@@ -653,37 +644,33 @@ const styles = StyleSheet.create({
   miniButton: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: Color.SOCIAL_DARK,
+    borderColor: Color.FRIENDS_DARK,
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
-  miniButtonText: { color: Color.SOCIAL_DARK },
+  miniButtonText: { color: Color.FRIENDS_DARK },
   empty: { textAlign: 'center', marginVertical: 10 },
-  // Kartu satu sesi main.
-  sesiCard: {
-    ...CARD,
+  // Kas tim: pastel Friends bergaris tepi, jadi terbaca sebagai PINTU ke
+  // halaman lain — beda dari kartu data biasa yang berlatar putih.
+  // Bentuknya mengikuti CARD, tapi TIDAK menyebarnya: kartu ini sengaja
+  // berwarna lain, dan menimpa warna milik CARD berarti bentuk baku kartu
+  // daftar punya pengecualian diam-diam (lihat assets/style/card.ts).
+  kasCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 8,
+    marginTop: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: Color.FRIENDS,
+    borderColor: Color.FRIENDS_DARK,
   },
-  sesiMain: { flex: 1, minWidth: 0, gap: 3 },
-  sesiTanggal: { color: Color.TEXT_TITLE },
-  sesiVenue: { color: Color.TEXT_LABEL },
-  pilRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
-  pil: {
-    borderRadius: 999,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  pilText: { color: Color.TEXT_LABEL },
-  pilDue: { backgroundColor: Color.DANGER_TRANSPARENT },
-  pilDueText: { color: Color.DANGER },
-  pilOk: { backgroundColor: Color.MAIN_TRANSPARENT },
-  pilOkText: { color: Color.SUCCESS },
-  pilSkor: { backgroundColor: Color.SOCIAL },
-  pilSkorText: { color: Color.SOCIAL_DARK },
+  kasMain: { flex: 1, minWidth: 0, gap: 1 },
+  kasLabel: { color: Color.FRIENDS_DARK },
+  kasNilai: { color: Color.TEXT_TITLE },
+  kasMinus: { color: Color.DANGER },
   // Baris anggota.
   orangRow: {
     ...CARD,
@@ -703,10 +690,10 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 8,
   },
-  papanRank: { color: Color.SOCIAL_DARK, width: 26, textAlign: 'center' },
+  papanRank: { color: Color.FRIENDS_DARK, width: 26, textAlign: 'center' },
   papanNama: { flex: 1, minWidth: 0, color: Color.TEXT_TITLE },
   papanCaps: { color: Color.TEXT_PLACEHOLDER },
-  papanGol: { color: Color.SOCIAL_DARK },
+  papanGol: { color: Color.FRIENDS_DARK },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginTop: 10 },
 });
