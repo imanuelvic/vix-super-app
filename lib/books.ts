@@ -14,10 +14,6 @@ import { liveDoc } from './liveDoc';
 // dalam SATU dokumen kecil biar sinkron antar perangkat:
 //   users/{uid}/reading/books → { chapters: { [bookKey]: { [idxBab]: true } } }
 // Sebuah buku dianggap "selesai" kalau semua babnya sudah dicentang.
-//
-// Soal LINK: untuk buku yang masih berhak cipta, link mengarah ke sumber GRATIS
-// yang LEGAL (esai/situs resmi penulis atau ringkasan) — bukan salinan bajakan.
-// Dukung penulisnya dengan membeli / meminjam bukunya ya 🙏
 
 export type BookCategory = { key: string; label: string };
 

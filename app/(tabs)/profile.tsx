@@ -73,7 +73,7 @@ type FieldSpec = {
   lowercase?: boolean;
   /**
    * Nomor HP → dirapikan tiap ketikan jadi bentuk lokal '08…' (lib/phone.ts).
-   * Sama persis dengan kolom nomor di CORE & Fun Sport: menempel
+   * Sama persis dengan kolom nomor di CORE & Fun Futsal: menempel
    * '+62 812-4204-3658' langsung jadi '081242043658', bukan tersimpan
    * lengkap dengan tanda baca yang tak terbaca siapa pun.
    */
@@ -118,8 +118,6 @@ const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
         maxLength: 16,
       },
       { key: 'npwp', label: 'NPWP', keyboard: 'number-pad' },
-      // Paspor Indonesia berhuruf + berangka (mis. C1234567) → tetap ketikan
-      // biasa, bukan papan angka.
       { key: 'passport', label: 'No. Paspor' },
       {
         key: 'bpjs',

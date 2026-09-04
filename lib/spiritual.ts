@@ -23,7 +23,7 @@ import { hashString, pickOfDay } from './core';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { dayIdToDate } from './format';
-import { yesterdayId } from './health';
+import { dayDocId, yesterdayId } from './health';
 import { openExternalUrl } from './linking';
 import { liveDoc, liveList } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
@@ -133,6 +133,77 @@ export function setReviveSkipped(
     ...(current ?? EMPTY_DAY_STREAK),
     skippedDayId: skipped ? todayId : '',
   });
+}
+
+/**
+ * Streak Revive yang DIHITUNG ULANG dari catatannya sendiri.
+ *
+ * Angka streak disimpan sebagai penghitung: dinaikkan sekali tiap Revive hari
+ * itu disimpan. Penghitung seperti itu gampang meleset dan tidak pernah
+ * membetulkan dirinya — satu penyimpanan yang gagal saat sinyal putus, satu
+ * Revive yang ditulis menyusul untuk tanggal kemarin (streaknya tak pernah
+ * naik untuk hari itu), atau tombol reset achievement, dan angkanya berbeda
+ * dari kenyataan SELAMANYA.
+ *
+ * Karena itu sumber kebenarannya dibalik: catatan Revive-lah yang menentukan,
+ * dan penghitungnya dibetulkan mengikuti (lihat `repairedReviveStreak`).
+ * Hitungannya = berapa hari BERTURUT-TURUT ada catatan, mundur dari hari ini.
+ * Belum menulis hari ini tidak langsung memutus — selama kemarin ada,
+ * streaknya masih hidup (aturan yang sama dengan `activeStreak` kebiasaan).
+ */
+export function reviveStreakFromDays(
+  dayIds: string[],
+  todayId: string,
+): number {
+  const ada = new Set(dayIds);
+  let hari = ada.has(todayId) ? todayId : sebelumnya(todayId);
+  let jumlah = 0;
+  while (ada.has(hari)) {
+    jumlah += 1;
+    hari = sebelumnya(hari);
+  }
+  return jumlah;
+}
+
+/** dayId sehari sebelum `dayId`. */
+function sebelumnya(dayId: string): string {
+  const d = dayIdToDate(dayId);
+  d.setDate(d.getDate() - 1);
+  return dayDocId(d);
+}
+
+/**
+ * Penghitung yang sudah dibetulkan dari catatannya — atau null kalau memang
+ * sudah cocok (jadi tak ada tulis yang sia-sia).
+ *
+ * `best` & `total` tidak pernah TURUN: keduanya rekor sepanjang masa,
+ * sedangkan catatan yang dibaca cuma 90 hari terakhir.
+ */
+export function repairedReviveStreak(
+  current: ReviveStreak | null,
+  dayIds: string[],
+  todayId: string,
+): ReviveStreak | null {
+  const count = reviveStreakFromDays(dayIds, todayId);
+  const terakhir = [...dayIds].sort().pop() ?? '';
+  const benar: ReviveStreak = {
+    ...(current ?? EMPTY_DAY_STREAK),
+    count,
+    lastDayId: terakhir,
+    best: Math.max(count, current?.best ?? 0),
+    total: Math.max(dayIds.length, current?.total ?? 0),
+  };
+  const sama =
+    current !== null &&
+    current.count === benar.count &&
+    current.lastDayId === benar.lastDayId &&
+    current.best === benar.best &&
+    current.total === benar.total;
+  return sama ? null : benar;
+}
+
+export function saveReviveStreak(uid: string, streak: ReviveStreak) {
+  return setDoc(doc(db, 'users', uid, 'app', 'revive'), streak);
 }
 
 /** Panggil saat Revive HARI INI pertama kali disimpan — naik maks 1×/hari. */

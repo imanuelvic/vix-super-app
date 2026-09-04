@@ -73,7 +73,7 @@ export default function StepsScreen() {
         backLabel="Health"
         title="Langkah Kaki👣"
         subtitle="Pencapaian langkah harianmu"
-        // Daftar tier di layar ini persis isi kategori "👣 Langkah Harian".
+        // Daftar tier di layar ini persis isi kategori "👣 Daily Steps".
         right={<AchievementButton category="steps" />}
       />
 

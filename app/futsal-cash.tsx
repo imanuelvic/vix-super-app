@@ -23,9 +23,10 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFutsalGang } from '@/contexts/futsalGang';
 import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
-import { useSportData } from '@/hooks/useSportData';
+import { useFutsalData } from '@/hooks/useFutsalData';
 import {
   dayId as toDayId,
   dayIdToDate,
@@ -38,13 +39,12 @@ import {
   cashTotal,
   gangCash,
   gangMeta,
-  newSportId,
-  saveSport,
-  SPORT_GANGS,
-  type SportCashDirection,
-  type SportCashEntry,
-  type SportGangKey,
-} from '@/lib/sport';
+  newFutsalId,
+  saveFutsal,
+  FUTSAL_GANGS,
+  type FutsalCashDirection,
+  type FutsalCashEntry,
+} from '@/lib/futsal';
 import { formatRupiah } from '@/lib/transactions';
 
 // Kas Tim 💰 — Saku 👛 versi uang bersama.
@@ -58,21 +58,23 @@ import { formatRupiah } from '@/lib/transactions';
 // Uang dari iuran main tidak diketik ulang di sini: layar sesi punya tombol
 // "Setor ke Kas" yang mencatatnya sendiri, lengkap dengan penanda sesi asalnya
 // supaya uang yang sama tak pernah masuk dua kali (lihat sessionCashIn).
-const ARAH: { key: SportCashDirection; label: string; sub: string }[] = [
+const ARAH: { key: FutsalCashDirection; label: string; sub: string }[] = [
   { key: 'in', label: '⬇️ Masuk', sub: 'Iuran, denda, sisa patungan, sumbangan' },
   { key: 'out', label: '⬆️ Keluar', sub: 'Sewa lapangan, bola, rompi, air minum' },
 ];
 
-export default function SportCashScreen() {
+export default function FutsalCashScreen() {
   const { user } = useAuth();
 
-  const { data, isi, error } = useSportData();
+  const { data, isi, error } = useFutsalData();
   const { busy, formError, setFormError, save, remove } = useFormSave();
 
-  const [gang, setGang] = useState<SportGangKey>('f3');
+  // Gengnya ikut yang sedang dibuka di sub-tab Fun Futsal: membuka Kas dari
+  // tab CORE lalu mendarat di saldo F3 terbaca seperti kas CORE yang kosong.
+  const { gang, setGang } = useFutsalGang();
   const [open, setOpen] = useState(false);
-  const [edit, setEdit] = useState<SportCashEntry | null>(null);
-  const [fArah, setFArah] = useState<SportCashDirection>('in');
+  const [edit, setEdit] = useState<FutsalCashEntry | null>(null);
+  const [fArah, setFArah] = useState<FutsalCashDirection>('in');
   const [fJudul, setFJudul] = useState('');
   const [fJumlah, setFJumlah] = useState('');
   const [fTanggal, setFTanggal] = useState(new Date());
@@ -94,7 +96,7 @@ export default function SportCashScreen() {
     setOpen(true);
   }
 
-  function bukaUbah(c: SportCashEntry) {
+  function bukaUbah(c: FutsalCashEntry) {
     setEdit(c);
     setFArah(c.direction);
     setFJudul(c.title);
@@ -116,11 +118,11 @@ export default function SportCashScreen() {
       setFormError('Jumlahnya diisi dulu ya.');
       return;
     }
-    const baris: SportCashEntry = {
+    const baris: FutsalCashEntry = {
       // Penanda sesi asal (kalau ada) DIPERTAHANKAN saat diubah — kalau hilang,
       // iuran sesi itu terlihat belum masuk kas dan bisa disetor dua kali.
       ...(edit?.sessionId ? { sessionId: edit.sessionId } : {}),
-      id: edit?.id ?? newSportId(new Date()),
+      id: edit?.id ?? newFutsalId(new Date()),
       gang,
       dayId: toDayId(fTanggal),
       title: fJudul.trim(),
@@ -129,7 +131,7 @@ export default function SportCashScreen() {
       note: fCatatan.trim(),
     };
     await save(async () => {
-      await saveSport(user.uid, {
+      await saveFutsal(user.uid, {
         ...data,
         cash: edit
           ? data.cash.map((c) => (c.id === edit.id ? baris : c))
@@ -142,7 +144,7 @@ export default function SportCashScreen() {
   async function hapus() {
     if (!user || !data || !edit || busy) return;
     await remove(async () => {
-      await saveSport(user.uid, {
+      await saveFutsal(user.uid, {
         ...data,
         cash: data.cash.filter((c) => c.id !== edit.id),
       });
@@ -177,14 +179,14 @@ export default function SportCashScreen() {
                 {formatRupiah(cashTotal(isi))}
               </VixText>
               <VixText heading="label" additionalStyle={summaryText.label}>
-                {SPORT_GANGS.map(
+                {FUTSAL_GANGS.map(
                   (g) => `${g.emoji} ${g.label} ${formatRupiah(cashBalance(isi, g.key))}`,
                 ).join('  ·  ')}
               </VixText>
             </SummaryCard>
 
             <SegmentTabs
-              tabs={SPORT_GANGS.map((g) => ({
+              tabs={FUTSAL_GANGS.map((g) => ({
                 key: g.key,
                 label: `${g.emoji} ${g.label}`,
                 sub: formatRupiah(cashBalance(isi, g.key)),

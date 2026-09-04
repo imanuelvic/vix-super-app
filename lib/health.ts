@@ -537,7 +537,7 @@ export function bumpWaterStreak(
 }
 
 // ============================== Streak 🔥 ==============================
-// users/{uid}/health/streak — {count, lastDayId}: berapa hari beruntun
+// users/{uid}/health/streak — {count, lastDayId}: berapa hari streak
 // SEMUA kebiasaan selesai. Disimpan sebagai dokumen kecil (bukan dihitung
 // dari riwayat) supaya tidak perlu membaca banyak dokumen tiap buka app.
 

@@ -91,12 +91,14 @@ export function SectionToggle({
 }
 
 const styles = StyleSheet.create({
-  // Jarak atas-bawahnya SAMA PERSIS dengan judul bagian biasa (SECTION_SPACE)
-  // — dipakai sebagai padding, bukan margin, karena margin tidak ikut
-  // mewarnai latar dan latar yang bolong membuat daftar di belakangnya tembus
-  // saat judul ini dipatok.
+  // Jarak ATAS sengaja 0. Judul ini hampir selalu dipatok, dan yang dipatok
+  // berhenti tepat di bawah deretan tab — ruang kosong di atasnya jadi pita
+  // menganga yang ikut ke mana-mana selama daftarnya digulung. Jarak BAWAH
+  // tetap seperti judul bagian lain (SECTION_SPACE), dan tetap padding, bukan
+  // margin: margin tidak ikut mewarnai latar, dan latar yang bolong membuat
+  // daftar di belakangnya tembus saat judul ini dipatok.
   head: {
-    paddingTop: SECTION_SPACE.marginTop,
+    paddingTop: 0,
     paddingBottom: SECTION_SPACE.marginBottom,
     backgroundColor: Color.BACKGROUND,
   },

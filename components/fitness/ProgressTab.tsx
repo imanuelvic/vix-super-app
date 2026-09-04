@@ -42,7 +42,7 @@ export function ProgressTab({
         <VixText heading="subheader" additionalStyle={styles.heroValue}>
           {count}{' '}
           <VixText heading="label" additionalStyle={styles.heroLabel}>
-            sesi beruntun
+            sesi streak
           </VixText>
         </VixText>
         <VixText heading="label" additionalStyle={styles.heroLabel}>
@@ -63,7 +63,7 @@ export function ProgressTab({
           <VixText heading="subheader" additionalStyle={styles.statValue}>
             {best}
           </VixText>
-          <VixText heading="label">Rekor beruntun</VixText>
+          <VixText heading="label">Rekor streak</VixText>
         </View>
       </View>
       

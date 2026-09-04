@@ -139,7 +139,7 @@ export function CreatorsTab() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  kindScroll: { height: 56 },
+  kindScroll: { height: 58 },
   kindRow: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10 },
   content: { paddingHorizontal: 20, paddingBottom: 24 },
   center: { alignItems: 'center', gap: 12, paddingTop: 40, paddingHorizontal: 20 },

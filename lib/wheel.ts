@@ -107,9 +107,9 @@ export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
 export const WHEEL_REFLECTIONS: Record<WheelAreaKey, string[]> = {
   spirituality: [
     '📖 Kapan terakhir kamu saat teduh tanpa buru-buru?',
-    '⛪ Bulan ini ibadah & CORE-mu bolong berapa kali?',
-    '✍️ Seberapa jujur kamu cerita ke Tuhan?',
-    '🧠 Firman apa yang kamu imankan saat ini?',
+    '⛪ Bulan ini ibadah-mu bolong berapa kali?',
+    '✍️ Seberapa dekat hubungan kamu dengan Tuhan?',
+    '🧠 Firman Tuhan apa yang kamu pegang saat ini?',
     '🙇 Kalau HP-mu diambil sehari, doamu jadi panjang atau hilang?',
   ],
   health: [

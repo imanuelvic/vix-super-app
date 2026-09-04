@@ -53,7 +53,7 @@ export function formatShortDayDate(d: Date): string {
  * Senin, 31 Agu 2026 — nama hari UTUH, bulan 3 huruf, tahun 4 angka.
  *
  * Inilah bentuk baku tanggal di DAFTAR (kartu reminder Dashboard, baris jadwal
- * Fun Sport): "dddd, d mmm yyyy". Tanggalnya 1 digit kalau memang 1 digit —
+ * Fun Futsal): "dddd, d mmm yyyy". Tanggalnya 1 digit kalau memang 1 digit —
  * "06 Feb" itu bahasa mesin, bukan bahasa orang.
  *
  * Tiga tetangganya cuma beda satu bagian, jadi gampang salah ambil:

@@ -367,23 +367,23 @@ export default function TimelineScreen() {
             </VixText>
           </SummaryCard>
 
-          <PrimaryButton
-            label="Tambah Wishlist"
-            icon="plus"
-            onPress={() => openAdd(null)}
-            additionalStyle={styles.addButton}
-          />
-
-          {/* Rekap cepat — SEMUA tahun sekaligus, bukan cuma tahun yang sedang
-              dibuka. Layar ini bekerja setahun demi setahun (murah & fokus),
-              jadi tanpa ini tidak ada satu pun tempat untuk melihat "apa saja
-              yang sudah aku tulis, dan berapa yang tercapai". */}
-          <PressableScale style={styles.recapRow} onPress={openRekap}>
-            <VixText heading="bold" additionalStyle={styles.recapText}>
-              📋 Rekap Semua Wishlist
-            </VixText>
-            <IconSymbol name="chevron.right" size={16} color={Color.MAIN} />
-          </PressableScale>
+          {/* Satu baris: menambah wishlist yang melebar, rekap cuma petak
+              kecil di sebelahnya. Rekapnya membuka SEMUA tahun sekaligus
+              (layar ini bekerja setahun demi setahun), jadi ia jalan pintas —
+              bukan tindakan utama yang pantas selebar layar. */}
+          <View style={styles.aksiRow}>
+            <PrimaryButton
+              label="Tambah Wishlist"
+              icon="plus"
+              onPress={() => openAdd(null)}
+              additionalStyle={styles.addButton}
+            />
+            <PressableScale style={styles.recapButton} onPress={openRekap} hitSlop={6}>
+              <VixText heading="bold" additionalStyle={styles.recapText}>
+                📋
+              </VixText>
+            </PressableScale>
+          </View>
 
           {/* Target tahunan (tanpa bulan) */}
           <View style={styles.yearCard}>
@@ -404,7 +404,7 @@ export default function TimelineScreen() {
                 onPress={() => setPastOpen((o) => !o)}>
                 <View style={styles.monthHeaderLeft}>
                   <VixText heading="bold" additionalStyle={styles.monthTitle}>
-                    🕗 {MONTH_NAMES[0]} – {MONTH_NAMES[currentMonth - 1]}
+                    🕗 {MONTH_NAMES[0]} - {MONTH_NAMES[currentMonth - 1]}
                   </VixText>
                 </View>
                 <View style={styles.monthHeaderRight}>
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: Color.MAIN_LIGHT,
   },
-  addButton: { marginBottom: 12 },
+  addButton: { flex: 1 },
   yearCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -692,17 +692,15 @@ const styles = StyleSheet.create({
   fieldLabel: { marginBottom: 6 },
   // Pintu ke rekap semua tahun — sengaja bergaris putus-putus seperti tombol
   // "Tambah kitab lain" di Baca Alkitab: pintu tambahan, bukan tombol utama.
-  recapRow: {
-    flexDirection: 'row',
+  aksiRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8, marginBottom: 12 },
+  recapButton: {
+    width: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: Color.MAIN,
-    marginBottom: 12,
   },
   recapText: { color: Color.MAIN_DARK },
   recapEmpty: { textAlign: 'center', marginVertical: 12 },

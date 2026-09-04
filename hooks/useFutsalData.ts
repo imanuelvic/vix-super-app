@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/contexts/auth';
 import { LOAD_ERROR } from '@/lib/messages';
-import { EMPTY_SPORT, subscribeSport, type SportData } from '@/lib/sport';
+import { EMPTY_FUTSAL, subscribeFutsal, type FutsalData } from '@/lib/futsal';
 
 /**
- * Langganan dokumen Fun Sport (anggota + sesi + kas) — dipakai TIGA layar:
+ * Langganan dokumen Fun Futsal (anggota + sesi + kas) — dipakai TIGA layar:
  * Kas Tim 💰, Jadwal Main 📅, dan rincian satu sesi ⚽.
  *
  * Ketiganya dulu menulis blok yang sama persis, dan yang paling gampang beda
- * sendiri bukan langganannya, tapi PERILAKU SAAT GAGAL: jatuh ke `EMPTY_SPORT`
+ * sendiri bukan langganannya, tapi PERILAKU SAAT GAGAL: jatuh ke `EMPTY_FUTSAL`
  * (bukan dibiarkan `null`) supaya layarnya berhenti memutar spinner selamanya
  * dan menampilkan pesan galat di atas daftar kosong — bukan layar abu-abu tanpa
  * keterangan apa pun.
@@ -23,23 +23,23 @@ import { EMPTY_SPORT, subscribeSport, type SportData } from '@/lib/sport';
  * `setError` ikut dikembalikan karena layar rincian sesi memakai kotak galat
  * yang sama untuk kegagalan MENYIMPAN (SAVE_ERROR), bukan cuma memuat.
  */
-export function useSportData(): {
-  data: SportData | null;
-  isi: SportData;
+export function useFutsalData(): {
+  data: FutsalData | null;
+  isi: FutsalData;
   error: string | null;
   setError: (value: string | null) => void;
 } {
   const { user } = useAuth();
-  const [data, setData] = useState<SportData | null>(null);
+  const [data, setData] = useState<FutsalData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    return subscribeSport(user.uid, setData, () => {
-      setData(EMPTY_SPORT);
+    return subscribeFutsal(user.uid, setData, () => {
+      setData(EMPTY_FUTSAL);
       setError(LOAD_ERROR);
     });
   }, [user]);
 
-  return { data, isi: data ?? EMPTY_SPORT, error, setError };
+  return { data, isi: data ?? EMPTY_FUTSAL, error, setError };
 }

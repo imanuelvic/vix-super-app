@@ -1,11 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 
 import { SegmentTabs } from '@/components/common/SegmentTabs';
-import { SPORT_GANGS, type SportGangKey } from '@/lib/sport';
+import { FUTSAL_GANGS, type FutsalGangKey } from '@/lib/futsal';
 
-// Deretan tab geng Fun Sport (⛪ CORE / ⚽ NDC F3) yang BERDIRI DI LUAR gulungan.
+// Deretan tab geng Fun Futsal (⛪ CORE / ⚽ NDC F3) yang BERDIRI DI LUAR gulungan.
 //
-// Dipakai tiga layar: sub-tab Fun Sport, Jadwal Main, dan Leaderboard. Ketiganya
+// Dipakai tiga layar: sub-tab Fun Futsal, Jadwal Main, dan Leaderboard. Ketiganya
 // menulis blok yang sama persis — sampai jarak kiri-kanannya, yang harus sama
 // dengan isi halamannya supaya batas kiri-kanan layar tetap satu garis.
 //
@@ -21,15 +21,15 @@ export function GangTabs({
   onChange,
   gap = 4,
 }: {
-  value: SportGangKey;
-  onChange: (gang: SportGangKey) => void;
-  /** Jarak ke pita header di atasnya — sub-tab Fun Sport perlu sedikit lebih. */
+  value: FutsalGangKey;
+  onChange: (gang: FutsalGangKey) => void;
+  /** Jarak ke pita header di atasnya — sub-tab Fun Futsal perlu sedikit lebih. */
   gap?: number;
 }) {
   return (
     <View style={[styles.bar, { paddingTop: gap }]}>
       <SegmentTabs
-        tabs={SPORT_GANGS.map((g) => ({
+        tabs={FUTSAL_GANGS.map((g) => ({
           key: g.key,
           label: `${g.emoji} ${g.label}`,
         }))}

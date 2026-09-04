@@ -127,18 +127,18 @@ export default function PausePrayScreen() {
       <ScreenHeader
         backLabel="Spiritual"
         title="Pause & Pray 🙏"
-        subtitle="Instastory"
+        subtitle="Berhenti sejenak, dan abadikan doa-mu"
       />
 
       <ScreenError message={error} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          🙏 Doa Singkatmu
+          🙏 Tulis Doa
         </VixText>
         <FormInput
           style={styles.prayerInput}
-          placeholder="mis. Tuhan, tenangkan hatiku hari ini. Cukupkan yang kupunya."
+          placeholder="Doa"
           value={prayer}
           onChangeText={setPrayer}
           multiline
@@ -146,8 +146,7 @@ export default function PausePrayScreen() {
         />
         {terpotong && (
           <VixText heading="label" additionalStyle={styles.tooLong}>
-            ✂️ Doanya kepanjangan — bagian akhirnya tidak muat di kartu.
-            Persingkat dulu ya.
+            ✂️ Doanya kepanjangan
           </VixText>
         )}
 

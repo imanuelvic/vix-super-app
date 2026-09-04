@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 
 import { type LoginStreak as WeekStreak } from './achievements';
+import { hashString } from './core';
 import { db } from './firebase';
 import { dayIdToDate } from './format';
 import { dayDocId } from './health';
@@ -477,16 +478,35 @@ export function canChangeWeekSkill(now = new Date()): boolean {
 export const TOPICS_PER_WEEK = 3;
 
 /**
- * Topik diskusi giliran minggu ini — tiga sekaligus, diambil berurutan lalu
- * digeser 3 tiap minggu. Tiga selalu berbeda (daftarnya jauh lebih panjang),
- * dan karena 3 tidak habis membagi jumlah topik, putarannya tetap kebagian
- * semua sebelum mengulang.
+ * Seluruh topik dalam URUTAN ACAK yang TETAP.
+ *
+ * Daftar aslinya dikelompokkan (semua Marriage dulu, baru Entertainment, lalu
+ * Job…), jadi mengambil tiga topik berurutan selalu memberi tiga topik dari
+ * kelompok yang SAMA — "Financial Planning · Plan Family & Child · Career"
+ * semuanya 💍 dalam satu minggu. Itu bukan giliran yang menarik untuk
+ * diobrolkan; itu satu tema yang dipecah tiga.
+ *
+ * Diacak dari hash NAMA KUNCINYA, bukan Math.random: hasilnya sama di tiap
+ * perangkat & tiap kali app dibuka (kalau tidak, topik minggu ini berubah
+ * sendiri tiap layar dibuka ulang), tapi urutannya tidak lagi mengikuti
+ * kelompok. Menambah topik baru cuma menyisipkannya di satu tempat di dalam
+ * urutan ini — yang lain tidak ikut bergeser.
+ */
+const SHUFFLED_TOPICS: Topic[] = [...TOPICS]
+  .map((t) => ({ t, urut: hashString(`${t.key}-diskusi`) }))
+  .sort((a, b) => a.urut - b.urut || a.t.key.localeCompare(b.t.key))
+  .map((x) => x.t);
+
+/**
+ * Topik diskusi giliran minggu ini — tiga sekaligus dari urutan acak di atas,
+ * digeser 3 tiap minggu. Tiga selalu berbeda, dan seluruh topik kebagian
+ * gilirannya sebelum ada yang terulang.
  */
 export function topicsOfWeek(now = new Date()): Topic[] {
-  const start = (weekNumber(now) * TOPICS_PER_WEEK) % TOPICS.length;
+  const start = (weekNumber(now) * TOPICS_PER_WEEK) % SHUFFLED_TOPICS.length;
   return Array.from(
     { length: TOPICS_PER_WEEK },
-    (_, i) => TOPICS[(start + i) % TOPICS.length],
+    (_, i) => SHUFFLED_TOPICS[(start + i) % SHUFFLED_TOPICS.length],
   );
 }
 

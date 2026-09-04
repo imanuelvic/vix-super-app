@@ -95,8 +95,7 @@ export default function RewardArchiveScreen() {
 
         {items.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada yang diklaim. Kumpulkan dulu saldonya, hadiahnya menunggu
-            🎁
+            Belum ada yang diklaim.
           </VixText>
         ) : (
           <>

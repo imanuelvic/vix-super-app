@@ -15,7 +15,6 @@ import { useAuth } from '@/contexts/auth';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
-  recordMonthlyPopulation,
   saveNewsBookmarks,
   subscribeNewsBookmarks,
   subscribePopulationLog,
@@ -62,14 +61,6 @@ export default function NewsScreen() {
       .then(() => setError(null))
       .catch(() => setError(SAVE_ERROR));
   }
-
-  // Catat perkiraan bulan ini sekali saja (kalau sudah tanggal 10 ke atas &
-  // bulan ini belum ada). Tidak ada server/background task di app ini, jadi
-  // pencatatan terjadi saat layar ini dibuka.
-  useEffect(() => {
-    if (!user) return;
-    recordMonthlyPopulation(user.uid, saved, new Date()).catch(() => {});
-  }, [user, saved]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

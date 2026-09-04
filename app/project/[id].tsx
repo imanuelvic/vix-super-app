@@ -177,10 +177,6 @@ export default function ProjectScreen() {
             <VixText heading="bold" additionalStyle={styles.estTitle}>
               Belum ada rincian biaya
             </VixText>
-            <VixText heading="label" additionalStyle={styles.estHint}>
-              Klik ✏️ di kanan atas untuk menambah. Ini perkiraan tarif yang
-              dipakai app — angkanya masih bisa diubah per proyek:
-            </VixText>
             {INVOICE_PRESETS.map((p) => (
               <View key={p.desc} style={styles.estRow}>
                 <VixText heading="label" additionalStyle={styles.estRowDesc}>
@@ -341,7 +337,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   estTitle: { color: Color.TEXT_TITLE },
-  estHint: { color: Color.TEXT_LABEL, marginBottom: 6 },
   estRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -18,6 +18,7 @@ import { Color } from '@/assets/style/color';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { MorningPrayerWatcher } from '@/components/spiritual/MorningPrayerWatcher';
 import { AuthProvider, useAuth } from '@/contexts/auth';
+import { FutsalGangProvider } from '@/contexts/futsalGang';
 
 function LoadingView() {
   return <LoadingCenter size="large" style={styles.boot} />;
@@ -136,11 +137,13 @@ function RootNavigator() {
         <Stack.Screen name="app-version" />
 
         {/* Rincian satu sesi futsal ⚽ — squad, setoran, & score tiap game */}
-        <Stack.Screen name="sport/[id]" />
+        <Stack.Screen name="futsal/[id]" />
         {/* Kas tim 💰 — saldo & mutasi uang bersama tiap geng */}
-        <Stack.Screen name="sport-cash" />
+        <Stack.Screen name="futsal-cash" />
         {/* Jadwal Main 📅 — semua pertandingan yang akan datang */}
-        <Stack.Screen name="sport-schedule" />
+        <Stack.Screen name="futsal-schedule" />
+        {/* Leaderboard 🏅 — top score & kehadiran tiap geng */}
+        <Stack.Screen name="futsal-board" />
       </Stack.Protected>
 
       {/* Hanya muncul kalau belum login */}
@@ -174,10 +177,15 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <AuthProvider>
-          <ThemeProvider value={navigationTheme}>
-            <RootNavigator />
-            <StatusBar style="dark" />
-          </ThemeProvider>
+          {/* Geng Fun Futsal yang sedang dibuka — dipakai bersama sub-tab Fun
+              Futsal, Jadwal Main, Leaderboard & Kas Tim, jadi berpindah layar
+              tidak pernah ikut berpindah geng. */}
+          <FutsalGangProvider>
+            <ThemeProvider value={navigationTheme}>
+              <RootNavigator />
+              <StatusBar style="dark" />
+            </ThemeProvider>
+          </FutsalGangProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

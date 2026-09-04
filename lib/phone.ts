@@ -43,9 +43,9 @@ export function localPhone(raw: string): string {
  * Bentuk untuk tautan wa.me: "6281242043658" — kode negara, tanpa "+".
  *
  * Menerima bentuk apa pun, termasuk yang TERSIMPAN di CORE (digit sesudah +62,
- * mis. "81242043658") maupun di Fun Sport (bentuk lokal "0812…"). Itu penting:
+ * mis. "81242043658") maupun di Fun Futsal (bentuk lokal "0812…"). Itu penting:
  * dua fitur menyimpannya dengan cara berbeda sejak lama, dan tautannya dulu
- * cuma menempelkan "62" di depan apa pun yang datang — nomor Fun Sport jadi
+ * cuma menempelkan "62" di depan apa pun yang datang — nomor Fun Futsal jadi
  * "62081242043658" dan chatnya tak pernah terbuka ke orang yang benar.
  */
 export function waPhone(raw: string): string {

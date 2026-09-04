@@ -513,7 +513,7 @@ export default function WheelScreen() {
         /* ===== Overview ===== */
         /* Judul "🎯 Fokus Kuartal" & "📋 Score per Area" DIPATOK di atas saat
             digulung, dan cuma SATU yang boleh terbuka — pola yang sama dengan
-            CORE Leader / Main Team di CORE dan Anggota di Fun Sport.
+            CORE Leader / Main Team di CORE dan Anggota di Fun Futsal.
 
             `stickyHeaderIndices` menghitung ANAK LANGSUNG ScrollView, jadi
             jumlahnya tidak boleh berubah-ubah. Karena itu semua yang bersyarat

@@ -236,7 +236,7 @@ export default function HabitsScreen() {
           Habits 📋
         </VixText>
         {/* Angka di pil ini = streak kebiasaan, jadi yang dibuka pun kategori
-            "🍎 Kebiasaan Sehat" — bukan daftar semua kategori. */}
+            "🍎 Good Habit" — bukan daftar semua kategori. */}
         <StreakPill
           streak={activeStreak(streak ?? null, dayId)}
           category="health"

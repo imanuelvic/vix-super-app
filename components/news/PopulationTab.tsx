@@ -3,28 +3,53 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SECTION_SPACE } from '@/assets/style/section';
+import { DateField } from '@/components/common/DateField';
+import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
+import { FormInput } from '@/components/common/FormInput';
+import { InlineDelete } from '@/components/common/InlineDelete';
+import { MiniButton } from '@/components/common/MiniButton';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SectionRow } from '@/components/common/SectionRow';
+import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
-import { dayIdToDate, formatShortDayDate } from '@/lib/format';
+import {
+  dayId as toDayId,
+  dayIdToDate,
+  formatShortDayDate,
+  groupDigits,
+  parseAmount,
+} from '@/lib/format';
 import { openExternalUrl } from '@/lib/linking';
 import {
   allPopulationPoints,
+  deletePopulationPoint,
   estimatePopulation,
   formatBillions,
   formatCount,
   pointGrowth,
+  populationDue,
   populationFacts,
+  populationRecordDay,
   POPULATION_SOURCE,
-  RECORD_DAY,
+  savePopulationPoint,
   type PopulationSaved,
 } from '@/lib/news';
 
 // Tab Population 🌏 — perkiraan populasi dunia yang berjalan tiap detik,
 // fakta laju pertambahan, dan riwayat catatan bulanan.
+//
+// Catatannya diisi TANGAN tiap awal bulan: angka yang kamu salin dari
+// worldometers. Tiap tanggal 1 badge News menyala sampai bulan itu tercatat —
+// aturannya di `populationDue`, dipakai bareng tile Home & Dashboard.
 export function PopulationTab({ saved }: { saved: PopulationSaved }) {
+  const { user } = useAuth();
+  const { busy, formError, setFormError, save, remove } = useFormSave();
+
   // Angka "hidup" — dihitung ulang tiap 3 detik supaya terasa berjalan.
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -32,84 +57,192 @@ export function PopulationTab({ saved }: { saved: PopulationSaved }) {
     return () => clearInterval(t);
   }, []);
 
+  const [open, setOpen] = useState(false);
+  /** dayId yang sedang diubah — null = catatan baru. */
+  const [edit, setEdit] = useState<string | null>(null);
+  const [fTanggal, setFTanggal] = useState(() => populationRecordDay(now));
+  const [fJumlah, setFJumlah] = useState('');
+
   const points = allPopulationPoints(saved);
   const { setPage, currentPage, pageCount, pageItems } = usePagination(points);
   const live = estimatePopulation(now);
+  const perluCatat = populationDue(saved, now) > 0;
+
+  function bukaBaru() {
+    setEdit(null);
+    // Tanggal 1 bulan ini — tanggal yang memang dicatat tiap bulan.
+    setFTanggal(populationRecordDay(new Date()));
+    setFJumlah('');
+    setFormError(null);
+    setOpen(true);
+  }
+
+  function bukaUbah(dayId: string) {
+    setEdit(dayId);
+    setFTanggal(dayIdToDate(dayId));
+    setFJumlah(groupDigits(String(saved[dayId])));
+    setFormError(null);
+    setOpen(true);
+  }
+
+  async function simpan() {
+    if (!user || busy) return;
+    const jumlah = parseAmount(fJumlah);
+    if (jumlah <= 0) {
+      setFormError('Angkanya diisi dulu — salin dari worldometers.info.');
+      return;
+    }
+    const dayId = toDayId(fTanggal);
+    await save(async () => {
+      // Tanggalnya digeser saat mengubah → baris lamanya ikut dibuang, kalau
+      // tidak catatan yang sama muncul dua kali dengan dua tanggal berbeda.
+      if (edit && edit !== dayId) await deletePopulationPoint(user.uid, saved, edit);
+      await savePopulationPoint(user.uid, dayId, jumlah);
+      setOpen(false);
+    });
+  }
+
+  async function hapus() {
+    if (!user || !edit || busy) return;
+    await remove(async () => {
+      await deletePopulationPoint(user.uid, saved, edit);
+      setOpen(false);
+    });
+  }
 
   return (
-    <ScrollView key={currentPage} contentContainerStyle={styles.content}>
-      {/* Penghitung besar */}
-      <View style={styles.hero}>
-        <VixText heading="label" additionalStyle={styles.heroLabel}>
-          🌏 Perkiraan Populasi Dunia
-        </VixText>
-        <VixText heading="header" additionalStyle={styles.heroValue}>
-          {formatCount(live)}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.heroLabel}>
-          ± {formatBillions(live)} jiwa · {formatShortDayDate(now)}
-        </VixText>
-      </View>
-
-      {/* Fakta laju pertambahan */}
-      <View style={styles.factRow}>
-        {populationFacts().map((f) => (
-          <View key={f.label} style={styles.factTile}>
-            <VixText additionalStyle={styles.factIcon}>{f.icon}</VixText>
-            <VixText heading="bold" additionalStyle={styles.factValue}>
-              {f.value}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.factLabel}>
-              {f.label}
-            </VixText>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.noteCard}>
-        <VixText heading="label" additionalStyle={styles.noteText}>
-          ℹ️ Angka di atas adalah PERKIRAAN yang dihitung di HP-mu — dari
-          catatan terakhir ditambah laju pertambahan harian. Persis begitu juga
-          cara worldometers menampilkan penghitungnya (ekstrapolasi data PBB,
-          bukan sensus real-time). Tiap tanggal {RECORD_DAY} catatan bulan baru
-          ditambahkan otomatis saat kamu membuka layar ini.
-        </VixText>
-        <PressableScale onPress={() => openExternalUrl(POPULATION_SOURCE)}>
-          <VixText heading="bold" additionalStyle={styles.sourceLink}>
-            🔗 Buka worldometers.info
+    <>
+      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
+        {/* Penghitung besar */}
+        <View style={styles.hero}>
+          <VixText heading="label" additionalStyle={styles.heroLabel}>
+            🌏 Perkiraan Populasi Dunia
           </VixText>
-        </PressableScale>
-      </View>
+          <VixText heading="header" additionalStyle={styles.heroValue}>
+            {formatCount(live)}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.heroLabel}>
+            ± {formatBillions(live)} jiwa · {formatShortDayDate(now)}
+          </VixText>
+        </View>
 
-      <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        📜 Riwayat Catatan ({points.length})
-      </VixText>
-
-      {pageItems.map((p) => {
-        const index = points.indexOf(p);
-        const growth = pointGrowth(points, index);
-        return (
-          <View key={p.dayId} style={styles.row}>
-            <View style={styles.rowMain}>
-              <VixText heading="bold" additionalStyle={styles.rowCount}>
-                {formatCount(p.count)}
+        {/* Fakta laju pertambahan */}
+        <View style={styles.factRow}>
+          {populationFacts().map((f) => (
+            <View key={f.label} style={styles.factTile}>
+              <VixText additionalStyle={styles.factIcon}>{f.icon}</VixText>
+              <VixText heading="bold" additionalStyle={styles.factValue}>
+                {f.value}
               </VixText>
-              <VixText heading="label">
-                📆 {formatShortDayDate(dayIdToDate(p.dayId))}
-                {p.estimated ? ' · perkiraan app' : ''}
+              <VixText heading="label" additionalStyle={styles.factLabel}>
+                {f.label}
               </VixText>
             </View>
-            {growth !== null && (
-              <VixText heading="label" additionalStyle={styles.rowGrowth}>
-                +{formatCount(growth)}
-              </VixText>
-            )}
-          </View>
-        );
-      })}
+          ))}
+        </View>
 
-      <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
-    </ScrollView>
+        {/* Bulan ini belum dicatat → diberitahu di sini juga, bukan cuma lewat
+            badge merah di Home: yang membuka layar ini justru sedang di depan
+            angkanya. */}
+        {perluCatat && (
+          <PressableScale style={styles.dueCard} onPress={bukaBaru}>
+            <VixText heading="bold" additionalStyle={styles.dueText}>
+              🗓️ Catatan bulan ini belum diisi
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.dueText}>
+              Buka worldometers, salin angkanya, lalu klik di sini.
+            </VixText>
+          </PressableScale>
+        )}
+
+        {/* Sumbernya sengaja sebaris dengan tombol tambah: satu klik untuk
+            melihat angkanya, satu klik lagi untuk mencatatnya. */}
+        <SectionRow
+          title={`📜 Riwayat Catatan (${points.length})`}
+          right={
+            <>
+              <MiniButton
+                label="🔗 Sumber"
+                onPress={() => openExternalUrl(POPULATION_SOURCE)}
+              />
+              <MiniButton label="+ Tambah" onPress={bukaBaru} />
+            </>
+          }
+        />
+
+        {pageItems.map((p) => {
+          const index = points.indexOf(p);
+          const growth = pointGrowth(points, index);
+          // Cuma catatan tanganmu yang bisa diubah; deretan bawaan di kode
+          // memang tetap.
+          const milikku = saved[p.dayId] !== undefined;
+          return (
+            <PressableScale
+              key={p.dayId}
+              style={styles.row}
+              disabled={!milikku}
+              onPress={() => bukaUbah(p.dayId)}>
+              <View style={styles.rowMain}>
+                <VixText heading="bold" additionalStyle={styles.rowCount}>
+                  {formatCount(p.count)}
+                </VixText>
+                <VixText heading="label">
+                  📆 {formatShortDayDate(dayIdToDate(p.dayId))}
+                  {milikku ? ' · catatanku' : ''}
+                </VixText>
+              </View>
+              {growth !== null && (
+                <VixText heading="label" additionalStyle={styles.rowGrowth}>
+                  +{formatCount(growth)}
+                </VixText>
+              )}
+            </PressableScale>
+          );
+        })}
+
+        <Pagination page={currentPage} pageCount={pageCount} onChange={setPage} />
+      </ScrollView>
+
+      <SheetModal
+        visible={open}
+        title={edit ? 'Ubah Catatan Populasi' : 'Catat Populasi'}
+        subtitle="Angka dari worldometers.info"
+        onClose={() => setOpen(false)}
+        footer={
+          <DualButtons
+            confirmLabel="Simpan"
+            busy={busy}
+            onCancel={() => setOpen(false)}
+            onConfirm={simpan}
+          />
+        }>
+        <VixText heading="label" additionalStyle={styles.fieldLabel}>
+          🗓️ Tanggal
+        </VixText>
+        <DateField key={edit ?? 'baru'} value={fTanggal} onChange={setFTanggal} />
+
+        <VixText heading="label" additionalStyle={[styles.fieldLabel, styles.formGap]}>
+          🌏 Jumlah jiwa
+        </VixText>
+        <FormInput
+          placeholder="mis. 8.309.930.650"
+          keyboardType="number-pad"
+          value={fJumlah}
+          onChangeText={(t) => setFJumlah(groupDigits(t))}
+          editable={!busy}
+        />
+
+        <FormError message={formError} gap="top" />
+        {edit && (
+          <InlineDelete
+            key={edit}
+            label="Hapus catatan ini"
+            busy={busy}
+            onDelete={hapus}
+          />
+        )}
+      </SheetModal>
+    </>
   );
 }
 
@@ -141,18 +274,17 @@ const styles = StyleSheet.create({
   factIcon: { fontSize: 20, lineHeight: 26 },
   factValue: { color: Color.TEXT_TITLE, textAlign: 'center' },
   factLabel: { textAlign: 'center' },
-  noteCard: {
+  // Ajakan mencatat: pastel News bergaris tepi — bentuk yang sama dengan
+  // kartu "pintu ke halaman lain" di fitur lain.
+  dueCard: {
     backgroundColor: Color.NEWS,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Color.NEWS_DARK,
     padding: 14,
-    gap: 8,
-    marginBottom: 4,
+    gap: 2,
   },
-  noteText: { color: Color.NEWS_DARK },
-  sourceLink: { color: Color.NEWS_DARK },
-  sectionTitle: { ...SECTION_SPACE },
+  dueText: { color: Color.NEWS_DARK },
   row: {
     ...CARD,
     flexDirection: 'row',
@@ -163,4 +295,6 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1, gap: 1 },
   rowCount: { color: Color.TEXT_TITLE },
   rowGrowth: { color: Color.NEWS_DARK },
+  fieldLabel: { marginBottom: 6 },
+  formGap: { marginTop: 10 },
 });

@@ -271,7 +271,7 @@ export default function AchievementsScreen() {
         </View>
 
         {/* ===== Self-Reward ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+        <VixText heading="title" additionalStyle={styles.selfTitle}>
           🎁 Self-Reward
         </VixText>
         <View style={styles.balanceCard}>
@@ -450,6 +450,10 @@ const styles = StyleSheet.create({
   heroValue: { color: Color.TEXT_REVERSE },
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   sectionTitle: { ...SECTION_SPACE },
+  // Judul Self-Reward berdiri tepat sesudah petak kategori, dan tiap petak
+  // sudah punya batang kemajuan menempel di kakinya — dengan jarak baku ia
+  // terbaca sebagai ekor barisan petak, bukan pembuka bagian barunya sendiri.
+  selfTitle: { ...SECTION_SPACE, marginTop: 26 },
   // Baris pencapaian / reward.
   row: {
     ...CARD,

@@ -13,8 +13,8 @@ export const WHATSAPP_ERROR =
  *
  * Nomornya dirapikan dulu lewat `waPhone`, bukan sekadar ditempeli "62" di
  * depan. Dua fitur menyimpannya dengan cara berbeda sejak lama — CORE menyimpan
- * digit SESUDAH +62 ("812…"), Fun Sport menyimpan bentuk lokal ("0812…") — dan
- * penempelan buta membuat nomor Fun Sport jadi "62 0812…", yang tidak pernah
+ * digit SESUDAH +62 ("812…"), Fun Futsal menyimpan bentuk lokal ("0812…") — dan
+ * penempelan buta membuat nomor Fun Futsal jadi "62 0812…", yang tidak pernah
  * membuka chat ke orang yang benar.
  */
 export function waLink(phone: string, text?: string): string {

@@ -56,14 +56,6 @@ export default function BookScreen() {
           value={`${doneCount}/${BOOKS.length} buku selesai 📖`}
         />
 
-        {/* Waktu baca — nyambung ke Morning Task */}
-        <View style={styles.noteCard}>
-          <VixText heading="label" additionalStyle={styles.noteText}>
-            🌅 Waktu bacamu: tiap pagi setelah worship, doa & olahraga — lihat
-            checklist Morning Task di Home.
-          </VixText>
-        </View>
-
         {BOOK_CATEGORIES.map((cat) => (
           <View key={cat.key}>
             <VixText heading="title" additionalStyle={styles.catTitle}>
@@ -126,14 +118,7 @@ export default function BookScreen() {
             })}
           </View>
         ))}
-
-        {/* Catatan legalitas — dukung penulisnya */}
-        <VixText heading="label" additionalStyle={styles.footer}>
-          ⚖️ Untuk buku yang masih berhak cipta, link di halaman detail mengarah
-          ke sumber gratis yang legal (esai/situs resmi penulis atau ringkasan),
-          bukan salinan bajakan. Kalau cocok, dukung penulisnya dengan membeli /
-          meminjam bukunya 🙏
-        </VixText>
+        
       </ScrollView>
     </SafeAreaView>
   );
@@ -142,17 +127,6 @@ export default function BookScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
-  noteCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    borderLeftWidth: 3,
-    borderLeftColor: Color.MAIN,
-    padding: 14,
-    marginBottom: 6,
-  },
-  noteText: { color: Color.TEXT_PARAGRAPH },
   catTitle: { marginTop: 14, marginBottom: 8 },
   row: {
     ...CARD,
@@ -181,9 +155,4 @@ const styles = StyleSheet.create({
   progressText: { color: Color.TEXT_LABEL },
   openButton: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   openText: { color: Color.MAIN_DARK },
-  footer: {
-    color: Color.TEXT_LABEL,
-    marginTop: 12,
-    lineHeight: 19.5,
-  },
 });

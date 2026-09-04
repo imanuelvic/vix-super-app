@@ -75,6 +75,8 @@ const MAPPING = {
   // ('mountain.2.fill' tetap dipakai sub-tab Summit di dalam fitur Fun.)
   'party.popper.fill': 'celebration',
   'figure.run': 'directions-run',
+  // Sub-tab Fun Futsal ⚽ di Friends — bola kaki, sama seperti nama fiturnya.
+  'soccerball': 'sports-soccer',
   'figure.mind.and.body': 'self-improvement',
   'beach.umbrella.fill': 'beach-access',
   'dumbbell.fill': 'fitness-center',

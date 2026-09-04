@@ -16,11 +16,21 @@ import { formatTime } from '@/lib/format';
 export function TimeField({
   value,
   label,
+  minimumDate,
   onChange,
 }: {
   value: Date;
   /** Emoji/teks kecil di depan jam, mis. "🛏️ Tidur". */
   label?: string;
+  /**
+   * Jam paling awal yang boleh dipilih — dipakai "sampai jam" (tak boleh
+   * lebih awal dari jam mulai). Roda jamnya sendiri yang menolak, jadi jam
+   * yang salah tidak pernah sempat terpilih.
+   *
+   * ⚠️ Bukan pengganti penjagaan saat menyimpan: Android mengabaikannya, dan
+   * nilai lama di data tetap harus diperiksa.
+   */
+  minimumDate?: Date;
   onChange: (date: Date) => void;
 }) {
   // Sama persis dengan <DateField> — lihat hooks/usePickerSlot.
@@ -49,6 +59,7 @@ export function TimeField({
       {open && (
         <DateTimePicker
           value={value}
+          minimumDate={minimumDate}
           mode="time"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           style={Platform.OS === 'ios' ? styles.picker : undefined}

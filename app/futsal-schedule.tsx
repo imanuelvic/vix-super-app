@@ -1,5 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,26 +11,25 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { GangTabs } from '@/components/friends/GangTabs';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { SportSessionCard } from '@/components/friends/SportSessionCard';
-import { SportSessionSheet } from '@/components/friends/SportSessionSheet';
+import { FutsalSessionCard } from '@/components/friends/FutsalSessionCard';
+import { FutsalSessionSheet } from '@/components/friends/FutsalSessionSheet';
+import { useFutsalGang } from '@/contexts/futsalGang';
 import { usePagination } from '@/hooks/usePagination';
-import { useSportData } from '@/hooks/useSportData';
-import { useSportSessionForm } from '@/hooks/useSportSessionForm';
+import { useFutsalData } from '@/hooks/useFutsalData';
+import { useFutsalSessionForm } from '@/hooks/useFutsalSessionForm';
 import { dayIdToDate, formatDayDate, dayId as toDayId } from '@/lib/format';
 import {
     daysToSession,
     gangMeta,
-    gangOf,
     pastSessions,
     upcomingSessions,
-    type SportGangKey,
-    type SportSession,
-} from '@/lib/sport';
+    type FutsalSession,
+} from '@/lib/futsal';
 
 // Jadwal Main 📅 — SELURUH pertandingan satu geng: yang akan datang & yang
 // sudah lewat, satu daftar bernomor halaman.
 //
-// Sub-tab Fun Sport sengaja cuma memajang pertandingan TERDEKAT. Itu satu-
+// Sub-tab Fun Futsal sengaja cuma memajang pertandingan TERDEKAT. Itu satu-
 // satunya yang benar-benar ditanya orang di grup, sedangkan daftar panjang di
 // sana mendorong anggota & kas jauh ke bawah — padahal keduanya yang dibuka
 // tiap hari. Semua sisanya, termasuk riwayat main, tinggal di sini.
@@ -39,31 +37,29 @@ import {
 // Satu daftar, bukan dua: yang akan datang di atas (paling dekat dulu), lalu
 // riwayat di bawahnya (terbaru dulu). Dua daftar dengan dua paginasi berarti
 // dua tombol halaman di satu layar, dan tak pernah jelas yang mana milik siapa.
-export default function SportScheduleScreen() {
+export default function FutsalScheduleScreen() {
   const router = useRouter();
-  const { gang: gangParam } = useLocalSearchParams<{ gang?: string }>();
-
-  const { data, isi, error } = useSportData();
-  // Geng-nya diwarisi dari tempat kamu menekan "Lihat semua" — berpindah geng
-  // diam-diam saat pindah halaman itu persis yang bikin orang mengira datanya
-  // hilang.
-  const [gang, setGang] = useState<SportGangKey>(() => gangOf(gangParam));
+  const { data, isi, error } = useFutsalData();
+  // Gengnya sama dengan yang sedang dibuka di sub-tab Fun Futsal — berpindah
+  // geng diam-diam saat pindah halaman itu persis yang bikin orang mengira
+  // datanya hilang.
+  const { gang, setGang } = useFutsalGang();
 
   const now = new Date();
   const todayId = toDayId(now);
   const meta = gangMeta(gang);
-  const form = useSportSessionForm(isi, gang);
+  const form = useFutsalSessionForm(isi, gang);
 
   const akanDatang = upcomingSessions(isi.sessions, gang, todayId);
   const riwayat = pastSessions(isi.sessions, gang, todayId);
   const semua = [...akanDatang, ...riwayat];
   const { currentPage, pageCount, pageItems, setPage } = usePagination(semua);
 
-  const bukaRincian = (s: SportSession) =>
-    router.push({ pathname: '/sport/[id]', params: { id: s.id } });
+  const bukaRincian = (s: FutsalSession) =>
+    router.push({ pathname: '/futsal/[id]', params: { id: s.id } });
 
   /** "Besok" · "3 hari lagi" · "12 hari lalu" — lebih cepat dibaca dari tanggal. */
-  function jarak(s: SportSession): string {
+  function jarak(s: FutsalSession): string {
     const n = daysToSession(s, now);
     if (n < 0) return `🧾 ${-n} hari lalu`;
     return n === 0 ? '⏳ Hari ini' : n === 1 ? '⏳ Besok' : `⏳ ${n} hari lagi`;
@@ -93,7 +89,7 @@ export default function SportScheduleScreen() {
           {semua.length === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
               Belum ada jadwal {meta.label} sama sekali. Buat lewat “Jadwalkan
-              Main” di sub-tab Fun Sport ⚽
+              Main” di sub-tab Fun Futsal ⚽
             </VixText>
           ) : (
             <>
@@ -111,15 +107,11 @@ export default function SportScheduleScreen() {
                 </SummaryCard>
               ) : (
                 <VixText heading="label" additionalStyle={styles.empty}>
-                  Belum ada jadwal {meta.label} yang akan datang — di bawah ini
-                  riwayat mainnya.
+                  Belum ada jadwal {meta.label} yang akan datang.
                 </VixText>
               )}
 
               {pageItems.map((s, i) => {
-                // Judul "Riwayat Main" muncul SEKALI, tepat di batas antara
-                // yang akan datang dan yang sudah lewat — di halaman mana pun
-                // batas itu jatuh.
                 const lewat = daysToSession(s, now) < 0;
                 const mulaiRiwayat =
                   lewat && (i === 0 || daysToSession(pageItems[i - 1], now) >= 0);
@@ -130,10 +122,7 @@ export default function SportScheduleScreen() {
                         🧾 Riwayat Main
                       </VixText>
                     )}
-                    <VixText heading="label" additionalStyle={styles.jarak}>
-                      {jarak(s)}
-                    </VixText>
-                    <SportSessionCard
+                    <FutsalSessionCard
                       s={s}
                       now={now}
                       onOpen={bukaRincian}
@@ -153,7 +142,7 @@ export default function SportScheduleScreen() {
         </ScrollView>
       )}
 
-      <SportSessionSheet form={form} gang={gang} />
+      <FutsalSessionSheet form={form} gang={gang} />
     </SafeAreaView>
   );
 }
@@ -163,6 +152,5 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   hero: { marginBottom: 6 },
   sectionTitle: { ...SECTION_SPACE },
-  jarak: { color: Color.FRIENDS_DARK, marginBottom: 4, marginTop: 4 },
   empty: { textAlign: 'center', marginVertical: 20 },
 });

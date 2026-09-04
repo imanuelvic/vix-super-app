@@ -98,10 +98,10 @@ const ROUTE_FEATURE: Record<string, string> = {
   games: 'games',
   friends: 'friends',
   bill: 'friends',
-  sport: 'friends',
-  'sport-cash': 'friends',
-  'sport-schedule': 'friends',
-  'sport-board': 'friends',
+  futsal: 'friends',
+  'futsal-cash': 'friends',
+  'futsal-schedule': 'friends',
+  'futsal-board': 'friends',
   married: 'married',
 };
 

@@ -1,42 +1,40 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SECTION_SPACE } from '@/assets/style/section';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SectionRow } from '@/components/common/SectionRow';
 import { GangTabs } from '@/components/friends/GangTabs';
 import { VixText } from '@/components/common/VixText';
-import { useSportData } from '@/hooks/useSportData';
-import { dayId as toDayId } from '@/lib/format';
+import { useFutsalGang } from '@/contexts/futsalGang';
+import { useFutsalData } from '@/hooks/useFutsalData';
+import { dayIdToDate, formatCompactDate, dayId as toDayId } from '@/lib/format';
 import {
     gangMeta,
-    gangOf,
     pastSessions,
     topAttendance,
     topScorers,
-    type SportGangKey,
-} from '@/lib/sport';
+} from '@/lib/futsal';
 
-// Leaderboard 🏅 — dua papan peringkat Fun Sport, satu geng sekali lihat.
+// Leaderboard 🏅 — dua papan peringkat Fun Futsal, satu geng sekali lihat.
 //
-// Dulu papan top score menumpang di bawah sub-tab Fun Sport, dan di sanalah ia
+// Dulu papan top score menumpang di bawah sub-tab Fun Futsal, dan di sanalah ia
 // paling jarang terbaca: ia berdiri di antara daftar anggota & riwayat main,
 // jadi baru kelihatan sesudah menggulung melewati keduanya. Sekarang pintunya
 // tombol 🏅 di pojok header, sejajar dengan pintu pencapaian di layar lain.
 //
-// Gengnya ikut tab yang sedang kamu buka di sana (?gang=), tapi tetap bisa
-// ditukar di sini — dua papan yang cuma bisa dibaca bergantian lewat mundur ke
-// layar sebelumnya itu pekerjaan yang tidak perlu ada.
+// Gengnya sama dengan yang sedang dibuka di sub-tab Fun Futsal
+// (contexts/futsalGang), dan tetap bisa ditukar di sini — dua papan yang cuma
+// bisa dibaca bergantian lewat mundur ke layar sebelumnya itu pekerjaan yang
+// tidak perlu ada. Menukarnya di sini ikut terbawa balik ke sub-tabnya.
 //
 // Peringkat KEDUA (paling rajin datang) sengaja di bawah top score: yang dicari
 // duluan sesudah main memang siapa yang mencetak gol. Aturan hitungannya —
 // kenapa anggota baru tidak dihukum karena sesi sebelum ia bergabung — ada di
-// `topAttendance` (lib/sport.ts).
+// `topAttendance` (lib/futsal.ts).
 // Berapa nama yang ditampilkan tiap papan.
 //
 // Sepuluh, dan itu bukan angka asal: papan peringkat dibaca untuk tahu siapa
@@ -46,10 +44,9 @@ import {
 // papannya tidak terlihat seolah anggotanya cuma sepuluh.
 const PAPAN_MAKS = 10;
 
-export default function SportBoardScreen() {
-  const { gang: gangParam } = useLocalSearchParams<{ gang?: string }>();
-  const { data, isi, error } = useSportData();
-  const [gang, setGang] = useState<SportGangKey>(() => gangOf(gangParam));
+export default function FutsalBoardScreen() {
+  const { data, isi, error } = useFutsalData();
+  const { gang, setGang } = useFutsalGang();
 
   const todayId = toDayId(new Date());
   const meta = gangMeta(gang);
@@ -59,7 +56,12 @@ export default function SportBoardScreen() {
   const rajinPenuh = topAttendance(isi, gang, todayId);
   const papan = papanPenuh.slice(0, PAPAN_MAKS);
   const rajin = rajinPenuh.slice(0, PAPAN_MAKS);
-  const sesiLewat = pastSessions(isi.sessions, gang, todayId).length;
+  // Kedua papan cuma menghitung sesi yang SUDAH lewat, jadi angkanya berhenti
+  // di sesi terakhir — bukan di hari ini. Tanggal itu ditulis di sebelah judul
+  // supaya "kenapa golku belum masuk?" terjawab sebelum ditanya.
+  const lewat = pastSessions(isi.sessions, gang, todayId);
+  const sesiLewat = lewat.length;
+  const perTanggal = lewat[0] ? dayIdToDate(lewat[0].dayId) : new Date();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -81,9 +83,14 @@ export default function SportBoardScreen() {
       ) : (
         <ScrollView key={gang} contentContainerStyle={styles.content}>
           {/* ===== Top score ===== */}
-          <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            🥇 Top Score {meta.label}
-          </VixText>
+          <SectionRow
+            title="🥇 Top Score"
+            right={
+              <VixText heading="label" additionalStyle={styles.per}>
+                Per {formatCompactDate(perTanggal)}
+              </VixText>
+            }
+          />
           {papan.length === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
               Belum ada gol yang tercatat di {meta.label}. Gol dicatat per game
@@ -116,9 +123,7 @@ export default function SportBoardScreen() {
           )}
 
           {/* ===== Paling rajin datang ===== */}
-          <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            🔥 Kehadiran Anggota
-          </VixText>
+          <SectionRow title="🔥 Kehadiran Anggota" />
           {sesiLewat === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
               Belum ada sesi {meta.label} yang sudah lewat.
@@ -157,7 +162,7 @@ export default function SportBoardScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
-  sectionTitle: { ...SECTION_SPACE },
+  per: { color: Color.TEXT_PLACEHOLDER },
   empty: { textAlign: 'center', marginVertical: 10 },
   sisa: { color: Color.TEXT_PLACEHOLDER, marginTop: 6 },
   papan: { ...CARD, paddingVertical: 4 },

@@ -12,6 +12,7 @@ import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { MiniButton } from '@/components/common/MiniButton';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SectionToggle } from '@/components/common/SectionToggle';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -22,28 +23,34 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
-import { useSportData } from '@/hooks/useSportData';
+import { useFutsalData } from '@/hooks/useFutsalData';
 import { dayIdToDate, formatDayDate, formatShortDayDate } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
     gangMembers,
     gangMeta,
-    newSportId,
+    newFutsalId,
     positionMeta,
-    saveSport,
+    saveFutsal,
     sessionCashIn,
     sessionDueTotal,
     sessionPaidTotal,
     sessionTotal,
+    sessionRecap,
+    sessionTimeRange,
     sessionUnpaidCount,
     squadOrder,
-    type SportCashEntry,
-    type SportGame,
-    type SportMember,
-    type SportSession,
-} from '@/lib/sport';
+    type FutsalCashEntry,
+    type FutsalGame,
+    type FutsalMember,
+    type FutsalSession,
+} from '@/lib/futsal';
 import { formatRupiah } from '@/lib/transactions';
-import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
+import {
+    openWhatsAppChat,
+    shareTextToWhatsApp,
+    WHATSAPP_ERROR,
+} from '@/lib/whatsapp';
 
 // Nomor anak ScrollView yang DIPATOK: judul "Squad & Setoran".
 // Menghitung ANAK LANGSUNG — karena itu tiap bagian di bawah dibungkus satu
@@ -54,20 +61,20 @@ const STICKY_HEADERS = [1];
 // Rincian satu sesi futsal ⚽ — ruang kerja managernya.
 //
 // Tiga hal yang cuma bisa diurus di sini, dan sengaja TIDAK ditaruh di daftar
-// sub-tab Sport supaya daftarnya tetap enteng dibaca:
+// sub-tab Futsal supaya daftarnya tetap enteng dibaca:
 //   1. Squad & setoran — siapa jadi ikut, siapa yang sudah bayar.
 //   2. Uang — total, yang masuk, dan sisa yang masih nyangkut di orang.
 //   3. Score tiap game + siapa yang mencetak golnya (dasar papan top score).
-export default function SportSessionScreen() {
+export default function FutsalSessionScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data, error, setError } = useSportData();
+  const { data, error, setError } = useFutsalData();
   const { busy, formError, setFormError, save, remove } = useFormSave();
 
   // Form game.
   const [gameOpen, setGameOpen] = useState(false);
-  const [editGame, setEditGame] = useState<SportGame | null>(null);
+  const [editGame, setEditGame] = useState<FutsalGame | null>(null);
   const [fTimA, setFTimA] = useState('Rompi');
   const [fTimB, setFTimB] = useState('Non-Rompi');
   const [fSkorA, setFSkorA] = useState('0');
@@ -77,11 +84,11 @@ export default function SportSessionScreen() {
   // Form catatan.
   const [catatanOpen, setCatatanOpen] = useState(false);
 
-  // Daftar squad terbuka? Bawaannya TERBUKA — beda dengan bagian buka-tutup
-  // lain di app ini, dan itu disengaja: halaman ini dibuka justru UNTUK daftar
-  // ini (mencentang setoran & menagih). Kalau tertutup, yang tersaji cuma dua
-  // baris ringkasan dan tiap kali harus dibuka dulu.
-  const [squadOpen, setSquadOpen] = useState(true);
+  // Daftar squad terbuka? Bawaannya TERTUTUP, sama seperti bagian buka-tutup
+  // lain di app ini: dua baris ringkasan di judulnya ("12 main · 5 belum
+  // setor") sudah menjawab pertanyaan yang paling sering dibawa ke halaman
+  // ini, dan Game & Score di bawahnya tidak lagi terdorong belasan baris nama.
+  const [squadOpen, setSquadOpen] = useState(false);
   const [fCatatan, setFCatatan] = useState('');
 
   const sesi = data?.sessions.find((s) => s.id === id) ?? null;
@@ -136,10 +143,10 @@ export default function SportSessionScreen() {
    * memaksanya dengan `!` berarti membuang jaring pengaman yang sesungguhnya
    * (dokumennya bisa terhapus dari perangkat lain selagi layar ini terbuka).
    */
-  async function simpanSesi(ubah: (s: SportSession) => SportSession) {
+  async function simpanSesi(ubah: (s: FutsalSession) => FutsalSession) {
     if (!user || !data || !sesi) return;
     const berikutnya = ubah(sesi);
-    await saveSport(user.uid, {
+    await saveFutsal(user.uid, {
       ...data,
       sessions: data.sessions.map((s) =>
         s.id === berikutnya.id ? berikutnya : s,
@@ -155,7 +162,7 @@ export default function SportSessionScreen() {
    * kalau sudah, mencabutnya diam-diam berarti kas kehilangan uang yang
    * sebenarnya ada di tanganmu.
    */
-  async function toggleIkut(m: SportMember) {
+  async function toggleIkut(m: FutsalMember) {
     if (!sesi) return;
     const ikut = sesi.squad.includes(m.id);
     try {
@@ -169,7 +176,7 @@ export default function SportSessionScreen() {
   }
 
   /** Sudah setor / belum — boleh dicentang walau ia tidak ikut main. */
-  async function toggleLunas(m: SportMember) {
+  async function toggleLunas(m: FutsalMember) {
     if (!sesi) return;
     const lunas = sesi.paid.includes(m.id);
     try {
@@ -182,7 +189,7 @@ export default function SportSessionScreen() {
     }
   }
 
-  function tagih(m: SportMember) {
+  function tagih(m: FutsalMember) {
     if (!sesi) return;
     if (!m.phone) {
       setError('Nomor HP-nya belum diisi — isi dulu di daftar anggota.');
@@ -208,7 +215,7 @@ export default function SportSessionScreen() {
     setGameOpen(true);
   }
 
-  function bukaGameUbah(g: SportGame) {
+  function bukaGameUbah(g: FutsalGame) {
     setEditGame(g);
     setFTimA(g.teamA);
     setFTimB(g.teamB);
@@ -220,11 +227,11 @@ export default function SportSessionScreen() {
   }
 
   /** Satu click = satu gol. Click lagi = gol berikutnya untuk orang yang sama. */
-  function tambahGol(m: SportMember) {
+  function tambahGol(m: FutsalMember) {
     setFPencetak((list) => [...list, m.id]);
   }
 
-  function kurangiGol(m: SportMember) {
+  function kurangiGol(m: FutsalMember) {
     setFPencetak((list) => {
       const i = list.lastIndexOf(m.id);
       return i === -1 ? list : [...list.slice(0, i), ...list.slice(i + 1)];
@@ -233,8 +240,8 @@ export default function SportSessionScreen() {
 
   async function simpanGame() {
     if (!user || busy) return;
-    const isi: SportGame = {
-      id: editGame?.id ?? newSportId(new Date()),
+    const isi: FutsalGame = {
+      id: editGame?.id ?? newFutsalId(new Date()),
       teamA: fTimA.trim() || 'Tim A',
       teamB: fTimB.trim() || 'Tim B',
       scoreA: Math.max(0, parseInt(fSkorA, 10) || 0),
@@ -273,8 +280,8 @@ export default function SportSessionScreen() {
    */
   async function setorKeKas() {
     if (!user || !data || !sesi || busy || belumKeKas <= 0) return;
-    const baris: SportCashEntry = {
-      id: newSportId(new Date()),
+    const baris: FutsalCashEntry = {
+      id: newFutsalId(new Date()),
       gang: sesi.gang,
       dayId: sesi.dayId,
       title: `Iuran main ${formatShortDayDate(dayIdToDate(sesi.dayId))}`,
@@ -284,7 +291,7 @@ export default function SportSessionScreen() {
       sessionId: sesi.id,
     };
     await save(async () => {
-      await saveSport(user.uid, { ...data, cash: [...data.cash, baris] });
+      await saveFutsal(user.uid, { ...data, cash: [...data.cash, baris] });
     });
   }
 
@@ -304,7 +311,7 @@ export default function SportSessionScreen() {
       <ScreenHeader
         backLabel="Friends"
         title={`${meta.emoji} ${meta.label}`}
-        subtitle={`${formatDayDate(dayIdToDate(sesi.dayId))} · ${sesi.time}`}
+        subtitle={`${formatDayDate(dayIdToDate(sesi.dayId))} · ${sessionTimeRange(sesi)}`}
       />
 
       <ScreenError message={error} />
@@ -368,6 +375,19 @@ export default function SportSessionScreen() {
           sub={ringkasSquad}
           open={squadOpen}
           onToggle={() => setSquadOpen((v) => !v)}
+          right={
+            /* Pengumuman siap tempel ke grup — jadwal, lokasi, iuran,
+               rekening & daftar yang ikut beserta tanda sudah setor. Isinya
+               disusun `sessionRecap` di lib/futsal.ts. */
+            <MiniButton
+              label="💬 Share"
+              onPress={() =>
+                shareTextToWhatsApp(sessionRecap(data, sesi), () =>
+                  setError(WHATSAPP_ERROR),
+                )
+              }
+            />
+          }
         />
 
         {/* 2 — isinya. */}
@@ -375,7 +395,7 @@ export default function SportSessionScreen() {
           {squadOpen &&
             (anggota.length === 0 ? (
               <VixText heading="label" additionalStyle={styles.empty}>
-                Belum ada anggota {meta.label} — tambahkan dulu di sub-tab Sport.
+                Belum ada anggota {meta.label} — tambahkan dulu di sub-tab Futsal.
               </VixText>
             ) : (
               barisSquad.map((m) => {

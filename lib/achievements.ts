@@ -170,9 +170,9 @@ export type AchievementStats = {
   bibleMorningBest: number; // streak terbaik baca pagi 🌅
   bibleDaytimeBest: number; // streak terbaik baca siang 🌤️
   bibleNightBest: number; // streak terbaik baca malam 🌙
-  learningWeekBest: number; // rekor MINGGU beruntun target Learning tuntas 🎓
+  learningWeekBest: number; // rekor MINGGU streak target Learning tuntas 🎓
   fitTotal: number; // total sesi gym selesai
-  fitBest: number; // rekor sesi gym beruntun (5 sesi = 1 minggu penuh)
+  fitBest: number; // rekor sesi gym streak (5 sesi = 1 minggu penuh)
   bestSteps: number; // rekor langkah terbanyak dalam sehari
   stepTierLastDate: Record<number, string | null>; // tier → dayId terakhir tercapai
   weekStepHits: number; // minggu yang langkahnya tembus target aerobik
@@ -182,7 +182,7 @@ export type AchievementStats = {
   bestWeekKm: number; // rekor jarak satu MINGGU (Senin–Minggu)
   bestMonthKm: number; // rekor jarak satu BULAN
   waterCount: number; // streak air putih 💧 yang sedang berjalan
-  waterBest: number; // rekor hari beruntun cukup 8 gelas
+  waterBest: number; // rekor hari streak cukup 8 gelas
   waterTotal: number; // total hari pernah cukup 8 gelas
 };
 
@@ -223,24 +223,24 @@ const CATEGORIES: {
    *
    * Ditulis satu per satu, BUKAN ditebak dari daftar lencananya, karena satu
    * kategori bisa memuat beberapa ukuran berbeda: Fitness punya total sesi DAN
-   * rekor beruntun; Jarak Tempuh punya rekor harian, mingguan & bulanan.
+   * rekor streak; Jarak Tempuh punya rekor harian, mingguan & bulanan.
    * Menebak "ukuran utamanya" berarti memilih diam-diam salah satu — dan angka
    * besar di pojok atas yang ternyata mengukur hal lain lebih menyesatkan
    * daripada tidak ada angka sama sekali.
    */
   now: (s: AchievementStats) => number;
-  /** Satuan di belakang angkanya, mis. "hari beruntun". */
+  /** Satuan di belakang angkanya, mis. "hari streak". */
   unit: string;
   /** Angkanya perlu bentuk khusus? (mis. km 1 desimal) */
   fmt?: (n: number) => string;
 }[] = [
-  { key: 'login', feature: 'spiritual', icon: '🙏', label: 'Doa Pagi', desc: 'Streak doa pagi di gerbang pagi', now: (s) => s.loginCount, unit: 'hari beruntun' },
-  { key: 'bibleMorning', feature: 'spiritual', icon: DAYPART.morning, label: 'Alkitab Pagi', desc: 'Streak baca Alkitab pagi', now: (s) => s.bibleMorningBest, unit: 'hari beruntun' },
-  { key: 'bibleDaytime', feature: 'spiritual', icon: DAYPART.daytime, label: 'Alkitab Siang', desc: 'Streak baca Alkitab siang', now: (s) => s.bibleDaytimeBest, unit: 'hari beruntun' },
-  { key: 'bibleNight', feature: 'spiritual', icon: DAYPART.night, label: 'Alkitab Malam', desc: 'Streak baca Alkitab malam', now: (s) => s.bibleNightBest, unit: 'hari beruntun' },
-  { key: 'health', feature: 'health', icon: '🍎', label: 'Kebiasaan Sehat', desc: 'Streak habit setiap hari', now: (s) => s.habitStreak, unit: 'hari beruntun' },
-  { key: 'steps', feature: 'health', icon: '👣', label: 'Langkah Harian', desc: 'Rekor jumlah langkah dalam sehari', now: (s) => s.bestSteps, unit: 'langkah (rekor sehari)' },
-  { key: 'run', feature: 'health', icon: '🏃', label: 'Jarak Tempuh', desc: 'Patokan pelari — harian, mingguan & bulanan', now: (s) => s.bestDayKm, unit: 'km (rekor sehari)', fmt: km },
+  { key: 'login', feature: 'spiritual', icon: '🙏', label: 'Morning Prayer', desc: 'Streak doa pagi di gerbang pagi', now: (s) => s.loginCount, unit: 'hari streak' },
+  { key: 'bibleMorning', feature: 'spiritual', icon: DAYPART.morning, label: 'Morning Reading', desc: 'Streak baca Alkitab pagi', now: (s) => s.bibleMorningBest, unit: 'hari streak' },
+  { key: 'bibleDaytime', feature: 'spiritual', icon: DAYPART.daytime, label: 'Midday Reading', desc: 'Streak baca Alkitab siang', now: (s) => s.bibleDaytimeBest, unit: 'hari streak' },
+  { key: 'bibleNight', feature: 'spiritual', icon: DAYPART.night, label: 'Night Reading', desc: 'Streak baca Alkitab malam', now: (s) => s.bibleNightBest, unit: 'hari streak' },
+  { key: 'health', feature: 'health', icon: '🍎', label: 'Good Habit', desc: 'Streak habit setiap hari', now: (s) => s.habitStreak, unit: 'hari streak' },
+  { key: 'steps', feature: 'health', icon: '👣', label: 'Daily Steps', desc: 'Rekor jumlah langkah dalam sehari', now: (s) => s.bestSteps, unit: 'langkah (rekor sehari)' },
+  { key: 'run', feature: 'health', icon: '🏃', label: 'Distance', desc: 'Patokan pelari — harian, mingguan & bulanan', now: (s) => s.bestDayKm, unit: 'km (rekor sehari)', fmt: km },
   // Dulu SATU kategori "Target Mingguan" berisi langkah & angkat beban
   // sekaligus — dan itu membuat daftarnya sulit dibaca: dua ladder yang
   // kemajuannya sama sekali tidak berhubungan berselang-seling di satu kolom.
@@ -249,9 +249,9 @@ const CATEGORIES: {
   // "Minggu Sempurna" (aerobik & strength dua-duanya) tetap di kolom LANGKAH:
   // ia diukur atas MINGGU-nya sebagai satu satuan, dan menaruhnya di kolom
   // strength akan membuat kolom itu tidak lagi murni soal angkat beban.
-  { key: 'week', feature: 'health', icon: '👣', label: 'Target Langkah Mingguan', desc: 'Tembus target langkah tiap pekan', now: (s) => s.weekStepHits, unit: 'pekan tembus target' },
-  { key: 'water', feature: 'health', icon: '💧', label: 'Air Putih', desc: 'Cukup 8 gelas air setiap hari', now: (s) => s.waterCount, unit: 'hari beruntun' },
-  { key: 'learning', feature: 'learning', icon: '🎓', label: 'Learning', desc: 'Minggu beruntun 4 langkah belajar tuntas', now: (s) => s.learningWeekBest, unit: 'pekan beruntun' },
+  { key: 'week', feature: 'health', icon: '👣', label: 'Weekly Steps', desc: 'Tembus target langkah tiap pekan', now: (s) => s.weekStepHits, unit: 'pekan tembus target' },
+  { key: 'water', feature: 'health', icon: '💧', label: 'Water', desc: 'Cukup 8 gelas air setiap hari', now: (s) => s.waterCount, unit: 'hari streak' },
+  { key: 'learning', feature: 'learning', icon: '🎓', label: 'Learning', desc: 'Minggu streak 4 langkah belajar tuntas', now: (s) => s.learningWeekBest, unit: 'pekan streak' },
   // Dulu DUA baris terpisah dengan lambang 🏋️ yang sama: "Strength Training"
   // (minggu dengan angkat beban ≥2 hari) & "Fitness Konsisten" (jumlah sesi
   // latihan). Ukurannya memang beda, tapi keduanya menghitung hal yang sama —
@@ -284,7 +284,7 @@ export const BIBLE_CATEGORY: Record<
  * stabil), jadi Alkitab Pagi → Siang → Malam tidak pernah tertukar.
  */
 /**
- * Angka SEKARANG satu kategori, siap tampil: mis. "12 hari beruntun".
+ * Angka SEKARANG satu kategori, siap tampil: mis. "12 hari streak".
  *
  * Dipakai pojok kanan atas modal kategori — supaya "sudah sampai berapa
  * sekarang?" terjawab tanpa harus menghitung sendiri dari deretan lencana yang
@@ -306,7 +306,7 @@ export const ACHIEVEMENT_CATEGORIES = [...CATEGORIES].sort(
 
 /**
  * Kunci kategori dari parameter URL — dipakai layar Achievement untuk langsung
- * membuka modal yang dimaksud (mis. pil 🔥 di Habits → Kebiasaan Sehat).
+ * membuka modal yang dimaksud (mis. pil 🔥 di Habits → Good Habit).
  *
  * Apa pun yang tidak dikenal (kosong, salah tulis, kategori yang sudah dihapus)
  * jatuh ke null = layarnya terbuka biasa tanpa modal. Jadi tautan lama tidak
@@ -341,27 +341,27 @@ type Achievement = {
 // Tangga level streak harian — dipakai bersama oleh doa pagi 🙏, Alkitab
 // pagi 🌅 & Alkitab malam 🌙 supaya perayaannya seragam sampai SETAHUN penuh.
 const STREAK_LEVELS: { days: number; icon: string; title: string }[] = [
-  { days: 1, icon: '🐣', title: 'Langkah Pertama' },
-  { days: 3, icon: '✨', title: 'Konsisten 3 Hari' },
-  { days: 7, icon: '🔥', title: 'Seminggu Penuh' },
-  { days: 14, icon: '⚡', title: 'Dua Minggu Membara' },
-  { days: 30, icon: '🏅', title: 'Sebulan Tanpa Putus' },
-  { days: 60, icon: '🌟', title: 'Dua Bulan Setia' },
-  { days: 100, icon: '👑', title: 'Legenda 100 Hari' },
-  { days: 180, icon: '💎', title: 'Setengah Tahun' },
-  { days: 365, icon: '🏆', title: 'Setahun Penuh' },
+  { days: 1, icon: '🐣', title: 'First Step' },
+  { days: 3, icon: '✨', title: '3 Day Streak' },
+  { days: 7, icon: '🔥', title: 'One Week' },
+  { days: 14, icon: '⚡', title: 'Two Weeks' },
+  { days: 30, icon: '🏅', title: 'One Month' },
+  { days: 60, icon: '🌟', title: 'Two Months' },
+  { days: 100, icon: '👑', title: '100 Days' },
+  { days: 180, icon: '💎', title: 'Half a Year' },
+  { days: 365, icon: '🏆', title: 'One Year' },
 ];
 
 // Tangga level streak MINGGUAN — khusus Learning 🎓, yang targetnya memang
 // per minggu. Berhenti di 52 = setahun penuh tanpa satu minggu pun bolong.
 const LEARNING_WEEK_LEVELS: { weeks: number; icon: string; title: string }[] = [
-  { weeks: 1, icon: '🐣', title: 'Minggu Pertama' },
-  { weeks: 2, icon: '✨', title: 'Dua Minggu Beruntun' },
-  { weeks: 4, icon: '🔥', title: 'Sebulan Beruntun' },
-  { weeks: 8, icon: '⚡', title: 'Dua Bulan Beruntun' },
-  { weeks: 12, icon: '🏅', title: 'Sekuartal Beruntun' },
-  { weeks: 26, icon: '💎', title: 'Setengah Tahun' },
-  { weeks: 52, icon: '🏆', title: 'Setahun Penuh' },
+  { weeks: 1, icon: '🐣', title: 'First Week' },
+  { weeks: 2, icon: '✨', title: 'Two Weeks' },
+  { weeks: 4, icon: '🔥', title: 'One Month' },
+  { weeks: 8, icon: '⚡', title: 'Two Months' },
+  { weeks: 12, icon: '🏅', title: 'Three Months' },
+  { weeks: 26, icon: '💎', title: 'Half a Year' },
+  { weeks: 52, icon: '🏆', title: 'One Year' },
 ];
 
 /** Bangun satu tangga level lengkap untuk sebuah streak harian. */
@@ -379,7 +379,7 @@ function streakLadder(
     desc:
       l.days === 1
         ? `${action} untuk pertama kali`
-        : `${action} ${l.days} hari beruntun`,
+        : `${action} ${l.days} hari streak`,
     target: l.days,
     of,
   }));
@@ -388,8 +388,8 @@ function streakLadder(
 export const ACHIEVEMENTS: Achievement[] = [
   ...streakLadder('login', 'login', 'Berdoa pagi', (s) => s.loginBest),
   { id: 'habit3', category: 'health', icon: '💪', title: 'Habit on Track', desc: 'Streak kebiasaan baik 3 hari', target: 3, of: (s) => s.habitStreak },
-  { id: 'habit7', category: 'health', icon: '🧘', title: 'Gaya Hidup Sehat', desc: 'Streak kebiasaan baik 7 hari', target: 7, of: (s) => s.habitStreak },
-  { id: 'habit21', category: 'health', icon: '🔥', title: 'Sudah sehat', desc: 'Streak kebiasaan baik 21 hari', target: 21, of: (s) => s.habitStreak },
+  { id: 'habit7', category: 'health', icon: '🧘', title: 'Healthy Lifestyle', desc: 'Streak kebiasaan baik 7 hari', target: 7, of: (s) => s.habitStreak },
+  { id: 'habit21', category: 'health', icon: '🔥', title: 'Habit Formed', desc: 'Streak kebiasaan baik 21 hari', target: 21, of: (s) => s.habitStreak },
   // Kategori "Revive Rohani" DIHAPUS — pemicunya sama saja dengan Doa Pagi
   // (Revive memang langkah 1 di gerbang pagi), jadi dulu satu perbuatan
   // menghasilkan dua pencapaian. Streak Revive 🔥 sendiri tetap ada & tetap
@@ -408,21 +408,21 @@ export const ACHIEVEMENTS: Achievement[] = [
     desc:
       l.weeks === 1
         ? 'Tuntaskan 4 langkah dalam satu minggu'
-        : `${l.weeks} minggu beruntun target Learning tuntas`,
+        : `${l.weeks} minggu streak target Learning tuntas`,
     target: l.weeks,
     of: (s: AchievementStats) => s.learningWeekBest,
   })),
-  { id: 'fit1', category: 'fitness', icon: '🐣', title: 'Sesi Pertama', desc: 'Selesaikan satu sesi gym penuh', target: 1, of: (s) => s.fitTotal },
-  { id: 'fitWeek1', category: 'fitness', icon: '✨', title: 'Seminggu Penuh', desc: '5 sesi beruntun tanpa bolos', target: 5, of: (s) => s.fitBest },
-  { id: 'fit10', category: 'fitness', icon: '💪', title: '10 Sesi', desc: 'Total 10 sesi gym selesai', target: 10, of: (s) => s.fitTotal },
-  { id: 'fitWeek2', category: 'fitness', icon: '🔥', title: 'Dua Minggu Membara', desc: '10 sesi beruntun tanpa bolos', target: 10, of: (s) => s.fitBest },
-  { id: 'fitMonth', category: 'fitness', icon: '👑', title: 'Sebulan Tanpa Bolos', desc: '20 sesi beruntun tanpa bolos', target: 20, of: (s) => s.fitBest },
-  { id: 'fit50', category: 'fitness', icon: '🏅', title: '50 Sesi', desc: 'Total 50 sesi gym selesai', target: 50, of: (s) => s.fitTotal },
-  { id: 'fit100', category: 'fitness', icon: '💎', title: '100 Sesi', desc: 'Total 100 sesi gym selesai', target: 100, of: (s) => s.fitTotal },
-  { id: 'steps20k', category: 'steps', icon: '👟', title: '20 Ribu Langkah', desc: 'Pernah jalan ≥ 20.000 langkah dalam sehari', target: 20000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 20000) },
-  { id: 'steps30k', category: 'steps', icon: '🎖️', title: '30 Ribu Langkah', desc: 'Pernah jalan ≥ 30.000 langkah dalam sehari', target: 30000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 30000) },
-  { id: 'steps40k', category: 'steps', icon: '🏅', title: '40 Ribu Langkah', desc: 'Pernah jalan ≥ 40.000 langkah dalam sehari', target: 40000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 40000) },
-  { id: 'steps50k', category: 'steps', icon: '🥇', title: '50 Ribu Langkah', desc: 'Pernah jalan ≥ 50.000 langkah dalam sehari', target: 50000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 50000) },
+  { id: 'fit1', category: 'fitness', icon: '🐣', title: 'First Session', desc: 'Selesaikan satu sesi gym penuh', target: 1, of: (s) => s.fitTotal },
+  { id: 'fitWeek1', category: 'fitness', icon: '✨', title: '5 in a Row', desc: '5 sesi streak tanpa bolos', target: 5, of: (s) => s.fitBest },
+  { id: 'fit10', category: 'fitness', icon: '💪', title: '10 Sessions', desc: 'Total 10 sesi gym selesai', target: 10, of: (s) => s.fitTotal },
+  { id: 'fitWeek2', category: 'fitness', icon: '🔥', title: '10 in a Row', desc: '10 sesi streak tanpa bolos', target: 10, of: (s) => s.fitBest },
+  { id: 'fitMonth', category: 'fitness', icon: '👑', title: '20 in a Row', desc: '20 sesi streak tanpa bolos', target: 20, of: (s) => s.fitBest },
+  { id: 'fit50', category: 'fitness', icon: '🏅', title: '50 Sessions', desc: 'Total 50 sesi gym selesai', target: 50, of: (s) => s.fitTotal },
+  { id: 'fit100', category: 'fitness', icon: '💎', title: '100 Sessions', desc: 'Total 100 sesi gym selesai', target: 100, of: (s) => s.fitTotal },
+  { id: 'steps20k', category: 'steps', icon: '👟', title: '20K Steps', desc: 'Pernah jalan ≥ 20.000 langkah dalam sehari', target: 20000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 20000) },
+  { id: 'steps30k', category: 'steps', icon: '🎖️', title: '30K Steps', desc: 'Pernah jalan ≥ 30.000 langkah dalam sehari', target: 30000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 30000) },
+  { id: 'steps40k', category: 'steps', icon: '🏅', title: '40K Steps', desc: 'Pernah jalan ≥ 40.000 langkah dalam sehari', target: 40000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 40000) },
+  { id: 'steps50k', category: 'steps', icon: '🥇', title: '50K Steps', desc: 'Pernah jalan ≥ 50.000 langkah dalam sehari', target: 50000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 50000) },
   // Jarak tempuh 🏃 — istilah yang dipakai pelari, dihitung dari langkah
   // Apple Health × panjang langkah (lihat lib/health → RUN_*_MILESTONES).
   { id: 'runShakeout', category: 'run', icon: '🚶', title: 'Shakeout', desc: 'Tempuh 3 km dalam sehari', target: 3, of: (s) => s.bestDayKm, fmt: km },
@@ -435,26 +435,26 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'runWeekMarathon', category: 'run', icon: '🔥', title: 'Marathon Week', desc: 'Total 42,2 km dalam sepekan', target: 42.2, of: (s) => s.bestWeekKm, fmt: km },
   { id: 'runWeekPeak', category: 'run', icon: '🏅', title: 'Peak Week', desc: 'Total 70 km dalam sepekan', target: 70, of: (s) => s.bestWeekKm, fmt: km },
   { id: 'runWeek100', category: 'run', icon: '👑', title: 'Century Week', desc: 'Total 100 km dalam sepekan', target: 100, of: (s) => s.bestWeekKm, fmt: km },
-  { id: 'runMonth100', category: 'run', icon: '🎽', title: '100K Bulanan', desc: 'Total 100 km dalam sebulan', target: 100, of: (s) => s.bestMonthKm, fmt: km },
-  { id: 'runMonth200', category: 'run', icon: '🏆', title: '200K Bulanan', desc: 'Total 200 km dalam sebulan', target: 200, of: (s) => s.bestMonthKm, fmt: km },
-  { id: 'runMonth300', category: 'run', icon: '💎', title: '300K Bulanan', desc: 'Total 300 km dalam sebulan', target: 300, of: (s) => s.bestMonthKm, fmt: km },
+  { id: 'runMonth100', category: 'run', icon: '🎽', title: '100K Month', desc: 'Total 100 km dalam sebulan', target: 100, of: (s) => s.bestMonthKm, fmt: km },
+  { id: 'runMonth200', category: 'run', icon: '🏆', title: '200K Month', desc: 'Total 200 km dalam sebulan', target: 200, of: (s) => s.bestMonthKm, fmt: km },
+  { id: 'runMonth300', category: 'run', icon: '💎', title: '300K Month', desc: 'Total 300 km dalam sebulan', target: 300, of: (s) => s.bestMonthKm, fmt: km },
   // Target mingguan 📅 — mengikuti anjuran kesehatan dewasa: ±150 menit
   // aerobik sedang (≈70.000 langkah) + strength training minimal 2 hari.
-  { id: 'weekStep1', category: 'week', icon: '🚶', title: 'Minggu Aktif', desc: 'Tembus target langkah dalam sepekan', target: 1, of: (s) => s.weekStepHits },
-  { id: 'weekStep4', category: 'week', icon: '✨', title: 'Sebulan Aktif', desc: '4 minggu tembus target langkah', target: 4, of: (s) => s.weekStepHits },
-  { id: 'weekStep12', category: 'week', icon: '🏅', title: 'Sekuartal Aktif', desc: '12 minggu tembus target langkah', target: 12, of: (s) => s.weekStepHits },
+  { id: 'weekStep1', category: 'week', icon: '🚶', title: 'Active Week', desc: 'Tembus target langkah dalam sepekan', target: 1, of: (s) => s.weekStepHits },
+  { id: 'weekStep4', category: 'week', icon: '✨', title: 'Active Month', desc: '4 minggu tembus target langkah', target: 4, of: (s) => s.weekStepHits },
+  { id: 'weekStep12', category: 'week', icon: '🏅', title: 'Active Quarter', desc: '12 minggu tembus target langkah', target: 12, of: (s) => s.weekStepHits },
   { id: 'weekGym1', category: 'fitness', icon: '🏋️', title: 'Strength 2×', desc: 'Strength training 2 hari dalam sepekan', target: 1, of: (s) => s.weekGymHits },
-  { id: 'weekGym4', category: 'fitness', icon: '💪', title: 'Sebulan Kuat', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits },
-  { id: 'weekGym12', category: 'fitness', icon: '🔥', title: 'Sekuartal Kuat', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits },
-  { id: 'weekBoth1', category: 'week', icon: '⭐', title: 'Minggu Sempurna', desc: 'Aerobik & strength tercapai dalam sepekan', target: 1, of: (s) => s.weekBothHits },
-  { id: 'weekBoth4', category: 'week', icon: '👑', title: 'Sebulan Sempurna', desc: '4 minggu sempurna', target: 4, of: (s) => s.weekBothHits },
-  { id: 'weekBoth12', category: 'week', icon: '💎', title: 'Sekuartal Sempurna', desc: '12 minggu sempurna', target: 12, of: (s) => s.weekBothHits },
-  { id: 'water1', category: 'water', icon: '💧', title: 'Gelas ke-8 Pertama', desc: 'Cukup 8 gelas air dalam sehari', target: 1, of: (s) => s.waterTotal },
-  { id: 'water3', category: 'water', icon: '✨', title: 'Tiga Hari Segar', desc: 'Cukup 8 gelas 3 hari beruntun', target: 3, of: (s) => s.waterBest },
-  { id: 'water7', category: 'water', icon: '🌊', title: 'Seminggu Terhidrasi', desc: 'Cukup 8 gelas 7 hari beruntun', target: 7, of: (s) => s.waterBest },
-  { id: 'water14', category: 'water', icon: '⚡', title: 'Dua Minggu Lancar', desc: 'Cukup 8 gelas 14 hari beruntun', target: 14, of: (s) => s.waterBest },
-  { id: 'water30', category: 'water', icon: '👑', title: 'Sebulan Tanpa Bolong', desc: 'Cukup 8 gelas 30 hari beruntun', target: 30, of: (s) => s.waterBest },
-  { id: 'water100', category: 'water', icon: '💎', title: '100 Hari Cukup Air', desc: 'Total 100 hari cukup 8 gelas', target: 100, of: (s) => s.waterTotal },
+  { id: 'weekGym4', category: 'fitness', icon: '💪', title: 'Strong Month', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits },
+  { id: 'weekGym12', category: 'fitness', icon: '🔥', title: 'Strong Quarter', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits },
+  { id: 'weekBoth1', category: 'week', icon: '⭐', title: 'Perfect Week', desc: 'Aerobik & strength tercapai dalam sepekan', target: 1, of: (s) => s.weekBothHits },
+  { id: 'weekBoth4', category: 'week', icon: '👑', title: 'Perfect Month', desc: '4 minggu sempurna', target: 4, of: (s) => s.weekBothHits },
+  { id: 'weekBoth12', category: 'week', icon: '💎', title: 'Perfect Quarter', desc: '12 minggu sempurna', target: 12, of: (s) => s.weekBothHits },
+  { id: 'water1', category: 'water', icon: '💧', title: 'First 8 Glasses', desc: 'Cukup 8 gelas air dalam sehari', target: 1, of: (s) => s.waterTotal },
+  { id: 'water3', category: 'water', icon: '✨', title: '3 Days Hydrated', desc: 'Cukup 8 gelas 3 hari streak', target: 3, of: (s) => s.waterBest },
+  { id: 'water7', category: 'water', icon: '🌊', title: 'One Week Hydrated', desc: 'Cukup 8 gelas 7 hari streak', target: 7, of: (s) => s.waterBest },
+  { id: 'water14', category: 'water', icon: '⚡', title: 'Two Weeks Hydrated', desc: 'Cukup 8 gelas 14 hari streak', target: 14, of: (s) => s.waterBest },
+  { id: 'water30', category: 'water', icon: '👑', title: 'One Month Hydrated', desc: 'Cukup 8 gelas 30 hari streak', target: 30, of: (s) => s.waterBest },
+  { id: 'water100', category: 'water', icon: '💎', title: '100 Days Hydrated', desc: 'Total 100 hari cukup 8 gelas', target: 100, of: (s) => s.waterTotal },
 ];
 
 // ============================ Self-Reward 🏆 ============================

@@ -61,6 +61,9 @@ export function Chip({
 const styles = StyleSheet.create({
   chip: {
     alignItems: 'center',
+    // Tengah di DUA arah. Tanpa `justifyContent`, tinggi chip yang dipatok
+    // barisnya (ChipRow) membuat hurufnya menempel ke atas.
+    justifyContent: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,

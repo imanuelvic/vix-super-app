@@ -35,7 +35,8 @@ import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
   BIBLE_SESSIONS,
   bibleSessionNow,
-  bumpReviveStreak,
+  repairedReviveStreak,
+  saveReviveStreak,
   reviveHandledToday,
   setReviveSkipped,
   subscribeBibleReadingDays,
@@ -117,20 +118,32 @@ export default function SpiritualScreen() {
   // lalu tidak menunjuk ke mana-mana.
   const reviveBeres = reviveHandledToday(reviveStreak, todayId);
 
-  // …dan kalau ketidakcocokan itu memang terjadi, DIPERBAIKI, bukan ditutupi:
-  // catatan hari ini ada = streaknya memang seharusnya sudah tercatat (itu
-  // yang dilakukan layar Revive saat menyimpan; bisa gagal kalau sinyal putus
-  // tepat sesudah catatannya tersimpan). Sekali tulis, lalu keduanya cocok
-  // lagi selamanya. `alreadyCounted` di dalamnya menjaga streaknya tidak naik
-  // dua kali.
+  // …dan kalau ketidakcocokan itu terjadi, DIPERBAIKI, bukan ditutupi.
+  //
+  // Yang menentukan streak adalah CATATANNYA — berapa hari berturut-turut kamu
+  // menulis Revive & menekan Simpan. Penghitung di dokumen streak cuma
+  // salinannya, dan salinan itu bisa meleset: penyimpanan yang gagal saat
+  // sinyal putus, Revive yang ditulis menyusul untuk tanggal kemarin, atau
+  // tombol reset achievement. Sekali meleset, penghitungnya tak pernah
+  // membetulkan diri — itulah kenapa angkanya bisa berhenti di 3 padahal
+  // catatannya sudah 12 hari berturut-turut.
+  //
+  // Layar ini memang sudah memegang daftar catatannya, jadi di sinilah
+  // salinannya dicocokkan. Menulis hanya kalau memang beda.
   const diperbaiki = useRef(false);
   useEffect(() => {
-    if (!user || !todayEntry || reviveBeres || diperbaiki.current) return;
+    if (!user || !entries || diperbaiki.current) return;
+    const benar = repairedReviveStreak(
+      reviveStreak,
+      entries.map((e) => e.id),
+      todayId,
+    );
+    if (!benar) return;
     diperbaiki.current = true;
-    bumpReviveStreak(user.uid, reviveStreak, todayId).catch(() => {
+    saveReviveStreak(user.uid, benar).catch(() => {
       diperbaiki.current = false;
     });
-  }, [user, todayEntry, reviveBeres, reviveStreak, todayId]);
+  }, [user, entries, reviveStreak, todayId]);
 
   async function toggleSkip() {
     if (!user || skipBusy) return;

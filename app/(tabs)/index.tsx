@@ -74,11 +74,11 @@ import {
 } from '@/lib/device';
 import { OWNER_NAME } from '@/lib/family';
 import {
-  EMPTY_SPORT,
-  sportAttention,
-  subscribeSport,
-  type SportData,
-} from '@/lib/sport';
+  EMPTY_FUTSAL,
+  futsalAttention,
+  subscribeFutsal,
+  type FutsalData,
+} from '@/lib/futsal';
 import {
   fastingCheckDue,
   fastingDayNumber,
@@ -138,6 +138,11 @@ import {
   subscribePriorityDay,
   type PriorityItem,
 } from '@/lib/priority';
+import {
+  populationDue,
+  subscribePopulationLog,
+  type PopulationSaved,
+} from '@/lib/news';
 import { subscribeFeedGenerated } from '@/lib/reflectionFeed';
 import {
   countResidenceAttention,
@@ -175,7 +180,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 20;
+const BADGE_SOURCES = 21;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -256,7 +261,9 @@ export default function HomeScreen() {
   // Paket kuota — untuk badge tile Device 📱 saat paketnya sudah H-1.
   const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
   // Futsal rutin — ikut menghitung badge tile Friends 🤝.
-  const [sport, setSport] = useState<SportData>(EMPTY_SPORT);
+  const [futsal, setFutsal] = useState<FutsalData>(EMPTY_FUTSAL);
+  // Catatan populasi — untuk badge tile News 📰 tiap awal bulan.
+  const [population, setPopulation] = useState<PopulationSaved>({});
 
   // Jam berjalan (di-refresh tiap menit) + id hari ini — untuk gate doa jam 4,
   // badge yang bergantung waktu (mobil/rumah), dan reset harian lewat tengah
@@ -291,6 +298,7 @@ export default function HomeScreen() {
       subscribeMainTeam(user.uid, mark('mainTeam', setMainTeam)),
       subscribeBirthdayGreets(user.uid, mark('greets', setGreets)),
       subscribeSermons(user.uid, mark('sermons', setSermons)),
+      subscribePopulationLog(user.uid, mark('population', setPopulation)),
       subscribeReviveStreak(user.uid, mark('revive', setRevive)),
       subscribePartStatus(user.uid, mark('carParts', setCarParts)),
       subscribeRoadmap(user.uid, mark('roadmap', setRoadmap)),
@@ -299,7 +307,7 @@ export default function HomeScreen() {
       subscribeFitDay(user.uid, todayId, mark('fitDay', setFitDay)),
       subscribeDebts(user.uid, mark('debts', setDebts)),
       subscribeDataPlans(user.uid, mark('dataPlans', setDataPlans)),
-      subscribeSport(user.uid, mark('sport', setSport)),
+      subscribeFutsal(user.uid, mark('futsal', setFutsal)),
       // --- Sisanya mengisi kartu & sapaan, bukan badge ---
       subscribeLoginStreak(user.uid, setLogin),
       subscribeHabitDay(user.uid, todayId, setDay),
@@ -488,13 +496,16 @@ export default function HomeScreen() {
     finance: debtUrgentCount(debts, now),
     // Friends = JUMLAH kedua sub-tab berbadge di dalamnya:
     //   Split Bill → patungan yang masih ada orang belum setor
-    //   Sport      → futsal ≤ 2 hari lagi, atau yang sudah lewat tapi
+    //   Fun Futsal → futsal ≤ 2 hari lagi, atau yang sudah lewat tapi
     //                iurannya belum lunas
-    friends: bills.filter(billUnsettled).length + sportAttention(sport, now),
+    friends: bills.filter(billUnsettled).length + futsalAttention(futsal, now),
     // Device = paket kuota yang sudah H-1 (habis besok atau hari ini).
     // Aturannya tinggal di lib/device.ts dan dipakai ulang oleh badge
     // sub-tabnya, jadi mustahil beda.
     device: devicesNeedingTopUp(dataPlans, now),
+    // News = catatan populasi awal bulan yang belum diisi. Menyala tiap
+    // tanggal 1 sampai angkanya kamu salin dari worldometers.
+    news: populationDue(population, now),
   };
 
   // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).

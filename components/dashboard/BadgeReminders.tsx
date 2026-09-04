@@ -35,6 +35,11 @@ type Nota = {
 };
 
 const TANPA_KARTU: Record<string, Nota> = {
+  news: {
+    emoji: '🌏',
+    apa: 'Catatan populasi awal bulan ini belum diisi.',
+    aksi: 'Buka worldometers dari tab Population, salin angkanya, lalu catat.',
+  },
   device: {
     emoji: '📱',
     apa: 'Paket kuota yang habis besok atau hari ini.',

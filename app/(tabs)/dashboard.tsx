@@ -99,11 +99,11 @@ import {
     type Bill,
 } from '@/lib/friends';
 import {
-    EMPTY_SPORT,
-    sportReminders,
-    subscribeSport,
-    type SportData,
-} from '@/lib/sport';
+    EMPTY_FUTSAL,
+    futsalReminders,
+    subscribeFutsal,
+    type FutsalData,
+} from '@/lib/futsal';
 import { anyBadgeReminder, BadgeReminders } from '@/components/dashboard/BadgeReminders';
 import {
     activeFasting,
@@ -185,6 +185,11 @@ import {
     subscribeSermons,
     type SermonNote,
 } from '@/lib/sermon';
+import {
+    populationDue,
+    subscribePopulationLog,
+    type PopulationSaved,
+} from '@/lib/news';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import {
     otherTaskDaysUntil,
@@ -230,7 +235,8 @@ export default function DashboardScreen() {
   // Sumber badge Friends 🤝 & Device 📱 (lihat `badgeCounts` di bawah).
   const [bills, setBills] = useState<Bill[]>([]);
   const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
-  const [sport, setSport] = useState<SportData>(EMPTY_SPORT);
+  const [population, setPopulation] = useState<PopulationSaved>({});
+  const [futsal, setFutsal] = useState<FutsalData>(EMPTY_FUTSAL);
   const [checkups, setCheckups] = useState<Checkup[]>([]);
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
@@ -276,7 +282,8 @@ export default function DashboardScreen() {
       // sendiri di sini (lihat components/dashboard/BadgeReminders.tsx).
       subscribeBills(user.uid, setBills),
       subscribeDataPlans(user.uid, setDataPlans),
-      subscribeSport(user.uid, setSport),
+      subscribePopulationLog(user.uid, setPopulation),
+      subscribeFutsal(user.uid, setFutsal),
       subscribeWheel(user.uid, wheelQid, setWheel),
       subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
       subscribeFitDay(user.uid, todayId, setFitDay),
@@ -635,16 +642,16 @@ export default function DashboardScreen() {
   // muncul tanpa badge (atau sebaliknya).
   const badgeCounts: Record<string, number> = {
     device: devicesNeedingTopUp(dataPlans, now),
+    news: populationDue(population, now),
   };
 
   // Reminder Friends 🤝 — SESI & TAGIHAN yang sesungguhnya, satu baris masing2.
-  //
   // Dua sumber, satu kartu, karena keduanya menyalakan badge yang sama di Home:
-  // sesi futsal yang mendesak (lihat `sportReminders`) dan patungan yang masih
+  // sesi futsal yang mendesak (lihat `futsalReminders`) dan patungan yang masih
   // ada orang belum bayar. Idnya diberi awalan supaya tiap baris tahu ia harus
   // membuka rincian sesi atau rincian nota — dua tujuan yang berbeda.
   const friendsRows = [
-    ...sportReminders(sport, now).map((r) => ({
+    ...futsalReminders(futsal, now).map((r) => ({
       id: `sesi:${r.id}`,
       text: r.text,
     })),
@@ -740,17 +747,9 @@ export default function DashboardScreen() {
               <VixText heading="label" additionalStyle={styles.streakLabel}>
                 Revive
               </VixText>
-              {/* Angka besar di atas = streak yang SEDANG berjalan, sama
-                  seperti kolom Habits di sebelahnya — jadi keterangannya pun
-                  harus sama. Dulu tertulis "rekor N hari" (angka lain: rekor
-                  sepanjang masa), padahal yang ditampilkan di atasnya bukan
-                  rekor — dua angka berbeda arti dalam satu kolom. */}
-              <VixText heading="label" additionalStyle={styles.streakBest}>
-                hari beruntun
-              </VixText>
             </PressableScale>
             <View style={styles.streakDivider} />
-            {/* Angkanya streak kebiasaan → langsung ke kategori Kebiasaan Sehat */}
+            {/* Angkanya streak kebiasaan → langsung ke kategori Good Habit */}
             <PressableScale
               style={styles.streakItem}
               onPress={() =>
@@ -765,9 +764,6 @@ export default function DashboardScreen() {
               </VixText>
               <VixText heading="label" additionalStyle={styles.streakLabel}>
                 Habits
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.streakBest}>
-                hari beruntun
               </VixText>
             </PressableScale>
           </View>
@@ -900,18 +896,106 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Reminder ulang tahun keluarga (hari ini s/d 7 hari) */}
-          {famBirthdays.length > 0 && (
+          {/* ===== Kartu reminder per fitur =====
+              Urutannya MENGIKUTI NOMOR URUT tile-nya di Home
+              (HomeFeature.sort di lib/homeGrid.ts): Spiritual 2 → Health 3 →
+              CORE 4 → Finance 5 → Learning 6 → Fitness 7 → Family 8 →
+              Career 10 → Fun 11 → Wheel 12 → Car 13 → Residence 14 →
+              Device 17 → Friends 19. Jadi "di mana kartunya" terjawab dari
+              posisi tile-nya di Home, bukan dari urutan orang menuliskannya
+              di berkas ini.
+
+              Yang DI LUAR grid berdiri di luar urutan itu: kartu putih
+              "Reminder Hari Ini" & kebiasaan sesi selalu di atas, dan
+              fallback produktivitas selalu paling bawah. */}
+
+          {/* Sedang berpuasa 🍽️ — hari ke berapa + pokok doa hari ini.
+              Ditekan → layar puasa itu (checklist harian). */}
+          {fastingNow && (
             <ReminderCard
-              bg={Color.FINANCE_SAVING}
-              fg={Color.ACCENT_DARK}
-              title="🎂 Reminder Family Birthday"
-              texts={famBirthdays}
-              // Klik satu nama → buka Family & pusatkan pohon ke orang itu.
-              onItemPress={(id) =>
-                router.push({ pathname: '/family', params: { focus: id } })
-              }
-            />
+              bg={Color.SPIRITUAL}
+              fg={Color.SPIRITUAL_DARK}
+              title={`🍽️ Reminder Puasa — hari ke-${fastingDayNumber(
+                fastingNow,
+                todayId,
+              )} dari ${fastingProgress(fastingNow).total}`}
+              onPress={() =>
+                router.push({
+                  pathname: '/fasting-days',
+                  params: { id: fastingNow.id },
+                })
+              }>
+              <VixText heading="label" additionalStyle={styles.prayerText}>
+                {fastingNow.title}
+              </VixText>
+              {fastingPrayer ? (
+                <VixText heading="label" additionalStyle={styles.prayerText}>
+                  🙏 {fastingPrayer}
+                </VixText>
+              ) : null}
+              {fastingNow.rules ? (
+                <VixText heading="label" additionalStyle={styles.prayerText}>
+                  📜 {fastingNow.rules}
+                </VixText>
+              ) : null}
+              <VixText heading="label" additionalStyle={styles.prayerText}>
+                🙏 Bawa juga syafaat hari ini: {intercession.emoji}{' '}
+                {intercession.label}
+              </VixText>
+            </ReminderCard>
+          )}
+
+          {/* Reminder Pokok Doa Bulanan — awal bulan belum diisi (tema spiritual) */}
+          {prayerNeedsFill && (
+            <ReminderCard
+              bg={Color.SPIRITUAL}
+              fg={Color.SPIRITUAL_DARK}
+              title={`📅 Reminder Pokok Doa Bulanan — ${prayerMonthTitle}`}
+              onPress={() => router.push('/monthly-prayers')}>
+              <VixText heading="label" additionalStyle={styles.prayerText}>
+                Awal bulan! Follow up tiap CORE Leader & tanyakan pokok doa mereka
+                bulan ini 🙏
+              </VixText>
+            </ReminderCard>
+          )}
+
+          {/* Reminder renungkan khotbah Minggu (Rabu/Jumat siang) — ungu */}
+          {sundaySermon && (
+            <ReminderCard
+              bg={Color.SPIRITUAL}
+              fg={Color.SPIRITUAL_DARK}
+              title="🙏 Reminder Renungkan Khotbah Minggu"
+              onPress={() =>
+                router.push({ pathname: '/spiritual', params: { tab: 'sermon' } })
+              }>
+              <VixText heading="label" additionalStyle={styles.onSpiritual}>
+                ⛪ {sundaySermon.title}
+              </VixText>
+              {sundaySermon.quote ? (
+                <VixText
+                  heading="label"
+                  numberOfLines={2}
+                  additionalStyle={styles.onSpiritual}>
+                  “{sundaySermon.quote}”
+                </VixText>
+              ) : null}
+            </ReminderCard>
+          )}
+
+          {/* Reminder Health digabung: cek tensi/gula, timbang berat, donor. */}
+          {healthRows.length > 0 && (
+            <View style={styles.healthCard}>
+              <VixText heading="bold" additionalStyle={styles.healthTitle}>
+                🩺 Reminder Health
+              </VixText>
+              {healthRows.map((r) => (
+                <PressableScale key={r.id} onPress={r.onPress}>
+                  <VixText heading="label" additionalStyle={styles.healthText}>
+                    {r.text}
+                  </VixText>
+                </PressableScale>
+              ))}
+            </View>
           )}
 
           {/* Reminder CORE: visitasi (H-3 s/d hari-H) + ulang tahun CL & Main
@@ -1023,56 +1107,6 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Sedang berpuasa 🍽️ — hari ke berapa + pokok doa hari ini.
-              Ditekan → layar puasa itu (checklist harian). */}
-          {fastingNow && (
-            <ReminderCard
-              bg={Color.SPIRITUAL}
-              fg={Color.SPIRITUAL_DARK}
-              title={`🍽️ Reminder Puasa — hari ke-${fastingDayNumber(
-                fastingNow,
-                todayId,
-              )} dari ${fastingProgress(fastingNow).total}`}
-              onPress={() =>
-                router.push({
-                  pathname: '/fasting-days',
-                  params: { id: fastingNow.id },
-                })
-              }>
-              <VixText heading="label" additionalStyle={styles.prayerText}>
-                {fastingNow.title}
-              </VixText>
-              {fastingPrayer ? (
-                <VixText heading="label" additionalStyle={styles.prayerText}>
-                  🙏 {fastingPrayer}
-                </VixText>
-              ) : null}
-              {fastingNow.rules ? (
-                <VixText heading="label" additionalStyle={styles.prayerText}>
-                  📜 {fastingNow.rules}
-                </VixText>
-              ) : null}
-              <VixText heading="label" additionalStyle={styles.prayerText}>
-                🙏 Bawa juga syafaat hari ini: {intercession.emoji}{' '}
-                {intercession.label}
-              </VixText>
-            </ReminderCard>
-          )}
-
-          {/* Reminder Pokok Doa Bulanan — awal bulan belum diisi (tema spiritual) */}
-          {prayerNeedsFill && (
-            <ReminderCard
-              bg={Color.SPIRITUAL}
-              fg={Color.SPIRITUAL_DARK}
-              title={`📅 Reminder Pokok Doa Bulanan — ${prayerMonthTitle}`}
-              onPress={() => router.push('/monthly-prayers')}>
-              <VixText heading="label" additionalStyle={styles.prayerText}>
-                Awal bulan! Follow up tiap CORE Leader & tanyakan pokok doa mereka
-                bulan ini 🙏
-              </VixText>
-            </ReminderCard>
-          )}
-
           {/* Follow Up Mingguan 🎯 — CL giliran minggu ini yang belum
               di-follow up HARI INI. Beda dengan kartu pagi di Home yang cuma
               numpang 09.00–09.30: di sini ia bertahan sampai dikerjakan,
@@ -1131,134 +1165,6 @@ export default function DashboardScreen() {
             />
           )}
 
-          {/* Reminder Health digabung: cek tensi/gula, timbang berat, donor. */}
-          {healthRows.length > 0 && (
-            <View style={styles.healthCard}>
-              <VixText heading="bold" additionalStyle={styles.healthTitle}>
-                🩺 Reminder Health
-              </VixText>
-              {healthRows.map((r) => (
-                <PressableScale key={r.id} onPress={r.onPress}>
-                  <VixText heading="label" additionalStyle={styles.healthText}>
-                    {r.text}
-                  </VixText>
-                </PressableScale>
-              ))}
-            </View>
-          )}
-
-          {/* Sesi inti 💪 — beban atau lari, pagi maupun sore (oranye Fitness) */}
-          {gymDayDue && (
-            <ReminderCard
-              bg={Color.FITNESS}
-              fg={Color.FITNESS_DARK}
-              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
-              texts={[
-                `${fitWindowLabel(now)} · bebas pagi atau sore · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
-                fitQuote(todayId),
-              ]}
-              // Sub-tab 💪 Exercise — di situlah gerakannya dicentang.
-              onPress={() =>
-                router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
-              }
-            />
-          )}
-
-          {/* Jalan pagi 🚶 — Rabu & Minggu, pemulihan (tidak memutus streak) */}
-          {restDayDue && (
-            <ReminderCard
-              bg={Color.FITNESS}
-              fg={Color.FITNESS_DARK}
-              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
-              texts={FIT_RECOVERY}
-              onPress={() =>
-                router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
-              }
-            />
-          )}
-
-          {/* Reminder renungkan khotbah Minggu (Rabu/Jumat siang) — ungu */}
-          {sundaySermon && (
-            <ReminderCard
-              bg={Color.SPIRITUAL}
-              fg={Color.SPIRITUAL_DARK}
-              title="🙏 Reminder Renungkan Khotbah Minggu"
-              onPress={() =>
-                router.push({ pathname: '/spiritual', params: { tab: 'sermon' } })
-              }>
-              <VixText heading="label" additionalStyle={styles.onSpiritual}>
-                ⛪ {sundaySermon.title}
-              </VixText>
-              {sundaySermon.quote ? (
-                <VixText
-                  heading="label"
-                  numberOfLines={2}
-                  additionalStyle={styles.onSpiritual}>
-                  “{sundaySermon.quote}”
-                </VixText>
-              ) : null}
-            </ReminderCard>
-          )}
-
-          {/* Reminder Wheel of Life 🎡 — kuartal baru belum diisi: ajak isi. */}
-          {wheelNeedsFill && (
-            <ReminderCard
-              bg={Color.WHEEL}
-              fg={Color.WHEEL_DARK}
-              title={`🎡 Reminder Kuartal Baru — ${wheelQLabel}`}
-              onPress={() => router.push('/wheel')}>
-              <VixText heading="label" additionalStyle={styles.wheelText}>
-                Yuk isi Wheel of Life kuartal ini — nilai 8 area hidupmu biar tahu
-                progres & area yang perlu dikembangkan 🎯
-              </VixText>
-            </ReminderCard>
-          )}
-
-          {/* Reminder fokus Wheel (Sen/Rab/Jum, 09.00–12.30). */}
-          {wheelFocusDue && (
-            <View style={styles.wheelCard}>
-              <VixText heading="bold" additionalStyle={styles.wheelTitle}>
-                🎡 Reminder Wheel of Life · {wheelQLabel}
-              </VixText>
-              {wheelFocusRows.map((r) => (
-                <PressableScale
-                  key={r.key}
-                  style={styles.wheelRow}
-                  onPress={() => router.push('/wheel')}>
-                  <VixText heading="label" additionalStyle={styles.wheelArea}>
-                    {r.icon} {r.label} · {r.current} → {r.target}
-                  </VixText>
-                  <VixText heading="label" additionalStyle={styles.wheelTip}>
-                    💡 {r.tip}
-                  </VixText>
-                </PressableScale>
-              ))}
-            </View>
-          )}
-
-          {/* Reminder deadline KERJA (Fulltime + Freelance, H-7). */}
-          {careerReminders.length > 0 && (
-            <View style={styles.careerCard}>
-              <VixText heading="bold" additionalStyle={styles.careerTitle}>
-                💼 Reminder Deadline Kerja
-              </VixText>
-              {careerReminders.map((r) => (
-                <PressableScale
-                  key={r.id}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/career',
-                      params: { tab: r.tab, edit: r.docId },
-                    })
-                  }>
-                  <VixText heading="label" additionalStyle={styles.careerText}>
-                    {r.text}
-                  </VixText>
-                </PressableScale>
-              ))}
-            </View>
-          )}
-
           {/* Reminder Learning 🎓 — satu ilmu baru per minggu, dicicil 4 langkah
               di Senin/Rabu/Jumat/Minggu (hari yang jadwalmu lowong). Kartunya
               hilang sendiri begitu langkah hari itu dicentang. */}
@@ -1304,6 +1210,146 @@ export default function DashboardScreen() {
             />
           )}
 
+          {/* Sesi inti 💪 — beban atau lari, pagi maupun sore (oranye Fitness) */}
+          {gymDayDue && (
+            <ReminderCard
+              bg={Color.FITNESS}
+              fg={Color.FITNESS_DARK}
+              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
+              texts={[
+                `${fitWindowLabel(now)} · bebas pagi atau sore · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
+                fitQuote(todayId),
+              ]}
+              // Sub-tab 💪 Exercise — di situlah gerakannya dicentang.
+              onPress={() =>
+                router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
+              }
+            />
+          )}
+
+          {/* Jalan pagi 🚶 — Rabu & Minggu, pemulihan (tidak memutus streak) */}
+          {restDayDue && (
+            <ReminderCard
+              bg={Color.FITNESS}
+              fg={Color.FITNESS_DARK}
+              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
+              texts={FIT_RECOVERY}
+              onPress={() =>
+                router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
+              }
+            />
+          )}
+
+          {/* Reminder ulang tahun keluarga (hari ini s/d 7 hari) */}
+          {famBirthdays.length > 0 && (
+            <ReminderCard
+              bg={Color.FINANCE_SAVING}
+              fg={Color.ACCENT_DARK}
+              title="🎂 Reminder Family Birthday"
+              texts={famBirthdays}
+              // Klik satu nama → buka Family & pusatkan pohon ke orang itu.
+              onItemPress={(id) =>
+                router.push({ pathname: '/family', params: { focus: id } })
+              }
+            />
+          )}
+
+          {/* Reminder deadline KERJA (Fulltime + Freelance, H-7). */}
+          {careerReminders.length > 0 && (
+            <View style={styles.careerCard}>
+              <VixText heading="bold" additionalStyle={styles.careerTitle}>
+                💼 Reminder Deadline Kerja
+              </VixText>
+              {careerReminders.map((r) => (
+                <PressableScale
+                  key={r.id}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/career',
+                      params: { tab: r.tab, edit: r.docId },
+                    })
+                  }>
+                  <VixText heading="label" additionalStyle={styles.careerText}>
+                    {r.text}
+                  </VixText>
+                </PressableScale>
+              ))}
+            </View>
+          )}
+
+          {/* Reminder FUN 🎉: sudah lama tidak refreshing → ajak main + kasih ide. */}
+          {funDue && (
+            <ReminderCard
+              bg={Color.FUN}
+              fg={Color.FUN_DARK}
+              title="🎉 Reminder Fun"
+              onPress={() => router.push('/fun')}>
+              <VixText heading="label" additionalStyle={styles.funSub}>
+                {funGap === null
+                  ? 'Belum ada kegiatan Fun yang tercatat — yuk mulai satu!'
+                  : `Sudah ${funGap} hari tanpa kegiatan seru. Jangan lupa refreshing 🙌`}
+              </VixText>
+              {funIdeas.map((idea, i) => (
+                <VixText key={i} heading="label" additionalStyle={styles.funText}>
+                  {idea}
+                </VixText>
+              ))}
+            </ReminderCard>
+          )}
+
+          {/* Reminder Wheel of Life 🎡 — kuartal baru belum diisi: ajak isi. */}
+          {wheelNeedsFill && (
+            <ReminderCard
+              bg={Color.WHEEL}
+              fg={Color.WHEEL_DARK}
+              title={`🎡 Reminder Kuartal Baru — ${wheelQLabel}`}
+              onPress={() => router.push('/wheel')}>
+              <VixText heading="label" additionalStyle={styles.wheelText}>
+                Yuk isi Wheel of Life kuartal ini — nilai 8 area hidupmu biar tahu
+                progres & area yang perlu dikembangkan 🎯
+              </VixText>
+            </ReminderCard>
+          )}
+
+          {/* Reminder fokus Wheel (Sen/Rab/Jum, 09.00–12.30). */}
+          {wheelFocusDue && (
+            <View style={styles.wheelCard}>
+              <VixText heading="bold" additionalStyle={styles.wheelTitle}>
+                🎡 Reminder Wheel of Life · {wheelQLabel}
+              </VixText>
+              {wheelFocusRows.map((r) => (
+                <PressableScale
+                  key={r.key}
+                  style={styles.wheelRow}
+                  onPress={() => router.push('/wheel')}>
+                  <VixText heading="label" additionalStyle={styles.wheelArea}>
+                    {r.icon} {r.label} · {r.current} → {r.target}
+                  </VixText>
+                  <VixText heading="label" additionalStyle={styles.wheelTip}>
+                    💡 {r.tip}
+                  </VixText>
+                </PressableScale>
+              ))}
+            </View>
+          )}
+
+          {/* Reminder Car 🚗 — servis/part mobil yang perlu perhatian (warna
+              senada tile Car di Home). */}
+          {carReminders.length > 0 && (
+            <ReminderCard
+              bg={Color.ACCENT}
+              fg={Color.ACCENT_DARK}
+              title="🚗 Reminder Car"
+              texts={carReminders}
+              // Sub-tab 🔧 Parts — sumber baris-baris ini. Kebetulan sama
+              // dengan bawaan layarnya, tapi ditulis tegas: bawaan boleh
+              // bergeser kapan saja, arti reminder ini tidak.
+              onPress={() =>
+                router.push({ pathname: '/car', params: { tab: 'parts' } })
+              }
+            />
+          )}
+
           {/* Reminder Residence 🏠 — perawatan/kebersihan rumah yang perlu
               perhatian (warna senada tile Residence di Home). */}
           {residenceReminders.length > 0 && (
@@ -1322,20 +1368,28 @@ export default function DashboardScreen() {
             />
           )}
 
-          {/* Reminder Car 🚗 — servis/part mobil yang perlu perhatian (warna
-              senada tile Car di Home). */}
-          {carReminders.length > 0 && (
+          {/* Badge yang belum punya kartunya sendiri (Device).
+              Warnanya ikut tile-nya di Home — lihat components/dashboard. */}
+          <BadgeReminders counts={badgeCounts} />
+
+          {/* Reminder FRIENDS 🤝: sesi futsal yang mendesak + patungan yang
+              belum lunas. Tiap baris tombolnya sendiri — sesi membuka rincian
+              sesinya, nota membuka rincian notanya. */}
+          {friendsRows.length > 0 && (
             <ReminderCard
-              bg={Color.ACCENT}
-              fg={Color.ACCENT_DARK}
-              title="🚗 Reminder Car"
-              texts={carReminders}
-              // Sub-tab 🔧 Parts — sumber baris-baris ini. Kebetulan sama
-              // dengan bawaan layarnya, tapi ditulis tegas: bawaan boleh
-              // bergeser kapan saja, arti reminder ini tidak.
-              onPress={() =>
-                router.push({ pathname: '/car', params: { tab: 'parts' } })
-              }
+              bg={Color.FRIENDS}
+              fg={Color.FRIENDS_DARK}
+              title={`🤝 Reminder Friends`}
+              texts={friendsRows}
+              onItemPress={(id) => {
+                const potong = id.indexOf(':');
+                const nyata = id.slice(potong + 1);
+                router.push(
+                  id.slice(0, potong) === 'nota'
+                    ? { pathname: '/bill/[id]', params: { id: nyata } }
+                    : { pathname: '/futsal/[id]', params: { id: nyata } },
+                );
+              }}
             />
           )}
 
@@ -1363,50 +1417,6 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Reminder FUN 🎉: sudah lama tidak refreshing → ajak main + kasih ide. */}
-          {funDue && (
-            <ReminderCard
-              bg={Color.FUN}
-              fg={Color.FUN_DARK}
-              title="🎉 Reminder Fun"
-              onPress={() => router.push('/fun')}>
-              <VixText heading="label" additionalStyle={styles.funSub}>
-                {funGap === null
-                  ? 'Belum ada kegiatan Fun yang tercatat — yuk mulai satu!'
-                  : `Sudah ${funGap} hari tanpa kegiatan seru. Jangan lupa refreshing 🙌`}
-              </VixText>
-              {funIdeas.map((idea, i) => (
-                <VixText key={i} heading="label" additionalStyle={styles.funText}>
-                  {idea}
-                </VixText>
-              ))}
-            </ReminderCard>
-          )}
-
-          {/* Reminder FRIENDS 🤝: sesi futsal yang mendesak + patungan yang
-              belum lunas. Tiap baris tombolnya sendiri — sesi membuka rincian
-              sesinya, nota membuka rincian notanya. */}
-          {friendsRows.length > 0 && (
-            <ReminderCard
-              bg={Color.FRIENDS}
-              fg={Color.FRIENDS_DARK}
-              title={`🤝 Reminder Friends — ${friendsRows.length} hal`}
-              texts={friendsRows}
-              onItemPress={(id) => {
-                const potong = id.indexOf(':');
-                const nyata = id.slice(potong + 1);
-                router.push(
-                  id.slice(0, potong) === 'nota'
-                    ? { pathname: '/bill/[id]', params: { id: nyata } }
-                    : { pathname: '/sport/[id]', params: { id: nyata } },
-                );
-              }}
-            />
-          )}
-
-          {/* Badge yang belum punya kartunya sendiri (Device).
-              Warnanya ikut tile-nya di Home — lihat components/dashboard. */}
-          <BadgeReminders counts={badgeCounts} />
         </View>
       </ScrollView>
 
@@ -1463,7 +1473,6 @@ const styles = StyleSheet.create({
   streakIcon: { fontSize: 22, lineHeight: 33 },
   streakNum: { color: Color.ACCENT_DARK },
   streakLabel: { color: Color.ACCENT_DARK, fontWeight: '600' },
-  streakBest: { color: Color.ACCENT_DARK, opacity: 0.8 },
   // Reminder kebiasaan sesi (Pagi/Siang/Malam) — teks di dalam ReminderCard.
   habitReminderSub: { color: Color.FINANCE_EXPENSE_DARK, marginBottom: 2 },
   habitReminderItem: { color: Color.FINANCE_EXPENSE_DARK },

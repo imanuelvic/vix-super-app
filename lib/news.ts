@@ -209,14 +209,20 @@ export function formatBillions(n: number): string {
   return `${(n / 1_000_000_000).toFixed(2).replace('.', ',')} miliar`;
 }
 
-// ===== Catatan bulanan otomatis (Firestore) =====
+// ===== Catatan bulanan (Firestore) =====
 // SATU dokumen kecil: users/{uid}/world/population → { points: {dayId: count} }.
-// Diisi otomatis saat app dibuka pada/di atas tanggal 10 tiap bulan.
+//
+// Diisi TANGAN tiap awal bulan, tidak lagi ditebak app. Angka hasil
+// ekstrapolasi memang enak dilihat, tapi ia cuma menyalin perkiraan app
+// sendiri — dicatat pun tak menambah satu pun kabar baru. Yang berguna justru
+// angka SUNGGUHAN yang kamu salin dari worldometers tiap tanggal 1: itulah yang
+// membuat laju pertambahannya (dan seluruh perkiraan di atasnya) ikut
+// dibetulkan sendiri.
 
 export type PopulationSaved = Record<string, number>;
 
 /** Tanggal berapa catatan bulanan diambil. */
-export const RECORD_DAY = 10;
+export const RECORD_DAY = 1;
 
 export function subscribePopulationLog(
   uid: string,
@@ -235,42 +241,62 @@ function monthKey(dayId: string): string {
   return dayId.slice(0, 7);
 }
 
-/**
- * Catat perkiraan populasi untuk tanggal 10 bulan ini — hanya kalau hari ini
- * SUDAH tanggal 10 ke atas dan bulan ini belum tercatat (di kode maupun
- * Firestore). Aman dipanggil tiap buka layar: kalau sudah ada, tidak menulis.
- * Return dayId yang baru dicatat, atau null kalau tidak ada yang ditulis.
- */
-export function recordMonthlyPopulation(
-  uid: string,
-  saved: PopulationSaved,
-  now: Date,
-): Promise<string | null> {
-  if (now.getDate() < RECORD_DAY) return Promise.resolve(null);
-  const target = new Date(now.getFullYear(), now.getMonth(), RECORD_DAY);
-  const targetId = dayDocId(target);
-  const month = monthKey(targetId);
-  const already =
-    Object.keys(saved).some((d) => monthKey(d) === month) ||
-    POPULATION_HISTORY.some((p) => monthKey(p.dayId) === month);
-  if (already) return Promise.resolve(null);
-
-  return setDoc(
-    doc(db, 'users', uid, 'world', 'population'),
-    { points: { [targetId]: estimatePopulation(target) } },
-    { merge: true },
-  ).then(() => targetId);
+/** Tanggal 1 bulan ini — tanggal bawaan saat mencatat. */
+export function populationRecordDay(now: Date): Date {
+  return new Date(now.getFullYear(), now.getMonth(), RECORD_DAY);
 }
 
-/** Gabungan catatan tetap + catatan otomatis, terbaru di atas. */
+/**
+ * Bulan ini BELUM dicatat? → 1 (angka badge), sudah → 0.
+ *
+ * Bentuknya angka, bukan boolean, karena inilah yang dipakai badge tile News
+ * di Home & kartu reminder Dashboard — sama seperti badge fitur lain, dan
+ * lewat fungsi yang sama persis, jadi keduanya mustahil berbeda pendapat.
+ */
+export function populationDue(saved: PopulationSaved, now: Date): number {
+  const month = monthKey(dayDocId(populationRecordDay(now)));
+  const sudah =
+    Object.keys(saved).some((d) => monthKey(d) === month) ||
+    POPULATION_HISTORY.some((p) => monthKey(p.dayId) === month);
+  return sudah ? 0 : 1;
+}
+
+/** Simpan satu catatan populasi (angka yang KAMU salin dari sumbernya). */
+export function savePopulationPoint(
+  uid: string,
+  dayId: string,
+  count: number,
+): Promise<void> {
+  return setDoc(
+    doc(db, 'users', uid, 'world', 'population'),
+    { points: { [dayId]: count } },
+    { merge: true },
+  );
+}
+
+/** Hapus satu catatan — permanen (hard delete, seperti hapus lain di app). */
+export function deletePopulationPoint(
+  uid: string,
+  saved: PopulationSaved,
+  dayId: string,
+): Promise<void> {
+  const sisa: PopulationSaved = { ...saved };
+  delete sisa[dayId];
+  // Ditulis ULANG utuh, bukan merge: merge tidak pernah bisa menghilangkan
+  // kunci yang sudah ada di dalam sebuah map.
+  return setDoc(doc(db, 'users', uid, 'world', 'population'), { points: sisa });
+}
+
+/** Gabungan catatan bawaan + catatan tanganmu, terbaru di atas. */
 export function allPopulationPoints(
   saved: PopulationSaved,
 ): PopulationPoint[] {
   const fixed = POPULATION_HISTORY.map((p) => ({ ...p }));
+  // `saved` kini isian tangan, jadi ia BUKAN perkiraan — hanya barisnya yang
+  // bisa diubah/dihapus, dan itu ditandai lewat `saved` di layarnya.
   const extra = Object.entries(saved).map(([dayId, count]) => ({
     dayId,
     count,
-    estimated: true,
   }));
   return [...fixed, ...extra].sort((a, b) => b.dayId.localeCompare(a.dayId));
 }

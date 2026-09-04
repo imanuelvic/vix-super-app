@@ -10,40 +10,41 @@ import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import {
     sessionNeedsAttention,
     sessionScoreLine,
+    sessionTimeRange,
     sessionUnpaidCount,
-    type SportSession,
-} from '@/lib/sport';
+    type FutsalSession,
+} from '@/lib/futsal';
 
-// Kartu satu sesi main — dipakai sub-tab Fun Sport & halaman Jadwal Main.
+// Kartu satu sesi main — dipakai sub-tab Fun Futsal & halaman Jadwal Main.
 //
-// Berkasnya sendiri (bukan di dalam SportTab) karena dua alasan: komponen yang
+// Berkasnya sendiri (bukan di dalam FutsalTab) karena dua alasan: komponen yang
 // dibuat DI DALAM komponen lain berganti identitas tiap render — React
 // membongkar-pasang seluruh kartunya alih-alih memperbaruinya, dan React
 // Compiler menolaknya — dan sekarang memang ada dua layar yang memakainya.
-export function SportSessionCard({
+export function FutsalSessionCard({
   s,
   now,
   onOpen,
   onEdit,
 }: {
-  s: SportSession;
+  s: FutsalSession;
   now: Date;
-  onOpen: (s: SportSession) => void;
+  onOpen: (s: FutsalSession) => void;
   /** Tanpa ini tombol pensilnya tidak muncul (mis. di halaman Jadwal Main). */
-  onEdit?: (s: SportSession) => void;
+  onEdit?: (s: FutsalSession) => void;
 }) {
   const belum = sessionUnpaidCount(s);
   const score = sessionScoreLine(s);
   const perlu = sessionNeedsAttention(s, now);
   return (
     <View style={[styles.sesiCard, attentionBorder(perlu)]}>
-      {/* Titik merah = sesi INI yang menyalakan badge Fun Sport: mau main ≤ 2
+      {/* Titik merah = sesi INI yang menyalakan badge Fun Futsal: mau main ≤ 2
           hari lagi, atau sudah lewat tapi masih ada yang belum setor.
           Syaratnya dipanggil dari lib yang sama dengan angka badge-nya. */}
       {perlu && <AttentionMark corner />}
       <PressableScale style={styles.sesiMain} onPress={() => onOpen(s)}>
         <VixText heading="bold" additionalStyle={styles.sesiTanggal}>
-          🗓️ {formatShortDayDate(dayIdToDate(s.dayId))} · {s.time}
+          🗓️ {formatShortDayDate(dayIdToDate(s.dayId))} · {sessionTimeRange(s)}
         </VixText>
         <VixText heading="label" additionalStyle={styles.sesiVenue}>
           📍 {s.venue || 'Lapangan belum ditentukan'}

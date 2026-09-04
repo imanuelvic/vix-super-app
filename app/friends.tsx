@@ -16,8 +16,9 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { PlacesTab } from '@/components/friends/PlacesTab';
 import { SplitBillTab } from '@/components/friends/SplitBillTab';
-import { SportTab } from '@/components/friends/SportTab';
+import { FutsalTab } from '@/components/friends/FutsalTab';
 import { useAuth } from '@/contexts/auth';
+import { useFutsalGang } from '@/contexts/futsalGang';
 import {
   billUnsettled,
   subscribeBills,
@@ -28,29 +29,28 @@ import {
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
-  EMPTY_SPORT,
-  sportAttention,
-  subscribeSport,
-  type SportData,
-  type SportGangKey,
-} from '@/lib/sport';
+  EMPTY_FUTSAL,
+  futsalAttention,
+  subscribeFutsal,
+  type FutsalData,
+} from '@/lib/futsal';
 
-type FriendsTab = 'sport' | 'bills' | 'places';
+type FriendsTab = 'futsal' | 'bills' | 'places';
 
-// Fun Sport duduk di TENGAH, tapi tetap jadi BAWAAN: dari ketiganya, cuma ini
+// Fun Futsal duduk di TENGAH, tapi tetap jadi BAWAAN: dari ketiganya, cuma ini
 // yang menuntut tindakan berjadwal (booking lapangan, menagih iuran). Split
 // Bill & Places dibuka saat dibutuhkan; futsal rutin harus DIINGATKAN, bukan
 // dicari. Urutan tab dan tab mana yang terbuka duluan memang dua hal berbeda —
 // lihat useTabScroll di bawah.
 const TABS: BottomTab<FriendsTab>[] = [
   { key: 'bills', label: 'Split Bill', icon: 'receipt.fill' },
-  { key: 'sport', label: 'Fun Sport', icon: 'figure.run' },
+  { key: 'futsal', label: 'Fun Futsal', icon: 'soccerball' },
   { key: 'places', label: 'Places', icon: 'cup.and.saucer.fill' },
 ];
 
 // Friends 🤝 — yang terjadi saat bergaul dengan teman.
 //
-// Fun Sport ⚽ mengurus futsal rutin dua geng (CORE & NDC F3): jadwal,
+// Fun Futsal ⚽ mengurus futsal rutin dua geng (CORE & NDC F3): jadwal,
 // lapangan, squad, kas tim, iuran siapa yang belum setor, dan score tiap game.
 // Split Bill 💸
 // menjawab bagian paling merepotkan setelah makan bareng: siapa makan apa,
@@ -60,20 +60,16 @@ const TABS: BottomTab<FriendsTab>[] = [
 export default function FriendsScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const { tab, scrollKey, onTabPress } = useTabScroll<FriendsTab>('sport');
+  const { tab, scrollKey, onTabPress } = useTabScroll<FriendsTab>('futsal');
 
-  // Geng yang sedang dibuka di sub-tab Fun Sport. Tinggal DI SINI, bukan di
-  // dalam SportTab, karena tombol 🏅 di pojok header memakainya: papan yang
-  // dibuka harus papan geng yang sedang kamu lihat, bukan geng bawaan.
-  //
-  // Bawaannya CORE (keputusan pemilik app, 4 Sep 2026). `gangOf` di lib/sport
-  // sengaja TIDAK ikut berubah: itu jatuhnya nilai URL yang tidak sah, bukan
-  // tab pembuka — dan tombol 🏅 selalu mengoper geng yang sedang dibuka.
-  const [gang, setGang] = useState<SportGangKey>('core');
+  // Geng yang sedang dibuka — nilai BERSAMA seluruh app (contexts/futsalGang),
+  // jadi Kas Tim, Jadwal Main & Leaderboard selalu membuka geng yang sama, dan
+  // menekan back mengembalikanmu ke geng itu juga.
+  const { gang, setGang } = useFutsalGang();
 
   const [bills, setBills] = useState<Bill[] | null>(null);
   const [places, setPlaces] = useState<Place[] | null>(null);
-  const [sport, setSport] = useState<SportData | null>(null);
+  const [futsal, setFutsal] = useState<FutsalData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,7 +78,7 @@ export default function FriendsScreen() {
     return unsubscribeAll([
       subscribeBills(user.uid, setBills, fail),
       subscribePlaces(user.uid, setPlaces, fail),
-      subscribeSport(user.uid, setSport, fail),
+      subscribeFutsal(user.uid, setFutsal, fail),
     ]);
   }, [user]);
 
@@ -93,13 +89,15 @@ export default function FriendsScreen() {
         title="Friends 🤝"
         subtitle="Kegiatan yang menyenangkan bersama teman-teman"
         right={
-          tab === 'sport' ? (
-            <EmojiButton
-              emoji="🏅"
-              onPress={() =>
-                router.push({ pathname: '/sport-board', params: { gang } })
-              }
-            />
+          /* Dua pintu yang dipakai tiap minggu: kas tim & papan peringkat.
+             Keduanya di pojok header, bukan kartu di dalam daftar — daftarnya
+             sudah panjang, dan pintu yang ikut menggulung itu pintu yang
+             dicari-cari. Kas ada di kiri: uang lebih sering dibuka. */
+          tab === 'futsal' ? (
+            <>
+              <EmojiButton emoji="💰" onPress={() => router.push('/futsal-cash')} />
+              <EmojiButton emoji="🏅" onPress={() => router.push('/futsal-board')} />
+            </>
           ) : undefined
         }
       />
@@ -107,10 +105,10 @@ export default function FriendsScreen() {
       <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
-        {bills === null || places === null || sport === null ? (
+        {bills === null || places === null || futsal === null ? (
           <LoadingCenter />
-        ) : tab === 'sport' ? (
-          <SportTab data={sport} gang={gang} onGangChange={setGang} />
+        ) : tab === 'futsal' ? (
+          <FutsalTab data={futsal} gang={gang} onGangChange={setGang} />
         ) : tab === 'bills' ? (
           <SplitBillTab bills={bills} />
         ) : (
@@ -125,7 +123,7 @@ export default function FriendsScreen() {
       <BottomTabs
         tabs={withBadge(TABS, {
           bills: (bills ?? []).filter(billUnsettled).length,
-          sport: sportAttention(sport ?? EMPTY_SPORT, new Date()),
+          futsal: futsalAttention(futsal ?? EMPTY_FUTSAL, new Date()),
         })}
         value={tab}
         onChange={onTabPress}

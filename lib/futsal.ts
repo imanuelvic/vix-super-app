@@ -1,10 +1,11 @@
 import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { dayId, dayIdToDate, formatDayDate } from './format';
+import { dayId, dayIdToDate, formatDayDate, formatFullDate } from './format';
 import { liveDoc } from './liveDoc';
+import { formatRupiah } from './transactions';
 
-// Sport ⚽ — pengurus futsal rutin (lihat components/friends/SportTab.tsx).
+// Futsal ⚽ — pengurus futsal rutin (lihat components/friends/FutsalTab.tsx).
 //
 // Ini bukan sekadar catatan olahraga: ini alat seorang MANAGER. Yang membuat
 // futsal rutin bubar hampir selalu tiga hal yang sama, dan ketiganya diurus di
@@ -21,10 +22,10 @@ import { liveDoc } from './liveDoc';
 // hidup, dan tidak perlu composite index.
 
 /** Geng yang rutin main bareng. */
-export type SportGangKey = 'core' | 'f3';
+export type FutsalGangKey = 'core' | 'f3';
 
-export type SportGang = {
-  key: SportGangKey;
+export type FutsalGang = {
+  key: FutsalGangKey;
   label: string;
   emoji: string;
   /** Kepanjangan / siapa mereka — muncul di bawah nama gengnya. */
@@ -37,7 +38,7 @@ export type SportGang = {
   repeatDays: number;
 };
 
-export const SPORT_GANGS: SportGang[] = [
+export const FUTSAL_GANGS: FutsalGang[] = [
   {
     key: 'core',
     label: 'CORE',
@@ -54,27 +55,26 @@ export const SPORT_GANGS: SportGang[] = [
   },
 ];
 
-export function gangMeta(key: SportGangKey): SportGang {
-  return SPORT_GANGS.find((g) => g.key === key) ?? SPORT_GANGS[0];
+/**
+ * Tulisan jam sesi: "18.00" atau "18.00–20.00" kalau jam selesainya diisi.
+ *
+ * Satu penyusun untuk SEMUA tempat jam itu tampil (kartu sesi, kartu ringkas,
+ * kepala layar sesi, pengumuman WhatsApp) — kalau tidak, sesi yang sama
+ * terbaca beda jam-jamnya tergantung kamu sedang berdiri di layar mana.
+ */
+export function sessionTimeRange(s: FutsalSession): string {
+  return s.endTime ? `${s.time}–${s.endTime}` : s.time;
 }
 
-/**
- * Geng dari parameter URL — apa pun selain kunci yang sah jatuh ke F3.
- *
- * F3 yang jadi jatuhnya, bukan geng pertama di daftar, karena itulah geng yang
- * paling sering main (dua mingguan) & tab bawaan sub-tab Fun Sport. Bentuknya
- * sama dengan `bibleSessionOf` di lib/spiritual.ts: nilai dari URL tidak pernah
- * dipercaya mentah-mentah.
- */
-export function gangOf(raw: string | undefined): SportGangKey {
-  return SPORT_GANGS.find((g) => g.key === raw)?.key ?? 'f3';
+export function gangMeta(key: FutsalGangKey): FutsalGang {
+  return FUTSAL_GANGS.find((g) => g.key === key) ?? FUTSAL_GANGS[0];
 }
 
 /** Posisi futsal — 5 pemain, bukan 11. Istilahnya memang beda dari sepak bola. */
-export type SportPosition = 'kiper' | 'anchor' | 'flank' | 'pivot';
+export type FutsalPosition = 'kiper' | 'anchor' | 'flank' | 'pivot';
 
-export const SPORT_POSITIONS: {
-  key: SportPosition;
+export const FUTSAL_POSITIONS: {
+  key: FutsalPosition;
   label: string;
   emoji: string;
   /** Tugasnya di lapangan — biar pembagian tim tidak asal comot. */
@@ -86,22 +86,22 @@ export const SPORT_POSITIONS: {
   { key: 'pivot', label: 'Pivot', emoji: '🎯', tugas: 'Ujung tombak, pemantul bola & pencetak gol' },
 ];
 
-export function positionMeta(key: SportPosition) {
-  return SPORT_POSITIONS.find((p) => p.key === key) ?? SPORT_POSITIONS[1];
+export function positionMeta(key: FutsalPosition) {
+  return FUTSAL_POSITIONS.find((p) => p.key === key) ?? FUTSAL_POSITIONS[1];
 }
 
-export type SportMember = {
+export type FutsalMember = {
   id: string;
-  gang: SportGangKey;
+  gang: FutsalGangKey;
   name: string;
   /** Nomor HP — dipakai tombol chat WhatsApp saat menagih. */
   phone: string;
-  position: SportPosition;
+  position: FutsalPosition;
   note: string;
 };
 
 /** Satu game di dalam sesi. Futsal tarkam: biasanya rompi vs non-rompi. */
-export type SportGame = {
+export type FutsalGame = {
   id: string;
   teamA: string;
   teamB: string;
@@ -114,26 +114,44 @@ export type SportGame = {
   scorers: string[];
 };
 
-export type SportSession = {
+export type FutsalSession = {
   id: string;
-  gang: SportGangKey;
+  gang: FutsalGangKey;
   /** Tanggal main, "YYYY-MM-DD". */
   dayId: string;
   /** Jam main, mis. "20.00". */
   time: string;
+  /**
+   * Jam selesai, mis. "20.00". Kosong = sesi lama yang belum punya.
+   *
+   * Selalu SESUDAH `time` (dijaga formulirnya): satu jam sewa lapangan yang
+   * berakhir sebelum ia mulai bukan salah ketik yang lucu — ia ikut ke
+   * pengumuman WhatsApp yang dibaca 12 orang.
+   */
+  endTime?: string;
   venue: string;
+  /**
+   * Tautan Google Maps lapangannya — ikut di pengumuman WhatsApp.
+   *
+   * Tinggal di sesi (bukan di daftar lapangan tersendiri) karena ia diwarisi
+   * dari sesi terakhir, sama seperti venue & iuran: diketik sekali, lalu
+   * terbawa sendiri tiap kali kamu menjadwalkan lagi di lapangan yang sama.
+   */
+  mapsUrl?: string;
+  /** Rekening tujuan setoran, mis. "BCA 5271415860" — ikut diwarisi. */
+  bank?: string;
   /** Iuran per orang (Rp). */
   fee: number;
   /** id anggota yang ikut main. */
   squad: string[];
   /** id anggota yang SUDAH setor. Selalu bagian dari `squad`. */
   paid: string[];
-  games: SportGame[];
+  games: FutsalGame[];
   note: string;
 };
 
 /** Uang masuk / keluar dari kas geng. */
-export type SportCashDirection = 'in' | 'out';
+export type FutsalCashDirection = 'in' | 'out';
 
 /**
  * Satu mutasi kas tim — bentuknya sama dengan Saku 👛 di Finance, tapi uangnya
@@ -141,13 +159,13 @@ export type SportCashDirection = 'in' | 'out';
  * tiap barisnya wajib punya judul; "keluar Rp 300.000" tanpa keterangan adalah
  * cara tercepat kehilangan kepercayaan satu geng.
  */
-export type SportCashEntry = {
+export type FutsalCashEntry = {
   id: string;
-  gang: SportGangKey;
+  gang: FutsalGangKey;
   /** Tanggal mutasi, "YYYY-MM-DD". */
   dayId: string;
   title: string;
-  direction: SportCashDirection;
+  direction: FutsalCashDirection;
   amount: number;
   note: string;
   /**
@@ -158,23 +176,23 @@ export type SportCashEntry = {
   sessionId?: string;
 };
 
-export type SportData = {
-  members: SportMember[];
-  sessions: SportSession[];
-  cash: SportCashEntry[];
+export type FutsalData = {
+  members: FutsalMember[];
+  sessions: FutsalSession[];
+  cash: FutsalCashEntry[];
 };
 
-export const EMPTY_SPORT: SportData = { members: [], sessions: [], cash: [] };
+export const EMPTY_FUTSAL: FutsalData = { members: [], sessions: [], cash: [] };
 
 /** Id baru — jam + acak, cukup unik untuk daftar sepanjang ini. */
-export function newSportId(now: Date): string {
+export function newFutsalId(now: Date): string {
   return `${now.getTime()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
 // ===================== Hitungan uang =====================
 
 /** Total iuran yang HARUS terkumpul dari sesi ini. */
-export function sessionTotal(s: SportSession): number {
+export function sessionTotal(s: FutsalSession): number {
   return s.fee * s.squad.length;
 }
 
@@ -187,7 +205,7 @@ export function sessionTotal(s: SportSession): number {
  * setoran orang di luar squad tidak dihitung sama sekali — angkanya rapi, tapi
  * bohong: kasnya melaporkan lebih sedikit dari yang benar-benar terkumpul.
  */
-export function sessionPaidTotal(s: SportSession): number {
+export function sessionPaidTotal(s: FutsalSession): number {
   return s.fee * s.paid.length;
 }
 
@@ -200,12 +218,12 @@ export function sessionPaidTotal(s: SportSession): number {
  * padahal yang terjadi cuma uang lebih. Yang perlu kamu tagih tetap sama: orang
  * yang ikut main tapi belum setor.
  */
-export function sessionDueTotal(s: SportSession): number {
+export function sessionDueTotal(s: FutsalSession): number {
   return s.fee * sessionUnpaidCount(s);
 }
 
 /** Berapa orang yang belum setor — yang IKUT MAIN saja; itu yang ditagih. */
-export function sessionUnpaidCount(s: SportSession): number {
+export function sessionUnpaidCount(s: FutsalSession): number {
   return s.squad.filter((id) => !s.paid.includes(id)).length;
 }
 
@@ -213,16 +231,16 @@ export function sessionUnpaidCount(s: SportSession): number {
 
 /** Mutasi kas satu geng, TERBARU dulu. */
 export function gangCash(
-  data: SportData,
-  gang: SportGangKey,
-): SportCashEntry[] {
+  data: FutsalData,
+  gang: FutsalGangKey,
+): FutsalCashEntry[] {
   return data.cash
     .filter((c) => c.gang === gang)
     .sort((a, b) => b.dayId.localeCompare(a.dayId) || b.id.localeCompare(a.id));
 }
 
 /** Saldo kas satu geng: yang masuk dikurangi yang keluar. */
-export function cashBalance(data: SportData, gang: SportGangKey): number {
+export function cashBalance(data: FutsalData, gang: FutsalGangKey): number {
   return data.cash.reduce(
     (n, c) =>
       c.gang === gang ? n + (c.direction === 'in' ? c.amount : -c.amount) : n,
@@ -231,8 +249,8 @@ export function cashBalance(data: SportData, gang: SportGangKey): number {
 }
 
 /** Kas SELURUH geng dijumlahkan — angka yang dicari saat buka halaman kas. */
-export function cashTotal(data: SportData): number {
-  return SPORT_GANGS.reduce((n, g) => n + cashBalance(data, g.key), 0);
+export function cashTotal(data: FutsalData): number {
+  return FUTSAL_GANGS.reduce((n, g) => n + cashBalance(data, g.key), 0);
 }
 
 /**
@@ -242,7 +260,7 @@ export function cashTotal(data: SportData): number {
  * telat setor tetap bisa disusulkan: tombol setornya cuma menawarkan SELISIH
  * antara yang sudah terkumpul di sesi dan yang sudah tercatat di kas.
  */
-export function sessionCashIn(data: SportData, sessionId: string): number {
+export function sessionCashIn(data: FutsalData, sessionId: string): number {
   return data.cash.reduce(
     (n, c) =>
       c.sessionId === sessionId && c.direction === 'in' ? n + c.amount : n,
@@ -261,9 +279,9 @@ export function sessionCashIn(data: SportData, sessionId: string): number {
  * → huruf besar/kecil & aksen tidak memisahkan nama yang sama.
  */
 export function gangMembers(
-  data: SportData,
-  gang: SportGangKey,
-): SportMember[] {
+  data: FutsalData,
+  gang: FutsalGangKey,
+): FutsalMember[] {
   return data.members
     .filter((m) => m.gang === gang)
     .sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
@@ -284,15 +302,21 @@ export function gangMembers(
  * namanya yang berloncatan.
  */
 export function squadOrder(
-  members: SportMember[],
-  s: SportSession,
-): SportMember[] {
-  // Sudah setor = urusannya BERES, ikut main atau tidak — jadi ia naik ke atas
-  // bersama yang lain yang sudah beres. Yang tersisa di tengah & bawah persis
-  // daftar kerjanya: yang main tapi belum setor, lalu yang tidak main dan juga
-  // belum setor.
-  const peringkat = (m: SportMember) =>
-    s.paid.includes(m.id) ? 0 : s.squad.includes(m.id) ? 1 : 2;
+  members: FutsalMember[],
+  s: FutsalSession,
+): FutsalMember[] {
+  // Urutannya = urutan KERJAMU, dari yang masih harus dikejar sampai yang
+  // sudah tak ada urusannya lagi:
+  //   0 ikut main, belum setor  → ini yang harus ditagih, jadi paling atas
+  //   1 ikut main & sudah setor → beres
+  //   2 tidak ikut tapi setor   → beres juga; ia tetap patungan walau absen
+  //   3 tidak ikut & tidak setor → tak ada yang perlu dikerjakan
+  const peringkat = (m: FutsalMember) => {
+    const ikut = s.squad.includes(m.id);
+    const lunas = s.paid.includes(m.id);
+    if (ikut) return lunas ? 1 : 0;
+    return lunas ? 2 : 3;
+  };
   return [...members].sort((a, b) => peringkat(a) - peringkat(b));
 }
 
@@ -300,10 +324,10 @@ export function squadOrder(
 
 /** SEMUA sesi yang belum lewat, paling dekat dulu. */
 export function upcomingSessions(
-  sessions: SportSession[],
-  gang: SportGangKey,
+  sessions: FutsalSession[],
+  gang: FutsalGangKey,
   todayId: string,
-): SportSession[] {
+): FutsalSession[] {
   return sessions
     .filter((s) => s.gang === gang && s.dayId >= todayId)
     .sort((a, b) => a.dayId.localeCompare(b.dayId));
@@ -314,19 +338,19 @@ export function upcomingSessions(
  * dekat. `null` = belum dijadwalkan sama sekali.
  */
 export function nextSession(
-  sessions: SportSession[],
-  gang: SportGangKey,
+  sessions: FutsalSession[],
+  gang: FutsalGangKey,
   todayId: string,
-): SportSession | null {
+): FutsalSession | null {
   return upcomingSessions(sessions, gang, todayId)[0] ?? null;
 }
 
 /** Sesi yang sudah lewat, terbaru dulu. */
 export function pastSessions(
-  sessions: SportSession[],
-  gang: SportGangKey,
+  sessions: FutsalSession[],
+  gang: FutsalGangKey,
   todayId: string,
-): SportSession[] {
+): FutsalSession[] {
   return sessions
     .filter((s) => s.gang === gang && s.dayId < todayId)
     .sort((a, b) => b.dayId.localeCompare(a.dayId));
@@ -334,9 +358,9 @@ export function pastSessions(
 
 /** Sesi terakhir geng ini (lewat maupun akan datang) — acuan tombol Ulangi. */
 export function lastSession(
-  sessions: SportSession[],
-  gang: SportGangKey,
-): SportSession | null {
+  sessions: FutsalSession[],
+  gang: FutsalGangKey,
+): FutsalSession | null {
   return (
     sessions
       .filter((s) => s.gang === gang)
@@ -345,14 +369,14 @@ export function lastSession(
 }
 
 /** Tanggal pertemuan berikutnya = tanggal ini + jarak rutin gengnya. */
-export function repeatDayId(from: string, gang: SportGangKey): string {
+export function repeatDayId(from: string, gang: FutsalGangKey): string {
   const d = dayIdToDate(from);
   d.setDate(d.getDate() + gangMeta(gang).repeatDays);
   return dayId(d);
 }
 
 /** Berapa hari lagi sampai sesi ini (negatif = sudah lewat). */
-export function daysToSession(s: SportSession, now: Date): number {
+export function daysToSession(s: FutsalSession, now: Date): number {
   const target = dayIdToDate(s.dayId);
   return Math.round(
     (new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime() -
@@ -364,14 +388,14 @@ export function daysToSession(s: SportSession, now: Date): number {
 // ===================== Score & papan pencetak gol =====================
 
 /** "12 – 9" dari seluruh game di satu sesi. */
-export function sessionScoreLine(s: SportSession): string {
+export function sessionScoreLine(s: FutsalSession): string {
   if (s.games.length === 0) return '';
   const a = s.games.reduce((n, g) => n + g.scoreA, 0);
   const b = s.games.reduce((n, g) => n + g.scoreB, 0);
   return `${a} – ${b}`;
 }
 
-export type ScorerRow = { member: SportMember; goals: number; caps: number };
+export type ScorerRow = { member: FutsalMember; goals: number; caps: number };
 
 /**
  * Papan top score satu geng: gol terbanyak dulu, lalu yang paling rajin datang.
@@ -382,8 +406,8 @@ export type ScorerRow = { member: SportMember; goals: number; caps: number };
  * kegiatannya tetap jalan.
  */
 export function topScorers(
-  data: SportData,
-  gang: SportGangKey,
+  data: FutsalData,
+  gang: FutsalGangKey,
 ): ScorerRow[] {
   const sesi = data.sessions.filter((s) => s.gang === gang);
   return data.members
@@ -402,7 +426,7 @@ export function topScorers(
 }
 
 export type AttendanceRow = {
-  member: SportMember;
+  member: FutsalMember;
   /** Berapa kali ia benar-benar ikut main. */
   present: number;
   /** Berapa sesi yang BISA ia hadiri (lihat aturan "sejak" di bawah). */
@@ -419,7 +443,7 @@ export type AttendanceRow = {
  * menyesatkan:
  *
  * 1. Cuma sesi yang SUDAH LEWAT yang dihitung. Squad sesi baru diisi SELURUH
- *    anggota geng (lihat SportTab) lalu yang berhalangan dicoret — jadi
+ *    anggota geng (lihat FutsalTab) lalu yang berhalangan dicoret — jadi
  *    menghitung sesi yang belum main sama saja menganggap semua orang sudah
  *    hadir di pertandingan yang belum terjadi.
  *
@@ -435,8 +459,8 @@ export type AttendanceRow = {
  * kabar yang perlu dilihat seorang manager.
  */
 export function topAttendance(
-  data: SportData,
-  gang: SportGangKey,
+  data: FutsalData,
+  gang: FutsalGangKey,
   todayId: string,
 ): AttendanceRow[] {
   const sesi = data.sessions
@@ -460,10 +484,10 @@ export function topAttendance(
 // ===================== Badge =====================
 
 /** Berapa hari sebelum hari-H sesinya mulai ditagih di badge. */
-export const SPORT_ALERT_DAYS = 2;
+export const FUTSAL_ALERT_DAYS = 2;
 
 /**
- * Angka badge Sport — dua hal yang benar-benar menuntut tindakanmu:
+ * Angka badge Fun Futsal — dua hal yang benar-benar menuntut tindakanmu:
  *   • sesi yang tinggal ≤ 2 hari lagi (pastikan pemainnya cukup & lapangannya
  *     sudah dibooking), dan
  *   • sesi yang SUDAH LEWAT tapi masih ada yang belum setor.
@@ -471,18 +495,18 @@ export const SPORT_ALERT_DAYS = 2;
  * Sesi jauh di depan tidak dihitung: menagih dua minggu sebelumnya cuma
  * membuat badge-nya menyala terus dan akhirnya diabaikan.
  */
-export function sportAttention(data: SportData, now: Date): number {
+export function futsalAttention(data: FutsalData, now: Date): number {
   return data.sessions.filter((s) => sessionNeedsAttention(s, now)).length;
 }
 
 /** Sesi INI yang menyalakan badge? Dipakai titik & garis merah di daftarnya. */
-export function sessionNeedsAttention(s: SportSession, now: Date): boolean {
+export function sessionNeedsAttention(s: FutsalSession, now: Date): boolean {
   const sisa = daysToSession(s, now);
-  return sisa >= 0 ? sisa <= SPORT_ALERT_DAYS : sessionUnpaidCount(s) > 0;
+  return sisa >= 0 ? sisa <= FUTSAL_ALERT_DAYS : sessionUnpaidCount(s) > 0;
 }
 
 /**
- * Baris reminder Fun Sport untuk Dashboard — SESI YANG SESUNGGUHNYA, bukan
+ * Baris reminder Fun Futsal untuk Dashboard — SESI YANG SESUNGGUHNYA, bukan
  * kalimat umum.
  *
  * Kartu ini dulu cuma menjelaskan APA yang membuat badge-nya menyala ("futsal
@@ -496,8 +520,8 @@ export function sessionNeedsAttention(s: SportSession, now: Date): boolean {
  * kamu urus. Sesi lewat yang setorannya belum lunas menyusul di bawahnya,
  * terbaru dulu; ia perlu ditagih, tapi tak ada lagi yang bisa dibatalkan.
  */
-export function sportReminders(
-  data: SportData,
+export function futsalReminders(
+  data: FutsalData,
   now: Date,
 ): { id: string; text: string }[] {
   const perlu = data.sessions.filter((s) => sessionNeedsAttention(s, now));
@@ -529,19 +553,61 @@ export function sportReminders(
   });
 }
 
+/**
+ * Pengumuman satu sesi, siap tempel ke grup WhatsApp — jadwal, lokasi, iuran,
+ * rekening, dan daftar yang ikut main lengkap dengan tanda siapa yang sudah
+ * setor.
+ *
+ * Disusun DI SINI, bukan di layarnya: isinya adalah aturan (siapa yang masuk
+ * daftar, tanda apa yang dipakai), dan aturan yang tinggal di dalam JSX tidak
+ * pernah bisa diuji tanpa menggambar layarnya dulu.
+ *
+ * Baris yang datanya kosong DIHILANGKAN, bukan dikirim sebagai baris kosong
+ * atau "—": ini pesan yang dibaca orang lain di grup.
+ */
+export function sessionRecap(data: FutsalData, s: FutsalSession): string {
+  const meta = gangMeta(s.gang);
+  const ikut = gangMembers(data, s.gang).filter((m) => s.squad.includes(m.id));
+  const baris = [
+    meta.label,
+    '',
+    `📅 ${formatFullDate(dayIdToDate(s.dayId))}`,
+    // Jam ditulis dengan titik dua di pesan keluar ("18:00–20:00"),
+    // sedangkan di dalam app tetap gaya Indonesia ("18.00–20.00").
+    `🕐 ${sessionTimeRange(s).replace(/\./g, ':')}`,
+    `📍 ${s.venue || 'Lapangan menyusul'}`,
+  ];
+  if (s.mapsUrl) baris.push(s.mapsUrl);
+  baris.push('');
+  if (s.fee > 0) baris.push(`${formatRupiah(s.fee)} per orang`);
+  if (s.bank) baris.push(s.bank);
+  if (s.fee > 0 || s.bank) baris.push('');
+
+  baris.push('Ikut main:');
+  ikut.forEach((m, i) => {
+    baris.push(`${i + 1}. ${m.name}${s.paid.includes(m.id) ? '✅' : ''}`);
+  });
+  if (ikut.length === 0) baris.push('(belum ada yang ikut)');
+  baris.push('', '✅ = Sudah setor');
+  return baris.join('\n');
+}
+
 // ===================== Firestore =====================
 
-const sportRef = (uid: string) => doc(db, 'users', uid, 'social', 'sport');
+// ⚠️ Nama dokumennya TETAP 'sport' walau fiturnya kini bernama Fun Futsal:
+// itu alamat data yang sudah ada di Firestore. Mengubahnya = seluruh anggota,
+// jadwal & kas hilang dari app (pindah ke dokumen baru yang kosong).
+const futsalRef = (uid: string) => doc(db, 'users', uid, 'social', 'sport');
 
-export function subscribeSport(
+export function subscribeFutsal(
   uid: string,
-  onChange: (data: SportData) => void,
+  onChange: (data: FutsalData) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   return liveDoc(
-    sportRef(uid),
+    futsalRef(uid),
     (snapshot) => {
-      const d = snapshot.data() as Partial<SportData> | undefined;
+      const d = snapshot.data() as Partial<FutsalData> | undefined;
       onChange({
         members: d?.members ?? [],
         sessions: d?.sessions ?? [],
@@ -554,6 +620,6 @@ export function subscribeSport(
 }
 
 /** Tulis ulang seluruhnya. Hapus = tulis ulang tanpa barisnya (PERMANEN). */
-export function saveSport(uid: string, data: SportData) {
-  return setDoc(sportRef(uid), data);
+export function saveFutsal(uid: string, data: FutsalData) {
+  return setDoc(futsalRef(uid), data);
 }
