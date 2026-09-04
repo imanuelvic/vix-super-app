@@ -838,17 +838,24 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00 & 🌙 Malam 21.00–24.00.
-              Hanya muncul di dalam jendela jamnya & selama sesi itu belum
-              diisi. Klik → layar catat bacaan (pilih kitab + pasal & ayat). */}
+          {/* Baca Alkitab 📖 — 🌅 Pagi 05.00–10.00, 🌤️ Siang 12.00–15.00 &
+              🌙 Malam 21.00–24.00. Hanya muncul di dalam jendela jamnya &
+              selama sesi itu belum diisi.
+
+              Klik → tab Habits, langsung tergulung ke baris Bible Reading sesi
+              jam itu (?focus=bible-<sesi>) — bukan lompat ke layar catat
+              bacaan. Alasannya: baris itulah yang menagih di daftar harian,
+              jadi mendarat di sana membuat centangnya kelihatan dalam
+              rangkaian hari ini, dan layar catat bacaannya tinggal sekali klik
+              lagi dari barisnya. Pintu yang sama dipakai kartu Refleksi. */}
           {bibleReadingDue && bibleMeta && bibleSession && (
             <Animated.View entering={FadeInDown.delay(60).duration(350)}>
               <PressableScale
                 style={styles.readingCard}
                 onPress={() =>
                   router.push({
-                    pathname: '/bible-reading',
-                    params: { session: bibleSession },
+                    pathname: '/habits',
+                    params: { focus: `bible-${bibleSession}` },
                   })
                 }>
                 <CheckCircle checked={false} size={24} />

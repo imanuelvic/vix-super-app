@@ -76,7 +76,11 @@ export default function DebtsScreen() {
 
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. `repress` =
   // tab yang sama ditekan lagi → lompat ke pinjaman yang jatuh tempo.
-  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('theirs');
+  // `tabs` dioper supaya reminder Pinjaman di Dashboard bisa mendarat di tab
+  // yang sesuai arah pinjamannya (Tagih → Lent Out, Bayar → My Debt).
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('theirs', {
+    tabs: TABS,
+  });
   const [debts, setDebts] = useState<Debt[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

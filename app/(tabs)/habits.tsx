@@ -32,6 +32,7 @@ import {
   saveHabits,
   subscribeHabitSchedule,
   withMiddayBible,
+  type HabitFocus,
   type HabitMirror,
   type ScheduledHabit,
 } from '@/lib/habits';
@@ -70,6 +71,22 @@ const MIRROR_SESSION: Record<string, BibleSession> = {
   'bible-night': 'night',
 };
 
+// Baris yang boleh dituju lewat ?focus= dari kartu di Home.
+//
+// Disaring, bukan dipercaya mentah-mentah: `focus` datang dari URL dan bisa
+// berisi apa saja. Yang tidak dikenali diperlakukan seperti tidak ada — layar
+// dibuka biasa, bukan melompat ke baris yang salah.
+const FOCUSABLE: HabitFocus[] = [
+  'rhema',
+  'bible-morning',
+  'bible-daytime',
+  'bible-night',
+];
+
+function focusOf(raw: string | undefined): HabitFocus | null {
+  return FOCUSABLE.find((f) => f === raw) ?? null;
+}
+
 /**
  * Keadaan yang SEHARUSNYA tampil di baris cermin ini hari ini.
  *
@@ -97,8 +114,9 @@ export default function HabitsScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Kartu "✍️ Rhema Pagi Ini" di Home mengarah ke sini dengan ?focus=rhema —
-  // artinya: buka sesi baris Rhema lalu gulung tepat ke barisnya.
+  // Dua kartu di Home mengarah ke sini dengan ?focus=… — artinya: buka sesi
+  // tempat baris itu berada lalu gulung tepat ke barisnya. "📓 Refleksi Hari
+  // Ini" → 'rhema', "🌅/🌤️/🌙 … Reading" → 'bible-<sesi jam itu>'.
   const { focus } = useLocalSearchParams<{ focus?: string }>();
   // Param dibersihkan SESUDAH lompatannya jalan. Habits ini layar tab: tanpa
   // dibersihkan, param-nya menempel dan tiap balik ke tab ini layarnya
@@ -238,7 +256,7 @@ export default function HabitsScreen() {
             profile={profile}
             target={target ?? null}
             streak={streak ?? null}
-            focusRhema={focus === 'rhema'}
+            focus={focusOf(focus)}
             onFocusDone={clearFocus}
           />
         )}

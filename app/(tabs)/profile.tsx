@@ -38,6 +38,7 @@ import {
 } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { localPhone } from '@/lib/phone';
 import { photoUri } from '@/lib/photo';
 import {
     EMPTY_PROFILE,
@@ -70,6 +71,13 @@ type FieldSpec = {
   maxLength?: number;
   /** Kolom yang huruf besar otomatisnya justru merepotkan (email). */
   lowercase?: boolean;
+  /**
+   * Nomor HP → dirapikan tiap ketikan jadi bentuk lokal '08…' (lib/phone.ts).
+   * Sama persis dengan kolom nomor di CORE & Fun Sport: menempel
+   * '+62 812-4204-3658' langsung jadi '081242043658', bukan tersimpan
+   * lengkap dengan tanda baca yang tak terbaca siapa pun.
+   */
+  phone?: boolean;
   /** Jawabannya terbatas → daftar pilihan, bukan ketikan bebas. */
   options?: readonly string[];
   /** Tanggal → date picker. Nilainya tetap disimpan sebagai teks tampilan. */
@@ -125,7 +133,7 @@ const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
     title: '📞 Kontak',
     fields: [
       { key: 'address', label: 'Alamat', multiline: true },
-      { key: 'phone', label: 'No. HP', keyboard: 'phone-pad' },
+      { key: 'phone', label: 'No. HP', keyboard: 'phone-pad', phone: true },
       { key: 'email', label: 'Email', keyboard: 'email-address', lowercase: true },
     ],
   },
@@ -530,7 +538,10 @@ export default function ProfileScreen() {
                     placeholder={f.placeholder}
                     value={form[f.key]}
                     onChangeText={(t) =>
-                      setForm((prev) => ({ ...prev, [f.key]: t }))
+                      setForm((prev) => ({
+                        ...prev,
+                        [f.key]: f.phone ? localPhone(t) : t,
+                      }))
                     }
                     keyboardType={f.keyboard}
                     multiline={f.multiline}

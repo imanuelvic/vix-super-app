@@ -6,7 +6,7 @@ import { type LoginStreak as DayStreak } from './achievements';
 // Yang berbeda cuma "hari sebelumnya yang dianggap menyambung":
 //   - streak harian biasa → kemarin
 //   - Fitness             → hari LATIHAN terakhir (Rabu & Minggu dilewati)
-//   - Doa pagi            → kemarin versi batas jam 04.00
+//   - Doa pagi            → kemarin (batasnya jam 00.00, sama seperti hari biasa)
 // Karena itu perhitungannya dikumpulkan di sini sebagai fungsi murni, dan tiap
 // fitur cukup menentukan `prevDayId`-nya sendiri lalu menulis ke dokumennya.
 

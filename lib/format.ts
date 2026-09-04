@@ -50,6 +50,21 @@ export function formatShortDayDate(d: Date): string {
 }
 
 /**
+ * Jum, 04 Sep 2026 — "ddd, dd mmm yyyy". Tanggalnya SELALU 2 digit.
+ *
+ * Bentuk baku untuk tanggal di kartu reminder Dashboard, dan bedanya dengan
+ * `formatShortDayDate` di atas cuma nol di depan tanggal — tapi di situlah
+ * gunanya: kartu reminder itu DAFTAR, dan tanggal 1 digit membuat tiap barisnya
+ * mulai di kolom yang berbeda-beda. Fungsinya dipisah, bukan yang lama
+ * dipadkan, supaya kartu sesi & jadwal yang memang bukan daftar tanggal tidak
+ * ikut berubah rupa.
+ */
+export function formatReminderDate(d: Date): string {
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${dayShort(d)}, ${day} ${monthShort(d)} ${d.getFullYear()}`;
+}
+
+/**
  * Senin, 31 Agu 2026 — nama hari UTUH, bulan 3 huruf, tahun 4 angka.
  *
  * Tiga tetangganya cuma beda satu bagian, jadi gampang salah ambil:

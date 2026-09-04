@@ -41,7 +41,7 @@ import {
     type MonthlyPrayers,
     type WeeklyFocus,
 } from '@/lib/core';
-import { MONTH_NAMES } from '@/lib/format';
+import { formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
     openWhatsAppChat,
@@ -432,10 +432,15 @@ export function FollowupTab({
       {birthdays.upcoming.length > 0 && (
         <View style={styles.upcomingCard}>
           {birthdays.upcoming.map((b) => (
+            // Nama HARI ikut ditulis: "7 hari lagi" saja masih menyuruhmu
+            // membuka kalender untuk tahu itu jatuh di hari apa — padahal
+            // itulah yang menentukan kapan kamu sempat menyiapkan ucapannya.
+            // Tanggalnya diambil dari `nextBirthday`, bukan disusun ulang di
+            // sini, supaya ulang tahun yang jatuh tahun depan tidak salah hari.
             <VixText key={b.key} heading="label">
               🎂 {b.label}
               {b.sub ? ` (${b.sub})` : ''} ultah {b.daysUntil} hari lagi (
-              {b.birthDay} {MONTH_NAMES[b.birthMonth]}) — ke-{b.turningAge}
+              {formatDayMonth(b.date)}) — ke-{b.turningAge}
             </VixText>
           ))}
         </View>

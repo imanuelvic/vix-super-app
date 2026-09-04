@@ -158,7 +158,7 @@ export function TetrisTab() {
   const [game, setGame] = useState<Game>(newGame);
   // Rekor 🏅 — baca/simpan di HP, aturannya sama dengan Snake (hooks/useHighScore).
   const best = useHighScore(BEST_KEY, game.score, game.status === 'over');
-  // Papan mengambil SISA ruang di antara skor & tombol kendali, lalu ukuran
+  // Papan mengambil SISA ruang di antara score & tombol kendali, lalu ukuran
   // kotaknya dipilih dari sisi yang paling sempit — supaya tombol di bawah
   // tidak pernah tertutup tab bar, di layar tinggi maupun pendek.
   const [cell, setCell] = useState(0);
@@ -222,14 +222,14 @@ export function TetrisTab() {
 
   return (
     <View style={styles.flex}>
-      {/* Skor · baris · rekor */}
+      {/* Score · baris · rekor */}
       <View style={styles.scoreRow}>
         <View style={styles.scoreBox}>
           <VixText heading="header" additionalStyle={styles.scoreValue}>
             {game.score}
           </VixText>
           <VixText heading="label" additionalStyle={styles.scoreLabel}>
-            Skor
+            Score
           </VixText>
         </View>
         <View style={styles.scoreBox}>
@@ -315,7 +315,7 @@ export function TetrisTab() {
               </VixText>
               <VixText heading="label" additionalStyle={styles.overlayText}>
                 {game.status === 'over'
-                  ? `${game.lines} baris · skor ${game.score}`
+                  ? `${game.lines} baris · score ${game.score}`
                   : 'Susun baloknya sampai satu baris penuh — barisnya hilang.'}
               </VixText>
               <PrimaryButton

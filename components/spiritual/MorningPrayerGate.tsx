@@ -29,7 +29,7 @@ const MAZMUR_95 = `Marilah kita bersorak-sorai untuk TUHAN, bersorak-sorak bagi 
 
 Biarlah kita menghadap wajah-Nya dengan nyanyian syukur, bersorak-sorak bagi-Nya dengan nyanyian mazmur.`;
 
-// Lock screen doa pagi — muncul sekali/hari (batas jam 4 pagi) DI MANA PUN
+// Lock screen doa pagi — muncul sekali/hari (hari berganti jam 00.00) DI MANA PUN
 // posisi kamu di app. Tidak bisa dilewati; harus Revive + doa Bapa Kami, dan
 // kalau hari ini jadwal Doa Rantai, follow up-nya jadi langkah ke-3.
 /** Satu CORE Leader giliran Doa Rantai hari ini, lengkap dengan pokok doanya. */

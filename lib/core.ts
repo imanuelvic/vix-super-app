@@ -1752,18 +1752,29 @@ export function prayerFollowupLeaders<T extends { id: string }>(
 // Berlaku untuk CORE Leader maupun Main Team (cukup punya tanggal lahir).
 type HasBirthday = { birthYear: number; birthMonth: number; birthDay: number };
 
-/** Berapa hari lagi ulang tahun berikutnya + umur yang akan dicapai. */
+/**
+ * Berapa hari lagi ulang tahun berikutnya + umur yang akan dicapai + TANGGALNYA.
+ *
+ * `date` ikut dikembalikan supaya yang menampilkan tidak perlu menyusun ulang
+ * tanggalnya sendiri dari `birthDay`/`birthMonth` — susunan sendiri itu tidak
+ * tahu TAHUN mana yang dimaksud, jadi nama harinya bisa meleset untuk ulang
+ * tahun yang jatuh di tahun depan.
+ */
 export function nextBirthday(
   person: HasBirthday,
   today: Date,
-): { daysUntil: number; turningAge: number } {
+): { daysUntil: number; turningAge: number; date: Date } {
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   let next = new Date(today.getFullYear(), person.birthMonth, person.birthDay);
   if (next < start) {
     next = new Date(today.getFullYear() + 1, person.birthMonth, person.birthDay);
   }
   const daysUntil = Math.round((next.getTime() - start.getTime()) / 86_400_000);
-  return { daysUntil, turningAge: next.getFullYear() - person.birthYear };
+  return {
+    daysUntil,
+    turningAge: next.getFullYear() - person.birthYear,
+    date: next,
+  };
 }
 
 /** Umur saat ini (sudah lewat ulang tahun tahun ini atau belum). */

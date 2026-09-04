@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    ScrollView,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
@@ -23,26 +23,26 @@ import { useDueJump } from '@/hooks/useDueJump';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { type LoginStreak } from '@/lib/achievements';
 import {
-  breakFitStreak,
-  EMPTY_FIT_DAY,
-  fetchFitDays,
-  FIT_DAY_SHORT,
-  FIT_RECOVERY,
-  FIT_TIME_LABEL,
-  fitBlockOf,
-  fitDayComplete,
-  fitQuote,
-  fitSessionMinutes,
-  fitSessionOfWeekday,
-  saveFitWeight,
-  setFitDaySkipped,
-  setFitExerciseDone,
-  syncFitnessHabit,
-  syncFitnessHabitSkipped,
-  weightOf,
-  type Exercise,
-  type FitDay,
-  type FitWeights,
+    breakFitStreak,
+    EMPTY_FIT_DAY,
+    fetchFitDays,
+    FIT_DAY_SHORT,
+    FIT_RECOVERY,
+    FIT_TIME_LABEL,
+    fitBlockOf,
+    fitDayComplete,
+    fitQuote,
+    fitSessionMinutes,
+    fitSessionOfWeekday,
+    saveFitWeight,
+    setFitDaySkipped,
+    setFitExerciseDone,
+    syncFitnessHabit,
+    syncFitnessHabitSkipped,
+    weightOf,
+    type Exercise,
+    type FitDay,
+    type FitWeights,
 } from '@/lib/fitness';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import { weekDayIds } from '@/lib/health';
@@ -186,7 +186,7 @@ export function ExerciseTab({
     setBusy(true);
     try {
       await setFitDaySkipped(user.uid, dayId, true);
-      // Baris di Habits ikut bertanda ❌ — keluar dari skor harian, bukan
+      // Baris di Habits ikut bertanda ❌ — keluar dari score harian, bukan
       // menggantung sebagai kebiasaan yang belum dikerjakan.
       await syncFitnessHabitSkipped(user.uid, dayId, true);
       // Jalan pagi tidak pernah menyentuh streak — melewatinya pun tidak.

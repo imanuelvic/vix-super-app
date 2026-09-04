@@ -101,6 +101,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   sport: 'friends',
   'sport-cash': 'friends',
   'sport-schedule': 'friends',
+  'sport-board': 'friends',
   married: 'married',
 };
 

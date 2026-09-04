@@ -25,48 +25,52 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { formatDecimal, parseDecimal } from '@/lib/format';
+import { saveGratitude } from '@/lib/gratitude';
 import {
-  areaMeta,
-  areaProgress,
-  coreDone,
-  countedHabits,
-  dailyScore,
-  defaultSlot,
-  filledNoteLines,
-  HABIT_AREAS,
-  HABIT_SLOTS,
-  habitArea,
-  habitLink,
-  habitNoteFilled,
-  habitNoteLines,
-  habitsBySlot,
-  habitTier,
-  isCoreHabit,
-  isFixedHabit,
-  isNoteDrivenHabit,
-  joinNoteLines,
-  newHabitId,
-  saveHabits,
-  slotMeta,
-  splitNoteLines,
-  type HabitArea,
-  type HabitLink,
-  type HabitSlot,
-  type HabitTier,
-  type ScheduledHabit,
+    areaMeta,
+    areaProgress,
+    coreDone,
+    countedHabits,
+    dailyScore,
+    defaultSlot,
+    filledNoteLines,
+    HABIT_AREAS,
+    HABIT_SLOTS,
+    habitArea,
+    habitLink,
+    habitMirror,
+    habitNoteFilled,
+    habitNoteLines,
+    habitsBySlot,
+    habitTier,
+    isCoreHabit,
+    isFixedHabit,
+    isGratitudeHabit,
+    isNoteDrivenHabit,
+    joinNoteLines,
+    newHabitId,
+    saveHabits,
+    slotMeta,
+    splitNoteLines,
+    type HabitArea,
+    type HabitFocus,
+    type HabitLink,
+    type HabitSlot,
+    type HabitTier,
+    type ScheduledHabit,
 } from '@/lib/habits';
 import {
-  bumpStreak,
-  clearWeightTarget,
-  idealWeightRange,
-  saveWeightTarget,
-  setHabitDone,
-  setHabitNote,
-  setHabitSkipped,
-  type HabitDay,
-  type HealthProfile,
-  type Streak,
-  type WeightTarget,
+    bumpStreak,
+    clearWeightTarget,
+    idealWeightRange,
+    saveWeightTarget,
+    setHabitDone,
+    setHabitNote,
+    setHabitSkipped,
+    type HabitDay,
+    type HealthProfile,
+    type Streak,
+    type WeightTarget,
 } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
 import { deleteErrorOf, SAVE_ERROR, saveErrorOf } from '@/lib/messages';
@@ -78,7 +82,7 @@ export function HabitsTab({
   profile,
   target,
   streak,
-  focusRhema = false,
+  focus = null,
   onFocusDone,
 }: {
   habits: ScheduledHabit[];
@@ -88,11 +92,15 @@ export function HabitsTab({
   target: WeightTarget | null;
   streak: Streak | null;
   /**
-   * Datang dari kartu "✍️ Rhema Pagi Ini" di Home: buka sesi tempat baris
-   * Rhema berada lalu gulung tepat ke barisnya, supaya tulisan paginya bisa
-   * langsung dibaca ulang tanpa mencari sendiri di daftar yang panjang.
+   * Baris yang dituju saat layar ini dibuka DARI kartu di Home: buka sesi
+   * tempat barisnya berada lalu gulung tepat ke barisnya, supaya tak perlu
+   * dicari sendiri di daftar yang panjang.
+   *
+   * Dua kartu memakai pintu ini:
+   *   'rhema'   → kartu "📓 Refleksi Hari Ini" (baris jurnal paginya)
+   *   'bible-*' → kartu "🌅/🌤️/🌙 … Reading" (baris Bible Reading sesi jam itu)
    */
-  focusRhema?: boolean;
+  focus?: HabitFocus | null;
   /** Dipanggil setelah lompatannya jalan — induk membersihkan param dari URL. */
   onFocusDone?: () => void;
 }) {
@@ -127,30 +135,40 @@ export function HabitsTab({
   const rowY = useRef<Record<string, number>>({});
   const blockY = useRef(0);
 
-  // ===== Lompatan dari kartu "✍️ Rhema Pagi Ini" di Home =====
-  // Baris Rhema dikenali dari sifatnya (centangnya ditentukan tulisan), bukan
-  // dari id yang ditulis tangan — jadi tetap ketemu walau namanya diganti.
-  const rhema = habits.find(isNoteDrivenHabit);
+  // ===== Lompatan dari kartu di Home =====
+  // Barisnya dicari lewat SIFATNYA — tulisan yang menentukan centangnya, atau
+  // sesi Baca Alkitab mana yang dicerminkannya — bukan lewat id yang ditulis
+  // tangan, jadi tetap ketemu walau namanya diganti.
+  const focusHabit = focus
+    ? habits.find((h) =>
+        focus === 'rhema' ? isNoteDrivenHabit(h) : habitMirror(h) === focus,
+      )
+    : undefined;
   // Dipisah jadi nilai primitif: `habits` datang dari Firestore dan objeknya
   // baru tiap snapshot, jadi memakai objeknya sebagai dependency akan memicu
   // efek di bawah berulang kali.
-  const rhemaId = rhema?.id ?? null;
-  const rhemaSlot = rhema?.slot ?? null;
+  const focusId = focusHabit?.id ?? null;
+  const focusSlot = focusHabit?.slot ?? null;
 
   // Sudah pernah melompat sejak layar ini dibuka? Satu penanda untuk DUA
-  // lompatan sekaligus (baris Rhema dari Home, dan baris pertama yang masih
+  // lompatan sekaligus (baris tujuan dari Home, dan baris pertama yang masih
   // menunggu saat layar dibuka biasa) — sesudah salah satunya jalan, posisimu
   // milikmu sendiri: jangan ditarik-tarik tiap satu baris dicentang.
   const bukaanJumped = useRef(false);
 
-  // Pindah dulu ke sesi tempat baris Rhema berada (biasanya Pagi). Saringan
-  // areanya ikut dilepas — kalau tidak, barisnya bisa saja sedang tersembunyi.
+  // Pindah dulu ke sesi tempat baris tujuannya berada. Saringan areanya ikut
+  // dilepas — kalau tidak, barisnya bisa saja sedang tersembunyi.
+  //
+  // `focusId` ikut jadi dependency, bukan cuma sesinya: baris "📖 Midday Bible
+  // Reading" disisipkan induk layar ini kalau belum ada, jadi kadang barisnya
+  // baru muncul beberapa saat SESUDAH layarnya dibuka — dan dua tujuan berbeda
+  // bisa kebetulan berada di sesi yang sama.
   useEffect(() => {
-    if (!focusRhema || !rhemaSlot) return;
-    setActiveSlot(rhemaSlot);
+    if (!focusId || !focusSlot) return;
+    setActiveSlot(focusSlot);
     setAreaFilter(null);
     bukaanJumped.current = false;
-  }, [focusRhema, rhemaSlot]);
+  }, [focusId, focusSlot]);
 
   // Modal tambah/edit kebiasaan.
   const [editing, setEditing] = useState<ScheduledHabit | 'new' | null>(null);
@@ -182,7 +200,7 @@ export function HabitsTab({
   // • `counted`  — daftar tanpa baris yang ditandai ✗. Sekarang dipakai HANYA
   //                untuk hitungan per sesi & memilih tab pembuka.
   //
-  // ⚠️ Skor, area hidup, & streak TIDAK lagi memakai `counted` — lihat
+  // ⚠️ Score, area hidup, & streak TIDAK lagi memakai `counted` — lihat
   // catatannya di atas `coreHabits` (lib/habits.ts). Ringkasnya: ✗ artinya
   // "hari ini tidak saya kerjakan", dan itu bukan keberhasilan.
   const counted = countedHabits(habits, day.skipped);
@@ -197,8 +215,8 @@ export function HabitsTab({
   // hooks/useDueJump.ts).
   //
   // Dua lompatan berbagi satu pintu ini, dan urutannya penting: kalau layar
-  // dibuka DARI kartu Refleksi di Home (?focus=rhema), yang dituju barisnya —
-  // bukan baris pertama yang belum dicentang.
+  // dibuka DARI kartu di Home (?focus=…), yang dituju barisnya — bukan baris
+  // pertama yang belum dicentang.
   // Sengaja TANPA useCallback: `firstPendingId` diturunkan dari daftar yang
   // sedang tampil, dan React Compiler (menyala di app ini) tidak bisa
   // membuktikan daftar dependency yang ditulis tangan masih benar untuk nilai
@@ -207,9 +225,9 @@ export function HabitsTab({
   function handleContentSize() {
     // Sudah pernah melompat sejak layar ini dibuka → jangan ditarik-tarik lagi.
     if (bukaanJumped.current) return;
-    // Dari kartu Refleksi di Home? Barisnya yang dituju. Kalau tidak, baris
-    // pertama yang masih menunggu di sesi jam sekarang.
-    const targetId = focusRhema ? rhemaId : firstPendingId;
+    // Dari kartu di Home? Barisnya yang dituju. Kalau tidak, baris pertama
+    // yang masih menunggu di sesi jam sekarang.
+    const targetId = focusId ?? firstPendingId;
     if (!targetId) return;
     const y = rowY.current[targetId];
     if (y === undefined) return;
@@ -218,10 +236,10 @@ export function HabitsTab({
       y: Math.max(0, blockY.current + y - 8),
       animated: true,
     });
-    if (focusRhema) onFocusDone?.();
+    if (focusId) onFocusDone?.();
   }
 
-  // Ukuran keberhasilan hari ini: skor 0–10 + 5 area hidup yang terjaga —
+  // Ukuran keberhasilan hari ini: score 0–10 + 5 area hidup yang terjaga —
   // bukan lagi "berapa dari 39 tercentang".
   const score = dailyScore(habits, day.done, day.skipped);
   const areas = areaProgress(habits, day.done, day.skipped);
@@ -316,7 +334,7 @@ export function HabitsTab({
   /**
    * Tandai ✗ = kebiasaan ini DILEWATI hari ini (atau batalkan lagi).
    * Bedanya dengan centang: ini bukan "selesai", tapi "hari ini tidak berlaku".
-   * Efeknya ia keluar dari skor, area, badge tab, & kartu reminder Dashboard.
+   * Efeknya ia keluar dari score, area, badge tab, & kartu reminder Dashboard.
    */
   async function handleSkip(habit: ScheduledHabit) {
     if (!user) return;
@@ -349,6 +367,15 @@ export function HabitsTab({
     if (!user) return;
     try {
       await setHabitNote(user.uid, dayId, habit.id, text);
+      // 🙏 Bersyukur 3 Hal disalin ke arsipnya sendiri
+      // (users/{uid}/gratitude/{hari}). Catatan kebiasaannya di atas TETAP
+      // ditulis — itu yang menentukan centang & pratinjau baris ini. Yang
+      // ditambah cuma salinan yang tidak bergantung pada id maupun nama baris
+      // ini, supaya arsipnya tak ikut hilang kalau barisnya diubah kelak.
+      // Alasan lengkapnya di lib/gratitude.ts.
+      if (isGratitudeHabit(habit)) {
+        await saveGratitude(user.uid, dayId, text);
+      }
       if (isNoteDrivenHabit(habit)) {
         // 🙏 Bersyukur 3 Hal minta KETIGA poinnya terisi, bukan sekadar
         // panjang tulisannya (lihat habitNoteFilled di lib/habits.ts).
@@ -856,7 +883,7 @@ export function HabitsTab({
                   Kebiasaan inti
                 </VixText>
                 <VixText heading="label">
-                  Yang inti menentukan streak 🔥 & skor harian. Di daftar,
+                  Yang inti menentukan streak 🔥 & score harian. Di daftar,
                   namanya ditulis tebal.
                 </VixText>
               </View>

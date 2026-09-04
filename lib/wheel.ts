@@ -1,8 +1,8 @@
 import {
-  doc,
-  setDoc,
-  Timestamp,
-  type FirestoreError,
+    doc,
+    setDoc,
+    Timestamp,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
@@ -10,7 +10,7 @@ import { liveDoc } from './liveDoc';
 
 // Wheel of Life 🎡 — versi app dari assessment website lama:
 // nilai 8 area hidup (1–10) per KUARTAL, lalu pilih minimal 3 area fokus
-// dengan target skor + action plan, supaya tetap on track tiap 3 bulan.
+// dengan target score + action plan, supaya tetap on track tiap 3 bulan.
 //
 // Penyimpanan: SATU dokumen per kuartal (users/{uid}/wheel/{2026-Q3}).
 
@@ -43,7 +43,7 @@ export const WHEEL_AREAS: {
 /** Minimal area fokus per kuartal. */
 export const MIN_FOCUS = 3;
 
-// Tips & ide praktis menaikkan skor tiap area — muncul di modal saat kartu
+// Tips & ide praktis menaikkan score tiap area — muncul di modal saat kartu
 // fokus ditekan. Dibuat singkat & mudah diingat supaya bisa langsung dilakukan.
 export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
   spirituality: [
@@ -211,7 +211,7 @@ export function radarGeometry(size: number, axes: number) {
     /** Cincin grid pada pecahan jari-jari (0–1). */
     ring: (frac: number) =>
       Array.from({ length: axes }, (_, i) => point(i, r * frac)).join(' '),
-    /** Poligon dari skor 0–10 (di luar rentang itu dijepit). */
+    /** Poligon dari score 0–10 (di luar rentang itu dijepit). */
     polygon: (values: number[]) =>
       values
         .map((v, i) => point(i, (r * Math.max(0, Math.min(v, 10))) / 10))
@@ -303,7 +303,7 @@ function stamps(existingCreatedAt?: Timestamp) {
   return { createdAt: existingCreatedAt ?? now, updatedAt: now };
 }
 
-/** Simpan hasil assessment (skor + alasan). merge: fokus tidak tersentuh. */
+/** Simpan hasil assessment (score + alasan). merge: fokus tidak tersentuh. */
 export function saveWheelScores(
   uid: string,
   qid: string,
@@ -316,7 +316,7 @@ export function saveWheelScores(
   return setDoc(ref, { scores, notes, ...stamps(createdAt) }, { merge: true });
 }
 
-/** Simpan area fokus kuartal. merge: skor tidak tersentuh. */
+/** Simpan area fokus kuartal. merge: score tidak tersentuh. */
 export function saveWheelFocus(
   uid: string,
   qid: string,
@@ -330,7 +330,7 @@ export function saveWheelFocus(
 
 // ===================== Reminder Home =====================
 
-/** Sudah dinilai (assessment)? True kalau SEMUA area sudah punya skor > 0. */
+/** Sudah dinilai (assessment)? True kalau SEMUA area sudah punya score > 0. */
 export function wheelHasScores(data: WheelData): boolean {
   return WHEEL_AREAS.every((a) => (data.scores[a.key] ?? 0) > 0);
 }
@@ -348,7 +348,7 @@ export function wheelFocusReminderActive(now: Date): boolean {
 }
 
 /**
- * Ringkasan tiap area fokus untuk kartu reminder Home: ikon, label, skor
+ * Ringkasan tiap area fokus untuk kartu reminder Home: ikon, label, score
  * sekarang → target, plus SATU tip yang berganti tiap hari (biar tidak bosan
  * & jadi kebiasaan). Tip dipilih deterministik dari nomor hari.
  */

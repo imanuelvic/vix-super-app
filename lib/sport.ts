@@ -1,7 +1,7 @@
 import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
-import { dayId, dayIdToDate } from './format';
 import { db } from './firebase';
+import { dayId, dayIdToDate } from './format';
 import { liveDoc } from './liveDoc';
 
 // Sport ⚽ — pengurus futsal rutin (lihat components/friends/SportTab.tsx).
@@ -13,7 +13,7 @@ import { liveDoc } from './liveDoc';
 //   2. Uangnya bocor → yang menalangi lapangan lupa siapa yang belum setor.
 //   3. Tidak ada yang seru untuk dikenang → mainnya jadi terasa sia-sia.
 // Karena itu tiap sesi memuat jadwal + lokasi, daftar setoran per orang, dan
-// skor tiap game.
+// score tiap game.
 //
 // Penyimpanan: SATU dokumen (users/{uid}/social/sport) berisi anggota &
 // seluruh sesi. Sesinya cuma teks & angka — dua geng × 2 kali sebulan ≈ 50
@@ -58,6 +58,18 @@ export function gangMeta(key: SportGangKey): SportGang {
   return SPORT_GANGS.find((g) => g.key === key) ?? SPORT_GANGS[0];
 }
 
+/**
+ * Geng dari parameter URL — apa pun selain kunci yang sah jatuh ke F3.
+ *
+ * F3 yang jadi jatuhnya, bukan geng pertama di daftar, karena itulah geng yang
+ * paling sering main (dua mingguan) & tab bawaan sub-tab Fun Sport. Bentuknya
+ * sama dengan `bibleSessionOf` di lib/spiritual.ts: nilai dari URL tidak pernah
+ * dipercaya mentah-mentah.
+ */
+export function gangOf(raw: string | undefined): SportGangKey {
+  return SPORT_GANGS.find((g) => g.key === raw)?.key ?? 'f3';
+}
+
 /** Posisi futsal — 5 pemain, bukan 11. Istilahnya memang beda dari sepak bola. */
 export type SportPosition = 'kiper' | 'anchor' | 'flank' | 'pivot';
 
@@ -97,7 +109,7 @@ export type SportGame = {
   scoreB: number;
   /**
    * id anggota pencetak gol — SATU BARIS PER GOL, jadi id yang sama boleh
-   * muncul dua kali kalau ia mencetak dua gol. Inilah dasar papan top skor.
+   * muncul dua kali kalau ia mencetak dua gol. Inilah dasar papan top score.
    */
   scorers: string[];
 };
@@ -306,7 +318,7 @@ export function daysToSession(s: SportSession, now: Date): number {
   );
 }
 
-// ===================== Skor & papan pencetak gol =====================
+// ===================== Score & papan pencetak gol =====================
 
 /** "12 – 9" dari seluruh game di satu sesi. */
 export function sessionScoreLine(s: SportSession): string {
@@ -319,7 +331,7 @@ export function sessionScoreLine(s: SportSession): string {
 export type ScorerRow = { member: SportMember; goals: number; caps: number };
 
 /**
- * Papan top skor satu geng: gol terbanyak dulu, lalu yang paling rajin datang.
+ * Papan top score satu geng: gol terbanyak dulu, lalu yang paling rajin datang.
  *
  * `caps` (berapa kali ikut main) sengaja ikut dihitung — tanpa itu, yang jarang
  * datang tapi sekali cetak 3 gol terlihat lebih hebat daripada yang tidak
@@ -344,6 +356,62 @@ export function topScorers(
       caps: sesi.filter((s) => s.squad.includes(member.id)).length,
     }))
     .sort((a, b) => b.goals - a.goals || b.caps - a.caps);
+}
+
+export type AttendanceRow = {
+  member: SportMember;
+  /** Berapa kali ia benar-benar ikut main. */
+  present: number;
+  /** Berapa sesi yang BISA ia hadiri (lihat aturan "sejak" di bawah). */
+  possible: number;
+  /** present ÷ possible — 0 kalau belum pernah sekali pun masuk squad. */
+  rate: number;
+};
+
+/**
+ * Papan paling rajin datang: yang persentase kehadirannya paling tinggi dulu,
+ * lalu yang paling banyak datang.
+ *
+ * DUA aturan di sini yang kelihatan kecil tapi menentukan angkanya benar atau
+ * menyesatkan:
+ *
+ * 1. Cuma sesi yang SUDAH LEWAT yang dihitung. Squad sesi baru diisi SELURUH
+ *    anggota geng (lihat SportTab) lalu yang berhalangan dicoret — jadi
+ *    menghitung sesi yang belum main sama saja menganggap semua orang sudah
+ *    hadir di pertandingan yang belum terjadi.
+ *
+ * 2. Hitungannya mulai dari sesi PERTAMA ia muncul di squad, bukan dari sesi
+ *    pertama gengnya. Anggota yang baru masuk bulan ini tidak pernah punya
+ *    kesempatan hadir di sesi tahun lalu; menghitungnya sebagai bolos membuat
+ *    tiap orang baru langsung mendarat di dasar papan dan butuh berbulan-bulan
+ *    untuk naik — papannya jadi soal "siapa yang paling lama bergabung", bukan
+ *    "siapa yang paling rajin".
+ *
+ * Yang belum pernah masuk squad sama sekali tetap ditampilkan dengan 0 dari 0,
+ * bukan disembunyikan: anggota terdaftar yang tak pernah datang itu justru
+ * kabar yang perlu dilihat seorang manager.
+ */
+export function topAttendance(
+  data: SportData,
+  gang: SportGangKey,
+  todayId: string,
+): AttendanceRow[] {
+  const sesi = data.sessions
+    .filter((s) => s.gang === gang && s.dayId < todayId)
+    .sort((a, b) => a.dayId.localeCompare(b.dayId));
+  return gangMembers(data, gang)
+    .map((member) => {
+      const mulai = sesi.findIndex((s) => s.squad.includes(member.id));
+      const sejak = mulai === -1 ? [] : sesi.slice(mulai);
+      const present = sejak.filter((s) => s.squad.includes(member.id)).length;
+      return {
+        member,
+        present,
+        possible: sejak.length,
+        rate: sejak.length > 0 ? present / sejak.length : 0,
+      };
+    })
+    .sort((a, b) => b.rate - a.rate || b.present - a.present);
 }
 
 // ===================== Badge =====================

@@ -14,21 +14,21 @@ import { VixText } from '@/components/common/VixText';
 import { SportSessionCard } from '@/components/friends/SportSessionCard';
 import { usePagination } from '@/hooks/usePagination';
 import { useSportData } from '@/hooks/useSportData';
-import { dayId as toDayId, dayIdToDate, formatDayDate } from '@/lib/format';
+import { dayIdToDate, formatDayDate, dayId as toDayId } from '@/lib/format';
 import {
-  daysToSession,
-  gangMeta,
-  SPORT_GANGS,
-  upcomingSessions,
-  type SportGangKey,
-  type SportSession,
+    daysToSession,
+    gangMeta,
+    SPORT_GANGS,
+    upcomingSessions,
+    type SportGangKey,
+    type SportSession,
 } from '@/lib/sport';
 
 // Jadwal Main 📅 — SEMUA pertandingan yang belum lewat, satu geng sekaligus.
 //
 // Sub-tab Fun Sport sengaja cuma memajang yang paling dekat: itu satu-satunya
 // yang benar-benar ditanya orang di grup, dan daftar panjang di sana membuat
-// anggota & papan skor terdorong jauh ke bawah. Yang sudah menjadwalkan
+// anggota & papan score terdorong jauh ke bawah. Yang sudah menjadwalkan
 // beberapa kali main ke depan melihat semuanya di sini.
 export default function SportScheduleScreen() {
   const router = useRouter();

@@ -6,7 +6,7 @@ import { radarGeometry } from '@/lib/wheel';
 
 /**
  * Radar chart (jaring laba-laba) berbasis SVG — pengganti chart.js Radar
- * dari website lama. `values` = skor 0–10 per sumbu; `secondary` opsional
+ * dari website lama. `values` = score 0–10 per sumbu; `secondary` opsional
  * (mis. target) digambar sebagai garis putus-putus.
  *
  * Letak titiknya dihitung `radarGeometry` di lib/wheel — rumus yang SAMA
@@ -66,7 +66,7 @@ export function RadarChart({
             fill="none"
           />
         )}
-        {/* Poligon skor sekarang */}
+        {/* Poligon score sekarang */}
         <Polygon
           points={dataPoints(values)}
           stroke={Color.MAIN}

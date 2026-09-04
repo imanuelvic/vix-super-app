@@ -1,24 +1,24 @@
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  documentId,
-  increment,
-  limit,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  Timestamp,
-  updateDoc,
-  type FirestoreError,
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    documentId,
+    increment,
+    limit,
+    orderBy,
+    query,
+    serverTimestamp,
+    setDoc,
+    Timestamp,
+    updateDoc,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { type LoginStreak as DayStreak } from './achievements';
 import { db } from './firebase';
-import { liveDoc, liveList } from './liveDoc';
 import { dayId, daysBetween } from './format';
+import { liveDoc, liveList } from './liveDoc';
 import { alreadyCounted, nextStreak } from './streak';
 
 // ============================== Profil tubuh ==============================
@@ -353,7 +353,7 @@ export type HabitDay = {
   /**
    * Kebiasaan yang sengaja DILEWATI hari ini (✗) — id kebiasaan → true.
    * Bukan "selesai" dan bukan "gagal": hari ini kebiasaan itu dianggap TIDAK
-   * BERLAKU, jadi ia keluar dari semua hitungan harian (skor, area, badge tab
+   * BERLAKU, jadi ia keluar dari semua hitungan harian (score, area, badge tab
    * Habits, kartu reminder Dashboard). Ikut kereset tiap ganti hari karena
    * disimpan di dokumen harian yang sama.
    */

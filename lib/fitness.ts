@@ -1,9 +1,9 @@
 import {
-  doc,
-  getDoc,
-  setDoc,
-  Timestamp,
-  type FirestoreError,
+    doc,
+    getDoc,
+    setDoc,
+    Timestamp,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { type LoginStreak as DayStreak } from './achievements';
@@ -13,15 +13,15 @@ import { db } from './firebase';
 import { dayIdToDate, formatDecimal } from './format';
 import { FITNESS_HABIT_ID } from './habits';
 import {
-  bmiCategory,
-  bmiValue,
-  bumpWeekGym,
-  dayDocId,
-  idealWeightRange,
-  setHabitDone,
-  setHabitSkipped,
-  type HealthProfile,
-  type WeightTarget,
+    bmiCategory,
+    bmiValue,
+    bumpWeekGym,
+    dayDocId,
+    idealWeightRange,
+    setHabitDone,
+    setHabitSkipped,
+    type HealthProfile,
+    type WeightTarget,
 } from './health';
 import { liveDoc } from './liveDoc';
 import { EMPTY_DAY_STREAK, nextStreak } from './streak';
@@ -755,7 +755,7 @@ export function syncFitnessHabit(uid: string, dayId: string, done: boolean) {
 }
 
 /**
- * Hari ini sengaja dilewati? → baris Habits bertanda ✕ dan keluar dari skor
+ * Hari ini sengaja dilewati? → baris Habits bertanda ✕ dan keluar dari score
  * harian, sama seperti kebiasaan lain yang dilewati. (`setHabitSkipped`
  * sekalian melepas centangnya, jadi tidak perlu tulis kedua.)
  */

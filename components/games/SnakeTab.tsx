@@ -13,7 +13,7 @@ import { useHighScore } from '@/hooks/useHighScore';
 // arah. Makan 1 makanan yang muncul di posisi acak → ular tambah panjang &
 // jalannya makin cepat. Nabrak dinding atau badan sendiri = selesai.
 //
-// Semua murni di HP: tidak menyentuh Firestore sama sekali. Rekor skor cukup
+// Semua murni di HP: tidak menyentuh Firestore sama sekali. Rekor score cukup
 // disimpan lokal — tidak perlu biaya baca/tulis database. Aturan simpannya
 // dipakai bersama Tetris: lihat hooks/useHighScore.ts.
 
@@ -108,7 +108,7 @@ export function SnakeTab() {
   // Arah yang ditekan pemain — dibaca saat tick berikutnya supaya menekan dua
   // tombol dalam satu tick tidak membuat ular menembus badannya sendiri.
   const wantedDir = useRef<Dir>('right');
-  // Papan mengambil SISA ruang di antara skor & tombol arah, lalu dibuat
+  // Papan mengambil SISA ruang di antara score & tombol arah, lalu dibuat
   // persegi dari sisi terpendeknya — supaya tombol arah tidak pernah tertutup
   // tab bar di bawah, di layar tinggi maupun pendek.
   const [boardSize, setBoardSize] = useState(0);
@@ -130,14 +130,14 @@ export function SnakeTab() {
 
   return (
     <View style={styles.flex}>
-      {/* Skor & rekor */}
+      {/* Score & rekor */}
       <View style={styles.scoreRow}>
         <View style={styles.scoreBox}>
           <VixText heading="header" additionalStyle={styles.scoreValue}>
             {game.score}
           </VixText>
           <VixText heading="label" additionalStyle={styles.scoreLabel}>
-            Skor
+            Score
           </VixText>
         </View>
         <View style={styles.scoreBox}>
@@ -202,7 +202,7 @@ export function SnakeTab() {
             </VixText>
             <VixText heading="label" additionalStyle={styles.overlayText}>
               {game.status === 'over'
-                ? `Panjang ${game.snake.length} · skor ${game.score}`
+                ? `Panjang ${game.snake.length} · score ${game.score}`
                 : 'Makan titik merahnya, jangan nabrak dinding & badan sendiri.'}
             </VixText>
             <PrimaryButton

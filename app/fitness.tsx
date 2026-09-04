@@ -58,7 +58,11 @@ const TABS: BottomTab<Tab>[] = [
 // Health (profile + target) supaya cuma ada satu sumber kebenaran.
 export default function FitnessScreen() {
   const { user } = useAuth();
-  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('exercise');
+  // `tabs` dioper supaya reminder sesi latihan di Dashboard bisa menuju
+  // sub-tab Exercise lewat ?tab=.
+  const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('exercise', {
+    tabs: TABS,
+  });
 
   const [weights, setWeights] = useState<FitWeights>({});
   const [day, setDay] = useState<FitDay>(EMPTY_FIT_DAY);

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 
 /**
- * Rekor skor satu permainan 🏅 — dibaca & disimpan di HP saja (AsyncStorage),
+ * Rekor score satu permainan 🏅 — dibaca & disimpan di HP saja (AsyncStorage),
  * bukan Firestore: gratis, instan, dan memang tidak perlu ikut antar-perangkat.
  *
  * Dulu blok ini disalin UTUH di SnakeTab & TetrisTab — sama persis baris per
@@ -23,7 +23,7 @@ import { useEffect, useState } from 'react';
  *   `react-hooks/set-state-in-effect`.
  *
  * Sekarang angka yang TAMPIL diturunkan saat render: begitu permainannya
- * selesai, skor yang barusan ikut dihitung sebagai calon rekor. Jadi angkanya
+ * selesai, score yang barusan ikut dihitung sebagai calon rekor. Jadi angkanya
  * berubah SEKETIKA, bahkan tidak menunggu tulisan ke disk selesai. Nilai
  * simpanannya menyusul di belakang layar.
  */

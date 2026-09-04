@@ -18,10 +18,11 @@ const ALLOWED_PATHS = [GATE_PATH, '/revive', '/core'];
 /**
  * Pengawal doa pagi — dipasang SEKALI di root layout, tidak menggambar apa pun.
  *
- * Jendela doa pagi: 04.00 (batas hari doa) sampai 08.59. Selama jendela itu dan
+ * Jendela doa pagi: 00.00 (hari berganti) sampai 08.59. Selama jendela itu dan
  * doa hari ini belum dikonfirmasi, layar mana pun otomatis dialihkan ke gerbang
- * `/morning-prayer`. Jam berjalan dicek tiap 30 detik, jadi kalau app sedang
- * terbuka saat jam 04.00 lewat, gerbang langsung muncul sendiri.
+ * `/morning-prayer`. Jam berjalan dicek tiap 30 detik, jadi app yang sedang
+ * terbuka saat tengah malam lewat tertarik ke gerbang dalam setengah menit —
+ * tanpa perlu ditutup & dibuka lagi.
  *
  * Pengawal ini bekerja DUA ARAH. Dulu ia cuma bisa mendorong MASUK ke gerbang,
  * sehingga layarnya bisa nyangkut: doa sudah dikonfirmasi di HP lain, atau jam

@@ -8,10 +8,10 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import {
-  sessionNeedsAttention,
-  sessionScoreLine,
-  sessionUnpaidCount,
-  type SportSession,
+    sessionNeedsAttention,
+    sessionScoreLine,
+    sessionUnpaidCount,
+    type SportSession,
 } from '@/lib/sport';
 
 // Kartu satu sesi main — dipakai sub-tab Fun Sport & halaman Jadwal Main.
@@ -33,7 +33,7 @@ export function SportSessionCard({
   onEdit?: (s: SportSession) => void;
 }) {
   const belum = sessionUnpaidCount(s);
-  const skor = sessionScoreLine(s);
+  const score = sessionScoreLine(s);
   const perlu = sessionNeedsAttention(s, now);
   return (
     <View style={[styles.sesiCard, attentionBorder(perlu)]}>
@@ -67,10 +67,10 @@ export function SportSessionCard({
               </VixText>
             </View>
           ) : null}
-          {skor ? (
+          {score ? (
             <View style={[styles.pil, styles.pilSkor]}>
               <VixText heading="label" additionalStyle={styles.pilSkorText}>
-                ⚽ {skor}
+                ⚽ {score}
               </VixText>
             </View>
           ) : null}

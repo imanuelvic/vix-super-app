@@ -85,13 +85,9 @@ export const HOME_FEATURES: HomeFeature[] = [
   { key: 'news', label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK, deep: Color.NEWS_DEEP },
   { key: 'book', label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK, deep: Color.BOOK_DEEP },
 
-  // Device 📱 — paket kuota iPhone/iPad & seluruh biaya perangkat.
   { key: 'device', label: 'Device', icon: 'iphone', route: '/device', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
   { key: 'games', label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },
-  // Friends 🤝 — futsal rutin, patungan (Split Bill) & tempat nongkrong.
   { key: 'friends', label: 'Friends', glyph: 'handshake', route: '/friends', bg: Color.FRIENDS, fg: Color.FRIENDS_DARK, deep: Color.FRIENDS_DEEP },
-  // Married 💍 — masih Coming Soon. Ditaruh paling belakang supaya urutan tile
-  // yang sudah kamu hafal tidak bergeser sama sekali.
   { key: 'married', label: 'Married', glyph: 'ring', route: '/married', bg: Color.MARRIED, fg: Color.MARRIED_DARK, deep: Color.MARRIED_DEEP },
 ];
 

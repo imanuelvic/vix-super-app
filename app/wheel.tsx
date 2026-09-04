@@ -16,6 +16,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SectionToggle } from '@/components/common/SectionToggle';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
@@ -27,27 +28,37 @@ import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatDayDate, formatDecimal } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
-  MIN_FOCUS,
-  quarterDocId,
-  quarterLabel,
-  quarterOf,
-  saveWheelFocus,
-  saveWheelScores,
-  shiftQuarter,
-  subscribeWheel,
-  WHEEL_AREAS,
-  WHEEL_REFLECTIONS,
-  WHEEL_TIPS,
-  type WheelAreaKey,
-  type WheelData,
-  type WheelFocus,
+    MIN_FOCUS,
+    quarterDocId,
+    quarterLabel,
+    quarterOf,
+    saveWheelFocus,
+    saveWheelScores,
+    shiftQuarter,
+    subscribeWheel,
+    WHEEL_AREAS,
+    WHEEL_REFLECTIONS,
+    WHEEL_TIPS,
+    type WheelAreaKey,
+    type WheelData,
+    type WheelFocus,
 } from '@/lib/wheel';
 import { shareWheelPdf } from '@/lib/wheelPdf';
 
 type Mode = 'overview' | 'assess' | 'focus';
 
 /**
- * Nada skor: ≥8 sehat, 5–7 perlu naik, <5 darurat. Satu skor memberi tiga hal
+ * Anak ScrollView Overview yang DIPATOK di atas saat digulung: judul
+ * "🎯 Fokus Kuartal" (1) & "📋 Score per Area" (3).
+ *
+ * Urutan anaknya, dan semuanya SELALU ada: 0 grafik/ajakan · 1 judul Fokus ·
+ * 2 isi Fokus · 3 judul Score · 4 daftar area · 5 tombol ulangi. Ditaruh di
+ * luar komponen supaya bukan array baru tiap render.
+ */
+const STICKY_HEADERS = [1, 3];
+
+/**
+ * Nada score: ≥8 sehat, 5–7 perlu naik, <5 darurat. Satu score memberi tiga hal
  * sekaligus — warna bar, latar pil, & warna angkanya — supaya tingkat "sehat"
  * kebaca dari bentuk, bukan cuma dari angka.
  */
@@ -88,13 +99,21 @@ export default function WheelScreen() {
   const qid = quarterDocId(year, q);
 
   // data = null → loading. Kosong sendiri tiap ganti kuartal (useKeyedData).
-  // Kuncinya ikut memuat pemiliknya, jadi skor CL A mustahil sempat terlihat
+  // Kuncinya ikut memuat pemiliknya, jadi score CL A mustahil sempat terlihat
   // di layar CL B walau layarnya kebetulan dipakai ulang.
   const { data, set: setData } = useKeyedData<string, WheelData>(
     `${owner ?? 'me'}/${qid}`,
   );
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('overview');
+  // Dua bagian Overview yang bisa dibuka-tutup — PALING BANYAK SATU terbuka,
+  // dan bawaannya tidak ada. Sengaja SATU state, bukan dua boolean: dua
+  // boolean membuat "keduanya terbuka" jadi keadaan yang mungkin lalu harus
+  // dijaga tangan di tiap tombolnya. Aturannya sama dengan CORE Leader /
+  // Main Team di CORE.
+  const [terbuka, setTerbuka] = useState<'focus' | 'score' | null>(null);
+  const toggleSeksi = (k: 'focus' | 'score') =>
+    setTerbuka((cur) => (cur === k ? null : k));
   const [busy, setBusy] = useState(false);
 
   // ---- Wizard assessment ----
@@ -142,7 +161,7 @@ export default function WheelScreen() {
   const values = WHEEL_AREAS.map((a) => data?.scores[a.key] ?? 0);
   const avg = values.reduce((s, v) => s + v, 0) / WHEEL_AREAS.length;
 
-  // Sebaran nada skor — ringkasan sekilas di atas daftar "Skor per Area".
+  // Sebaran nada score — ringkasan sekilas di atas daftar "Score per Area".
   const okCount = values.filter((v) => v >= 8).length;
   const warnCount = values.filter((v) => v >= 5 && v < 8).length;
   const dangerCount = values.filter((v) => v < 5).length;
@@ -153,7 +172,7 @@ export default function WheelScreen() {
     0,
   );
 
-  // Poligon target: skor target untuk area fokus, skor sekarang untuk sisanya.
+  // Poligon target: score target untuk area fokus, score sekarang untuk sisanya.
   const targetValues =
     data && data.focus.length > 0
       ? WHEEL_AREAS.map((a) => {
@@ -215,7 +234,7 @@ export default function WheelScreen() {
       );
       setPlans(Object.fromEntries(data.focus.map((f) => [f.area, f.plan])));
     } else {
-      // Saran awal: 3 area dengan skor terendah.
+      // Saran awal: 3 area dengan score terendah.
       const lowest = [...WHEEL_AREAS]
         .sort((a, b) => (data.scores[a.key] ?? 0) - (data.scores[b.key] ?? 0))
         .slice(0, MIN_FOCUS)
@@ -244,7 +263,7 @@ export default function WheelScreen() {
     for (const key of selected) {
       const target = targets[key];
       if (!target) {
-        setFocusError('Semua area fokus harus punya target skor.');
+        setFocusError('Semua area fokus harus punya target score.');
         return;
       }
       focus.push({ area: key, targetScore: target, plan: (plans[key] ?? '').trim() });
@@ -356,7 +375,7 @@ export default function WheelScreen() {
           {/* Pertanyaan refleksi 💭 — naik pelan sebelum kamu memilih angka.
               Ditaruh DI ATAS deretan nilai, bukan di bawahnya: gunanya
               menahan tangan sebentar supaya skornya dipikirkan, bukan
-              membenarkan skor yang sudah terlanjur dipilih. BACA SAJA —
+              membenarkan score yang sudah terlanjur dipilih. BACA SAJA —
               tidak ada yang bisa diklik di situ. Sama untuk assessment
               punyaku maupun punya CORE Leader — layarnya memang satu. */}
           <ReflectionBubbles questions={WHEEL_REFLECTIONS[area.key]} />
@@ -438,7 +457,7 @@ export default function WheelScreen() {
                   {meta.icon} {meta.label}{' '}
                   <VixText heading="label">· sekarang {current}</VixText>
                 </VixText>
-                <VixText heading="label">Target skor kuartal ini:</VixText>
+                <VixText heading="label">Target score kuartal ini:</VixText>
                 <View style={styles.scoreWrap}>
                   {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
                     const active = targets[key] === n;
@@ -492,23 +511,22 @@ export default function WheelScreen() {
         </KeyboardAwareScrollView>
       ) : (
         /* ===== Overview ===== */
-        <ScrollView contentContainerStyle={styles.content}>
-          {!hasScores ? (
-            <View style={styles.introCard}>
-              <VixText additionalStyle={styles.introEmoji}>🎡</VixText>
-              <VixText heading="title" additionalStyle={styles.introTitle}>
-                {owner
-                  ? `Bagaimana Wheel Of Life ${orang} di kuartal ini?`
-                  : 'Bagaimana Wheel Of Lifemu di kuartal ini?'}
-              </VixText>
-              <PrimaryButton
-                label="Mulai Assessment"
-                onPress={startAssess}
-                additionalStyle={styles.introButton}
-              />
-            </View>
-          ) : (
-            <>
+        /* Judul "🎯 Fokus Kuartal" & "📋 Score per Area" DIPATOK di atas saat
+            digulung, dan cuma SATU yang boleh terbuka — pola yang sama dengan
+            CORE Leader / Main Team di CORE dan Anggota di Fun Sport.
+
+            `stickyHeaderIndices` menghitung ANAK LANGSUNG ScrollView, jadi
+            jumlahnya tidak boleh berubah-ubah. Karena itu semua yang bersyarat
+            dibungkus <View> yang SELALU ada (isinya saja yang kosong), dan
+            kedua judulnya pun tetap jadi anak walau belum ada score — saat itu
+            yang berdiri di tempatnya <View /> kosong. */
+        <ScrollView
+          contentContainerStyle={styles.content}
+          stickyHeaderIndices={STICKY_HEADERS}>
+          {/* 0 — grafik + sebaran, atau ajakan mulai kalau belum diisi */}
+          <View>
+            {hasScores ? (
+              <>
               {/* Radar chart + rata-rata */}
               <View style={styles.chartCard}>
                 <RadarChart
@@ -523,7 +541,7 @@ export default function WheelScreen() {
                 </VixText>
                 {targetValues && (
                   <VixText heading="label">
-                    ── skor sekarang · ┄┄ target fokus
+                    ── score sekarang · ┄┄ target fokus
                   </VixText>
                 )}
               </View>
@@ -566,25 +584,40 @@ export default function WheelScreen() {
                   </View>
                 </View>
               </View>
+              </>
+            ) : (
+            <View style={styles.introCard}>
+              <VixText additionalStyle={styles.introEmoji}>🎡</VixText>
+              <VixText heading="title" additionalStyle={styles.introTitle}>
+                {owner
+                  ? `Bagaimana Wheel Of Life ${orang} di kuartal ini?`
+                  : 'Bagaimana Wheel Of Lifemu di kuartal ini?'}
+              </VixText>
+              <PrimaryButton
+                label="Mulai Assessment"
+                onPress={startAssess}
+                additionalStyle={styles.introButton}
+              />
+            </View>
+            )}
+          </View>
 
-              {/* Fokus kuartal.
-                  Judul & tombolnya SATU baris berdua saja. Pil sebaran tadi
-                  sempat ikut berdiri di baris ini — lebar mininya mendorong
-                  judulnya sampai selebar 0, dan "Fokus Kuartal" menumpuk satu
-                  huruf per baris. Barang selebar itu tidak boleh masuk sini. */}
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeadMain}>
-                  <VixText heading="title">🎯 Fokus Kuartal</VixText>
-                  {data.focus.length > 0 && (
-                    <VixText heading="label">
-                      {data.focus.length} area ·{' '}
-                      {focusGap > 0
+          {/* 1 — DIPATOK */}
+          {hasScores ? (
+            <SectionToggle
+              title="🎯 Fokus Kuartal"
+              sub={
+                data.focus.length > 0
+                  ? `${data.focus.length} area · ${
+                      focusGap > 0
                         ? `kurang ${focusGap} poin lagi`
-                        : 'semua target tercapai 🎉'}
-                    </VixText>
-                  )}
-                </View>
-
+                        : 'semua target tercapai 🎉'
+                    }`
+                  : undefined
+              }
+              open={terbuka === 'focus'}
+              onToggle={() => toggleSeksi('focus')}
+              right={
                 <PressableScale
                   style={styles.editButton}
                   onPress={startFocus}
@@ -593,7 +626,16 @@ export default function WheelScreen() {
                     {data.focus.length > 0 ? 'Ubah' : 'Pilih'}
                   </VixText>
                 </PressableScale>
-              </View>
+              }
+            />
+          ) : (
+            <View />
+          )}
+
+          {/* 2 */}
+          <View>
+            {hasScores && terbuka === 'focus' && (
+              <>
               {data.focus.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.emptyFocus}>
                   Belum ada area fokus — pilih minimal {MIN_FOCUS} untuk kuartal
@@ -606,7 +648,7 @@ export default function WheelScreen() {
                   const tone = scoreTone(current);
                   const gap = Math.max(0, f.targetScore - current);
                   return (
-                    // Tekan kartu → modal tips menaikkan skor area ini.
+                    // Tekan kartu → modal tips menaikkan score area ini.
                     <PressableScale
                       key={f.area}
                       style={styles.focusCard}
@@ -661,7 +703,7 @@ export default function WheelScreen() {
                       ) : null}
                       <View style={styles.tipsHintRow}>
                         <VixText heading="label" additionalStyle={styles.tipsHint}>
-                          💡 Tips naikkan skor
+                          💡 Tips naikkan score
                         </VixText>
                         <IconSymbol
                           name="chevron.right"
@@ -694,11 +736,25 @@ export default function WheelScreen() {
                   )}
                 </View>
               )}
+              </>
+            )}
+          </View>
 
-              {/* Skor per area */}
-              <VixText heading="title" additionalStyle={styles.sectionTitle}>
-                📋 Skor per Area
-              </VixText>
+          {/* 3 — DIPATOK */}
+          {hasScores ? (
+            <SectionToggle
+              title="📋 Score per Area"
+              open={terbuka === 'score'}
+              onToggle={() => toggleSeksi('score')}
+            />
+          ) : (
+            <View />
+          )}
+
+          {/* 4 */}
+          <View>
+            {hasScores && terbuka === 'score' && (
+              <>
               {WHEEL_AREAS.map((a) => {
                 const score = data.scores[a.key] ?? 0;
                 const note = data.notes[a.key];
@@ -750,7 +806,14 @@ export default function WheelScreen() {
                   </PressableScale>
                 );
               })}
+              </>
+            )}
+          </View>
 
+          {/* 5 */}
+          <View>
+            {hasScores && (
+              <>
               <PressableScale
                 style={styles.retakeButton}
                 onPress={startAssess}
@@ -759,12 +822,13 @@ export default function WheelScreen() {
                   🔄 Ulangi Assessment
                 </VixText>
               </PressableScale>
-            </>
-          )}
+              </>
+            )}
+          </View>
         </ScrollView>
       )}
 
-      {/* Modal tips & ide menaikkan skor area fokus */}
+      {/* Modal tips & ide menaikkan score area fokus */}
       <CenterDialog visible={tipArea !== null} onClose={() => setTipArea(null)}>
         {tipMeta && tipArea ? (
           <>
@@ -772,7 +836,7 @@ export default function WheelScreen() {
               {tipMeta.icon} {tipMeta.label}
             </VixText>
             <VixText heading="label" additionalStyle={styles.tipDialogSub}>
-              💡 Ide & tips menaikkan skor
+              💡 Ide & tips menaikkan score
             </VixText>
             <ScrollView
               style={styles.tipDialogList}
@@ -912,7 +976,7 @@ const styles = StyleSheet.create({
   planText: { color: Color.TEXT_PARAGRAPH },
   tipsHintRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
   tipsHint: { color: Color.MAIN },
-  // Modal tips menaikkan skor
+  // Modal tips menaikkan score
   tipDialogTitle: { textAlign: 'center', marginBottom: 2 },
   tipDialogSub: {
     textAlign: 'center',
@@ -963,17 +1027,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   avgValue: { color: Color.TEXT_TITLE },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-  },
   // minWidth 0: tanpa ini `flex: 1` masih bisa dipaksa mengecil di bawah lebar
   // hurufnya sendiri oleh tetangga yang lebar — itu yang dulu membuat judulnya
   // menumpuk satu huruf per baris.
-  sectionHeadMain: { flex: 1, minWidth: 0, gap: 1 },
   // "Ubah / Pilih" jadi pil bergaris — lebih kelihatan bisa ditekan
   // daripada teks polos.
   editButton: {
@@ -988,7 +1044,6 @@ const styles = StyleSheet.create({
   // Dua baris cap waktu (dibuat & terakhir diubah) dirapatkan jadi satu blok.
   stampBox: { marginTop: 2, marginBottom: 4, gap: 1 },
   updatedLabel: { color: Color.TEXT_LABEL },
-  sectionTitle: { marginTop: 10, marginBottom: 10 },
   // ===== Sebaran nada kedelapan area =====
   spreadBox: { marginBottom: 14, gap: 8 },
   // Batang proporsi: lebar tiap ruas = BANYAKNYA area bernada itu (flex diisi
@@ -1024,7 +1079,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   focusBadgeText: { color: Color.WHEEL_DARK },
-  // Angka skor + "/10" dalam pil berwarna nada — didorong ke kanan.
+  // Angka score + "/10" dalam pil berwarna nada — didorong ke kanan.
   scorePill: {
     flexDirection: 'row',
     alignItems: 'baseline',

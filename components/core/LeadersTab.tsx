@@ -53,6 +53,7 @@ import {
 import { MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { localPhone } from '@/lib/phone';
 
 /**
  * Yang sedang DILIHAT (bukan diubah) di modal baca-saja.
@@ -99,9 +100,19 @@ export function LeadersTab({
   const [error, setError] = useState<string | null>(null);
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
-  // Dropdown daftar — default TERTUTUP biar layar tidak langsung penuh list.
-  const [clOpen, setClOpen] = useState(false);
-  const [mtOpen, setMtOpen] = useState(false);
+  // Dropdown daftar — PALING BANYAK SATU yang terbuka, dan bawaannya tidak ada
+  // (null) biar layar tidak langsung penuh list.
+  //
+  // Sengaja SATU state, bukan dua boolean: dua boolean membuat "keduanya
+  // terbuka" jadi keadaan yang mungkin, lalu harus dijaga tangan di tiap
+  // tombolnya. Dengan satu nilai, keadaan itu tidak bisa ada — dan itu yang
+  // dicari: membuka satu daftar sembilan kartu sementara daftar lain masih
+  // terbentang di bawahnya cuma membuat keduanya sama-sama sulit dibaca.
+  const [terbuka, setTerbuka] = useState<'cl' | 'mt' | null>(null);
+  const clOpen = terbuka === 'cl';
+  const mtOpen = terbuka === 'mt';
+  const toggleSeksi = (k: 'cl' | 'mt') =>
+    setTerbuka((cur) => (cur === k ? null : k));
 
   // Form CORE Leader. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<CoreLeader | 'new' | null>(null);
@@ -175,7 +186,7 @@ export function LeadersTab({
     setFName(l.name);
     setFHeart(l.heart);
     setFBirthday(new Date(l.birthYear, l.birthMonth, l.birthDay));
-    setFPhone(l.phone ?? '');
+    setFPhone(localPhone(l.phone ?? ''));
     setFGender(l.gender ?? null);
     setFDisc(l.disc ?? null);
     setFMbti(l.mbti ?? null);
@@ -285,7 +296,7 @@ export function LeadersTab({
     setMtName(m.name);
     setMtLeaderId(m.leaderId);
     setMtBirthday(new Date(m.birthYear, m.birthMonth, m.birthDay));
-    setMtPhone(m.phone ?? '');
+    setMtPhone(localPhone(m.phone ?? ''));
     setMtGender(m.gender ?? null);
     setMtDisc(m.disc ?? null);
     setMtMbti(m.mbti ?? null);
@@ -390,7 +401,7 @@ export function LeadersTab({
         {/* Dropdown CORE Leader (default tertutup) */}
         <PressableScale
           style={styles.toggleHeader}
-          onPress={() => setClOpen((o) => !o)}>
+          onPress={() => toggleSeksi('cl')}>
           <View style={styles.toggleRow}>
             <VixText
               heading="title"
@@ -506,7 +517,7 @@ export function LeadersTab({
         {/* ===== Main Team (dropdown, default tertutup) ===== */}
         <PressableScale
           style={styles.toggleHeader}
-          onPress={() => setMtOpen((o) => !o)}>
+          onPress={() => toggleSeksi('mt')}>
           <View style={styles.toggleRow}>
             <VixText
               heading="title"
@@ -710,19 +721,12 @@ export function LeadersTab({
                 No. HP
               </VixText>
               <View style={styles.phoneRow}>
-                <View style={styles.phonePrefix}>
-                  <VixText
-                    heading="bold"
-                    additionalStyle={styles.phonePrefixText}>
-                    +62
-                  </VixText>
-                </View>
                 <FormInput
                   style={styles.phoneInput}
-                  placeholder="81234567890"
+                  placeholder="081234567890"
                   keyboardType="phone-pad"
                   value={fPhone}
-                  onChangeText={(t) => setFPhone(t.replace(/\D/g, ''))}
+                  onChangeText={(t) => setFPhone(localPhone(t))}
                   editable={!busy}
                 />
               </View>
@@ -849,17 +853,12 @@ export function LeadersTab({
           No. HP
         </VixText>
         <View style={styles.phoneRow}>
-          <View style={styles.phonePrefix}>
-            <VixText heading="bold" additionalStyle={styles.phonePrefixText}>
-              +62
-            </VixText>
-          </View>
           <FormInput
             style={styles.phoneInput}
-            placeholder="81234567890"
+            placeholder="081234567890"
             keyboardType="phone-pad"
             value={mtPhone}
-            onChangeText={(t) => setMtPhone(t.replace(/\D/g, ''))}
+            onChangeText={(t) => setMtPhone(localPhone(t))}
             editable={!busy}
           />
         </View>
@@ -1301,15 +1300,6 @@ const styles = StyleSheet.create({
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   phoneRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  phonePrefix: {
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTRAST_CONTAINER,
-  },
-  phonePrefixText: { color: Color.TEXT_PARAGRAPH },
   phoneInput: { flex: 1 },
   // Cowok / cewek — dua chip selebar setengah baris. marginBottom 10 = jarak
   // yang sama dengan `formGap` di semua kolom lain; tanpa itu label berikutnya

@@ -1,15 +1,15 @@
-import { escapeHtml, htmlParagraphs, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
 import { formatFullDateTime } from './format';
+import { escapeHtml, htmlParagraphs, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
 import {
-  MIN_FOCUS,
-  quarterLabel,
-  radarGeometry,
-  WHEEL_AREAS,
-  type WheelData,
+    MIN_FOCUS,
+    quarterLabel,
+    radarGeometry,
+    WHEEL_AREAS,
+    type WheelData,
 } from './wheel';
 
 // PDF Wheel of Life 🎡 — SELURUH isi satu kuartal dicetak: radar chart, fokus
-// kuartal beserta action plan-nya, skor tiap area beserta alasan penilaiannya,
+// kuartal beserta action plan-nya, score tiap area beserta alasan penilaiannya,
 // plus kapan dibuat & terakhir diubah.
 //
 // Dipakai untuk roda sendiri MAUPUN roda tiap CORE Leader — yang berbeda hanya
@@ -22,7 +22,7 @@ import {
 
 const RADAR_SIZE = 340;
 
-/** Warna nada skor — angka yang sama dengan `scoreTone` di layar Wheel. */
+/** Warna nada score — angka yang sama dengan `scoreTone` di layar Wheel. */
 function tone(score: number): { warna: string; label: string } {
   if (score >= 8) return { warna: '#1D8D7A', label: 'sehat' };
   if (score >= 5) return { warna: '#B8860B', label: 'perlu naik' };
@@ -61,7 +61,7 @@ function radarSvg(values: number[], target: number[] | null): string {
   </svg>`;
 }
 
-/** Satu batang skor 0–10; `target` opsional digambar sebagai garis penanda. */
+/** Satu batang score 0–10; `target` opsional digambar sebagai garis penanda. */
 function bar(score: number, warna: string, target?: number): string {
   const lebar = Math.max(0, Math.min(score, 10)) * 10;
   const penanda =
@@ -100,16 +100,16 @@ function focusHtml(data: WheelData): string {
 
 function scoresHtml(data: WheelData): string {
   return WHEEL_AREAS.map((a) => {
-    const skor = data.scores[a.key] ?? 0;
-    const t = tone(skor);
+    const score = data.scores[a.key] ?? 0;
+    const t = tone(score);
     const catatan = (data.notes[a.key] ?? '').trim();
     const fokus = data.focus.some((f) => f.area === a.key);
     return `<div class="area">
       <div class="area-atas">
         <div class="area-judul">${a.icon} ${escapeHtml(a.label)}${fokus ? ' <em>🎯 fokus</em>' : ''}</div>
-        <div class="area-skor" style="color:${t.warna}">${skor}<small>/10 · ${t.label}</small></div>
+        <div class="area-score" style="color:${t.warna}">${score}<small>/10 · ${t.label}</small></div>
       </div>
-      ${bar(skor, t.warna)}
+      ${bar(score, t.warna)}
       <div class="area-tanya">${escapeHtml(a.question)}</div>
       <div class="area-catatan">${
         catatan ? htmlParagraphs(catatan) : '<p class="kosong">— tanpa catatan —</p>'
@@ -138,7 +138,7 @@ const EXTRA_CSS = `
     padding: 9px 6px; font-size: 11px; font-weight: 700;
   }
 
-  /* Batang skor — dipakai kartu fokus & daftar area */
+  /* Batang score — dipakai kartu fokus & daftar area */
   .bar {
     position: relative; height: 9px; border-radius: 5px;
     background: #F1E7D6; overflow: hidden; margin: 7px 0 0;
@@ -170,7 +170,7 @@ const EXTRA_CSS = `
   }
   .plan p { margin: 0; }
 
-  /* Daftar skor per area */
+  /* Daftar score per area */
   .area {
     border-bottom: 1px solid #F1E7D6; padding: 11px 0;
     page-break-inside: avoid; -webkit-column-break-inside: avoid;
@@ -181,8 +181,8 @@ const EXTRA_CSS = `
   .area-judul em {
     font-style: normal; font-size: 10px; color: #8A6B3E; font-weight: 400;
   }
-  .area-skor { font-size: 17px; font-weight: 700; white-space: nowrap; }
-  .area-skor small { font-size: 10px; font-weight: 400; color: #9AA79F; }
+  .area-score { font-size: 17px; font-weight: 700; white-space: nowrap; }
+  .area-score small { font-size: 10px; font-weight: 400; color: #9AA79F; }
   .area-tanya { color: #9AA79F; font-size: 10.5px; margin-top: 6px; }
   .area-catatan { margin-top: 3px; }
   .area-catatan p { margin: 0; }
@@ -205,7 +205,7 @@ export async function shareWheelPdf(
   const values = WHEEL_AREAS.map((a) => data.scores[a.key] ?? 0);
   const avg = values.reduce((s, v) => s + v, 0) / WHEEL_AREAS.length;
 
-  // Poligon target: skor target untuk area fokus, skor sekarang untuk sisanya
+  // Poligon target: score target untuk area fokus, score sekarang untuk sisanya
   // — aturan yang sama dengan layarnya.
   const target =
     data.focus.length > 0
@@ -231,7 +231,7 @@ export async function shareWheelPdf(
     <div class="radar">
       ${radarSvg(values, target)}
       <p class="rata">${avg.toFixed(1).replace('.', ',')}<small> / 10 rata-rata</small></p>
-      ${target ? '<p class="legenda">─── skor sekarang &nbsp;·&nbsp; ┄┄┄ target fokus</p>' : ''}
+      ${target ? '<p class="legenda">─── score sekarang &nbsp;·&nbsp; ┄┄┄ target fokus</p>' : ''}
     </div>
 
     <div class="sebaran">
@@ -247,7 +247,7 @@ export async function shareWheelPdf(
     }</h2>
     ${focusHtml(data)}
 
-    <h2>📋 Skor per Area</h2>
+    <h2>📋 Score per Area</h2>
     ${scoresHtml(data)}
   `;
 

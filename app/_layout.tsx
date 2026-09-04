@@ -1,13 +1,13 @@
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  useFonts,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    useFonts,
 } from '@expo-google-fonts/inter';
-import { DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
 import { Stack } from 'expo-router';
+import { DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -135,7 +135,7 @@ function RootNavigator() {
         {/* Version 📱 — versi terpasang & tarik update, dari pojok kanan System */}
         <Stack.Screen name="app-version" />
 
-        {/* Rincian satu sesi futsal ⚽ — skuad, setoran, & skor tiap game */}
+        {/* Rincian satu sesi futsal ⚽ — squad, setoran, & score tiap game */}
         <Stack.Screen name="sport/[id]" />
         {/* Kas tim 💰 — saldo & mutasi uang bersama tiap geng */}
         <Stack.Screen name="sport-cash" />

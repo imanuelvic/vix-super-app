@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
@@ -8,6 +8,7 @@ import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { SelectField } from '@/components/common/SelectField';
@@ -158,7 +159,10 @@ export function WeekTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView
+      {/* Sadar-keyboard: kotak rangkuman ada di BAWAH daftar langkah, jadi
+          begitu diketik keyboard menutupinya persis. Sama seperti layar lain
+          yang punya kotak isian di tengah daftar. */}
+      <KeyboardAwareScrollView
         ref={listRef}
         onContentSizeChange={onContentSizeChange}
         contentContainerStyle={styles.content}>
@@ -299,7 +303,6 @@ export function WeekTab({
                     heading="bold"
                     additionalStyle={checked ? styles.stepTitleDone : undefined}>
                     {s.emoji} {s.day} — {s.label}
-                    <VixText heading="label"> · {s.minutes} mnt</VixText>
                   </VixText>
                   {/* Jendela jam mengerjakannya (Senin/Rabu/Jumat). Langkah
                       "Ceritakan" tidak punya jam — ia ikut kapan kamu ketemu
@@ -346,7 +349,7 @@ export function WeekTab({
             Badge-nya ikut pindah. */}
 
         <FormError message={error} gap="none" additionalStyle={styles.error} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Sheet ganti topik */}
       <SheetModal

@@ -45,7 +45,10 @@ export default function CarScreen() {
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   // `repress` = tombol Parts ditekan lagi saat sudah aktif → daftarnya langsung
   // melompat ke bagian yang jatuh tempo (angka merah di badge-nya).
-  const { tab, scrollKey, onTabPress } = useTabScroll<CarTab>('parts');
+  // `tabs` dioper supaya reminder Dashboard bisa menuju sub-tabnya lewat ?tab=.
+  const { tab, scrollKey, onTabPress } = useTabScroll<CarTab>('parts', {
+    tabs: TABS,
+  });
   const [logs, setLogs] = useState<CarLog[] | null>(null);
   const [parts, setParts] = useState<PartStatusMap | null>(null);
   const [error, setError] = useState<string | null>(null);

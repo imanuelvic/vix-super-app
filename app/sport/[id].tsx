@@ -24,18 +24,18 @@ import { useSportData } from '@/hooks/useSportData';
 import { dayIdToDate, formatDayDate, formatShortDayDate } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
-  gangMeta,
-  newSportId,
-  positionMeta,
-  saveSport,
-  sessionCashIn,
-  sessionDueTotal,
-  sessionPaidTotal,
-  sessionTotal,
-  type SportCashEntry,
-  type SportGame,
-  type SportMember,
-  type SportSession,
+    gangMeta,
+    newSportId,
+    positionMeta,
+    saveSport,
+    sessionCashIn,
+    sessionDueTotal,
+    sessionPaidTotal,
+    sessionTotal,
+    type SportCashEntry,
+    type SportGame,
+    type SportMember,
+    type SportSession,
 } from '@/lib/sport';
 import { formatRupiah } from '@/lib/transactions';
 import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
@@ -44,9 +44,9 @@ import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
 //
 // Tiga hal yang cuma bisa diurus di sini, dan sengaja TIDAK ditaruh di daftar
 // sub-tab Sport supaya daftarnya tetap enteng dibaca:
-//   1. Skuad & setoran — siapa jadi ikut, siapa yang sudah bayar.
+//   1. Squad & setoran — siapa jadi ikut, siapa yang sudah bayar.
 //   2. Uang — total, yang masuk, dan sisa yang masih nyangkut di orang.
-//   3. Skor tiap game + siapa yang mencetak golnya (dasar papan top skor).
+//   3. Score tiap game + siapa yang mencetak golnya (dasar papan top score).
 export default function SportSessionScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -120,7 +120,7 @@ export default function SportSessionScreen() {
     });
   }
 
-  /** Ikut / tidak ikut main. Yang dicabut dari skuad ikut lepas dari setoran. */
+  /** Ikut / tidak ikut main. Yang dicabut dari squad ikut lepas dari setoran. */
   async function toggleIkut(m: SportMember) {
     if (!sesi) return;
     const ikut = sesi.squad.includes(m.id);
@@ -320,9 +320,9 @@ export default function SportSessionScreen() {
           </>
         )}
 
-        {/* ===== Skuad & setoran ===== */}
+        {/* ===== Squad & setoran ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          👥 Skuad & Setoran
+          👥 Squad & Setoran
         </VixText>
 
         {anggota.length === 0 ? (
@@ -381,9 +381,9 @@ export default function SportSessionScreen() {
           })
         )}
 
-        {/* ===== Game & skor ===== */}
+        {/* ===== Game & score ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          ⚽ Game & Skor
+          ⚽ Game & Score
         </VixText>
         {sesi.games.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.empty}>
@@ -457,7 +457,7 @@ export default function SportSessionScreen() {
       <SheetModal
         visible={gameOpen}
         title={editGame ? 'Ubah Game' : 'Catat Game'}
-        subtitle="Skor & pencetak golnya"
+        subtitle="Score & pencetak golnya"
         onClose={() => setGameOpen(false)}
         footer={
           <DualButtons
@@ -535,7 +535,7 @@ export default function SportSessionScreen() {
       {/* ===== Sheet catatan ===== */}
       <SheetModal
         visible={catatanOpen}
-        title="Catatan Sesi"
+        title="Catatan"
         onClose={() => setCatatanOpen(false)}
         footer={
           <DualButtons
@@ -546,7 +546,7 @@ export default function SportSessionScreen() {
           />
         }>
         <FormInput
-          placeholder="mis. bawa rompi, parkir di basement, Andre bawa bola"
+          placeholder="Isi catatan yang terjadi saat itu"
           value={fCatatan}
           onChangeText={setFCatatan}
           editable={!busy}

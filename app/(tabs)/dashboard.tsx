@@ -118,8 +118,8 @@ import {
 } from '@/lib/fitness';
 import {
     daysBetween,
-    formatDate,
     formatMonthsDays,
+    formatReminderDate,
     formatShortDayDate,
     MONTH_NAMES,
     whenLabel,
@@ -363,7 +363,9 @@ export default function DashboardScreen() {
       text:
         b.daysUntil === 0
           ? `${b.m.name} — HARI INI 🎉 (ke-${b.turningAge})`
-          : `${b.m.name} — ${b.daysUntil} hari lagi (ke-${b.turningAge})`,
+          : `${b.m.name} — ${b.daysUntil} hari lagi (${formatReminderDate(
+              b.date,
+            )}) — ke-${b.turningAge}`,
     }));
 
   // Reminder KIRIM PDF: pertemuan biasa H-3; acara besar (Gathering, Charity,
@@ -399,7 +401,7 @@ export default function DashboardScreen() {
         id: v.id,
         text: `${meetingKindMeta(v.kind).icon} ${cl} — ${
           days === 0 ? 'HARI INI' : `${days} hari lagi`
-        } (${formatDate(v.date.toDate())})`,
+        } (${formatReminderDate(v.date.toDate())})`,
       };
     });
 
@@ -434,7 +436,9 @@ export default function DashboardScreen() {
       text: `${b.label}${b.sub ? ` · ${b.sub}` : ''} — ${
         b.daysUntil === 0
           ? `HARI INI 🎉 (ke-${b.turningAge})`
-          : `${b.daysUntil} hari lagi (ke-${b.turningAge})`
+          : `${b.daysUntil} hari lagi (${formatReminderDate(
+              b.date,
+            )}) — ke-${b.turningAge}`
       }`,
     }));
 
@@ -1087,7 +1091,17 @@ export default function DashboardScreen() {
               fg={Color.FINANCE_EXPENSE_DARK}
               title="🤝 Reminder Pinjaman"
               texts={debtReminders}
-              onPress={() => router.push('/debts')}
+              // Tiap baris menuju tabnya SENDIRI: "💰 Tagih" tinggal di Lent
+              // Out, "💸 Bayar" di My Debt. Satu kartu memang memuat dua arah
+              // sekaligus, jadi satu tujuan untuk semuanya pasti salah separuh.
+              onItemPress={(id) =>
+                router.push({
+                  pathname: '/debts',
+                  params: {
+                    tab: debts.find((d) => d.id === id)?.direction ?? 'theirs',
+                  },
+                })
+              }
             />
           )}
 
@@ -1117,7 +1131,10 @@ export default function DashboardScreen() {
                 `${fitWindowLabel(now)} · bebas pagi atau sore · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
                 fitQuote(todayId),
               ]}
-              onPress={() => router.push('/fitness')}
+              // Sub-tab 💪 Exercise — di situlah gerakannya dicentang.
+              onPress={() =>
+                router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
+              }
             />
           )}
 
@@ -1128,7 +1145,9 @@ export default function DashboardScreen() {
               fg={Color.FITNESS_DARK}
               title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
               texts={FIT_RECOVERY}
-              onPress={() => router.push('/fitness')}
+              onPress={() =>
+                router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
+              }
             />
           )}
 
@@ -1221,8 +1240,12 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.LEARNING}
               fg={Color.LEARNING_DARK}
-              title={`🎓 Reminder Learning — ${learningDue.emoji} ${learningDue.label} (${learningDue.minutes} mnt)`}
-              onPress={() => router.push('/learning')}>
+              title={`🎓 Reminder Learning — ${learningDue.emoji} ${learningDue.label}`}
+              // Sub-tab 🎯 Target — langkah mingguannya ada di situ,
+              // sedangkan Discussion punya remindernya sendiri di bawah.
+              onPress={() =>
+                router.push({ pathname: '/learning', params: { tab: 'week' } })
+              }>
               <VixText heading="label" additionalStyle={styles.learningText}>
                 {learningSkill.title}
               </VixText>
@@ -1263,7 +1286,13 @@ export default function DashboardScreen() {
               fg={Color.HOUSE_DARK}
               title="🏠 Reminder Residence"
               texts={residenceReminders}
-              onPress={() => router.push('/residence')}
+              // Mendarat di sub-tab 🔧 Maintenance — di situlah baris-baris ini
+              // berada. Bawaan layar Residence adalah Token ⚡ (yang paling
+              // sering diisi), jadi tanpa param ini reminder perawatan
+              // menjatuhkanmu di layar yang sama sekali tidak menyebutnya.
+              onPress={() =>
+                router.push({ pathname: '/residence', params: { tab: 'chores' } })
+              }
             />
           )}
 
@@ -1275,7 +1304,12 @@ export default function DashboardScreen() {
               fg={Color.ACCENT_DARK}
               title="🚗 Reminder Car"
               texts={carReminders}
-              onPress={() => router.push('/car')}
+              // Sub-tab 🔧 Parts — sumber baris-baris ini. Kebetulan sama
+              // dengan bawaan layarnya, tapi ditulis tegas: bawaan boleh
+              // bergeser kapan saja, arti reminder ini tidak.
+              onPress={() =>
+                router.push({ pathname: '/car', params: { tab: 'parts' } })
+              }
             />
           )}
 

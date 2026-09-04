@@ -23,6 +23,7 @@ import {
   achievementCategoryOf,
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORIES,
+  categoryNow,
   resetAchievements,
   subscribeLoginStreak,
   subscribeSelfRewardBalance,
@@ -103,6 +104,7 @@ export default function AchievementsScreen() {
   // PERTAMA — tak ada kedipan daftar dulu baru modal menyusul. Setelah itu
   // parameternya tidak dilihat lagi: ditutup ya tetap tertutup.
   const { cat } = useLocalSearchParams<{ cat?: string }>();
+  const [pickedId, setPickedId] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<AchievementCategoryKey | null>(() =>
     achievementCategoryOf(cat),
   );
@@ -281,6 +283,8 @@ export default function AchievementsScreen() {
   const activeList = openCat
     ? ACHIEVEMENTS.filter((a) => a.category === openCat)
     : [];
+  const sekarang = openCat ? categoryNow(openCat, stats) : null;
+  const picked = activeList.find((a) => a.id === pickedId) ?? null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -444,51 +448,124 @@ export default function AchievementsScreen() {
         visible={openCat !== null}
         title={activeCat ? `${activeCat.icon} ${activeCat.label}` : ''}
         subtitle={activeCat?.desc}
-        onClose={() => setOpenCat(null)}>
+        onClose={() => {
+          setOpenCat(null);
+          setPickedId(null);
+        }}
+        // Angka SEKARANG kategori ini, dipampang di pojok kanan atas. Tanpa
+        // ini, "sudah sampai berapa?" cuma bisa ditebak dari lencana mana yang
+        // setengah terisi — padahal itu justru pertanyaan pertama tiap kali
+        // modal ini dibuka.
+        headerRight={
+          sekarang ? (
+            <View style={styles.nowPill}>
+              <VixText heading="subheader" additionalStyle={styles.nowValue}>
+                {sekarang.text.split(' ')[0]}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.nowUnit}>
+                {sekarang.text.split(' ').slice(1).join(' ')}
+              </VixText>
+            </View>
+          ) : undefined
+        }>
+        {/* Grid lencana — tiga kolom, seperti papan Awards di Duolingo.
+            Bentuk daftar memanjang yang dulu dipakai memaksa menggulung jauh
+            untuk melihat "sudah dapat berapa dari berapa"; sebagai grid,
+            seluruh tangganya terbaca sekali pandang, dan yang sudah terbuka
+            langsung terlihat dari lencananya yang berwarna penuh.
+
+            Rinciannya (keterangan + tanggal + batang kemajuan) tidak hilang:
+            ia pindah ke kartu di bawah grid, muncul saat lencananya di-klik. */}
         <ScrollView
           style={styles.modalList}
           showsVerticalScrollIndicator={false}>
-          {activeList.map((a) => {
-            const value = a.of(stats);
-            const done = value >= a.target;
-            const pct = Math.min((value / a.target) * 100, 100);
-            return (
-              <View key={a.id} style={[styles.row, !done && styles.rowLocked]}>
-                <VixText additionalStyle={styles.rowIcon}>{a.icon}</VixText>
-                <View style={styles.rowMain}>
-                  <View style={styles.catTop}>
-                    <VixText heading="bold" additionalStyle={styles.rowTitle}>
-                      {a.title}
-                    </VixText>
-                    <VixText
-                      heading="bold"
-                      additionalStyle={done ? styles.doneText : styles.lockText}>
-                      {done
-                        ? '✅'
-                        : a.fmt
-                          ? `${a.fmt(Math.min(value, a.target))}/${a.fmt(a.target)}`
-                          : `${Math.min(value, a.target)}/${a.target}`}
-                    </VixText>
+          <View style={styles.grid}>
+            {activeList.map((a) => {
+              const value = a.of(stats);
+              const done = value >= a.target;
+              const dipilih = pickedId === a.id;
+              return (
+                <PressableScale
+                  key={a.id}
+                  style={styles.tile}
+                  onPress={() => setPickedId(dipilih ? null : a.id)}>
+                  {/* Lencananya sendiri: bundaran berwarna saat terbuka, pudar
+                      saat belum — angka targetnya menempel di kakinya, persis
+                      cara Duolingo menandai tiap tingkat. */}
+                  <View style={[styles.badge, !done && styles.badgeLocked]}>
+                    <VixText additionalStyle={styles.badgeIcon}>{a.icon}</VixText>
+                    <View style={[styles.badgeTag, !done && styles.badgeTagLocked]}>
+                      <VixText heading="label" additionalStyle={styles.badgeTagText}>
+                        {a.fmt ? a.fmt(a.target) : a.target}
+                      </VixText>
+                    </View>
                   </View>
-                  <VixText heading="label">{a.desc}</VixText>
-                  {a.detail?.(stats) ? (
-                    <VixText heading="label" additionalStyle={styles.detailText}>
-                      {a.detail(stats)}
-                    </VixText>
-                  ) : null}
-                  <View style={styles.barTrack}>
-                    <View
-                      style={[
-                        styles.barFill,
-                        { width: `${pct}%` },
-                        done && styles.barFillDone,
-                      ]}
-                    />
-                  </View>
-                </View>
+                  <VixText
+                    heading="bold"
+                    numberOfLines={2}
+                    additionalStyle={[
+                      styles.tileTitle,
+                      !done && styles.tileTitleLocked,
+                    ]}>
+                    {a.title}
+                  </VixText>
+                  <VixText
+                    heading="label"
+                    additionalStyle={done ? styles.doneText : styles.lockText}>
+                    {done
+                      ? '✅ terbuka'
+                      : a.fmt
+                        ? `${a.fmt(Math.min(value, a.target))}/${a.fmt(a.target)}`
+                        : `${Math.min(value, a.target)}/${a.target}`}
+                  </VixText>
+                </PressableScale>
+              );
+            })}
+          </View>
+
+          {/* Rincian lencana yang sedang di-klik. Satu kartu, bukan satu per
+              lencana: yang dicari saat mengklik memang cuma satu. */}
+          {picked ? (
+            <View style={styles.pickedCard}>
+              <View style={styles.catTop}>
+                <VixText heading="bold" additionalStyle={styles.rowTitle}>
+                  {picked.icon} {picked.title}
+                </VixText>
+                <VixText
+                  heading="bold"
+                  additionalStyle={
+                    picked.of(stats) >= picked.target
+                      ? styles.doneText
+                      : styles.lockText
+                  }>
+                  {picked.fmt
+                    ? `${picked.fmt(Math.min(picked.of(stats), picked.target))}/${picked.fmt(picked.target)}`
+                    : `${Math.min(picked.of(stats), picked.target)}/${picked.target}`}
+                </VixText>
               </View>
-            );
-          })}
+              <VixText heading="label">{picked.desc}</VixText>
+              {picked.detail?.(stats) ? (
+                <VixText heading="label" additionalStyle={styles.detailText}>
+                  {picked.detail(stats)}
+                </VixText>
+              ) : null}
+              <View style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.barFill,
+                    {
+                      width: `${Math.min((picked.of(stats) / picked.target) * 100, 100)}%`,
+                    },
+                    picked.of(stats) >= picked.target && styles.barFillDone,
+                  ]}
+                />
+              </View>
+            </View>
+          ) : (
+            <VixText heading="label" additionalStyle={styles.gridHint}>
+              Klik lencananya untuk lihat keterangan & kemajuannya.
+            </VixText>
+          )}
         </ScrollView>
       </SheetModal>
 
@@ -574,6 +651,62 @@ export default function AchievementsScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ===== Grid lencana di modal kategori (ala papan Awards Duolingo) =====
+  // Tiga kolom: cukup lega untuk emoji besar + judul dua baris, dan pas untuk
+  // tangga 7–10 tingkat tanpa perlu digulung.
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    rowGap: 14,
+  },
+  tile: { width: '33.33%', alignItems: 'center', paddingHorizontal: 4, gap: 4 },
+  badge: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Color.MAIN_TRANSPARENT,
+    borderWidth: 2,
+    borderColor: Color.MAIN,
+  },
+  // Belum terbuka = pudar & abu, bukan disembunyikan: tangganya harus terlihat
+  // utuh supaya jelas tingkat berikutnya apa.
+  badgeLocked: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderColor: Color.BORDER,
+    opacity: 0.65,
+  },
+  badgeIcon: { fontSize: 28, lineHeight: 34 },
+  // Angka targetnya menempel di kaki lencana, persis cara Duolingo menandai
+  // tiap tingkat — jadi "ini lencana yang ke berapa" terbaca tanpa judulnya.
+  badgeTag: {
+    position: 'absolute',
+    bottom: -6,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    backgroundColor: Color.MAIN,
+  },
+  badgeTagLocked: { backgroundColor: Color.TEXT_PLACEHOLDER },
+  badgeTagText: { color: Color.TEXT_REVERSE },
+  tileTitle: { textAlign: 'center', color: Color.TEXT_TITLE },
+  tileTitleLocked: { color: Color.TEXT_LABEL },
+  gridHint: { textAlign: 'center', marginTop: 16, color: Color.TEXT_PLACEHOLDER },
+  pickedCard: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 12,
+    marginTop: 16,
+    gap: 4,
+  },
+  // Angka sekarang di pojok kanan atas modal — dua baris, angkanya yang besar.
+  nowPill: { alignItems: 'flex-end' },
+  nowValue: { color: Color.MAIN_DARK },
+  nowUnit: { color: Color.TEXT_LABEL },
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Piala di KIRI, angkanya di sebelahnya — kartunya jadi satu baris pendek.

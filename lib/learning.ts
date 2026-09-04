@@ -392,7 +392,6 @@ export const LEARNING_STEPS: {
   day: string;
   emoji: string;
   label: string;
-  minutes: number;
   how: string;
   /** Jendela jam mengerjakannya. Kosong = tidak dipatok jam. */
   time: string;
@@ -403,7 +402,6 @@ export const LEARNING_STEPS: {
     day: 'Senin',
     emoji: '🎯',
     label: 'Kenali',
-    minutes: 15,
     how: 'Pelajari "ini apa, dan kenapa penting buatku?"',
     time: LEARNING_TIME_LABEL,
   },
@@ -413,7 +411,6 @@ export const LEARNING_STEPS: {
     day: 'Rabu',
     emoji: '📖',
     label: 'Gali',
-    minutes: 15,
     how: 'SATU sumber saja: 1 bab buku, 1 artikel, atau 1 video.',
     time: LEARNING_TIME_LABEL,
   },
@@ -423,7 +420,6 @@ export const LEARNING_STEPS: {
     day: 'Jumat',
     emoji: '✍️',
     label: 'Rangkum',
-    minutes: 10,
     how: 'Tulis 3 poin rangkuman darimu.',
     time: LEARNING_TIME_LABEL,
   },
@@ -433,7 +429,6 @@ export const LEARNING_STEPS: {
     day: 'Minggu',
     emoji: '💬',
     label: 'Ceritakan',
-    minutes: 5,
     how: 'Ceritakan ke 1 orang.',
     time: '',
   },

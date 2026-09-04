@@ -50,7 +50,7 @@ export function areaMeta(area: HabitArea) {
  * Tingkat kebiasaan — sekarang tinggal DUA keadaan: inti, atau bukan.
  *
  * Dulu tiga (Inti 🟢 / Pendukung 🟡 / Opsional ⚪), dan tiga tingkat itu tidak
- * pernah benar-benar berbeda dalam pemakaian: yang menentukan streak & skor
+ * pernah benar-benar berbeda dalam pemakaian: yang menentukan streak & score
  * cuma Inti, sedangkan Pendukung & Opsional sama-sama "kalau sempat". Yang
  * tersisa dari perbedaannya cuma tiga lambang berwarna di depan tiap baris
  * yang harus dihafal artinya.
@@ -61,7 +61,7 @@ export function areaMeta(area: HabitArea) {
  */
 export type HabitTier = 'core' | 'support' | 'optional';
 
-/** Kebiasaan ini INTI? Inti = penentu streak 🔥, skor harian, & area hidup. */
+/** Kebiasaan ini INTI? Inti = penentu streak 🔥, score harian, & area hidup. */
 export function isCoreHabit(h: ScheduledHabit): boolean {
   return habitTier(h) === 'core';
 }
@@ -193,9 +193,22 @@ export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
 /** Berapa poin yang diminta baris "Bersyukur 3 Hal". */
 export const GRATITUDE_LINES = 3;
 
+/**
+ * Baris "🙏 Bersyukur 3 Hal".
+ *
+ * Dipisah jadi fungsi bernama karena dipakai DUA hal yang berbeda: bentuk
+ * kolomnya (tiga poin, bukan satu paragraf) dan arsipnya yang punya
+ * penyimpanan sendiri (lihat lib/gratitude.ts). Satu regex, satu tempat —
+ * kalau tidak, mengubah namanya nanti memperbaiki yang satu & melupakan yang
+ * lain.
+ */
+export function isGratitudeHabit(h: ScheduledHabit): boolean {
+  return /bersyukur/i.test(h.label);
+}
+
 /** Baris yang catatannya daftar poin — 0 = satu kotak biasa. */
 export function habitNoteLines(h: ScheduledHabit): number {
-  return /bersyukur/i.test(h.label) ? GRATITUDE_LINES : 0;
+  return isGratitudeHabit(h) ? GRATITUDE_LINES : 0;
 }
 
 /** Pecah catatan jadi tepat `lines` poin (kurang → dikosongkan). */
@@ -290,10 +303,10 @@ export function currentOpenSlot(now: Date): HabitSlot | null {
 /**
  * Kebiasaan yang BERLAKU hari ini — yang ditandai ✗ (dilewati) dibuang.
  *
- * Satu-satunya pintu masuk untuk semua penghitung harian (skor, area, badge
+ * Satu-satunya pintu masuk untuk semua penghitung harian (score, area, badge
  * tab Habits, kartu reminder Dashboard, hitungan tiap sesi). Yang sudah
  * sengaja dilewati bukan lagi "bolong": ia dianggap tidak berlaku hari ini,
- * jadi tidak lagi menagih dan tidak menahan skor.
+ * jadi tidak lagi menagih dan tidak menahan score.
  *
  * Daftar yang DITAMPILKAN di layar tetap memakai daftar lengkap — barisnya
  * masih kelihatan, cuma bertanda ⏭️.
@@ -334,7 +347,7 @@ function allHabitsDone(
   return habits.length > 0 && habits.every((h) => done[h.id]);
 }
 
-// ===================== Skor & streak =====================
+// ===================== Score & streak =====================
 // Streak TIDAK lagi menuntut seluruh kebiasaan tercentang (dengan 39 kebiasaan
 // itu praktis mustahil, dan streaknya jadi selalu 0). Yang menentukan cuma
 // kebiasaan INTI; sisanya murni bonus.
@@ -366,8 +379,8 @@ export function coreDone(
 }
 
 /**
- * Skor harian 0–10 — HANYA dari kebiasaan Inti. Yang bukan inti sengaja tidak
- * ikut dihitung supaya skor ini menjawab satu pertanyaan saja: "yang wajib
+ * Score harian 0–10 — HANYA dari kebiasaan Inti. Yang bukan inti sengaja tidak
+ * ikut dihitung supaya score ini menjawab satu pertanyaan saja: "yang wajib
  * hari ini sudah beres belum?" Efeknya 10/10 selalu sama artinya dengan
  * naiknya streak 🔥 (`coreDone`). Yang ditandai ✗ dihitung belum beres.
  */
@@ -501,6 +514,19 @@ export type HabitMirror =
   | 'bible-morning'
   | 'bible-daytime'
   | 'bible-night';
+
+/**
+ * Baris yang dituju saat layar Habits dibuka DARI kartu di Home (`?focus=…`):
+ * sesinya dibuka, lalu daftarnya digulung tepat ke baris itu.
+ *
+ * Kartu di Home menagih satu hal tertentu, jadi mendarat di puncak daftar 39
+ * baris berarti pekerjaan mencarinya dilempar balik ke kamu. Dua kartu memakai
+ * ini: "📓 Refleksi Hari Ini" (→ 'rhema') & "🌅/🌤️/🌙 … Reading" (→ 'bible-*').
+ *
+ * Selain 'rhema', nilainya = `HabitMirror` — barisnya dicari lewat
+ * `habitMirror`, bukan lewat id yang ditulis tangan.
+ */
+export type HabitFocus = 'rhema' | HabitMirror;
 
 export type HabitLink = {
   /** Cocokkan lewat id tetap — dipakai baris olahraga gabungan. */
