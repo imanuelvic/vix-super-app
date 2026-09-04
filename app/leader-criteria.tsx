@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { CardActionButton } from '@/components/common/CardActionButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
   visionText: { color: Color.TEXT_TITLE },
   tabs: { marginTop: 14 },
   shareButton: { marginTop: 12 },
-  sectionTitle: { marginTop: 18, marginBottom: 2 },
+  sectionTitle: { ...SECTION_SPACE },
   sectionNote: { marginBottom: 8 },
   card: {
     ...CARD,

@@ -90,10 +90,17 @@ import {
     type DataPlan,
 } from '@/lib/device';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
-import { billUnsettled, subscribeBills, type Bill } from '@/lib/friends';
+import {
+    billUnsettled,
+    outstandingTotal,
+    sortedBills,
+    subscribeBills,
+    unpaidCount,
+    type Bill,
+} from '@/lib/friends';
 import {
     EMPTY_SPORT,
-    sportAttention,
+    sportReminders,
     subscribeSport,
     type SportData,
 } from '@/lib/sport';
@@ -118,8 +125,8 @@ import {
 } from '@/lib/fitness';
 import {
     daysBetween,
+    formatDayDate,
     formatMonthsDays,
-    formatReminderDate,
     formatShortDayDate,
     MONTH_NAMES,
     whenLabel,
@@ -363,7 +370,7 @@ export default function DashboardScreen() {
       text:
         b.daysUntil === 0
           ? `${b.m.name} — HARI INI 🎉 (ke-${b.turningAge})`
-          : `${b.m.name} — ${b.daysUntil} hari lagi (${formatReminderDate(
+          : `${b.m.name} — ${b.daysUntil} hari lagi (${formatDayDate(
               b.date,
             )}) — ke-${b.turningAge}`,
     }));
@@ -401,7 +408,7 @@ export default function DashboardScreen() {
         id: v.id,
         text: `${meetingKindMeta(v.kind).icon} ${cl} — ${
           days === 0 ? 'HARI INI' : `${days} hari lagi`
-        } (${formatReminderDate(v.date.toDate())})`,
+        } (${formatDayDate(v.date.toDate())})`,
       };
     });
 
@@ -436,7 +443,7 @@ export default function DashboardScreen() {
       text: `${b.label}${b.sub ? ` · ${b.sub}` : ''} — ${
         b.daysUntil === 0
           ? `HARI INI 🎉 (ke-${b.turningAge})`
-          : `${b.daysUntil} hari lagi (${formatReminderDate(
+          : `${b.daysUntil} hari lagi (${formatDayDate(
               b.date,
             )}) — ke-${b.turningAge}`
       }`,
@@ -627,9 +634,27 @@ export default function DashboardScreen() {
   // dari lib yang sama, bukan ditebak ulang, jadi mustahil ada kartu yang
   // muncul tanpa badge (atau sebaliknya).
   const badgeCounts: Record<string, number> = {
-    friends: bills.filter(billUnsettled).length + sportAttention(sport, now),
     device: devicesNeedingTopUp(dataPlans, now),
   };
+
+  // Reminder Friends 🤝 — SESI & TAGIHAN yang sesungguhnya, satu baris masing2.
+  //
+  // Dua sumber, satu kartu, karena keduanya menyalakan badge yang sama di Home:
+  // sesi futsal yang mendesak (lihat `sportReminders`) dan patungan yang masih
+  // ada orang belum bayar. Idnya diberi awalan supaya tiap baris tahu ia harus
+  // membuka rincian sesi atau rincian nota — dua tujuan yang berbeda.
+  const friendsRows = [
+    ...sportReminders(sport, now).map((r) => ({
+      id: `sesi:${r.id}`,
+      text: r.text,
+    })),
+    ...sortedBills(bills)
+      .filter(billUnsettled)
+      .map((b) => ({
+        id: `nota:${b.id}`,
+        text: `🧾 ${b.title} · ${unpaidCount(b)} orang belum bayar ${formatRupiah(outstandingTotal([b]))}`,
+      })),
+  ];
 
   // Ada reminder "aksi" yang harus dikerjakan hari ini? (dipakai untuk
   // memutuskan apakah perlu memunculkan fallback produktivitas).
@@ -652,6 +677,7 @@ export default function DashboardScreen() {
     gymDayDue ||
     slotUndone.length > 0 ||
     todayUndone > 0 ||
+    friendsRows.length > 0 ||
     anyBadgeReminder(badgeCounts);
 
   // Fallback PRODUKTIVITAS: kalau tidak ada reminder aksi & bukan jam pagi,
@@ -1357,7 +1383,28 @@ export default function DashboardScreen() {
             </ReminderCard>
           )}
 
-          {/* Badge yang belum punya kartunya sendiri (Friends & Device).
+          {/* Reminder FRIENDS 🤝: sesi futsal yang mendesak + patungan yang
+              belum lunas. Tiap baris tombolnya sendiri — sesi membuka rincian
+              sesinya, nota membuka rincian notanya. */}
+          {friendsRows.length > 0 && (
+            <ReminderCard
+              bg={Color.FRIENDS}
+              fg={Color.FRIENDS_DARK}
+              title={`🤝 Reminder Friends — ${friendsRows.length} hal`}
+              texts={friendsRows}
+              onItemPress={(id) => {
+                const potong = id.indexOf(':');
+                const nyata = id.slice(potong + 1);
+                router.push(
+                  id.slice(0, potong) === 'nota'
+                    ? { pathname: '/bill/[id]', params: { id: nyata } }
+                    : { pathname: '/sport/[id]', params: { id: nyata } },
+                );
+              }}
+            />
+          )}
+
+          {/* Badge yang belum punya kartunya sendiri (Device).
               Warnanya ikut tile-nya di Home — lihat components/dashboard. */}
           <BadgeReminders counts={badgeCounts} />
         </View>

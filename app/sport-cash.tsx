@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -344,7 +345,7 @@ const styles = StyleSheet.create({
   saldoMinus: { color: Color.DANGER },
   saldoWarn: { color: Color.DANGER },
   addButton: { marginTop: 10 },
-  sectionTitle: { marginTop: 16, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     ...CARD,

@@ -8,37 +8,17 @@ import {
 import Animated, { FadeInRight } from 'react-native-reanimated';
 
 // Satu baris chip yang bisa digeser ke samping — kategori Reminder, sumber
-// News, pemilih kreator Fun, saringan Riwayat, kelompok topik Diskusi, dan
-// seterusnya. Semuanya dulu menulis `<ScrollView horizontal>`-nya sendiri;
-// sekarang satu bentuk, satu tempat memperbaikinya.
+// News, pemilih kreator Fun, saringan Riwayat, kelompok topik Diskusi.
+// Semuanya dulu menulis `<ScrollView horizontal>`-nya sendiri.
 //
-// SATU bentuk saja, sengaja — dan tiga percobaan lain sudah dibuang karena
-// masing-masing merusak barisnya dengan caranya sendiri:
-//   • `wrap` (turun baris) — baris KEDUA-nya tertimpa isi di bawahnya sampai
-//     chip terakhir ("Kristen") terpotong separuh.
-//   • `spread` (melebar kalau muat) — tidak dipakai satu layar pun.
-//   • `fit` (muat sebaris, lebar dibagi rata) — supaya keenam sumber News
-//     terlihat sekaligus tanpa digeser. Tapi lebar yang dipatok sama rata
-//     menuntut hurufnya yang mengalah: satu baris jadi berisi enam ukuran
-//     huruf berbeda, dan yang terpanjang tetap paling kecil. Chip yang benar
-//     itu KOTAKNYA yang mengikuti hurufnya, bukan sebaliknya.
-// Sekarang semua baris chip berkelakuan sama persis seperti di Reminder:
-// hurufnya seukuran, kotaknya selebar isinya, dan yang tidak muat digeser.
+// SATU bentuk saja: chip yang benar itu KOTAKNYA yang mengikuti hurufnya,
+// bukan sebaliknya (varian "lebar dibagi rata" bikin satu baris berisi enam
+// ukuran huruf berbeda).
 //
-// ── Kenapa `flexGrow: 0` itu WAJIB, bukan selera ──────────────────────────
-// ScrollView bawaan React Native memasang `flexGrow: 1` pada dirinya sendiri
-// (lihat ScrollView.js: baseHorizontal). Di dalam kolom `flex: 1` yang
-// tetangganya juga `flex: 1` — persis susunan tab News: baris chip di atas,
-// isi/loading/pesan gagal di bawah — ruang sisanya dibagi DUA, jadi baris
-// chip yang seharusnya setinggi 40pt ikut melar jadi ratusan pt dan chip-nya
-// berubah bentuk seperti kapsul raksasa. Baru kelihatan saat isinya belum ada
-// (sedang memuat / gagal), karena saat daftarnya penuh ruang sisanya habis.
-// Dengan `flexGrow: 0` barisnya selalu setinggi isinya, apa pun tetangganya.
-//
-// Tingginya sengaja TIDAK dipatok di sini — tiap baris punya jarak bawahnya
-// sendiri yang sudah pas di layarnya. Yang butuh tinggi tetap (Reminder:
-// ScrollView horizontal di Android pernah salah mengukur tinggi kontennya
-// sampai chip terpotong) cukup mengopernya lewat `additionalStyle`.
+// ⚠️ `flexGrow: 0` WAJIB, bukan selera: ScrollView RN memasang `flexGrow: 1`
+// pada dirinya sendiri, jadi di dalam kolom `flex: 1` yang tetangganya juga
+// `flex: 1` (susunan tab News) baris chipnya ikut melar jadi ratusan pt dan
+// chipnya berubah bentuk seperti kapsul raksasa saat isinya belum ada.
 
 /**
  * Nafas tepi: chip yang sedang aktif disisakan sejauh ini dari tepi layar,

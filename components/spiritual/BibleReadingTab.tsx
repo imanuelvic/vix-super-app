@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { BibleRefField } from '@/components/common/BibleRefField';
+import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -94,14 +94,6 @@ export function BibleReadingTab({
     setRefs(splitBibleRefs(d[session]));
     setVersion(d.versions[session]);
     setFormError(null);
-  }
-
-  function setRefAt(index: number, ref: string) {
-    setRefs((list) => list.map((r, i) => (i === index ? ref : r)));
-  }
-
-  function removeRefAt(index: number) {
-    setRefs((list) => list.filter((_, i) => i !== index));
   }
 
   async function handleSave() {
@@ -241,37 +233,7 @@ export function BibleReadingTab({
             `inlinePicker` — daftar kitabnya mengembang di tempat, bukan sebagai
             dialog tengah layar: sheet ini sendiri sudah sebuah modal, dan modal
             di atas modal tidak andal di iOS. */}
-        {refs.map((ref, i) => (
-          <View key={i} style={styles.refCard}>
-            <View style={styles.refTop}>
-              <VixText heading="bold" additionalStyle={styles.refTitle}>
-                Bacaan {i + 1}
-              </VixText>
-              {refs.length > 1 && (
-                <PressableScale onPress={() => removeRefAt(i)} hitSlop={10}>
-                  <VixText heading="label" additionalStyle={styles.removeText}>
-                    Hapus
-                  </VixText>
-                </PressableScale>
-              )}
-            </View>
-            <BibleRefField
-              value={ref}
-              onChange={(next) => setRefAt(i, next)}
-              editable={!busy}
-              inlinePicker
-            />
-          </View>
-        ))}
-
-        {/* Baca lebih dari satu kitab hari itu? Tambah baris baru. */}
-        <PressableScale
-          style={styles.addButton}
-          onPress={() => setRefs((list) => [...list, ''])}>
-          <VixText heading="bold" additionalStyle={styles.addText}>
-            ➕ Tambah kitab lain
-          </VixText>
-        </PressableScale>
+        <BibleRefList refs={refs} onChange={setRefs} editable={!busy} inlinePicker />
 
         <View style={styles.versionRow}>
           <VixText heading="label" additionalStyle={styles.versionLabel}>
@@ -339,36 +301,6 @@ const styles = StyleSheet.create({
   refChipPlain: { backgroundColor: 'transparent', paddingHorizontal: 0 },
   refChipText: { color: Color.SPIRITUAL_DARK },
   cardVersion: { color: Color.TEXT_LABEL },
-  // Kartu "Bacaan N" di dalam sheet edit — bentuk & warnanya disamakan dengan
-  // layar Baca Alkitab, jadi mengubah catatan terasa seperti mengisinya lagi.
-  refCard: {
-    backgroundColor: Color.SPIRITUAL,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: Color.SPIRITUAL_DARK,
-    padding: 14,
-    gap: 10,
-    marginBottom: 10,
-  },
-  refTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
-  },
-  refTitle: { color: Color.SPIRITUAL_DARK },
-  removeText: { color: Color.DANGER },
-  addButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Color.SPIRITUAL_DARK,
-    marginBottom: 12,
-  },
-  addText: { color: Color.SPIRITUAL_DARK },
   versionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   versionLabel: { color: Color.TEXT_LABEL },
   // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).

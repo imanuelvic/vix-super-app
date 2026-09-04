@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -220,7 +221,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   appButtonText: { color: Color.MAIN_DARK },
-  sectionTitle: { marginTop: 6, marginBottom: 10 },
+  sectionTitle: { ...SECTION_SPACE },
   // Laporan pemakaian 📊
   // Dua kartu sebelahan; `alignItems: 'stretch'` (bawaan) menyamakan tingginya
   // walau nama fiturnya beda panjang, jadi tak ada yang menggantung.

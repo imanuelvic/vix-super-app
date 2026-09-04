@@ -4,33 +4,31 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { DateField } from '@/components/common/DateField';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
-import { MoneyInput } from '@/components/common/MoneyInput';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SectionToggle } from '@/components/common/SectionToggle';
-import { SegmentTabs } from '@/components/common/SegmentTabs';
+import { GangTabs } from '@/components/friends/GangTabs';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
-import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
 import { SportSessionCard } from '@/components/friends/SportSessionCard';
+import { SportSessionSheet } from '@/components/friends/SportSessionSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
+import { useSportSessionForm } from '@/hooks/useSportSessionForm';
 import {
   dayIdToDate,
   formatDayDate,
-  groupDigits,
-  parseAmount,
   dayId as toDayId,
 } from '@/lib/format';
 import {
@@ -40,11 +38,9 @@ import {
   lastSession,
   newSportId,
   nextSession,
-  pastSessions,
   positionMeta,
   repeatDayId,
   saveSport,
-  SPORT_GANGS,
   SPORT_POSITIONS,
   upcomingSessions,
   type SportData,
@@ -57,16 +53,20 @@ import { localPhone } from '@/lib/phone';
 import { formatRupiah } from '@/lib/transactions';
 
 /**
- * Anak ScrollView yang DIPATOK di atas saat digulung: judul "👥 Anggota" (7).
+ * Anak ScrollView yang DIPATOK di atas saat digulung: judul "👥 Anggota" (6).
  *
  * Urutan anaknya, dan semuanya SELALU ada (yang bersyarat dibungkus <View>
- * kosong): 0 SegmentTabs · 1 kartu ringkas · 2 tombol Jadwalkan · 3 tombol
- * Ulangi · 4 FormError · 5 kartu Kas · 6 Akan Datang · 7 judul Anggota ·
- * 8 daftar Anggota · 9 Riwayat. Menyisipkan anak baru DI ATAS nomor 7 berarti
- * angka di sini ikut digeser. Ditaruh di luar komponen supaya bukan array baru
- * tiap render.
+ * kosong): 0 kartu ringkas · 1 tombol Jadwalkan · 2 tombol Ulangi · 3 FormError ·
+ * 4 kartu Kas · 5 Akan Datang · 6 judul Anggota · 7 daftar Anggota. Menyisipkan
+ * anak baru DI ATAS nomor 6 berarti angka di sini ikut digeser. Ditaruh di luar
+ * komponen supaya bukan array baru tiap render.
+ *
+ * Tab gengnya sendiri TIDAK di sini: ia berdiri di luar gulungan (lihat di
+ * bawah), jadi ia tak pernah hilang — bukan cuma menempel sampai judul
+ * berikutnya mendorongnya pergi, yang justru yang terjadi kalau dua judul
+ * sama-sama dipatok.
  */
-const STICKY_HEADERS = [7];
+const STICKY_HEADERS = [6];
 
 // Sub-tab Sport ⚽ — pengurus futsal rutin, dari sisi MANAGER.
 //
@@ -96,14 +96,9 @@ export function SportTab({
   const meta = gangMeta(gang);
   const { busy, formError, setFormError, save, remove } = useFormSave();
 
-  // ----- Form sesi -----
-  const [sesiOpen, setSesiOpen] = useState(false);
-  const [editSesi, setEditSesi] = useState<SportSession | null>(null);
-  const [fTanggal, setFTanggal] = useState(now);
-  const [fJam, setFJam] = useState(now);
-  const [fVenue, setFVenue] = useState('');
-  const [fFee, setFFee] = useState('');
-  const [fCatatan, setFCatatan] = useState('');
+  // Formulir jadwal main — isinya di hooks/useSportSessionForm.ts, dipakai
+  // bareng halaman Jadwal Main supaya menjadwalkan & mengubah terasa sama.
+  const formSesi = useSportSessionForm(data, gang);
 
   // ----- Form anggota -----
   const [orangOpen, setOrangOpen] = useState(false);
@@ -122,99 +117,16 @@ export function SportTab({
   const anggota = gangMembers(data, gang);
   const berikut = nextSession(data.sessions, gang, todayId);
   const akanDatang = upcomingSessions(data.sessions, gang, todayId);
-  const riwayat = pastSessions(data.sessions, gang, todayId);
   const terakhir = lastSession(data.sessions, gang);
   const kas = cashBalance(data, gang);
 
   const bukaRincian = (s: SportSession) =>
     router.push({ pathname: '/sport/[id]', params: { id: s.id } });
 
-  // 10 riwayat per halaman — sesi menumpuk terus tiap dua minggu.
-  const { currentPage, pageCount, pageItems, setPage } = usePagination(riwayat);
-  // Anggota punya paginasinya SENDIRI, dan sengaja tidak ikut ke dalam `key`
+  // Anggota punya paginasinya sendiri, dan sengaja tidak ikut ke dalam `key`
   // ScrollView-nya: ganti halaman anggota tidak boleh melempar layar ke atas,
   // karena daftar yang sedang kamu baca ada di tengah halaman.
   const orang = usePagination(anggota);
-
-  // ===================== Sesi =====================
-
-  function bukaSesiBaru(dariTanggal?: string) {
-    setEditSesi(null);
-    setFTanggal(dariTanggal ? dayIdToDate(dariTanggal) : now);
-    // Jam & lapangan & iuran diwarisi dari sesi terakhir: futsal rutin hampir
-    // selalu di jam & lapangan yang sama, jadi mengetik ulang tiap dua minggu
-    // itu pekerjaan yang tidak perlu ada.
-    const j = terakhir?.time ?? '20.00';
-    const [jam, menit] = j.split('.').map((n) => Number(n) || 0);
-    const t = new Date(now);
-    t.setHours(jam, menit, 0, 0);
-    setFJam(t);
-    setFVenue(terakhir?.venue ?? '');
-    setFFee(terakhir?.fee ? groupDigits(String(terakhir.fee)) : '');
-    setFCatatan('');
-    setFormError(null);
-    setSesiOpen(true);
-  }
-
-  function bukaSesiUbah(s: SportSession) {
-    setEditSesi(s);
-    setFTanggal(dayIdToDate(s.dayId));
-    const [jam, menit] = s.time.split('.').map((n) => Number(n) || 0);
-    const t = new Date(now);
-    t.setHours(jam, menit, 0, 0);
-    setFJam(t);
-    setFVenue(s.venue);
-    setFFee(s.fee ? groupDigits(String(s.fee)) : '');
-    setFCatatan(s.note);
-    setFormError(null);
-    setSesiOpen(true);
-  }
-
-  async function simpanSesi() {
-    if (!user || busy) return;
-    if (!fVenue.trim()) {
-      setFormError('Lapangannya diisi dulu — itu yang paling sering ditanya di grup.');
-      return;
-    }
-    const jam = `${String(fJam.getHours()).padStart(2, '0')}.${String(
-      fJam.getMinutes(),
-    ).padStart(2, '0')}`;
-    const isi: SportSession = {
-      id: editSesi?.id ?? newSportId(now),
-      gang,
-      dayId: toDayId(fTanggal),
-      time: jam,
-      venue: fVenue.trim(),
-      fee: parseAmount(fFee),
-      // Sesi baru: SEMUA anggota geng langsung masuk squad. Menghapus yang
-      // berhalangan jauh lebih cepat daripada mencentang satu per satu, dan
-      // absen kosong bikin sesinya terlihat batal padahal belum.
-      squad: editSesi?.squad ?? anggota.map((m) => m.id),
-      paid: editSesi?.paid ?? [],
-      games: editSesi?.games ?? [],
-      note: fCatatan.trim(),
-    };
-    await save(async () => {
-      await saveSport(user.uid, {
-        ...data,
-        sessions: editSesi
-          ? data.sessions.map((s) => (s.id === editSesi.id ? isi : s))
-          : [...data.sessions, isi],
-      });
-      setSesiOpen(false);
-    });
-  }
-
-  async function hapusSesi() {
-    if (!user || !editSesi || busy) return;
-    await remove(async () => {
-      await saveSport(user.uid, {
-        ...data,
-        sessions: data.sessions.filter((s) => s.id !== editSesi.id),
-      });
-      setSesiOpen(false);
-    });
-  }
 
   // ===================== Anggota =====================
 
@@ -300,20 +212,16 @@ export function SportTab({
           di bawah dibungkus <View> yang SELALU ada (isinya saja yang kosong) —
           ditulis `{syarat && …}` telanjang, anaknya lenyap saat syaratnya
           salah dan nomor patokannya meleset ke elemen lain. */}
+      {/* Tab geng berdiri DI LUAR gulungan: ia tak ikut bergerak sama sekali,
+          jadi berpindah geng selalu satu klik dari mana pun kamu berhenti
+          membaca. Keterangan kecil di bawah namanya dibuang — yang dicari di
+          deretan ini cuma "aku sedang di geng mana". */}
+      <GangTabs value={gang} onChange={onGangChange} gap={8} />
+
       <ScrollView
-        key={`${gang}-${currentPage}`}
+        key={gang}
         contentContainerStyle={styles.content}
         stickyHeaderIndices={STICKY_HEADERS}>
-        <SegmentTabs
-          tabs={SPORT_GANGS.map((g) => ({
-            key: g.key,
-            label: `${g.emoji} ${g.label}`,
-            sub: `${data.members.filter((m) => m.gang === g.key).length} orang`,
-          }))}
-          value={gang}
-          onChange={onGangChange}
-        />
-
         {/* Kartu utama: pertandingan berikutnya. Inilah satu-satunya hal yang
             benar-benar ditanya semua orang di grup. */}
         <SummaryCard style={styles.hero}>
@@ -350,14 +258,14 @@ export function SportTab({
         <PrimaryButton
           label="Jadwalkan Main"
           icon="plus"
-          onPress={() => bukaSesiBaru()}
+          onPress={() => formSesi.bukaBaru()}
           additionalStyle={styles.addButton}
         />
         <View>
           {terakhir && (
             <PressableScale
               style={styles.ulangButton}
-              onPress={() => bukaSesiBaru(repeatDayId(terakhir.dayId, gang))}>
+              onPress={() => formSesi.bukaBaru(repeatDayId(terakhir.dayId, gang))}>
               <VixText heading="bold" additionalStyle={styles.ulangText}>
                 🔁 Repeat (2 weeks)
               </VixText>
@@ -365,7 +273,7 @@ export function SportTab({
           )}
         </View>
 
-        <FormError message={formError} gap="top" />
+        <FormError message={formSesi.formError ?? formError} gap="top" />
 
         {/* ===== Kas tim ===== */}
         {/* Uang bersama yang sedang kamu pegang. Ditaruh di atas, bukan di
@@ -397,7 +305,12 @@ export function SportTab({
                 </VixText>
                 <PressableScale
                   style={styles.miniButton}
-                  onPress={() => router.push('/sport-schedule')}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/sport-schedule',
+                      params: { gang },
+                    })
+                  }
                   hitSlop={8}>
                   <VixText heading="bold" additionalStyle={styles.miniButtonText}>
                     Lihat semua{akanDatang.length > 1 ? ` (${akanDatang.length})` : ''}
@@ -408,7 +321,7 @@ export function SportTab({
                 s={berikut}
                 now={now}
                 onOpen={bukaRincian}
-                onEdit={bukaSesiUbah}
+                onEdit={formSesi.bukaUbah}
               />
             </>
           )}
@@ -476,101 +389,14 @@ export function SportTab({
             Dulu ia menumpang di sini, terjepit antara daftar anggota & riwayat
             main, jadi baru terbaca sesudah menggulung melewati keduanya. */}
 
-        {/* ===== Riwayat ===== */}
-        <View>
-          {riwayat.length > 0 && (
-            <>
-              <VixText heading="title" additionalStyle={styles.sectionTitle}>
-                🧾 Riwayat Main
-              </VixText>
-              {pageItems.map((s) => (
-                <SportSessionCard
-                  key={s.id}
-                  s={s}
-                  now={now}
-                  onOpen={bukaRincian}
-                  onEdit={bukaSesiUbah}
-                />
-              ))}
-              <Pagination
-                page={currentPage}
-                pageCount={pageCount}
-                onChange={setPage}
-              />
-            </>
-          )}
-        </View>
+        {/* Riwayat main PINDAH ke halaman Jadwal Main ("Lihat semua"): satu
+            tempat untuk seluruh daftar pertandingan, yang akan datang maupun
+            yang sudah lewat. Di sini ia cuma mendorong anggota & kas jauh ke
+            bawah, padahal yang dibuka tiap hari justru keduanya. */}
       </ScrollView>
 
-      {/* ===== Sheet sesi ===== */}
-      <SheetModal
-        visible={sesiOpen}
-        title={editSesi ? 'Ubah Jadwal Main' : 'Jadwalkan Main'}
-        subtitle={`${meta.emoji} ${meta.label}`}
-        onClose={() => setSesiOpen(false)}
-        footer={
-          <DualButtons
-            confirmLabel="Simpan"
-            busy={busy}
-            onCancel={() => setSesiOpen(false)}
-            onConfirm={simpanSesi}
-          />
-        }>
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🗓️ Tanggal
-        </VixText>
-        <DateField
-          key={editSesi?.id ?? 'baru'}
-          value={fTanggal}
-          onChange={setFTanggal}
-        />
-
-        <View style={styles.formGap}>
-          <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            🕗 Jam
-          </VixText>
-          <TimeField value={fJam} onChange={setFJam} />
-        </View>
-
-        <VixText heading="label" additionalStyle={[styles.fieldLabel, styles.formGap]}>
-          📍 Lapangan
-        </VixText>
-        <FormInput
-          placeholder="Nama lapangan"
-          value={fVenue}
-          onChangeText={setFVenue}
-          editable={!busy}
-        />
-
-        <VixText heading="label" additionalStyle={[styles.fieldLabel, styles.formGap]}>
-          💵 Iuran per orang
-        </VixText>
-        <MoneyInput
-          placeholder="Isi angka"
-          value={fFee}
-          onChangeText={(t) => setFFee(groupDigits(t))}
-          editable={!busy}
-        />
-
-        <FormInput
-          style={styles.formGap}
-          placeholder="Isi catatan yang terjadi saat itu"
-          value={fCatatan}
-          onChangeText={setFCatatan}
-          editable={!busy}
-          multiline
-        />
-
-        <FormError message={formError} gap="top" />
-        {editSesi && (
-          <InlineDelete
-            key={editSesi.id}
-            label="Hapus jadwal ini"
-            busy={busy}
-            onDelete={hapusSesi}
-          />
-        )}
-      </SheetModal>
+      {/* ===== Sheet jadwal main ===== */}
+      <SportSessionSheet form={formSesi} gang={gang} />
 
       {/* ===== Sheet anggota ===== */}
       <SheetModal
@@ -653,14 +479,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   ulangText: { color: Color.FRIENDS_DARK },
-  sectionTitle: { marginTop: 14, marginBottom: 8 },
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    marginTop: 14,
-    marginBottom: 8,
+    ...SECTION_SPACE,
   },
   sectionTitleFlat: { flex: 1, minWidth: 0 },
   miniButton: {

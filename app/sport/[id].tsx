@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -12,6 +13,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SectionToggle } from '@/components/common/SectionToggle';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -24,6 +26,7 @@ import { useSportData } from '@/hooks/useSportData';
 import { dayIdToDate, formatDayDate, formatShortDayDate } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
+    gangMembers,
     gangMeta,
     newSportId,
     positionMeta,
@@ -32,6 +35,8 @@ import {
     sessionDueTotal,
     sessionPaidTotal,
     sessionTotal,
+    sessionUnpaidCount,
+    squadOrder,
     type SportCashEntry,
     type SportGame,
     type SportMember,
@@ -39,6 +44,12 @@ import {
 } from '@/lib/sport';
 import { formatRupiah } from '@/lib/transactions';
 import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
+
+// Nomor anak ScrollView yang DIPATOK: judul "Squad & Setoran".
+// Menghitung ANAK LANGSUNG — karena itu tiap bagian di bawah dibungkus satu
+// View, termasuk yang isinya bersyarat: `{cond && …}` yang bernilai false
+// menghilang dari daftar anak dan menggeser semua nomor sesudahnya.
+const STICKY_HEADERS = [1];
 
 // Rincian satu sesi futsal ⚽ — ruang kerja managernya.
 //
@@ -65,6 +76,12 @@ export default function SportSessionScreen() {
 
   // Form catatan.
   const [catatanOpen, setCatatanOpen] = useState(false);
+
+  // Daftar squad terbuka? Bawaannya TERBUKA — beda dengan bagian buka-tutup
+  // lain di app ini, dan itu disengaja: halaman ini dibuka justru UNTUK daftar
+  // ini (mencentang setoran & menagih). Kalau tertutup, yang tersaji cuma dua
+  // baris ringkasan dan tiap kali harus dibuka dulu.
+  const [squadOpen, setSquadOpen] = useState(true);
   const [fCatatan, setFCatatan] = useState('');
 
   const sesi = data?.sessions.find((s) => s.id === id) ?? null;
@@ -91,7 +108,17 @@ export default function SportSessionScreen() {
   }
 
   const meta = gangMeta(sesi.gang);
-  const anggota = data.members.filter((m) => m.gang === sesi.gang);
+  // Bawaannya urut abjad nama (lewat `gangMembers`) — urutan tambahnya sendiri
+  // tak berarti apa-apa buat siapa pun. Baris "Squad & Setoran" memakai urutan
+  // itu lagi, cuma dikelompokkan ulang menurut status setorannya.
+  const anggota = gangMembers(data, sesi.gang);
+  const barisSquad = squadOrder(anggota, sesi);
+  // Baris kecil di bawah judulnya — ia MERINGKAS yang sedang disembunyikan,
+  // jadi menutup daftarnya tidak berarti kehilangan kabar terpentingnya.
+  const belumSetor = sessionUnpaidCount(sesi);
+  const ringkasSquad = `${sesi.squad.length} main${
+    belumSetor > 0 ? ` · ${belumSetor} belum setor` : sesi.squad.length > 0 ? ' · lunas semua ✅' : ''
+  }`;
   const total = sessionTotal(sesi);
   const masuk = sessionPaidTotal(sesi);
   const kurang = sessionDueTotal(sesi);
@@ -120,7 +147,14 @@ export default function SportSessionScreen() {
     });
   }
 
-  /** Ikut / tidak ikut main. Yang dicabut dari squad ikut lepas dari setoran. */
+  /**
+   * Ikut / tidak ikut main.
+   *
+   * Setorannya TIDAK ikut dicabut: batal main bukan berarti uangnya ditarik
+   * kembali. Kalau memang belum menyetor, centang setorannya toh sudah kosong;
+   * kalau sudah, mencabutnya diam-diam berarti kas kehilangan uang yang
+   * sebenarnya ada di tanganmu.
+   */
   async function toggleIkut(m: SportMember) {
     if (!sesi) return;
     const ikut = sesi.squad.includes(m.id);
@@ -128,16 +162,15 @@ export default function SportSessionScreen() {
       await simpanSesi((s) => ({
         ...s,
         squad: ikut ? s.squad.filter((x) => x !== m.id) : [...s.squad, m.id],
-        paid: ikut ? s.paid.filter((x) => x !== m.id) : s.paid,
       }));
     } catch {
       setError(SAVE_ERROR);
     }
   }
 
-  /** Sudah setor / belum. Yang tidak ikut main tidak bisa ditandai lunas. */
+  /** Sudah setor / belum — boleh dicentang walau ia tidak ikut main. */
   async function toggleLunas(m: SportMember) {
-    if (!sesi || !sesi.squad.includes(m.id)) return;
+    if (!sesi) return;
     const lunas = sesi.paid.includes(m.id);
     try {
       await simpanSesi((s) => ({
@@ -276,181 +309,204 @@ export default function SportSessionScreen() {
 
       <ScreenError message={error} />
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* ===== Uang ===== */}
-        <SummaryCard>
-          <VixText heading="label" additionalStyle={summaryText.label}>
-            📍 {sesi.venue || 'Lapangan belum ditentukan'}
-          </VixText>
-          <VixText heading="subheader" additionalStyle={summaryText.value}>
-            {formatRupiah(masuk)} / {formatRupiah(total)}
-          </VixText>
-          <VixText heading="label" additionalStyle={summaryText.label}>
-            {kurang > 0
-              ? `Kurang ${formatRupiah(kurang)} dari ${
-                  sesi.squad.filter((x) => !sesi.paid.includes(x)).length
-                } orang`
-              : sesi.squad.length > 0
-                ? 'Semua sudah setor ✅'
-                : 'Belum ada yang ikut main'}
-          </VixText>
-        </SummaryCard>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        stickyHeaderIndices={STICKY_HEADERS}>
+        {/* 0 — uang: ringkasan + tombol setor ke kas. Dibungkus SATU View
+            supaya nomor patokan di bawah tidak bergeser saat tombol kasnya
+            muncul/menghilang. */}
+        <View>
+          {/* ===== Uang ===== */}
+          <SummaryCard>
+            <VixText heading="label" additionalStyle={summaryText.label}>
+              📍 {sesi.venue || 'Lapangan belum ditentukan'}
+            </VixText>
+            <VixText heading="subheader" additionalStyle={summaryText.value}>
+              {formatRupiah(masuk)} / {formatRupiah(total)}
+            </VixText>
+            <VixText heading="label" additionalStyle={summaryText.label}>
+              {kurang > 0
+                ? `Kurang ${formatRupiah(kurang)} dari ${belumSetor} orang`
+                : sesi.squad.length > 0
+                  ? 'Semua sudah setor ✅'
+                  : 'Belum ada yang ikut main'}
+            </VixText>
+          </SummaryCard>
 
-        {/* Uang yang sudah terkumpul masih ada di tanganmu sampai dipindahkan
-            ke kas geng. Tanpa tombol ini kamu harus mengetik ulang angkanya di
-            halaman Kas — dan angka yang diketik ulang itulah yang biasanya
-            meleset. */}
-        {masuk > 0 && (
-          <>
-            {belumKeKas > 0 ? (
-              <PressableScale
-                style={styles.kasButton}
-                onPress={setorKeKas}
-                disabled={busy}>
-                <VixText heading="bold" additionalStyle={styles.kasButtonText}>
-                  💰 Setor {formatRupiah(belumKeKas)} ke Kas {meta.label}
-                </VixText>
-              </PressableScale>
-            ) : (
-              <VixText heading="label" additionalStyle={styles.kasDone}>
-                ✅ {formatRupiah(keKas)} dari sesi ini sudah masuk kas {meta.label}.
-              </VixText>
-            )}
-            <FormError message={formError} gap="top" />
-          </>
-        )}
-
-        {/* ===== Squad & setoran ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          👥 Squad & Setoran
-        </VixText>
-
-        {anggota.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada anggota {meta.label} — tambahkan dulu di sub-tab Sport.
-          </VixText>
-        ) : (
-          anggota.map((m) => {
-            const ikut = sesi.squad.includes(m.id);
-            const lunas = sesi.paid.includes(m.id);
-            const pos = positionMeta(m.position);
-            return (
-              <View
-                key={m.id}
-                style={[styles.row, !ikut && styles.rowOff, lunas && styles.rowPaid]}>
+          {/* Uang yang sudah terkumpul masih ada di tanganmu sampai dipindahkan
+              ke kas geng. Tanpa tombol ini kamu harus mengetik ulang angkanya di
+              halaman Kas — dan angka yang diketik ulang itulah yang biasanya
+              meleset. */}
+          {masuk > 0 && (
+            <>
+              {belumKeKas > 0 ? (
                 <PressableScale
-                  onPress={() => toggleIkut(m)}
-                  hitSlop={6}
-                  haptic={ikut ? 'light' : 'success'}>
-                  <CheckCircle checked={ikut} />
+                  style={styles.kasButton}
+                  onPress={setorKeKas}
+                  disabled={busy}>
+                  <VixText heading="bold" additionalStyle={styles.kasButtonText}>
+                    💰 Setor {formatRupiah(belumKeKas)} ke Kas {meta.label}
+                  </VixText>
                 </PressableScale>
-
-                <View style={styles.rowMain}>
-                  <VixText heading="bold" additionalStyle={styles.rowName}>
-                    {pos.emoji} {m.name}
-                  </VixText>
-                  <VixText heading="label">
-                    {ikut
-                      ? lunas
-                        ? `✅ Sudah setor ${formatRupiah(sesi.fee)}`
-                        : `💸 Belum setor ${formatRupiah(sesi.fee)}`
-                      : 'Tidak ikut main kali ini'}
-                  </VixText>
-                </View>
-
-                {ikut && !lunas && (
-                  <PressableScale
-                    style={styles.tagih}
-                    onPress={() => tagih(m)}
-                    hitSlop={6}>
-                    <VixText heading="label" additionalStyle={styles.tagihText}>
-                      💬
-                    </VixText>
-                  </PressableScale>
-                )}
-                {ikut && (
-                  <PressableScale
-                    onPress={() => toggleLunas(m)}
-                    hitSlop={6}
-                    haptic={lunas ? 'light' : 'success'}>
-                    <CheckCircle checked={lunas} />
-                  </PressableScale>
-                )}
-              </View>
-            );
-          })
-        )}
-
-        {/* ===== Game & score ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          ⚽ Game & Score
-        </VixText>
-        {sesi.games.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada game tercatat.
-          </VixText>
-        ) : (
-          sesi.games.map((g, i) => (
-            <PressableScale
-              key={g.id}
-              style={styles.gameCard}
-              onPress={() => bukaGameUbah(g)}>
-              <VixText heading="label" additionalStyle={styles.gameNo}>
-                Game {i + 1}
-              </VixText>
-              <View style={styles.gameRow}>
-                <VixText heading="bold" additionalStyle={styles.gameTim}>
-                  {g.teamA}
-                </VixText>
-                <VixText heading="subheader" additionalStyle={styles.gameSkor}>
-                  {g.scoreA} – {g.scoreB}
-                </VixText>
-                <VixText heading="bold" additionalStyle={styles.gameTimKanan}>
-                  {g.teamB}
-                </VixText>
-              </View>
-              {g.scorers.length > 0 && (
-                <VixText heading="label" additionalStyle={styles.gamePencetak}>
-                  ⚽{' '}
-                  {[...new Set(g.scorers)]
-                    .map((sid) => {
-                      const orang = anggota.find((m) => m.id === sid);
-                      const n = g.scorers.filter((x) => x === sid).length;
-                      return orang
-                        ? `${orang.name}${n > 1 ? ` ×${n}` : ''}`
-                        : null;
-                    })
-                    .filter(Boolean)
-                    .join(' · ')}
+              ) : (
+                <VixText heading="label" additionalStyle={styles.kasDone}>
+                  ✅ {formatRupiah(keKas)} dari sesi ini sudah masuk kas {meta.label}.
                 </VixText>
               )}
-            </PressableScale>
-          ))
-        )}
-        <PrimaryButton
-          label="Catat Game"
-          icon="plus"
-          onPress={bukaGameBaru}
-          additionalStyle={styles.addButton}
+              <FormError message={formError} gap="top" />
+            </>
+          )}
+
+        </View>
+
+        {/* 1 — judul Squad & Setoran, DIPATOK di atas (lihat STICKY_HEADERS).
+            Daftarnya panjang (sampai 19 orang), jadi setelah menggulung
+            beberapa layar judulnya sudah lama hilang — dan bersamanya tombol
+            tutupnya. Dipatok, ia tetap terjangkau di mana pun kamu berhenti. */}
+        <SectionToggle
+          title="👥 Squad & Setoran"
+          sub={ringkasSquad}
+          open={squadOpen}
+          onToggle={() => setSquadOpen((v) => !v)}
         />
 
-        {/* ===== Catatan ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          📝 Catatan
-        </VixText>
-        <PressableScale
-          style={styles.noteCard}
-          onPress={() => {
-            setFCatatan(sesi.note);
-            setFormError(null);
-            setCatatanOpen(true);
-          }}>
-          <VixText
-            heading="label"
-            additionalStyle={sesi.note ? styles.noteText : styles.notePlaceholder}>
-            {sesi.note || 'Belum ada catatan.'}
+        {/* 2 — isinya. */}
+        <View>
+          {squadOpen &&
+            (anggota.length === 0 ? (
+              <VixText heading="label" additionalStyle={styles.empty}>
+                Belum ada anggota {meta.label} — tambahkan dulu di sub-tab Sport.
+              </VixText>
+            ) : (
+              barisSquad.map((m) => {
+                const ikut = sesi.squad.includes(m.id);
+                const lunas = sesi.paid.includes(m.id);
+                const pos = positionMeta(m.position);
+                return (
+                  <View
+                    key={m.id}
+                    style={[styles.row, !ikut && styles.rowOff, lunas && styles.rowPaid]}>
+                    <PressableScale
+                      onPress={() => toggleIkut(m)}
+                      hitSlop={6}
+                      haptic={ikut ? 'light' : 'success'}>
+                      <CheckCircle checked={ikut} />
+                    </PressableScale>
+
+                    <View style={styles.rowMain}>
+                      <VixText heading="bold" additionalStyle={styles.rowName}>
+                        {pos.emoji} {m.name}
+                      </VixText>
+                      <VixText heading="label">
+                        {lunas
+                          ? `✅ Sudah setor ${formatRupiah(sesi.fee)}${
+                              ikut ? '' : ' — walau tidak ikut main'
+                            }`
+                          : ikut
+                            ? `💸 Belum setor ${formatRupiah(sesi.fee)}`
+                            : 'Tidak ikut main kali ini'}
+                      </VixText>
+                    </View>
+
+                    {/* Tombol tagih cuma untuk yang IKUT MAIN & belum setor —
+                        menagih orang yang tidak jadi main itu salah alamat. */}
+                    {ikut && !lunas && (
+                      <PressableScale
+                        style={styles.tagih}
+                        onPress={() => tagih(m)}
+                        hitSlop={6}>
+                        <VixText heading="label" additionalStyle={styles.tagihText}>
+                          💬
+                        </VixText>
+                      </PressableScale>
+                    )}
+                    {/* Centang setoran SELALU ada: yang berhalangan datang pun
+                        boleh tetap patungan, dan uangnya harus bisa dicatat. */}
+                    <PressableScale
+                      onPress={() => toggleLunas(m)}
+                      hitSlop={6}
+                      haptic={lunas ? 'light' : 'success'}>
+                      <CheckCircle checked={lunas} />
+                    </PressableScale>
+                  </View>
+                );
+              })
+            ))}
+        </View>
+
+        {/* 3 — sisa layarnya, satu anak juga. */}
+        <View>
+          {/* ===== Game & score ===== */}
+          <VixText heading="title" additionalStyle={styles.sectionTitle}>
+            ⚽ Game & Score
           </VixText>
-        </PressableScale>
+          {sesi.games.length === 0 ? (
+            <VixText heading="label" additionalStyle={styles.empty}>
+              Belum ada game tercatat.
+            </VixText>
+          ) : (
+            sesi.games.map((g, i) => (
+              <PressableScale
+                key={g.id}
+                style={styles.gameCard}
+                onPress={() => bukaGameUbah(g)}>
+                <VixText heading="label" additionalStyle={styles.gameNo}>
+                  Game {i + 1}
+                </VixText>
+                <View style={styles.gameRow}>
+                  <VixText heading="bold" additionalStyle={styles.gameTim}>
+                    {g.teamA}
+                  </VixText>
+                  <VixText heading="subheader" additionalStyle={styles.gameSkor}>
+                    {g.scoreA} – {g.scoreB}
+                  </VixText>
+                  <VixText heading="bold" additionalStyle={styles.gameTimKanan}>
+                    {g.teamB}
+                  </VixText>
+                </View>
+                {g.scorers.length > 0 && (
+                  <VixText heading="label" additionalStyle={styles.gamePencetak}>
+                    ⚽{' '}
+                    {[...new Set(g.scorers)]
+                      .map((sid) => {
+                        const orang = anggota.find((m) => m.id === sid);
+                        const n = g.scorers.filter((x) => x === sid).length;
+                        return orang
+                          ? `${orang.name}${n > 1 ? ` ×${n}` : ''}`
+                          : null;
+                      })
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </VixText>
+                )}
+              </PressableScale>
+            ))
+          )}
+          <PrimaryButton
+            label="Catat Game"
+            icon="plus"
+            onPress={bukaGameBaru}
+            additionalStyle={styles.addButton}
+          />
+
+          {/* ===== Catatan ===== */}
+          <VixText heading="title" additionalStyle={styles.sectionTitle}>
+            📝 Catatan
+          </VixText>
+          <PressableScale
+            style={styles.noteCard}
+            onPress={() => {
+              setFCatatan(sesi.note);
+              setFormError(null);
+              setCatatanOpen(true);
+            }}>
+            <VixText
+              heading="label"
+              additionalStyle={sesi.note ? styles.noteText : styles.notePlaceholder}>
+              {sesi.note || 'Belum ada catatan.'}
+            </VixText>
+          </PressableScale>
+        </View>
       </ScrollView>
 
       {/* ===== Sheet game ===== */}
@@ -562,7 +618,7 @@ export default function SportSessionScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
-  sectionTitle: { marginTop: 16, marginBottom: 6 },
+  sectionTitle: { ...SECTION_SPACE },
   empty: { textAlign: 'center', marginVertical: 10 },
   // Setor ke kas: garis saja, bukan tombol penuh — memindahkan uang ke kas itu
   // langkah lanjutan, bukan tindakan utama layar ini.

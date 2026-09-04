@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
 import { Chip } from '@/components/common/Chip';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -173,6 +174,6 @@ const styles = StyleSheet.create({
     height: REMINDER_H,
     transformOrigin: 'top left',
   },
-  sectionTitle: { marginTop: 14, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

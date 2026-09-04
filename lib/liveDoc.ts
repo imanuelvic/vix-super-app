@@ -11,37 +11,25 @@ import {
   type QuerySnapshot,
 } from 'firebase/firestore';
 
-// Lapisan bersama untuk semua langganan DOKUMEN Firestore. Dua masalah yang
-// diselesaikan sekaligus:
+// Lapisan bersama semua langganan Firestore. Dua gunanya:
 //
-// 1. LANGGANAN KEMBAR. Dokumen yang sama dipasang berkali-kali oleh layar
-//    berbeda — `health/profile` dipasang 7 layar, `core/leaders` 7 layar,
-//    `habitDays/{hari ini}` 5 layar. Karena tab tetap terpasang setelah
-//    dibuka, semuanya hidup berbarengan: 7 koneksi, 7 salinan data di memori,
-//    dan 7× biaya baca Firestore untuk isi yang persis sama.
-//    Di sini semuanya digabung jadi SATU listener per dokumen, hasilnya
-//    dibagikan ke semua pemakai (dihitung dengan ref-count).
+// 1. SATU listener per dokumen/kueri walau dipakai banyak layar (ref-count).
+//    health/profile dipasang 7 layar, core/leaders 7, habitDays hari ini 5 —
+//    dan tab tetap hidup setelah dibuka, jadi tanpa ini biayanya 7× lipat.
+// 2. NILAI TERAKHIR disimpan ke AsyncStorage & ditampilkan lebih dulu.
+//    Firebase JS SDK tidak punya cache disk di RN, jadi tanpa ini tiap layar
+//    berkedip kosong menunggu server.
 //
-// 2. LAYAR KOSONG SAAT DIBUKA. Firebase JS SDK TIDAK punya cache disk di
-//    React Native (butuh IndexedDB yang tidak ada di RN), jadi tiap kali app
-//    dibuka semua data harus ditunggu dari server dulu. Di sini nilai terakhir
-//    tiap dokumen ditulis ke AsyncStorage, lalu ditampilkan LEBIH DULU sambil
-//    menunggu server — layar langsung terisi, bukan berkedip kosong.
-//    Nilai dari server selalu menimpa nilai cache begitu tiba.
-//
-// Catatan tipe: yang di-cache hanya string/angka/boolean/array/map/Timestamp —
-// itu semua yang dipakai app ini. Tipe Firestore lain (GeoPoint, Bytes,
-// DocumentReference) TIDAK ditangani; kalau nanti dipakai, tambahkan di
-// encode/decode di bawah.
+// Yang di-cache cuma string/angka/boolean/array/map/Timestamp. Tipe Firestore
+// lain (GeoPoint, Bytes, DocumentReference) belum ditangani encode/decode.
 
 /** Isi dokumen apa adanya. `undefined` = dokumennya memang belum ada. */
 export type DocData = DocumentData | undefined;
 
 /**
- * Bentuk minimal yang dipakai semua pemanggil: `.data()` & `.exists()`.
- * Snapshot asli dari Firestore sudah memenuhi bentuk ini, jadi mengganti
- * `onSnapshot(` menjadi `liveDoc(` TIDAK menuntut isi callback-nya diubah —
- * dan saat data datang dari disk, dibuatkan tiruannya dengan bentuk sama.
+ * Bentuk minimal yang dipakai pemanggil: `.data()` & `.exists()`. Snapshot
+ * asli sudah memenuhinya, jadi `onSnapshot(` → `liveDoc(` tak menuntut isi
+ * callback diubah.
  */
 export type DocLike = {
   data(): DocData;
@@ -58,8 +46,8 @@ function fromCache(id: string, data: DocData): DocLike {
 // Gunanya supaya pindah-pindah layar tidak memasang & melepas terus-menerus.
 const IDLE_MS = 30_000;
 
-// Jeda pemasangan ulang sesudah listener mati — lihat `pulihkan` di bawah.
-// Tiga kali, makin lebar; sesudah itu galatnya baru dilaporkan ke layar.
+// Jeda pemasangan ulang sesudah listener mati (makin lebar; sesudah habis,
+// galatnya baru dilaporkan ke layar). Lihat `pulihkan`.
 const RETRY_MS = [1_000, 4_000, 10_000];
 
 const CACHE_PREFIX = 'fs1:';
@@ -69,9 +57,8 @@ const INDEX_KEY = 'fs1:index';
 const MAX_CACHED = 200;
 
 // ===================== Penyandian Timestamp =====================
-// JSON tidak mengenal Timestamp Firestore, padahal banyak kode memanggil
-// `.toDate()` pada field tanggal. Jadi Timestamp diubah jadi penanda khusus
-// saat disimpan, dan dibentuk kembali saat dibaca.
+// JSON tak mengenal Timestamp, padahal banyak kode memanggil `.toDate()`.
+// Jadi disandikan jadi penanda khusus saat disimpan & dibentuk lagi saat baca.
 
 const TS_KEY = '__ts__';
 
@@ -107,8 +94,8 @@ function decode(value: unknown): unknown {
 }
 
 // ===================== Cache disk =====================
-// Semua operasi disk sengaja "tembak & lupakan": cache cuma mempercepat, jadi
-// kalau gagal sekalipun app harus tetap jalan normal dari data server.
+// Semua operasi disk "tembak & lupakan": cache cuma mempercepat, jadi gagal
+// pun app tetap jalan dari data server.
 
 /** Urutan pemakaian dokumen (paling lama di depan) — untuk membuang yang basi. */
 let index: string[] | null = null;
@@ -197,24 +184,13 @@ export async function clearLiveCache(): Promise<void> {
 }
 
 // ===================== Listener yang mati =====================
-// `onSnapshot` memanggil callback galatnya paling banyak SEKALI: sesudah itu
-// listenernya selesai dan tidak pernah menyala lagi sendiri. Dua akibatnya
-// dulu tak tertangani:
+// `onSnapshot` memanggil callback galatnya paling banyak SEKALI, lalu diam
+// selamanya. Akibatnya dulu: pesan merah "Gagal memuat" menempel permanen,
+// dan mayat listenernya bikin layar berikutnya mengira masih hidup.
 //
-//   • Pesan "Gagal memuat data. Coba lagi." menempel SELAMANYA. Satu kedipan
-//     sinyal — atau token yang kebetulan kedaluwarsa persis saat sinyal
-//     hilang — sudah cukup, dan karena tak ada lagi data yang datang, tak ada
-//     lagi yang menghapus pesannya. Pesan merah itu lalu terpampang di atas
-//     data yang sebenarnya sudah tampil lengkap di bawahnya.
-//   • Mayatnya ikut tersimpan di sini. `stop` masih terisi, jadi layar yang
-//     dibuka sesudahnya mengira listenernya masih hidup dan tidak memasang
-//     yang baru — sekali mati, mati untuk semua.
-//
-// Jadi sekarang listener yang mati DIPASANG ULANG, tiga kali, jaraknya makin
-// lebar. Galatnya baru dilaporkan ke layar kalau ketiganya gagal juga.
-// Batasnya penting: galat yang memang menetap (aturan Firestore menolak,
-// kuota habis) tidak boleh jadi pemasangan ulang tanpa henti — itu justru
-// yang menghabiskan kuota baca.
+// Sekarang dipasang ulang tiga kali, jaraknya makin lebar. Batasnya penting:
+// galat yang memang menetap (rules menolak, kuota habis) tidak boleh jadi
+// pemasangan ulang tanpa henti — itu justru yang menghabiskan kuota baca.
 
 /** Bagian Entry/ListEntry yang dipakai `pulihkan` — sengaja seminimal itu. */
 type Pulih = {
@@ -269,11 +245,9 @@ function pasangDoc(path: string, ref: DocumentReference, e: Entry) {
 
 /**
  * Langganan satu dokumen — pengganti langsung `onSnapshot(ref, …)`.
- * Isi callback TIDAK perlu diubah: yang dioper tetap punya `.data()` dan
- * `.exists()` seperti snapshot asli.
  *
- * Bedanya: dokumen yang sama hanya dipasang SEKALI walau dipakai banyak layar,
- * dan nilai terakhirnya tersimpan di disk sehingga muncul seketika saat dibuka.
+ * Dipasang SEKALI walau dipakai banyak layar, dan nilai terakhirnya dari disk
+ * muncul seketika saat dibuka.
  */
 export function liveDoc(
   ref: DocumentReference,
@@ -321,9 +295,8 @@ export function liveDoc(
   }
 
   // `e.retry` = pemasangan ulang sedang dijadwalkan; jangan pasang yang kedua.
-  // Kalau jatah coba-laginya sudah habis (stop & retry sama-sama kosong),
-  // kedatangan pemakai baru mengisinya penuh lagi — membuka layarnya lagi
-  // memang wajar diartikan "coba lagi".
+  // Kalau jatah coba-laginya habis (stop & retry sama-sama kosong), pemakai
+  // baru mengisinya penuh lagi — membuka layarnya lagi memang berarti "coba lagi".
   if (!e.stop && !e.retry) {
     e.gagal = 0;
     pasangDoc(path, ref, e);
@@ -344,45 +317,16 @@ export function liveDoc(
 }
 
 /**
- * Langganan satu KOLEKSI/kueri — pengganti langsung untuk blok yang sebelumnya
- * disalin 20 kali di 15 berkas lib:
+ * Langganan satu KOLEKSI/kueri — pengganti blok `onSnapshot` + `docs.map`
+ * yang dulu disalin 20 kali di 15 berkas lib.
  *
- *   return onSnapshot(
- *     q,
- *     (snapshot) => {
- *       onChange(
- *         snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<X, 'id'>) })),
- *       );
- *     },
- *     onError,
- *   );
+ * Kueri yang sama dipasang sekali walau diminta beberapa layar sekaligus
+ * (`tasks` didengarkan Home, Dashboard & Reminder bersamaan). Yang dibagikan
+ * snapshot MENTAH-nya, jadi tiap pemanggil tetap boleh membentuk barisnya
+ * sendiri lewat `row` (bawaan: `{ ...data, id }`).
  *
- * ── Digabung, sama seperti `liveDoc` ──────────────────────────────────────
- * Kueri yang SAMA hanya dipasang sekali walau diminta beberapa layar. Ini
- * penting justru untuk koleksi: `tasks` didengarkan Home, Dashboard, DAN layar
- * Reminder sekaligus — dan karena tab tetap terpasang setelah dibuka,
- * ketiganya hidup berbarengan. Tanpa penggabungan itu 3 koneksi & 3× biaya
- * baca untuk isi yang persis sama; makin banyak task, makin mahal.
- *
- * Yang dibagikan snapshot MENTAHnya, bukan hasil jadinya: tiap pemanggil tetap
- * memakai `row`-nya sendiri, jadi dua layar boleh membentuk barisnya berbeda
- * dari kueri yang sama.
- *
- * Bedanya dengan `liveDoc`: TANPA cache disk. Isi koleksi tidak bisa disimpan
- * apa adanya seperti satu dokumen (jumlahnya tak tentu & bisa besar), dan
- * itulah yang membuat daftar masih sempat kosong sekejap saat app dibuka.
- *
- * `row` mengubah satu dokumen jadi satu barisnya. Bawaannya `{ id, ...data }`
- * — bentuk yang dipakai sepuluh langganan. Yang datanya perlu dirapikan dulu
- * (nilai bawaan untuk dokumen lama, nama kolom yang berganti) mengirim
- * mappernya sendiri; yang perlu diurutkan/disaring melakukannya di `onChange`,
- * karena itu urusan DAFTARNYA, bukan barisnya.
- *
- * Soal `as T` pada bawaannya: isi dokumen Firestore memang tak bisa diperiksa
- * TypeScript, jadi paksaan tipe itu tidak terhindarkan — tiap pemanggil dulu
- * menuliskannya sendiri (`as Omit<X, 'id'>`). Yang berubah cuma tempatnya:
- * sekarang satu, jadi kalau suatu hari mau diganti pemeriksaan sungguhan,
- * cukup satu tempat yang disentuh.
+ * Bedanya dengan `liveDoc`: TANPA cache disk — isi koleksi tak tentu besarnya,
+ * jadi daftar masih sempat kosong sekejap saat app dibuka.
  */
 export function liveList<T>(
   q: Query,
@@ -390,15 +334,9 @@ export function liveList<T>(
   onError?: (error: FirestoreError) => void,
   row?: (d: QueryDocumentSnapshot) => T,
 ): () => void {
-  // `id` ditaruh SESUDAH sebaran isinya, bukan sebelum. Kalau sebelum, dokumen
-  // yang kebetulan menyimpan field bernama `id` akan menimpa id dokumen
-  // aslinya — dan baris itu lalu menyamar jadi baris lain, jadi
-  // menghapus/mengubahnya bisa mengenai dokumen yang salah.
-  //
-  // Hari ini tak ada koleksi yang menyimpannya (tiap penulisan sudah membuang
-  // `id` lebih dulu), jadi urutan ini tidak mengubah apa pun sekarang — ia
-  // menjaga supaya penulisan berikutnya yang lupa membuang `id` tidak
-  // diam-diam merusak daftarnya.
+  // `id` ditaruh SESUDAH sebaran isinya: kalau sebelum, dokumen yang kebetulan
+  // punya field `id` akan menimpa id aslinya — barisnya lalu menyamar jadi baris
+  // lain, dan menghapusnya bisa mengenai dokumen yang salah.
   const bentuk = row ?? ((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id }) as T);
   const terima = (snapshot: QuerySnapshot) => onChange(snapshot.docs.map(bentuk));
 

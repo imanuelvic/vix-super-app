@@ -86,9 +86,6 @@ export default function LoginScreen() {
           <VixText heading="header" additionalStyle={styles.title}>
             {isSignup ? 'Buat akun' : 'Masuk'}
           </VixText>
-          <VixText heading="label" additionalStyle={styles.subtitle}>
-            Login cukup sekali — setelah ini app selalu langsung terbuka.
-          </VixText>
 
           {!isFirebaseConfigured && (
             <View style={styles.warning}>
@@ -162,7 +159,6 @@ const styles = StyleSheet.create({
   },
   brand: { color: Color.MAIN },
   title: { marginTop: 8 },
-  subtitle: { marginBottom: 12 },
   input: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 12,

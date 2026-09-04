@@ -351,7 +351,7 @@ export function ExerciseTab({
                 detail={
                   isWalkDay
                     ? 'Streak hanya untuk strength workout'
-                    : 'Streak kembali ke 0.'
+                    : 'Streak kembali ke awal'
                 }
               />
             ) : isToday ? (

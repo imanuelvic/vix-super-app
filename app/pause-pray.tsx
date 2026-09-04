@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
@@ -213,7 +214,7 @@ export default function PausePrayScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
-  sectionTitle: { marginTop: 14, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   prayerInput: { minHeight: 110, textAlignVertical: 'top' },
   tooLong: { color: Color.DANGER, marginTop: 6 },
   previewWrap: { alignItems: 'center', paddingVertical: 14 },

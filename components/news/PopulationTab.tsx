@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
   },
   noteText: { color: Color.NEWS_DARK },
   sourceLink: { color: Color.NEWS_DARK },
-  sectionTitle: { marginTop: 14, marginBottom: 10 },
+  sectionTitle: { ...SECTION_SPACE },
   row: {
     ...CARD,
     flexDirection: 'row',

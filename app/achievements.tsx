@@ -1,12 +1,14 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EditFooter } from '@/components/common/EditFooter';
+import { BadgeTile, badgeGrid } from '@/components/common/BadgeTile';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -17,40 +19,16 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useAchievementStats } from '@/hooks/useAchievementStats';
 import {
-  achievementCategoryOf,
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORIES,
-  categoryNow,
   resetAchievements,
-  subscribeLoginStreak,
   subscribeSelfRewardBalance,
   type AchievementCategoryKey,
-  type AchievementStats,
-  type LoginStreak,
 } from '@/lib/achievements';
-import { settleFitDays, subscribeFitStreak } from '@/lib/fitness';
 import { formatShortRupiah, groupDigits, parseAmount } from '@/lib/format';
-import {
-  activeStreak,
-  dayDocId,
-  stepAchievements,
-  runRecords,
-  stepTierLastDates,
-  subscribeHealthProfile,
-  subscribeStepDays,
-  subscribeStreak,
-  subscribeWaterStreak,
-  subscribeWeekStats,
-  weekGoalStats,
-  type HealthProfile,
-  type StepDaysMap,
-  type Streak,
-  type WeekStatsMap,
-} from '@/lib/health';
-import { subscribeLearningStreak, type WeekStreak } from '@/lib/learning';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
@@ -62,52 +40,33 @@ import {
   type ClaimedReward,
   type SelfReward,
 } from '@/lib/selfReward';
-import { EMPTY_DAY_STREAK as EMPTY_WEEK_STREAK } from '@/lib/streak';
-import {
-  EMPTY_BIBLE_STREAKS,
-  subscribeBibleStreaks,
-  type BibleStreaks,
-} from '@/lib/spiritual';
 import { formatRupiah } from '@/lib/transactions';
 
 // Achievement 🏆 — pencapaian dikelompokkan per kategori (ala Duolingo).
-// Tekan kartu kategori → modal berisi pencapaian bertingkat kategori itu,
-// jadi tidak perlu scroll daftar panjang. Plus self-reward di bawah.
+//
+// Layar ini cuma PAPAN KATEGORI: satu lambang per kategori dalam grid tiga
+// kolom, ditambah saku self-reward di bawahnya. Rincian tiap kategori — tangga
+// lencananya — punya halamannya sendiri (app/achievement-category.tsx).
+//
+// Dulu rincian itu muncul sebagai modal di layar ini. Bentuk itu memaksa dua
+// hal yang tak enak sekaligus: isinya digulung DI DALAM kotak yang juga
+// menggulung, dan seluruh angka mentah app (sembilan langganan) harus dirakit
+// di sini walau yang membacanya cuma modalnya. Sekarang angkanya dirakit
+// useAchievementStats, dan dipakai kedua layar dengan arti yang sama persis.
 export default function AchievementsScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [login, setLogin] = useState<LoginStreak | null>(null);
-  const [habit, setHabit] = useState<Streak | null>(null);
-  const [bible, setBible] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
-  const [fit, setFit] = useState<LoginStreak | null>(null);
-  const [water, setWater] = useState<LoginStreak | null>(null);
-  const [stepDays, setStepDays] = useState<StepDaysMap>({});
-  // Tinggi badan dipakai mengubah langkah → kilometer (patokan pelari).
-  const [body, setBody] = useState<HealthProfile | null>(null);
-  const [weeks, setWeeks] = useState<WeekStatsMap>({});
-  // Streak MINGGUAN Learning 🎓 — satu dokumen kecil, sama seperti yang lain.
-  const [learning, setLearning] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
+  // Angka mentah seluruh achievement — dirakit di satu tempat, dipakai juga
+  // oleh halaman rincian kategori.
+  const { stats, error: statsError } = useAchievementStats();
+
   const [balance, setBalance] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   // Daftar hadiah incaran + riwayat klaimnya (dua dokumen array kecil).
   const [rewards, setRewards] = useState<SelfReward[]>([]);
   const [claimed, setClaimed] = useState<ClaimedReward[]>([]);
-
-  // Kategori yang sedang dibuka di modal (null = tertutup).
-  //
-  // Nilai AWALNYA boleh datang dari tautan yang membuka layar ini: pil 🔥 di
-  // Habits mengirim ?cat=health → modal "Kebiasaan Sehat" sudah terbuka begitu
-  // layarnya muncul, tanpa perlu mencarinya lagi di daftar. Dipasang sebagai
-  // nilai awal useState (bukan lewat efek) supaya modalnya ada sejak render
-  // PERTAMA — tak ada kedipan daftar dulu baru modal menyusul. Setelah itu
-  // parameternya tidak dilihat lagi: ditutup ya tetap tertutup.
-  const { cat } = useLocalSearchParams<{ cat?: string }>();
-  const [pickedId, setPickedId] = useState<string | null>(null);
-  const [openCat, setOpenCat] = useState<AchievementCategoryKey | null>(() =>
-    achievementCategoryOf(cat),
-  );
 
   // Sheet tambah/ubah hadiah + isiannya.
   const [editing, setEditing] = useState<SelfReward | 'new' | null>(null);
@@ -218,58 +177,12 @@ export default function AchievementsScreen() {
     if (!user) return;
     const fail = () => setError(LOAD_ERROR);
     return unsubscribeAll([
-      subscribeLoginStreak(user.uid, setLogin, fail),
-      subscribeStreak(user.uid, setHabit, fail),
-      subscribeBibleStreaks(user.uid, setBible, fail),
-      subscribeFitStreak(user.uid, setFit, fail),
-      subscribeWaterStreak(user.uid, setWater, fail),
-      subscribeStepDays(user.uid, setStepDays, fail),
-      subscribeHealthProfile(user.uid, setBody, fail),
-      subscribeWeekStats(user.uid, setWeeks, fail),
-      subscribeLearningStreak(user.uid, setLearning, fail),
       subscribeSelfRewardBalance(user.uid, setBalance, fail),
       subscribeSelfRewards(user.uid, setRewards, fail),
       subscribeClaimedRewards(user.uid, setClaimed, fail),
     ]);
   }, [user]);
 
-  // Tutup buku sesi gym yang harinya sudah habis 🔥 — sama seperti yang
-  // dijalankan layar Fitness. Diulang di sini karena halaman INI yang
-  // menampilkan angkanya: kalau Achievement dibuka lebih dulu, sesi kemarin
-  // harus sudah ikut terhitung, bukan menunggu Fitness dibuka.
-  //
-  // Murah: kalau tidak ada hari yang perlu ditutup, cuma 1 baca dokumen kecil
-  // lalu berhenti. Aman diulang — `lastDayId` yang menjaga tidak dobel hitung.
-  useEffect(() => {
-    if (!user) return;
-    settleFitDays(user.uid, new Date()).catch(() => {});
-  }, [user]);
-
-  const stepAch = stepAchievements(stepDays);
-  const runs = runRecords(stepDays, body?.heightCm ?? 170);
-  const wk = weekGoalStats(weeks);
-  const stats: AchievementStats = {
-    loginCount: login?.count ?? 0,
-    loginBest: login?.best ?? 0,
-    habitStreak: activeStreak(habit, dayDocId(new Date())),
-    bibleMorningBest: bible.morning.best,
-    bibleDaytimeBest: bible.daytime.best,
-    bibleNightBest: bible.night.best,
-    learningWeekBest: learning.best,
-    fitTotal: fit?.total ?? 0,
-    fitBest: fit?.best ?? 0,
-    bestSteps: stepAch.best?.steps ?? 0,
-    stepTierLastDate: stepTierLastDates(stepDays),
-    weekStepHits: wk.stepHits,
-    weekGymHits: wk.gymHits,
-    weekBothHits: wk.bothHits,
-    bestDayKm: runs.bestDayKm,
-    bestWeekKm: runs.bestWeekKm,
-    bestMonthKm: runs.bestMonthKm,
-    waterCount: water?.count ?? 0,
-    waterBest: water?.best ?? 0,
-    waterTotal: water?.total ?? 0,
-  };
   const unlocked = ACHIEVEMENTS.filter((a) => a.of(stats) >= a.target).length;
 
   // Ringkasan satu kategori: daftar + berapa yang sudah terbuka.
@@ -278,13 +191,6 @@ export default function AchievementsScreen() {
     const done = list.filter((a) => a.of(stats) >= a.target).length;
     return { list, done, total: list.length };
   }
-
-  const activeCat = ACHIEVEMENT_CATEGORIES.find((c) => c.key === openCat);
-  const activeList = openCat
-    ? ACHIEVEMENTS.filter((a) => a.category === openCat)
-    : [];
-  const sekarang = openCat ? categoryNow(openCat, stats) : null;
-  const picked = activeList.find((a) => a.id === pickedId) ?? null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -301,7 +207,7 @@ export default function AchievementsScreen() {
         }
       />
 
-      <ScreenError message={error} />
+      <ScreenError message={error ?? statsError} />
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Hero: ringkasan streak. Pialanya di KIRI (dulu di atas, di tengah) —
@@ -319,50 +225,50 @@ export default function AchievementsScreen() {
           </View>
         </View>
 
-        {/* ===== Kategori pencapaian (tekan → modal) ===== */}
+        {/* ===== Kategori pencapaian (klik → halamannya) ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
           🎖️ Kategori Pencapaian
         </VixText>
-        {ACHIEVEMENT_CATEGORIES.map((cat) => {
-          const { done, total } = catInfo(cat.key);
-          const pct = total > 0 ? (done / total) * 100 : 0;
-          const allDone = done === total;
-          return (
-            <PressableScale
-              key={cat.key}
-              style={styles.catCard}
-              onPress={() => setOpenCat(cat.key)}>
-              <VixText additionalStyle={styles.catIcon}>{cat.icon}</VixText>
-              <View style={styles.catMain}>
-                <View style={styles.catTop}>
-                  <VixText heading="bold" additionalStyle={styles.rowTitle}>
-                    {cat.label}
-                  </VixText>
-                  <VixText
-                    heading="bold"
-                    additionalStyle={allDone ? styles.doneText : styles.countText}>
-                    {allDone ? '✅ Lengkap' : `${done}/${total}`}
-                  </VixText>
-                </View>
-                <VixText heading="label">{cat.desc}</VixText>
-                <View style={styles.barTrack}>
+        {/* Grid tiga kolom — bentuk yang sama dengan tangga lencana di dalam
+            tiap kategori, jadi "papan besar" dan "papan kecil" terbaca satu
+            keluarga. Sebagai daftar memanjang, sebelas kategori memakan dua
+            layar penuh sebelum sampai ke Self-Reward di bawahnya.
+
+            Diklik → HALAMAN kategorinya, bukan modal. */}
+        <View style={badgeGrid.grid}>
+          {ACHIEVEMENT_CATEGORIES.map((cat) => {
+            const { done, total } = catInfo(cat.key);
+            const pct = total > 0 ? (done / total) * 100 : 0;
+            // Berwarna penuh begitu ADA satu yang terbuka — bukan hanya saat
+            // lengkap. Kategori yang sudah kamu jalani tidak boleh terlihat
+            // sama pudarnya dengan yang belum pernah disentuh.
+            const mulai = done > 0;
+            return (
+              <BadgeTile
+                key={cat.key}
+                icon={cat.icon}
+                tag={`${done}/${total}`}
+                title={cat.label}
+                unlocked={mulai}
+                onPress={() =>
+                  router.push({
+                    pathname: '/achievement-category',
+                    params: { cat: cat.key },
+                  })
+                }>
+                <View style={styles.catBar}>
                   <View
                     style={[
                       styles.barFill,
                       { width: `${pct}%` },
-                      allDone && styles.barFillDone,
+                      done === total && styles.barFillDone,
                     ]}
                   />
                 </View>
-              </View>
-              <IconSymbol
-                name="chevron.right"
-                size={18}
-                color={Color.TEXT_PLACEHOLDER}
-              />
-            </PressableScale>
-          );
-        })}
+              </BadgeTile>
+            );
+          })}
+        </View>
 
         {/* ===== Self-Reward ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
@@ -444,130 +350,6 @@ export default function AchievementsScreen() {
       </ScrollView>
 
       {/* Modal pencapaian satu kategori — daftar bertingkat + progress bar */}
-      <SheetModal
-        visible={openCat !== null}
-        title={activeCat ? `${activeCat.icon} ${activeCat.label}` : ''}
-        subtitle={activeCat?.desc}
-        onClose={() => {
-          setOpenCat(null);
-          setPickedId(null);
-        }}
-        // Angka SEKARANG kategori ini, dipampang di pojok kanan atas. Tanpa
-        // ini, "sudah sampai berapa?" cuma bisa ditebak dari lencana mana yang
-        // setengah terisi — padahal itu justru pertanyaan pertama tiap kali
-        // modal ini dibuka.
-        headerRight={
-          sekarang ? (
-            <View style={styles.nowPill}>
-              <VixText heading="subheader" additionalStyle={styles.nowValue}>
-                {sekarang.text.split(' ')[0]}
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.nowUnit}>
-                {sekarang.text.split(' ').slice(1).join(' ')}
-              </VixText>
-            </View>
-          ) : undefined
-        }>
-        {/* Grid lencana — tiga kolom, seperti papan Awards di Duolingo.
-            Bentuk daftar memanjang yang dulu dipakai memaksa menggulung jauh
-            untuk melihat "sudah dapat berapa dari berapa"; sebagai grid,
-            seluruh tangganya terbaca sekali pandang, dan yang sudah terbuka
-            langsung terlihat dari lencananya yang berwarna penuh.
-
-            Rinciannya (keterangan + tanggal + batang kemajuan) tidak hilang:
-            ia pindah ke kartu di bawah grid, muncul saat lencananya di-klik. */}
-        <ScrollView
-          style={styles.modalList}
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.grid}>
-            {activeList.map((a) => {
-              const value = a.of(stats);
-              const done = value >= a.target;
-              const dipilih = pickedId === a.id;
-              return (
-                <PressableScale
-                  key={a.id}
-                  style={styles.tile}
-                  onPress={() => setPickedId(dipilih ? null : a.id)}>
-                  {/* Lencananya sendiri: bundaran berwarna saat terbuka, pudar
-                      saat belum — angka targetnya menempel di kakinya, persis
-                      cara Duolingo menandai tiap tingkat. */}
-                  <View style={[styles.badge, !done && styles.badgeLocked]}>
-                    <VixText additionalStyle={styles.badgeIcon}>{a.icon}</VixText>
-                    <View style={[styles.badgeTag, !done && styles.badgeTagLocked]}>
-                      <VixText heading="label" additionalStyle={styles.badgeTagText}>
-                        {a.fmt ? a.fmt(a.target) : a.target}
-                      </VixText>
-                    </View>
-                  </View>
-                  <VixText
-                    heading="bold"
-                    numberOfLines={2}
-                    additionalStyle={[
-                      styles.tileTitle,
-                      !done && styles.tileTitleLocked,
-                    ]}>
-                    {a.title}
-                  </VixText>
-                  <VixText
-                    heading="label"
-                    additionalStyle={done ? styles.doneText : styles.lockText}>
-                    {done
-                      ? '✅ terbuka'
-                      : a.fmt
-                        ? `${a.fmt(Math.min(value, a.target))}/${a.fmt(a.target)}`
-                        : `${Math.min(value, a.target)}/${a.target}`}
-                  </VixText>
-                </PressableScale>
-              );
-            })}
-          </View>
-
-          {/* Rincian lencana yang sedang di-klik. Satu kartu, bukan satu per
-              lencana: yang dicari saat mengklik memang cuma satu. */}
-          {picked ? (
-            <View style={styles.pickedCard}>
-              <View style={styles.catTop}>
-                <VixText heading="bold" additionalStyle={styles.rowTitle}>
-                  {picked.icon} {picked.title}
-                </VixText>
-                <VixText
-                  heading="bold"
-                  additionalStyle={
-                    picked.of(stats) >= picked.target
-                      ? styles.doneText
-                      : styles.lockText
-                  }>
-                  {picked.fmt
-                    ? `${picked.fmt(Math.min(picked.of(stats), picked.target))}/${picked.fmt(picked.target)}`
-                    : `${Math.min(picked.of(stats), picked.target)}/${picked.target}`}
-                </VixText>
-              </View>
-              <VixText heading="label">{picked.desc}</VixText>
-              {picked.detail?.(stats) ? (
-                <VixText heading="label" additionalStyle={styles.detailText}>
-                  {picked.detail(stats)}
-                </VixText>
-              ) : null}
-              <View style={styles.barTrack}>
-                <View
-                  style={[
-                    styles.barFill,
-                    {
-                      width: `${Math.min((picked.of(stats) / picked.target) * 100, 100)}%`,
-                    },
-                    picked.of(stats) >= picked.target && styles.barFillDone,
-                  ]}
-                />
-              </View>
-            </View>
-          ) : (
-            <VixText heading="label" additionalStyle={styles.gridHint}>
-              Klik lencananya untuk lihat keterangan & kemajuannya.
-            </VixText>
-          )}
-        </ScrollView>
-      </SheetModal>
 
       {/* Sheet tambah / ubah hadiah incaran */}
       <SheetModal
@@ -651,62 +433,6 @@ export default function AchievementsScreen() {
 }
 
 const styles = StyleSheet.create({
-  // ===== Grid lencana di modal kategori (ala papan Awards Duolingo) =====
-  // Tiga kolom: cukup lega untuk emoji besar + judul dua baris, dan pas untuk
-  // tangga 7–10 tingkat tanpa perlu digulung.
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    rowGap: 14,
-  },
-  tile: { width: '33.33%', alignItems: 'center', paddingHorizontal: 4, gap: 4 },
-  badge: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderWidth: 2,
-    borderColor: Color.MAIN,
-  },
-  // Belum terbuka = pudar & abu, bukan disembunyikan: tangganya harus terlihat
-  // utuh supaya jelas tingkat berikutnya apa.
-  badgeLocked: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderColor: Color.BORDER,
-    opacity: 0.65,
-  },
-  badgeIcon: { fontSize: 28, lineHeight: 34 },
-  // Angka targetnya menempel di kaki lencana, persis cara Duolingo menandai
-  // tiap tingkat — jadi "ini lencana yang ke berapa" terbaca tanpa judulnya.
-  badgeTag: {
-    position: 'absolute',
-    bottom: -6,
-    borderRadius: 999,
-    paddingHorizontal: 7,
-    paddingVertical: 1,
-    backgroundColor: Color.MAIN,
-  },
-  badgeTagLocked: { backgroundColor: Color.TEXT_PLACEHOLDER },
-  badgeTagText: { color: Color.TEXT_REVERSE },
-  tileTitle: { textAlign: 'center', color: Color.TEXT_TITLE },
-  tileTitleLocked: { color: Color.TEXT_LABEL },
-  gridHint: { textAlign: 'center', marginTop: 16, color: Color.TEXT_PLACEHOLDER },
-  pickedCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    padding: 12,
-    marginTop: 16,
-    gap: 4,
-  },
-  // Angka sekarang di pojok kanan atas modal — dua baris, angkanya yang besar.
-  nowPill: { alignItems: 'flex-end' },
-  nowValue: { color: Color.MAIN_DARK },
-  nowUnit: { color: Color.TEXT_LABEL },
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Piala di KIRI, angkanya di sebelahnya — kartunya jadi satu baris pendek.
@@ -723,30 +449,7 @@ const styles = StyleSheet.create({
   heroMain: { flex: 1 },
   heroValue: { color: Color.TEXT_REVERSE },
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
-  sectionTitle: { marginTop: 14, marginBottom: 10 },
-  // Kartu kategori di halaman utama (tekan → modal).
-  catCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 10,
-  },
-  catIcon: { fontSize: 30, lineHeight: 38 },
-  catMain: { flex: 1, gap: 5 },
-  catTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
-  },
-  countText: { color: Color.TEXT_LABEL },
+  sectionTitle: { ...SECTION_SPACE },
   // Baris pencapaian / reward.
   row: {
     ...CARD,
@@ -759,16 +462,16 @@ const styles = StyleSheet.create({
   rowIcon: { fontSize: 26, lineHeight: 32 },
   rowMain: { flex: 1, gap: 4 },
   rowTitle: { color: Color.TEXT_TITLE },
-  detailText: { color: Color.MAIN_DARK },
-  doneText: { color: Color.SUCCESS },
   lockText: { color: Color.TEXT_PLACEHOLDER },
-  // Progress bar (kategori & tiap pencapaian).
-  barTrack: {
-    height: 7,
-    borderRadius: 4,
+  // Batang kemajuan tipis di kaki petak kategori — selebar petaknya.
+  catBar: {
+    width: '100%',
+    height: 5,
+    borderRadius: 3,
     backgroundColor: Color.CONTRAST_CONTAINER,
     overflow: 'hidden',
   },
+  // Progress bar (tiap hadiah self-reward).
   barFill: {
     height: '100%',
     borderRadius: 4,
@@ -796,7 +499,6 @@ const styles = StyleSheet.create({
   claimText: { color: Color.TEXT_REVERSE },
   manageButton: { marginTop: 6, marginBottom: 4 },
   resetLink: { color: Color.DANGER, textAlign: 'center', paddingVertical: 12 },
-  modalList: { maxHeight: 460 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
 });

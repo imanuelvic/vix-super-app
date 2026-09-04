@@ -1,40 +1,21 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 
-// Hook bersama untuk tab bar bawah (BottomTabs) di SEMUA layar fitur.
+// Hook bersama tab bar bawah (BottomTabs) di SEMUA layar fitur.
 //
-// Cara pakai (seragam di semua layar):
 //   const { tab, setTab, scrollKey, onTabPress } = useTabScroll<MyTab>('default');
-//   ...
 //   <View style={styles.content} key={scrollKey}>{isi tab}</View>
 //   <BottomTabs tabs={TABS} value={tab} onChange={onTabPress} />
 //
-// `scrollKey` naik SETIAP tombol tab ditekan (termasuk tab yang sedang aktif).
-// Karena dipakai sebagai `key` pembungkus konten, konten otomatis re-mount →
-// selalu mulai dari paling atas. Satu mekanisme, tanpa ref di tiap tab, dan
-// tanpa tambahan baca Firestore (data tetap dilangganani di level layar).
+// `scrollKey` naik SETIAP tombol tab ditekan (termasuk yang sedang aktif) →
+// konten re-mount → selalu mulai dari atas, tanpa ref di tiap tab dan tanpa
+// tambahan baca Firestore. Itu juga yang dipakai `useDueJump` untuk melompat.
 //
-// Lompatan ke baris yang menyalakan badge TIDAK butuh isyarat dari sini:
-// karena kontennya memang re-mount tiap tekan, hook `useDueJump` cukup
-// melompat saat mount. Dulu ada `repress` (tanda "tab yang sudah aktif ditekan
-// lagi") dan lompatannya menunggu tekanan kedua — syarat yang cuma diketahui
-// penulis kodenya; bagi siapa pun yang lain, tekanan pertama sekadar terasa
-// tidak melakukan apa-apa.
-//
-// ── Membuka sub-tab tertentu lewat ?tab=… ────────────────────────────────
-// Enam layar (Profile, Career, CORE, Learning, News, Spiritual) bisa dituju
-// langsung ke sub-tabnya dari reminder Dashboard / kartu Home. Dulu keenamnya
-// menulis blok yang sama: baca param, satu fungsi penjaga "ini tab yang sah?",
-// nilai awal, lalu satu efek penyelaras. Empat penjaganya bahkan berbunyi
-// sama persis (`TABS.some((t) => t.key === value)`) dan dua sisanya menyalin
-// daftar kuncinya dengan tangan — yang berarti menambah sub-tab baru bisa
-// diam-diam tidak ikut bisa dituju.
-//
-// Sekarang cukup mengoper daftar TABS yang memang sudah dirender layarnya:
+// Mengoper `tabs` membuat layarnya menerima ?tab=… (dipakai reminder Dashboard
+// & kartu Home): daftar tab yang sah = daftar tab yang tampil, jadi tak bisa
+// beda lagi.
 //
 //   const { tab, … } = useTabScroll<MyTab>('default', { tabs: TABS });
-//
-// Daftar tab yang sah = daftar tab yang tampil. Mustahil beda lagi.
 export function useTabScroll<T extends string>(
   initial: T,
   options?: {

@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AchievementButton } from '@/components/common/AchievementButton';
-import { BibleRefField } from '@/components/common/BibleRefField';
+import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -147,14 +147,6 @@ export default function BibleReadingScreen() {
   const minutesLeft = bibleMinutesLeft(session, now);
   const closingSoon = minutesLeft <= 30;
 
-  function setRefAt(index: number, ref: string) {
-    setRefs((list) => list.map((r, i) => (i === index ? ref : r)));
-  }
-
-  function removeRefAt(index: number) {
-    setRefs((list) => list.filter((_, i) => i !== index));
-  }
-
   async function handleSave() {
     if (!user || !today || filled.length === 0 || busy) return;
     setBusy(true);
@@ -284,41 +276,12 @@ export default function BibleReadingScreen() {
           version={versiTerpakai}
         />
 
-        {refs.map((ref, i) => (
-          <View key={i} style={styles.refCard}>
-            <View style={styles.refTop}>
-              <VixText heading="bold" additionalStyle={styles.refTitle}>
-                Bacaan {i + 1}
-              </VixText>
-              {refs.length > 1 && (
-                <PressableScale onPress={() => removeRefAt(i)} hitSlop={10}>
-                  <VixText heading="label" additionalStyle={styles.removeText}>
-                    Hapus
-                  </VixText>
-                </PressableScale>
-              )}
-            </View>
-            {i === 0 && saranHint ? (
-              <VixText heading="label" additionalStyle={styles.suggestHint}>
-                {saranHint}
-              </VixText>
-            ) : null}
-            <BibleRefField
-              value={ref}
-              onChange={(next) => setRefAt(i, next)}
-              editable={!busy}
-            />
-          </View>
-        ))}
-
-        {/* Baca lebih dari satu kitab hari ini? Tambah baris baru. */}
-        <PressableScale
-          style={styles.addButton}
-          onPress={() => setRefs((list) => [...list, ''])}>
-          <VixText heading="bold" additionalStyle={styles.addText}>
-            ➕ Tambah kitab lain
-          </VixText>
-        </PressableScale>
+        <BibleRefList
+          refs={refs}
+          onChange={setRefs}
+          editable={!busy}
+          hint={saranHint}
+        />
 
         {/* Terjemahan yang dibaca. Satu untuk seluruh bacaan hari itu —
             praktisnya memang begitu: satu app dibuka, satu terjemahan dipilih,
@@ -452,36 +415,6 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   storyText: { color: Color.SPIRITUAL_DARK },
-  refCard: {
-    backgroundColor: Color.SPIRITUAL,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: Color.SPIRITUAL_DARK,
-    padding: 14,
-    gap: 10,
-    marginBottom: 10,
-  },
-  refTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
-  },
-  refTitle: { color: Color.SPIRITUAL_DARK },
-  // Sedikit lebih gelap dari judul kartunya: keterangan, bukan judul kedua.
-  suggestHint: { color: Color.SPIRITUAL_DEEP },
-  removeText: { color: Color.DANGER },
-  addButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Color.SPIRITUAL_DARK,
-    marginBottom: 12,
-  },
-  addText: { color: Color.SPIRITUAL_DARK },
   versionRow: {
     flexDirection: 'row',
     alignItems: 'center',

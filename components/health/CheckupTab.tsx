@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
   summaryValue: { color: Color.MAIN_DARK },
   summaryWarn: { color: Color.DANGER },
   summaryHint: { color: Color.TEXT_LABEL },
-  sectionTitle: { marginTop: 10, marginBottom: 10 },
+  sectionTitle: { ...SECTION_SPACE },
   addButton: { marginTop: 4, marginBottom: 4 },
   fieldLabel: { marginBottom: 6 },
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },

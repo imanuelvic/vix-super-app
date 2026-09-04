@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { CHECKUP_INFO, CHECKUP_TYPES } from '@/lib/health';
@@ -108,7 +109,7 @@ export default function HealthInfoScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  sectionTitle: { marginTop: 8, marginBottom: 10 },
+  sectionTitle: { ...SECTION_SPACE },
   profileNote: { color: Color.TEXT_LABEL, marginBottom: 10 },
   rangeCard: {
     ...CARD,

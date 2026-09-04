@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
@@ -248,7 +249,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   emptyWrap: { paddingHorizontal: 20, paddingTop: 20 },
   empty: { textAlign: 'center' },
-  sectionTitle: { marginTop: 14, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   verseInput: { minHeight: 96, textAlignVertical: 'top' },
   previewWrap: { alignItems: 'center', paddingVertical: 14 },
   // Kartunya dirender seukuran aslinya lalu dikecilkan; kotak ini yang

@@ -5,10 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { SegmentTabs } from '@/components/common/SegmentTabs';
+import { GangTabs } from '@/components/friends/GangTabs';
 import { VixText } from '@/components/common/VixText';
 import { useSportData } from '@/hooks/useSportData';
 import { dayId as toDayId } from '@/lib/format';
@@ -16,13 +17,12 @@ import {
     gangMeta,
     gangOf,
     pastSessions,
-    SPORT_GANGS,
     topAttendance,
     topScorers,
     type SportGangKey,
 } from '@/lib/sport';
 
-// Papan Prestasi 🏅 — dua papan peringkat Fun Sport, satu geng sekali lihat.
+// Leaderboard 🏅 — dua papan peringkat Fun Sport, satu geng sekali lihat.
 //
 // Dulu papan top score menumpang di bawah sub-tab Fun Sport, dan di sanalah ia
 // paling jarang terbaca: ia berdiri di antara daftar anggota & riwayat main,
@@ -37,6 +37,15 @@ import {
 // duluan sesudah main memang siapa yang mencetak gol. Aturan hitungannya —
 // kenapa anggota baru tidak dihukum karena sesi sebelum ia bergabung — ada di
 // `topAttendance` (lib/sport.ts).
+// Berapa nama yang ditampilkan tiap papan.
+//
+// Sepuluh, dan itu bukan angka asal: papan peringkat dibaca untuk tahu siapa
+// yang DI ATAS. Dengan 19 anggota, sisanya cuma deretan panjang yang tak pernah
+// dibaca sampai habis — dan ekor sepanjang itu justru mendorong papan kedua
+// keluar layar. Yang tidak masuk sepuluh besar tetap disebut jumlahnya, supaya
+// papannya tidak terlihat seolah anggotanya cuma sepuluh.
+const PAPAN_MAKS = 10;
+
 export default function SportBoardScreen() {
   const { gang: gangParam } = useLocalSearchParams<{ gang?: string }>();
   const { data, isi, error } = useSportData();
@@ -46,34 +55,31 @@ export default function SportBoardScreen() {
   const meta = gangMeta(gang);
   // Yang belum pernah main DAN belum pernah cetak gol tidak ikut papan score:
   // barisnya cuma "0 gol · 0× main", dan deretan nol tidak memberi tahu apa pun.
-  const papan = topScorers(isi, gang).filter((r) => r.goals > 0 || r.caps > 0);
-  const rajin = topAttendance(isi, gang, todayId);
+  const papanPenuh = topScorers(isi, gang).filter((r) => r.goals > 0 || r.caps > 0);
+  const rajinPenuh = topAttendance(isi, gang, todayId);
+  const papan = papanPenuh.slice(0, PAPAN_MAKS);
+  const rajin = rajinPenuh.slice(0, PAPAN_MAKS);
   const sesiLewat = pastSessions(isi.sessions, gang, todayId).length;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Friends"
-        title="Papan Prestasi 🏅"
+        title="Leaderboard 🏅"
         subtitle="Top score & yang paling rajin datang tiap geng."
       />
 
       <ScreenError message={error} />
 
+      {/* Tab geng berdiri DI LUAR gulungan: ia tak ikut bergerak sama sekali,
+          jadi membandingkan dua geng cukup satu klik dari mana pun kamu
+          berhenti membaca papannya. */}
+      <GangTabs value={gang} onChange={setGang} />
+
       {data === null ? (
         <LoadingCenter />
       ) : (
         <ScrollView key={gang} contentContainerStyle={styles.content}>
-          <SegmentTabs
-            tabs={SPORT_GANGS.map((g) => ({
-              key: g.key,
-              label: `${g.emoji} ${g.label}`,
-              sub: `${pastSessions(isi.sessions, g.key, todayId).length} sesi`,
-            }))}
-            value={gang}
-            onChange={setGang}
-          />
-
           {/* ===== Top score ===== */}
           <VixText heading="title" additionalStyle={styles.sectionTitle}>
             🥇 Top Score {meta.label}
@@ -103,17 +109,15 @@ export default function SportBoardScreen() {
               ))}
             </View>
           )}
+          {papanPenuh.length > PAPAN_MAKS && (
+            <VixText heading="label" additionalStyle={styles.sisa}>
+              +{papanPenuh.length - PAPAN_MAKS} nama lain tidak masuk sepuluh besar.
+            </VixText>
+          )}
 
           {/* ===== Paling rajin datang ===== */}
           <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            🔥 Paling Rajin Datang
-          </VixText>
-          {/* Keterangan ini bukan hiasan: tanpa itu "3 dari 3" di atas "18 dari
-              20" terbaca seperti salah hitung, padahal memang begitu aturannya. */}
-          <VixText heading="label" additionalStyle={styles.catatan}>
-            Dihitung sejak sesi pertama ia masuk squad — anggota baru tidak
-            dihukum karena sesi sebelum ia bergabung. Sesi yang belum main tidak
-            ikut dihitung.
+            🔥 Kehadiran Anggota
           </VixText>
           {sesiLewat === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
@@ -139,6 +143,11 @@ export default function SportBoardScreen() {
               ))}
             </View>
           )}
+          {rajinPenuh.length > PAPAN_MAKS && (
+            <VixText heading="label" additionalStyle={styles.sisa}>
+              +{rajinPenuh.length - PAPAN_MAKS} nama lain tidak masuk sepuluh besar.
+            </VixText>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -147,12 +156,10 @@ export default function SportBoardScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
-  sectionTitle: { marginTop: 14, marginBottom: 8 },
-  catatan: { color: Color.TEXT_PLACEHOLDER, marginBottom: 8 },
+  content: { paddingHorizontal: 20, paddingBottom: 28 },
+  sectionTitle: { ...SECTION_SPACE },
   empty: { textAlign: 'center', marginVertical: 10 },
-  // Bentuknya sama persis dengan papan lama di sub-tab Fun Sport — yang pindah
-  // cuma tempatnya, bukan rupanya.
+  sisa: { color: Color.TEXT_PLACEHOLDER, marginTop: 6 },
   papan: { ...CARD, paddingVertical: 4 },
   papanRow: {
     flexDirection: 'row',

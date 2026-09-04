@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -732,7 +733,7 @@ const styles = StyleSheet.create({
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   heroValue: { color: Color.TEXT_REVERSE },
   heroHint: { color: Color.MAIN_LIGHT, marginTop: 4 },
-  sectionTitle: { marginTop: 16, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   photo: {
     width: '100%',
     height: 220,

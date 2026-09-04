@@ -22,7 +22,7 @@ export function AchievementButton({
     <EmojiButton
       emoji="🔥"
       onPress={() =>
-        router.push({ pathname: '/achievements', params: { cat: category } })
+        router.push({ pathname: '/achievement-category', params: { cat: category } })
       }
     />
   );

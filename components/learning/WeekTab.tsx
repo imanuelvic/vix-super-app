@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FormError } from '@/components/common/FormError';
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
   bookMain: { flex: 1, gap: 2 },
   bookTitle: { color: Color.TEXT_TITLE },
   bookSub: { color: Color.TEXT_LABEL },
-  sectionTitle: { marginTop: 4, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   stepRow: {
     ...CARD,
     flexDirection: 'row',

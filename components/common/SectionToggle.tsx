@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -90,9 +91,13 @@ export function SectionToggle({
 }
 
 const styles = StyleSheet.create({
+  // Jarak atas-bawahnya SAMA PERSIS dengan judul bagian biasa (SECTION_SPACE)
+  // — dipakai sebagai padding, bukan margin, karena margin tidak ikut
+  // mewarnai latar dan latar yang bolong membuat daftar di belakangnya tembus
+  // saat judul ini dipatok.
   head: {
-    paddingTop: 14,
-    paddingBottom: 8,
+    paddingTop: SECTION_SPACE.marginTop,
+    paddingBottom: SECTION_SPACE.marginBottom,
     backgroundColor: Color.BACKGROUND,
   },
   row: {

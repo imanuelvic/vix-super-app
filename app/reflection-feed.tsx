@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
 import { Chip } from '@/components/common/Chip';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
   // memotongnya jadi sebesar pratinjau.
   previewClip: { overflow: 'hidden' },
   full: { width: FEED_W, height: FEED_H, transformOrigin: 'top left' },
-  sectionTitle: { marginTop: 14, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   savedNote: { textAlign: 'center', color: Color.SUCCESS },
 });

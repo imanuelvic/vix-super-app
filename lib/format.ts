@@ -50,22 +50,11 @@ export function formatShortDayDate(d: Date): string {
 }
 
 /**
- * Jum, 04 Sep 2026 — "ddd, dd mmm yyyy". Tanggalnya SELALU 2 digit.
- *
- * Bentuk baku untuk tanggal di kartu reminder Dashboard, dan bedanya dengan
- * `formatShortDayDate` di atas cuma nol di depan tanggal — tapi di situlah
- * gunanya: kartu reminder itu DAFTAR, dan tanggal 1 digit membuat tiap barisnya
- * mulai di kolom yang berbeda-beda. Fungsinya dipisah, bukan yang lama
- * dipadkan, supaya kartu sesi & jadwal yang memang bukan daftar tanggal tidak
- * ikut berubah rupa.
- */
-export function formatReminderDate(d: Date): string {
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${dayShort(d)}, ${day} ${monthShort(d)} ${d.getFullYear()}`;
-}
-
-/**
  * Senin, 31 Agu 2026 — nama hari UTUH, bulan 3 huruf, tahun 4 angka.
+ *
+ * Inilah bentuk baku tanggal di DAFTAR (kartu reminder Dashboard, baris jadwal
+ * Fun Sport): "dddd, d mmm yyyy". Tanggalnya 1 digit kalau memang 1 digit —
+ * "06 Feb" itu bahasa mesin, bukan bahasa orang.
  *
  * Tiga tetangganya cuma beda satu bagian, jadi gampang salah ambil:
  *   formatFullDate      → Senin, 31 Agustus 2026  (bulannya utuh)
@@ -77,12 +66,12 @@ export function formatDayDate(d: Date): string {
 }
 
 /**
- * Sab, 16 Agu 26 — "ddd, dd mmm yy". Tanggal paling ringkas: hari & bulan
- * 3 huruf, tanggal 2 digit, tahun 2 digit. Untuk kartu sempit yang tanggalnya
- * tidak boleh sampai membungkus ke baris berikutnya.
+ * Sab, 6 Agu 26 — "ddd, d mmm yy". Tanggal paling ringkas: hari & bulan
+ * 3 huruf, tahun 2 digit. Untuk kartu sempit yang tanggalnya tidak boleh
+ * sampai membungkus ke baris berikutnya.
  */
 export function formatCompactDate(d: Date): string {
-  const day = String(d.getDate()).padStart(2, '0');
+  const day = d.getDate();
   const month = monthShort(d);
   const year = String(d.getFullYear()).slice(-2);
   return `${dayShort(d)}, ${day} ${month} ${year}`;
@@ -97,7 +86,7 @@ export function formatShortDayDateTime(d: Date): string {
 }
 
 /**
- * Sel, 03 Mar 26 · 🕒 19.30 — tanggal ringkas + jam, berikut lambang jamnya.
+ * Sel, 3 Mar 26 · 🕒 19.30 — tanggal ringkas + jam, berikut lambang jamnya.
  *
  * SATU bentuk untuk semua kartu jadwal: rapat bulanan CORE (sub-tab Monthly)
  * DAN jadwal visitasi (sub-tab Visitation + layar Riwayat Visitasi). Dulu
@@ -111,9 +100,9 @@ export function formatCompactDateTime(d: Date): string {
   return `${formatCompactDate(d)} · 🕒 ${formatTime(d)}`;
 }
 
-/** Rabu, 12 Agu 26 — "dddd, dd mmm yy" untuk baris sapaan (<GreetingHeader/>). */
+/** Rabu, 12 Agu 26 — "dddd, d mmm yy" untuk baris sapaan (<GreetingHeader/>). */
 export function formatGreetingDate(d: Date): string {
-  const day = String(d.getDate()).padStart(2, '0');
+  const day = d.getDate();
   const month = monthShort(d);
   const year = String(d.getFullYear()).slice(-2);
   return `${DAY_NAMES[d.getDay()]}, ${day} ${month} ${year}`;

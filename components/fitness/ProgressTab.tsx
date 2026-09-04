@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { type LoginStreak } from '@/lib/achievements';
@@ -173,7 +174,7 @@ const styles = StyleSheet.create({
   bodyRow: { flexDirection: 'row', gap: 10 },
   bodyItem: { flex: 1, gap: 1 },
   bodyValue: { color: Color.TEXT_TITLE },
-  sectionTitle: { marginTop: 16, marginBottom: 10 },
+  sectionTitle: { ...SECTION_SPACE },
   card: {
     ...CARD,
     flexDirection: 'row',

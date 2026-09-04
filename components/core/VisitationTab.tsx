@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { deadlineBorder } from '@/components/common/Deadline';
@@ -581,8 +582,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 8,
-    marginTop: 10,
-    marginBottom: 10,
+    ...SECTION_SPACE,
   },
   sectionTitleFlex: { flex: 1 },
   sectionActions: { flexDirection: 'row', gap: 8 },

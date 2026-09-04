@@ -28,11 +28,9 @@ import { openExternalUrl } from './linking';
 import { liveDoc, liveList } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 
-// Spiritual ✝️ — Revive harian (mengikuti struktur renungan NDC:
-// judul, bacaan Alkitab, ayat hafalan, rhema, refleksi) + reminder acak
-// untuk fokus pada hubungan pribadi dengan Tuhan + streak ala Duolingo.
-//
-// "Doing for God without being with God" — fitur ini ruang untuk BERHENTI.
+// Spiritual ✝️ — Revive harian (judul, bacaan, ayat hafalan, rhema, refleksi)
+// + reminder acak + streak. "Doing for God without being with God": fitur ini
+// ruang untuk BERHENTI.
 
 export type ReviveEntry = {
   id: string; // "YYYY-MM-DD" — satu Revive per hari
@@ -81,16 +79,14 @@ export function deleteReviveEntry(uid: string, dayId: string) {
 }
 
 // ===================== Streak Revive 🔥 =====================
-// users/{uid}/app/revive — bentuknya sama dengan streak login, plus penanda
-// hari yang sengaja dilewati. Ditumpangkan di dokumen yang SAMA supaya tidak
-// menambah satu pun pembacaan Firestore.
+// users/{uid}/app/revive — sama seperti streak login + penanda hari yang
+// dilewati, ditumpangkan di dokumen yang SAMA supaya tak menambah read.
 
 export type ReviveStreak = DayStreak & {
   /**
-   * dayId yang ditandai "dilewati". Hanya berlaku untuk hari itu saja — besok
-   * nilainya sudah tidak cocok lagi dengan todayId, jadi tandanya hilang
-   * sendiri tanpa perlu dibersihkan.
-   */
+     * dayId yang ditandai "dilewati" — cuma berlaku hari itu, jadi tandanya
+     * hilang sendiri besok tanpa perlu dibersihkan.
+     */
   skippedDayId?: string;
 };
 
@@ -110,10 +106,9 @@ export function subscribeReviveStreak(
 }
 
 /**
- * Revive hari ini sudah "selesai diurus"? Yaitu SUDAH DITULIS atau sengaja
- * DILEWATI. Inilah satu-satunya penentu badge Revive — dipakai bareng oleh
- * tile Spiritual di Home, sub-tab Revive, dan langkah 1 di gerbang doa pagi,
- * jadi ketiganya tidak mungkin berbeda pendapat.
+ * Revive hari ini selesai diurus (ditulis ATAU sengaja dilewati)?
+ * Satu-satunya penentu badge Revive — dipakai tile Home, sub-tab Revive, &
+ * gerbang doa pagi, jadi ketiganya tak mungkin beda pendapat.
  */
 export function reviveHandledToday(
   streak: ReviveStreak | null,
@@ -124,11 +119,9 @@ export function reviveHandledToday(
 }
 
 /**
- * Tandai Revive hari ini DILEWATI (atau batalkan lagi).
- *
- * Streak 🔥 tidak diubah di sini — dan memang tidak perlu: hari yang
- * dilewati tidak pernah tercatat, jadi streaknya putus dengan sendirinya
- * saat kamu menulis Revive lagi nanti.
+ * Tandai Revive hari ini DILEWATI (atau batalkan).
+ * Streak tidak disentuh: hari yang dilewati tak pernah tercatat, jadi
+ * streaknya putus sendiri saat kamu menulis lagi nanti.
  */
 export function setReviveSkipped(
   uid: string,
@@ -156,19 +149,14 @@ export function bumpReviveStreak(
   });
 }
 
-// ================ Bacaan Alkitab 📖 (Pagi, Siang & Malam) ================
-// TIGA sesi baca per hari, masing-masing punya jendela jam sendiri:
-//   🌅 Pagi 05.00–09.59 · 🌤️ Siang 12.00–13.59 · 🌙 Malam 21.00–23.59
-// Kartu reminder di Home hanya muncul di dalam jendela itu & selama sesi hari
-// itu belum diisi. Isinya string bebas: kitab/pasal yang dibaca.
+// ============ Bacaan Alkitab 📖 (Pagi, Siang & Malam) ============
+// Jendela jam tiap sesi: 🌅 05.00–09.59 · 🌤️ 12.00–13.59 · 🌙 21.00–23.59.
+// Kartu reminder Home cuma muncul di dalam jendela & selama sesinya kosong.
 //
 // Satu dokumen kecil per hari: users/{uid}/bibleRead/{YYYY-MM-DD}
-//   { morning: string, daytime: string, night: string, date: Timestamp }
-// Sesi bernilai "" = belum diisi hari itu.
-// CATATAN: nama koleksi tetap `bibleRead` (bukan `bibleReading`) — mengubahnya
-// akan memutus semua catatan bacaan yang sudah tersimpan di Firestore. Nama
-// kolom `daytime` mengikuti sesi Siang di Habits (lib/habits.ts) supaya satu
-// istilah dipakai di seluruh app.
+//   { morning, daytime, night, date } — "" = belum diisi.
+// ⚠️ Nama koleksi tetap `bibleRead` (bukan `bibleReading`): menggantinya
+// memutus semua catatan yang sudah tersimpan.
 
 export type BibleSession = 'morning' | 'daytime' | 'night';
 
@@ -205,14 +193,12 @@ export function bibleMinutesLeft(session: BibleSession, now: Date): number {
 }
 
 /**
- * Jendela sesi ini sudah lewat? Dipakai baris cermin di Habits untuk memberi
- * tanda ✗ SENDIRI: sesi yang jamnya habis tanpa dibaca memang tidak dikerjakan,
- * jadi barisnya tidak boleh dibiarkan menggantung seolah masih bisa dikejar.
+ * Jendela sesi ini sudah lewat? Dipakai baris cermin Habits untuk menandai ✗
+ * sendiri — sesi yang jamnya habis tanpa dibaca memang tidak dikerjakan.
  *
- * Catatan sesi Malam: jendelanya tutup jam 24.00, dan pada jam itu juga id
- * harinya sudah berganti — jadi baris Malam tidak pernah sempat terlihat dalam
- * keadaan "lewat" di layar Habits. Itu memang benar, bukan kelalaian: selama
- * masih hari ini, malam masih bisa dikejar.
+ * Sesi Malam tutup jam 24.00, saat id harinya juga berganti, jadi ia tak
+ * pernah sempat terlihat "lewat". Itu benar: selama masih hari ini, malam
+ * masih bisa dikejar.
  */
 export function bibleWindowPassed(session: BibleSession, now: Date): boolean {
   return bibleMinutesLeft(session, now) <= 0;
@@ -233,11 +219,9 @@ export function isBibleSkipped(passage: string): boolean {
 export type BibleReadingSessions = Record<BibleSession, string>;
 
 // ===================== Versi terjemahan =====================
-// Acuan bacaan tanpa terjemahannya masih setengah keterangan: "Amsal 16" di
-// TB dan di BIS bunyinya bisa jauh berbeda, dan enam bulan lagi kamu tidak
-// akan ingat baca yang mana. Disimpan TERPISAH dari acuannya (bukan disambung
-// jadi satu teks) supaya acuannya tetap bisa diurai — pemilih kitab, Story
-// ayat, dan pencarian riwayat semuanya membaca acuan yang bersih.
+// "Amsal 16" di TB & BIS bunyinya bisa jauh berbeda. Disimpan TERPISAH dari
+// acuannya supaya acuannya tetap bisa diurai — pemilih kitab, Story ayat, &
+// pencarian riwayat semuanya membaca acuan yang bersih.
 
 /** Terjemahan bawaan kalau belum pernah diisi — Terjemahan Baru. */
 export const BIBLE_VERSION_DEFAULT = 'TB';
@@ -256,12 +240,9 @@ export function bibleRefWithVersion(passage: string, version: string): string {
 }
 
 /**
- * Sesi ini benar-benar SUDAH DIBACA hari itu?
- *
- * Bukan sekadar "ada isinya": hari yang ditandai dilewati (`__skip__`) juga
- * tersimpan di kolom yang sama, dan itu jelas bukan membaca. Dipakai baris
- * cermin Baca Alkitab di Habits — aturannya harus SATU supaya centang di
- * Habits tak mungkin beda pendapat dengan catatan bacaannya.
+ * Sesi ini benar-benar SUDAH DIBACA? Bukan sekadar "ada isinya": tanda
+ * dilewati (`__skip__`) tersimpan di kolom yang sama, dan itu bukan membaca.
+ * Satu aturan, supaya centang Habits tak beda pendapat dengan catatannya.
  */
 export function bibleSessionRead(
   sessions: BibleReadingSessions,
@@ -272,12 +253,9 @@ export function bibleSessionRead(
 }
 
 /**
- * Keadaan yang SEHARUSNYA tampil di baris cermin Baca Alkitab di Habits.
- *
- * Bentuknya sama dengan `fitMirrorState` (lib/fitness.ts) supaya layar Habits
- * memperlakukan semua baris cermin dengan cara yang sama. Termasuk tanda
- * dilewati: sesi yang kamu tandai lewat di layar Baca Alkitab membuat barisnya
- * bertanda ✗ juga — kalau tidak, baris itu tak akan pernah bisa dilewati
+ * Keadaan baris cermin Baca Alkitab di Habits — bentuknya sama dengan
+ * `fitMirrorState`, jadi Habits memperlakukan semua baris cermin sama.
+ * Termasuk tanda dilewati: tanpa itu baris ini tak akan pernah bisa dilewati
  * (tombol ✗-nya memang tidak ada di baris cermin).
  */
 export function bibleMirrorState(
@@ -291,9 +269,8 @@ export function bibleMirrorState(
     skipped:
       // Ditandai lewat sendiri di layar Baca Alkitab…
       isBibleSkipped(sessions[session]) ||
-      // …ATAU jamnya memang sudah habis tanpa dibaca. Yang kedua ini tidak
-      // bisa dibatalkan lagi dari Habits — waktunya sudah lewat, dan angka
-      // hariannya harus jujur.
+      // …ATAU jamnya habis tanpa dibaca. Yang ini tak bisa dibatalkan lagi dari
+      // Habits — waktunya sudah lewat, dan angka hariannya harus jujur.
       (!done && bibleWindowPassed(session, now)),
   };
 }
@@ -345,16 +322,11 @@ export function bibleSessionNow(now: Date): BibleSession | null {
 }
 
 /**
- * Jam mulai tiap sesi UNTUK MEMILIH TAB arsip — sengaja BEDA dari `fromHour`
- * jendela bacanya, dan bedanya penting.
+ * Jam mulai sesi UNTUK TAB ARSIP — sengaja beda dari `fromHour` jendela baca.
  *
- * `fromHour` di BIBLE_SESSIONS itu jendela "terhitung tepat waktu": pagi baru
- * mulai jam 5, siang jam 12, malam jam 21, dan di antaranya TIDAK ADA sesi
- * yang berjalan. Itu benar untuk menagih, tapi tab arsip harus punya jawaban
- * SETIAP saat — jam 11, jam 17, jam 20 pun tetap harus membuka sesuatu.
- *
- * Jadi di sini garisnya dibuat bersambung: begitu satu sesi lewat, sesi
- * berikutnya yang terbuka sampai giliran sesudahnya tiba.
+ * `fromHour` itu jendela "terhitung tepat waktu" dan di antaranya tidak ada
+ * sesi yang berjalan. Tab arsip harus punya jawaban SETIAP saat, jadi di sini
+ * garisnya dibuat bersambung.
  */
 export const BIBLE_TAB_HOURS: { key: BibleSession; fromHour: number }[] = [
   { key: 'morning', fromHour: 1 },
@@ -364,14 +336,10 @@ export const BIBLE_TAB_HOURS: { key: BibleSession; fromHour: number }[] = [
 
 /**
  * Sesi yang jam sekarang termasuk di dalamnya — SELALU ada jawabannya.
+ * Dipakai memilih tab saat sub-tab Bible Reading dibuka (dengan
+ * `bibleSessionNow`, membuka arsip jam 17.00 menampilkan bacaan PAGI).
  *
- * Dipakai memilih tab yang terbuka saat sub-tab Bible Reading dibuka. Dulu
- * yang dipakai `bibleSessionNow`, dan di luar ketiga jendela bacanya ia
- * mengembalikan null → tabnya jatuh ke Pagi. Akibatnya membuka arsip jam 17.00
- * menampilkan bacaan PAGI, padahal yang barusan dijalani sesi Siang.
- *
- * Jam 00.00–00.59 masih ikut Malam: tengah malam itu ekor hari kemarin, bukan
- * awal pagi berikutnya.
+ * Jam 00.00–00.59 ikut Malam: tengah malam itu ekor hari kemarin.
  */
 export function bibleSessionOfClock(now: Date): BibleSession {
   const h = now.getHours();
@@ -388,12 +356,9 @@ function readSessions(data?: Record<string, unknown>): BibleReadingSessions {
 }
 
 /**
- * Terjemahan tiap sesi. Disimpan sebagai field datar (`morningVersion`, …)
- * supaya `setDoc(..., { merge: true })` per sesi tetap sesederhana sebelumnya.
- *
- * Catatan yang dibuat SEBELUM kolom ini ada tidak punya field-nya sama sekali
- * → semuanya jatuh ke TB. Itu memang benar: seluruh catatan lama dibuat dari
- * Terjemahan Baru.
+ * Terjemahan tiap sesi, disimpan sebagai field datar (`morningVersion`, …)
+ * supaya `setDoc(…, { merge: true })` per sesi tetap sederhana. Catatan lama
+ * tak punya field ini → jatuh ke TB, dan itu memang benar.
  */
 function readVersions(data?: Record<string, unknown>): BibleReadingVersions {
   const ambil = (k: string) =>
@@ -439,21 +404,14 @@ export function subscribeBibleReadingDays(
   );
 }
 
-// =============== Rekomendasi bacaan berikutnya 💡 ===============
-// Baca Alkitab itu berurutan: kemarin Amsal 2, hari ini Amsal 3. Jadi kolom
-// "Bacaan 1" tidak perlu dimulai dari kosong — sambungan dari catatan
-// terakhirlah yang hampir selalu benar, dan kalau meleset tinggal diganti.
-//
-// TIAP SESI punya rantainya SENDIRI (pagi Amsal, siang Yesaya, malam
-// 1 Petrus itu tiga bacaan berbeda), jadi yang ditengok cuma kolom sesi itu.
+// ============ Rekomendasi bacaan berikutnya 💡 ============
+// Baca Alkitab berurutan, jadi kolom "Bacaan 1" tak perlu mulai dari kosong.
+// TIAP SESI punya rantainya sendiri, jadi yang ditengok cuma kolom sesi itu.
 
 /**
  * Berapa hari ke belakang yang ditengok saat mencari bacaan terakhir.
- *
- * Sebulan: cukup panjang untuk melewati minggu yang bolong, dan biayanya
- * jelas — sekali buka layar catat bacaan = sekali kueri, bukan langganan yang
- * hidup terus. Lebih lama dari itu, rekomendasinya sendiri sudah tidak
- * relevan (bacaan sebulan lalu biasanya sudah ditinggalkan).
+ * Sebulan: cukup melewati minggu yang bolong, dan lebih lama dari itu
+ * rekomendasinya sudah tidak relevan.
  */
 export const BIBLE_SUGGEST_DAYS = 30;
 
@@ -471,12 +429,9 @@ export type BibleSuggestion = {
 };
 
 /**
- * Sambungan dari catatan TERAKHIR sesi ini. `days` harus urut terbaru →
- * terlama (seperti yang dikembalikan kueri di atas).
- *
- * Hari yang kosong & hari yang ditandai dilewati dilompati — keduanya bukan
- * bacaan. Kalau satu hari mencatat beberapa kitab ("Amsal 30, Amsal 31"),
- * yang jadi acuan yang TERAKHIR, karena itu yang paling jauh dibaca.
+ * Sambungan dari catatan TERAKHIR sesi ini. `days` harus urut terbaru → lama.
+ * Hari kosong & hari yang dilewati dilompati. Kalau satu hari mencatat
+ * beberapa kitab, yang jadi acuan yang TERAKHIR.
  */
 export function bibleSuggestion(
   days: BibleReadingDay[],
@@ -503,13 +458,9 @@ export function bibleSuggestion(
 export type BibleSuggestions = Record<BibleSession, BibleSuggestion | null>;
 
 /**
- * Ambil rekomendasi — SEKALI JALAN, bukan langganan: saran tidak perlu ikut
- * berubah selagi layarnya terbuka, dan sekali ambil jauh lebih murah daripada
- * listener yang hidup selama layar itu dibuka.
- *
- * Ketiga sesi dihitung dari SATU kueri yang sama. Riwayatnya toh sudah di
- * tangan, jadi memisahnya per sesi cuma akan jadi tiga kueri untuk dokumen
- * yang sama persis.
+ * Ambil rekomendasi SEKALI JALAN, bukan langganan: saran tak perlu berubah
+ * selagi layarnya terbuka, dan ini jauh lebih murah. Ketiga sesi dihitung
+ * dari SATU kueri yang sama.
  */
 export async function fetchBibleSuggestions(
   uid: string,
@@ -542,11 +493,9 @@ export function subscribeBibleReadingToday(
 }
 
 /**
- * Simpan bacaan SATU sesi — merge, jadi sesi lain di hari itu tidak tersentuh.
- *
- * `version` boleh dikosongkan; yang tersimpan tetap TB. Ditulis walau sama
- * dengan bawaannya supaya catatannya jujur menyebut terjemahan yang dipakai,
- * bukan menebak dari kekosongan.
+ * Simpan bacaan SATU sesi — merge, sesi lain di hari itu tak tersentuh.
+ * `version` boleh kosong (tetap TB), tapi tetap ditulis supaya catatannya
+ * jujur menyebut terjemahannya, bukan menebak dari kekosongan.
  */
 export function saveBibleReading(
   uid: string,
@@ -678,10 +627,8 @@ const REMINDERS: string[] = [
   '🔥 Semangatmu boleh naik-turun; kesetiaan Tuhan tidak pernah.',
   '🧭 Tidak tahu arah? Itu bukan gagal — itu undangan untuk bertanya pada-Nya.',
   // --- Ayat Alkitab ---
-  // Dikutip apa adanya (Terjemahan Baru), dipendekkan seperlunya dengan "…"
-  // dan SELALU disertai acuannya. Bukan supaya terlihat rohani: kalimat yang
-  // dibagikan ke orang lain harus bisa dicek sendiri sumbernya. Firman yang
-  // dikutip tanpa alamat pelan-pelan berubah jadi kutipan motivasi biasa.
+  // Dikutip apa adanya (TB), dipendekkan dengan "…", SELALU dengan acuannya:
+  // kalimat yang dibagikan harus bisa dicek sumbernya sendiri.
   '🕊️ "Damai sejahtera Kutinggalkan bagimu… janganlah gelisah dan gentar hatimu." — Yoh 14:27',
   '🦅 "Orang yang menanti-nantikan TUHAN mendapat kekuatan baru… mereka berlari dan tidak menjadi lesu." — Yes 40:31',
   '🛡️ "Janganlah takut, sebab Aku menyertai engkau… Aku akan meneguhkan, bahkan akan menolong engkau." — Yes 41:10',
@@ -725,14 +672,10 @@ export function dailyReminder(todayId: string, salt = 'revive'): string {
   return pickOfDay(REMINDERS, todayId, salt);
 }
 
-// ===================== Reminder tulisanmu sendiri 📌 =====================
-// Rhema & Aplikasi yang kamu tulis di Revive bisa "dipasang" jadi salah satu
-// penyegar harian di Home — jadi firman yang merhema hari Senin masih menegur
-// kamu hari Kamis, bukan tenggelam di riwayat.
-//
-// SATU dokumen kecil untuk semuanya (users/{uid}/app/myReminders), pola yang
-// sama dengan arsip Fun: 1 listener, 1 read, tak peduli sudah terkumpul berapa
-// kalimat. Memasang & melepas menulis ulang array-nya.
+// ============ Reminder tulisanmu sendiri 📌 ============
+// Rhema & Aplikasi dari Revive bisa dipasang jadi penyegar harian di Home.
+// SATU dokumen kecil (users/{uid}/app/myReminders): 1 listener, 1 read,
+// berapa pun kalimatnya. Memasang & melepas menulis ulang array-nya.
 
 export type MyReminderKind = 'rhema' | 'application';
 
@@ -750,13 +693,9 @@ export type MyReminders = { items: MyReminder[] };
 export const EMPTY_MY_REMINDERS: MyReminders = { items: [] };
 
 /**
- * Batas panjang kalimat yang dipasang.
- *
- * Bukan selera: kartu di Home dibaca sekilas, dan tombol 📤-nya menggambar
- * kalimat itu ke kartu persegi 1080×1080 yang muat ±600 huruf (lihat
- * lib/reminderImage.ts). Rhema yang ditulis panjang lebar — dan memang sering
- * begitu, karena kolomnya besar — akan tumpah keluar gambarnya tanpa ada yang
- * memberi tahu. Dipotong di sini, sekali, bukan di tiga tempat penampil.
+ * Batas panjang kalimat yang dipasang — bukan selera: tombol 📤 menggambarnya
+ * ke kartu 1080×1080 yang muat ±600 huruf (lib/reminderImage.ts). Dipotong di
+ * sini sekali, bukan di tiga tempat penampil.
  */
 export const MY_REMINDER_MAX = 400;
 
@@ -832,10 +771,9 @@ export function toggleMyReminder(
 }
 
 /**
- * Segarkan kalimat reminder yang berasal dari Revive hari itu, supaya yang
- * muncul di Home tidak ketinggalan dari tulisan yang barusan disimpan.
- * TIDAK memasang apa pun yang belum pernah dipasang. `null` = tak ada yang
- * berubah, jadi pemanggilnya tidak perlu menulis ke Firestore sama sekali.
+ * Segarkan kalimat reminder dari Revive hari itu supaya Home tidak tertinggal
+ * dari tulisan yang barusan disimpan. TIDAK memasang yang belum pernah
+ * dipasang; `null` = tak ada yang berubah (pemanggil tak perlu menulis).
  */
 export function refreshMyReminders(
   items: MyReminder[],
@@ -856,18 +794,11 @@ export function refreshMyReminders(
 }
 
 // ===================== Penyegar acak di Home 🌤️ =====================
-// Kalimat yang sama juga muncul SENDIRI di Home beberapa kali sehari, di atas
-// kartu Doa Syafaat.
+// Muncul sendiri beberapa kali sehari di atas kartu Doa Syafaat. Bedanya
+// dengan syafaat: jam munculnya & kalimatnya sama-sama diundi.
 //
-// Bedanya dengan Doa Syafaat: syafaat WAJIB muncul tiap hari sepanjang hari,
-// sedangkan penyegar ini datang tak terduga — jam munculnya & kalimatnya
-// sama-sama diundi.
-//
-// Undiannya deterministik per hari, BUKAN Math.random: jadwal & kalimat hari
-// ini sudah "ditentukan" sejak lewat tengah malam, jadi kartunya tidak
-// berkedip muncul-hilang tiap layar digambar ulang, dan tidak berubah walau
-// app ditutup lalu dibuka lagi. Besok undiannya beda sendiri karena benihnya
-// ikut tanggal.
+// Undiannya deterministik per hari (bukan Math.random), jadi kartunya tidak
+// berkedip tiap render dan tidak berubah walau app ditutup-buka.
 
 /** Berapa kali penyegar muncul dalam sehari. */
 const NUDGE_COUNT = 3;
@@ -888,19 +819,12 @@ const NUDGE_GAP_MINUTES = 60;
 export type Nudge = { from: number; to: number; text: string; day?: string };
 
 /**
- * Angka 0–1 yang terasa acak, tapi selalu sama untuk kombinasi hari + kunci
- * yang sama.
+ * Angka 0–1 yang terasa acak tapi tetap sama untuk hari + kunci yang sama.
  *
- * Hasil `hashString` HARUS diaduk dulu, tidak boleh dipakai mentah: rumusnya
- * `h * 31 + kode-karakter`, jadi dua benih yang cuma beda karakter TERAKHIR
- * ("…|jam0" vs "…|jam1") menghasilkan angka yang selisihnya persis 1. Tanpa
- * pengadukan, keempat bobot celah jadi nyaris kembar → pembagiannya selalu
- * rata → jam munculnya sama persis tiap hari (sempat terbukti begitu: setahun
- * cuma memakai 3 jam yang itu-itu saja).
- *
- * Pengaduknya fmix32 milik MurmurHash3 — beda 1 bit di masukan membalik
- * kira-kira separuh bit keluaran, jadi "…jam0" dan "…jam1" jatuh ke angka yang
- * benar-benar berjauhan.
+ * ⚠️ Hasil `hashString` HARUS diaduk dulu: rumusnya `h * 31 + kode`, jadi dua
+ * benih yang cuma beda karakter terakhir ("…jam0" vs "…jam1") selisihnya 1 —
+ * bobot celahnya jadi nyaris kembar dan jam munculnya sama terus (pernah
+ * terbukti: setahun cuma 3 jam yang itu-itu saja). Pengaduknya fmix32.
  */
 function seededUnit(dayId: string, key: string): number {
   let x = (hashString(`${dayId}|${key}`) + 0x9e3779b9) | 0;
@@ -911,20 +835,12 @@ function seededUnit(dayId: string, key: string): number {
 }
 
 // ===================== Ayat penyembahan 🎶 =====================
-// Subjudul layar Spiritual. Dulu satu kalimat tetap ("Being with God, bukan
-// sekadar doing for God"); sekarang ayat tentang memuji & menyembah yang
-// berganti tiap hari.
+// Subjudul layar Spiritual, diundi dari `dayId` (bukan tiap render), jadi
+// sepanjang hari bunyinya sama persis.
 //
-// Diundi dari `dayId`, BUKAN acak tiap render — jadi sepanjang hari itu
-// bunyinya sama persis: pindah-pindah sub-tab tidak menggantinya, dan tidak
-// ada tulisan yang berkedip.
-//
-// PANJANGNYA PUNYA BATAS, dan batasnya bukan selera: subjudul ini satu baris
-// selebar header (393 − 40 = 353pt di iPhone 15). Kalau ada satu ayat yang
-// lebih panjang, hari itu saja ia pecah dua baris — headernya jadi lebih
-// tinggi dan seluruh isi layarnya turun, persis keluhan yang mau dihilangkan.
-// Yang terpanjang di daftar ini 346pt, diukur dari metrik font Inter-nya
-// sendiri. Menambah ayat? Ukur dulu.
+// ⚠️ PANJANGNYA ADA BATAS: subjudul ini satu baris selebar header (353pt di
+// iPhone 15). Satu ayat yang lebih panjang bikin header lebih tinggi & seluruh
+// isi layar turun. Yang terpanjang di daftar ini 346pt — menambah ayat? Ukur dulu.
 export const WORSHIP_VERSES: string[] = [
   'Menyembah dalam roh dan kebenaran — Yohanes 4:24',
   'Segala yang bernapas, pujilah TUHAN — Mazmur 150:6',
@@ -950,16 +866,10 @@ export function worshipVerseOfDay(dayId: string): string {
 
 /**
  * Jadwal penyegar hari ini — 3 kemunculan, jamnya diundi tapi dijamin tidak
- * saling menempel: sisa waktu di dalam jendela dibagi acak ke celah-celahnya,
- * sedangkan durasi tampil & jeda minimalnya sudah dipesan lebih dulu.
- * Kalimat tiap kemunculan dijamin BERBEDA satu sama lain.
+ * menempel; kalimatnya dijamin berbeda satu sama lain.
  *
- * `mine` = kalimat yang kamu pasang sendiri dari Revive. Kalau ada, SATU dari
- * ketiga giliran hari itu diganti dengan salah satunya (yang mana, diundi per
- * hari juga). Sengaja mengganti giliran, bukan ikut diadu di satu kantong
- * besar: tulisanmu sendiri jadi dijamin muncul tiap hari — kalau dicampur, satu
- * kalimatmu cuma punya peluang 1 : 65 melawan daftar bawaan. Daftar kosong →
- * hasilnya persis sama seperti sebelum fitur ini ada.
+ * `mine` = kalimat yang kamu pasang sendiri. Kalau ada, SATU giliran diganti
+ * dengannya — bukan diadu di satu kantong (peluangnya cuma 1 : 65).
  */
 export function nudgeSchedule(dayId: string, mine: MyReminder[] = []): Nudge[] {
   const windowStart = NUDGE_FROM_HOUR * 60;

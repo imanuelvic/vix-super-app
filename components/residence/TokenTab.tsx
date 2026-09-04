@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -635,7 +636,7 @@ const styles = StyleSheet.create({
   heroDays: { color: Color.TEXT_REVERSE, marginTop: 6 },
   buttonRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
   buttonFlex: { flex: 1 },
-  sectionTitle: { marginTop: 16, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   empty: { textAlign: 'center', marginVertical: 10 },
   hint: { color: Color.TEXT_LABEL, marginTop: 8 },
   hintTight: { color: Color.TEXT_LABEL, marginBottom: 10 },

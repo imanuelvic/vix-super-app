@@ -1,7 +1,7 @@
 import { doc, setDoc, type FirestoreError } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { dayId, dayIdToDate } from './format';
+import { dayId, dayIdToDate, formatDayDate } from './format';
 import { liveDoc } from './liveDoc';
 
 // Sport ⚽ — pengurus futsal rutin (lihat components/friends/SportTab.tsx).
@@ -178,17 +178,33 @@ export function sessionTotal(s: SportSession): number {
   return s.fee * s.squad.length;
 }
 
-/** Yang sudah masuk. */
+/**
+ * Uang yang SUDAH masuk — dari SIAPA PUN yang menyetor.
+ *
+ * Termasuk yang tidak ikut main kali ini. Berhalangan datang bukan berarti
+ * tidak ikut patungan: yang sudah janji main lalu batal sering tetap membayar
+ * supaya lapangannya tidak nombok, dan uang itu memang ada di tanganmu. Dulu
+ * setoran orang di luar squad tidak dihitung sama sekali — angkanya rapi, tapi
+ * bohong: kasnya melaporkan lebih sedikit dari yang benar-benar terkumpul.
+ */
 export function sessionPaidTotal(s: SportSession): number {
-  return s.fee * s.paid.filter((id) => s.squad.includes(id)).length;
+  return s.fee * s.paid.length;
 }
 
-/** Sisa yang belum masuk — ini angka yang bikin manager rugi diam-diam. */
+/**
+ * Sisa yang belum masuk — ini angka yang bikin manager rugi diam-diam.
+ *
+ * Dihitung dari yang MAIN dan belum setor, bukan "total dikurangi yang masuk".
+ * Bedanya baru terasa saat ada yang tidak ikut main tapi tetap membayar:
+ * dengan pengurangan, sisanya bisa jadi MINUS dan terbaca seperti salah hitung,
+ * padahal yang terjadi cuma uang lebih. Yang perlu kamu tagih tetap sama: orang
+ * yang ikut main tapi belum setor.
+ */
 export function sessionDueTotal(s: SportSession): number {
-  return sessionTotal(s) - sessionPaidTotal(s);
+  return s.fee * sessionUnpaidCount(s);
 }
 
-/** Berapa orang yang belum setor. */
+/** Berapa orang yang belum setor — yang IKUT MAIN saja; itu yang ditagih. */
 export function sessionUnpaidCount(s: SportSession): number {
   return s.squad.filter((id) => !s.paid.includes(id)).length;
 }
@@ -251,6 +267,33 @@ export function gangMembers(
   return data.members
     .filter((m) => m.gang === gang)
     .sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
+}
+
+/**
+ * Urutan baris "Squad & Setoran": sudah setor di ATAS, tidak ikut main di BAWAH.
+ *
+ * Daftar itu bukan sekadar daftar nama, melainkan daftar KERJA — yang tersisa
+ * buat manager cuma menagih orang yang ikut main tapi belum setor. Dengan yang
+ * sudah beres naik ke atas dan yang tidak ikut main turun ke dasar, sisa
+ * kerjanya berkumpul jadi satu blok di tengah, bukan berselang-seling di antara
+ * baris yang tak perlu disentuh lagi.
+ *
+ * Di dalam tiap kelompok urutannya TIDAK diacak: sort JavaScript stabil, jadi
+ * urutan yang masuk — abjad nama, lewat `gangMembers` — tetap terjaga. Itu yang
+ * membuat "cari si Anu" tetap bisa ditebak: kelompoknya yang berpindah, bukan
+ * namanya yang berloncatan.
+ */
+export function squadOrder(
+  members: SportMember[],
+  s: SportSession,
+): SportMember[] {
+  // Sudah setor = urusannya BERES, ikut main atau tidak — jadi ia naik ke atas
+  // bersama yang lain yang sudah beres. Yang tersisa di tengah & bawah persis
+  // daftar kerjanya: yang main tapi belum setor, lalu yang tidak main dan juga
+  // belum setor.
+  const peringkat = (m: SportMember) =>
+    s.paid.includes(m.id) ? 0 : s.squad.includes(m.id) ? 1 : 2;
+  return [...members].sort((a, b) => peringkat(a) - peringkat(b));
 }
 
 // ===================== Jadwal =====================
@@ -436,6 +479,54 @@ export function sportAttention(data: SportData, now: Date): number {
 export function sessionNeedsAttention(s: SportSession, now: Date): boolean {
   const sisa = daysToSession(s, now);
   return sisa >= 0 ? sisa <= SPORT_ALERT_DAYS : sessionUnpaidCount(s) > 0;
+}
+
+/**
+ * Baris reminder Fun Sport untuk Dashboard — SESI YANG SESUNGGUHNYA, bukan
+ * kalimat umum.
+ *
+ * Kartu ini dulu cuma menjelaskan APA yang membuat badge-nya menyala ("futsal
+ * yang tinggal ≤ 2 hari lagi, atau iuran yang belum masuk"). Kalimat itu benar,
+ * tapi tak pernah menjawab pertanyaan yang sebenarnya kamu bawa ke Dashboard:
+ * "yang mana, kapan?" — jadi tiap kali tetap harus membuka fiturnya untuk tahu.
+ * Sekarang tiap sesi jadi satu barisnya sendiri, memakai kosakata yang sama
+ * dengan kartu di dalam fiturnya (🗓️ tanggal · jam, 💸 sisa setoran).
+ *
+ * Urutannya: yang AKAN DATANG dulu, paling dekat di atas — itu yang masih bisa
+ * kamu urus. Sesi lewat yang setorannya belum lunas menyusul di bawahnya,
+ * terbaru dulu; ia perlu ditagih, tapi tak ada lagi yang bisa dibatalkan.
+ */
+export function sportReminders(
+  data: SportData,
+  now: Date,
+): { id: string; text: string }[] {
+  const perlu = data.sessions.filter((s) => sessionNeedsAttention(s, now));
+  const nanti = perlu
+    .filter((s) => daysToSession(s, now) >= 0)
+    .sort((a, b) => a.dayId.localeCompare(b.dayId));
+  const lewat = perlu
+    .filter((s) => daysToSession(s, now) < 0)
+    .sort((a, b) => b.dayId.localeCompare(a.dayId));
+  return [...nanti, ...lewat].map((s) => {
+    const meta = gangMeta(s.gang);
+    const sisa = daysToSession(s, now);
+    // "2 hari lagi" jauh lebih cepat dibaca daripada menghitung sendiri dari
+    // tanggalnya — tapi tanggalnya tetap ditulis, karena itu yang kamu salin
+    // ke grup saat mengabari orang.
+    const kapan =
+      sisa === 0
+        ? 'HARI INI'
+        : sisa === 1
+          ? 'BESOK'
+          : sisa > 1
+            ? `${sisa} hari lagi`
+            : `lewat ${-sisa} hari`;
+    const belum = sessionUnpaidCount(s);
+    return {
+      id: s.id,
+      text: `${meta.emoji} ${meta.label} · 🗓️ ${formatDayDate(dayIdToDate(s.dayId))} · ${s.time} — ${kapan}${belum > 0 ? ` · 💸 ${belum} belum setor` : ''}`,
+    };
+  });
 }
 
 // ===================== Firestore =====================

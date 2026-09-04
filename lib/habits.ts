@@ -6,10 +6,8 @@ import { DAYPART } from './daypart';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
-// Kebiasaan (habit) harian dibagi 3 sesi waktu (Pagi/Siang/Malam). SATU daftar
-// kebiasaan dipakai untuk SEMUA hari (sama tiap hari — biar simple). Disimpan di
-// dokumen users/{uid}/health/habitSchedule (field `habits`). Centang harian
-// tetap memakai health habitDays/{YYYY-MM-DD}.done (keyed by id kebiasaan).
+// Kebiasaan harian, 3 sesi (Pagi/Siang/Malam). Satu daftar untuk semua hari:
+// users/{uid}/health/habitSchedule.habits — centang harian di habitDays.
 
 export type HabitSlot = 'morning' | 'daytime' | 'night';
 
@@ -24,9 +22,8 @@ export function slotMeta(slot: HabitSlot) {
 }
 
 // ===================== Area & tingkat kepentingan =====================
-// Kesehatan bukan cuma badan. Tiap kebiasaan ditandai AREA hidup yang ia jaga
-// dan TINGKAT dampaknya, supaya ukuran keberhasilan harian bukan lagi
-// "berapa dari 39 yang tercentang", melainkan "apakah 5 area ini terjaga".
+// Tiap kebiasaan menjaga satu AREA hidup, jadi ukuran hariannya "5 area
+// terjaga?", bukan "berapa dari 39 tercentang?".
 
 export type HabitArea = 'body' | 'mind' | 'spirit' | 'social' | 'recovery';
 
@@ -47,17 +44,10 @@ export function areaMeta(area: HabitArea) {
 }
 
 /**
- * Tingkat kebiasaan — sekarang tinggal DUA keadaan: inti, atau bukan.
+ * Tingkat kebiasaan: `core` penentu streak & score, sisanya bonus.
  *
- * Dulu tiga (Inti 🟢 / Pendukung 🟡 / Opsional ⚪), dan tiga tingkat itu tidak
- * pernah benar-benar berbeda dalam pemakaian: yang menentukan streak & score
- * cuma Inti, sedangkan Pendukung & Opsional sama-sama "kalau sempat". Yang
- * tersisa dari perbedaannya cuma tiga lambang berwarna di depan tiap baris
- * yang harus dihafal artinya.
- *
- * `'support'` & `'optional'` TETAP dikenali sebagai bentuk tersimpan — daftar
- * kebiasaanmu memuatnya, dan menulis ulang datanya cuma menambah satu tempat
- * untuk salah. Keduanya dibaca sebagai "bukan inti".
+ * `support`/`optional` tetap dikenali karena masih ada di data tersimpan —
+ * keduanya dibaca "bukan inti".
  */
 export type HabitTier = 'core' | 'support' | 'optional';
 
@@ -90,39 +80,24 @@ type HabitRename = {
   /** Ganti SELURUH namanya. */
   label?: string;
   /**
-   * …atau buang POTONGANNYA saja. Dipakai kalau yang mengganggu cuma ekornya
-   * (jam di belakang nama): emoji & tulisan yang kamu pilih sendiri tetap
-   * seperti apa adanya, jadi tidak perlu menebak-nebak emoji apa yang dulu
-   * kamu pakai — dan mengubah namanya nanti tidak membatalkan aturan ini.
-   */
+     * …atau buang POTONGANNYA saja (mis. jam di ekor nama) — emoji & tulisan
+     * pilihanmu tetap apa adanya.
+     */
   drop?: RegExp;
 };
 
 const HABIT_RENAMES: HabitRename[] = [
-  // Dulu "1 kalimat rhema", lalu "✍️ 1 Rhema before Activities". Sekarang jadi
-  // jurnal refleksi harian — tulisannya yang sama, tapi namanya tidak lagi
-  // mengunci isinya ke satu kalimat ayat saja.
+  // Jurnal refleksi harian — namanya sengaja tidak mengunci isinya ke satu
+  // kalimat ayat.
   { match: /1 kalimat rhema|rhema before activities/i, label: '📓 Daily Reflection Journal' },
-  // 📝 → 💡 supaya emojinya sama dengan tombol & layar Daily Priority 💡.
+  // 💡 = lambang yang sama dengan tombol & layar Daily Priority.
   { match: /top 3 priorit/i, label: '💡 Top 3 Priorities' },
-  // Jamnya dibuang dari namanya. Jam 16.00-nya sendiri tidak hilang — baris
-  // ini memang tinggal di sesi 🌤️ Siang, dan sesinya sudah menyebutkan
-  // waktunya. Nama yang memuat jam juga membuat barisnya paling panjang
-  // sendiri di daftar tanpa memberi tahu apa pun yang baru.
+  // Tanpa jam di nama: sesinya (🌤️ Siang) sudah menyebut waktunya.
   { match: /drink creatine/i, label: '⚡ Drink Creatine' },
-  // "Revive + IG Story 📲" → sebutan yang sama dengan saudaranya
-  // ("📱 Share Revive ke WAG"): dibaca sekali langsung tahu ini kebiasaan
-  // MEMBAGIKAN Revive, bukan menulisnya.
-  //
-  // Kata "IG" sengaja dipertahankan di dalam namanya — pintasan ke aplikasi
-  // Instagram dicari dari kata itu (lihat HABIT_LINKS di bawah), jadi
-  // menggantinya dengan "Instagram" penuh pun aman, tapi membuangnya berarti
-  // barisnya diam-diam kehilangan pintunya.
+  // Kata "IG" WAJIB tetap ada: pintasan ke Instagram dicari dari kata itu
+  // (lihat HABIT_LINKS di bawah).
   { match: /revive \+ ig story/i, label: '📱 Share Revive ke IG Story' },
-  // Jamnya dibuang dari nama — alasan yang sama dengan Drink Creatine di atas.
-  // Kedua baris ini memang tinggal di sesi 🌤️ Siang, dan sesinya sudah
-  // menyebut waktunya; jam di dalam nama cuma membuat barisnya membungkus ke
-  // baris kedua tanpa memberi tahu apa pun yang baru.
+  // Tanpa jam di nama, alasan yang sama dengan Drink Creatine di atas.
   {
     match: /eat mindfully|take fish oil/i,
     // "- Pk. 12.00" & "- 12.30" — "Pk." opsional, titik/titik dua sama saja.
@@ -134,15 +109,12 @@ function renamedHabit(h: ScheduledHabit): ScheduledHabit {
   const ganti = HABIT_RENAMES.find((r) => r.match.test(h.label));
   if (!ganti) return h;
   if (ganti.label) return { ...h, label: ganti.label };
-  // `drop` boleh tidak menemukan apa-apa (namanya sudah bersih) — hasilnya
-  // sama saja, jadi tak perlu diperiksa dulu.
   return { ...h, label: h.label.replace(ganti.drop!, '').trim() };
 }
 
-// ===================== Kebiasaan yang centangnya dari catatan =====================
-// Sebagian kebiasaan buktinya BUKAN klik, melainkan tulisannya. Daily
-// Reflection Journal contohnya: mencentang tanpa menulis apa pun cuma bikin
-// angkanya bohong. Jadi centangnya dikunci & ditentukan panjang catatannya.
+// ============ Kebiasaan yang centangnya dari catatan ============
+// Buktinya tulisan, bukan klik: mencentang tanpa menulis bikin angkanya
+// bohong. Jadi centangnya dikunci & ditentukan isi catatannya.
 
 /** Panjang minimal catatan supaya kebiasaan bercatatan dianggap selesai. */
 export const HABIT_NOTE_MIN = 10;
@@ -152,13 +124,9 @@ export function habitNoteDone(text: string): boolean {
 }
 
 /**
- * Catatan kebiasaan INI sudah cukup untuk dihitung selesai?
- *
- * Aturannya beda menurut bentuk catatannya, dan bedanya bukan main-main:
- *   • poin (🙏 Bersyukur 3 Hal) → SEMUA poin harus terisi. Namanya
- *     sendiri menyebut tiga; tercentang dengan satu poin cuma bikin angkanya
- *     bohong, persis alasan centangnya dikunci.
- *   • satu paragraf (📓 Jurnal)     → cukup panjangnya (HABIT_NOTE_MIN).
+ * Catatan ini sudah cukup untuk dihitung selesai?
+ *   • poin (🙏 Bersyukur 3 Hal) → SEMUA poin harus terisi.
+ *   • satu paragraf (📓 Jurnal) → cukup panjangnya (HABIT_NOTE_MIN).
  */
 export function habitNoteFilled(h: ScheduledHabit, text: string): boolean {
   const poin = habitNoteLines(h);
@@ -167,40 +135,27 @@ export function habitNoteFilled(h: ScheduledHabit, text: string): boolean {
 }
 
 /**
- * Centangnya ditentukan catatan, bukan klik (sekarang: Daily Reflection
- * Journal).
+ * Centangnya ditentukan catatan, bukan klik (Daily Reflection Journal).
  *
- * "rhema" TETAP dikenali: nama tersimpannya di Firestore masih yang lama, dan
- * beberapa layar mencari baris ini lewat fungsi inilah — bukan lewat id yang
- * ditulis tangan. Melepas kata itu berarti baris jurnalnya "hilang" bagi Home,
- * layar Generate Feed, dan penguncian centangnya sekaligus.
+ * "rhema" tetap dikenali — itu nama tersimpannya di Firestore, dan beberapa
+ * layar mencari baris ini lewat fungsi ini.
  */
 export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
   return /rhema|reflection journal|bersyukur/i.test(h.label);
 }
 
 // ===================== Catatan yang isinya POIN =====================
-// Sebagian catatan harian bukan satu paragraf, tapi daftar pendek dengan
-// jumlah yang sudah tertentu. "🙏 Bersyukur 3 Hal" contohnya: namanya sendiri
-// sudah menyebut TIGA, tapi kolomnya cuma satu kotak besar — jadi yang
-// tertulis di situ sering cuma satu kalimat panjang, dan "3 hal"-nya tak
-// pernah benar-benar tiga.
-//
-// Yang disimpan TETAP satu teks di `habitDays/{hari}.notes[id]`, dipisah
-// baris. Tidak ada bentuk data baru, tidak ada migrasi: catatan lama yang
-// terlanjur satu kalimat terbaca sebagai poin pertama, dua sisanya kosong.
+// Daftar pendek berjumlah tetap (mis. "🙏 Bersyukur 3 Hal"). Tersimpan tetap
+// SATU teks di habitDays/{hari}.notes[id], dipisah baris — tanpa bentuk data
+// baru & tanpa migrasi.
 
 /** Berapa poin yang diminta baris "Bersyukur 3 Hal". */
 export const GRATITUDE_LINES = 3;
 
 /**
- * Baris "🙏 Bersyukur 3 Hal".
+ * Baris "🙏 Bersyukur 3 Hal" — satu regex, satu tempat.
  *
- * Dipisah jadi fungsi bernama karena dipakai DUA hal yang berbeda: bentuk
- * kolomnya (tiga poin, bukan satu paragraf) dan arsipnya yang punya
- * penyimpanan sendiri (lihat lib/gratitude.ts). Satu regex, satu tempat —
- * kalau tidak, mengubah namanya nanti memperbaiki yang satu & melupakan yang
- * lain.
+ * Dipakai dua hal: bentuk kolomnya (3 poin) & arsipnya (lib/gratitude.ts).
  */
 export function isGratitudeHabit(h: ScheduledHabit): boolean {
   return /bersyukur/i.test(h.label);
@@ -218,11 +173,9 @@ export function splitNoteLines(text: string, lines: number): string[] {
 }
 
 /**
- * Gabung poin jadi satu teks simpanan. Poin kosong DI TENGAH tetap
- * disimpan sebagai baris kosong — kalau tidak, mengosongkan poin ke-2 akan
- * membuat poin ke-3 naik ke tempatnya, dan apa yang kamu tulis pindah baris
- * sendiri. Baris kosong di EKOR dibuang supaya catatan yang benar-benar
- * kosong tetap terbaca kosong.
+ * Gabung poin jadi satu teks. Poin kosong DI TENGAH tetap jadi baris kosong —
+ * kalau tidak, poin ke-3 naik ke tempat ke-2 saat ke-2 dikosongkan. Baris
+ * kosong di EKOR dibuang.
  */
 export function joinNoteLines(lines: string[]): string {
   const bersih = lines.map((l) => l.trim());
@@ -238,9 +191,8 @@ export function filledNoteLines(text: string): string[] {
     .filter((l) => l.length > 0);
 }
 
-// Refleksi pagi ditampilkan ULANG di Home pada jam-jam ini, biar tulisan
-// paginya tidak berhenti di kolom catatan — dibaca lagi saat siang, sore, &
-// malam.
+// Refleksi pagi ditayangkan ulang di Home pada jam-jam ini, biar tulisannya
+// tidak berhenti di kolom catatan.
 const REFLECTION_WINDOWS: [number, number][] = [
   [12, 13],
   [17, 18],
@@ -275,13 +227,10 @@ function slotNow(now: Date): HabitSlot {
 }
 
 /**
- * Sesi yang WAKTUNYA SUDAH TIBA hari ini — Pagi ≥06:00, Siang ≥12:00,
- * Malam ≥18:00 (kumulatif: siang tetap membawa sisa pagi).
+ * Sesi yang waktunya SUDAH tiba hari ini — kumulatif (siang membawa sisa pagi).
  *
- * Jam 00.00–05.59 sengaja KOSONG: lewat tengah malam ceklis sudah kereset ke
- * hari baru (sisa kebiasaan malam kemarin hangus), sementara sesi Pagi baru
- * mulai jam 6. Jadi di jam-jam itu memang belum ada yang perlu dikerjakan —
- * badge & kartu reminder ikut hilang.
+ * Jam 00.00–05.59 sengaja kosong: ceklis sudah kereset ke hari baru sementara
+ * sesi Pagi baru mulai jam 6 — badge & kartu reminder ikut hilang.
  */
 function openSlots(now: Date): HabitSlot[] {
   const h = now.getHours();
@@ -301,15 +250,10 @@ export function currentOpenSlot(now: Date): HabitSlot | null {
 }
 
 /**
- * Kebiasaan yang BERLAKU hari ini — yang ditandai ✗ (dilewati) dibuang.
+ * Kebiasaan yang BERLAKU hari ini — yang ditandai ✗ dibuang.
  *
- * Satu-satunya pintu masuk untuk semua penghitung harian (score, area, badge
- * tab Habits, kartu reminder Dashboard, hitungan tiap sesi). Yang sudah
- * sengaja dilewati bukan lagi "bolong": ia dianggap tidak berlaku hari ini,
- * jadi tidak lagi menagih dan tidak menahan score.
- *
- * Daftar yang DITAMPILKAN di layar tetap memakai daftar lengkap — barisnya
- * masih kelihatan, cuma bertanda ⏭️.
+ * Satu pintu masuk untuk semua penghitung harian. Daftar yang DITAMPILKAN
+ * tetap lengkap; barisnya cuma bertanda ⏭️.
  */
 export function countedHabits(
   habits: ScheduledHabit[],
@@ -332,9 +276,8 @@ export function pendingHabits(
     (h) =>
       open.includes(h.slot) &&
       !done[h.id] &&
-      // Olahraga sengaja TIDAK ikut menagih di sini — penagihannya sudah
-      // dipegang fitur Fitness (badge & kartu reminder-nya sendiri). Kalau
-      // ikut, satu olahraga ditagih dua kali dari dua tempat berbeda.
+      // Olahraga tidak ikut menagih di sini — sudah dipegang fitur Fitness.
+      // Kalau ikut, satu olahraga ditagih dari dua tempat.
       h.id !== FITNESS_HABIT_ID,
   );
 }
@@ -348,26 +291,20 @@ function allHabitsDone(
 }
 
 // ===================== Score & streak =====================
-// Streak TIDAK lagi menuntut seluruh kebiasaan tercentang (dengan 39 kebiasaan
-// itu praktis mustahil, dan streaknya jadi selalu 0). Yang menentukan cuma
-// kebiasaan INTI; sisanya murni bonus.
+// Yang menentukan streak cuma kebiasaan INTI; sisanya bonus.
 //
-// ⚠️ SEMUANYA di bawah ini menerima daftar LENGKAP + peta `skipped`, bukan
-// daftar yang sudah disaring `countedHabits`. Bedanya menentukan:
-// mengeluarkan baris yang ditandai ✗ membuat hari yang seluruh kebiasaan
-// intinya dilewati terbaca "beres semua" — streaknya naik, areanya hijau,
-// skornya 10/10, padahal tidak ada satu pun yang dikerjakan. ✗ artinya "hari
-// ini tidak saya kerjakan", dan itu BUKAN keberhasilan.
+// ⚠️ Semuanya di bawah menerima daftar LENGKAP + peta `skipped`, BUKAN hasil
+// `countedHabits`. Kalau baris ✗ dikeluarkan, hari yang semua intinya
+// dilewati terbaca "beres semua" — streak naik & skor 10/10 tanpa satu pun
+// dikerjakan.
 
 function coreHabits(habits: ScheduledHabit[]): ScheduledHabit[] {
   return habits.filter(isCoreHabit);
 }
 
 /**
- * Semua kebiasaan Inti hari ini sudah beres? → penentu naiknya streak 🔥
- *
- * Yang ditandai ✗ dihitung BELUM beres, bukan dikeluarkan dari hitungan:
- * melewatinya berarti hari itu tidak dapat poin streak.
+ * Semua kebiasaan Inti hari ini beres? → penentu naiknya streak 🔥
+ * Yang ditandai ✗ dihitung BELUM beres, bukan dikeluarkan dari hitungan.
  */
 export function coreDone(
   habits: ScheduledHabit[],
@@ -379,10 +316,8 @@ export function coreDone(
 }
 
 /**
- * Score harian 0–10 — HANYA dari kebiasaan Inti. Yang bukan inti sengaja tidak
- * ikut dihitung supaya score ini menjawab satu pertanyaan saja: "yang wajib
- * hari ini sudah beres belum?" Efeknya 10/10 selalu sama artinya dengan
- * naiknya streak 🔥 (`coreDone`). Yang ditandai ✗ dihitung belum beres.
+ * Score harian 0–10, HANYA dari kebiasaan Inti — jadi 10/10 selalu berarti
+ * sama dengan naiknya streak. Yang ditandai ✗ dihitung belum beres.
  */
 export function dailyScore(
   habits: ScheduledHabit[],
@@ -406,22 +341,17 @@ export type AreaProgress = {
   total: number;
   kept: boolean; // semua kebiasaan Inti area ini beres
   /**
-   * Ada kebiasaan di area ini yang ditandai ✗ hari ini.
-   *
-   * Dipisahkan dari `kept` dengan sengaja: "belum dikerjakan" masih mungkin
-   * berubah sampai tengah malam, sedangkan "dilewati" sudah jadi keputusan.
-   * Yang pertama netral, yang kedua ditandai MERAH.
-   */
+     * Ada kebiasaan area ini yang ditandai ✗ hari ini.
+     *
+     * Dipisah dari `kept`: "belum dikerjakan" masih bisa berubah, "dilewati"
+     * sudah jadi keputusan — yang kedua ditandai MERAH.
+     */
   skipped: boolean;
 };
 
 /**
- * Rekap per area untuk hari ini. Area tanpa kebiasaan Inti dianggap terjaga
- * begitu minimal satu kebiasaannya dilakukan.
- *
- * Menerima daftar LENGKAP + peta ✗ (lihat catatan di atas coreHabits): satu
- * saja yang dilewati membuat areanya TIDAK terjaga, bukan membuat baris itu
- * menghilang dari hitungan.
+ * Rekap per area hari ini. Area tanpa kebiasaan Inti terjaga begitu minimal
+ * satu kebiasaannya dilakukan. Satu baris ✗ membuat areanya TIDAK terjaga.
  */
 export function areaProgress(
   habits: ScheduledHabit[],

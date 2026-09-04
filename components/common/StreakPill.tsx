@@ -62,7 +62,7 @@ export function StreakPill({
         onPress={() =>
           router.push(
             category
-              ? { pathname: '/achievements', params: { cat: category } }
+              ? { pathname: '/achievement-category', params: { cat: category } }
               : '/achievements',
           )
         }

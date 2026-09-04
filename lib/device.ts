@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  limit,
   orderBy,
   query,
   Timestamp,
@@ -130,7 +131,10 @@ export function subscribeDataPlans(
 ) {
   // orderBy satu field → tanpa composite index. Yang paling baru berakhir di
   // atas: paket aktif memang yang tanggal habisnya paling jauh ke depan.
-  const q = query(plansCollection(uid), orderBy('endDate', 'desc'));
+  //
+  // Dibatasi 60: paket bertambah tiap bulan, jadi tanpa batas ia tumbuh
+  // selamanya — dan tak ada satu pun hitungan yang butuh paket lima tahun lalu.
+  const q = query(plansCollection(uid), orderBy('endDate', 'desc'), limit(60));
   return liveList<DataPlan>(q, onChange, onError);
 }
 

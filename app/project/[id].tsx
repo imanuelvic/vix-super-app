@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { SECTION_SPACE } from '@/assets/style/section';
 import { DeadlineTag } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     textAlign: 'right',
   },
-  sectionTitle: { marginTop: 18, marginBottom: 8 },
+  sectionTitle: { ...SECTION_SPACE },
   reqCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

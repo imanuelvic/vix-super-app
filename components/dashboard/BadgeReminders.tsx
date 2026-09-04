@@ -14,7 +14,12 @@ import { HOME_FEATURES } from '@/lib/homeGrid';
 // Fitur yang SUDAH punya kartu/bagiannya sendiri sengaja TIDAK masuk daftar
 // ini, supaya tidak ada dua kartu untuk hal yang sama:
 //   tasks · career · core · spiritual · car · residence · fitness ·
-//   learning · finance · family
+//   learning · finance · family · friends
+//
+// Friends 🤝 dulu ada di sini, lalu keluar begitu kartunya bisa menyebut SESI
+// & TAGIHAN yang sesungguhnya (lihat `friendsRows` di dashboard.tsx). Kalimat
+// umum seperti yang tersisa di bawah ini adalah yang terbaik yang bisa ditulis
+// tanpa datanya — begitu datanya ada, barisnya sendiri selalu lebih berguna.
 //
 // Menambah fitur berbadge baru → tambah satu baris di sini (atau buat kartu
 // khususnya sendiri di dashboard.tsx). Warna & tujuannya tidak perlu ditulis
@@ -30,11 +35,6 @@ type Nota = {
 };
 
 const TANPA_KARTU: Record<string, Nota> = {
-  friends: {
-    emoji: '🤝',
-    apa: 'Futsal yang tinggal ≤ 2 hari lagi, atau iuran (futsal / patungan) yang belum masuk.',
-    aksi: 'Pastikan lapangannya sudah dibooking & pemainnya cukup, lalu tagih yang belum setor.',
-  },
   device: {
     emoji: '📱',
     apa: 'Paket kuota yang habis besok atau hari ini.',

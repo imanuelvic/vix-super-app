@@ -3,58 +3,15 @@ import { useState } from 'react';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 /**
- * Keadaan bersama untuk form di dalam sheet/modal: penanda sibuk + pesan gagal,
- * plus pembungkus penyimpanannya.
+ * Keadaan bersama form di dalam sheet: penanda sibuk + pesan gagal, plus
+ * pembungkus penyimpanannya. Dipakai 19 layar & tab.
  *
- * Sembilan belas layar & tab menulis blok yang SAMA PERSIS:
- *
- *     const [formError, setFormError] = useState<string | null>(null);
- *     const [busy, setBusy] = useState(false);
- *     …
- *     async function handleSave() {
- *       if (!user || !editing || busy) return;
- *       if (!fTitle.trim()) { setFormError('Judul wajib diisi.'); return; }
- *       setBusy(true);
- *       setFormError(null);
- *       const data = { … };
- *       try {
- *         await simpan(data);
- *         setEditing(null);        // tutup sheet-nya HANYA kalau berhasil
- *       } catch {
- *         setFormError(SAVE_ERROR);
- *       } finally {
- *         setBusy(false);
- *       }
- *     }
- *
- * Yang paling gampang salah bukan `try`-nya, tapi `finally`: sekali lupa,
+ * Yang paling gampang salah bukan `try`-nya tapi `finally`: sekali lupa,
  * penanda sibuknya menyala selamanya — tombol Simpan berputar terus & mati
- * sampai layarnya ditutup. Di sini penyalaan, pemadaman, dan bunyi pesan
- * gagalnya jadi satu tempat, tak bisa lupa ditulis maupun berbeda-beda.
- *
- * Pemakaiannya:
+ * sampai layarnya ditutup.
  *
  *     const { busy, formError, setFormError, save } = useFormSave();
- *     …
- *     async function handleSave() {
- *       if (!user || !editing || busy) return;
- *       if (!fTitle.trim()) { setFormError('Judul wajib diisi.'); return; }
- *       const data = { … };
- *       await save(async () => {
- *         await simpan(data);
- *         setEditing(null);
- *       });
- *     }
- *
- * Pemeriksaan isian tetap di pemanggilnya — bunyinya beda-beda tiap form, dan
- * memang harus begitu. `save` baru mengambil alih sejak penyimpanan dimulai.
- *
- * Kenapa `setBusy` ikut dikembalikan: tombol 🗑️ Hapus di beberapa layar
- * memakai penanda sibuk yang sama tapi perilakunya BELUM seragam — ada yang
- * menutup sheet-nya hanya kalau berhasil, ada yang selalu menutup, dan ada
- * yang tidak menangkap kegagalan sama sekali (sheet-nya tertutup seolah
- * berhasil padahal datanya masih ada). Menyeragamkannya berarti mengubah
- * perilaku, jadi itu dibiarkan dulu apa adanya di sini.
+ *     await save(async () => { await simpan(data); setEditing(null); });
  */
 export function useFormSave(): {
   /** true = penyimpanan sedang berjalan (tombolnya berputar & mati). */

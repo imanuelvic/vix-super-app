@@ -1,41 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 
 /**
- * Data yang diambil SEKALI JALAN dari luar (fetch HTTP, Apple Health) — beda
- * dengan langganan Firestore yang mengalir terus. Contoh: harga emas/Bitcoin/
- * IHSG/kurs, judul berita, ringkasan langkah hari ini.
+ * Data yang diambil SEKALI JALAN dari luar (harga emas, berita, Apple Health)
+ * — beda dengan langganan Firestore yang mengalir terus.
  *
- * Dulu tiap pemakainya menulis pola yang sama persis:
+ * `loading` & `error` DITURUNKAN saat render, dibaca dari jawaban permintaan
+ * yang sedang berlaku. Jadi tak ada setState di badan efek — yang dilarang
+ * React Compiler (`react-hooks/set-state-in-effect`).
  *
- *     const load = useCallback(async () => {
- *       setLoading(true);          // ← ini yang dilarang saat dipanggil efek
- *       setError(null);
- *       try { setData(await ambil()); } catch { setError(PESAN); }
- *       finally { setLoading(false); }
- *     }, []);
- *     useEffect(() => { load(); }, [load]);
- *
- * Dua masalahnya:
- *
- *   1. `setLoading(true)` jalan LANGSUNG di dalam efek → render bertingkat, dan
- *      React Compiler (menyala di app ini) melarangnya
- *      (`react-hooks/set-state-in-effect`).
- *   2. Ditulis ulang di tiap layar → gampang beda-beda sendiri.
- *
- * Di sini `loading` & `error` DITURUNKAN saat render: keduanya dibaca dari
- * jawaban permintaan yang sedang berlaku. Begitu ada permintaan baru (ditekan
- * muat ulang, atau `load` berganti karena sumbernya diganti), jawaban lama
- * tidak cocok lagi → `loading` true & `error` bersih di render yang sama juga.
- * Jadi tak ada satu pun setState yang dijalankan langsung di badan efek — yang
- * menulis state cuma jawaban promise (callback) dan tombol (event).
- *
- * Cara pakai:
  *   const { data, loading, error, reload } = useAsyncData(loadGold, GOLD_ERROR);
  *
- * `load` boleh berganti-ganti (mis. ikut sumber berita yang dipilih): begitu
- * fungsinya berbeda, itu dihitung permintaan baru. `load = null` artinya
- * "jangan ambil apa-apa dulu" (mis. izin Apple Health belum ada) — `loading`
- * ikut false, tak ada permintaan yang dikirim.
+ * `load` boleh berganti (ikut sumber yang dipilih) → dihitung permintaan baru.
+ * `load = null` = jangan ambil apa-apa dulu; `loading` ikut false.
  */
 export function useAsyncData<T>(
   load: ((force: boolean) => Promise<T>) | null,
