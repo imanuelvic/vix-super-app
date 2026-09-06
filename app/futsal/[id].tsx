@@ -322,7 +322,7 @@ export default function FutsalSessionScreen() {
         {/* 0 — uang: ringkasan + tombol setor ke kas. Dibungkus SATU View
             supaya nomor patokan di bawah tidak bergeser saat tombol kasnya
             muncul/menghilang. */}
-        <View>
+        <View style={styles.moneyBlock}>
           {/* ===== Uang ===== */}
           <SummaryCard>
             <VixText heading="label" additionalStyle={summaryText.label}>
@@ -638,6 +638,10 @@ export default function FutsalSessionScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  // Jaraknya ditaruh di BAWAH blok uang, bukan di atas judul "Squad &
+  // Setoran": judul itu dipatok (sticky), dan jarak atas pada yang dipatok
+  // ikut menempel di layar sebagai pita menganga selama daftarnya digulung.
+  moneyBlock: { marginBottom: 12 },
   sectionTitle: { ...SECTION_SPACE },
   empty: { textAlign: 'center', marginVertical: 10 },
   // Setor ke kas: garis saja, bukan tombol penuh — memindahkan uang ke kas itu

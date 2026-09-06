@@ -16,26 +16,7 @@ import { liveDoc } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 import { weekStart } from './usage';
 
-/** Streak MINGGUAN — bentuknya sama dengan streak harian, isi lastDayId = weekId. */
 export type { LoginStreak as WeekStreak } from './achievements';
-
-// Learning 🎓 — SATU ilmu baru tiap minggu, supaya tidak ketinggalan soal
-// teknologi, dunia, dan skill umum.
-//
-// Kenapa dibuat "per minggu", bukan "per hari":
-// jadwal harianmu sudah padat (39 kebiasaan, doa pagi & malam, Alkitab, olahraga).
-// Menambah satu beban harian lagi hampir pasti gagal. Satu topik per minggu yang
-// dicicil 4 kali @ 5–15 menit itu total cuma ±45 menit seminggu — kecil, tapi
-// dalam setahun jadi 52 ilmu baru.
-//
-// Daftar skill & topik diskusi STATIK di sini (tidak masuk Firestore) supaya
-// ringan & gratis. Yang disimpan hanya kemajuanmu:
-//   users/{uid}/learning/{weekId}  → { skillKey, steps, note }   (per minggu)
-//   users/{uid}/learning/skills    → { done: { [skillKey]: weekId } }
-//   users/{uid}/learning/topics    → { done: { [topicKey]: true } }
-// weekId = dayId hari SENIN minggu itu, mis. "2026-08-10".
-
-// ===================== Bidang & skill =====================
 
 export type SkillArea = {
   key: string;

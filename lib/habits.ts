@@ -513,6 +513,14 @@ export type HabitLink = {
    * kedua baris bercatatan wajib adalah `isNoteDrivenHabit`.
    */
   whenDone?: boolean;
+  /**
+   * Pintasan PENGGANTI selagi barisnya belum tercentang — pasangan `whenDone`.
+   *
+   * Tanpa ini baris ber-`whenDone` sama sekali tak punya keterangan sebelum
+   * dikerjakan. Dengan ini pintunya berganti mengikuti keadaan: sebelum
+   * dikerjakan menuju SUMBERNYA, sesudah dikerjakan menuju HASILNYA.
+   */
+  beforeDone?: HabitLink;
 };
 
 // Urutan penting: yang lebih spesifik diperiksa duluan. "Share Revive ke
@@ -536,6 +544,23 @@ export const HABIT_LINKS: HabitLink[] = [
     color: Color.SPIRITUAL_DARK,
     route: { pathname: '/gratitude' },
     whenDone: true,
+    // Sebelum ketiga halnya ditulis, yang berguna bukan riwayatnya —
+    // melainkan ayat yang menyuruhnya: "Mengucap syukurlah dalam segala hal"
+    // (1 Tesalonika 5:16-18). Nama kitabnya ditulis LENGKAP supaya kode
+    // USFM-nya (1TH) ketemu; yang tampil di layar tetap singkatannya.
+    beforeDone: {
+      note: 'Buka Baca 1 Tes. 5:16-18',
+      color: Color.SPIRITUAL_DARK,
+      // Bentuknya sama persis dengan yang disusun `youVersionLink` di
+      // lib/spiritual.ts: kode USFM 1TH.5.16 + nomor terjemahan TSI (320).
+      // Ditulis apa adanya di sini — sama seperti pintasan Instagram &
+      // Duolingo di atas — supaya daftar ini tidak ikut menarik seluruh
+      // lib/spiritual.ts hanya demi satu alamat.
+      external: {
+        scheme: 'youversion://bible?reference=1TH.5.16&version=320',
+        web: 'https://www.bible.com/bible/320/1TH.5.16',
+      },
+    },
   },
   // 📓 Daily Reflection Journal → layar Generate Feed 🖼️.
   //

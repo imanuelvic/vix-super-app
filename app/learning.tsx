@@ -88,7 +88,6 @@ export default function LearningScreen() {
         backLabel="Home"
         title="Learning 🎓"
         subtitle="Satu ilmu baru tiap minggu"
-        // Streak MINGGUAN Learning 🎓 lahir dari 4 langkah di layar ini.
         right={<AchievementButton category="learning" />}
       />
 

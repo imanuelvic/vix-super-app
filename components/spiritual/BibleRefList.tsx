@@ -57,11 +57,15 @@ export function BibleRefList({
               {hint}
             </VixText>
           ) : null}
+          {/* Kitab & pasal saja. Yang dicatat di sini "hari ini saya baca
+              Amsal 5" — ayat ke berapanya baru berarti waktu satu ayat
+              dipajang ke Story, dan kolomnya ada di sana. */}
           <BibleRefField
             value={ref}
             onChange={(next) => onChange(refs.map((r, x) => (x === i ? next : r)))}
             editable={editable}
             inlinePicker={inlinePicker}
+            chapterOnly
           />
         </View>
       ))}

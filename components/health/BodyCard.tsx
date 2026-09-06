@@ -242,11 +242,6 @@ export function BodyCard({ profile }: { profile: HealthProfile }) {
           label="Ukuran sepatu"
           value={profile.shoeSize != null ? String(profile.shoeSize) : 'belum diisi'}
         />
-
-        <VixText heading="label" additionalStyle={styles.hint}>
-          BMI ambang Asia-Pasifik (normal 18,5–22,9) · rasio perut/tinggi sehat
-          {' < '}0,50 · lemak tubuh dihitung metode US Navy (perkiraan).
-        </VixText>
       </View>
 
       {/* ===== Saran supaya badan makin sehat & mendekati ideal ===== */}
@@ -411,7 +406,6 @@ const styles = StyleSheet.create({
   ok: { color: Color.SUCCESS },
   warn: { color: Color.WARNING },
   danger: { color: Color.DANGER },
-  hint: { marginTop: 8 },
   adviceCard: {
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderRadius: 16,

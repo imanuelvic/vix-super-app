@@ -246,16 +246,31 @@ export function ExerciseTab({
   // Layar sempit (iPhone) → tetap pil selebar tetap yang bisa digeser samping.
   const oneRow = width - 40 >= DAY_PILL_WIDTH * 7 + DAY_GAP * 6;
 
+  // Ambilan seminggu sudah sampai? Sebelum itu semua hari terlihat kosong —
+  // dan hari kosong yang sudah lewat itu warnanya MERAH. Tanpa penjaga ini,
+  // tiap kali sub-tab dibuka deretan harinya berkedip merah dulu sekejap.
+  const weekLoaded = Object.keys(weekDays).length > 0;
+
   const dayPills = [1, 2, 3, 4, 5, 6, 0].map((wd) => {
     const s = fitSessionOfWeekday(wd, block);
     const active = wd === weekday;
-    // Sudah beres hari itu? Hari ini dibaca LANGSUNG dari `day` yang live, hari
+    // Catatan hari itu: hari ini dibaca LANGSUNG dari `day` yang live, hari
     // lain dari hasil ambilan seminggu — jadi centang terakhir hari ini
     // langsung memunculkan ✅-nya tanpa menunggu apa pun.
-    const selesai =
-      wd === todayWeekday
-        ? fitDayComplete(day, wd, block)
-        : fitDayComplete(weekDays[weekIdOf(wd)], wd, block);
+    const catatan = wd === todayWeekday ? day : weekDays[weekIdOf(wd)];
+    const selesai = fitDayComplete(catatan, wd, block);
+    // Hari yang catatannya sudah TUTUP BUKU — kemarin & sebelumnya. Hari ini
+    // sengaja tidak ikut: sesinya masih berjalan, jadi belum pantas dinilai
+    // (jam 7 pagi belum tercentang apa-apa itu wajar, bukan gagal).
+    const lampau = weekLoaded && weekIdOf(wd) < dayId;
+    const tercentang = catatan
+      ? s.exercises.filter((e) => catatan.done[e.id]).length
+      : 0;
+    // ❌ MERAH — hari itu tidak ada olahraganya sama sekali: sengaja dilewati,
+    // atau harinya sudah tutup buku tanpa satu gerakan pun tercentang.
+    const kosong = (catatan?.skipped ?? false) || (lampau && tercentang === 0);
+    // ⬜ ABU-ABU — sesinya jalan tapi tidak tuntas: ada yang terlewat / lupa.
+    const bolong = !kosong && lampau && !selesai;
     return (
       <PressableScale
         key={wd}
@@ -264,6 +279,8 @@ export function ExerciseTab({
           oneRow && styles.dayPillFill,
           active && styles.dayPillActive,
           selesai && !active && styles.dayPillDone,
+          bolong && !active && styles.dayPillMissed,
+          kosong && !active && styles.dayPillSkipped,
         ]}
         // Tekanan kedua (hari yang sedang dibuka) = balik ke paling atas.
         onPress={() => (active ? toTop() : setWeekday(wd))}>
@@ -518,11 +535,7 @@ export function ExerciseTab({
       <ConfirmDialog
         visible={confirmSkip}
         title={isWalkDay ? 'Lewati jalan pagi hari ini?' : 'Lewati latihan hari ini?'}
-        detail={
-          isWalkDay
-            ? `${session.emoji} ${session.title} ditandai ❌.\n\n🔥 Streak tidak terpengaruh — hari jalan pagi memang tidak pernah dihitung sebagai sesi latihan.`
-            : `${session.emoji} ${session.title} ditandai ❌ — semua gerakan dianggap tidak dikerjakan.\n\n🔥 Streak kembali ke 0 dan TIDAK bisa dikembalikan. Rekor terbaik & total sesimu tetap aman.`
-        }
+        detail={`${session.emoji} ${session.title} ditandai ❌`}
         confirmLabel="Ya, Lewati"
         busy={busy}
         onCancel={() => setConfirmSkip(false)}
@@ -560,6 +573,18 @@ const styles = StyleSheet.create({
   // Sengaja lebih kalem daripada hari yang sedang dibuka (dayPillActive), jadi
   // yang paling menonjol tetap hari yang sedang kamu lihat.
   dayPillDone: { borderColor: Color.SUCCESS },
+  // Hari lampau yang tidak tuntas — ada gerakan yang terlewat atau lupa
+  // dicentang. Abu-abu, bukan merah: olahraganya tetap jalan, cuma tak penuh.
+  dayPillMissed: {
+    borderColor: Color.DISABLED_DARK,
+    backgroundColor: Color.DISABLED,
+  },
+  // Tidak ada olahraganya sama sekali. Pasangan warna merahnya sama dengan
+  // tab bertanda bahaya (components/common/SegmentTabs) — satu bahasa warna.
+  dayPillSkipped: {
+    borderColor: Color.DANGER,
+    backgroundColor: Color.DANGER_TRANSPARENT,
+  },
   // Ditaruh DI DALAM batas pil (bukan menggantung keluar): pil-nya ada di dalam
   // ScrollView mendatar yang bisa memotong apa pun yang melewati tepinya.
   dayDoneBadge: {

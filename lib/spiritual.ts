@@ -927,6 +927,87 @@ export const WORSHIP_VERSES: string[] = [
   'Korban bibir yang memuji nama-Nya — Ibrani 13:15',
 ];
 
+// Bacaan penuh untuk langkah "Memuji & Menyembah 🎶" di gerbang doa pagi.
+//
+// Bedanya dengan WORSHIP_VERSES di atas: yang itu SATU BARIS untuk subjudul
+// header (panjangnya dibatasi lebar header). Yang ini bacaan utuh yang benar
+// -benar didoakan — jadi tidak ada batas panjang, tapi tiap butirnya harus
+// memang soal memuji & menyembah, bukan sekadar ayat yang indah.
+//
+// Dulu langkah itu memakai Mazmur 95:1-2 yang ditulis mati di layarnya. Satu
+// ayat yang sama tiap pagi selama bertahun-tahun berhenti terbaca — matanya
+// hafal, hatinya lewat.
+export type WorshipPassage = { text: string; ref: string };
+
+export const WORSHIP_PASSAGES: WorshipPassage[] = [
+  {
+    text: `Marilah kita bersorak-sorai untuk TUHAN, bersorak-sorak bagi gunung batu keselamatan kita.
+
+Biarlah kita menghadap wajah-Nya dengan nyanyian syukur, bersorak-sorak bagi-Nya dengan nyanyian mazmur.`,
+    ref: 'Mazmur 95:1–2',
+  },
+  {
+    text: `Pujilah TUHAN, hai jiwaku! Pujilah nama-Nya yang kudus, hai segenap batinku!
+
+Pujilah TUHAN, hai jiwaku, dan janganlah lupakan segala kebaikan-Nya!`,
+    ref: 'Mazmur 103:1–2',
+  },
+  {
+    text: `Masuklah melalui pintu gerbang-Nya dengan nyanyian syukur, ke dalam pelataran-Nya dengan puji-pujian.
+
+Bersyukurlah kepada-Nya dan pujilah nama-Nya!`,
+    ref: 'Mazmur 100:4',
+  },
+  {
+    text: `Nyanyikanlah nyanyian baru bagi TUHAN, menyanyilah bagi TUHAN, hai segenap bumi!
+
+Menyanyilah bagi TUHAN, pujilah nama-Nya, kabarkanlah keselamatan yang dari pada-Nya dari hari ke hari.`,
+    ref: 'Mazmur 96:1–2',
+  },
+  {
+    text: `Tetapi saatnya akan datang dan sudah tiba sekarang, bahwa penyembah-penyembah benar akan menyembah Bapa dalam roh dan kebenaran; sebab Bapa menghendaki penyembah-penyembah demikian.
+
+Allah itu Roh dan barangsiapa menyembah Dia, harus menyembah-Nya dalam roh dan kebenaran.`,
+    ref: 'Yohanes 4:23–24',
+  },
+  {
+    text: `Sebab itu marilah kita, oleh Dia, senantiasa mempersembahkan korban syukur kepada Allah, yaitu ucapan bibir yang memuliakan nama-Nya.`,
+    ref: 'Ibrani 13:15',
+  },
+  {
+    text: `Aku hendak memuji TUHAN pada segala waktu; puji-pujian kepada-Nya tetap di dalam mulutku.
+
+Muliakanlah TUHAN bersama-sama dengan aku, marilah kita bersama-sama memasyhurkan nama-Nya!`,
+    ref: 'Mazmur 34:2, 4',
+  },
+  {
+    text: `Aku hendak mengagungkan Engkau, ya Allahku, ya Raja, dan aku hendak memuji nama-Mu untuk seterusnya dan selamanya.
+
+Besarlah TUHAN dan sangat terpuji, dan kebesaran-Nya tidak terduga.`,
+    ref: 'Mazmur 145:1, 3',
+  },
+  {
+    text: `Karena itu, saudara-saudara, demi kemurahan Allah aku menasihatkan kamu, supaya kamu mempersembahkan tubuhmu sebagai persembahan yang hidup, yang kudus dan yang berkenan kepada Allah: itu adalah ibadahmu yang sejati.`,
+    ref: 'Roma 12:1',
+  },
+  {
+    text: `Biarlah segala yang bernafas memuji TUHAN! Haleluya!`,
+    ref: 'Mazmur 150:6',
+  },
+];
+
+/**
+ * Bacaan penyembahan untuk hari ini — sama sepanjang hari itu.
+ *
+ * Garamnya sengaja BEDA dari `worshipVerseOfDay` ('worship'), supaya subjudul
+ * header dan langkah doa pagi tidak selalu menunjuk ayat yang sama persis di
+ * hari yang sama.
+ */
+export function worshipPassageOfDay(dayId: string): WorshipPassage {
+  const i = Math.floor(seededUnit(dayId, 'worship-doa') * WORSHIP_PASSAGES.length);
+  return WORSHIP_PASSAGES[Math.min(i, WORSHIP_PASSAGES.length - 1)];
+}
+
 /** Ayat penyembahan untuk hari ini — sama sepanjang hari itu. */
 export function worshipVerseOfDay(dayId: string): string {
   const i = Math.floor(seededUnit(dayId, 'worship') * WORSHIP_VERSES.length);
@@ -1041,6 +1122,7 @@ const YOUVERSION_APP_STORE = 'https://apps.apple.com/id/app/bible/id282935706';
  */
 export const YOUVERSION_VERSION_ID: Record<string, number> = {
   TB: 306, // Alkitab Terjemahan Baru (LAI)
+  TSI: 320, // Alkitab Terjemahan Sederhana Indonesia
 };
 
 /** Nomor terjemahan untuk singkatan ini (null = belum terdaftar). */

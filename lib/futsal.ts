@@ -248,11 +248,6 @@ export function cashBalance(data: FutsalData, gang: FutsalGangKey): number {
   );
 }
 
-/** Kas SELURUH geng dijumlahkan — angka yang dicari saat buka halaman kas. */
-export function cashTotal(data: FutsalData): number {
-  return FUTSAL_GANGS.reduce((n, g) => n + cashBalance(data, g.key), 0);
-}
-
 /**
  * Berapa rupiah dari iuran sesi ini yang SUDAH disetor ke kas.
  *

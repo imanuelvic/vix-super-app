@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { InfoChip } from '@/components/common/InfoChip';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -70,40 +71,18 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
                 {s.title}
               </VixText>
               <View style={styles.metaRow}>
-                {s.preacher ? (
-                  <VixText heading="label" additionalStyle={styles.metaChip}>
-                    🎤 {s.preacher}
-                  </VixText>
-                ) : null}
+                {s.preacher ? <InfoChip label={`🎤 ${s.preacher}`} /> : null}
                 {s.serviceTime ? (
-                  <VixText heading="label" additionalStyle={styles.metaChip}>
-                    🕙 {s.serviceTime}
-                  </VixText>
+                  <InfoChip label={`🕙 ${s.serviceTime}`} />
                 ) : null}
-                {cardLocked ? (
-                  <VixText heading="label" additionalStyle={styles.lockChip}>
-                    🔒 Arsip
-                  </VixText>
-                ) : null}
+                {cardLocked ? <InfoChip label="🔒 Arsip" tone="muted" /> : null}
               </View>
+              {/* Kutipannya saja. Catatan & aplikasinya SENGAJA tidak
+                  mengintip di sini: keduanya berbaris-baris, dan cuplikan dua
+                  baris dari tulisan sepanjang itu bukan ringkasan — cuma
+                  kalimat yang terpotong di tengah. Isinya dibaca utuh di layar
+                  catatannya, sekali klik dari kartu ini. */}
               <QuoteBox text={s.quote} lines={3} />
-              {/* Cuplikan saja — isi utuhnya dibaca di layar catatannya. */}
-              {s.note ? (
-                <VixText
-                  heading="label"
-                  numberOfLines={2}
-                  additionalStyle={styles.snippet}>
-                  📝 {s.note}
-                </VixText>
-              ) : null}
-              {s.reflection ? (
-                <VixText
-                  heading="label"
-                  numberOfLines={2}
-                  additionalStyle={styles.snippet}>
-                  🏃🏻‍➡️ Aplikasi - {s.reflection}
-                </VixText>
-              ) : null}
             </PressableScale>
           );
         })}
@@ -133,23 +112,4 @@ const styles = StyleSheet.create({
   cardDate: { color: Color.SPIRITUAL_DARK },
   cardTitle: { color: Color.TEXT_TITLE },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  metaChip: {
-    backgroundColor: Color.SPIRITUAL,
-    color: Color.SPIRITUAL_DARK,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    overflow: 'hidden',
-  },
-  // Bentuk kutipannya sekarang komponen bersama <QuoteBox/> — dipakai juga
-  // oleh daftar Puasa & kartu Revive.
-  snippet: { color: Color.TEXT_PARAGRAPH },
-  lockChip: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    color: Color.TEXT_LABEL,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    overflow: 'hidden',
-  },
 });

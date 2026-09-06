@@ -47,6 +47,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   sermon: 'spiritual',
   'bible-reading': 'spiritual',
   'bible-story': 'spiritual',
+  promise: 'spiritual',
   fasting: 'spiritual',
   'fasting-days': 'spiritual',
   gratitude: 'spiritual',
@@ -82,6 +83,7 @@ const ROUTE_FEATURE: Record<string, string> = {
 
   // Sisanya: satu fitur, satu layar (plus sub-halaman ber-ruas sama).
   learning: 'learning',
+  'learning-archive': 'learning',
   fitness: 'fitness',
   family: 'family',
   investment: 'investment',

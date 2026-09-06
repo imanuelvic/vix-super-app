@@ -20,7 +20,6 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
-import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFutsalGang } from '@/contexts/futsalGang';
@@ -36,7 +35,6 @@ import {
 } from '@/lib/format';
 import {
   cashBalance,
-  cashTotal,
   gangCash,
   gangMeta,
   newFutsalId,
@@ -169,22 +167,9 @@ export default function FutsalCashScreen() {
           <ScrollView
             key={`${gang}-${currentPage}`}
             contentContainerStyle={styles.content}>
-            {/* Total SEMUA geng — inilah angka yang dicari saat membuka
-                halaman ini: berapa uang orang lain yang sedang kamu pegang. */}
-            <SummaryCard>
-              <VixText heading="label" additionalStyle={summaryText.label}>
-                💰 Total kas semua tim
-              </VixText>
-              <VixText heading="subheader" additionalStyle={summaryText.value}>
-                {formatRupiah(cashTotal(isi))}
-              </VixText>
-              <VixText heading="label" additionalStyle={summaryText.label}>
-                {FUTSAL_GANGS.map(
-                  (g) => `${g.emoji} ${g.label} ${formatRupiah(cashBalance(isi, g.key))}`,
-                ).join('  ·  ')}
-              </VixText>
-            </SummaryCard>
-
+            {/* Saldo tiap geng sudah tertulis di pilihan tabnya sendiri,
+                lengkap dengan angkanya — jadi tab inilah yang jadi ringkasan.
+                Satu tempat saja untuk angka yang sama. */}
             <SegmentTabs
               tabs={FUTSAL_GANGS.map((g) => ({
                 key: g.key,

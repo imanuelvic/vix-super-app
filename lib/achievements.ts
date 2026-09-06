@@ -198,6 +198,7 @@ export type AchievementCategoryKey =
   | 'steps'
   | 'run'
   | 'week'
+  | 'strength'
   | 'water'
   | 'learning';
 
@@ -250,15 +251,17 @@ const CATEGORIES: {
   // ia diukur atas MINGGU-nya sebagai satu satuan, dan menaruhnya di kolom
   // strength akan membuat kolom itu tidak lagi murni soal angkat beban.
   { key: 'week', feature: 'health', icon: '👣', label: 'Weekly Steps', desc: 'Tembus target langkah tiap pekan', now: (s) => s.weekStepHits, unit: 'pekan tembus target' },
+  // Angkat beban MINGGUAN — kolomnya sendiri lagi (6 Sep).
+  //
+  // Sempat digabung ke kolom Fitness karena "sama-sama soal latihan". Ternyata
+  // tidak: angkanya datang dari rekap mingguan Apple Health (health/weeks),
+  // BUKAN dari sesi yang kamu centang di fitur Fitness — jadi di dalam kolom
+  // Fitness ia tampak tidak nyambung dengan apa pun di sekitarnya, dan
+  // kemajuannya seolah macet padahal diukur dari sumber yang lain sama sekali.
+  { key: 'strength', feature: 'health', icon: '🏋️', label: 'Weekly Strength', desc: 'Angkat beban 2 hari tiap pekan', now: (s) => s.weekGymHits, unit: 'pekan tembus target' },
   { key: 'water', feature: 'health', icon: '💧', label: 'Water', desc: 'Cukup 8 gelas air setiap hari', now: (s) => s.waterCount, unit: 'hari streak' },
   { key: 'learning', feature: 'learning', icon: '🎓', label: 'Learning', desc: 'Minggu streak 4 langkah belajar tuntas', now: (s) => s.learningWeekBest, unit: 'pekan streak' },
-  // Dulu DUA baris terpisah dengan lambang 🏋️ yang sama: "Strength Training"
-  // (minggu dengan angkat beban ≥2 hari) & "Fitness Konsisten" (jumlah sesi
-  // latihan). Ukurannya memang beda, tapi keduanya menghitung hal yang sama —
-  // latihan di fitur Fitness — dan berdiri berdampingan keduanya cuma bikin
-  // bingung "bedanya apa". Digabung jadi satu kolom; TIDAK ADA lencana yang
-  // hilang, ketiga lencana mingguannya cuma pindah ke sini.
-  { key: 'fitness', feature: 'fitness', icon: '🏋️', label: 'Fitness', desc: 'Sesi latihan & angkat beban 2 hari/minggu', now: (s) => s.fitTotal, unit: 'sesi selesai' },
+  { key: 'fitness', feature: 'fitness', icon: '💪', label: 'Fitness', desc: 'Sesi latihan yang kamu centang di fitur Fitness', now: (s) => s.fitTotal, unit: 'sesi selesai' },
 ];
 
 /**
@@ -443,9 +446,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'weekStep1', category: 'week', icon: '🚶', title: 'Active Week', desc: 'Tembus target langkah dalam sepekan', target: 1, of: (s) => s.weekStepHits },
   { id: 'weekStep4', category: 'week', icon: '✨', title: 'Active Month', desc: '4 minggu tembus target langkah', target: 4, of: (s) => s.weekStepHits },
   { id: 'weekStep12', category: 'week', icon: '🏅', title: 'Active Quarter', desc: '12 minggu tembus target langkah', target: 12, of: (s) => s.weekStepHits },
-  { id: 'weekGym1', category: 'fitness', icon: '🏋️', title: 'Strength 2×', desc: 'Strength training 2 hari dalam sepekan', target: 1, of: (s) => s.weekGymHits },
-  { id: 'weekGym4', category: 'fitness', icon: '💪', title: 'Strong Month', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits },
-  { id: 'weekGym12', category: 'fitness', icon: '🔥', title: 'Strong Quarter', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits },
+  { id: 'weekGym1', category: 'strength', icon: '🏋️', title: 'Strength 2×', desc: 'Strength training 2 hari dalam sepekan', target: 1, of: (s) => s.weekGymHits },
+  { id: 'weekGym4', category: 'strength', icon: '💪', title: 'Strong Month', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits },
+  { id: 'weekGym12', category: 'strength', icon: '🔥', title: 'Strong Quarter', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits },
   { id: 'weekBoth1', category: 'week', icon: '⭐', title: 'Perfect Week', desc: 'Aerobik & strength tercapai dalam sepekan', target: 1, of: (s) => s.weekBothHits },
   { id: 'weekBoth4', category: 'week', icon: '👑', title: 'Perfect Month', desc: '4 minggu sempurna', target: 4, of: (s) => s.weekBothHits },
   { id: 'weekBoth12', category: 'week', icon: '💎', title: 'Perfect Quarter', desc: '12 minggu sempurna', target: 12, of: (s) => s.weekBothHits },
@@ -479,18 +482,6 @@ export function subscribeSelfRewardBalance(
   );
 }
 
-// ===================== Reset semua progres achievement =====================
-// Semua achievement dihitung dari dokumen streak/rekor di bawah ini. Menghapus
-// dokumennya = semua pencapaian kembali 0 (hard delete, tak ada arsip).
-//
-// SENGAJA TIDAK ikut dihapus:
-// - funds/self-reward → itu saldo uang beneran di Finance, bukan pencapaian.
-// - Catatan harian (Revive, bacaan Alkitab, habit, sesi gym) → yang direset
-//   hitungan streak-nya saja, isinya tetap aman.
-//
-// app/revive TETAP ikut dihapus walau kategori "Revive Rohani" sudah dibuang:
-// streak Revive 🔥 masih tampil di fitur Revive, dan tombol ini menjanjikan
-// "semua streak kembali ke 0" — jadi ia harus benar-benar ikut nol.
 const ACHIEVEMENT_DOCS: [collection: string, id: string][] = [
   ['app', 'login'], // streak doa pagi 🙏
   ['app', 'revive'], // streak Revive 📖 (bukan achievement lagi, tetap direset)
@@ -503,13 +494,6 @@ const ACHIEVEMENT_DOCS: [collection: string, id: string][] = [
   ['health', 'weeks'], // rekap mingguan 📅 (langkah + strength training)
 ];
 
-/**
- * Kembalikan SEMUA achievement ke 0 — permanen, tidak bisa dibatalkan.
- *
- * Catatan langkah 👣: dokumen `health/steps` diisi ulang otomatis dari riwayat
- * Apple Health tiap layar Steps dibuka, jadi rekor langkah bisa muncul lagi
- * setelah reset. Itu memang datanya ada di iPhone, bukan dibuat app ini.
- */
 export function resetAchievements(uid: string) {
   const batch = writeBatch(db);
   for (const [col, id] of ACHIEVEMENT_DOCS) {

@@ -84,14 +84,33 @@ export default function FastingScreen() {
   const terkunci = plan ? fastingLocked(plan, today) : false;
   const sisaKunci = plan ? fastingLockDaysLeft(plan, today) : null;
 
-  // Pil keadaan di kartu atas. Tiga saja, dan ketiganya menjawab pertanyaan
-  // yang sama: hari ini aku masih puasa atau tidak?
+  // Pil keadaan di kartu atas. EMPAT, dan keempatnya menjawab pertanyaan yang
+  // sama: puasa ini sedang apa?
+  //
+  // Yang keempat ("🗓️ Belum mulai") ditambahkan 6 Sep: puasa yang tanggal
+  // mulainya masih di depan dulu jatuh ke cabang terakhir dan dilabeli
+  // "✅ Selesai" — padahal 0/7 hari, dan satu hari pun belum dijalani.
   const todayId = dayDocId(today);
+  const belumMulai = !!plan && todayId < plan.startId;
   const keadaan = terkunci
     ? { label: '🔒 Terkunci', gaya: styles.pillLocked }
-    : plan && todayId >= plan.startId && todayId <= plan.endId
-      ? { label: '🔥 Berjalan', gaya: styles.pillLive }
-      : { label: '✅ Selesai', gaya: styles.pillDone };
+    : belumMulai
+      ? { label: '🗓️ Belum mulai', gaya: styles.pillSoon }
+      : plan && todayId <= plan.endId
+        ? { label: '🔥 Berjalan', gaya: styles.pillLive }
+        : { label: '✅ Selesai', gaya: styles.pillDone };
+  // Berapa hari lagi sampai hari pertamanya.
+  const menujuMulai =
+    belumMulai && plan
+      ? Math.max(
+          1,
+          Math.round(
+            (dayIdToDate(plan.startId).getTime() -
+              dayIdToDate(todayId).getTime()) /
+              86_400_000,
+          ),
+        )
+      : 0;
 
   async function handleSaveInfo() {
     if (!user || busy || terkunci) return;
@@ -164,8 +183,13 @@ export default function FastingScreen() {
           {plan && (
             <SummaryCard style={styles.hero}>
               <View style={styles.heroTop}>
+                {/* Angka besar di bawahnya = hari puasa yang BERHASIL. Untuk
+                    puasa yang belum mulai, angka itu memang 0 dan wajar —
+                    jadi labelnya menghitung mundur, bukan menagih. */}
                 <VixText heading="label" additionalStyle={summaryText.label}>
-                  🍽️ Puasa berhasil
+                  {belumMulai
+                    ? `🗓️ Mulai ${menujuMulai} hari lagi`
+                    : '🍽️ Puasa berhasil'}
                 </VixText>
                 <View style={[styles.pill, keadaan.gaya]}>
                   <VixText heading="label" additionalStyle={styles.pillText}>
@@ -401,6 +425,9 @@ const styles = StyleSheet.create({
   pillLive: { backgroundColor: Color.SPIRITUAL_DARK, borderColor: Color.SPIRITUAL },
   pillDone: { backgroundColor: 'transparent', borderColor: Color.SPIRITUAL },
   pillLocked: { backgroundColor: 'transparent', borderColor: Color.BORDER },
+  // Belum mulai: bergaris seperti 'Selesai' tapi PUDAR — belum terjadi apa-apa,
+  // jadi ia tidak boleh terlihat sekuat keadaan yang sudah dijalani.
+  pillSoon: { backgroundColor: 'transparent', borderColor: Color.TEXT_ON_DARK_MUTED },
 
   // ── Kelompok isian ─────────────────────────────────────────────────────
   bagian: {

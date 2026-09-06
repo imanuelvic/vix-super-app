@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { InfoChip } from '@/components/common/InfoChip';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -271,21 +272,11 @@ export default function SermonScreen() {
           <View style={styles.readCol}>
             {note.preacher || note.serviceTime ? (
               <View style={styles.metaRow}>
-                {note.preacher ? (
-                  <VixText heading="label" additionalStyle={styles.metaChip}>
-                    🎤 {note.preacher}
-                  </VixText>
-                ) : null}
+                {note.preacher ? <InfoChip label={`🎤 ${note.preacher}`} /> : null}
                 {note.serviceTime ? (
-                  <VixText heading="label" additionalStyle={styles.metaChip}>
-                    🕙 {note.serviceTime}
-                  </VixText>
+                  <InfoChip label={`🕙 ${note.serviceTime}`} />
                 ) : null}
-                {!bisaDiubah ? (
-                  <VixText heading="label" additionalStyle={styles.lockChip}>
-                    🔒 Arsip
-                  </VixText>
-                ) : null}
+                {!bisaDiubah ? <InfoChip label="🔒 Arsip" tone="muted" /> : null}
               </View>
             ) : null}
 
@@ -391,22 +382,6 @@ const styles = StyleSheet.create({
   // Jarak antar bagian bacaan — satu angka untuk seluruh kolom.
   readCol: { gap: 16 },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  metaChip: {
-    backgroundColor: Color.SPIRITUAL,
-    color: Color.SPIRITUAL_DARK,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    overflow: 'hidden',
-  },
-  lockChip: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    color: Color.TEXT_LABEL,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    overflow: 'hidden',
-  },
   quoteBox: {
     backgroundColor: Color.CONTAINER,
     borderLeftWidth: 3,

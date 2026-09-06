@@ -63,7 +63,12 @@ type FieldKey = Exclude<keyof Profile, 'photo'>;
 // tidak ada lagi "Kristen" vs "Kristen Protestan" untuk hal yang sama.
 type FieldSpec = {
   key: FieldKey;
-  label: string;
+  /**
+   * Nama kolomnya. Boleh KOSONG kalau judul bagiannya sudah mengatakan hal
+   * yang sama persis — mis. satu-satunya kolom di bagian "📝 Catatan" tak
+   * perlu diberi label "Catatan bebas" lagi.
+   */
+  label?: string;
   placeholder?: string;
   keyboard?: KeyboardTypeOptions;
   multiline?: boolean;
@@ -140,7 +145,6 @@ const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
     fields: [
       {
         key: 'notes',
-        label: 'Catatan bebas',
         placeholder: 'Hal penting lain biar tidak lupa…',
         multiline: true,
       },
@@ -457,9 +461,11 @@ export default function ProfileScreen() {
                 const value = profile[f.key];
                 return (
                   <View key={f.key} style={styles.infoRow}>
-                    <VixText heading="label" additionalStyle={styles.infoLabel}>
-                      {f.label}
-                    </VixText>
+                    {f.label ? (
+                      <VixText heading="label" additionalStyle={styles.infoLabel}>
+                        {f.label}
+                      </VixText>
+                    ) : null}
                     <VixText
                       heading="paragraph"
                       additionalStyle={value ? styles.infoValue : styles.infoEmpty}>
@@ -503,9 +509,11 @@ export default function ProfileScreen() {
             </VixText>
             {section.fields.map((f) => (
               <View key={f.key} style={styles.field}>
-                <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                  {f.label}
-                </VixText>
+                {f.label ? (
+                  <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                    {f.label}
+                  </VixText>
+                ) : null}
                 {f.date ? (
                   // Tanggalnya tetap TERSIMPAN sebagai teks ("1 Januari 1998")
                   // seperti dulu — cuma cara mengisinya yang berubah, jadi data

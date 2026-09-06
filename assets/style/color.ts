@@ -53,6 +53,10 @@ export const Color = {
   // ikut fitur (bisa cokelat, merah tua, grafit, …). TEXT_ON_DARK_MUTED
   // bersemu mint, jadi di atas kartu cokelat/merah ia terlihat kehijauan.
   TEXT_ON_DARK_SOFT: '#FFFFFFC2',
+  // Latar chip kecil DI ATAS kartu gelap (jadwal main terdekat, dst). Putih
+  // sangat redup, jadi ia mengambang di atas warna apa pun yang sedang dipakai
+  // fitur itu — cokelat, merah tua, grafit — tanpa membawa semunya sendiri.
+  SURFACE_ON_DARK: '#FFFFFF1F',
 
   // Warna jenis transaksi Finance (pastel, selaras spreadsheet keuangan lama)
   FINANCE_INCOME: MONEY_GREEN,

@@ -1,12 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
-import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
@@ -24,10 +23,7 @@ import {
   SKILL_AREAS,
   SKILLS,
   skillOf,
-  skillOfNote,
   skillOfWeek,
-  subscribeLearningNotes,
-  type LearningNote,
   type LearningWeek,
   type Skill,
   type SkillsDone,
@@ -54,17 +50,6 @@ export function SkillsTab({
   const [open, setOpen] = useState<Skill | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Arsip rangkuman 📔 — dilangganani HANYA saat modalnya dibuka. Isinya
-  // seluruh koleksi minggu, jadi tidak pantas dibaca tiap kali sub-tab ini
-  // dibuka padahal jarang dilihat.
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [notes, setNotes] = useState<LearningNote[] | null>(null);
-
-  useEffect(() => {
-    if (!user || !archiveOpen) return;
-    return subscribeLearningNotes(user.uid, setNotes, () => setNotes([]));
-  }, [user, archiveOpen]);
 
   const current = (week.skillKey ? skillOf(week.skillKey) : null) ?? skillOfWeek(now);
   const doneCount = SKILLS.filter((s) => skillsDone[s.key]).length;
@@ -123,7 +108,7 @@ export function SkillsTab({
             </View>
             <PressableScale
               style={styles.archiveButton}
-              onPress={() => setArchiveOpen(true)}>
+              onPress={() => router.push('/learning-archive')}>
               <VixText heading="bold" additionalStyle={styles.archiveText}>
                 📔 Arsip
               </VixText>
@@ -192,40 +177,6 @@ export function SkillsTab({
 
         <FormError message={error} gap="none" additionalStyle={styles.error} />
       </ScrollView>
-
-      {/* Arsip rangkuman 📔 — semua yang pernah ditulis hari Jumat di sub-tab
-          Target, terbaru dulu. BACA saja: mengubahnya tetap di minggunya
-          masing-masing, jadi tidak ada dua pintu edit untuk satu tulisan. */}
-      <SheetModal
-        visible={archiveOpen}
-        title="📔 Arsip Rangkuman"
-        subtitle="Semua rangkuman Jumat yang pernah kamu tulis"
-        onClose={() => setArchiveOpen(false)}>
-        {notes === null ? (
-          <LoadingCenter />
-        ) : notes.length === 0 ? (
-          <VixText heading="paragraph" additionalStyle={styles.archiveEmpty}>
-            Belum ada rangkuman.
-          </VixText>
-        ) : (
-          notes.map((n) => {
-            const s = skillOfNote(n);
-            return (
-              <View key={n.weekId} style={styles.noteCard}>
-                <VixText heading="label" additionalStyle={styles.noteDate}>
-                  📅 {formatShortDayDate(dayIdToDate(n.weekId))}
-                </VixText>
-                <VixText heading="bold" additionalStyle={styles.noteTitle}>
-                  {SKILL_AREAS.find((a) => a.key === s.area)?.emoji} {s.title}
-                </VixText>
-                <VixText heading="paragraph" additionalStyle={styles.noteText}>
-                  {n.note}
-                </VixText>
-              </View>
-            );
-          })
-        )}
-      </SheetModal>
 
       {/* Detail satu topik */}
       <SheetModal
@@ -384,16 +335,4 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   archiveText: { color: Color.MAIN_LIGHT },
-  // ---- Isi modal arsip ----
-  archiveEmpty: { color: Color.TEXT_PARAGRAPH },
-  noteCard: {
-    ...CARD,
-    borderLeftWidth: 3,
-    borderLeftColor: Color.LEARNING_DARK,
-    marginBottom: 8,
-    gap: 3,
-  },
-  noteDate: { color: Color.LEARNING_DARK },
-  noteTitle: { color: Color.TEXT_TITLE },
-  noteText: { color: Color.TEXT_PARAGRAPH },
 });

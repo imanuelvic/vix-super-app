@@ -67,6 +67,7 @@ export function BibleRefField({
   onChange,
   editable = true,
   inlinePicker = false,
+  chapterOnly = false,
 }: {
   value: string;
   onChange: (ref: string) => void;
@@ -81,6 +82,17 @@ export function BibleRefField({
    * layar memberi daftar yang jauh lebih lega.
    */
   inlinePicker?: boolean;
+  /**
+   * Kitab & PASAL saja — kolom "Ayat dari / sampai" tidak ditampilkan, dan
+   * kolom Pasal naik sebaris dengan nama kitabnya.
+   *
+   * Dipakai layar catat bacaan: yang dicatat di sana "hari ini saya baca
+   * Amsal 5", bukan ayat ke berapa — ayatnya baru berarti waktu satu ayat
+   * dipajang ke Story (lihat app/bible-story.tsx), dan di situlah kolomnya
+   * sekarang berada. Ayat yang TERLANJUR tersimpan tidak hilang: `emit`
+   * selalu membawa serta bagian yang tidak diubah.
+   */
+  chapterOnly?: boolean;
 }) {
   // Keempat bagiannya DITURUNKAN dari `value`, tidak disimpan lagi sebagai
   // state sendiri. Tiap perubahan memang langsung dikirim ke atas lewat
@@ -125,24 +137,46 @@ export function BibleRefField({
       .filter((g) => g.books.length > 0);
   }, [query]);
 
+  // Kolom "Pasal" — isinya sama di kedua tata letak (sebaris dengan nama
+  // kitab, atau sebaris dengan kolom ayat), jadi ditulis sekali di sini.
+  const pasal = (
+    <View style={[styles.numberBox, chapterOnly && styles.chapterBox]}>
+      <VixText heading="label" additionalStyle={styles.numberLabel}>
+        Pasal
+      </VixText>
+      <FormInput
+        placeholder={meta ? `1–${meta.chapters}` : '—'}
+        keyboardType="number-pad"
+        value={chapter}
+        onChangeText={(v) => emit({ chapter: v.replace(/\D/g, '') })}
+        editable={editable && !!book}
+      />
+    </View>
+  );
+
   return (
     <View style={styles.wrap}>
-      {/* Pilih kitab */}
-      <PressableScale
-        style={styles.bookButton}
-        onPress={() =>
-          editable && (pickerOpen ? tutupPemilih() : setPickerOpen(true))
-        }
-        disabled={!editable}>
-        <VixText
-          heading="bold"
-          additionalStyle={book ? styles.bookText : styles.bookPlaceholder}>
-          📖 {book || 'Pilih kitab…'}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.bookChevron}>
-          {inlinePicker && pickerOpen ? '⌄' : '›'}
-        </VixText>
-      </PressableScale>
+      {/* Pilih kitab. Tanpa kolom ayat, "Pasal" ikut sebaris di sebelah
+          kanannya: keduanya satu kalimat ("Amsal 5"), dan menaruhnya
+          bertingkat cuma memanjangkan formulir tanpa menambah kejelasan. */}
+      <View style={chapterOnly ? styles.bookPasalRow : undefined}>
+        <PressableScale
+          style={[styles.bookButton, chapterOnly && styles.bookGrow]}
+          onPress={() =>
+            editable && (pickerOpen ? tutupPemilih() : setPickerOpen(true))
+          }
+          disabled={!editable}>
+          <VixText
+            heading="bold"
+            additionalStyle={book ? styles.bookText : styles.bookPlaceholder}>
+            📖 {book || 'Pilih kitab…'}
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.bookChevron}>
+            {inlinePicker && pickerOpen ? '⌄' : '›'}
+          </VixText>
+        </PressableScale>
+        {chapterOnly && pasal}
+      </View>
 
       {/* Daftar kitab yang mengembang di tempat — dipakai di dalam modal,
           tempat dialog tengah layar tidak bisa dipanggil. */}
@@ -164,44 +198,35 @@ export function BibleRefField({
       )}
 
       {/* Pasal & ayat */}
-      <View style={styles.numberRow}>
-        <View style={styles.numberBox}>
-          <VixText heading="label" additionalStyle={styles.numberLabel}>
-            Pasal
-          </VixText>
-          <FormInput
-            placeholder={meta ? `1–${meta.chapters}` : '—'}
-            keyboardType="number-pad"
-            value={chapter}
-            onChangeText={(v) => emit({ chapter: v.replace(/\D/g, '') })}
-            editable={editable && !!book}
-          />
+      {!chapterOnly && (
+        <View style={styles.numberRow}>
+          {pasal}
+          <View style={styles.numberBox}>
+            <VixText heading="label" additionalStyle={styles.numberLabel}>
+              Ayat dari
+            </VixText>
+            <FormInput
+              placeholder="Ayat"
+              keyboardType="number-pad"
+              value={verseFrom}
+              onChangeText={(v) => emit({ verseFrom: v.replace(/\D/g, '') })}
+              editable={editable && !!chapter}
+            />
+          </View>
+          <View style={styles.numberBox}>
+            <VixText heading="label" additionalStyle={styles.numberLabel}>
+              sampai
+            </VixText>
+            <FormInput
+              placeholder="Ayat"
+              keyboardType="number-pad"
+              value={verseTo}
+              onChangeText={(v) => emit({ verseTo: v.replace(/\D/g, '') })}
+              editable={editable && !!verseFrom}
+            />
+          </View>
         </View>
-        <View style={styles.numberBox}>
-          <VixText heading="label" additionalStyle={styles.numberLabel}>
-            Ayat dari
-          </VixText>
-          <FormInput
-            placeholder="Ayat"
-            keyboardType="number-pad"
-            value={verseFrom}
-            onChangeText={(v) => emit({ verseFrom: v.replace(/\D/g, '') })}
-            editable={editable && !!chapter}
-          />
-        </View>
-        <View style={styles.numberBox}>
-          <VixText heading="label" additionalStyle={styles.numberLabel}>
-            sampai
-          </VixText>
-          <FormInput
-            placeholder="Ayat"
-            keyboardType="number-pad"
-            value={verseTo}
-            onChangeText={(v) => emit({ verseTo: v.replace(/\D/g, '') })}
-            editable={editable && !!verseFrom}
-          />
-        </View>
-      </View>
+      )}
 
       {/* Pratinjau hasil */}
       {value ? (
@@ -247,6 +272,12 @@ const styles = StyleSheet.create({
   bookText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   bookPlaceholder: { color: Color.TEXT_PLACEHOLDER, flexShrink: 1 },
   bookChevron: { color: Color.TEXT_LABEL },
+  // Nama kitab + Pasal sebaris. Rata BAWAH, bukan tengah: kolom Pasal punya
+  // label kecil di atasnya, jadi yang harus sejajar kotak isiannya.
+  bookPasalRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  bookGrow: { flex: 1, minWidth: 0 },
+  // Selebar tiga angka + tulisan "1–150" di placeholder-nya.
+  chapterBox: { flex: 0, width: 104 },
   // Panel mengembang: dibingkai supaya jelas ia MILIK tombol di atasnya, bukan
   // bagian baru dari formulir. Tingginya dipatok — 66 kitab tak boleh mendorong
   // kolom Pasal & ayat keluar dari layar.

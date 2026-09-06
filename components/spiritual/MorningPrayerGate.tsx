@@ -10,7 +10,9 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
+import { dayDocId } from '@/lib/health';
 import { isChainTopic, type IntercessionTopic } from '@/lib/intercession';
+import { worshipPassageOfDay } from '@/lib/spiritual';
 
 // Doa Bapa Kami (Matius 6:9–13).
 const BAPA_KAMI = `Bapa kami yang di sorga,
@@ -23,11 +25,6 @@ Berikanlah kami pada hari ini makanan kami yang secukupnya, dan ampunilah kami a
 dan janganlah membawa kami ke dalam pencobaan, tetapi lepaskanlah kami dari pada yang jahat.
 
 Karena Engkaulah yang empunya Kerajaan dan kuasa dan kemuliaan sampai selama-lamanya. Amin.`;
-
-// Ayat pengiring langkah memuji & menyembah (Mazmur 95:1–2, TB).
-const MAZMUR_95 = `Marilah kita bersorak-sorai untuk TUHAN, bersorak-sorak bagi gunung batu keselamatan kita.
-
-Biarlah kita menghadap wajah-Nya dengan nyanyian syukur, bersorak-sorak bagi-Nya dengan nyanyian mazmur.`;
 
 // Lock screen doa pagi — muncul sekali/hari (hari berganti jam 00.00) DI MANA PUN
 // posisi kamu di app. Tidak bisa dilewati; harus Revive + doa Bapa Kami, dan
@@ -82,6 +79,11 @@ export function MorningPrayerGate({
   // Lewati doa pagi (keadaan mendesak): relakan streak hangus, langsung ke Home.
   onSkip: () => void;
 }) {
+  // Bacaan pengiring langkah memuji & menyembah — diundi dari TANGGALNYA, jadi
+  // tiap pagi bacaannya berganti tapi tidak pernah bertukar di tengah doa.
+  // Dibekukan sekali seumur gerbang ini: kalau dihitung ulang tiap render, ia
+  // bisa berganti persis tengah malam, di tengah kamu berdoa.
+  const [worship] = useState(() => worshipPassageOfDay(dayDocId(new Date())));
   const [prayed, setPrayed] = useState(false);
   const [interceded, setInterceded] = useState(false);
   const [worshiped, setWorshiped] = useState(false);
@@ -302,10 +304,10 @@ export function MorningPrayerGate({
           </VixText>
           <View style={styles.prayerBox}>
             <VixText heading="paragraph" additionalStyle={styles.prayerText}>
-              {MAZMUR_95}
+              {worship.text}
             </VixText>
             <VixText heading="label" additionalStyle={styles.verseRef}>
-              — Mazmur 95:1–2
+              — {worship.ref}
             </VixText>
           </View>
           <PressableScale
@@ -378,7 +380,7 @@ export function MorningPrayerGate({
       <ConfirmDialog
         visible={skipConfirm}
         title="Lewati doa pagi?"
-        detail="Streak 🔥 kamu akan hangus jadi 0. Yakin mau lewati dan langsung ke Home?"
+        detail="Streak 🔥 kamu akan dimulai dari awal"
         confirmLabel="Ya, lewati"
         onCancel={() => setSkipConfirm(false)}
         onConfirm={() => {

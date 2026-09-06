@@ -213,7 +213,7 @@ export function WeekTab({
 
           {complete && (
             <VixText heading="bold" additionalStyle={styles.heroDone}>
-              🎉 Minggu ini tuntas — satu ilmu baru masuk kantong
+              🎉 Minggu ini tuntas
             </VixText>
           )}
 

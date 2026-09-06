@@ -7,12 +7,15 @@ import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
+import { MiniButton } from '@/components/common/MiniButton';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
+import { SectionRow } from '@/components/common/SectionRow';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { openChatGpt } from '@/lib/linking';
 import {
   setTopicDone,
   TOPIC_GROUPS,
@@ -77,9 +80,18 @@ export function DiscussionTab({
             memang di sub-tab ini: daftar topiknya ada di bawah, dan yang
             giliran minggu ini tinggal ditarik ke atas — bukan disalin ke
             layar lain. Badge sub-tabnya ikut pindah. */}
-        <VixText heading="title" additionalStyle={styles.weeklyTitle}>
-          Diskusi Dalam Minggu Ini
-        </VixText>
+        {/* 🎙️ Tombol ChatGPT — ilmu baru melekat kalau DIUCAPKAN, dan tidak
+            selalu ada teman yang siap diajak bicara jam sebelas malam. Suara,
+            bukan ketikan: yang dilatih di sini menyusun kalimat sambil bicara.
+
+            ⚠️ Tombolnya membuka ChatGPT, BUKAN langsung mode Voice-nya:
+            OpenAI belum menyediakan tautan yang bisa menembus ke sana (lihat
+            catatan di openChatGpt, lib/linking.ts). Sesampainya di sana,
+            lambang gelombang suara di pojok kanan bawah tinggal diklik. */}
+        <SectionRow
+          title="Diskusi Dalam Minggu Ini"
+          right={<MiniButton label="🎙️ ChatGPT" onPress={openChatGpt} />}
+        />
         
         {weekly.map((t) => {
           const meta = topicGroupMeta(t.group);
@@ -179,7 +191,6 @@ const styles = StyleSheet.create({
   // Topik yang jadi bahan "Ceritakan" minggu ini.
   rowWeekly: { borderColor: Color.LEARNING_DARK, borderWidth: 1.5 },
   // ---- Blok "Diskusi Dalam Minggu Ini" (pindahan dari sub-tab Target) ----
-  weeklyTitle: { marginTop: 4, marginBottom: 8 },
   allTitle: { marginTop: 14, marginBottom: 8 },
   topicCard: {
     ...CARD,

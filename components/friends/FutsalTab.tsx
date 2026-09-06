@@ -8,6 +8,7 @@ import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
+import { InfoChip } from '@/components/common/InfoChip';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { MiniButton } from '@/components/common/MiniButton';
 import { Pagination } from '@/components/common/Pagination';
@@ -20,7 +21,6 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { FutsalSessionCard } from '@/components/friends/FutsalSessionCard';
 import { FutsalSessionSheet } from '@/components/friends/FutsalSessionSheet';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
@@ -230,34 +230,64 @@ export function FutsalTab({
           disabled={!berikut}
           onPress={() => berikut && bukaRincian(berikut)}>
           <SummaryCard>
-          <VixText heading="label" additionalStyle={summaryText.label}>
-            {meta.emoji} {meta.label} · {meta.desc}
-          </VixText>
-          {berikut ? (
-            <>
-              <VixText heading="subheader" additionalStyle={summaryText.value}>
-                {formatDayDate(dayIdToDate(berikut.dayId))}
+            <View style={styles.heroTop}>
+              <VixText
+                heading="label"
+                numberOfLines={1}
+                additionalStyle={[summaryText.label, styles.heroGang]}>
+                {meta.emoji} {meta.label} · {meta.desc}
               </VixText>
-              <VixText heading="label" additionalStyle={summaryText.label}>
-                🕗 {sessionTimeRange(berikut)} · 📍 {berikut.venue || '—'}
-              </VixText>
-              <VixText heading="label" additionalStyle={summaryText.label}>
-                👥 {berikut.squad.length} pemain ·{' '}
-                {berikut.fee > 0
-                  ? `💵 ${formatRupiah(berikut.fee)}/orang`
-                  : 'iuran belum ditentukan'}
-              </VixText>
-            </>
-          ) : (
-            <>
-              <VixText heading="subheader" additionalStyle={summaryText.value}>
-                Belum ada jadwal
-              </VixText>
-              <VixText heading="label" additionalStyle={summaryText.label}>
-                Tentukan jadwal sekarang ⚽
-              </VixText>
-            </>
-          )}
+              {/* Tanda bahwa kartu ini BISA diklik. Tanpa ini ia terbaca
+                  sebagai papan pengumuman, dan orang menggulung ke bawah
+                  mencari kartu kecil yang kelihatan bisa diklik. */}
+              {berikut ? (
+                <VixText heading="bold" additionalStyle={styles.heroChevron}>
+                  ›
+                </VixText>
+              ) : null}
+            </View>
+            {berikut ? (
+              <>
+                <VixText heading="subheader" additionalStyle={summaryText.value}>
+                  {formatDayDate(dayIdToDate(berikut.dayId))}
+                </VixText>
+                {/* Keempat keterangannya jadi chip, bukan tiga baris teks
+                    redup yang menyambung dengan titik tengah. Tiap butir
+                    berdiri sendiri, jadi matanya bisa mencari SATU hal (jam?
+                    lapangan? iuran?) tanpa membaca seluruh barisnya. */}
+                <View style={styles.heroChips}>
+                  <InfoChip
+                    tone="onDark"
+                    label={`🕗 ${sessionTimeRange(berikut)}`}
+                  />
+                  <InfoChip
+                    tone="onDark"
+                    label={`📍 ${berikut.venue || 'lapangan belum diisi'}`}
+                  />
+                  <InfoChip
+                    tone="onDark"
+                    label={`👥 ${berikut.squad.length} pemain`}
+                  />
+                  <InfoChip
+                    tone="onDark"
+                    label={
+                      berikut.fee > 0
+                        ? `💵 ${formatRupiah(berikut.fee)}/orang`
+                        : '💵 iuran belum diisi'
+                    }
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                <VixText heading="subheader" additionalStyle={summaryText.value}>
+                  Belum ada jadwal
+                </VixText>
+                <VixText heading="label" additionalStyle={summaryText.label}>
+                  Tentukan jadwal sekarang ⚽
+                </VixText>
+              </>
+            )}
           </SummaryCard>
         </PressableScale>
 
@@ -286,27 +316,25 @@ export function FutsalTab({
 
         <FormError message={formSesi.formError ?? formError} gap="top" />
 
-        {/* ===== Akan datang ===== */}
+        {/* ===== Pintu ke Jadwal Main =====
+            Daftarnya sendiri DIBUANG dari sini: jadwal terdekatnya sudah jadi
+            kartu besar di atas — dan kartu itu bisa diklik ke rincian yang
+            sama — jadi kartu kecil di bawahnya cuma mengulang hal yang persis
+            sama dua kali dalam satu layar.
+
+            Yang tinggal pintunya. SELALU ada, tidak lagi ikut hilang waktu
+            jadwal terdekat kosong: halaman itu juga memuat riwayat main, dan
+            justru saat belum ada jadwal itulah riwayatnya yang dicari. */}
         <View>
-          {berikut && (
-            <>
-              <SectionRow
-                title="📅 Jadwal Main Terdekat"
-                right={
-                  <MiniButton
-                    label={`Lihat semua${akanDatang.length > 1 ? ` (${akanDatang.length})` : ''}`}
-                    onPress={() => router.push('/futsal-schedule')}
-                  />
-                }
+          <SectionRow
+            title="📅 Jadwal Main"
+            right={
+              <MiniButton
+                label={`Lihat semua${akanDatang.length > 0 ? ` (${akanDatang.length})` : ''}`}
+                onPress={() => router.push('/futsal-schedule')}
               />
-              <FutsalSessionCard
-                s={berikut}
-                now={now}
-                onOpen={bukaRincian}
-                onEdit={formSesi.bukaUbah}
-              />
-            </>
-          )}
+            }
+          />
         </View>
 
         {/* ===== Anggota ===== (judulnya DIPATOK — lihat STICKY_HEADERS) */}
@@ -452,6 +480,11 @@ const styles = StyleSheet.create({
     borderColor: Color.FRIENDS_DARK,
   },
   ulangText: { color: Color.FRIENDS_DARK },
+  // ---- Kartu jadwal terdekat ----
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  heroGang: { flex: 1, minWidth: 0 },
+  heroChevron: { color: Color.TEXT_ON_DARK_SOFT },
+  heroChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
   empty: { textAlign: 'center', marginVertical: 10 },
   // Baris anggota.
   orangRow: {

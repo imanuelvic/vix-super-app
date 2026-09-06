@@ -22,6 +22,7 @@ import {
   STORY_H,
   STORY_W,
 } from '@/lib/bibleStory';
+import { bibleRefText, parseBibleRef } from '@/lib/bible';
 import { formatFullDate } from '@/lib/format';
 import {
   archiveNo,
@@ -67,6 +68,14 @@ export default function BibleStoryScreen() {
   // Acuan yang sedang dipilih. Nilai awalnya yang pertama — parameternya sudah
   // ada sejak render pertama, jadi tak perlu efek penyelaras.
   const [pickedRef, setPickedRef] = useState(refs[0] ?? '');
+  // Ayat berapa sampai ayat berapa. Layar catat bacaan cuma menyimpan kitab &
+  // pasalnya ("Amsal 5") — ayatnya dipilih DI SINI, karena yang benar-benar
+  // butuh "dari ayat mana sampai ayat mana" cuma gambar Story-nya. Nilai
+  // awalnya ikut acuan yang dioper, jadi catatan lama yang sudah berayat tidak
+  // kehilangan ayatnya.
+  const awal = parseBibleRef(refs[0] ?? '');
+  const [ayatDari, setAyatDari] = useState(awal.verseFrom);
+  const [ayatSampai, setAyatSampai] = useState(awal.verseTo);
   const [verse, setVerse] = useState('');
   const [pickedKey, setPickedKey] = useState(SHARE_DESIGNS[0].key);
   // Tombol mana yang sedang bekerja — dua tombol, satu proses.
@@ -81,7 +90,15 @@ export default function BibleStoryScreen() {
   const design = designOf(pickedKey);
   // Acuan yang dipakai: yang dipilih, atau yang pertama kalau pilihannya
   // sempat kosong (mis. parameternya cuma satu).
-  const reference = pickedRef || refs[0] || '';
+  const dipilih = pickedRef || refs[0] || '';
+  // Judul di kartunya = kitab & pasal yang dipilih + ayat yang diketik di
+  // bawah, disusun `bibleRefText` supaya bentuknya sama persis dengan acuan
+  // mana pun di app ini: "Amsal 5" → "Amsal 5:16" → "Amsal 5:16-18".
+  // Kitab yang tak terbaca (mis. ditulis tangan di catatan lama) dipakai apa
+  // adanya — lebih baik daripada kartu tanpa acuan sama sekali.
+  const dasar = parseBibleRef(dipilih);
+  const reference =
+    bibleRefText(dasar.book, dasar.chapter, ayatDari, ayatSampai) || dipilih;
 
   // Pratinjau selebar layar dikurangi tepi, tapi dibatasi supaya lembar 9:16-nya
   // tetap muat utuh di layar mana pun (termasuk iPhone 15 yang tingginya pas).
@@ -165,8 +182,13 @@ export default function BibleStoryScreen() {
                   <Chip
                     key={r}
                     label={r}
-                    active={r === reference}
-                    onPress={() => setPickedRef(r)}
+                    active={r === pickedRef}
+                    onPress={() => {
+                      const b = parseBibleRef(r);
+                      setPickedRef(r);
+                      setAyatDari(b.verseFrom);
+                      setAyatSampai(b.verseTo);
+                    }}
                   />
                 ))}
               </View>
@@ -184,6 +206,35 @@ export default function BibleStoryScreen() {
             multiline
             editable={kerja.busy === null}
           />
+
+          {/* Dari ayat berapa sampai ayat berapa — judul kitab di kartunya
+              ikut berubah sendiri. Dikosongkan = pasalnya saja ("Amsal 5"). */}
+          <View style={styles.ayatRow}>
+            <View style={styles.ayatBox}>
+              <VixText heading="label" additionalStyle={styles.ayatLabel}>
+                Ayat dari
+              </VixText>
+              <FormInput
+                placeholder="Ayat"
+                keyboardType="number-pad"
+                value={ayatDari}
+                onChangeText={(v) => setAyatDari(v.replace(/\D/g, ''))}
+                editable={kerja.busy === null}
+              />
+            </View>
+            <View style={styles.ayatBox}>
+              <VixText heading="label" additionalStyle={styles.ayatLabel}>
+                sampai
+              </VixText>
+              <FormInput
+                placeholder="Ayat"
+                keyboardType="number-pad"
+                value={ayatSampai}
+                onChangeText={(v) => setAyatSampai(v.replace(/\D/g, ''))}
+                editable={kerja.busy === null && !!ayatDari}
+              />
+            </View>
+          </View>
 
           <View style={styles.previewWrap}>
             <View
@@ -251,6 +302,11 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center' },
   sectionTitle: { ...SECTION_SPACE },
   verseInput: { minHeight: 96, textAlignVertical: 'top' },
+  // Dua kolom angka, bentuknya sama dengan kolom ayat di layar mana pun
+  // (components/common/BibleRefField).
+  ayatRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  ayatBox: { flex: 1, gap: 4 },
+  ayatLabel: { marginLeft: 2 },
   previewWrap: { alignItems: 'center', paddingVertical: 14 },
   // Kartunya dirender seukuran aslinya lalu dikecilkan; kotak ini yang
   // memotongnya jadi sebesar pratinjau.

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { CARD } from '@/assets/style/card';
@@ -16,6 +16,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
+import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -178,6 +179,9 @@ export function HabitsTab({
   const [fTier, setFTier] = useState<HabitTier>('support');
   const [busy, setBusy] = useState(false);
 
+  // Modal isi score: baris WAJIB apa saja yang dihitung, per sesi.
+  const [coreOpen, setCoreOpen] = useState(false);
+
   // Modal pasang/ubah target berat.
   const [targetOpen, setTargetOpen] = useState(false);
   const [fTarget, setFTarget] = useState('');
@@ -225,6 +229,17 @@ export function HabitsTab({
   function handleContentSize() {
     // Sudah pernah melompat sejak layar ini dibuka → jangan ditarik-tarik lagi.
     if (bukaanJumped.current) return;
+    // Dari kartu "📓 Refleksi Hari Ini" di Home: yang dicari BUKAN barisnya,
+    // melainkan TULISANNYA — dan tulisan itu ada di bawah barisnya, sebagai
+    // kotak tersendiri. Menggulung ke barisnya menaruh baris itu di puncak
+    // layar dan tulisan yang mau dibaca ulang justru tetap di bawah lipatan.
+    // Jadi khusus yang satu ini: langsung ke dasar daftarnya.
+    if (focus === 'rhema' && focusId) {
+      bukaanJumped.current = true;
+      scrollRef.current?.scrollToEnd({ animated: true });
+      onFocusDone?.();
+      return;
+    }
     // Dari kartu di Home? Barisnya yang dituju. Kalau tidak, baris pertama
     // yang masih menunggu di sesi jam sekarang.
     const targetId = focusId ?? firstPendingId;
@@ -541,7 +556,14 @@ export function HabitsTab({
             digeser ke SAMPING ring, supaya daftar kebiasaan di bawah dapat
             ruang scroll yang lega. */}
         <View style={styles.statsRow}>
-          <View style={styles.heroCard}>
+          {/* Ring = tombol. Angka 7/10 itu ringkasan yang menyembunyikan
+              pertanyaan sebenarnya: "yang tiga lagi itu APA?". Sebelum ini
+              jawabannya harus dikumpulkan sendiri dengan menyusuri tiga sesi
+              satu per satu sambil mengingat mana yang tulisannya tebal. */}
+          <PressableScale
+            style={styles.heroCard}
+            onPress={() => setCoreOpen(true)}
+            haptic="light">
             <DonutChart
               size={66}
               thickness={8}
@@ -553,7 +575,7 @@ export function HabitsTab({
                 {score}/10
               </VixText>
             </DonutChart>
-          </View>
+          </PressableScale>
 
           {/* Seluruh kartu = tombol ubah/pasang target. Judul "🎯 Target" &
               tombol "Ubah" dihapus biar kartunya pendek. */}
@@ -697,7 +719,10 @@ export function HabitsTab({
             // refleksinya, jadi sebelum ditulis pintunya memang belum ada
             // gunanya. Sesudah itu ia menetap sepanjang hari — beda dengan
             // kartu di Home yang hilang begitu feed-nya jadi.
-            const link = rawLink?.whenDone && !checked ? null : rawLink;
+            const link =
+              rawLink?.whenDone && !checked
+                ? (rawLink.beforeDone ?? null)
+                : rawLink;
             // Baris cermin (olahraga, Top 3 Priorities, Baca Alkitab):
             // centangnya datang dari layar tempat pekerjaannya benar-benar
             // dilakukan, jadi di sini ia cuma penunjuk keadaan + pintasan.
@@ -1023,6 +1048,61 @@ export function HabitsTab({
           onConfirm={handleSaveTarget}
         />
       </CenterDialog>
+
+      {/* ===== Isi score harian =====
+          Baris WAJIB apa saja yang dihitung, dikelompokkan Pagi · Siang ·
+          Malam — sama persis dengan yang tulisannya tebal di daftar. Yang
+          "penunjang" tidak ikut ke sini karena memang tidak ikut ke angkanya.
+
+          BACA saja: mencentangnya tetap di daftarnya sendiri, supaya tidak ada
+          dua tempat mencentang satu kebiasaan yang sama. */}
+      <CenterDialog visible={coreOpen} onClose={() => setCoreOpen(false)}>
+        <VixText heading="title" additionalStyle={styles.modalTitle}>
+          Isi Score {score}/10
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.coreIntro}>
+          Cuma kebiasaan WAJIB yang dihitung. Yang ✗ (dilewati) tidak dihitung
+          sudah — hari yang dilewati memang bukan hari yang dikerjakan.
+        </VixText>
+        <ScrollView style={styles.coreList} showsVerticalScrollIndicator={false}>
+          {HABIT_SLOTS.map((s) => {
+            const wajib = grouped[s.key].filter(isCoreHabit);
+            if (wajib.length === 0) return null;
+            const beres = wajib.filter(
+              (h) => day.done[h.id] && !day.skipped[h.id],
+            ).length;
+            return (
+              <View key={s.key} style={styles.coreGroup}>
+                <VixText heading="label" additionalStyle={styles.coreSlot}>
+                  {s.emoji} {s.label} · {beres}/{wajib.length}
+                </VixText>
+                {wajib.map((h) => {
+                  const dilewati = !!day.skipped[h.id];
+                  const beresIni = !!day.done[h.id] && !dilewati;
+                  return (
+                    <View key={h.id} style={styles.coreRow}>
+                      <CheckCircle
+                        checked={beresIni}
+                        skipped={dilewati}
+                        locked
+                      />
+                      <VixText
+                        heading="bold"
+                        additionalStyle={[
+                          styles.coreLabel,
+                          (beresIni || dilewati) && styles.coreLabelOff,
+                        ]}>
+                        {h.label}
+                      </VixText>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          })}
+        </ScrollView>
+        <PrimaryButton label="Tutup" onPress={() => setCoreOpen(false)} />
+      </CenterDialog>
     </View>
   );
 }
@@ -1145,6 +1225,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   heroRingSub: { color: Color.TEXT_ON_DARK_MUTED },
+  // ---- Isi score harian (dialog dari ring) ----
+  coreIntro: { color: Color.TEXT_PARAGRAPH, marginBottom: 10 },
+  // Dipatok: sepuluh baris wajib + tiga judul sesi lebih tinggi dari dialognya.
+  coreList: { maxHeight: 340, marginBottom: 12 },
+  coreGroup: { marginBottom: 10 },
+  coreSlot: { color: Color.MAIN_DARK, marginBottom: 6 },
+  coreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 6,
+  },
+  coreLabel: { flex: 1, minWidth: 0, color: Color.TEXT_TITLE },
+  // Yang sudah beres / dilewati diredupkan: yang dicari waktu membuka daftar
+  // ini justru yang BELUM — biar ia yang paling menonjol.
+  coreLabelOff: { color: Color.TEXT_LABEL },
   areaRow: { flexDirection: 'row', gap: 6, marginBottom: 12 },
   areaChip: {
     flex: 1,

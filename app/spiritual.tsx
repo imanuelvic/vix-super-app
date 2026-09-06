@@ -23,6 +23,7 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { BibleReadingTab } from '@/components/spiritual/BibleReadingTab';
 import { FastingTab } from '@/components/spiritual/FastingTab';
+import { PromiseTab } from '@/components/spiritual/PromiseTab';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
@@ -31,6 +32,7 @@ import { subscribeFastingPlans, type FastingPlan } from '@/lib/fasting';
 import { dayDocId } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { subscribePromises, type Promise as HisPromise } from '@/lib/promise';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
   BIBLE_SESSIONS,
@@ -49,12 +51,15 @@ import {
   type ReviveStreak,
 } from '@/lib/spiritual';
 
-type Tab = 'revive' | 'sermon' | 'bible' | 'fasting';
+type Tab = 'revive' | 'sermon' | 'bible' | 'promise' | 'fasting';
 
+// 🚩 Panji, bukan hati atau tangan: "TUHAN panji-panjiku" (Keluaran 17:15) —
+// janji yang ditancapkan dan tetap berdiri sampai digenapi.
 const TABS: BottomTab<Tab>[] = [
   { key: 'revive', label: 'Revive', icon: 'book.closed.fill' },
   { key: 'sermon', label: 'Sermon', icon: 'mic.fill' },
   { key: 'bible', label: 'Bible Reading', icon: 'books.vertical.fill' },
+  { key: 'promise', label: 'Promise', icon: 'flag.fill' },
   { key: 'fasting', label: 'Fasting', icon: 'figure.mind.and.body' },
 ];
 
@@ -78,6 +83,7 @@ export default function SpiritualScreen() {
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [bibleDays, setBibleDays] = useState<BibleReadingDay[]>([]);
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
+  const [promises, setPromises] = useState<HisPromise[]>([]);
   // Streak Revive — dibaca di sini bukan untuk angkanya, tapi untuk tanda
   // "hari ini dilewati" yang menempel di dokumen yang sama.
   const [reviveStreak, setReviveStreak] = useState<ReviveStreak | null>(null);
@@ -99,6 +105,7 @@ export default function SpiritualScreen() {
       subscribeSermons(user.uid, setSermons, fail),
       subscribeBibleReadingDays(user.uid, setBibleDays, fail),
       subscribeFastingPlans(user.uid, setFastingPlans, fail),
+      subscribePromises(user.uid, setPromises, fail),
       subscribeReviveStreak(user.uid, setReviveStreak, fail),
     ]);
   }, [user]);
@@ -173,11 +180,15 @@ export default function SpiritualScreen() {
         //   Bible   → ⏸️ Pause & Pray + 🔥 sesi yang JENDELANYA sedang berjalan
         //             (di luar jam baca mana pun, jatuh ke pagi 🌅 sebagai
         //             patokan)
-        //   Sermon & Fasting belum punya pencapaian → ⏸️ saja.
+        //   Sermon · Promise · Fasting → kosong.
         //
-        // ⏸️ Pause & Pray sengaja TIDAK ikut di tab Revive: pojok itu sudah
-        // berisi tiga tombol (📖 🙏 🔥 = 142pt) dan judul "Spiritual ✝️"
-        // menghabiskan sisanya — tombol keempat memaksa judulnya pecah baris.
+        // ⏸️ Pause & Pray HANYA di Bible Reading. Ia memang lahir dari sana:
+        // berhenti sejenak di tengah bacaan lalu berdoa. Di sub-tab lain ia
+        // cuma tombol yang kebetulan lewat — dan pojok kanan yang isinya
+        // berganti-ganti tanpa alasan lebih sulit dihafal daripada pojok yang
+        // memang kosong. (Di tab Revive ia sejak dulu tidak ikut: pojok itu
+        // sudah berisi tiga tombol 📖 🙏 🔥 = 142pt dan judul "Spiritual ✝️"
+        // menghabiskan sisanya — tombol keempat memaksa judulnya pecah baris.)
         right={
           tab === 'revive' ? (
             <>
@@ -194,7 +205,7 @@ export default function SpiritualScreen() {
               />
               <AchievementButton category="login" />
             </>
-          ) : (
+          ) : tab === 'bible' ? (
             <>
               {/* ⏸️ Doa singkat → Story Instagram. Sekeluarga dengan "Bagikan
                   ayatnya" di layar Baca Alkitab: kartunya sama persis, cuma
@@ -203,13 +214,11 @@ export default function SpiritualScreen() {
                 emoji="⏸️"
                 onPress={() => router.push('/pause-pray')}
               />
-              {tab === 'bible' && (
-                <AchievementButton
-                  category={BIBLE_CATEGORY[bibleSessionNow(now) ?? 'morning']}
-                />
-              )}
+              <AchievementButton
+                category={BIBLE_CATEGORY[bibleSessionNow(now) ?? 'morning']}
+              />
             </>
-          )
+          ) : undefined
         }
       />
 
@@ -293,6 +302,8 @@ export default function SpiritualScreen() {
           <SermonTab sermons={sermons} />
         ) : tab === 'bible' ? (
           <BibleReadingTab days={bibleDays} openSession={sesiDituju} />
+        ) : tab === 'promise' ? (
+          <PromiseTab list={promises} />
         ) : (
           <FastingTab plans={fastingPlans} />
         )}
