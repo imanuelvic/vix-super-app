@@ -106,11 +106,11 @@ export function FutsalTab({
   const [fPosisi, setFPosisi] = useState<FutsalPosition>('flank');
   const [fCatatanOrang, setFCatatanOrang] = useState('');
 
-  // Daftar anggota TERTUTUP saat sub-tab ini dibuka. Isinya jarang berubah
-  // (geng yang sama main berbulan-bulan), sedangkan yang dicari tiap kali masuk
-  // ke sini justru yang di bawahnya: kas & riwayat main. Membiarkannya terbuka
-  // berarti 15 baris nama mendorong keduanya jauh ke bawah setiap saat.
-  const [anggotaOpen, setAnggotaOpen] = useState(false);
+  // Daftar anggota TERBUKA saat sub-tab ini dibuka. Dulu ia tertutup karena
+  // 15 baris nama mendorong kas & riwayat main jauh ke bawah — tapi keduanya
+  // sekarang pintu di pojok header (💰 & 📅), jadi tak ada lagi yang bisa
+  // terdorong: daftar anggota memang isi terakhir halaman ini.
+  const [anggotaOpen, setAnggotaOpen] = useState(true);
 
   const anggota = gangMembers(data, gang);
   const berikut = nextSession(data.sessions, gang, todayId);

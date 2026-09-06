@@ -65,6 +65,9 @@ import {
 // menghilang dari daftar anak dan menggeser semua nomor sesudahnya.
 const STICKY_HEADERS = [1, 3, 5];
 
+/** Ketiga bagian halaman ini — lihat `bagian` di bawah. */
+type Bagian = 'squad' | 'games' | 'notes';
+
 // Rincian satu sesi futsal ⚽ — ruang kerja managernya.
 //
 // Tiga hal yang cuma bisa diurus di sini, dan sengaja TIDAK ditaruh di daftar
@@ -91,21 +94,28 @@ export default function FutsalSessionScreen() {
   // Form catatan.
   const [catatanOpen, setCatatanOpen] = useState(false);
 
-  // Ketiga bagian halaman ini BAWAANNYA TERBUKA — beda dengan daftar
-  // buka-tutup di sub-tab, yang cuma dilewati. Halaman ini justru DIBUKA untuk
-  // mengurus isinya: mencentang setoran, mencatat score, menulis catatan.
-  // Membukanya dalam keadaan tertutup semua berarti tiga klik sebelum apa pun
-  // bisa dikerjakan. Yang mau menutup tinggal menutup; yang baru masuk tidak
-  // perlu memilih apa-apa.
+  // Bagian mana yang sedang terbuka. SATU nilai, bukan tiga saklar terpisah:
+  // membuka satu bagian menutup yang lain dengan sendirinya, dan sebagai satu
+  // nilai keadaan itu tidak bisa berbohong — tiga boolean masih bisa terbuka
+  // bersamaan begitu ada satu setter yang lupa dipanggil.
   //
-  // Judul ketiganya dipatok di atas (STICKY_HEADERS), jadi walau terbuka
-  // semua, tombol tutupnya tak pernah ikut hilang ke atas layar.
+  // Bawaannya Squad & Setoran: dari ketiganya itu yang dibuka begitu masuk
+  // (siapa ikut, siapa belum setor). Game & Score dan Catatan diisi
+  // belakangan, sesudah mainnya selesai — jadi keduanya mulai tertutup.
+  //
+  // `null` = ketiganya tertutup. Judul yang sedang terbuka tetap boleh diklik
+  // lagi untuk menutup; ia tidak macet terbuka sampai bagian lain dibuka.
   //
   // Catatan nama: `catatanOpen` & `gameOpen` di atas itu SHEET-nya (form yang
-  // muncul dari bawah), sedangkan yang di sini bagian di halamannya.
-  const [squadOpen, setSquadOpen] = useState(true);
-  const [gamesOpen, setGamesOpen] = useState(true);
-  const [notesOpen, setNotesOpen] = useState(true);
+  // muncul dari bawah), bukan bagian di halaman ini.
+  // Bentuknya sama persis dengan dropdown CORE Leaders: satu state, boolean
+  // yang diturunkan darinya, satu pintu untuk membuka-tutup.
+  const [terbuka, setTerbuka] = useState<Bagian | null>('squad');
+  const squadOpen = terbuka === 'squad';
+  const gamesOpen = terbuka === 'games';
+  const notesOpen = terbuka === 'notes';
+  const toggleSeksi = (k: Bagian) =>
+    setTerbuka((cur) => (cur === k ? null : k));
   const [fCatatan, setFCatatan] = useState('');
 
   const sesi = data?.sessions.find((s) => s.id === id) ?? null;
@@ -399,7 +409,7 @@ export default function FutsalSessionScreen() {
           title="👥 Squad & Setoran"
           sub={ringkasSquad}
           open={squadOpen}
-          onToggle={() => setSquadOpen((v) => !v)}
+          onToggle={() => toggleSeksi('squad')}
           right={
             /* Pengumuman siap tempel ke grup — jadwal, lokasi, iuran,
                rekening & daftar yang ikut beserta tanda sudah setor. Isinya
@@ -485,12 +495,13 @@ export default function FutsalSessionScreen() {
           title="⚽ Game & Score"
           sub={ringkasGame}
           open={gamesOpen}
-          onToggle={() => setGamesOpen((v) => !v)}
+          onToggle={() => toggleSeksi('games')}
         />
 
         {/* 4 — isinya. Tombol "Catat Game" ikut MASUK ke dalam, bukan berdiri
             di judulnya: ia tindakan utama bagian ini, dan tombol sebesar itu
-            di ujung judul yang dipatok akan ikut menempel di layar terus. */}
+            di ujung judul yang dipatok akan ikut menempel di layar terus —
+            bahkan saat bagiannya sedang ditutup oleh bagian lain. */}
         <View style={styles.sectionGap}>
           {gamesOpen && (
             <>
@@ -551,7 +562,7 @@ export default function FutsalSessionScreen() {
           title="📝 Catatan"
           sub={sesi.note ? 'Sudah ditulis' : 'Belum ditulis'}
           open={notesOpen}
-          onToggle={() => setNotesOpen((v) => !v)}
+          onToggle={() => toggleSeksi('notes')}
         />
 
         {/* 6 — isinya. */}

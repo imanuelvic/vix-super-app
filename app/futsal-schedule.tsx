@@ -9,7 +9,6 @@ import { Pagination } from '@/components/common/Pagination';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { GangTabs } from '@/components/friends/GangTabs';
-import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { FutsalSessionCard } from '@/components/friends/FutsalSessionCard';
 import { FutsalSessionSheet } from '@/components/friends/FutsalSessionSheet';
@@ -17,7 +16,7 @@ import { useFutsalGang } from '@/contexts/futsalGang';
 import { usePagination } from '@/hooks/usePagination';
 import { useFutsalData } from '@/hooks/useFutsalData';
 import { useFutsalSessionForm } from '@/hooks/useFutsalSessionForm';
-import { dayIdToDate, formatDayDate, dayId as toDayId } from '@/lib/format';
+import { dayId as toDayId } from '@/lib/format';
 import {
     daysToSession,
     gangMeta,
@@ -58,13 +57,6 @@ export default function FutsalScheduleScreen() {
   const bukaRincian = (s: FutsalSession) =>
     router.push({ pathname: '/futsal/[id]', params: { id: s.id } });
 
-  /** "Besok" · "3 hari lagi" · "12 hari lalu" — lebih cepat dibaca dari tanggal. */
-  function jarak(s: FutsalSession): string {
-    const n = daysToSession(s, now);
-    if (n < 0) return `🧾 ${-n} hari lalu`;
-    return n === 0 ? '⏳ Hari ini' : n === 1 ? '⏳ Besok' : `⏳ ${n} hari lagi`;
-  }
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
@@ -93,23 +85,20 @@ export default function FutsalScheduleScreen() {
             </VixText>
           ) : (
             <>
-              {akanDatang.length > 0 ? (
-                <SummaryCard style={styles.hero}>
-                  <VixText heading="label" additionalStyle={summaryText.label}>
-                    {meta.emoji} {meta.label} · main berikutnya
-                  </VixText>
-                  <VixText heading="subheader" additionalStyle={summaryText.value}>
-                    {formatDayDate(dayIdToDate(akanDatang[0].dayId))}
-                  </VixText>
-                  <VixText heading="label" additionalStyle={summaryText.label}>
-                    {jarak(akanDatang[0])} · {akanDatang.length} jadwal tersimpan
-                  </VixText>
-                </SummaryCard>
-              ) : (
+              {/* Kartu "main berikutnya" DIBUANG. Jadwal terdekat itu selalu
+                  kartu PERTAMA daftar tepat di bawahnya — kartu besar di atas
+                  cuma mengulang hal yang sama dua kali dalam satu layar,
+                  sambil mendorong daftarnya turun sepertiga layar.
+
+                  Yang tinggal cuma kabar yang TIDAK ada di daftarnya: kalau
+                  semua yang tersimpan sudah lewat, itu harus dikatakan —
+                  daftar yang langsung dibuka dengan "🧾 Riwayat Main" tidak
+                  menjelaskan kenapa tak ada satu pun jadwal di atasnya. */}
+              {akanDatang.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.empty}>
                   Belum ada jadwal {meta.label} yang akan datang.
                 </VixText>
-              )}
+              ) : null}
 
               {pageItems.map((s, i) => {
                 const lewat = daysToSession(s, now) < 0;
@@ -150,7 +139,6 @@ export default function FutsalScheduleScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
-  hero: { marginBottom: 6 },
   sectionTitle: { ...SECTION_SPACE },
   empty: { textAlign: 'center', marginVertical: 20 },
 });
