@@ -14,7 +14,6 @@ import { MiniButton } from '@/components/common/MiniButton';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { SectionRow } from '@/components/common/SectionRow';
 import { SectionToggle } from '@/components/common/SectionToggle';
 import { GangTabs } from '@/components/friends/GangTabs';
 import { SelectField } from '@/components/common/SelectField';
@@ -42,7 +41,6 @@ import {
   saveFutsal,
   sessionTimeRange,
   FUTSAL_POSITIONS,
-  upcomingSessions,
   type FutsalData,
   type FutsalGangKey,
   type FutsalMember,
@@ -53,20 +51,20 @@ import { localPhone } from '@/lib/phone';
 import { formatRupiah } from '@/lib/transactions';
 
 /**
- * Anak ScrollView yang DIPATOK di atas saat digulung: judul "👥 Anggota" (6).
+ * Anak ScrollView yang DIPATOK di atas saat digulung: judul "👥 Anggota" (3).
  *
  * Urutan anaknya, dan semuanya SELALU ada (yang bersyarat dibungkus <View>
  * kosong): 0 kartu ringkas · 1 baris tombol (Jadwalkan + 🔁) · 2 FormError ·
- * 3 Akan Datang · 4 judul Anggota · 5 daftar Anggota. Menyisipkan anak baru DI
- * ATAS nomor 4 berarti angka di sini ikut digeser. Ditaruh di luar komponen
- * supaya bukan array baru tiap render.
+ * 3 judul Anggota · 4 daftar Anggota. Menyisipkan anak baru DI ATAS nomor 3
+ * berarti angka di sini ikut digeser. Ditaruh di luar komponen supaya bukan
+ * array baru tiap render.
  *
  * Tab gengnya sendiri TIDAK di sini: ia berdiri di luar gulungan (lihat di
  * bawah), jadi ia tak pernah hilang — bukan cuma menempel sampai judul
  * berikutnya mendorongnya pergi, yang justru yang terjadi kalau dua judul
  * sama-sama dipatok.
  */
-const STICKY_HEADERS = [4];
+const STICKY_HEADERS = [3];
 
 // Sub-tab Fun Futsal ⚽ — pengurus futsal rutin, dari sisi MANAGER.
 //
@@ -116,7 +114,6 @@ export function FutsalTab({
 
   const anggota = gangMembers(data, gang);
   const berikut = nextSession(data.sessions, gang, todayId);
-  const akanDatang = upcomingSessions(data.sessions, gang, todayId);
   const terakhir = lastSession(data.sessions, gang);
 
   const bukaRincian = (s: FutsalSession) =>
@@ -316,26 +313,12 @@ export function FutsalTab({
 
         <FormError message={formSesi.formError ?? formError} gap="top" />
 
-        {/* ===== Pintu ke Jadwal Main =====
-            Daftarnya sendiri DIBUANG dari sini: jadwal terdekatnya sudah jadi
-            kartu besar di atas — dan kartu itu bisa diklik ke rincian yang
-            sama — jadi kartu kecil di bawahnya cuma mengulang hal yang persis
-            sama dua kali dalam satu layar.
-
-            Yang tinggal pintunya. SELALU ada, tidak lagi ikut hilang waktu
-            jadwal terdekat kosong: halaman itu juga memuat riwayat main, dan
-            justru saat belum ada jadwal itulah riwayatnya yang dicari. */}
-        <View>
-          <SectionRow
-            title="📅 Jadwal Main"
-            right={
-              <MiniButton
-                label={`Lihat semua${akanDatang.length > 0 ? ` (${akanDatang.length})` : ''}`}
-                onPress={() => router.push('/futsal-schedule')}
-              />
-            }
-          />
-        </View>
+        {/* Pintu ke Jadwal Main PINDAH ke pojok header — tombol 📅 di antara
+            💰 Kas & 🏅 Papan (app/friends.tsx). Judul bagian yang isinya cuma
+            satu tombol itu judul yang tak memayungi apa pun: barisnya memakan
+            tinggi satu bagian penuh untuk menyampaikan satu klik saja, dan ia
+            ikut menggulung hilang — padahal daftar seluruh jadwal justru
+            paling dicari waktu kamu sudah jauh di bawah. */}
 
         {/* ===== Anggota ===== (judulnya DIPATOK — lihat STICKY_HEADERS) */}
         <SectionToggle

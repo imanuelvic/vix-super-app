@@ -155,7 +155,7 @@ export default function FutsalCashScreen() {
       <ScreenHeader
         backLabel="Friends"
         title="Kas Tim 💰"
-        subtitle="Uang bersama tiap geng — masuk, keluar & sisanya."
+        subtitle="Uang bersama tiap tim"
       />
 
       <ScreenError message={error} />

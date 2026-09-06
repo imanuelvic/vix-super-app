@@ -52,11 +52,18 @@ import {
     WHATSAPP_ERROR,
 } from '@/lib/whatsapp';
 
-// Nomor anak ScrollView yang DIPATOK: judul "Squad & Setoran".
-// Menghitung ANAK LANGSUNG — karena itu tiap bagian di bawah dibungkus satu
-// View, termasuk yang isinya bersyarat: `{cond && …}` yang bernilai false
+// Nomor anak ScrollView yang DIPATOK: KETIGA judul bagiannya — Squad &
+// Setoran (1), Game & Score (3), Catatan (5). Anak ganjil judul, anak genap
+// sesudahnya isinya.
+//
+// Ketiganya dipatok, bukan cuma yang pertama: judul yang dipatok saling
+// mendorong, jadi yang menempel di atas selalu judul bagian yang SEDANG kamu
+// baca — dan tombol tutupnya terjangkau di mana pun kamu berhenti menggulung.
+//
+// Menghitung ANAK LANGSUNG — karena itu tiap isi bagian dibungkus satu View,
+// termasuk yang isinya bersyarat: `{cond && …}` yang bernilai false
 // menghilang dari daftar anak dan menggeser semua nomor sesudahnya.
-const STICKY_HEADERS = [1];
+const STICKY_HEADERS = [1, 3, 5];
 
 // Rincian satu sesi futsal ⚽ — ruang kerja managernya.
 //
@@ -84,11 +91,21 @@ export default function FutsalSessionScreen() {
   // Form catatan.
   const [catatanOpen, setCatatanOpen] = useState(false);
 
-  // Daftar squad terbuka? Bawaannya TERTUTUP, sama seperti bagian buka-tutup
-  // lain di app ini: dua baris ringkasan di judulnya ("12 main · 5 belum
-  // setor") sudah menjawab pertanyaan yang paling sering dibawa ke halaman
-  // ini, dan Game & Score di bawahnya tidak lagi terdorong belasan baris nama.
-  const [squadOpen, setSquadOpen] = useState(false);
+  // Ketiga bagian halaman ini BAWAANNYA TERBUKA — beda dengan daftar
+  // buka-tutup di sub-tab, yang cuma dilewati. Halaman ini justru DIBUKA untuk
+  // mengurus isinya: mencentang setoran, mencatat score, menulis catatan.
+  // Membukanya dalam keadaan tertutup semua berarti tiga klik sebelum apa pun
+  // bisa dikerjakan. Yang mau menutup tinggal menutup; yang baru masuk tidak
+  // perlu memilih apa-apa.
+  //
+  // Judul ketiganya dipatok di atas (STICKY_HEADERS), jadi walau terbuka
+  // semua, tombol tutupnya tak pernah ikut hilang ke atas layar.
+  //
+  // Catatan nama: `catatanOpen` & `gameOpen` di atas itu SHEET-nya (form yang
+  // muncul dari bawah), sedangkan yang di sini bagian di halamannya.
+  const [squadOpen, setSquadOpen] = useState(true);
+  const [gamesOpen, setGamesOpen] = useState(true);
+  const [notesOpen, setNotesOpen] = useState(true);
   const [fCatatan, setFCatatan] = useState('');
 
   const sesi = data?.sessions.find((s) => s.id === id) ?? null;
@@ -126,6 +143,14 @@ export default function FutsalSessionScreen() {
   const ringkasSquad = `${sesi.squad.length} main${
     belumSetor > 0 ? ` · ${belumSetor} belum setor` : sesi.squad.length > 0 ? ' · lunas semua ✅' : ''
   }`;
+  // Ringkasan yang sama gunanya untuk judul Game & Score: berapa game dan
+  // berapa gol yang sudah tercatat, supaya menutupnya tidak menghilangkan
+  // kabar terpentingnya.
+  const golSemua = sesi.games.reduce((n, g) => n + g.scoreA + g.scoreB, 0);
+  const ringkasGame =
+    sesi.games.length === 0
+      ? 'Belum ada game'
+      : `${sesi.games.length} game · ${golSemua} gol`;
   const total = sessionTotal(sesi);
   const masuk = sessionPaidTotal(sesi);
   const kurang = sessionDueTotal(sesi);
@@ -391,7 +416,7 @@ export default function FutsalSessionScreen() {
         />
 
         {/* 2 — isinya. */}
-        <View>
+        <View style={styles.sectionGap}>
           {squadOpen &&
             (anggota.length === 0 ? (
               <VixText heading="label" additionalStyle={styles.empty}>
@@ -454,78 +479,98 @@ export default function FutsalSessionScreen() {
             ))}
         </View>
 
-        {/* 3 — sisa layarnya, satu anak juga. */}
-        <View>
-          {/* ===== Game & score ===== */}
-          <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            ⚽ Game & Score
-          </VixText>
-          {sesi.games.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
-              Belum ada game tercatat.
-            </VixText>
-          ) : (
-            sesi.games.map((g, i) => (
-              <PressableScale
-                key={g.id}
-                style={styles.gameCard}
-                onPress={() => bukaGameUbah(g)}>
-                <VixText heading="label" additionalStyle={styles.gameNo}>
-                  Game {i + 1}
-                </VixText>
-                <View style={styles.gameRow}>
-                  <VixText heading="bold" additionalStyle={styles.gameTim}>
-                    {g.teamA}
-                  </VixText>
-                  <VixText heading="subheader" additionalStyle={styles.gameSkor}>
-                    {g.scoreA} – {g.scoreB}
-                  </VixText>
-                  <VixText heading="bold" additionalStyle={styles.gameTimKanan}>
-                    {g.teamB}
-                  </VixText>
-                </View>
-                {g.scorers.length > 0 && (
-                  <VixText heading="label" additionalStyle={styles.gamePencetak}>
-                    ⚽{' '}
-                    {[...new Set(g.scorers)]
-                      .map((sid) => {
-                        const orang = anggota.find((m) => m.id === sid);
-                        const n = g.scorers.filter((x) => x === sid).length;
-                        return orang
-                          ? `${orang.name}${n > 1 ? ` ×${n}` : ''}`
-                          : null;
-                      })
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </VixText>
-                )}
-              </PressableScale>
-            ))
-          )}
-          <PrimaryButton
-            label="Catat Game"
-            icon="plus"
-            onPress={bukaGameBaru}
-            additionalStyle={styles.addButton}
-          />
+        {/* 3 — judul Game & Score, DIPATOK juga. Bentuk & cara kerjanya
+            persis judul Squad di atas: satu <SectionToggle/> yang sama. */}
+        <SectionToggle
+          title="⚽ Game & Score"
+          sub={ringkasGame}
+          open={gamesOpen}
+          onToggle={() => setGamesOpen((v) => !v)}
+        />
 
-          {/* ===== Catatan ===== */}
-          <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            📝 Catatan
-          </VixText>
-          <PressableScale
-            style={styles.noteCard}
-            onPress={() => {
-              setFCatatan(sesi.note);
-              setFormError(null);
-              setCatatanOpen(true);
-            }}>
-            <VixText
-              heading="label"
-              additionalStyle={sesi.note ? styles.noteText : styles.notePlaceholder}>
-              {sesi.note || 'Belum ada catatan.'}
-            </VixText>
-          </PressableScale>
+        {/* 4 — isinya. Tombol "Catat Game" ikut MASUK ke dalam, bukan berdiri
+            di judulnya: ia tindakan utama bagian ini, dan tombol sebesar itu
+            di ujung judul yang dipatok akan ikut menempel di layar terus. */}
+        <View style={styles.sectionGap}>
+          {gamesOpen && (
+            <>
+              {sesi.games.length === 0 ? (
+                <VixText heading="label" additionalStyle={styles.empty}>
+                  Belum ada game tercatat.
+                </VixText>
+              ) : (
+                sesi.games.map((g, i) => (
+                  <PressableScale
+                    key={g.id}
+                    style={styles.gameCard}
+                    onPress={() => bukaGameUbah(g)}>
+                    <VixText heading="label" additionalStyle={styles.gameNo}>
+                      Game {i + 1}
+                    </VixText>
+                    <View style={styles.gameRow}>
+                      <VixText heading="bold" additionalStyle={styles.gameTim}>
+                        {g.teamA}
+                      </VixText>
+                      <VixText heading="subheader" additionalStyle={styles.gameSkor}>
+                        {g.scoreA} – {g.scoreB}
+                      </VixText>
+                      <VixText heading="bold" additionalStyle={styles.gameTimKanan}>
+                        {g.teamB}
+                      </VixText>
+                    </View>
+                    {g.scorers.length > 0 && (
+                      <VixText heading="label" additionalStyle={styles.gamePencetak}>
+                        ⚽{' '}
+                        {[...new Set(g.scorers)]
+                          .map((sid) => {
+                            const orang = anggota.find((m) => m.id === sid);
+                            const n = g.scorers.filter((x) => x === sid).length;
+                            return orang
+                              ? `${orang.name}${n > 1 ? ` ×${n}` : ''}`
+                              : null;
+                          })
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </VixText>
+                    )}
+                  </PressableScale>
+                ))
+              )}
+              <PrimaryButton
+                label="Catat Game"
+                icon="plus"
+                onPress={bukaGameBaru}
+                additionalStyle={styles.addButton}
+              />
+            </>
+          )}
+        </View>
+
+        {/* 5 — judul Catatan, DIPATOK. */}
+        <SectionToggle
+          title="📝 Catatan"
+          sub={sesi.note ? 'Sudah ditulis' : 'Belum ditulis'}
+          open={notesOpen}
+          onToggle={() => setNotesOpen((v) => !v)}
+        />
+
+        {/* 6 — isinya. */}
+        <View>
+          {notesOpen && (
+            <PressableScale
+              style={styles.noteCard}
+              onPress={() => {
+                setFCatatan(sesi.note);
+                setFormError(null);
+                setCatatanOpen(true);
+              }}>
+              <VixText
+                heading="label"
+                additionalStyle={sesi.note ? styles.noteText : styles.notePlaceholder}>
+                {sesi.note || 'Belum ada catatan.'}
+              </VixText>
+            </PressableScale>
+          )}
         </View>
       </ScrollView>
 
@@ -642,7 +687,11 @@ const styles = StyleSheet.create({
   // Setoran": judul itu dipatok (sticky), dan jarak atas pada yang dipatok
   // ikut menempel di layar sebagai pita menganga selama daftarnya digulung.
   moneyBlock: { marginBottom: 12 },
-  sectionTitle: { ...SECTION_SPACE },
+  // Jarak sebelum judul bagian BERIKUTNYA. Dulu ia `marginTop` milik judul
+  // itu sendiri; judul yang dipatok tidak boleh membawanya (lihat moneyBlock
+  // di atas), jadi ia turun ke blok yang mendahuluinya. Angkanya tetap yang
+  // sama supaya jarak antar-bagian di layar ini tak bergeser sedikit pun.
+  sectionGap: { marginBottom: SECTION_SPACE.marginTop },
   empty: { textAlign: 'center', marginVertical: 10 },
   // Setor ke kas: garis saja, bukan tombol penuh — memindahkan uang ke kas itu
   // langkah lanjutan, bukan tindakan utama layar ini.

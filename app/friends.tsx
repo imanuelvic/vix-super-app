@@ -89,13 +89,18 @@ export default function FriendsScreen() {
         title="Friends 🤝"
         subtitle="Kegiatan yang menyenangkan bersama teman-teman"
         right={
-          /* Dua pintu yang dipakai tiap minggu: kas tim & papan peringkat.
-             Keduanya di pojok header, bukan kartu di dalam daftar — daftarnya
-             sudah panjang, dan pintu yang ikut menggulung itu pintu yang
-             dicari-cari. Kas ada di kiri: uang lebih sering dibuka. */
+          /* Tiga pintu yang dipakai tiap minggu: kas tim, seluruh jadwal main,
+             & papan peringkat. Ketiganya di pojok header, bukan baris judul di
+             dalam daftar — daftarnya sudah panjang, dan pintu yang ikut
+             menggulung itu pintu yang dicari-cari.
+
+             Urutannya dari yang paling sering dibuka: uang, lalu jadwal
+             (riwayat & yang akan datang, app/futsal-schedule.tsx), lalu papan
+             yang cuma sesekali dilihat. */
           tab === 'futsal' ? (
             <>
               <EmojiButton emoji="💰" onPress={() => router.push('/futsal-cash')} />
+              <EmojiButton emoji="📅" onPress={() => router.push('/futsal-schedule')} />
               <EmojiButton emoji="🏅" onPress={() => router.push('/futsal-board')} />
             </>
           ) : undefined

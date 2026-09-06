@@ -59,9 +59,7 @@ export function PromiseTab({ list }: { list: HisPromise[] }) {
 
         {list.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada janji yang dicatat. Waktu Tuhan berbicara lewat firman-Nya,
-            tulis di sini — supaya waktu digenapi kamu masih ingat kapan Dia
-            mengatakannya 🚩
+            Belum ada janji yang dicatat.
           </VixText>
         )}
 
