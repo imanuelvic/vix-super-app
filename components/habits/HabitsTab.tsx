@@ -1061,8 +1061,7 @@ export function HabitsTab({
           Isi Score {score}/10
         </VixText>
         <VixText heading="label" additionalStyle={styles.coreIntro}>
-          Cuma kebiasaan WAJIB yang dihitung. Yang ✗ (dilewati) tidak dihitung
-          sudah — hari yang dilewati memang bukan hari yang dikerjakan.
+          Kebiasaan WAJIB yang di bold yang dihitung.
         </VixText>
         <ScrollView style={styles.coreList} showsVerticalScrollIndicator={false}>
           {HABIT_SLOTS.map((s) => {

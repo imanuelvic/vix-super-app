@@ -303,7 +303,7 @@ export default function BibleReadingScreen() {
 
         {filled.length > 0 && (
           <View style={styles.summaryCard}>
-            {/* Sebelum ditekan "Sudah baca" isinya belum tersimpan apa pun —
+            {/* Sebelum "Sudah baca" di-click isinya belum tersimpan apa pun —
                 dan sekarang kolomnya bisa terisi sendiri dari rekomendasi,
                 jadi kalimatnya harus jujur menyebut mana yang mana. */}
             <VixText heading="label" additionalStyle={styles.summaryLabel}>
@@ -328,6 +328,43 @@ export default function BibleReadingScreen() {
           />
         )}
 
+        {/* OPSIONAL — bacaan hari ini jadi Story Instagram 9:16 bertanda
+            `vixtory.archive`, sekeluarga dengan Feed refleksi harian.
+            Acuannya dioper apa adanya lewat parameter (pendek), jadi Story
+            bisa dibuat walau "Sudah baca" belum di-click. Baru muncul setelah
+            ada isinya — tanpa acuan tak ada yang bisa dipajang.
+
+            Duduk DI ATAS "Sudah baca": membagikannya dilakukan sambil ayatnya
+            masih di layar. Dulu ia paling bawah, di balik dua tombol dan
+            sebuah garis pemisah — jadi baru ketemu sesudah bacaannya dicatat,
+            saat layar ini justru sudah selesai dipakai.
+
+            Garis pemisahnya ikut dibuang: ia dulu menandai "yang di bawah ini
+            bonus". Di atas tombol utama tak ada lagi batas yang perlu
+            ditandai — yang tersisa cuma sebaris garis di tengah tumpukan
+            tombol. Jaraknya sekarang marginBottom milik barisnya sendiri,
+            sama dengan jarak tombol utama ke tombol lewati. */}
+        {filled.length > 0 && (
+          <PressableScale
+            style={styles.storyRow}
+            onPress={() =>
+              router.push({
+                pathname: '/bible-story',
+                // Terjemahannya ikut dioper — yang membaca Story-mu tidak
+                // punya cara lain untuk tahu "Amsal 1:4" itu versi yang mana.
+                params: {
+                  session,
+                  refs: filled.join(', '),
+                  version: versiTerpakai,
+                },
+              })
+            }>
+            <VixText heading="bold" additionalStyle={styles.storyText}>
+              📖 Bagikan ayatnya ke Instagram Story
+            </VixText>
+          </PressableScale>
+        )}
+
         {/* Aktif setelah minimal satu bacaan terisi (handleSave juga menjaga). */}
         <PrimaryButton
           label="✅ Sudah baca"
@@ -346,36 +383,6 @@ export default function BibleReadingScreen() {
           busy={busy}
           onPress={handleSkip}
         />
-
-        {/* OPSIONAL — bacaan hari ini jadi Story Instagram 9:16 bertanda
-            `vixtory.archive`, sekeluarga dengan Feed refleksi harian.
-            Acuannya dioper apa adanya lewat parameter (pendek), jadi Story
-            bisa dibuat walau bacaannya belum ditekan "Sudah baca". Baru
-            muncul setelah ada isinya — tanpa acuan tak ada yang bisa
-            dipajang. */}
-        {filled.length > 0 && (
-          <>
-            <View style={styles.storyDivider} />
-            <PressableScale
-              style={styles.storyRow}
-              onPress={() =>
-                router.push({
-                  pathname: '/bible-story',
-                  // Terjemahannya ikut dioper — yang membaca Story-mu tidak
-                  // punya cara lain untuk tahu "Amsal 1:4" itu versi yang mana.
-                  params: {
-                    session,
-                    refs: filled.join(', '),
-                    version: versiTerpakai,
-                  },
-                })
-              }>
-              <VixText heading="bold" additionalStyle={styles.storyText}>
-                📖 Bagikan ayatnya ke Instagram Story
-              </VixText>
-            </PressableScale>
-          </>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -400,19 +407,15 @@ const styles = StyleSheet.create({
   countdownText: { color: Color.ACCENT_DARK },
   countdownSoonText: { color: Color.DANGER },
   countdownSub: { color: Color.TEXT_LABEL },
-  // Pemisah tipis: yang di bawahnya bonus, bukan bagian dari mencatat bacaan.
-  storyDivider: {
-    height: 1,
-    backgroundColor: Color.BORDER,
-    marginTop: 22,
-    marginBottom: 14,
-  },
+  // Jaraknya SAMA dengan `save` di bawahnya — ketiganya (Story, Sudah baca,
+  // Lewati) satu tumpukan tombol, jadi jarak antar-barisnya tidak boleh beda.
   storyRow: {
     backgroundColor: Color.SPIRITUAL,
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 2,
+    marginBottom: 10,
   },
   storyText: { color: Color.SPIRITUAL_DARK },
   versionRow: {
