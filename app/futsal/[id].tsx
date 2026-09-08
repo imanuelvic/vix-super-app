@@ -37,6 +37,7 @@ import {
     sessionPaidTotal,
     sessionTotal,
     sessionRecap,
+    sessionReminder,
     sessionTimeRange,
     sessionUnpaidCount,
     squadOrder,
@@ -230,11 +231,9 @@ export default function FutsalSessionScreen() {
       setError('Nomor HP-nya belum diisi — isi dulu di daftar anggota.');
       return;
     }
-    const pesan =
-      `Halo ${m.name} 👋 Iuran futsal ${meta.label} ` +
-      `${formatDayDate(dayIdToDate(sesi.dayId))} di ${sesi.venue} ` +
-      `sebesar ${formatRupiah(sesi.fee)} belum masuk ya. Makasih! ⚽`;
-    openWhatsAppChat(m.phone, pesan, () => setError(WHATSAPP_ERROR));
+    openWhatsAppChat(m.phone, sessionReminder(sesi), () =>
+      setError(WHATSAPP_ERROR),
+    );
   }
 
   // ===================== Game =====================

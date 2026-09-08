@@ -560,23 +560,73 @@ export function futsalReminders(
  * Baris yang datanya kosong DIHILANGKAN, bukan dikirim sebagai baris kosong
  * atau "—": ini pesan yang dibaca orang lain di grup.
  */
-export function sessionRecap(data: FutsalData, s: FutsalSession): string {
-  const meta = gangMeta(s.gang);
-  const ikut = gangMembers(data, s.gang).filter((m) => s.squad.includes(m.id));
-  const baris = [
-    meta.label,
-    '',
+/**
+ * Kapan & di mana — tiga baris pembuka tiap pesan yang keluar dari sesi ini.
+ *
+ * Dipakai pengumuman grup (sessionRecap) MAUPUN tagihan perorangan
+ * (sessionReminder). Keduanya menyebut jadwal yang sama, jadi keduanya tak
+ * boleh punya dua cara menulisnya — cukup satu yang salah untuk membuat orang
+ * datang di jam yang beda dari yang tertulis di pesan sebelumnya.
+ */
+function sessionWhenLines(s: FutsalSession): string[] {
+  return [
     `📅 ${formatFullDate(dayIdToDate(s.dayId))}`,
     // Jam ditulis dengan titik dua di pesan keluar ("18:00–20:00"),
     // sedangkan di dalam app tetap gaya Indonesia ("18.00–20.00").
     `🕐 ${sessionTimeRange(s).replace(/\./g, ':')}`,
     `📍 ${s.venue || 'Lapangan menyusul'}`,
   ];
-  if (s.mapsUrl) baris.push(s.mapsUrl);
-  baris.push('');
+}
+
+/**
+ * Iuran & rekeningnya. Yang belum diisi TIDAK ditulis sama sekali — "Rp 0 per
+ * orang" dan baris rekening kosong itu pesan yang dibaca orang lain.
+ *
+ * Rekeningnya dipakai apa adanya seperti yang kamu ketik di formulir ("BCA
+ * 5271415860", "Trf ke 5271415860"): app ini tidak tahu bank mana yang kamu
+ * pakai, dan menebaknya cuma bikin nomornya salah baca.
+ */
+function sessionPayLines(s: FutsalSession): string[] {
+  const baris: string[] = [];
   if (s.fee > 0) baris.push(`${formatRupiah(s.fee)} per orang`);
   if (s.bank) baris.push(s.bank);
-  if (s.fee > 0 || s.bank) baris.push('');
+  return baris;
+}
+
+/**
+ * Tagihan untuk SATU orang yang belum setor — dikirim lewat 💬 di barisnya.
+ *
+ * Bentuknya sengaja sama dengan pengumuman grup: kepala, jadwal, setoran,
+ * penutup. Yang menerimanya sudah pernah membaca pengumumannya di grup, jadi
+ * pesan yang bentuknya sama langsung dikenali sebagai sesi yang itu juga —
+ * bukan tagihan entah untuk main yang mana.
+ *
+ * Tanpa daftar squad: ini pesan japri, dan siapa saja yang belum setor bukan
+ * urusan orang yang sedang ditagih.
+ */
+export function sessionReminder(s: FutsalSession): string {
+  const bayar = sessionPayLines(s);
+  return [
+    `Shalomm👋 reminder untuk patungan ${gangMeta(s.gang).label}`,
+    '',
+    ...sessionWhenLines(s),
+    // Blok setoran dilewati seluruhnya kalau iuran & rekening sama-sama
+    // kosong — beserta baris pemisahnya, supaya tak ada rongga menganga.
+    ...(bayar.length > 0 ? ['', ...bayar] : []),
+    '',
+    'Tlg kirim buktinya kalau sudah',
+  ].join('\n');
+}
+
+export function sessionRecap(data: FutsalData, s: FutsalSession): string {
+  const meta = gangMeta(s.gang);
+  const ikut = gangMembers(data, s.gang).filter((m) => s.squad.includes(m.id));
+  const baris = [meta.label, '', ...sessionWhenLines(s)];
+  if (s.mapsUrl) baris.push(s.mapsUrl);
+  baris.push('');
+  const bayar = sessionPayLines(s);
+  baris.push(...bayar);
+  if (bayar.length > 0) baris.push('');
 
   baris.push('Ikut main:');
   ikut.forEach((m, i) => {
