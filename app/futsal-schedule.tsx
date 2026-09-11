@@ -68,7 +68,7 @@ export default function FutsalScheduleScreen() {
       <ScreenError message={error} />
 
       {/* Tab geng berdiri DI LUAR gulungan: ia tak ikut bergerak sama sekali,
-          jadi berpindah geng selalu satu klik dari mana pun kamu berhenti
+          jadi berpindah geng selalu satu click dari mana pun kamu berhenti
           membaca. */}
       <GangTabs value={gang} onChange={setGang} />
 

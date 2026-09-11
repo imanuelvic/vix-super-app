@@ -29,7 +29,7 @@ export default function AchievementCategoryScreen() {
   const { cat } = useLocalSearchParams<{ cat?: string }>();
   const { stats, error } = useAchievementStats();
 
-  // Lencana yang sedang di-klik (null = belum ada yang dipilih).
+  // Lencana yang sedang di-click (null = belum ada yang dipilih).
   const [pickedId, setPickedId] = useState<string | null>(null);
 
   // Nama kategorinya datang dari URL, jadi ia disaring — bukan dipercaya.
@@ -81,7 +81,7 @@ export default function AchievementCategoryScreen() {
             berapa"; sebagai grid, seluruh tangganya terbaca sekali pandang.
 
             Rinciannya (keterangan + tanggal + batang kemajuan) tidak hilang: ia
-            pindah ke kartu di bawah grid, muncul saat lencananya di-klik. */}
+            pindah ke kartu di bawah grid, muncul saat lencananya di-click. */}
         <View style={badgeGrid.grid}>
           {daftar.map((a) => {
             const value = a.of(stats);
@@ -109,8 +109,8 @@ export default function AchievementCategoryScreen() {
           })}
         </View>
 
-        {/* Rincian lencana yang sedang di-klik. Satu kartu, bukan satu per
-            lencana: yang dicari saat mengklik memang cuma satu. */}
+        {/* Rincian lencana yang sedang di-click. Satu kartu, bukan satu per
+            lencana: yang dicari saat meng-click memang cuma satu. */}
         {picked ? (
           <View style={styles.pickedCard}>
             <View style={styles.catTop}>
@@ -149,7 +149,7 @@ export default function AchievementCategoryScreen() {
           </View>
         ) : (
           <VixText heading="label" additionalStyle={styles.gridHint}>
-            Klik lencananya untuk lihat keterangan & kemajuannya.
+            Click lencananya untuk lihat keterangan & kemajuannya.
           </VixText>
         )}
       </ScrollView>

@@ -1,12 +1,12 @@
 import {
-  collection,
-  deleteDoc,
-  doc,
-  limit,
-  orderBy,
-  query,
-  setDoc,
-  type FirestoreError,
+    collection,
+    deleteDoc,
+    doc,
+    limit,
+    orderBy,
+    query,
+    setDoc,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';

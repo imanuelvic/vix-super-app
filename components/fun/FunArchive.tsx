@@ -1,17 +1,17 @@
 import { Timestamp } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  StyleSheet,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    StyleSheet,
+    View,
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { FormError } from '@/components/common/FormError';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { MoneyInput } from '@/components/common/MoneyInput';
@@ -24,22 +24,22 @@ import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatShortDayDate, groupDigits, parseAmount } from '@/lib/format';
 import {
-  EMPTY_FUN,
-  funCategoryMeta,
-  newFunId,
-  pickCompressedMedal,
-  saveFun,
-  subscribeFun,
-  summitTotal,
-  type FunCategory,
-  type FunData,
-  type FunEntry,
+    EMPTY_FUN,
+    funCategoryMeta,
+    newFunId,
+    pickCompressedMedal,
+    saveFun,
+    subscribeFun,
+    summitTotal,
+    type FunCategory,
+    type FunData,
+    type FunEntry,
 } from '@/lib/fun';
 import {
-  DELETE_ERROR,
-  LOAD_ERROR,
-  PHOTO_ERROR,
-  SAVE_ERROR,
+    DELETE_ERROR,
+    LOAD_ERROR,
+    PHOTO_ERROR,
+    SAVE_ERROR,
 } from '@/lib/messages';
 import { photoUri } from '@/lib/photo';
 import { formatRupiah } from '@/lib/transactions';

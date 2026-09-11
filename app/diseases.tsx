@@ -5,9 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
-import { FormError } from '@/components/common/FormError';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -20,11 +20,11 @@ import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { formatDate } from '@/lib/format';
 import {
-  addDisease,
-  deleteDisease,
-  subscribeDiseases,
-  updateDisease,
-  type Disease,
+    addDisease,
+    deleteDisease,
+    subscribeDiseases,
+    updateDisease,
+    type Disease,
 } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 

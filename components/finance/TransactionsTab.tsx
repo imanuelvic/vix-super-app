@@ -1,20 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-  type ViewStyle,
+    FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    View,
+    type ViewStyle,
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
-import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -30,43 +30,43 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import {
-  budgetKey,
-  isFuelTransaction,
-  isResidenceTransaction,
-  subLabelOf,
-  subsOf,
-  type BudgetMap,
-  type SubcategoryMap,
+    budgetKey,
+    isFuelTransaction,
+    isResidenceTransaction,
+    subLabelOf,
+    subsOf,
+    type BudgetMap,
+    type SubcategoryMap,
 } from '@/lib/budgets';
 import { deleteCarLog, syncFuelLog } from '@/lib/car';
 import {
-  deleteResidenceLog,
-  syncResidenceLog,
-  type ResidenceLogType,
-} from '@/lib/residence';
-import {
-  activeCategories,
-  categoryOf,
-  FINANCE_TYPE_COLOR,
-  FINANCE_TYPE_LABEL,
-  type FinanceType,
+    activeCategories,
+    categoryOf,
+    FINANCE_TYPE_COLOR,
+    FINANCE_TYPE_LABEL,
+    type FinanceType,
 } from '@/lib/categories';
 import {
-  dayShort,
-  formatFullDate,
-  groupDigits,
-  MONTH_NAMES,
-  parseAmount,
-  parseDecimal,
+    dayShort,
+    formatFullDate,
+    groupDigits,
+    MONTH_NAMES,
+    parseAmount,
+    parseDecimal,
 } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { openPayApp, payAppForCategory } from '@/lib/payapps';
 import {
-  addTransaction,
-  deleteTransaction,
-  formatRupiah,
-  updateTransaction,
-  type Transaction,
+    deleteResidenceLog,
+    syncResidenceLog,
+    type ResidenceLogType,
+} from '@/lib/residence';
+import {
+    addTransaction,
+    deleteTransaction,
+    formatRupiah,
+    updateTransaction,
+    type Transaction,
 } from '@/lib/transactions';
 
 // Preferensi tampil/sembunyi nominal — disimpan (AsyncStorage) supaya

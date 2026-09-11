@@ -19,13 +19,13 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
 import {
-  EMPTY_CORE_IDEAS,
-  newCoreIdeaId,
-  saveCoreIdeas,
-  subscribeCoreIdeas,
-  type CoreIdea,
-  type CoreIdeasData,
-  type IdeaCadence,
+    EMPTY_CORE_IDEAS,
+    newCoreIdeaId,
+    saveCoreIdeas,
+    subscribeCoreIdeas,
+    type CoreIdea,
+    type CoreIdeasData,
+    type IdeaCadence,
 } from '@/lib/core';
 import { formatDate } from '@/lib/format';
 import { LOAD_ERROR } from '@/lib/messages';

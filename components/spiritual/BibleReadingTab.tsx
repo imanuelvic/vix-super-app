@@ -5,7 +5,6 @@ import { Color } from '@/assets/style/color';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -175,7 +174,7 @@ export function BibleReadingTab({
                   Catatan lama yang belum punya kolom terjemahan tampil (TB),
                   dan itu memang benar: semuanya dibuat dari Terjemahan Baru.
 
-                  Tiap acuan bisa di-klik SENDIRI-SENDIRI → membuka pasal itu
+                  Tiap acuan bisa di-click SENDIRI-SENDIRI → membuka pasal itu
                   di YouVersion. Baris "Yakobus 3, Amsal 14" jadi dua tombol,
                   bukan satu: yang mau dibaca ulang biasanya cuma salah satunya.
                   Terjemahannya ikut, jadi yang terbuka bacaan yang sama persis
@@ -228,27 +227,19 @@ export function BibleReadingTab({
             daftar 66, lalu pasal & ayat dari–sampai. Jadi acuan yang tersimpan
             selalu terbaca YouVersion — mengetik "yesaya 5" dengan huruf kecil
             atau salah eja dulu bisa lolos ke sini, dan pil di kartunya berhenti
-            bisa di-klik tanpa penjelasan apa pun.
+            bisa di-click tanpa penjelasan apa pun.
 
             `inlinePicker` — daftar kitabnya mengembang di tempat, bukan sebagai
             dialog tengah layar: sheet ini sendiri sudah sebuah modal, dan modal
             di atas modal tidak andal di iOS. */}
-        <BibleRefList refs={refs} onChange={setRefs} editable={!busy} inlinePicker />
-
-        <View style={styles.versionRow}>
-          <VixText heading="label" additionalStyle={styles.versionLabel}>
-            Terjemahan
-          </VixText>
-          <FormInput
-            placeholder={BIBLE_VERSION_DEFAULT}
-            value={version}
-            onChangeText={setVersion}
-            editable={!busy}
-            autoCapitalize="characters"
-            maxLength={12}
-            style={styles.versionInput}
-          />
-        </View>
+        <BibleRefList
+          refs={refs}
+          onChange={setRefs}
+          editable={!busy}
+          inlinePicker
+          version={version}
+          onVersionChange={setVersion}
+        />
 
         <FormError message={formError} gap="top" />
 
@@ -288,7 +279,7 @@ const styles = StyleSheet.create({
   cardDate: { color: Color.SPIRITUAL_DARK },
   editText: { color: Color.MAIN },
   cardText: { color: Color.TEXT_TITLE },
-  // Acuan yang bisa di-klik tampil sebagai pil ungu muda — beda jelas dari
+  // Acuan yang bisa di-click tampil sebagai pil ungu muda — beda jelas dari
   // teks biasa, jadi kelihatan mana yang membuka YouVersion dan mana yang
   // cuma tulisan (kitab yang namanya tidak dikenali tetap tampil apa adanya).
   refRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
@@ -301,8 +292,4 @@ const styles = StyleSheet.create({
   refChipPlain: { backgroundColor: 'transparent', paddingHorizontal: 0 },
   refChipText: { color: Color.SPIRITUAL_DARK },
   cardVersion: { color: Color.TEXT_LABEL },
-  versionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  versionLabel: { color: Color.TEXT_LABEL },
-  // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
-  versionInput: { flex: 1, maxWidth: 140 },
 });

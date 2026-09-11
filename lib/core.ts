@@ -1,15 +1,15 @@
 import {
-  arrayUnion,
-  collection,
-  deleteDoc,
-  doc,
-  limit,
-  orderBy,
-  query,
-  setDoc,
-  Timestamp,
-  writeBatch,
-  type FirestoreError,
+    arrayUnion,
+    collection,
+    deleteDoc,
+    doc,
+    limit,
+    orderBy,
+    query,
+    setDoc,
+    Timestamp,
+    writeBatch,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
@@ -1293,21 +1293,27 @@ export function focusLeaders<T extends { id: string }>(
 }
 
 // ===================== Tagihan Follow Up Mingguan 🎯 =====================
-// Follow up itu percakapan, dan percakapan tidak dimulai jam 00.05. Tagihannya
-// baru menyala jam 09.00 — jam orang sudah bangun & pesan masuk tidak
-// mengganggu. Sebelum itu badge-nya 0 & kartunya tidak muncul, walaupun
-// harinya memang belum di-follow up.
+// Tagihannya menyala SEJAK PERGANTIAN HARI, tidak menunggu jam berapa pun.
+//
+// Dulu ia baru menyala jam 09.00 ("percakapan tidak dimulai jam 00.05").
+// Masalahnya aturan itu cuma dipatuhi badge, tidak oleh kartunya: kartu CL di
+// sub-tab Follow Up selalu bergaris merah + bertitik merah selama hari itu
+// belum di-follow up. Jadi jam 07.55 layarnya berteriak merah sementara badge
+// sub-tab & badge tile CORE di Home diam — persis keadaan yang membuat badge
+// berhenti dipercaya, karena "merah di dalam, kosong di luar" tidak bisa
+// dijelaskan oleh yang melihatnya.
+//
+// 11 Sep 2026: aturan jamnya dibuang, jadi tanda di dalam & angka di luar
+// berangkat dari syarat yang PERSIS SAMA.
 const FOLLOWUP_FROM_HOUR = 9;
 
 // Kartu "penting" di Home cuma numpang SETENGAH JAM (09.00–09.30). Home itu
 // launcher, jadi tagihan yang menetap sepanjang hari tempatnya di Dashboard;
 // yang di Home cuma tepukan bahu di jam yang paling mungkin dikerjakan.
+//
+// Ini SATU-SATUNYA aturan jam yang tersisa di Follow Up, dan ia bukan penagih:
+// badge-nya tetap menyala sebelum & sesudah jendela ini.
 const FOLLOWUP_CARD_TO_MINUTE = 9 * 60 + 30;
-
-/** Sudah lewat jam 09.00? (tagihan follow-up mulai menghitung) */
-export function followupHourReached(now: Date): boolean {
-  return now.getHours() >= FOLLOWUP_FROM_HOUR;
-}
 
 /** Sekarang jam tayang kartu Follow Up di Home? (09.00–09.30) */
 export function followupCardWindow(now: Date): boolean {
@@ -1316,17 +1322,19 @@ export function followupCardWindow(now: Date): boolean {
 }
 
 /**
- * CORE Leader fokus minggu ini yang HARI INI belum di-follow up — kosong
- * sebelum jam 09.00.
+ * CORE Leader fokus minggu ini yang HARI INI belum di-follow up — berlaku
+ * sepanjang hari, dari lewat tengah malam sampai dikerjakan.
  *
- * Satu-satunya aturan penagihan Follow Up: badge sub-tab, badge tile Home, dan
- * kartu reminder sama-sama berangkat dari sini, jadi ketiganya mustahil beda
- * pendapat soal siapa yang masih tertagih.
+ * Satu-satunya aturan penagihan Follow Up: badge sub-tab, badge tile Home,
+ * kartu reminder, DAN tanda merah di kartu CL-nya sendiri sama-sama berangkat
+ * dari sini, jadi keempatnya mustahil beda pendapat soal siapa yang tertagih.
+ *
+ * `now` dipakai untuk menentukan giliran minggu ini (focusLeaders), bukan untuk
+ * menahan tagihannya sampai jam tertentu.
  */
 export function followupDue<
   T extends { id: string; lastFollowupDayId?: string | null },
 >(leaders: T[], now: Date, focus: WeeklyFocus, todayId: string): T[] {
-  if (!followupHourReached(now)) return [];
   return focusLeaders(leaders, now, focus).filter(
     (l) => l.lastFollowupDayId !== todayId,
   );

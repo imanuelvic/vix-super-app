@@ -1,8 +1,8 @@
 import {
-  doc,
-  setDoc,
-  Timestamp,
-  type FirestoreError,
+    doc,
+    setDoc,
+    Timestamp,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';

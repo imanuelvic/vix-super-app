@@ -42,7 +42,7 @@ export function PrimaryButton({
       ]}
       onPress={onPress}
       disabled={busy}
-      // Aksi utama terasa lebih "berbobot" daripada klik kartu biasa.
+      // Aksi utama terasa lebih "berbobot" daripada click kartu biasa.
       haptic="medium">
       {busy ? (
         <ActivityIndicator color={textColor} />

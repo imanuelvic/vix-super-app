@@ -7,10 +7,10 @@ import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 // Chip keterangan kecil — "🎤 Ps. Michael", "🕙 Ibadah 3", "🔒 Arsip",
 // "📖 Yeremia 29:11", "🕗 18.00–20.00".
 //
-// BUKAN tombol: ia tidak bisa diklik dan tidak menandakan pilihan. Tugasnya
+// BUKAN tombol: ia tidak bisa di-click dan tidak menandakan pilihan. Tugasnya
 // memecah beberapa keterangan pendek jadi butir-butir terpisah, supaya mata
 // bisa mencari SATU hal (jam? pengkhotbah? iuran?) tanpa membaca seluruh
-// barisnya. Yang bisa diklik ada bentuknya sendiri: <MiniButton/> untuk aksi,
+// barisnya. Yang bisa di-click ada bentuknya sendiri: <MiniButton/> untuk aksi,
 // <Chip/> untuk pilihan.
 //
 // Sebelum ini tiap layar menulis pilnya sendiri — dan pil yang sama persis

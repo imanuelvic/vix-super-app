@@ -8,7 +8,6 @@ import { Color } from '@/assets/style/color';
 import { AchievementButton } from '@/components/common/AchievementButton';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -147,6 +146,11 @@ export default function BibleReadingScreen() {
   const minutesLeft = bibleMinutesLeft(session, now);
   const closingSoon = minutesLeft <= 30;
 
+  // Jendelanya habis DAN sesi ini masih kosong — bukan "belum dibaca", tapi
+  // "terlewat". `!existing` mencakup keduanya sekaligus: belum dicatat dan
+  // belum ditandai lewat sendiri.
+  const terlewat = !existing && minutesLeft <= 0;
+
   async function handleSave() {
     if (!user || !today || filled.length === 0 || busy) return;
     setBusy(true);
@@ -256,7 +260,7 @@ export default function BibleReadingScreen() {
             <VixText heading="label" additionalStyle={styles.countdownSub}>
               {minutesLeft > 0
                 ? `Jendela ${meta.label} ${meta.emoji} akan tutup jam ${meta.toHour}.00.`
-                : `Jam ${meta.fromHour}.00–${meta.toHour}.00 sudah habis. Hilang streak.`}
+                : `Jam ${meta.fromHour}.00–${meta.toHour}.00 sudah habis. Otomatis ✗ di Habits, streak hilang.`}
             </VixText>
           </View>
         )}
@@ -268,7 +272,7 @@ export default function BibleReadingScreen() {
             kalimat yang sama persis. */}
         {/* Begitu bacaannya diisi, tombolnya tidak lagi cuma "buka app": ia
             membuka PASAL ITU. Acuan pertama yang dipakai — kalau ada beberapa
-            kitab, sisanya tinggal di-klik dari riwayatnya. */}
+            kitab, sisanya tinggal di-click dari riwayatnya. */}
         <SpiritualIntro
           reminder={dailyReminder(dayId, `baca-${session}`)}
           app="youversion"
@@ -276,30 +280,17 @@ export default function BibleReadingScreen() {
           version={versiTerpakai}
         />
 
+        {/* Terjemahannya ikut MASUK ke kartu bacaan — dulu ia sebaris polos
+            di bawah tumpukan kartu, terpisah dari acuan yang justru ia
+            jelaskan. "Amsal 3" dan "TB" satu keterangan yang sama. */}
         <BibleRefList
           refs={refs}
           onChange={setRefs}
           editable={!busy}
           hint={saranHint}
+          version={version}
+          onVersionChange={setVersion}
         />
-
-        {/* Terjemahan yang dibaca. Satu untuk seluruh bacaan hari itu —
-            praktisnya memang begitu: satu app dibuka, satu terjemahan dipilih,
-            lalu semua pasalnya dibaca di situ. */}
-        <View style={styles.versionRow}>
-          <VixText heading="label" additionalStyle={styles.versionLabel}>
-            Terjemahan
-          </VixText>
-          <FormInput
-            placeholder={BIBLE_VERSION_DEFAULT}
-            value={version}
-            onChangeText={setVersion}
-            editable={!busy}
-            autoCapitalize="characters"
-            maxLength={12}
-            style={styles.versionInput}
-          />
-        </View>
 
         {filled.length > 0 && (
           <View style={styles.summaryCard}>
@@ -376,13 +367,23 @@ export default function BibleReadingScreen() {
           ]}
         />
 
-        {/* Jujur lebih baik daripada mengarang bacaan demi streak. */}
-        <SkipButton
-          skipped={skipped}
-          label="⏭️ Lewati baca hari ini"
-          busy={busy}
-          onPress={handleSkip}
-        />
+        {/* Jujur lebih baik daripada mengarang bacaan demi streak.
+
+            Tombolnya HILANG begitu jendelanya habis tanpa sesi ini terisi:
+            saat itu Habits sudah menandainya ✗ sendiri (lihat
+            `bibleMirrorState` di lib/spiritual.ts), jadi ia tak lagi
+            menawarkan apa pun — cuma meminta melewati hari yang memang sudah
+            terlewat. Yang sudah TERLANJUR ditandai lewat sendiri tetap punya
+            tombolnya: di keadaan itu bunyinya "↩️ Batalkan lewati", dan
+            membatalkan masih ada gunanya. */}
+        {!terlewat && (
+          <SkipButton
+            skipped={skipped}
+            label="⏭️ Lewati baca hari ini"
+            busy={busy}
+            onPress={handleSkip}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -418,15 +419,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   storyText: { color: Color.SPIRITUAL_DARK },
-  versionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  versionLabel: { color: Color.TEXT_LABEL },
-  // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
-  versionInput: { flex: 1, maxWidth: 140 },
   summaryCard: {
     ...CARD,
     gap: 2,

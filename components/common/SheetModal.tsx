@@ -11,7 +11,6 @@ import {
     Modal,
     Platform,
     Pressable,
-    ScrollView,
     StyleSheet,
     useWindowDimensions,
     View,
@@ -30,6 +29,7 @@ import Animated, {
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { PickerScrollView } from '@/components/common/PickerScrollView';
 import { VixText } from '@/components/common/VixText';
 
 // Celah minimal dari atas layar → backdrop SELALU terlihat & bisa ditekan untuk
@@ -90,6 +90,11 @@ export function SheetModal({
 
   useEffect(() => {
     if (visible) {
+      // Sheet-nya harus SUDAH terpasang sebelum animasi masuk berjalan, jadi
+      // nilainya tidak bisa diturunkan saat render: arah keluarnya baru
+      // selesai belakangan, lewat runOnJS di callback animasi di bawah.
+      // Sekali per buka/tutup, bukan tiap render.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRendered(true);
       translateY.value = withTiming(0, { duration: 260 });
     } else if (rendered) {
@@ -111,7 +116,7 @@ export function SheetModal({
   }));
 
   // Seret gagang/judul ke bawah untuk menutup. activeOffsetY(12) supaya
-  // klik biasa tidak langsung dianggap menyeret.
+  // click biasa tidak langsung dianggap menyeret.
   const pan = Gesture.Pan()
     .activeOffsetY(12)
     .onUpdate((e) => {
@@ -145,14 +150,19 @@ export function SheetModal({
   const contentKids = autoBar ? kids.filter((c) => c !== autoBar) : kids;
   const footerContent = footer ?? autoBar;
 
+  // PickerScrollView, bukan ScrollView biasa: kolom tanggal/jam yang duduk di
+  // bagian bawah form melahirkan spinner iOS-nya DI LUAR layar. Wadah ini
+  // menggulung sendiri secukupnya begitu picker-nya tergambar — lihat
+  // components/common/PickerScrollView.tsx. Sheet yang mengoper
+  // `scroll={false}` memang sudah punya gulungannya sendiri.
   const body = scroll ? (
-    <ScrollView
+    <PickerScrollView
       style={styles.scroll}
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}>
       {contentKids}
-    </ScrollView>
+    </PickerScrollView>
   ) : (
     contentKids
   );

@@ -84,7 +84,7 @@ export function FollowupTab({
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
   // Modal tengah: pokok doa 1 CL (follow up), dan ide pendekatan 1 CL.
   const [prayerModal, setPrayerModal] = useState<CoreLeader | null>(null);
-  // Modal follow up mingguan (mirip Doa Rantai): klik kartu CL → lihat
+  // Modal follow up mingguan (mirip Doa Rantai): click kartu CL → lihat
   // pertanyaan + ide pendekatan, ganti pertanyaan di dalamnya. Menandai
   // "selesai" lewat tombol kecil di kartu (di luar modal).
   const [followupModal, setFollowupModal] = useState<{
@@ -243,7 +243,7 @@ export function FollowupTab({
     markBirthdayGreeted(user.uid, personId, dayId).catch(() => {});
   }
 
-  // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: klik untuk buka
+  // Kartu follow up mingguan — RINGKAS seperti Doa Rantai: click untuk buka
   // modal (pertanyaan + ide pendekatan). Tombol "Selesai" kecil di kartu (di
   // luar modal) untuk menandai sudah follow up hari ini.
   function renderFollowCard({
@@ -297,13 +297,18 @@ export function FollowupTab({
         {/* Salah satu dari dua penyusun badge sub-tab Follow Up: CL fokus
             minggu ini yang belum di-follow up (`followupDue` di lib/core.ts).
             Yang satunya lagi ulang tahun yang belum diucapkan — ditandai di
-            kartu ulang tahunnya sendiri. */}
+            kartu ulang tahunnya sendiri.
+
+            Syaratnya `!done`, dan itu PERSIS syarat yang menyalakan badge.
+            Dulu tidak: badge menunggu jam 09.00 sementara titik merah ini
+            tidak, jadi sebelum jam 9 kartunya merah tapi badge sub-tab &
+            badge tile CORE di Home sama-sama kosong. */}
         {!done && <AttentionMark corner />}
       </PressableScale>
     );
   }
 
-  // Kartu ringkas 1 CL untuk follow up pokok doa (Selasa & Kamis). Di-klik →
+  // Kartu ringkas 1 CL untuk follow up pokok doa (Selasa & Kamis). Di-click →
   // modal tengah berisi seluruh pokok doa + tombol WA.
   //
   // Bentuknya DUA KOLOM (lihat `prayerGrid`): satu baris per CL bikin blok Doa
@@ -636,7 +641,7 @@ export function FollowupTab({
           {/* Pengingat Motivational Word 🔥 — ditaruh persis di atas tombol
               Chat WA, karena di sinilah WhatsApp dibuka. Follow up itu urusan
               satu orang; Motivational Word urusan GRUP dan gampang terlewat
-              justru pada pagi yang sibuk mengejar follow up. Klik-nya
+              justru pada pagi yang sibuk mengejar follow up. Click-nya
               membawa ke Template Chat, yang memang sudah membuka kategori
               Motivational Words dengan pilihan hari ini tersorot. */}
           <PressableScale

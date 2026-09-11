@@ -59,9 +59,32 @@ if (isFirebaseConfigured) {
 
 // Firestore. experimentalForceLongPolling mencegah koneksi "menggantung"
 // di sebagian jaringan/perangkat React Native.
+//
+// `timeoutSeconds` menyembuhkan warning yang paling sering muncul di HP:
+//
+//   WebChannelConnection RPC 'Listen' stream … transport errored.
+//   Name: undefined Message: undefined
+//
+// Dengan long polling, klien membuka satu "hanging GET" dan MEMBIARKANNYA
+// menggantung sampai server punya sesuatu untuk dikirim — bawaannya 30 detik.
+// Jaringan seluler & NAT rumahan gemar memutus koneksi yang diam selama itu.
+// Waktu JARINGAN yang memutus (bukan server), objek galat yang sampai ke SDK
+// kosong melompong — itulah sebabnya name & message-nya `undefined`.
+//
+// 25 detik: server menutup & membuka ulang hanging GET-nya lebih dulu,
+// sebelum jaringan sempat memutusnya. Batas yang diizinkan SDK 5–30 detik.
+//
+// Warning-nya sendiri TIDAK berbahaya walau muncul: sesudah mencatatnya SDK
+// langsung memasang ulang streamnya dengan jeda bertambah, dan langganan yang
+// sedang hidup tersambung kembali sendiri — tak ada data yang hilang. Yang
+// tersisa sesudah setelan ini normal & memang tak bisa dihindari: app
+// di-background, pindah WiFi↔seluler, sinyal hilang, atau Fast Refresh.
 let db: Firestore;
 try {
-  db = initializeFirestore(app, { experimentalForceLongPolling: true });
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    experimentalLongPollingOptions: { timeoutSeconds: 25 },
+  });
 } catch {
   db = getFirestore(app);
 }

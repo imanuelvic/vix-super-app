@@ -111,7 +111,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
                 style={styles.card}
                 onPress={() => open(p.id)}>
                 {/* Angka {done}/{total} pindah ke tombol 📆 di depannya —
-                    di situlah tempat ia bisa di-klik untuk dilihat. */}
+                    di situlah tempat ia bisa di-click untuk dilihat. */}
                 <VixText heading="bold" additionalStyle={styles.cardTitle}>
                   {p.title}
                 </VixText>

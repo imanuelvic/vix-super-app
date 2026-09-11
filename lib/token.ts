@@ -281,6 +281,37 @@ export function daysLeft(
 export const TOKEN_LOW_DAYS = 3;
 
 /**
+ * Apa yang masih kurang dari catatan meteran HARI INI.
+ *
+ * Badge sub-tab Token dan kartu penjelasnya di dalam sub-tab itu sama-sama
+ * berangkat dari sini — kalau tidak, badge bisa menyala sementara kartunya
+ * bilang semuanya beres, dan badge yang begitu berhenti dipercaya.
+ */
+export function readingTodo(
+  readings: MeterReading[],
+  now: Date,
+): {
+  /** Sudah tercatat berapa kali hari ini. */
+  count: number;
+  /** Jenis catatan yang belum ada hari ini (🚪 Berangkat / 🏠 Sampai rumah). */
+  missing: (typeof READING_KINDS)[number][];
+  /** Badge ⚡ menyala? */
+  due: boolean;
+} {
+  const hariIni = readings.filter((r) => sameDay(r.at.toDate(), now));
+  return {
+    count: hariIni.length,
+    missing: READING_KINDS.filter(
+      (k) => !hariIni.some((r) => r.kind === k.key),
+    ),
+    // Dihitung dari JUMLAHNYA, bukan dari `missing`: mencatat dua kali dengan
+    // jenis yang sama tetap dua titik ukur, dan dari dua titik itulah
+    // pemakaiannya bisa dihitung. Itu yang sebenarnya ditagih.
+    due: hariIni.length < 2,
+  };
+}
+
+/**
  * Sudah waktunya mencatat meteran? true kalau catatan TERAKHIR bukan hari ini,
  * atau hari ini baru satu kali dicatat (pagi saja / malam saja).
  *
@@ -288,6 +319,5 @@ export const TOKEN_LOW_DAYS = 3;
  * — app ini memang tidak punya keduanya.
  */
 export function readingDue(readings: MeterReading[], now: Date): boolean {
-  const hariIni = readings.filter((r) => sameDay(r.at.toDate(), now));
-  return hariIni.length < 2;
+  return readingTodo(readings, now).due;
 }

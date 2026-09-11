@@ -25,12 +25,12 @@ import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
-  deletePromise,
-  newPromiseId,
-  promiseWaitDays,
-  savePromise,
-  subscribePromises,
-  type Promise as HisPromise,
+    deletePromise,
+    newPromiseId,
+    promiseWaitDays,
+    savePromise,
+    subscribePromises,
+    type Promise as HisPromise,
 } from '@/lib/promise';
 
 // Tulis Janji Tuhan 🚩 — LAYAR sendiri, bukan bottom sheet.

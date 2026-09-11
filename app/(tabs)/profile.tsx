@@ -428,7 +428,7 @@ export default function ProfileScreen() {
         {/* Sepasang catatan hidup — sengaja DI SINI, bukan di grid Home:
             isinya paling pribadi (pertobatan, relasi, gaji) jadi tidak ikut
             terpampang saat app dibuka atau ditunjukkan ke orang lain, tapi
-            tetap cuma 2 klik untuk dipantau rutin.
+            tetap cuma 2 click untuk dipantau rutin.
               📜 History  = masa lalu, biar ingat dari mana kamu datang
               📍 Timeline = masa depan, biar tahu mau ke mana */}
         <View style={styles.lifeRow}>

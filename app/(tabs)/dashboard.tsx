@@ -116,9 +116,11 @@ import {
 import {
     EMPTY_FIT_DAY,
     FIT_RECOVERY,
+    fitExercisesOf,
     fitPendingToday,
     fitQuote,
     fitSessionFor,
+    fitSessionsOf,
     fitWindowLabel,
     subscribeFitDay,
     type FitDay,
@@ -419,9 +421,9 @@ export default function DashboardScreen() {
       };
     });
 
-  // Follow Up Mingguan 🎯 — kosong sebelum jam 09.00 (lihat followupDue di
-  // lib/core.ts): follow up itu percakapan, dan percakapan tidak dimulai
-  // jam 00.05.
+  // Follow Up Mingguan 🎯 — CL giliran minggu ini yang belum di-follow up
+  // HARI INI. Berlaku sepanjang hari (lihat followupDue di lib/core.ts): sejak
+  // lewat tengah malam sampai dikerjakan, tanpa menunggu jam berapa pun.
   const followupPending = followupDue(leaders, now, weeklyFocus, todayId);
 
   // Ulang tahun CORE Leader & Main Team: hari ini + 7 hari ke depan.
@@ -609,15 +611,31 @@ export default function DashboardScreen() {
   // sampai semua gerakan dicentang — atau sampai harinya ditandai ✕ lewat
   // tombol "Lewati" di Fitness → Exercise.
   //
-  // Hari inti (beban Sen/Kam/Sab & lari Sel/Jum) → kartu sesi latihan.
-  // Rabu & Minggu → kartu jalan pagi, isinya pengingat pemulihan.
-  const fitSession = fitSessionFor(now);
-  const fitWalkDay = fitSession.kind === 'walk';
+  // TIGA keadaan sekarang, karena olahraganya kamu yang pilih:
+  //   belum memilih apa pun  → kartu ajakan memilih (+ saran programnya)
+  //   sudah memilih          → kartu sesi, judulnya paket yang kamu ambil
+  //   yang dipilih cuma jalan → kartu pemulihan
+  const fitPicked = fitSessionsOf(fitDay, now);
+  const fitBelumPilih = fitPicked.length === 0;
+  // Saran program hari ini — dipakai sebagai bocoran di kartu ajakan, bukan
+  // sebagai isi hari yang seolah sudah ditetapkan.
+  const fitSaran = fitSessionFor(now);
   // Satu sumber angka dengan badge tile Home & sub-tab Exercise: jendela jam
-  // dan tanda ✕ sudah diurus di dalamnya.
+  // dan tanda ✕ sudah diurus di dalamnya. Hari yang belum dipilih bernilai 1 —
+  // satu hal memang menunggu, yaitu memilihnya.
   const fitLeft = fitPendingToday(fitDay, now);
-  const gymDayDue = !fitWalkDay && fitLeft > 0;
-  const restDayDue = fitWalkDay && fitLeft > 0;
+  const fitWalkOnly =
+    !fitBelumPilih && fitPicked.every((s) => s.kind === 'walk');
+  const pickDue = fitBelumPilih && fitLeft > 0;
+  const gymDayDue = !fitBelumPilih && !fitWalkOnly && fitLeft > 0;
+  const restDayDue = fitWalkOnly && fitLeft > 0;
+  // Judul kartunya menyebut yang KAMU ambil. Lebih dari satu → yang pertama
+  // disebut, sisanya dihitung; judul sepanjang tiga paket tidak muat di kartu.
+  const fitJudul = fitBelumPilih
+    ? ''
+    : `${fitPicked[0].emoji} ${fitPicked[0].title}${
+        fitPicked.length > 1 ? ` +${fitPicked.length - 1} lagi` : ''
+      }`;
 
   // ===== Reminder Residence 🏠 & Car 🚗 =====
   // Dashboard HANYA menampilkan yang statusnya "Sekarang" (hari-H atau sudah
@@ -681,6 +699,7 @@ export default function DashboardScreen() {
     careerReminders.length > 0 ||
     residenceReminders.length > 0 ||
     carReminders.length > 0 ||
+    pickDue ||
     gymDayDue ||
     slotUndone.length > 0 ||
     todayUndone > 0 ||
@@ -1210,14 +1229,33 @@ export default function DashboardScreen() {
             />
           )}
 
-          {/* Sesi inti 💪 — beban atau lari, pagi maupun sore (oranye Fitness) */}
+          {/* Belum memilih 🤔 — kartu yang paling sering muncul sekarang, dan
+              yang paling berguna: tanpa ini hari kosong tidak menagih apa pun,
+              padahal hari kosong itulah yang mau dihindari. */}
+          {pickDue && (
+            <ReminderCard
+              bg={Color.FITNESS}
+              fg={Color.FITNESS_DARK}
+              title="🤔 Reminder Olahraga Hari Ini"
+              texts={[
+                `${fitWindowLabel(now)} · belum pilih olahraga apa pun hari ini`,
+                `💡 Program menyarankan ${fitSaran.emoji} ${fitSaran.title} — atau pilih sendiri`,
+              ]}
+              // Sub-tab 💪 Exercise — di situlah memilihnya.
+              onPress={() =>
+                router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
+              }
+            />
+          )}
+
+          {/* Sudah memilih 💪 — pagi maupun sore (oranye Fitness) */}
           {gymDayDue && (
             <ReminderCard
               bg={Color.FITNESS}
               fg={Color.FITNESS_DARK}
-              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
+              title={`Reminder ${fitJudul}`}
               texts={[
-                `${fitWindowLabel(now)} · bebas pagi atau sore · ${fitLeft} dari ${fitSession.exercises.length} gerakan belum beres`,
+                `${fitWindowLabel(now)} · bebas pagi atau sore · ${fitLeft} dari ${fitExercisesOf(fitDay, now).length} gerakan belum beres`,
                 fitQuote(todayId),
               ]}
               // Sub-tab 💪 Exercise — di situlah gerakannya dicentang.
@@ -1227,12 +1265,12 @@ export default function DashboardScreen() {
             />
           )}
 
-          {/* Jalan pagi 🚶 — Rabu & Minggu, pemulihan (tidak memutus streak) */}
+          {/* Yang dipilih cuma jalan 🚶 — kartunya berisi pengingat pemulihan */}
           {restDayDue && (
             <ReminderCard
               bg={Color.FITNESS}
               fg={Color.FITNESS_DARK}
-              title={`Reminder ${fitSession.emoji} ${fitSession.title}`}
+              title={`Reminder ${fitJudul}`}
               texts={FIT_RECOVERY}
               onPress={() =>
                 router.push({ pathname: '/fitness', params: { tab: 'exercise' } })
@@ -1247,7 +1285,7 @@ export default function DashboardScreen() {
               fg={Color.ACCENT_DARK}
               title="🎂 Reminder Family Birthday"
               texts={famBirthdays}
-              // Klik satu nama → buka Family & pusatkan pohon ke orang itu.
+              // Click satu nama → buka Family & pusatkan pohon ke orang itu.
               onItemPress={(id) =>
                 router.push({ pathname: '/family', params: { focus: id } })
               }
@@ -1451,7 +1489,7 @@ const styles = StyleSheet.create({
   },
   // paddingVertical + marginVertical negatif yang SAMA BESAR dengan padding
   // kartunya: tampilannya tidak bergeser sepiksel pun, tapi area yang bisa
-  // di-klik ikut mencakup padding atas-bawah kartu — persis seperti saat
+  // di-click ikut mencakup padding atas-bawah kartu — persis seperti saat
   // seluruh kartu masih satu tombol.
   streakItem: {
     flex: 1,

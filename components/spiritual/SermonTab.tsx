@@ -81,7 +81,7 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
                   mengintip di sini: keduanya berbaris-baris, dan cuplikan dua
                   baris dari tulisan sepanjang itu bukan ringkasan — cuma
                   kalimat yang terpotong di tengah. Isinya dibaca utuh di layar
-                  catatannya, sekali klik dari kartu ini. */}
+                  catatannya, sekali click dari kartu ini. */}
               <QuoteBox text={s.quote} lines={3} />
             </PressableScale>
           );

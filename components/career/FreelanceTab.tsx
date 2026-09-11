@@ -25,8 +25,8 @@ import { formatRupiah } from '@/lib/transactions';
 // Tab Freelance 🌐: proyek website & aplikasi — siapa client-nya,
 // deadline kapan, requirement apa, dan fee-nya berapa.
 //
-// Di sini HANYA daftarnya. Klik kartu → halaman rincian proyek (baca-saja),
-// klik ✏️ → langsung ke halaman isian. Dulu kartunya membuka modal isian
+// Di sini HANYA daftarnya. Click kartu → halaman rincian proyek (baca-saja),
+// click ✏️ → langsung ke halaman isian. Dulu kartunya membuka modal isian
 // panjang; isian sepanjang itu (termasuk rincian biaya belasan baris) memang
 // bukan pekerjaan modal.
 export function FreelanceTab({
@@ -112,8 +112,8 @@ export function FreelanceTab({
           // rinciannya sudah terisi.
           const nilai = p.fee > 0 ? p.fee : invoiceTotal(items);
           return (
-            // Tombol ✏️ jadi SAUDARA area klik, bukan anaknya — Pressable
-            // bersarang di iOS bikin klik tombolnya ikut membuka kartunya.
+            // Tombol ✏️ jadi SAUDARA area click, bukan anaknya — Pressable
+            // bersarang di iOS bikin click tombolnya ikut membuka kartunya.
             <View
               key={p.id}
               style={[

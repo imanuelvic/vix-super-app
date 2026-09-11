@@ -15,7 +15,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 // naik-turun, bukan kanan-bawah: isinya memang muncul & hilang di BAWAH judul
 // ini. Panah ke kanan itu bahasa "pindah ke halaman lain".
 //
-// Tombol `right` (mis. "+ Tambah") berdiri DI LUAR area yang bisa diklik untuk
+// Tombol `right` (mis. "+ Tambah") berdiri DI LUAR area yang bisa di-click untuk
 // membuka-tutup: menambah anggota lalu bagiannya ikut menutup sendiri adalah
 // persis kejutan yang tidak diinginkan.
 //
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
   },
-  // Judul + panah memakan sisa lebar, jadi seluruh baris judulnya bisa diklik
+  // Judul + panah memakan sisa lebar, jadi seluruh baris judulnya bisa di-click
   // — bukan cuma panah kecil di ujungnya.
   main: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
   // Kotak judulnya MENGALAH (flexShrink), BUKAN flex: 1 — dengan flex: 1

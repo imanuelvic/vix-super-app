@@ -24,24 +24,24 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFutsalGang } from '@/contexts/futsalGang';
 import { useFormSave } from '@/hooks/useFormSave';
-import { usePagination } from '@/hooks/usePagination';
 import { useFutsalData } from '@/hooks/useFutsalData';
+import { usePagination } from '@/hooks/usePagination';
 import {
-  dayId as toDayId,
-  dayIdToDate,
-  formatShortDayDate,
-  groupDigits,
-  parseAmount,
+    dayIdToDate,
+    formatShortDayDate,
+    groupDigits,
+    parseAmount,
+    dayId as toDayId,
 } from '@/lib/format';
 import {
-  cashBalance,
-  gangCash,
-  gangMeta,
-  newFutsalId,
-  saveFutsal,
-  FUTSAL_GANGS,
-  type FutsalCashDirection,
-  type FutsalCashEntry,
+    cashBalance,
+    FUTSAL_GANGS,
+    gangCash,
+    gangMeta,
+    newFutsalId,
+    saveFutsal,
+    type FutsalCashDirection,
+    type FutsalCashEntry,
 } from '@/lib/futsal';
 import { formatRupiah } from '@/lib/transactions';
 

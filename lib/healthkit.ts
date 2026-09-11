@@ -23,6 +23,10 @@ function getModule(): HealthKitModule | null {
     return cached;
   }
   try {
+    // WAJIB require(): modul native ini tidak ada di Expo Go & build lama.
+    // `import` statis dievaluasi saat berkas ini dimuat → app gagal start,
+    // bukan cuma fitur HealthKit-nya yang mati.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     cached = require('@kingstinct/react-native-healthkit') as HealthKitModule;
   } catch {
     cached = null;

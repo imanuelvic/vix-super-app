@@ -47,8 +47,6 @@ export type Skill = {
   book?: string;
   /** Diisi kalau bukunya SUDAH ada di fitur Book → bisa dibuka langsung. */
   bookKey?: string;
-  /** Catatan tambahan dari kolom Extra. */
-  extra?: string;
 };
 
 // 22 skill, urut sesuai daftarmu. URUTAN JANGAN DIACAK: topik minggu ini
@@ -105,7 +103,6 @@ export const SKILLS: Skill[] = [
     title: 'Climate Change & Renewable Energy',
     what: 'Cara menghemat energi, solusi masa depan (solar, angin, dll.).',
     book: 'This Changes Everything — Naomi Klein (2014)',
-    extra: 'Plastik & gas rumah kaca',
   },
   {
     key: 'biotech',
@@ -127,7 +124,6 @@ export const SKILLS: Skill[] = [
     area: 'tech',
     title: 'Computer & Internet Basics',
     what: 'Cara kerja komputer, keamanan siber, AI, teknologi blockchain.',
-    extra: 'Password manager',
   },
   {
     key: 'ai',
@@ -581,12 +577,12 @@ export function weekComplete(steps: Record<string, boolean>): boolean {
 
 // ===================== Langkah yang centangnya dari tulisan =====================
 // Aturan yang sama persis dengan kebiasaan "Daily Reflection Journal" di tab
-// Habits (lihat habitNoteDone di lib/habits.ts): buktinya BUKAN klik,
+// Habits (lihat habitNoteDone di lib/habits.ts): buktinya BUKAN click,
 // melainkan tulisannya. Mencentang "Rangkum" tanpa menulis apa pun cuma
 // membuat angka mingguannya bohong — dan justru langkah inilah yang membuat
 // ilmunya nempel, jadi ia yang paling merugikan kalau dicentang kosong.
 
-/** Langkah yang centangnya ditentukan isi rangkumannya, bukan klik. */
+/** Langkah yang centangnya ditentukan isi rangkumannya, bukan click. */
 export const NOTE_DRIVEN_STEP: LearningStep = 'summarize';
 
 /**

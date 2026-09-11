@@ -8,6 +8,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useAccordion } from '@/hooks/useAccordion';
 import { useHealthToday } from '@/hooks/useHealthToday';
 import { dayIdToDate, formatShortDayDate, groupDigits } from '@/lib/format';
 import {
@@ -42,7 +43,8 @@ export default function StepsScreen() {
   // data tersimpan.
   const { status: hkStatus, today: hk } = useHealthToday();
   const [stepDays, setStepDays] = useState<StepDaysMap>({});
-  const [expandedTier, setExpandedTier] = useState<number | null>(null);
+  // Satu tier terbuka sekaligus — aturannya di hooks/useAccordion.ts.
+  const { isOpen: tierTerbuka, toggle: toggleTier } = useAccordion<number>();
 
   // Dengarkan rekor langkah tersimpan (dokumen kecil, 1 listener).
   useEffect(() => {
@@ -116,14 +118,12 @@ export default function StepsScreen() {
           </VixText>
           {[...ach.tiers].reverse().map((t) => {
             const meta = STEP_TIER_META[t.tier];
-            const open = expandedTier === t.tier;
+            const open = tierTerbuka(t.tier);
             return (
               <View key={t.tier}>
                 <PressableScale
                   style={styles.tierRow}
-                  onPress={() =>
-                    setExpandedTier((cur) => (cur === t.tier ? null : t.tier))
-                  }>
+                  onPress={() => toggleTier(t.tier)}>
                   <View style={styles.tierLeft}>
                     <VixText heading="bold" additionalStyle={styles.tierLabel}>
                       {meta ? `${meta.emoji} ${meta.label}` : String(t.tier)}

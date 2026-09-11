@@ -31,7 +31,7 @@ import { formatRupiah } from '@/lib/transactions';
 // Dulu menekan kartu proyek langsung membuka modal isian; sekarang yang muncul
 // halaman ini. Bedanya bukan cuma rasa: yang paling sering kamu lakukan adalah
 // MELIHAT (deadline kapan, client siapa, tagihannya berapa) — bukan mengetik.
-// Mengubah datanya sekali klik lagi, lewat tombol ✏️ di kanan atas.
+// Mengubah datanya sekali click lagi, lewat tombol ✏️ di kanan atas.
 export default function ProjectScreen() {
   const router = useRouter();
   const { user } = useAuth();

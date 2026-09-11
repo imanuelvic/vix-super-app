@@ -87,7 +87,7 @@ export function DiscussionTab({
             ⚠️ Tombolnya membuka ChatGPT, BUKAN langsung mode Voice-nya:
             OpenAI belum menyediakan tautan yang bisa menembus ke sana (lihat
             catatan di openChatGpt, lib/linking.ts). Sesampainya di sana,
-            lambang gelombang suara di pojok kanan bawah tinggal diklik. */}
+            lambang gelombang suara di pojok kanan bawah tinggal di-click. */}
         <SectionRow
           title="Diskusi Dalam Minggu Ini"
           right={<MiniButton label="🎙️ ChatGPT" onPress={openChatGpt} />}

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -38,6 +39,7 @@ import {
   purchasesOfMonth,
   READING_KINDS,
   readingKindMeta,
+  readingTodo,
   saveMeterReadings,
   saveTokenPurchases,
   sortedReadings,
@@ -107,6 +109,10 @@ export function TokenTab({
   // bulan datanya masih terlalu sedikit untuk menebak apa pun.
   const hariLagi = daysLeft(readings, semua.perDay);
   const hampirHabis = hariLagi !== null && hariLagi <= TOKEN_LOW_DAYS;
+
+  // Penyebab badge ⚡ di sub-tab ini — dihitung di lib/token.ts, sumber yang
+  // SAMA dengan badge-nya (lihat app/residence.tsx).
+  const tagihan = readingTodo(readings, now);
 
   // Riwayat selang waktu, terbaru di atas.
   const riwayat = [...spans].reverse();
@@ -278,7 +284,7 @@ export function TokenTab({
         {/* Sisa token & perkiraan habisnya — inti layar ini. */}
         <View style={[styles.hero, hampirHabis && styles.heroLow]}>
           <VixText heading="label" additionalStyle={styles.heroLabel}>
-            🔋 Sisa di meteran
+            🔋 Sisa
           </VixText>
           <VixText heading="subheader" additionalStyle={styles.heroValue}>
             {sisa ? `${formatDecimal(sisa.kwh)} kWh` : 'Belum dicatat'}
@@ -298,9 +304,35 @@ export function TokenTab({
           ) : null}
         </View>
 
+        {/* Badge ⚡ cuma bilang "ada yang perlu dikerjakan"; kartu inilah yang
+            menjawab "yang mana". Tanpa ini badge-nya menyala tiap hari tanpa
+            pernah menyebut sebabnya — dan badge yang tidak bisa dijelaskan
+            akan berhenti dipercaya, lalu diabaikan. Di-click → langsung ke
+            sheet catat meteran. */}
+        {tagihan.due && (
+          <PressableScale
+            style={[styles.dueCard, attentionBorder(true)]}
+            onPress={openReadingAdd}>
+            <AttentionMark corner />
+            <VixText heading="bold" additionalStyle={styles.dueTitle}>
+              ⚡ Meteran hari ini{' '}
+              {tagihan.count === 0
+                ? 'belum dicatat'
+                : `baru tercatat ${tagihan.count}×`}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.dueText}>
+              {tagihan.missing.length > 0
+                ? `Tinggal ${tagihan.missing
+                    .map((k) => `${k.icon} ${k.label}`)
+                    .join(' & ')} — badge ⚡ padam begitu hari ini tercatat 2×.`
+                : 'Catat sekali lagi — badge ⚡ padam begitu hari ini tercatat 2×.'}
+            </VixText>
+          </PressableScale>
+        )}
+
         <View style={styles.buttonRow}>
           <PrimaryButton
-            label="Catat Meteran"
+            label="Catat kWh"
             icon="plus"
             onPress={openReadingAdd}
             additionalStyle={styles.buttonFlex}
@@ -448,11 +480,7 @@ export function TokenTab({
       <SheetModal
         visible={!!editReading}
         title={editReading === 'new' ? 'Catat Meteran' : 'Ubah Catatan'}
-        subtitle="Angka sisa kWh yang terbaca di meteran"
         onClose={() => setEditReading(null)}>
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Sedang apa?
-        </VixText>
         <View style={styles.chipWrap}>
           {READING_KINDS.map((k) => (
             <Chip
@@ -463,17 +491,13 @@ export function TokenTab({
             />
           ))}
         </View>
-        <VixText heading="label" additionalStyle={styles.hintTight}>
-          {readingKindMeta(rKind).hint}. Ini yang menentukan selang waktunya
-          dihitung sebagai pemakaian saat di rumah atau saat ditinggal.
-        </VixText>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🔋 Sisa kWh di meteran
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. 118,6"
+          placeholder="118,6"
           keyboardType="decimal-pad"
           value={rKwh}
           onChangeText={setRKwh}
@@ -532,25 +556,24 @@ export function TokenTab({
       <SheetModal
         visible={!!editBuy}
         title={editBuy === 'new' ? 'Beli Token' : 'Ubah Pembelian'}
-        subtitle="Dari sini app tahu harga per kWh-mu"
         onClose={() => setEditBuy(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          💰 Yang dibayar (termasuk admin)
+          💰 Beli
         </VixText>
         <MoneyInput
           style={styles.formGap}
-          placeholder="mis. 200.300"
+          placeholder="1.001.900"
           value={bCost}
           onChangeText={(t) => setBCost(groupDigits(t))}
           editable={!busy}
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          ⚡ kWh yang masuk
+          ⚡ kWh
         </VixText>
         <FormInput
           style={styles.formGap}
-          placeholder="mis. 114,96"
+          placeholder="114,96"
           keyboardType="decimal-pad"
           value={bKwh}
           onChangeText={setBKwh}
@@ -565,7 +588,7 @@ export function TokenTab({
         ) : null}
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Beli lewat
+          Platform
         </VixText>
         <View style={styles.chipWrap}>
           {TOKEN_PLATFORMS.map((p) => (
@@ -634,6 +657,11 @@ const styles = StyleSheet.create({
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   heroValue: { color: Color.TEXT_REVERSE },
   heroDays: { color: Color.TEXT_REVERSE, marginTop: 6 },
+  // Kartu penjelas badge ⚡ — bentuk kartu daftar biasa, yang membedakan cuma
+  // garis merahnya (attentionBorder) & titik berdenyut di pojok.
+  dueCard: { ...CARD, gap: 2, marginBottom: 10 },
+  dueTitle: { color: Color.TEXT_TITLE },
+  dueText: { color: Color.TEXT_LABEL },
   buttonRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
   buttonFlex: { flex: 1 },
   sectionTitle: { ...SECTION_SPACE },

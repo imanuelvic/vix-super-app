@@ -24,6 +24,9 @@ function getModule(): ExtractorModule | null {
     return cached;
   }
   try {
+    // WAJIB require() — alasan yang sama dengan lib/healthkit.ts: modulnya
+    // tidak ada di Expo Go, dan `import` statis membuat app gagal start.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     cached = require('expo-text-extractor') as ExtractorModule;
   } catch {
     cached = null;

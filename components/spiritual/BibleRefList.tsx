@@ -2,8 +2,10 @@ import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { BibleRefField } from '@/components/common/BibleRefField';
+import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { BIBLE_VERSION_DEFAULT } from '@/lib/spiritual';
 
 // Daftar isian "Bacaan 1, Bacaan 2, …" + tombol tambah kitab.
 //
@@ -14,23 +16,39 @@ import { VixText } from '@/components/common/VixText';
 // dengan layar Baca Alkitab". Menyamakannya dengan cara menyalin berarti
 // keduanya tetap sama HANYA sampai salah satunya diubah.
 //
-// Bedanya cuma dua, dan keduanya jadi prop:
+// Bedanya cuma tiga, dan ketiganya jadi prop:
 //   • `inlinePicker` — daftar kitab mengembang di tempat, bukan sebagai dialog:
 //     dipakai saat komponen ini berada DI DALAM sheet (modal di atas modal
 //     tidak andal di iOS).
 //   • `hint` — baris kecil di bawah kartu PERTAMA, mis. saran bacaan hari ini.
+//   • `version` / `onVersionChange` — kolom Terjemahan di dalam kartu
+//     pertama. Dulu bloknya disalin di KEDUA pemakainya, sebaris polos di
+//     luar kartu; sekarang ia ikut masuk ke kartu acuannya, sekali saja.
 export function BibleRefList({
   refs,
   onChange,
   editable = true,
   inlinePicker,
   hint,
+  version,
+  onVersionChange,
 }: {
   refs: string[];
   onChange: (refs: string[]) => void;
   editable?: boolean;
   inlinePicker?: boolean;
   hint?: string | null;
+  /**
+   * Terjemahan yang dibaca ("TB", "BIS", "NIV", …) — SATU untuk seluruh
+   * bacaan hari itu, jadi kolomnya duduk di kartu PERTAMA saja. Bebas
+   * diketik: daftar terjemahan di YouVersion terlalu panjang untuk dijadikan
+   * pilihan, dan yang dipakai sehari-hari cuma segelintir. Kosong = TB.
+   *
+   * Dioper berdua dengan `onVersionChange`; tanpa keduanya kolomnya tidak
+   * muncul sama sekali.
+   */
+  version?: string;
+  onVersionChange?: (version: string) => void;
 }) {
   return (
     <>
@@ -67,6 +85,31 @@ export function BibleRefList({
             inlinePicker={inlinePicker}
             chapterOnly
           />
+
+          {/* Terjemahannya, di kartu yang sama dengan acuannya. Dipisah garis
+              tipis: masih satu kartu, tapi jelas keterangan yang berbeda.
+
+              Lebih dari satu kitab hari itu → labelnya menyebutkan bahwa
+              satu kolom ini berlaku untuk semuanya. Tanpa itu ia terbaca
+              seperti milik "Bacaan 1" saja, padahal praktiknya memang satu:
+              satu app dibuka, satu terjemahan dipilih, lalu semua pasalnya
+              dibaca di situ. */}
+          {i === 0 && onVersionChange ? (
+            <View style={styles.versionRow}>
+              <VixText heading="label" additionalStyle={styles.versionLabel}>
+                Terjemahan{refs.length > 1 ? ' (semua bacaan)' : ''}
+              </VixText>
+              <FormInput
+                placeholder={BIBLE_VERSION_DEFAULT}
+                value={version ?? ''}
+                onChangeText={onVersionChange}
+                editable={editable}
+                autoCapitalize="characters"
+                maxLength={12}
+                style={styles.versionInput}
+              />
+            </View>
+          ) : null}
         </View>
       ))}
 
@@ -100,6 +143,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   refTitle: { color: Color.SPIRITUAL_DARK },
+  versionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: Color.SPIRITUAL_DARK,
+    paddingTop: 10,
+  },
+  versionLabel: { color: Color.SPIRITUAL_DARK },
+  // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
+  versionInput: { flex: 1, maxWidth: 140 },
   // Sedikit lebih gelap dari judul kartunya: keterangan, bukan judul kedua.
   suggestHint: { color: Color.SPIRITUAL_DEEP },
   removeText: { color: Color.DANGER },

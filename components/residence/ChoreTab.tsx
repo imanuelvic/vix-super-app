@@ -73,7 +73,7 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
         sub:
           unknownCount > 0
             ? `${unknownCount} item belum pernah dicatat.`
-            : 'Klik item mana pun untuk memperbarui tanggalnya.',
+            : 'Click item mana pun untuk memperbarui tanggalnya.',
       }}
       groups={groups}
       dialogHint="Kapan terakhir dibersihkan / dikerjakan?"

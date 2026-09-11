@@ -168,8 +168,8 @@ export function MultiplicationTab() {
                   key={m.id}
                   entering={FadeInDown.delay(i * 50).duration(280)}>
                   {/* Tekan kartu → layar timeline & anggotanya. Tombol ✏️
-                      jadi SAUDARA area klik, bukan anaknya — Pressable
-                      bersarang di iOS bikin klik-nya ikut membuka layar. */}
+                      jadi SAUDARA area click, bukan anaknya — Pressable
+                      bersarang di iOS bikin click-nya ikut membuka layar. */}
                   <View style={styles.card}>
                     <View style={styles.cardRow}>
                       <PressableScale

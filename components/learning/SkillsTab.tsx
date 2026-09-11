@@ -189,11 +189,6 @@ export function SkillsTab({
             <VixText heading="paragraph" additionalStyle={styles.detailWhat}>
               {open.what}
             </VixText>
-            {open.extra ? (
-              <VixText heading="label" additionalStyle={styles.detailExtra}>
-                ➕ {open.extra}
-              </VixText>
-            ) : null}
 
             {open.book ? (
               openBook ? (
@@ -303,7 +298,6 @@ const styles = StyleSheet.create({
   rowWhat: { color: Color.TEXT_LABEL },
   rowBook: { color: Color.MAIN_DARK },
   detailWhat: { color: Color.TEXT_PARAGRAPH, marginBottom: 4 },
-  detailExtra: { color: Color.TEXT_LABEL, marginBottom: 4 },
   detailBook: {
     flexDirection: 'row',
     alignItems: 'center',

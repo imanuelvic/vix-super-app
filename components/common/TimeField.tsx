@@ -1,9 +1,11 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { Platform, StyleSheet } from 'react-native';
+import { useRef } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { usePickerReveal } from '@/components/common/PickerScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
 import { closePickers } from '@/components/common/pickerBus';
 import { VixText } from '@/components/common/VixText';
@@ -36,6 +38,10 @@ export function TimeField({
   // Sama persis dengan <DateField> — lihat hooks/usePickerSlot.
   const { open, toggle } = usePickerSlot();
 
+  // Dan sama persis soal menampakkan rodanya — lihat PickerScrollView.
+  const reveal = usePickerReveal();
+  const pickerRef = useRef<View>(null);
+
   function handlePick(event: DateTimePickerEvent, selected?: Date) {
     // Android menutup dialognya sendiri; closePickers() mematikan `open`
     // lewat subscriber usePickerSlot.
@@ -57,17 +63,19 @@ export function TimeField({
         />
       </PressableScale>
       {open && (
-        <DateTimePicker
-          value={value}
-          minimumDate={minimumDate}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          style={Platform.OS === 'ios' ? styles.picker : undefined}
-          // App ini selalu terang — paksa picker iOS ikut terang.
-          themeVariant="light"
-          textColor={Color.TEXT_TITLE}
-          onChange={handlePick}
-        />
+        <View ref={pickerRef} onLayout={() => reveal?.(pickerRef.current)}>
+          <DateTimePicker
+            value={value}
+            minimumDate={minimumDate}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            style={Platform.OS === 'ios' ? styles.picker : undefined}
+            // App ini selalu terang — paksa picker iOS ikut terang.
+            themeVariant="light"
+            textColor={Color.TEXT_TITLE}
+            onChange={handlePick}
+          />
+        </View>
       )}
     </>
   );

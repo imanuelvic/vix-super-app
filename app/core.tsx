@@ -103,8 +103,9 @@ export default function CoreScreen() {
   const [greets, setGreets] = useState<BirthdayGreets>({});
   const [error, setError] = useState<string | null>(null);
 
-  // Jam BERJALAN (di-segarkan tiap menit): badge Follow Up menyala sendiri
-  // tepat jam 09.00 tanpa perlu layarnya dibuka ulang.
+  // Jam BERJALAN (di-segarkan tiap menit): lewat tengah malam badge-nya
+  // berganti sendiri ke tagihan hari yang baru — giliran minggu ini & ulang
+  // tahun hari ini ikut dihitung ulang tanpa perlu layarnya dibuka ulang.
   const { now, todayId: dayId } = useNow();
 
   useEffect(() => {
@@ -233,8 +234,11 @@ export default function CoreScreen() {
           di Home (coreAttention di lib/core.ts), jadi angka di luar selalu
           punya tujuan di dalam:
             Visitation → acara yang panduannya perlu dikirim hari ini
-            Follow Up  → CL fokus yang belum di-follow up (mulai jam 09.00)
-                         + ulang tahun hari ini yang belum diucapkan */}
+            Follow Up  → CL fokus yang belum di-follow up HARI INI
+                         + ulang tahun hari ini yang belum diucapkan
+          Keduanya memakai syarat yang sama persis dengan tanda merah di
+          kartunya masing-masing di dalam sub-tab — tak ada lagi kartu merah
+          yang badge-nya diam. */}
       <BottomTabs
         tabs={withBadge(TABS, {
           visitation: perhatian.visitation,

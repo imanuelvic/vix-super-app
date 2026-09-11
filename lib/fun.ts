@@ -1,8 +1,8 @@
 import {
-  doc,
-  setDoc,
-  type FirestoreError,
-  type Timestamp,
+    doc,
+    setDoc,
+    type FirestoreError,
+    type Timestamp,
 } from 'firebase/firestore';
 
 import { Color } from '@/assets/style/color';

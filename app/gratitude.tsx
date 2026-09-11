@@ -48,7 +48,7 @@ export default function GratitudeScreen() {
   const [habits, setHabits] = useState<ScheduledHabit[] | null>(null);
   const [notes, setNotes] = useState<HabitNotes | null>(null);
   const [arsip, setArsip] = useState<GratitudeDay[] | null>(null);
-  // Sejauh mana riwayatnya ditarik. Naik sejendela tiap tombolnya di-klik.
+  // Sejauh mana riwayatnya ditarik. Naik sejendela tiap tombolnya di-click.
   const [jendela, setJendela] = useState(GRATITUDE_PAGE);
   const [menarik, setMenarik] = useState(false);
   const [error, setError] = useState<string | null>(null);

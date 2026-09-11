@@ -13,6 +13,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useAccordion } from '@/hooks/useAccordion';
 import {
   EMPTY_MONTHLY_PRAYERS,
   isCurrentMonthPrayers,
@@ -41,9 +42,9 @@ export default function MonthlyPrayersScreen() {
   const [data, setData] = useState<MonthlyPrayers>(EMPTY_MONTHLY_PRAYERS);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
-  // Kartu mana yang sedang dibuka — HANYA satu sekaligus (accordion): membuka
-  // satu otomatis menutup yang lain. null = tidak ada yang dibuka.
-  const [openLeaderId, setOpenLeaderId] = useState<string | null>(null);
+  // Kartu mana yang sedang dibuka — hanya satu sekaligus (aturannya di
+  // hooks/useAccordion.ts). Kuncinya id CORE Leader-nya.
+  const { isOpen: kartuTerbuka, toggle: toggleKartu } = useAccordion<string>();
   // Konfirmasi hapus 1 pokok doa.
   const [confirmDelete, setConfirmDelete] = useState<{
     leaderId: string;
@@ -169,7 +170,7 @@ export default function MonthlyPrayersScreen() {
             const hasPoints = list.length > 0;
             // Punya poin → default TERTUTUP (minimize). Kosong → selalu terbuka
             // biar gampang langsung mengisi.
-            const open = hasPoints ? openLeaderId === l.id : true;
+            const open = hasPoints ? kartuTerbuka(l.id) : true;
             const updatedId = data.updatedAt[l.id];
             const updatedLabel =
               hasPoints && updatedId
@@ -180,9 +181,7 @@ export default function MonthlyPrayersScreen() {
                 <PressableScale
                   style={styles.cardHeader}
                   disabled={!hasPoints}
-                  onPress={() =>
-                    setOpenLeaderId((cur) => (cur === l.id ? null : l.id))
-                  }>
+                  onPress={() => toggleKartu(l.id)}>
                   <View style={styles.avatar}>
                     <VixText heading="title">{l.heart}</VixText>
                   </View>

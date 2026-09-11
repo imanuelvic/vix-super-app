@@ -120,9 +120,13 @@ export default function TasksScreen() {
     tabParam === 'priority' ? 'priority' : 'daily',
   );
 
-  // Param kategori berubah (mis. klik task lain di Dashboard) → pindah kategori.
+  // Param kategori berubah (mis. click task lain di Dashboard) → pindah kategori.
   useEffect(() => {
     if (validCategory) {
+      // Sama seperti Family: sinkron sekali saat param kategorinya datang.
+      // Diturunkan saat render = kategori dari Dashboard tidak bisa diganti
+      // lagi dari dalam layarnya sendiri.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCategory(validCategory);
       setMainTab('daily');
     }
@@ -708,7 +712,7 @@ export default function TasksScreen() {
         </Animated.View>
       )}
 
-      {/* Backdrop transparan: klik di luar menutup speed-dial.
+      {/* Backdrop transparan: click di luar menutup speed-dial.
           Sengaja Pressable biasa — area penutup tidak perlu animasi tekan. */}
       {mainTab === 'daily' && fabOpen && (
         <Pressable

@@ -16,7 +16,7 @@ import { Linking } from 'react-native';
 // `chatgpt://` cuma membuka app-nya, dan permintaan untuk `chatgpt://voice`
 // masih berstatus usulan di forum mereka. Menebak alamat yang tidak ada cuma
 // menghasilkan tombol yang terasa mati, jadi yang dipakai skema yang MEMANG
-// jalan — sesampainya di sana, lambang gelombang suaranya tinggal diklik.
+// jalan — sesampainya di sana, lambang gelombang suaranya tinggal di-click.
 //
 // (Kalau mau benar-benar satu tekan ke Voice: iOS punya pintasan ChatGPT
 // untuk tombol Aksi & Pusat Kontrol — itulah layar yang kamu potret.)

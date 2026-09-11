@@ -134,7 +134,7 @@ const VConnector = () => <View style={styles.vConnector} />;
 
 // ============ Picker nama anggota (buka-tutup) — module-scope ============
 // Dipakai untuk memilih Orang tua & Pasangan. Default ringkas 1 baris berisi
-// nama terpilih (tak menumpuk walau anggota banyak); di-klik → daftar nama
+// nama terpilih (tak menumpuk walau anggota banyak); di-click → daftar nama
 // muncul untuk dicentang. Tidak pakai modal-di-atas-modal (bermasalah di iOS).
 function MemberPicker({
   label,
@@ -246,7 +246,7 @@ function childRowSizes(windowWidth: number) {
 }
 
 // Family Tree 👨‍👩‍👧‍👦 — silsilah ala The Sims: pohon 3 generasi yang
-// berpusat pada orang yang dipilih; klik siapa pun → pohon pindah ke dia.
+// berpusat pada orang yang dipilih; click siapa pun → pohon pindah ke dia.
 export default function FamilyScreen() {
   const { user } = useAuth();
   // Lebar layar SAAT INI — ikut berubah kalau jendela iPad diubah ukurannya.
@@ -301,6 +301,10 @@ export default function FamilyScreen() {
   // orang itu & naik ke atas biar pohonnya langsung kelihatan.
   useEffect(() => {
     if (typeof focus === 'string' && focus) {
+      // Sinkron SATU ARAH dari param navigasi: jalan sekali saat `focus`
+      // datang, lalu diam. Kalau diturunkan saat render, param itu menang
+      // selamanya — memilih orang lain di pohon jadi tidak berpengaruh.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedId(focus);
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     }
@@ -491,7 +495,7 @@ export default function FamilyScreen() {
               </VixText>
               <VixText heading="label" additionalStyle={styles.emptyText}>
                 Tambahkan dirimu dulu, lalu orang tua, pasangan, anak, dan
-                seterusnya. Klik siapa pun di pohon untuk berpindah seperti di
+                seterusnya. Click siapa pun di pohon untuk berpindah seperti di
                 The Sims 🎮
               </VixText>
             </View>

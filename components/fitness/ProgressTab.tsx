@@ -1,23 +1,35 @@
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SECTION_SPACE } from '@/assets/style/section';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { useAuth } from '@/contexts/auth';
 import { type LoginStreak } from '@/lib/achievements';
-import { fitTargets } from '@/lib/fitness';
+import {
+  fetchFitDays,
+  fitPace,
+  fitRunTotals,
+  type FitDay,
+} from '@/lib/fitness';
 import { formatDecimal } from '@/lib/format';
 import {
   bmiCategory,
   bmiValue,
+  weekDayIds,
   type HealthProfile,
   type WeightTarget,
 } from '@/lib/health';
 
-// Tab Progress 📈 — streak sesi, Data Tubuh (dibaca dari fitur Profile),
-// target yang dikejar, dan daftar persiapan sebelum berangkat gym.
+// Tab Progress 📈 — streak sesi, rekap lari minggu ini, dan Data Tubuh
+// (dibaca dari fitur Profile, bukan disimpan ulang di sini).
+//
+// Daftar "🎯 Target yang dikejar" DIBUANG: separuh isinya menjelaskan jadwal
+// mingguan yang sudah tidak menentukan apa-apa lagi sejak sesinya jadi
+// pilihanmu, dan separuh sisanya (protein, tidur, langkah) sudah punya
+// rumahnya sendiri di Health & Habits.
 export function ProgressTab({
   streak,
   profile,
@@ -28,6 +40,28 @@ export function ProgressTab({
   target: WeightTarget | null;
 }) {
   const router = useRouter();
+  const { user } = useAuth();
+
+  // Hari-hari minggu berjalan, sekali baca saat tab ini dibuka — 7 dokumen
+  // kecil, pola yang sama dengan deretan hari di tab Exercise. Dibaca di sini
+  // (bukan di layar induknya) karena cuma tab ini yang memerlukannya.
+  const [weekDays, setWeekDays] = useState<Record<string, FitDay>>({});
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    fetchFitDays(user.uid, weekDayIds(new Date()))
+      .then((d) => {
+        if (alive) setWeekDays(d);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+
+  const lari = fitRunTotals(weekDays);
+  const pace = fitPace(lari.km, lari.minutes);
+
   const count = streak?.count ?? 0;
   const best = streak?.best ?? 0;
   const total = streak?.total ?? 0;
@@ -66,7 +100,22 @@ export function ProgressTab({
           <VixText heading="label">Rekor streak</VixText>
         </View>
       </View>
-      
+
+      {lari.sessions > 0 && (
+        <View style={styles.runCard}>
+          <VixText heading="label" additionalStyle={styles.runLabel}>
+            🏃 Lari minggu ini
+          </VixText>
+          <VixText heading="subheader" additionalStyle={styles.runValue}>
+            {formatDecimal(lari.km)} km
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.runSub}>
+            {lari.sessions} sesi · {formatDecimal(lari.minutes)} menit
+            {pace ? ` · ${pace}` : ''}
+          </VixText>
+        </View>
+      )}
+
       {profile && (
         <PressableScale
           style={styles.bodyCard}
@@ -109,26 +158,23 @@ export function ProgressTab({
           </View>
         </PressableScale>
       )}
-
-      <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        🎯 Target yang dikejar
-      </VixText>
-      {(profile ? fitTargets(profile, target) : []).map((t) => (
-        <View key={t.label} style={styles.card}>
-          <VixText additionalStyle={styles.cardIcon}>{t.icon}</VixText>
-          <View style={styles.cardMain}>
-            <VixText heading="bold" additionalStyle={styles.cardTitle}>
-              {t.label}
-            </VixText>
-            <VixText heading="label">{t.desc}</VixText>
-          </View>
-        </View>
-      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  // Bentuknya sekeluarga dengan kartu streak di atasnya, cuma warnanya kalem:
+  // ini catatan, bukan pencapaian yang perlu dirayakan.
+  runCard: {
+    ...CARD,
+    borderLeftWidth: 3,
+    borderLeftColor: Color.FITNESS_DARK,
+    gap: 2,
+    marginTop: 10,
+  },
+  runLabel: { color: Color.TEXT_LABEL },
+  runValue: { color: Color.TEXT_TITLE },
+  runSub: { color: Color.FITNESS_DARK },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.FITNESS_DARK,
@@ -174,15 +220,4 @@ const styles = StyleSheet.create({
   bodyRow: { flexDirection: 'row', gap: 10 },
   bodyItem: { flex: 1, gap: 1 },
   bodyValue: { color: Color.TEXT_TITLE },
-  sectionTitle: { ...SECTION_SPACE },
-  card: {
-    ...CARD,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 8,
-  },
-  cardIcon: { fontSize: 24, lineHeight: 30 },
-  cardMain: { flex: 1, gap: 2 },
-  cardTitle: { color: Color.TEXT_TITLE },
 });

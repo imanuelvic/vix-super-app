@@ -150,13 +150,13 @@ export function PopulationTab({ saved }: { saved: PopulationSaved }) {
               🗓️ Catatan bulan ini belum diisi
             </VixText>
             <VixText heading="label" additionalStyle={styles.dueText}>
-              Buka worldometers, salin angkanya, lalu klik di sini.
+              Buka worldometers, salin angkanya, lalu click di sini.
             </VixText>
           </PressableScale>
         )}
 
-        {/* Sumbernya sengaja sebaris dengan tombol tambah: satu klik untuk
-            melihat angkanya, satu klik lagi untuk mencatatnya. */}
+        {/* Sumbernya sengaja sebaris dengan tombol tambah: satu click untuk
+            melihat angkanya, satu click lagi untuk mencatatnya. */}
         <SectionRow
           title={`📜 Riwayat Catatan (${points.length})`}
           right={

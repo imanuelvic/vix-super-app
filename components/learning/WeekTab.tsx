@@ -8,8 +8,8 @@ import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
+import { NoteField } from '@/components/common/NoteField';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { SelectField } from '@/components/common/SelectField';
@@ -95,7 +95,7 @@ export function WeekTab({
   const runningStreak = learningStreakAlive(streak, weekId) ? streak.count : 0;
 
   /**
-   * Setel satu langkah + efek sampingnya. DUA jalan masuk memakainya: klik
+   * Setel satu langkah + efek sampingnya. DUA jalan masuk memakainya: click
    * centang biasa, dan langkah Rangkum yang centangnya datang dari tulisannya
    * sendiri — jadi efek sampingnya (tanda skill selesai & streak) mustahil
    * ikut di satu jalan tapi terlewat di jalan lain.
@@ -196,11 +196,6 @@ export function WeekTab({
           <VixText heading="label" additionalStyle={styles.heroWhat}>
             {skill.what}
           </VixText>
-          {skill.extra ? (
-            <VixText heading="label" additionalStyle={styles.heroWhat}>
-              ➕ {skill.extra}
-            </VixText>
-          ) : null}
 
           <View style={styles.heroBar}>
             {/* Warna gelap: isian bar harus kontras di atas kartu periwinkle. */}
@@ -322,7 +317,7 @@ export function WeekTab({
                     </VixText>
                   )}
                   {/* Lingkarannya dikunci, jadi harus ada yang memberi tahu
-                      kenapa — tanpa ini klik yang tidak terjadi apa-apa cuma
+                      kenapa — tanpa ini click yang tidak terjadi apa-apa cuma
                       terasa rusak. */}
                   {dariTulisan && !checked && (
                     <VixText heading="label" additionalStyle={styles.stepLocked}>
@@ -332,11 +327,22 @@ export function WeekTab({
                 </View>
               </View>
 
-              {/* Kotak rangkuman menempel di langkah "Rangkum" */}
+              {/* Kotak rangkuman menempel di langkah "Rangkum". Yang di
+                  daftar cuma PRATINJAU — menulisnya di sheet yang lega
+                  (NoteField), sama seperti jurnal refleksi di Habits. */}
               {s.key === 'summarize' && (
-                <NoteBox
+                <NoteField
                   key={weekId}
+                  title="✍️ Rangkuman Minggu Ini"
+                  // Topiknya ikut dibawa masuk: begitu sheet terbuka, kartu
+                  // langkah di belakangnya tertutup — padahal "ini rangkuman
+                  // soal apa" justru yang paling dibutuhkan saat menulis.
+                  // Aba-abanya diambil dari LEARNING_STEPS, bukan ditulis
+                  // ulang, jadi tak mungkin beda dengan kartu di atasnya.
+                  subtitle={`${skill.title} — ${s.how}`}
+                  placeholder={'1. …\n2. …\n3. …'}
                   value={week.note}
+                  boxStyle={styles.noteBox}
                   onSave={saveNote}
                 />
               )}
@@ -369,30 +375,6 @@ export function WeekTab({
         />
       </SheetModal>
     </View>
-  );
-}
-
-// Kotak rangkuman 3 poin. Disimpan saat selesai mengetik (onBlur) — bukan tiap
-// huruf, biar hemat tulis Firestore.
-function NoteBox({
-  value,
-  onSave,
-}: {
-  value: string;
-  onSave: (text: string) => void;
-}) {
-  const [text, setText] = useState(value);
-  return (
-    <FormInput
-      style={styles.noteInput}
-      placeholder={'1. …\n2. …\n3. …'}
-      value={text}
-      onChangeText={setText}
-      onBlur={() => {
-        if (text.trim() !== value) onSave(text.trim());
-      }}
-      multiline
-    />
   );
 }
 
@@ -476,11 +458,9 @@ const styles = StyleSheet.create({
   stepTime: { color: Color.LEARNING_DARK },
   stepDue: { color: Color.LEARNING_DARK },
   stepLocked: { color: Color.TEXT_PLACEHOLDER },
-  noteInput: {
-    minHeight: 88,
-    textAlignVertical: 'top',
-    marginTop: -2,
-    marginBottom: 8,
-  },
+  // Tinggi kotak pratinjau rangkuman disamakan dengan kolom isian yang dulu
+  // ada di sini (88), jadi daftar 4 langkahnya tidak bergeser sedikit pun.
+  // Jarak atas/bawah & garis tepinya sudah dibawa NoteField.
+  noteBox: { minHeight: 88 },
   error: { marginTop: 10 },
 });

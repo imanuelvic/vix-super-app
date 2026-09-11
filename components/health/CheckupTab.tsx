@@ -167,7 +167,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             Dulu dua kartu panjang berjajar ke bawah dan memakan hampir
             seluruh layar: tombol "Catat Pemeriksaan" & riwayatnya harus
             digulung jauh dulu. Sekarang ringkas — keterangan lengkapnya
-            (nilai normal, tips, jadwal berikutnya) satu klik di halaman
+            (nilai normal, tips, jadwal berikutnya) satu click di halaman
             sendiri. Titik ⚠️ muncul kalau ada yang di luar normal atau sudah
             waktunya dicek lagi, jadi yang penting tetap terlihat dari sini. */}
         <PressableScale
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     borderColor: Color.FINANCE_EXPENSE_DARK,
   },
   navTextDonor: { color: Color.DANGER },
-  // Kotak ringkas hasil terakhir — dua angka berdampingan, satu klik ke
+  // Kotak ringkas hasil terakhir — dua angka berdampingan, satu click ke
   // halaman keterangan lengkapnya.
   summaryCard: {
     backgroundColor: Color.CONTAINER,

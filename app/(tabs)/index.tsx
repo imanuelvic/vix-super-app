@@ -133,10 +133,10 @@ import {
   type PrayerNews,
 } from '@/lib/prayerNews';
 import {
-  EMPTY_PRIORITY,
+  EMPTY_PRIORITY_DAY,
   priorityBadgeText,
   subscribePriorityDay,
-  type PriorityItem,
+  type PriorityDay,
 } from '@/lib/priority';
 import {
   populationDue,
@@ -236,7 +236,7 @@ export default function HomeScreen() {
   const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
   // Tiga prioritas hari ini 💡 — untuk angka di tombol header. Dokumennya per
   // tanggal, jadi ganti hari = daftar kosong lagi tanpa perlu direset.
-  const [priorities, setPriorities] = useState<PriorityItem[]>(EMPTY_PRIORITY);
+  const [priorities, setPriorities] = useState<PriorityDay>(EMPTY_PRIORITY_DAY);
   // Feed refleksi hari ini sudah dibuat? Selama BELUM, tombol "Generate Feed"
   // bertahan di kartu refleksi — di luar jam baca-ulangnya sekalipun.
   const [feedGenerated, setFeedGenerated] = useState(false);
@@ -248,7 +248,7 @@ export default function HomeScreen() {
   );
   // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
   const [intercessionOpen, setIntercessionOpen] = useState(false);
-  // Kalimat penyegar yang barusan di-klik "sudah dibaca" (null = belum ada).
+  // Kalimat penyegar yang barusan di-click "sudah dibaca" (null = belum ada).
   const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
   // Rhema & Aplikasi yang kamu pasang sendiri dari Revive 📌 — salah satunya
   // menggantikan satu giliran penyegar hari ini (lihat nudgeSchedule).
@@ -365,7 +365,7 @@ export default function HomeScreen() {
   // Pagi sudah jadi langkah wajib di Morning Gateway; kartu ini pengingatnya
   // sepanjang hari, dan mulai jam 18.00 berubah jadi ajakan mendoakan lagi.
   // Ditampilkan RINGKAS (1 baris) supaya grid fitur tetap muat sekali layar —
-  // pokok doanya baru terbuka saat kartunya di-klik.
+  // pokok doanya baru terbuka saat kartunya di-click.
   // Hari Gereja ⛪ (Sabtu) & Negara 🇮🇩 (Minggu) pokok doanya ditambah kliping
   // berita sepekan terakhir — biar yang didoakan ikut yang sedang terjadi,
   // bukan cuma daftar tetap. Hari lain tidak berubah sama sekali.
@@ -414,7 +414,9 @@ export default function HomeScreen() {
   const showDiscussion = badgesReady && discussionTopics.length > 0;
 
   // Follow Up Mingguan 🎯 — CL giliran minggu ini yang belum di-follow up
-  // hari ini. Menyala mulai jam 09.00 (percakapan tidak dimulai jam 00.05).
+  // hari ini. Menyala sejak lewat tengah malam — syarat yang PERSIS SAMA
+  // dengan tanda merah di kartu CL-nya di sub-tab Follow Up, jadi badge tile
+  // CORE tidak pernah lagi kosong sementara di dalamnya merah.
   const followupPending = followupDue(leaders, now, weeklyFocus, todayId);
   // Seluruh tagihan CORE (kiriman panduan + follow up + ulang tahun) —
   // perhitungan yang SAMA dengan badge sub-tab di dalam layar CORE.
@@ -442,11 +444,11 @@ export default function HomeScreen() {
   const sermonDue = badgesReady ? sermonShareDue(sermons, now) : null;
 
   // Penyegar acak 🕊️ — kalimatnya & jam munculnya sama-sama diundi per hari.
-  // Kalau sudah di-klik, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
+  // Kalau sudah di-click, disembunyikan sampai giliran BERIKUTNYA (kalimatnya
   // beda, jadi cukup dibandingkan teksnya — tak perlu menyimpan jam).
   // Kalau kamu sudah memasang Rhema/Aplikasi sendiri dari Revive 📌, SATU dari
   // ketiga giliran hari ini jadi milik tulisanmu — dan giliran itu ingat asal
-  // catatannya, jadi kartunya bisa di-klik balik ke Revive-nya.
+  // catatannya, jadi kartunya bisa di-click balik ke Revive-nya.
   const nudge = activeNudge(now, todayId, myReminders);
   const showNudge = nudge !== null && nudge.text !== nudgeSeen;
 
@@ -639,7 +641,7 @@ export default function HomeScreen() {
               nudgeSchedule di lib/spiritual.ts), tiap kali dengan kalimat yang
               berbeda, lalu hilang sendiri sesudah satu jam. Sengaja di ATAS
               Doa Syafaat: syafaat wajib tiap hari, yang ini kejutan kecil.
-              Di-klik = "sudah dibaca" → hilang sampai giliran berikutnya. */}
+              Di-click = "sudah dibaca" → hilang sampai giliran berikutnya. */}
           {showNudge && (
             <Animated.View
               entering={FadeInDown.duration(350)}
@@ -649,7 +651,7 @@ export default function HomeScreen() {
                 fg={Color.MAIN_DARK}
                 title={nudge.day ? '🕊️ Reminder dari Revive-mu' : '🕊️ Reminder'}
                 texts={[nudge.text]}
-                // Kalimat bawaan: klik = "sudah dibaca", kartunya pergi.
+                // Kalimat bawaan: click = "sudah dibaca", kartunya pergi.
                 // Kalimat TULISANMU sendiri: selain itu, ia juga membuka
                 // catatan Revive asalnya — di situlah kalimatnya utuh, lengkap
                 // dengan bacaan & judulnya.
@@ -687,7 +689,7 @@ export default function HomeScreen() {
           )}
 
           {/* Follow Up Mingguan 🎯 — cuma jam 09.00–09.30, dan cuma kalau
-              masih ada yang belum di-follow up hari ini. Klik → CORE ›
+              masih ada yang belum di-follow up hari ini. Click → CORE ›
               Follow Up, tempat tombol Chat WA-nya. Sepanjang sisa hari
               tagihannya tetap terlihat di badge & di Dashboard. */}
           {showFollowup && (
@@ -712,7 +714,7 @@ export default function HomeScreen() {
           )}
 
           {/* Kirim Catatan Khotbah 📤 — cuma KAMIS jam 12.00–14.00, dan cuma
-              kalau catatan Minggu kemarin memang sudah ditulis. Klik →
+              kalau catatan Minggu kemarin memang sudah ditulis. Click →
               halaman catatannya, tempat tombol "💬 Share ke WhatsApp"-nya
               berada. Catatannya sudah jadi arsip sejak Selasa, jadi yang
               dibagikan pasti versi finalnya. */}
@@ -767,7 +769,7 @@ export default function HomeScreen() {
 
           {/* Doa Syafaat 🙏 — pokok doa tetap sesuai hari dalam seminggu.
               Hari Doa Rantai CL (Selasa & Kamis) kartunya menuju CORE Follow
-              Up; hari lain di-klik untuk membuka/menutup pokok doanya. */}
+              Up; hari lain di-click untuk membuka/menutup pokok doanya. */}
           <Animated.View
             entering={FadeInDown.delay(40).duration(350)}
             style={styles.intercessionCard}>
@@ -790,7 +792,7 @@ export default function HomeScreen() {
           </Animated.View>
 
           {/* Refleksi Hari Ini 📓 — yang kamu tulis tadi pagi, dibaca ulang
-              siang (12–13), sore (17–18), & malam (21–22). Klik tulisannya →
+              siang (12–13), sore (17–18), & malam (21–22). Click tulisannya →
               tab Habits, langsung tergulung ke barisnya (?focus=rhema).
 
               Baris "🖼️ Generate Feed" TETAP ADA selama feed hari itu belum
@@ -826,7 +828,7 @@ export default function HomeScreen() {
           )}
 
           {/* Puasa 🍽️ — cuma malam (20.00–24.00) & cuma kalau hari ini belum
-              dijawab. Klik → layar puasanya dengan modal HARI INI sudah
+              dijawab. Click → layar puasanya dengan modal HARI INI sudah
               terbuka, jadi tinggal centang & tulis jawaban doanya. */}
           {fastingDue && (
             <Animated.View
@@ -853,11 +855,11 @@ export default function HomeScreen() {
               🌙 Malam 21.00–24.00. Hanya muncul di dalam jendela jamnya &
               selama sesi itu belum diisi.
 
-              Klik → tab Habits, langsung tergulung ke baris Bible Reading sesi
+              Click → tab Habits, langsung tergulung ke baris Bible Reading sesi
               jam itu (?focus=bible-<sesi>) — bukan lompat ke layar catat
               bacaan. Alasannya: baris itulah yang menagih di daftar harian,
               jadi mendarat di sana membuat centangnya kelihatan dalam
-              rangkaian hari ini, dan layar catat bacaannya tinggal sekali klik
+              rangkaian hari ini, dan layar catat bacaannya tinggal sekali click
               lagi dari barisnya. Pintu yang sama dipakai kartu Refleksi. */}
           {bibleReadingDue && bibleMeta && bibleSession && (
             <Animated.View entering={FadeInDown.delay(60).duration(350)}>

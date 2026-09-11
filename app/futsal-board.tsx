@@ -74,7 +74,7 @@ export default function FutsalBoardScreen() {
       <ScreenError message={error} />
 
       {/* Tab geng berdiri DI LUAR gulungan: ia tak ikut bergerak sama sekali,
-          jadi membandingkan dua geng cukup satu klik dari mana pun kamu
+          jadi membandingkan dua geng cukup satu click dari mana pun kamu
           berhenti membaca papannya. */}
       <GangTabs value={gang} onChange={setGang} />
 

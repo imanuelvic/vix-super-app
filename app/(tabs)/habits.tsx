@@ -52,10 +52,9 @@ import {
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
-  PRIORITY_COUNT,
-  priorityFilled,
+  priorityMirrorState,
   subscribePriorityDay,
-  type PriorityItem,
+  type PriorityDay,
 } from '@/lib/priority';
 import {
   bibleMirrorState,
@@ -90,23 +89,16 @@ function focusOf(raw: string | undefined): HabitFocus | null {
 /**
  * Keadaan yang SEHARUSNYA tampil di baris cermin ini hari ini.
  *
- * Daily Priority tidak punya "dilewati" — tiga prioritas itu memang diisi atau
- * tidak. Jadi skipped-nya selalu false; kalau barisnya pernah ditandai ✗ dulu,
- * tanda itu dilepas sekali (tombol ✗-nya sudah tidak ada di baris cermin, jadi
- * membiarkannya berarti tandanya tak akan pernah bisa dibatalkan).
+ * Keduanya menjawab dalam bentuk yang sama — { done, skipped } — jadi efek
+ * penyelarasnya di bawah tak perlu tahu baris mana yang sedang diurus.
  */
 function mirrorState(
   kind: HabitMirror,
-  priorities: PriorityItem[],
+  priorities: PriorityDay,
   bible: BibleReadingSessions,
   now: Date,
 ): { done: boolean; skipped: boolean } {
-  if (kind === 'priority') {
-    return {
-      done: priorityFilled(priorities) === PRIORITY_COUNT,
-      skipped: false,
-    };
-  }
+  if (kind === 'priority') return priorityMirrorState(priorities);
   return bibleMirrorState(bible, MIRROR_SESSION[kind], now);
 }
 
@@ -136,7 +128,7 @@ export default function HabitsScreen() {
   // Bukan untuk ditampilkan — hanya untuk menyelaraskan baris cerminnya.
   // Dokumen yang sama sudah didengarkan Home untuk badge, dan liveDoc memakai
   // listener bersama, jadi tidak menambah pembacaan Firestore.
-  const [priorities, setPriorities] = useState<PriorityItem[] | null>(null);
+  const [priorities, setPriorities] = useState<PriorityDay | null>(null);
   const [bible, setBible] = useState<BibleReadingSessions | null>(null);
   const [error, setError] = useState<string | null>(null);
 

@@ -15,6 +15,7 @@ import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
+import { NoteField } from '@/components/common/NoteField';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
@@ -34,7 +35,6 @@ import {
     countedHabits,
     dailyScore,
     defaultSlot,
-    filledNoteLines,
     HABIT_AREAS,
     HABIT_SLOTS,
     habitArea,
@@ -48,11 +48,9 @@ import {
     isFixedHabit,
     isGratitudeHabit,
     isNoteDrivenHabit,
-    joinNoteLines,
     newHabitId,
     saveHabits,
     slotMeta,
-    splitNoteLines,
     type HabitArea,
     type HabitFocus,
     type HabitLink,
@@ -121,6 +119,9 @@ export function HabitsTab({
   // Sengaja HANYA bergantung pada dayId: kalau `habits`/`day.done` ikut jadi
   // dependency, tab akan lompat sendiri tiap kali satu kebiasaan dicentang.
   useEffect(() => {
+    // Sekali per GANTI HARI, bukan tiap render — dan tidak bisa diturunkan
+    // saat render karena sesudah itu tabnya memang boleh dipindah tangan.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSlot(
       defaultSlot(countedHabits(habits, day.skipped), day.done, new Date()),
     );
@@ -166,6 +167,9 @@ export function HabitsTab({
   // bisa kebetulan berada di sesi yang sama.
   useEffect(() => {
     if (!focusId || !focusSlot) return;
+    // Sinkron dari param navigasi, sekali tiap tujuan baru datang — alasan
+    // lengkapnya di komentar tepat di atas efek ini.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSlot(focusSlot);
     setAreaFilter(null);
     bukaanJumped.current = false;
@@ -190,7 +194,7 @@ export function HabitsTab({
 
   const range = idealWeightRange(profile.heightCm);
   const grouped = habitsBySlot(habits);
-  // Saringan area hidup (klik ikonnya di atas). null = tampilkan semua.
+  // Saringan area hidup (click ikonnya di atas). null = tampilkan semua.
   // Berlaku BERSAMA tab sesi: yang tampil = area ini, di sesi yang sedang
   // dibuka. Sengaja tidak ikut kereset saat pindah sesi — supaya bisa menyusuri
   // satu area dari Pagi ke Malam tanpa memilih ulang.
@@ -310,14 +314,14 @@ export function HabitsTab({
   /**
    * Buka tempat kebiasaan ini dikerjakan: layar lain di dalam app, atau
    * aplikasi luar. Kalau aplikasinya belum terpasang, jatuh ke alamat webnya —
-   * jangan sampai klik-nya terasa mati begitu saja.
+   * jangan sampai click-nya terasa mati begitu saja.
    */
   function openHabitLink(link: HabitLink, habit?: ScheduledHabit) {
-    // `doneOnOpen` (mis. "Reading the News"): klik-nya berarti "sekarang saya
+    // `doneOnOpen` (mis. "Reading the News"): click-nya berarti "sekarang saya
     // kerjakan", jadi barisnya dicentang saat itu juga lalu layarnya dibuka.
     // Dicentang DULU supaya centangnya sudah terpasang begitu kembali dari
     // sana; kalau gagal menulis, pesannya muncul & layarnya tetap dibuka —
-    // menahan perpindahannya cuma bikin klik-nya terasa mati.
+    // menahan perpindahannya cuma bikin click-nya terasa mati.
     if (link.doneOnOpen && habit && !day.done[habit.id] && !day.skipped[habit.id]) {
       void handleToggle(habit);
     }
@@ -613,8 +617,8 @@ export function HabitsTab({
         </View>
 
         {/* Lima area hidup hari ini — kelihatan mana yang masih bolong.
-            Sekaligus SARINGAN: klik satu area → daftar di bawah hanya berisi
-            area itu; klik lagi area yang sama → saringannya lepas.
+            Sekaligus SARINGAN: click satu area → daftar di bawah hanya berisi
+            area itu; click lagi area yang sama → saringannya lepas.
 
             TIGA keadaan, bukan dua: hijau = terjaga, netral = belum selesai
             (masih bisa berubah sampai tengah malam), MERAH = ada yang ditandai
@@ -712,7 +716,7 @@ export function HabitsTab({
             const checked = !skipped && !!day.done[habit.id];
             const inti = isCoreHabit(habit);
             // Kebiasaan yang sebenarnya dikerjakan di layar/aplikasi lain →
-            // dapat keterangan kecil + klik yang langsung ke sana.
+            // dapat keterangan kecil + click yang langsung ke sana.
             const rawLink = habitLink(habit);
             // Pintasan bertanda `whenDone` (📓 Jurnal → Instagram Feed) baru
             // muncul sesudah barisnya tercentang: feed-nya dibuat DARI tulisan
@@ -749,15 +753,15 @@ export function HabitsTab({
                     skipped && styles.rowSkipped,
                   ]}>
                   {/* Getaran "berhasil" khusus saat MENCENTANG — melepas
-                      centang cukup klik biasa. Yang sudah dilewati tidak
+                      centang cukup click biasa. Yang sudah dilewati tidak
                       bisa dicentang: batalkan ✗ dulu. */}
                   {/* Baris cermin yang perkaranya SUDAH SELESAI — tercentang
                       (mis. Bible Reading-nya sudah diisi) atau ✗ karena jendela
                       jamnya habis — lingkarannya mati total, tidak lagi bisa
-                      diklik. Dulu ia masih membuka layar asalnya, dan itu
+                      di-click. Dulu ia masih membuka layar asalnya, dan itu
                       menyesatkan: yang sudah lewat waktunya memang tak bisa
                       diapa-apakan lagi dari sini. Nama kebiasaannya tetap bisa
-                      diklik kalau mau melihat catatannya. */}
+                      di-click kalau mau melihat catatannya. */}
                   <PressableScale
                     onPress={() =>
                       mirrored ? openHabitLink(link!) : handleToggle(habit)
@@ -773,7 +777,7 @@ export function HabitsTab({
                   </PressableScale>
                   {/* Nama kebiasaan tidak bisa ditekan — ubah/urutkan/hapus
                       lewat tombol ✏️. KECUALI yang punya pintasan: di situ
-                      klik membawa ke tempat kebiasaannya dikerjakan. */}
+                      click membawa ke tempat kebiasaannya dikerjakan. */}
                   <PressableScale
                     style={styles.rowMain}
                     onPress={() => link && openHabitLink(link, habit)}
@@ -823,8 +827,9 @@ export function HabitsTab({
                 {/* Kebiasaan yang minta catatan (refleksi, syukur, rhema).
                     Yang dilewati tidak perlu diisi. */}
                 {habit.note && !skipped && (
-                  <HabitNote
+                  <NoteField
                     key={`${habit.id}-${dayId}`}
+                    title="📓 Catatan Hari Ini"
                     placeholder={habit.notePrompt ?? 'Tulis singkat saja…'}
                     value={day.notes[habit.id] ?? ''}
                     // "🙏 Bersyukur 3 Hal" minta TIGA poin, bukan satu
@@ -1106,100 +1111,6 @@ export function HabitsTab({
   );
 }
 
-function HabitNote({
-  placeholder,
-  value,
-  lines = 0,
-  onSave,
-}: {
-  placeholder: string;
-  value: string;
-  lines?: number;
-  onSave: (text: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState(value);
-  const [poin, setPoin] = useState<string[]>(() =>
-    splitNoteLines(value, Math.max(lines, 1)),
-  );
-
-  const berpoin = lines > 0;
-  // Pratinjau baris: poinnya dirangkai jadi satu baris pendek supaya kartu
-  // kebiasaannya tidak memanjang tiga kali lipat.
-  const pratinjau = berpoin
-    ? filledNoteLines(value).join(' · ')
-    : value;
-
-  function simpan() {
-    const isi = berpoin ? joinNoteLines(poin) : text.trim();
-    if (isi !== value) onSave(isi);
-    setOpen(false);
-  }
-
-  return (
-    <>
-      <PressableScale
-        style={styles.noteBox}
-        onPress={() => {
-          // selalu mulai dari yang tersimpan
-          setText(value);
-          setPoin(splitNoteLines(value, Math.max(lines, 1)));
-          setOpen(true);
-        }}>
-        <VixText
-          heading="paragraph"
-          additionalStyle={value ? styles.noteFilled : styles.notePlaceholder}>
-          {pratinjau || placeholder}
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.noteHint}>
-          ✍️
-        </VixText>
-      </PressableScale>
-
-      <SheetModal
-        visible={open}
-        title="📓 Catatan Hari Ini"
-        subtitle={placeholder}
-        onClose={() => setOpen(false)}
-        footer={
-          <DualButtons
-            confirmLabel="Simpan"
-            onCancel={() => setOpen(false)}
-            onConfirm={simpan}
-          />
-        }>
-        {berpoin ? (
-          poin.map((isi, i) => (
-            <View key={i} style={styles.noteLineBox}>
-              <VixText heading="label" additionalStyle={styles.noteLineLabel}>
-                {i + 1}.
-              </VixText>
-              <FormInput
-                style={styles.noteLineInput}
-                placeholder={`Hal ke-${i + 1}`}
-                value={isi}
-                onChangeText={(t) =>
-                  setPoin((lama) => lama.map((v, j) => (j === i ? t : v)))
-                }
-                autoFocus={i === 0}
-              />
-            </View>
-          ))
-        ) : (
-          <FormInput
-            style={styles.noteSheetInput}
-            placeholder={placeholder}
-            value={text}
-            onChangeText={setText}
-            multiline
-            autoFocus
-          />
-        )}
-      </SheetModal>
-    </>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   // Bagian atas yang menempel (sapaan + ringkasan + tab sesi).
@@ -1318,33 +1229,6 @@ const styles = StyleSheet.create({
   },
   coreToggleMain: { flex: 1, gap: 1 },
   coreToggleTitle: { color: Color.TEXT_TITLE },
-  // Catatan singkat di bawah kebiasaan refleksi/syukur/rhema.
-  // Pratinjau catatan di daftar — bentuknya sama persis dengan kolom isian
-  // yang dulu ada di sini (tinggi minimum, jarak, garis tepi), jadi daftarnya
-  // tidak bergeser sama sekali; bedanya sekarang ia tombol, bukan kolom.
-  noteBox: {
-    ...CARD,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    minHeight: 64,
-    marginTop: -2,
-    marginBottom: 8,
-  },
-  noteFilled: { flex: 1, color: Color.TEXT_TITLE },
-  notePlaceholder: { flex: 1, color: Color.TEXT_PLACEHOLDER },
-  noteHint: { color: Color.TEXT_LABEL },
-  // Kolom isian DI DALAM modal — dibuat lega, karena di sinilah menulisnya.
-  noteSheetInput: { minHeight: 180, textAlignVertical: 'top' },
-  // Tiga kotak kecil bernomor — bentuk untuk catatan yang isinya poinnya.
-  noteLineBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-  },
-  noteLineLabel: { color: Color.TEXT_LABEL, width: 16 },
-  noteLineInput: { flex: 1 },
   // Pilihan tingkat & area di modal ubah kebiasaan.
   fieldLabel: { marginTop: 14, marginBottom: 6 },
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
-import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { PriorityBadge } from '@/components/common/PriorityBadge';
+import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -21,20 +23,18 @@ import { useDueJump } from '@/hooks/useDueJump';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { daysBetween, formatDate } from '@/lib/format';
-import { FilterChips } from '@/components/common/FilterChips';
-import { SelectField } from '@/components/common/SelectField';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
-  addOtherTask,
-  deleteOtherTask,
-  effectiveOtherTask,
-  otherTaskDaysUntil,
-  OTHER_REMINDER_DAYS,
-  setOtherTaskDone,
-  TASK_CATEGORIES,
-  updateOtherTask,
-  type OtherTask,
-  type TaskCategory,
+    addOtherTask,
+    deleteOtherTask,
+    effectiveOtherTask,
+    OTHER_REMINDER_DAYS,
+    otherTaskDaysUntil,
+    setOtherTaskDone,
+    TASK_CATEGORIES,
+    updateOtherTask,
+    type OtherTask,
+    type TaskCategory,
 } from '@/lib/tasks';
 
 /** Meta kategori (emoji + label) — dipakai kartu & filter. */

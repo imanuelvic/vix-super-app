@@ -209,7 +209,7 @@ export function FutsalTab({
           ditulis `{syarat && …}` telanjang, anaknya lenyap saat syaratnya
           salah dan nomor patokannya meleset ke elemen lain. */}
       {/* Tab geng berdiri DI LUAR gulungan: ia tak ikut bergerak sama sekali,
-          jadi berpindah geng selalu satu klik dari mana pun kamu berhenti
+          jadi berpindah geng selalu satu click dari mana pun kamu berhenti
           membaca. Keterangan kecil di bawah namanya dibuang — yang dicari di
           deretan ini cuma "aku sedang di geng mana". */}
       <GangTabs value={gang} onChange={onGangChange} gap={8} />
@@ -219,9 +219,9 @@ export function FutsalTab({
         contentContainerStyle={styles.content}
         stickyHeaderIndices={STICKY_HEADERS}>
         {/* Kartu utama: pertandingan berikutnya. Inilah satu-satunya hal yang
-            benar-benar ditanya semua orang di grup — dan diklik, ia membuka
+            benar-benar ditanya semua orang di grup — dan di-click, ia membuka
             rincian sesinya, sama seperti kartu di daftar bawah. Kartu besar
-            berisi jadwal yang tidak bisa diklik itu justru yang bikin orang
+            berisi jadwal yang tidak bisa di-click itu justru yang bikin orang
             menggulung ke bawah mencari kartu kecilnya. */}
         <PressableScale
           disabled={!berikut}
@@ -234,9 +234,9 @@ export function FutsalTab({
                 additionalStyle={[summaryText.label, styles.heroGang]}>
                 {meta.emoji} {meta.label} · {meta.desc}
               </VixText>
-              {/* Tanda bahwa kartu ini BISA diklik. Tanpa ini ia terbaca
+              {/* Tanda bahwa kartu ini BISA di-click. Tanpa ini ia terbaca
                   sebagai papan pengumuman, dan orang menggulung ke bawah
-                  mencari kartu kecil yang kelihatan bisa diklik. */}
+                  mencari kartu kecil yang kelihatan bisa di-click. */}
               {berikut ? (
                 <VixText heading="bold" additionalStyle={styles.heroChevron}>
                   ›
@@ -316,7 +316,7 @@ export function FutsalTab({
         {/* Pintu ke Jadwal Main PINDAH ke pojok header — tombol 📅 di antara
             💰 Kas & 🏅 Papan (app/friends.tsx). Judul bagian yang isinya cuma
             satu tombol itu judul yang tak memayungi apa pun: barisnya memakan
-            tinggi satu bagian penuh untuk menyampaikan satu klik saja, dan ia
+            tinggi satu bagian penuh untuk menyampaikan satu click saja, dan ia
             ikut menggulung hilang — padahal daftar seluruh jadwal justru
             paling dicari waktu kamu sudah jauh di bawah. */}
 

@@ -1,4 +1,4 @@
-import { formatFullDateTime } from './format';
+import { formatCompactDateTime, formatFullDateTime } from './format';
 import { escapeHtml, htmlParagraphs, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
 import {
     MIN_FOCUS,
@@ -259,13 +259,21 @@ export async function shareWheelPdf(
       : '8 area hidup, dinilai ulang tiap kuartal.',
     chips: [
       { label: 'Kuartal', value: kuartal },
+      // Bentuk RINGKAS ("Sen, 7 Sep 26 · 🕒 19.00"), bukan tanggal utuh:
+      // kotak chip-nya sempit, dan "Senin, 7 September 2026" mendorong keluar
+      // kotaknya sampai menabrak chip sebelahnya. Catatan kaki di bawah tetap
+      // memakai tanggal utuh — di sana ruangnya satu baris penuh.
       {
         label: 'Dibuat',
-        value: data.createdAt ? formatFullDateTime(data.createdAt.toDate()) : '—',
+        value: data.createdAt
+          ? formatCompactDateTime(data.createdAt.toDate())
+          : '—',
       },
       {
         label: 'Terakhir diubah',
-        value: data.updatedAt ? formatFullDateTime(data.updatedAt.toDate()) : '—',
+        value: data.updatedAt
+          ? formatCompactDateTime(data.updatedAt.toDate())
+          : '—',
       },
       { label: 'Rata-rata', value: `${avg.toFixed(1).replace('.', ',')} / 10` },
     ],

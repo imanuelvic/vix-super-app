@@ -1,7 +1,7 @@
 # Keamanan vix-super-app
 
 Repo ini **publik** di GitHub. Catatan ini isinya: apa yang sudah aman, apa
-yang masih perlu kamu klik sendiri di Console, dan kenapa.
+yang masih perlu kamu click sendiri di Console, dan kenapa.
 
 ---
 
@@ -46,7 +46,7 @@ ke `app.config.ts` yang membacanya dari variabel lingkungan.
 
 ---
 
-## Yang masih perlu kamu klik sendiri
+## Yang masih perlu kamu click sendiri
 
 Urut dari yang paling penting. Semuanya gratis dan tidak butuh build baru.
 

@@ -1,9 +1,11 @@
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { Platform, StyleSheet } from 'react-native';
+import { useRef } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { usePickerReveal } from '@/components/common/PickerScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
 import { closePickers } from '@/components/common/pickerBus';
 import { VixText } from '@/components/common/VixText';
@@ -47,6 +49,13 @@ export function DateField({
   // hooks/usePickerSlot — blok yang sama persis dulu disalin di <TimeField>.
   const { open, toggle } = usePickerSlot();
 
+  // Spinner iOS lahir INLINE di bawah kolom ini — kalau kolomnya ada di bagian
+  // bawah form, rodanya di luar layar. Begitu tergambar, ia melapor & wadah
+  // gulungnya menghampiri (lihat PickerScrollView). Di luar wadah semacam itu
+  // `reveal` null → tidak terjadi apa-apa.
+  const reveal = usePickerReveal();
+  const pickerRef = useRef<View>(null);
+
   // Roda picker harus selalu berdiri di suatu tanggal. Saat kolomnya masih
   // kosong ia mulai dari batas terjauh yang diizinkan (kalau ada) — untuk
   // tanggal lahir itu berarti hari ini, bukan tanggal acak di masa depan.
@@ -86,23 +95,25 @@ export function DateField({
         )}
       </PressableScale>
       {open && !disabled && (
-        <DateTimePicker
-          value={shown}
-          maximumDate={maximumDate}
-          minimumDate={minimumDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          // iOS: batasi lebar & tengahkan. Di layar lebar (iPad landscape)
-          // spinner memakai lebar penuh tapi rodanya menempel ke KIRI — dengan
-          // maxWidth + alignSelf center, rodanya jadi di tengah. Di HP lebar
-          // layar < 320 jadi tampilannya tetap sama seperti sebelumnya.
-          style={Platform.OS === 'ios' ? styles.picker : undefined}
-          // App ini selalu terang — paksa picker iOS ikut terang juga,
-          // kalau tidak teksnya putih (mode gelap iPhone) dan tak terbaca.
-          themeVariant="light"
-          textColor={Color.TEXT_TITLE}
-          onChange={handlePick}
-        />
+        <View ref={pickerRef} onLayout={() => reveal?.(pickerRef.current)}>
+          <DateTimePicker
+            value={shown}
+            maximumDate={maximumDate}
+            minimumDate={minimumDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            // iOS: batasi lebar & tengahkan. Di layar lebar (iPad landscape)
+            // spinner memakai lebar penuh tapi rodanya menempel ke KIRI — dengan
+            // maxWidth + alignSelf center, rodanya jadi di tengah. Di HP lebar
+            // layar < 320 jadi tampilannya tetap sama seperti sebelumnya.
+            style={Platform.OS === 'ios' ? styles.picker : undefined}
+            // App ini selalu terang — paksa picker iOS ikut terang juga,
+            // kalau tidak teksnya putih (mode gelap iPhone) dan tak terbaca.
+            themeVariant="light"
+            textColor={Color.TEXT_TITLE}
+            onChange={handlePick}
+          />
+        </View>
       )}
     </>
   );

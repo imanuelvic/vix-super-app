@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -12,6 +13,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
@@ -23,7 +25,9 @@ import {
   priorityDone,
   priorityFilled,
   savePriorityDay,
+  setPrioritySkipped,
   subscribePriorityDay,
+  type PriorityDay,
   type PriorityItem,
 } from '@/lib/priority';
 
@@ -34,11 +38,14 @@ import {
 // ada tombol reset & tidak ada tugas latar: `todayId` dari useNow berganti
 // sendiri saat hari berganti, dan dokumen hari baru memang belum ada isinya.
 export default function DailyPriorityScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const { now, todayId } = useNow();
 
   // null = belum termuat (biar kolomnya tidak berkedip dari kosong ke terisi).
-  const [items, setItems] = useState<PriorityItem[] | null>(null);
+  const [day, setDay] = useState<PriorityDay | null>(null);
+  // Sedang menulis tanda dilewati — tombolnya dimatikan selama itu.
+  const [busy, setBusy] = useState(false);
   // Tulisan yang sedang diketik. Dipisah dari `items` supaya kursornya tidak
   // melompat tiap snapshot Firestore datang balik di tengah mengetik.
   const [drafts, setDrafts] = useState<string[]>(() =>
@@ -48,7 +55,7 @@ export default function DailyPriorityScreen() {
 
   useEffect(() => {
     if (!user) return;
-    return subscribePriorityDay(user.uid, todayId, setItems, () =>
+    return subscribePriorityDay(user.uid, todayId, setDay, () =>
       setError(LOAD_ERROR),
     );
   }, [user, todayId]);
@@ -58,12 +65,13 @@ export default function DailyPriorityScreen() {
   // diketik akan ditimpa balik oleh gemanya sendiri.
   const loadedDay = useRef<string | null>(null);
   useEffect(() => {
-    if (!items || loadedDay.current === todayId) return;
+    if (!day || loadedDay.current === todayId) return;
     loadedDay.current = todayId;
-    setDrafts(items.map((i) => i.text));
-  }, [items, todayId]);
+    setDrafts(day.items.map((i) => i.text));
+  }, [day, todayId]);
 
-  const stored = items ?? EMPTY_PRIORITY;
+  const stored = day?.items ?? EMPTY_PRIORITY;
+  const skipped = day?.skipped ?? false;
   // Keadaan yang SEDANG terlihat = centang dari Firestore + tulisan terbaru.
   const list: PriorityItem[] = stored.map((it, i) => ({
     text: drafts[i] ?? it.text,
@@ -122,6 +130,32 @@ export default function DailyPriorityScreen() {
     );
   }
 
+  /**
+   * Lewati hari ini — sama artinya dengan tombol lewati di Baca Alkitab,
+   * Revive, & Fitness: "hari ini memang tidak dipakai memilih prioritas",
+   * dicatat jujur alih-alih dibiarkan menggantung setengah terisi.
+   *
+   * Akibatnya langsung terlihat di Habits: baris 💡 Top 3 Priorities jadi ✗,
+   * bukan kotak kosong yang masih menunggu. Click lagi untuk membatalkannya —
+   * ketiga barisnya tidak ikut terhapus, jadi tidak ada yang hangus.
+   */
+  async function toggleSkip() {
+    if (!user || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await setPrioritySkipped(user.uid, todayId, !skipped);
+      // Baru MENANDAI → layarnya sudah selesai tugasnya, kembali ke Home.
+      // Membatalkan → tetap di sini, karena yang berikutnya kamu lakukan
+      // hampir pasti mengisi ketiga barisnya.
+      if (!skipped) router.back();
+    } catch {
+      setError(SAVE_ERROR);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
@@ -130,7 +164,7 @@ export default function DailyPriorityScreen() {
         subtitle="Tiga hal terpenting hari ini"
       />
 
-      {items === null ? (
+      {day === null ? (
         <LoadingCenter />
       ) : (
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
@@ -189,6 +223,28 @@ export default function DailyPriorityScreen() {
               </Animated.View>
             );
           })}
+
+          {/* Sedang berstatus dilewati → beri tahu, dan tombolnya jadi
+              pembatal. Bunyinya menyebut akibat yang paling nyata: barisnya
+              di Habits sudah ditandai ✗. */}
+          {skipped && (
+            <SkipNotice
+              title="⏭️ Dilewati hari ini"
+              detail="❌ Tercatat tak tuntas di Habits"
+              additionalStyle={styles.skippedGap}
+            />
+          )}
+
+          {/* ⏭️ Lewati hari ini — satu keluarga dengan tombol lewati di Baca
+              Alkitab, Revive, & Fitness, jadi bentuk & getarannya pun sama
+              (komponen bersama components/common/SkipToday.tsx). Tanpa
+              konfirmasi: tidak ada yang hangus & bisa dibatalkan kapan saja. */}
+          <SkipButton
+            skipped={skipped}
+            label="⏭️ Lewati prioritas hari ini"
+            busy={busy}
+            onPress={toggleSkip}
+          />
         </KeyboardAwareScrollView>
       )}
     </SafeAreaView>
@@ -227,6 +283,9 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1, gap: 2 },
   rowNumber: { color: Color.TEXT_LABEL },
   input: { minHeight: 46, textAlignVertical: 'top' },
+  // Bentuk kartunya ada di components/common/SkipToday.tsx — di sini cukup
+  // jaraknya saja, karena tiap layar menaruhnya di posisi berbeda.
+  skippedGap: { marginBottom: 12 },
   inputDone: {
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',

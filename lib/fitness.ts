@@ -10,18 +10,13 @@ import { type LoginStreak as DayStreak } from './achievements';
 import { pickOfDay, weekIndex } from './core';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
-import { dayIdToDate, formatDecimal } from './format';
+import { dayIdToDate } from './format';
 import { FITNESS_HABIT_ID } from './habits';
 import {
-    bmiCategory,
-    bmiValue,
     bumpWeekGym,
     dayDocId,
-    idealWeightRange,
     setHabitDone,
     setHabitSkipped,
-    type HealthProfile,
-    type WeightTarget,
 } from './health';
 import { liveDoc } from './liveDoc';
 import { EMPTY_DAY_STREAK, nextStreak } from './streak';
@@ -74,7 +69,19 @@ export type Exercise = {
 };
 
 export type FitSession = {
-  weekday: number; // 0=Minggu … 6=Sabtu
+  /**
+   * Kunci tetap paket ini — INILAH yang tersimpan di dokumen harian sebagai
+   * pilihanmu. Karena itu ia tidak boleh diubah setelah dipakai: mengubahnya
+   * membuat sesi yang sudah tercatat kehilangan daftar gerakannya.
+   */
+  id: string;
+  /**
+   * Blok asalnya, HANYA untuk paket yang judulnya kembar (blok A & B melatih
+   * otot sama dengan gerakan berbeda). Dipakai daftar pilihan supaya keduanya
+   * bisa dibedakan: "Dada, Bahu & Trisep · variasi A".
+   */
+  variant?: FitBlock;
+  weekday: number; // 0=Minggu … 6=Sabtu — hari yang MENYARANKANNYA di program
   kind: FitKind;
   emoji: string;
   title: string;
@@ -88,6 +95,7 @@ export type FitSession = {
 // gampang ditebak supaya benar-benar dijalani.
 
 const WALK_WED: FitSession = {
+  id: 'walk-recovery',
   weekday: 3,
   kind: 'walk',
   emoji: '🚶',
@@ -101,6 +109,7 @@ const WALK_WED: FitSession = {
 };
 
 const WALK_SUN: FitSession = {
+  id: 'walk-easy',
   weekday: 0,
   kind: 'walk',
   emoji: '🚶',
@@ -124,6 +133,8 @@ const WALK_SUN: FitSession = {
 
 const BLOCK_A: FitSession[] = [
   {
+    id: 'chest-a',
+    variant: 'A',
     weekday: 1,
     kind: 'strength',
     emoji: '💥',
@@ -141,6 +152,8 @@ const BLOCK_A: FitSession[] = [
     ],
   },
   {
+    id: 'easyrun-a',
+    variant: 'A',
     weekday: 2,
     kind: 'run',
     emoji: '🏃',
@@ -157,6 +170,8 @@ const BLOCK_A: FitSession[] = [
   },
   WALK_WED,
   {
+    id: 'back-a',
+    variant: 'A',
     weekday: 4,
     kind: 'strength',
     emoji: '🔙',
@@ -174,6 +189,8 @@ const BLOCK_A: FitSession[] = [
     ],
   },
   {
+    id: 'interval-a',
+    variant: 'A',
     weekday: 5,
     kind: 'run',
     emoji: '⚡',
@@ -189,6 +206,8 @@ const BLOCK_A: FitSession[] = [
     ],
   },
   {
+    id: 'legs-a',
+    variant: 'A',
     weekday: 6,
     kind: 'strength',
     emoji: '🦵',
@@ -212,6 +231,8 @@ const BLOCK_A: FitSession[] = [
 
 const BLOCK_B: FitSession[] = [
   {
+    id: 'chest-b',
+    variant: 'B',
     weekday: 1,
     kind: 'strength',
     emoji: '💥',
@@ -229,6 +250,8 @@ const BLOCK_B: FitSession[] = [
     ],
   },
   {
+    id: 'easyrun-b',
+    variant: 'B',
     weekday: 2,
     kind: 'run',
     emoji: '🏃',
@@ -245,6 +268,8 @@ const BLOCK_B: FitSession[] = [
   },
   WALK_WED,
   {
+    id: 'back-b',
+    variant: 'B',
     weekday: 4,
     kind: 'strength',
     emoji: '🔙',
@@ -262,6 +287,8 @@ const BLOCK_B: FitSession[] = [
     ],
   },
   {
+    id: 'interval-b',
+    variant: 'B',
     weekday: 5,
     kind: 'run',
     emoji: '⚡',
@@ -277,6 +304,8 @@ const BLOCK_B: FitSession[] = [
     ],
   },
   {
+    id: 'legs-b',
+    variant: 'B',
     weekday: 6,
     kind: 'strength',
     emoji: '🦵',
@@ -315,6 +344,7 @@ const BLOCK_B: FitSession[] = [
 
 const BLOCK_C: FitSession[] = [
   {
+    id: 'bicepback-c',
     weekday: 1,
     kind: 'strength',
     emoji: '💪',
@@ -331,6 +361,7 @@ const BLOCK_C: FitSession[] = [
     ],
   },
   {
+    id: 'easyrun-c',
     weekday: 2,
     kind: 'run',
     emoji: '🏃',
@@ -346,6 +377,7 @@ const BLOCK_C: FitSession[] = [
   },
   WALK_WED,
   {
+    id: 'chestbicep-c',
     weekday: 4,
     kind: 'strength',
     emoji: '💥',
@@ -362,6 +394,7 @@ const BLOCK_C: FitSession[] = [
     ],
   },
   {
+    id: 'tempo-c',
     weekday: 5,
     kind: 'run',
     emoji: '⚡',
@@ -376,6 +409,7 @@ const BLOCK_C: FitSession[] = [
     ],
   },
   {
+    id: 'legsbicep-c',
     weekday: 6,
     kind: 'strength',
     emoji: '🦵',
@@ -392,6 +426,7 @@ const BLOCK_C: FitSession[] = [
     ],
   },
   {
+    id: 'longrun-c',
     weekday: 0,
     kind: 'run',
     emoji: '🏁',
@@ -412,6 +447,52 @@ export const FIT_PROGRAM: Record<FitBlock, FitSession[]> = {
   B: BLOCK_B,
   C: BLOCK_C,
 };
+
+// ===================== Katalog paket 📋 =====================
+//
+// SEMUA paket yang bisa kamu pilih, mendatar. Inilah yang berubah paling
+// mendasar: dulu sesi hari ini DITENTUKAN oleh hari apa sekarang, jadi hari
+// Selasa berarti lari — titik. Padahal hidupnya tidak begitu: ada hari kamu
+// lari 5K bareng teman di GBK, ada minggu yang tutupnya race, dan tak satu pun
+// dari itu muat di kotak "Selasa = lari santai".
+//
+// Sekarang programnya cuma MENYARANKAN; yang menentukan kamu.
+//
+// Dua hari jalan pagi masuk sekali saja walau dipakai ketiga blok — paketnya
+// memang satu dan sama, bukan tiga yang kebetulan mirip.
+export const FIT_MENU: FitSession[] = [
+  ...BLOCK_A.filter((s) => s.kind !== 'walk'),
+  ...BLOCK_B.filter((s) => s.kind !== 'walk'),
+  ...BLOCK_C.filter((s) => s.kind !== 'walk'),
+  WALK_WED,
+  WALK_SUN,
+];
+
+/**
+ * Paket dari idnya. `undefined` kalau idnya tak dikenal lagi — itu bisa
+ * terjadi pada hari lama yang paketnya sudah dihapus dari katalog, dan
+ * pemanggilnya harus tahan menghadapinya (hari itu tetap terbaca, cuma
+ * kehilangan daftar gerakan paket tersebut).
+ */
+export function fitMenuById(id: string): FitSession | undefined {
+  return FIT_MENU.find((s) => s.id === id);
+}
+
+/** Kelompok daftar pilihan: beban dulu, lalu lari, jalan terakhir. */
+export const FIT_MENU_GROUPS: { kind: FitKind; emoji: string; label: string }[] = [
+  { kind: 'strength', emoji: '💪', label: 'Angkat Beban' },
+  { kind: 'run', emoji: '🏃', label: 'Lari' },
+  { kind: 'walk', emoji: '🚶', label: 'Jalan' },
+];
+
+/**
+ * Nama paket sebagaimana ditampilkan. Blok A & B punya paket berjudul sama
+ * yang cuma beda gerakannya — tanpa penanda variasi, keduanya terbaca sebagai
+ * satu paket yang muncul dua kali.
+ */
+export function fitMenuLabel(s: FitSession): string {
+  return s.variant ? `${s.title} · variasi ${s.variant}` : s.title;
+}
 
 // Jam latihan BEBAS — pagi atau sore. Pengingat & badge menyala di dua jendela
 // saja supaya Dashboard tidak ditagih sepanjang jam kerja.
@@ -448,11 +529,6 @@ export function fitSessionOfWeekday(
 /** Sesi latihan untuk tanggal ini. */
 export function fitSessionFor(d: Date): FitSession {
   return fitSessionOfWeekday(d.getDay(), fitBlockOf(d));
-}
-
-/** Hari jalan pagi (Rabu & Minggu) — tidak pernah memutus streak 🔥. */
-function isFitWalkDay(d: Date): boolean {
-  return fitSessionFor(d).kind === 'walk';
 }
 
 /** Perkiraan durasi sesi, termasuk pemanasan. */
@@ -507,69 +583,6 @@ export function fitQuote(dayId: string): string {
   return pickOfDay(FIT_QUOTES, dayId, 'fitness');
 }
 
-// ===================== Target & persiapan 🎯 =====================
-
-/**
- * Target latihan — angkanya DIHITUNG dari Data Tubuh & Target Berat, bukan
- * ditulis ulang di sini. Ubah berat/lingkar perut/target di Profile → Data
- * Tubuh & tab Habits, angka di sini ikut berubah sendiri.
- */
-export function fitTargets(
-  profile: HealthProfile,
-  target: WeightTarget | null,
-): { icon: string; label: string; desc: string }[] {
-  const w = profile.weightKg;
-  // Protein untuk membangun otot: 1,6–2 g per kg berat badan.
-  const proteinMin = Math.round(w * 1.6);
-  const proteinMax = Math.round(w * 2);
-  // Lingkar perut sehat = di bawah setengah tinggi badan (rasio < 0,5).
-  const waistGoal = profile.heightCm / 2;
-  const waist = profile.waistCm;
-  const bmi = bmiValue(w, profile.heightCm);
-
-  // Berat: pakai target dari Health kalau sudah dipasang.
-  const gap = target ? w - target.targetWeightKg : 0;
-  const weeks = Math.max(1, Math.ceil(Math.abs(gap) / 0.4));
-  const weightLabel = target
-    ? `Berat ${formatDecimal(w)} → ${formatDecimal(target.targetWeightKg)} kg`
-    : `Berat sekarang ${formatDecimal(w)} kg`;
-  const weightDesc = !target
-    ? 'Belum ada target berat. Pasang dulu di tab Habits → 🎯 Target.'
-    : Math.abs(gap) < 0.1
-      ? 'Target berat sudah tercapai 🎉 Sekarang fokus jaga & tambah otot.'
-      : `Sisa ${formatDecimal(Math.abs(gap))} kg · aman ±0,4 kg/minggu ≈ ${weeks} minggu. Lebih cepat dari itu, otot ikut hilang.`;
-
-  return [
-    { icon: '🏋️', label: '3 beban + 2 lari per minggu', desc: 'Beban: Sen, Kam, Sab. Lari: Sel (santai) & Jum (interval). Rabu & Minggu jalan pagi.' },
-    { icon: '💥', label: 'Dada & lengan naik duluan', desc: 'Dada dilatih tiap Senin dengan 3 sudut, lengan kebagian Kamis & Sabtu. Ini yang paling kelihatan di cermin.' },
-    { icon: '📈', label: 'Naik beban tiap 2 minggu', desc: 'Kalau set terakhir masih terasa ringan, tambah 1–2 kg saat blok berganti.' },
-    { icon: '⚖️', label: weightLabel, desc: weightDesc },
-    {
-      icon: '📊',
-      label: `BMI ${formatDecimal(bmi)} → di bawah 23`,
-      desc: `${bmiCategory(bmi).label} (ambang Asia-Pasifik). Sehat untuk tinggi ${profile.heightCm} cm: ${formatDecimal(idealWeightRange(profile.heightCm).min)}–${formatDecimal(idealWeightRange(profile.heightCm).max)} kg.`,
-    },
-    {
-      icon: '🔥',
-      label: waist
-        ? `Sixpack: perut ${formatDecimal(waist)} → di bawah ${formatDecimal(waistGoal)} cm`
-        : `Sixpack: perut di bawah ${formatDecimal(waistGoal)} cm`,
-      desc: waist
-        ? waist < waistGoal
-          ? 'Sudah di bawah ambang — perut mulai kelihatan. Pertahankan 💪'
-          : `Sisa ${formatDecimal(waist - waistGoal)} cm. Perut dilatih tiap sesi & lari membakar lapisannya — sisanya ditentukan defisit kalori.`
-        : 'Isi lingkar perut di Profile → 🧍 Data Tubuh biar bisa dilacak.',
-    },
-    {
-      icon: '🥩',
-      label: `Protein ${proteinMin}–${proteinMax} g/hari`,
-      desc: `1,6–2 g per kg berat badanmu (${formatDecimal(w)} kg). Telur, ayam, ikan, tempe, whey.`,
-    },
-    { icon: '😴', label: 'Tidur 7–8 jam', desc: 'Otot tumbuh saat tidur, bukan saat latihan. Ini bagian dari program.' },
-    { icon: '🚶', label: '8.000+ langkah/hari', desc: 'Aktivitas di luar sesi latihan yang paling besar efeknya untuk membakar lemak.' },
-  ];
-}
-
 export const FIT_RECOVERY: string[] = [
   '😴 Tidur 7–8 jam — ini saat otot benar-benar dibangun',
   '🧘 Stretching ringan 10 menit biar tidak kaku',
@@ -612,14 +625,89 @@ export function weightOf(ex: Exercise, weights: FitWeights): number | null {
 
 export type FitDayDone = Record<string, boolean>;
 
-/**
- * Satu hari latihan: gerakan yang sudah dicentang + apakah harinya sengaja
- * DILEWATI. `skipped` disimpan di dokumen harian yang sama, jadi ia ikut
- * kereset sendiri lewat tengah malam — persis seperti tanda ⏭️ di Habits.
- */
-export type FitDay = { done: FitDayDone; skipped: boolean };
+/** Hasil satu sesi lari: jarak & waktunya. */
+export type FitRun = { km: number; minutes: number };
 
-export const EMPTY_FIT_DAY: FitDay = { done: {}, skipped: false };
+/**
+ * Satu hari latihan: paket yang KAMU PILIH, gerakan yang sudah dicentang,
+ * hasil tiap sesi lari, dan apakah harinya sengaja DILEWATI. `skipped`
+ * disimpan di dokumen harian yang sama, jadi ia ikut kereset sendiri lewat
+ * tengah malam — persis seperti tanda ⏭️ di Habits.
+ */
+export type FitDay = {
+  done: FitDayDone;
+  skipped: boolean;
+  /** Id paket pilihanmu hari itu. Kosong = belum memilih apa-apa. */
+  picks: string[];
+  /** Jarak & waktu tiap paket lari, dikunci id paketnya. */
+  runs: Record<string, FitRun>;
+};
+
+export const EMPTY_FIT_DAY: FitDay = {
+  done: {},
+  skipped: false,
+  picks: [],
+  runs: {},
+};
+
+/** Membaca satu dokumen harian — dipakai bersama oleh langganan & ambil-sekali. */
+function readFitDay(data: Record<string, unknown> | undefined): FitDay {
+  return {
+    done: (data?.done as FitDayDone) ?? {},
+    skipped: data?.skipped === true,
+    picks: (data?.picks as string[]) ?? [],
+    runs: (data?.runs as Record<string, FitRun>) ?? {},
+  };
+}
+
+/**
+ * Paket yang berlaku untuk satu hari.
+ *
+ * ⚠️ Bagian yang menjaga masa lalu: dokumen harian yang ditulis SEBELUM
+ * perombakan ini tidak punya `picks` sama sekali — isinya cuma `done`, karena
+ * dulu sesinya tidak perlu dicatat (ia bisa dihitung dari tanggalnya). Untuk
+ * hari-hari itu kita hitung ulang dengan cara lama, lewat program. Tanpa ini,
+ * seluruh riwayat centang, tanda ✓ mingguan, dan streak 🔥 yang sudah kamu
+ * kumpulkan akan terbaca kosong.
+ */
+export function fitPicksOf(day: FitDay | undefined, d: Date): string[] {
+  if (!day) return [];
+  if (day.picks.length > 0) return day.picks;
+  if (Object.keys(day.done).length > 0) return [fitSessionFor(d).id];
+  return [];
+}
+
+/** Paket-paket satu hari, sudah jadi objek sesinya. */
+export function fitSessionsOf(day: FitDay | undefined, d: Date): FitSession[] {
+  return fitPicksOf(day, d)
+    .map(fitMenuById)
+    .filter((s): s is FitSession => s !== undefined);
+}
+
+/**
+ * Seluruh gerakan satu hari — gabungan semua paket yang dipilih.
+ *
+ * Gerakan kembar dibuang (id yang sama cuma muncul sekali): memilih lari +
+ * kaki di hari yang sama tidak boleh membuat Russian Twist harus dicentang dua
+ * kali. Yang pertama menang, jadi urutan paketnya menentukan urutan bacanya.
+ */
+export function fitExercisesOf(day: FitDay | undefined, d: Date): Exercise[] {
+  const out: Exercise[] = [];
+  const sudah = new Set<string>();
+  for (const s of fitSessionsOf(day, d)) {
+    for (const ex of s.exercises) {
+      if (sudah.has(ex.id)) continue;
+      sudah.add(ex.id);
+      out.push(ex);
+    }
+  }
+  return out;
+}
+
+/** Perkiraan total durasi paket-paket yang dipilih hari itu. */
+export function fitPickedMinutes(day: FitDay | undefined, d: Date): number {
+  return fitSessionsOf(day, d).reduce((n, s) => n + s.minutes, 0);
+}
 
 export function subscribeFitDay(
   uid: string,
@@ -629,11 +717,7 @@ export function subscribeFitDay(
 ) {
   return liveDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
-    (snapshot) =>
-      onChange({
-        done: (snapshot.data()?.done as FitDayDone) ?? {},
-        skipped: snapshot.data()?.skipped === true,
-      }),
+    (snapshot) => onChange(readFitDay(snapshot.data())),
     onError,
   );
 }
@@ -655,25 +739,20 @@ export async function fetchFitDays(
   );
   const out: Record<string, FitDay> = {};
   snaps.forEach((snap, i) => {
-    out[dayIds[i]] = {
-      done: (snap.data()?.done as FitDayDone) ?? {},
-      skipped: snap.data()?.skipped === true,
-    };
+    out[dayIds[i]] = readFitDay(snap.data());
   });
   return out;
 }
 
 /**
- * Sesi satu hari SUDAH beres? Yaitu semua gerakannya tercentang & harinya tidak
- * dilewati ✕. Dipakai tanda ✅ di deretan hari.
+ * Sesi satu hari SUDAH beres? Yaitu ada paket yang dipilih, semua gerakannya
+ * tercentang, dan harinya tidak dilewati ✕. Dipakai tanda ✅ di deretan hari.
+ *
+ * Hari tanpa pilihan sama sekali bukan "beres" — ia hari yang tidak dipakai.
  */
-export function fitDayComplete(
-  day: FitDay | undefined,
-  weekday: number,
-  block: FitBlock,
-): boolean {
+export function fitDayComplete(day: FitDay | undefined, d: Date): boolean {
   if (!day || day.skipped) return false;
-  const list = fitSessionOfWeekday(weekday, block).exercises;
+  const list = fitExercisesOf(day, d);
   return list.length > 0 && list.every((e) => day.done[e.id]);
 }
 
@@ -690,7 +769,12 @@ export function fitDayComplete(
 export function fitPendingToday(day: FitDay, now: Date): number {
   if (!fitReminderWindow(now)) return 0;
   if (day.skipped) return 0;
-  return fitSessionFor(now).exercises.filter((e) => !day.done[e.id]).length;
+  const list = fitExercisesOf(day, now);
+  // Belum memilih apa pun → tepat SATU hal yang menunggu: memilihnya. Tanpa
+  // baris ini badge-nya 0 sepanjang hari yang kosong, dan justru hari kosong
+  // itulah yang paling perlu ditagih.
+  if (list.length === 0) return 1;
+  return list.filter((e) => !day.done[e.id]).length;
 }
 
 /**
@@ -701,6 +785,37 @@ export function setFitDaySkipped(uid: string, dayId: string, skipped: boolean) {
   return setDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
     { skipped, date: Timestamp.fromDate(new Date()) },
+    { merge: true },
+  );
+}
+
+/**
+ * Simpan paket pilihan hari ini. Seluruh daftarnya ditulis ulang (bukan
+ * ditambah satu-satu) — array di Firestore memang diganti utuh saat merge,
+ * dan "apa yang kupilih hari ini" memang satu daftar, bukan tumpukan tambalan.
+ */
+export function setFitPicks(uid: string, dayId: string, picks: string[]) {
+  return setDoc(
+    doc(db, 'users', uid, 'fitnessDays', dayId),
+    { picks, date: Timestamp.fromDate(new Date()) },
+    { merge: true },
+  );
+}
+
+/**
+ * Simpan jarak & waktu satu sesi lari. Dikunci id PAKETNYA, bukan id
+ * gerakannya: satu paket lari = satu kali lari, walau di dalamnya ada
+ * pemanasan & pendinginan yang juga bertanda cardio.
+ */
+export function setFitRun(
+  uid: string,
+  dayId: string,
+  pickId: string,
+  run: FitRun,
+) {
+  return setDoc(
+    doc(db, 'users', uid, 'fitnessDays', dayId),
+    { runs: { [pickId]: run }, date: Timestamp.fromDate(new Date()) },
     { merge: true },
   );
 }
@@ -723,7 +838,7 @@ export function setFitExerciseDone(
 // ikut sendiri, jadi tidak ada lagi centang dobel.
 //
 // Keduanya sengaja dipisah jadi dua fungsi (bukan satu yang menulis dua-duanya
-// sekaligus) supaya tiap klik cuma memicu SATU tulis Firestore. Klik
+// sekaligus) supaya tiap click cuma memicu SATU tulis Firestore. Click
 // gerakan terjadi berkali-kali tiap sesi; tanda lewati jarang.
 //
 // Sengaja tidak melempar error ke pemanggil: gagal menyinkronkan baris cermin
@@ -742,11 +857,29 @@ export function fitMirrorState(
   day: FitDay,
   now: Date,
 ): { done: boolean; skipped: boolean } {
-  const list = fitSessionFor(now).exercises;
-  return {
-    done: !day.skipped && list.length > 0 && list.every((e) => day.done[e.id]),
-    skipped: day.skipped,
-  };
+  return { done: fitDayComplete(day, now), skipped: day.skipped };
+}
+
+/**
+ * Simpan daftar pilihan hari ini SEKALIGUS menyelaraskan baris cermin di
+ * Habits. Mengganti pilihan mengubah daftar gerakannya — jadi hari yang tadinya
+ * tuntas bisa jadi belum tuntas lagi begitu kategori baru ditambahkan, dan
+ * baris di Habits harus ikut bergerak. Dipakai tab Exercise & tab Program.
+ */
+export async function applyFitPicks(
+  uid: string,
+  dayId: string,
+  day: FitDay,
+  d: Date,
+  picks: string[],
+) {
+  await setFitPicks(uid, dayId, picks);
+  const gerakan = fitExercisesOf({ ...day, picks }, d);
+  await syncFitnessHabit(
+    uid,
+    dayId,
+    gerakan.length > 0 && gerakan.every((e) => day.done[e.id]),
+  );
 }
 
 /** Sesi hari ini beres semua? → baris Habits ikut tercentang. */
@@ -769,10 +902,54 @@ export function syncFitnessHabitSkipped(
   );
 }
 
+/**
+ * Total jarak & waktu lari beberapa hari sekaligus — bahan rekap mingguan.
+ *
+ * Yang dijumlahkan cuma yang benar-benar kamu isi. Sesi lari yang dicentang
+ * selesai tapi angkanya dikosongkan tidak dihitung sebagai "0 km": itu bukan
+ * lari sejauh nol, itu lari yang jaraknya tidak dicatat.
+ */
+export function fitRunTotals(days: Record<string, FitDay>): {
+  km: number;
+  minutes: number;
+  sessions: number;
+} {
+  let km = 0;
+  let minutes = 0;
+  let sessions = 0;
+  for (const day of Object.values(days)) {
+    for (const run of Object.values(day.runs)) {
+      if (run.km <= 0 && run.minutes <= 0) continue;
+      km += run.km;
+      minutes += run.minutes;
+      sessions += 1;
+    }
+  }
+  return { km, minutes, sessions };
+}
+
+/** "5:24 /km" — pace dari jarak & waktu. Kosong kalau salah satunya belum ada. */
+export function fitPace(km: number, minutes: number): string {
+  if (km <= 0 || minutes <= 0) return '';
+  const perKm = minutes / km;
+  const m = Math.floor(perKm);
+  const s = Math.round((perKm - m) * 60);
+  // 59,6 detik membulat jadi 60 — itu harus jadi menit berikutnya, bukan ":60".
+  return s === 60 ? `${m + 1}:00 /km` : `${m}:${String(s).padStart(2, '0')} /km`;
+}
+
 // ===================== Streak sesi 🔥 =====================
 // users/{uid}/app/fitnessStreak — bentuknya sama dengan streak lain.
-// Streak dihitung antar HARI INTI (beban & lari): jalan pagi Rabu & Minggu
-// tidak memutus streak (Selasa → Kamis tetap nyambung).
+//
+// Dihitung HARI KE HARI: apa pun paket yang kamu pilih, kalau gerakannya
+// tuntas hari itu masuk hitungan. Hari yang lewat tanpa satu pun pilihan
+// memutusnya.
+//
+// Dulu jalan pagi dilompati supaya Selasa → Kamis tetap nyambung. Aturan itu
+// tak bisa dipertahankan sekarang: tidak ada lagi hari yang app ini tahu
+// "seharusnya" hari istirahat — kamu yang menentukan tiap harinya. Gantinya
+// ada di tanganmu: hari yang ingin ringan tinggal diisi paket 🚶 Jalan Pagi,
+// dan streaknya tetap jalan.
 
 export function subscribeFitStreak(
   uid: string,
@@ -786,14 +963,11 @@ export function subscribeFitStreak(
   );
 }
 
-/** dayId hari INTI terakhir sebelum `d` (lewati hari jalan pagi). */
-function prevWorkoutDayId(d: Date): string {
+/** dayId KEMARIN — streaknya kini nyambung hari ke hari, tanpa lompatan. */
+function prevDayId(d: Date): string {
   const p = new Date(d);
-  for (let i = 0; i < 7; i++) {
-    p.setDate(p.getDate() - 1);
-    if (!isFitWalkDay(p)) return dayDocId(p);
-  }
-  return '';
+  p.setDate(p.getDate() - 1);
+  return dayDocId(p);
 }
 
 // ---- Tutup buku lewat tengah malam ⏰ ----
@@ -857,21 +1031,22 @@ export async function settleFitDays(uid: string, now: Date): Promise<number> {
   let counted = 0;
   for (const id of ids) {
     const d = dayIdToDate(id);
-    // Jalan pagi Rabu & Minggu memang tidak pernah dihitung sebagai sesi.
-    if (isFitWalkDay(d)) continue;
-    if (!fitDayComplete(days[id], d.getDay(), fitBlockOf(d))) continue;
-    streak = nextStreak(streak, id, prevWorkoutDayId(d));
+    if (!fitDayComplete(days[id], d)) continue;
+    streak = nextStreak(streak, id, prevDayId(d));
     counted += 1;
     // Rekap mingguan Health cuma menghitung hari ANGKAT BEBAN (anjuran:
-    // strength training minimal 2 hari/minggu) — hari lari tidak ikut.
-    if (fitSessionFor(d).kind === 'strength') await bumpWeekGym(uid, d);
+    // strength training minimal 2 hari/minggu) — hari lari tidak ikut. Satu
+    // paket beban sudah cukup, walau hari itu kamu juga lari.
+    if (fitSessionsOf(days[id], d).some((s) => s.kind === 'strength')) {
+      await bumpWeekGym(uid, d);
+    }
   }
   if (counted > 0) await setDoc(ref, streak);
   return counted;
 }
 
 /**
- * Putus streak 🔥 — dipakai saat hari INTI sengaja DILEWATI.
+ * Putus streak 🔥 — dipakai saat hari ini sengaja DILEWATI.
  *
  * Yang hilang cuma streak berjalannya (`count` → 0). Rekor terbaik & total
  * sesi sengaja DIPERTAHANKAN: itu catatan sejarah yang benar-benar pernah kamu

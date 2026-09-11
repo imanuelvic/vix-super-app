@@ -194,7 +194,7 @@ export default function ReviveEditorScreen() {
       // membatalkan penghapusannya — penampilnya sudah tahan sambungan yatim.
       purgeNoteLinks(user.uid, 'revive', targetDay).catch(() => {});
       // Reminder yang lahir dari catatan ini ikut dilepas — kalau tidak, di
-      // Home masih ada kalimat yang klik-nya membuka Revive kosong.
+      // Home masih ada kalimat yang click-nya membuka Revive kosong.
       const sisa = mine.filter((m) => m.day !== targetDay);
       if (sisa.length !== mine.length) {
         saveMyReminders(user.uid, sisa).catch(() => {});

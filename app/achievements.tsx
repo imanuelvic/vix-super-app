@@ -225,7 +225,7 @@ export default function AchievementsScreen() {
           </View>
         </View>
 
-        {/* ===== Kategori pencapaian (klik → halamannya) ===== */}
+        {/* ===== Kategori pencapaian (click → halamannya) ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
           🎖️ Kategori Pencapaian
         </VixText>
@@ -234,7 +234,7 @@ export default function AchievementsScreen() {
             keluarga. Sebagai daftar memanjang, sebelas kategori memakan dua
             layar penuh sebelum sampai ke Self-Reward di bawahnya.
 
-            Diklik → HALAMAN kategorinya, bukan modal. */}
+            Di-click → HALAMAN kategorinya, bukan modal. */}
         <View style={badgeGrid.grid}>
           {ACHIEVEMENT_CATEGORIES.map((cat) => {
             const { done, total } = catInfo(cat.key);

@@ -7,55 +7,55 @@ import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import {
-  BottomTabs,
-  withBadge,
-  type BottomTab,
+    BottomTabs,
+    withBadge,
+    type BottomTab,
 } from '@/components/common/BottomTabs';
-import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
-import { EditDelete } from '@/components/common/EditDelete';
-import { ScreenError } from '@/components/common/ScreenError';
-import { SummaryCard } from '@/components/common/SummaryCard';
-import { useTabScroll } from '@/components/common/useTabScroll';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
+import { deadlineBorder, DeadlineTag } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
 import { FormInput } from '@/components/common/FormInput';
-import { MoneyInput } from '@/components/common/MoneyInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SummaryCard } from '@/components/common/SummaryCard';
+import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useFormSave } from '@/hooks/useFormSave';
 import { deadlineDue, deadlineLabel } from '@/lib/deadline';
 import {
-  addDebtPayment,
-  debtDaysUntil,
-  debtPaid,
-  debtTone,
-  debtUrgent,
-  debtUrgentCount,
-  debtRemaining,
-  deleteDebt,
-  deleteDebtPayment,
-  newDebtId,
-  newPaymentId,
-  PERIOD_META,
-  saveDebt,
-  subscribeDebts,
-  type Debt,
-  type DebtDirection,
-  type DebtPeriod,
+    addDebtPayment,
+    debtDaysUntil,
+    debtPaid,
+    debtRemaining,
+    debtTone,
+    debtUrgent,
+    debtUrgentCount,
+    deleteDebt,
+    deleteDebtPayment,
+    newDebtId,
+    newPaymentId,
+    PERIOD_META,
+    saveDebt,
+    subscribeDebts,
+    type Debt,
+    type DebtDirection,
+    type DebtPeriod,
 } from '@/lib/debts';
 import {
-  formatFullDate,
-  formatShortDayDate,
-  groupDigits,
-  parseAmount,
+    formatFullDate,
+    formatShortDayDate,
+    groupDigits,
+    parseAmount,
 } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';

@@ -113,7 +113,7 @@ function renamedHabit(h: ScheduledHabit): ScheduledHabit {
 }
 
 // ============ Kebiasaan yang centangnya dari catatan ============
-// Buktinya tulisan, bukan klik: mencentang tanpa menulis bikin angkanya
+// Buktinya tulisan, bukan click: mencentang tanpa menulis bikin angkanya
 // bohong. Jadi centangnya dikunci & ditentukan isi catatannya.
 
 /** Panjang minimal catatan supaya kebiasaan bercatatan dianggap selesai. */
@@ -135,7 +135,7 @@ export function habitNoteFilled(h: ScheduledHabit, text: string): boolean {
 }
 
 /**
- * Centangnya ditentukan catatan, bukan klik (Daily Reflection Journal).
+ * Centangnya ditentukan catatan, bukan click (Daily Reflection Journal).
  *
  * "rhema" tetap dikenali — itu nama tersimpannya di Firestore, dan beberapa
  * layar mencari baris ini lewat fungsi ini.
@@ -421,7 +421,7 @@ export const FITNESS_HABIT_ID = 'fitness-link';
 // ===================== Pintasan kebiasaan =====================
 // Sebagian kebiasaan sebenarnya DIKERJAKAN di layar lain (atau di aplikasi
 // lain). Daripada mengingat sendiri harus buka apa, baris-baris itu diberi
-// keterangan kecil + klik yang langsung membawa ke tempatnya.
+// keterangan kecil + click yang langsung membawa ke tempatnya.
 //
 // Warnanya sengaja mengikuti warna ubin fitur tujuannya di Home (atau warna
 // merek aplikasi luar), jadi tujuannya sudah kebaca sebelum teksnya dibaca.
@@ -431,7 +431,7 @@ export const FITNESS_HABIT_ID = 'fitness-link';
  *
  * Baris begini tidak bisa dicentang manual di Habits — buktinya ada di layar
  * lain, dan mencentangnya sendiri di sini cuma bikin angka hariannya bohong.
- * Lingkarannya dikunci abu-abu, dan klik-nya membuka layar tujuannya.
+ * Lingkarannya dikunci abu-abu, dan click-nya membuka layar tujuannya.
  *
  * Aturan "sudah"-nya masing-masing:
  *   fitness       → semua gerakan sesi hari ini beres (lib/fitness.ts)
@@ -486,8 +486,8 @@ export type HabitLink = {
   /** Tujuan aplikasi LUAR: skema app + alamat cadangan kalau belum terpasang. */
   external?: { scheme: string; web: string };
   /**
-   * Ada = centangnya TIDAK di-klik di Habits, melainkan ikut layar tujuan.
-   * Baris begini dikunci: lingkarannya abu-abu & klik-nya membuka tujuan.
+   * Ada = centangnya TIDAK di-click di Habits, melainkan ikut layar tujuan.
+   * Baris begini dikunci: lingkarannya abu-abu & click-nya membuka tujuan.
    */
   mirrorOf?: HabitMirror;
   /**
@@ -496,8 +496,8 @@ export type HabitLink = {
    * Bedanya dengan `mirrorOf`: di sana centangnya menunggu bukti di layar
    * tujuan (bacaan tercatat, latihan beres). Di sini tidak ada yang bisa
    * dijadikan bukti — membaca berita tak meninggalkan jejak — jadi yang
-   * dihitung adalah keputusannya: klik = "sekarang saya baca", dan app
-   * langsung membawanya ke sana. Lingkarannya tetap bisa di-klik sendiri,
+   * dihitung adalah keputusannya: click = "sekarang saya baca", dan app
+   * langsung membawanya ke sana. Lingkarannya tetap bisa di-click sendiri,
    * jadi centangnya masih bisa dibatalkan kalau ternyata batal membaca.
    */
   doneOnOpen?: boolean;
@@ -589,7 +589,7 @@ export const HABIT_LINKS: HabitLink[] = [
     external: { scheme: 'instagram://app', web: 'https://www.instagram.com/' },
   },
   // 🦉 Play Duolingo → aplikasi Duolingo. Sama seperti Instagram: pintunya
-  // aplikasi luar, jadi centangnya TETAP di-klik sendiri — membuka Duolingo
+  // aplikasi luar, jadi centangnya TETAP di-click sendiri — membuka Duolingo
   // belum tentu menyelesaikan pelajarannya, dan angka harian yang dicentang
   // sendiri lebih jujur daripada yang tercentang cuma karena app terbuka.
   //
@@ -636,7 +636,7 @@ export const HABIT_LINKS: HabitLink[] = [
     mirrorOf: 'priority',
   },
   // Baca Alkitab pagi, siang & malam — tujuannya layar yang sama dengan kartu
-  // di Home, jadi klik dari mana pun mendarat di tempat yang sama. Ketiganya
+  // di Home, jadi click dari mana pun mendarat di tempat yang sama. Ketiganya
   // ikut catatan bacaannya: tercentang sesudah "✅ Sudah baca" di sana.
   {
     match: /morning bible reading/i,

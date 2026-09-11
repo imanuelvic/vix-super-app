@@ -246,7 +246,7 @@ export default function ProjectEditScreen() {
             <View style={styles.invoiceSection}>
               <VixText heading="title">🧾 Rincian Biaya</VixText>
               <VixText heading="label" additionalStyle={styles.invoiceHint}>
-                Klik item di bawah — harganya terisi otomatis dari perkiraan,
+                Click item di bawah — harganya terisi otomatis dari perkiraan,
                 tinggal dibetulkan kalau proyeknya beda.
               </VixText>
               <View style={styles.presetWrap}>

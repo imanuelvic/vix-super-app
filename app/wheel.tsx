@@ -23,6 +23,7 @@ import { RadarChart } from '@/components/wheel/RadarChart';
 import { ReflectionBubbles } from '@/components/wheel/ReflectionBubbles';
 import { ScoreMeter } from '@/components/wheel/ScoreMeter';
 import { useAuth } from '@/contexts/auth';
+import { useAccordion } from '@/hooks/useAccordion';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatDayDate, formatDecimal } from '@/lib/format';
@@ -106,14 +107,10 @@ export default function WheelScreen() {
   );
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('overview');
-  // Dua bagian Overview yang bisa dibuka-tutup — PALING BANYAK SATU terbuka,
-  // dan bawaannya tidak ada. Sengaja SATU state, bukan dua boolean: dua
-  // boolean membuat "keduanya terbuka" jadi keadaan yang mungkin lalu harus
-  // dijaga tangan di tiap tombolnya. Aturannya sama dengan CORE Leader /
-  // Main Team di CORE.
-  const [terbuka, setTerbuka] = useState<'focus' | 'score' | null>(null);
-  const toggleSeksi = (k: 'focus' | 'score') =>
-    setTerbuka((cur) => (cur === k ? null : k));
+  // Dua bagian Overview yang bisa dibuka-tutup, bawaannya tidak ada yang
+  // terbuka. Aturannya di hooks/useAccordion.ts — sama dengan dropdown CORE
+  // Leader / Main Team.
+  const { isOpen, toggle: toggleSeksi } = useAccordion<'focus' | 'score'>();
   const [busy, setBusy] = useState(false);
 
   // ---- Wizard assessment ----
@@ -376,7 +373,7 @@ export default function WheelScreen() {
               Ditaruh DI ATAS deretan nilai, bukan di bawahnya: gunanya
               menahan tangan sebentar supaya skornya dipikirkan, bukan
               membenarkan score yang sudah terlanjur dipilih. BACA SAJA —
-              tidak ada yang bisa diklik di situ. Sama untuk assessment
+              tidak ada yang bisa di-click di situ. Sama untuk assessment
               punyaku maupun punya CORE Leader — layarnya memang satu. */}
           <ReflectionBubbles questions={WHEEL_REFLECTIONS[area.key]} />
 
@@ -615,7 +612,7 @@ export default function WheelScreen() {
                     }`
                   : undefined
               }
-              open={terbuka === 'focus'}
+              open={isOpen('focus')}
               onToggle={() => toggleSeksi('focus')}
               right={
                 <PressableScale
@@ -634,7 +631,7 @@ export default function WheelScreen() {
 
           {/* 2 */}
           <View>
-            {hasScores && terbuka === 'focus' && (
+            {hasScores && isOpen('focus') && (
               <>
               {data.focus.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.emptyFocus}>
@@ -744,7 +741,7 @@ export default function WheelScreen() {
           {hasScores ? (
             <SectionToggle
               title="📋 Score per Area"
-              open={terbuka === 'score'}
+              open={isOpen('score')}
               onToggle={() => toggleSeksi('score')}
             />
           ) : (
@@ -753,7 +750,7 @@ export default function WheelScreen() {
 
           {/* 4 */}
           <View>
-            {hasScores && terbuka === 'score' && (
+            {hasScores && isOpen('score') && (
               <>
               {WHEEL_AREAS.map((a) => {
                 const score = data.scores[a.key] ?? 0;

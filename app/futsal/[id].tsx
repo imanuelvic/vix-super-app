@@ -22,6 +22,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useAccordion } from '@/hooks/useAccordion';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useFutsalData } from '@/hooks/useFutsalData';
 import { dayIdToDate, formatDayDate, formatShortDayDate } from '@/lib/format';
@@ -95,28 +96,18 @@ export default function FutsalSessionScreen() {
   // Form catatan.
   const [catatanOpen, setCatatanOpen] = useState(false);
 
-  // Bagian mana yang sedang terbuka. SATU nilai, bukan tiga saklar terpisah:
-  // membuka satu bagian menutup yang lain dengan sendirinya, dan sebagai satu
-  // nilai keadaan itu tidak bisa berbohong — tiga boolean masih bisa terbuka
-  // bersamaan begitu ada satu setter yang lupa dipanggil.
+  // Bagian mana yang sedang terbuka — aturannya di hooks/useAccordion.ts.
   //
   // Bawaannya Squad & Setoran: dari ketiganya itu yang dibuka begitu masuk
   // (siapa ikut, siapa belum setor). Game & Score dan Catatan diisi
   // belakangan, sesudah mainnya selesai — jadi keduanya mulai tertutup.
   //
-  // `null` = ketiganya tertutup. Judul yang sedang terbuka tetap boleh diklik
-  // lagi untuk menutup; ia tidak macet terbuka sampai bagian lain dibuka.
-  //
   // Catatan nama: `catatanOpen` & `gameOpen` di atas itu SHEET-nya (form yang
   // muncul dari bawah), bukan bagian di halaman ini.
-  // Bentuknya sama persis dengan dropdown CORE Leaders: satu state, boolean
-  // yang diturunkan darinya, satu pintu untuk membuka-tutup.
-  const [terbuka, setTerbuka] = useState<Bagian | null>('squad');
-  const squadOpen = terbuka === 'squad';
-  const gamesOpen = terbuka === 'games';
-  const notesOpen = terbuka === 'notes';
-  const toggleSeksi = (k: Bagian) =>
-    setTerbuka((cur) => (cur === k ? null : k));
+  const { isOpen, toggle: toggleSeksi } = useAccordion<Bagian>('squad');
+  const squadOpen = isOpen('squad');
+  const gamesOpen = isOpen('games');
+  const notesOpen = isOpen('notes');
   const [fCatatan, setFCatatan] = useState('');
 
   const sesi = data?.sessions.find((s) => s.id === id) ?? null;

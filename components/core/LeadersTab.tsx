@@ -20,6 +20,7 @@ import { VixText } from '@/components/common/VixText';
 import { LeaderBodyDialog } from '@/components/core/LeaderBodyDialog';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useAccordion } from '@/hooks/useAccordion';
 import { useFormSave } from '@/hooks/useFormSave';
 import {
     archiveCoreLeader,
@@ -59,8 +60,8 @@ import { localPhone } from '@/lib/phone';
  * Yang sedang DILIHAT (bukan diubah) di modal baca-saja.
  *
  * Dulu menekan barisnya langsung membuka form edit — sekali salah pencet saat
- * cuma ingin mengintip nomor WA-nya, satu klik lagi sudah bisa mengubah
- * data. Sekarang klik baris = lihat saja; mengubah harus lewat tombol ✏️.
+ * cuma ingin mengintip nomor WA-nya, satu click lagi sudah bisa mengubah
+ * data. Sekarang click baris = lihat saja; mengubah harus lewat tombol ✏️.
  */
 type Viewing = {
   emoji: string;
@@ -100,19 +101,14 @@ export function LeadersTab({
   const [error, setError] = useState<string | null>(null);
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
-  // Dropdown daftar — PALING BANYAK SATU yang terbuka, dan bawaannya tidak ada
-  // (null) biar layar tidak langsung penuh list.
-  //
-  // Sengaja SATU state, bukan dua boolean: dua boolean membuat "keduanya
-  // terbuka" jadi keadaan yang mungkin, lalu harus dijaga tangan di tiap
-  // tombolnya. Dengan satu nilai, keadaan itu tidak bisa ada — dan itu yang
-  // dicari: membuka satu daftar sembilan kartu sementara daftar lain masih
-  // terbentang di bawahnya cuma membuat keduanya sama-sama sulit dibaca.
-  const [terbuka, setTerbuka] = useState<'cl' | 'mt' | null>(null);
-  const clOpen = terbuka === 'cl';
-  const mtOpen = terbuka === 'mt';
-  const toggleSeksi = (k: 'cl' | 'mt') =>
-    setTerbuka((cur) => (cur === k ? null : k));
+  // Dropdown daftar — bawaannya tidak ada yang terbuka biar layar tidak
+  // langsung penuh list. Aturan "paling banyak satu terbuka" ada di
+  // hooks/useAccordion.ts; di sini yang penting akibatnya: membuka satu daftar
+  // sembilan kartu sementara daftar lain masih terbentang di bawahnya cuma
+  // membuat keduanya sama-sama sulit dibaca.
+  const { isOpen, toggle: toggleSeksi } = useAccordion<'cl' | 'mt'>();
+  const clOpen = isOpen('cl');
+  const mtOpen = isOpen('mt');
 
   // Form CORE Leader. 'new' = sedang menambah baru.
   const [editing, setEditing] = useState<CoreLeader | 'new' | null>(null);
@@ -427,11 +423,11 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(l, today);
           const soon = daysUntil <= 30;
           return (
-            // Tombol 🎡 & ✏️ jadi SAUDARA area klik, bukan anaknya —
-            // Pressable bersarang di iOS bikin klik tombolnya ikut
+            // Tombol 🎡 & ✏️ jadi SAUDARA area click, bukan anaknya —
+            // Pressable bersarang di iOS bikin click tombolnya ikut
             // membuka modal barisnya.
             <View key={l.id} style={styles.card}>
-              {/* Klik baris = LIHAT data CL (baca-saja), bukan mengubahnya. */}
+              {/* Click baris = LIHAT data CL (baca-saja), bukan mengubahnya. */}
               <PressableScale
                 style={styles.cardLeft}
                 onPress={() =>
@@ -551,7 +547,7 @@ export function LeadersTab({
           const { daysUntil } = nextBirthday(m, today);
           const soon = daysUntil <= 30;
           return (
-            // Sama seperti kartu CL: klik baris = lihat, ✏️ = ubah.
+            // Sama seperti kartu CL: click baris = lihat, ✏️ = ubah.
             <View key={m.id} style={styles.card}>
               <PressableScale
                 style={styles.cardLeft}
@@ -604,7 +600,7 @@ export function LeadersTab({
       {/* Data tubuh CL 🧍 — juga BACA-SAJA, aturan yang sama. */}
       <LeaderBodyDialog leader={bodyOf} onClose={() => setBodyOf(null)} />
 
-      {/* Modal BACA-SAJA — muncul saat barisnya di-klik. Tidak ada satu pun
+      {/* Modal BACA-SAJA — muncul saat barisnya di-click. Tidak ada satu pun
           kolom yang bisa diubah di sini; mengubah lewat tombol ✏️ di kartunya. */}
       <SheetModal
         visible={viewing !== null}
@@ -928,7 +924,7 @@ function GenderField({
   );
 }
 
-// Input kepribadian: pilih 1 tiap kategori, klik lagi untuk mengosongkan.
+// Input kepribadian: pilih 1 tiap kategori, click lagi untuk mengosongkan.
 function PersonalityFields({
   disc,
   setDisc,

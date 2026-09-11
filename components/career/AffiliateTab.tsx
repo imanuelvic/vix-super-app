@@ -43,7 +43,7 @@ import { Timestamp } from 'firebase/firestore';
 //
 // Tahapnya bisa diubah LANGSUNG dari kartunya (tanpa buka modal) — memindahkan
 // tahap itu hal yang paling sering dilakukan, dan yang paling sering dilakukan
-// harus jadi yang paling sedikit klik-nya.
+// harus jadi yang paling sedikit click-nya.
 export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
   const { user } = useAuth();
   const { ref: scrollRef, toTop } = useScrollTop();
