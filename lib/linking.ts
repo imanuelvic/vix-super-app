@@ -44,7 +44,12 @@ export function openChatGpt() {
 // Isi catatannya TIDAK dititipkan lewat ?q= : OpenAI hanya menjamin ?q= untuk
 // obrolan baru di web, dan di app iOS-nya tidak diproses. Karena itu tombol ✨
 // menyalin catatan ke papan klip dulu, lalu tinggal tempel di sana.
-export const CHATGPT_PROJECT_URL = '';
+//
+// Diisi 14 Sep 2026 dengan halaman PROJECT-nya (…/project), bukan salah satu
+// obrolan di dalamnya (…/c/<id>): tiap catatan harian memang sebaiknya jadi
+// obrolan baru yang masih membawa instruksi & berkas project-nya.
+export const CHATGPT_PROJECT_URL =
+  'https://chatgpt.com/g/g-p-6a9d2d0b760c8191944d6c0a8f252e09/project';
 
 export function openChatGptProject() {
   if (!CHATGPT_PROJECT_URL) return openChatGpt();

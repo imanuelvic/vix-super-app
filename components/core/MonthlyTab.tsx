@@ -1,47 +1,30 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { DateField } from '@/components/common/DateField';
 import { EditButton } from '@/components/common/EditButton';
-import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
-import { SheetModal } from '@/components/common/SheetModal';
-import { SoftPill } from '@/components/common/SoftPill';
 import { StickyTop } from '@/components/common/StickyTop';
-import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
 import { LinkedNotesButton } from '@/components/core/LinkedNotesButton';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
-import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
-import {
-    deleteMonthlyMeeting,
-    emptyMonthlyPoints,
-    MAX_MEETING_PHOTOS,
-    MONTHLY_AGENDA_POINTS,
-    newMonthlyMeetingId,
-    pickMeetingPhoto,
-    saveMonthlyMeeting,
-    type MonthlyMeeting,
-} from '@/lib/core';
+import { MONTHLY_AGENDA_POINTS, type MonthlyMeeting } from '@/lib/core';
 import {
     EMPTY_CORE_NOTE_LINKS,
     subscribeCoreNoteLinks,
     type CoreNoteLinks,
 } from '@/lib/coreNotes';
-import { formatCompactDateTime, MONTH_NAMES } from '@/lib/format';
-import { DELETE_ERROR, PHOTO_ERROR } from '@/lib/messages';
-import { notulenAiErrorMessage, rapikanNotulen } from '@/lib/notulenAi';
+import { formatCompactDateTime } from '@/lib/format';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
 import { photoUri } from '@/lib/photo';
 
@@ -49,7 +32,13 @@ import { photoUri } from '@/lib/photo';
 // Susunan agendanya selalu 5 poin yang sama (MENTORSHIP · LEADER'S MESSAGE ·
 // NDC INFORMATION · CORE · OUR EVENTS), jadi kolomnya sudah disiapkan dan
 // tinggal diisi — tidak perlu mengetik ulang judul poinnya tiap rapat.
+//
+// Di sini cuma DAFTARNYA (+ cari, PDF, tautan catatan). Mencatat & mengubah
+// notulen ada di layarnya sendiri, app/core/monthly/[id].tsx — isiannya
+// terlalu panjang untuk sheet, dan di sana tombol ✨ Rapihkan bisa dipatok di
+// header.
 export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
+  const router = useRouter();
   const { user } = useAuth();
 
   // Catatan Revive/Khotbah yang disambungkan ke rapat — untuk tombol 🔗.
@@ -65,55 +54,12 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   }, [user]);
 
   const [error, setError] = useState<string | null>(null);
-  const { busy, setBusy, formError, setFormError, save } = useFormSave();
   // Kartu yang sedang dibentangkan (rapat lama default tertutup biar ringkas).
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Mode cari 🔍 — sama seperti sub-tab Pertemuan & Transaksi di Finance.
   const { searchMode, query, setQuery, toggleSearch } = useSearchMode();
 
-  // Form tambah/edit.
-  const [editing, setEditing] = useState<MonthlyMeeting | 'new' | null>(null);
-  const [fTitle, setFTitle] = useState('');
-  // Satu objek Date memuat tanggal SEKALIGUS jam mulai: DateField mengubah
-  // tanggalnya (jamnya dipertahankan), TimeField mengubah jamnya.
-  const [fDate, setFDate] = useState(new Date());
-  const [fPlace, setFPlace] = useState('');
-  const [fPoints, setFPoints] = useState<Record<string, string>>(
-    emptyMonthlyPoints(),
-  );
-  // Dokumentasi foto rapat — JPEG base64 kecil, ikut tercetak di PDF.
-  const [fPhotos, setFPhotos] = useState<string[]>([]);
-  const foto = useBusyTask<'foto'>();
-  const photoBusy = foto.busy !== null;
-  // ✨ Rapihkan: sedang menunggu jawaban Gemini (lib/notulenAi.ts).
-  const [merapikan, setMerapikan] = useState(false);
-  // Sudah berhasil dirapihkan di sheet ini → tombolnya mati sampai sheet
-  // dibuka lagi. Click kedua cuma merapikan yang sudah rapi (dan membayar
-  // Claude dua kali); kalau memang mau diulang, tutup dan buka lagi.
-  const [sudahRapi, setSudahRapi] = useState(false);
-
-  // Kirim kelima bagian ke server, terima versi kesimpulannya, isikan ke
-  // kolom. Kolom TIDAK disimpan otomatis: kamu baca dulu, baru Simpan.
-  async function handleRapikan() {
-    if (merapikan || busy || sudahRapi) return;
-    const adaIsi = MONTHLY_AGENDA_POINTS.some((p) => (fPoints[p.key] ?? '').trim());
-    if (!adaIsi) {
-      setFormError('Isi dulu catatannya, baru dirapikan.');
-      return;
-    }
-    setMerapikan(true);
-    setFormError(null);
-    try {
-      const rapi = await rapikanNotulen(fPoints);
-      setFPoints((prev) => ({ ...prev, ...rapi }));
-      setSudahRapi(true);
-    } catch (e) {
-      setFormError(notulenAiErrorMessage(e));
-    } finally {
-      setMerapikan(false);
-    }
-  }
   // Notulen yang PDF-nya sedang dibuat (null = tidak ada).
   const pdf = useBusyTask();
 
@@ -131,40 +77,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   // Halaman notulen — sama seperti daftar panjang lain di app ini.
   const { currentPage, pageCount, pageItems, setPage } = usePagination(shown);
 
-  function openAdd() {
-    const now = new Date();
-    setEditing('new');
-    setFTitle(`00. Meeting MCL CL - ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`);
-    setFDate(now);
-    setFPlace('');
-    setFPoints(emptyMonthlyPoints());
-    setFPhotos([]);
-    setFormError(null);
-    setSudahRapi(false);
-  }
-
-  function openEdit(m: MonthlyMeeting) {
-    setEditing(m);
-    setFTitle(m.title);
-    setFDate(m.date.toDate());
-    setFPlace(m.place);
-    setFPoints({ ...emptyMonthlyPoints(), ...m.points });
-    setFPhotos(m.photos);
-    setSudahRapi(false);
-    setFormError(null);
-  }
-
-  /** Tambah satu foto dokumentasi dari galeri (sudah dikecilkan otomatis). */
-  function handleAddPhoto() {
-    if (busy || fPhotos.length >= MAX_MEETING_PHOTOS) return;
-    return foto.run({
-      key: 'foto',
-      task: async () => {
-        const photo = await pickMeetingPhoto();
-        if (photo) setFPhotos((prev) => [...prev, photo]);
-      },
-      fail: () => setFormError(PHOTO_ERROR),
-    });
+  /** Layar catat/ubah notulen; 'new' = rapat baru. */
+  function openEditor(id: string) {
+    router.push({ pathname: '/core/monthly/[id]', params: { id } });
   }
 
   /** Cetak notulen jadi PDF lalu buka share sheet (ada WhatsApp di dalamnya). */
@@ -175,47 +90,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
       task: () => shareMonthlyPdf(m),
       fail: () => setError('Gagal membuat PDF notulen. Coba lagi.'),
     });
-  }
-
-  async function handleSave() {
-    if (!user || !editing || busy) return;
-    if (!fTitle.trim()) {
-      setFormError('Judul rapat wajib diisi.');
-      return;
-    }
-    await save(async () => {
-      await saveMonthlyMeeting(
-        user.uid,
-        editing === 'new' ? newMonthlyMeetingId() : editing.id,
-        {
-          title: fTitle.trim(),
-          date: fDate,
-          place: fPlace.trim(),
-          // Rapikan spasi di ujung tiap poin sebelum disimpan.
-          points: Object.fromEntries(
-            MONTHLY_AGENDA_POINTS.map((p) => [
-              p.key,
-              (fPoints[p.key] ?? '').trim(),
-            ]),
-          ),
-          photos: fPhotos,
-        },
-      );
-      setEditing(null);
-    });
-  }
-
-  async function handleDelete() {
-    if (!user || !editing || editing === 'new' || busy) return;
-    setBusy(true);
-    try {
-      await deleteMonthlyMeeting(user.uid, editing.id);
-      setEditing(null);
-    } catch {
-      setError(DELETE_ERROR);
-    } finally {
-      setBusy(false);
-    }
   }
 
   function renderCard(m: MonthlyMeeting) {
@@ -253,7 +127,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               </VixText>
             ) : null}
           </PressableScale>
-          <EditButton onPress={() => openEdit(m)} />
+          <EditButton onPress={() => openEditor(m.id)} />
           {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
           <EmojiButton
             icon="square.and.arrow.up"
@@ -324,7 +198,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           <PrimaryButton
             label="Buat Rapat Bulanan"
             icon="plus"
-            onPress={openAdd}
+            onPress={() => openEditor('new')}
             additionalStyle={styles.addButton}
           />
         )}
@@ -365,148 +239,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           color={Color.TEXT_REVERSE}
         />
       </PressableScale>
-
-      {/* Sheet tambah / edit notulen */}
-      <SheetModal
-        visible={!!editing}
-        title={editing === 'new' ? 'Catat Rapat Bulanan' : 'Ubah Notulen'}
-        onClose={() => setEditing(null)}>
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏷️ Judul rapat
-        </VixText>
-        <FormInput
-          style={styles.formGap}
-          placeholder="Judul rapat"
-          value={fTitle}
-          onChangeText={setFTitle}
-          editable={!busy}
-        />
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📆 Tanggal rapat
-        </VixText>
-        <View style={styles.formGap}>
-          {/* key = id supaya state picker internal reset tiap ganti rapat */}
-          <DateField
-            key={editing === 'new' ? 'new' : editing?.id}
-            value={fDate}
-            onChange={setFDate}
-          />
-        </View>
-
-        {/* Jam mulai — menempel di objek Date yang sama dengan tanggal di atas,
-            jadi keduanya tersimpan sebagai SATU field. */}
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🕒 Jam mulai
-        </VixText>
-        <View style={styles.formGap}>
-          <TimeField
-            key={`t-${editing === 'new' ? 'new' : editing?.id}`}
-            value={fDate}
-            onChange={setFDate}
-          />
-        </View>
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📍 Tempat
-        </VixText>
-        <FormInput
-          style={styles.formGap}
-          placeholder="Nama tempat"
-          value={fPlace}
-          onChangeText={setFPlace}
-          editable={!busy}
-        />
-
-        {/* ✨ Rapihkan: tulisan cepat saat rapat → kesimpulan rapi, tetap lima
-            bagian yang sama. Dikerjakan Gemini lewat Firebase AI Logic, kuota
-            gratis paket Spark (lib/notulenAi.ts). Hasilnya langsung mengisi
-            kelima kolom di bawah; Simpan tetap di tanganmu. Sekali click per
-            sheet (lihat sudahRapi). */}
-        <SoftPill
-          label={
-            merapikan
-              ? 'Merapihkan…'
-              : sudahRapi
-                ? '✓ Sudah dirapihkan'
-                : '✨ Rapihkan dengan AI'
-          }
-          busy={merapikan}
-          disabled={busy || sudahRapi}
-          onPress={handleRapikan}
-          additionalStyle={[styles.rapikanGap, sudahRapi && styles.rapikanDone]}
-        />
-
-        {MONTHLY_AGENDA_POINTS.map((p) => (
-          <View key={p.key}>
-            <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              {p.icon} {p.label}
-            </VixText>
-            <FormInput
-              style={[styles.textArea, styles.formGap]}
-              placeholder={p.hint}
-              value={fPoints[p.key] ?? ''}
-              onChangeText={(text) =>
-                setFPoints((prev) => ({ ...prev, [p.key]: text }))
-              }
-              editable={!busy && !merapikan}
-              multiline
-            />
-          </View>
-        ))}
-
-        {/* Dokumentasi rapat — ikut tercetak di PDF sebagai bukti foto.
-            Dibatasi {MAX_MEETING_PHOTOS} biar dokumen notulennya tetap ringan. */}
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📸 Dokumentasi rapat (opsional), {fPhotos.length}/
-          {MAX_MEETING_PHOTOS}
-        </VixText>
-        <View style={styles.photoWrap}>
-          {fPhotos.map((photo, i) => (
-            <View key={`${i}-${photo.slice(0, 16)}`} style={styles.photoBox}>
-              <Image
-                source={{ uri: photoUri(photo) }}
-                style={styles.photoFill}
-                resizeMode="cover"
-              />
-              <PressableScale
-                style={styles.photoRemove}
-                hitSlop={6}
-                onPress={() =>
-                  setFPhotos((prev) => prev.filter((_, x) => x !== i))
-                }>
-                <VixText heading="bold" additionalStyle={styles.photoRemoveText}>
-                  ✕
-                </VixText>
-              </PressableScale>
-            </View>
-          ))}
-          {fPhotos.length < MAX_MEETING_PHOTOS && (
-            <PressableScale
-              style={[styles.photoBox, styles.photoAdd]}
-              onPress={handleAddPhoto}
-              disabled={photoBusy || busy}>
-              {photoBusy ? (
-                <ActivityIndicator color={Color.MAIN} />
-              ) : (
-                <VixText heading="label" additionalStyle={styles.photoAddText}>
-                  📸{'\n'}Tambah
-                </VixText>
-              )}
-            </PressableScale>
-          )}
-        </View>
-
-        <FormError message={formError} />
-        <EditFooter
-          editing={editing}
-          deleteLabel="Hapus notulen ini"
-          busy={busy}
-          onDelete={handleDelete}
-          onCancel={() => setEditing(null)}
-          onConfirm={handleSave}
-        />
-      </SheetModal>
     </View>
   );
 }
@@ -548,11 +280,6 @@ const styles = StyleSheet.create({
   },
   pointBlock: { gap: 1 },
   pointLabel: { color: Color.MAIN_DARK, marginTop: 10, },
-  // Tombol ✨ Rapihkan (SoftPill) di atas kelima kolom. Jarak ke Tempat di
-  // atasnya = formGap 10 + 4, ke label MENTORSHIP di bawahnya 14 → sama.
-  rapikanGap: { marginTop: 4, marginBottom: 14 },
-  // Sudah dipakai → pudar, supaya terbaca "tidak bisa lagi", bukan "belum".
-  rapikanDone: { opacity: 0.5 },
   pointText: { color: Color.TEXT_PARAGRAPH },
   pointEmpty: { color: Color.TEXT_PLACEHOLDER },
   // Foto dokumentasi di dalam kartu — selebar kartu, ditumpuk ke bawah.
@@ -562,43 +289,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: Color.BORDER,
   },
-  // Petak foto di form: thumbnail berjajar + satu kotak "Tambah" di ujungnya.
-  photoWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
-  },
-  photoBox: {
-    width: 96,
-    height: 96,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.BACKGROUND,
-    overflow: 'hidden',
-  },
-  photoFill: { width: '100%', height: '100%' },
-  // Tombol ✕ menempel di pojok foto — hapus foto ini dari daftar.
-  photoRemove: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Color.DANGER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoRemoveText: { color: Color.TEXT_REVERSE, fontSize: 12, lineHeight: 16 },
-  photoAdd: {
-    borderStyle: 'dashed',
-    borderColor: Color.MAIN_LIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoAddText: { textAlign: 'center', color: Color.MAIN },
   fab: {
     position: 'absolute',
     right: 18,
@@ -610,7 +300,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fieldLabel: { marginBottom: 6 },
-  formGap: { marginBottom: 10 },
-  textArea: { minHeight: 88, paddingTop: 12, textAlignVertical: 'top' },
 });

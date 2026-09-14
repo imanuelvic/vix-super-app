@@ -39,9 +39,10 @@ Tahanan Rp400.000 di kartu lepas sendiri dalam beberapa hari.
    Firebase menyalakan API-nya dan membuat kunci Gemini **di dalam proyek**;
    app tidak pernah memegang kunci itu.
 2. Pastikan halaman *Usage and billing* masih menunjukkan **Spark**.
-3. Buka app › CORE › Monthly › Ubah Notulen › isi satu bagian › **✨ Rapihkan
-   dengan AI**. Sebelum langkah 1, tombolnya menjawab "Firebase AI Logic belum
-   diaktifkan".
+3. Buka app › CORE › Monthly › ✏️ (atau + Buat Rapat Bulanan) › isi satu
+   bagian › **✨ Rapihkan** di kanan atas, sebaris dengan judul layar (dulu
+   "Rapihkan dengan AI" di dalam sheet). Sebelum langkah 1, tombolnya menjawab
+   "Firebase AI Logic belum diaktifkan".
 
 Tidak ada `.env`, secret, deploy, maupun build baru yang dibutuhkan; ini JS saja.
 
@@ -102,3 +103,12 @@ React Native), orang yang mengambil config itu paling jauh cuma bisa ikut
 **menghabiskan kuota gratis** proyek ini, bukan uang. Firestore-nya tetap
 dijaga `firestore.rules` (hanya pemilik). Kalau suatu saat kuota sering habis
 tanpa kamu pakai, itu tandanya; ganti kunci Gemini dari console AI Logic.
+
+**Tenggat App Check: 2 November 2026.** Console AI Logic memberi peringatan
+bahwa sejak tanggal itu *enforcement* App Check WAJIB untuk Firebase AI Logic;
+tanpa token App Check, permintaan Gemini akan ditolak (fitur ✨ berhenti,
+tidak ada biaya). Provider web resminya reCAPTCHA Enterprise, yang butuh
+browser, jadi untuk Firebase JS SDK di React Native harus dicari jalan lain
+sebelum tanggal itu (debug token yang didaftarkan di console, atau custom
+provider). Sampai itu beres: **jangan** menyalakan enforcement App Check di
+console, karena app akan langsung ditolak.

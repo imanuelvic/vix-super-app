@@ -104,6 +104,8 @@ function RootNavigator() {
         <Stack.Screen name="donor" />
 
         <Stack.Screen name="core" />
+        {/* Catat/ubah notulen rapat bulanan — dari sub-tab Monthly */}
+        <Stack.Screen name="core/monthly/[id]" />
         <Stack.Screen name="visitations" />
         <Stack.Screen name="monthly-prayers" />
         {/* Pedoman CORE Leader (syarat calon + tugasnya) — dari sub-tab Multiplication */}
