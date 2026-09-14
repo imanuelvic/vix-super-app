@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { EmptyText } from '@/components/common/EmptyText';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -53,11 +54,11 @@ export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) 
           // Sub-nya disebut namanya: yang tampil di sini disaring lewat NAMA
           // sub-kategorinya, jadi kalau sub "Mobile" di Finance diganti nama,
           // di sinilah petunjuk kenapa daftarnya tiba-tiba kosong.
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada pengeluaran perangkat. Catat pulsa/paket datamu di Finance
             dengan kategori 📱 Mobile, Data & Administration → sub 📱 Mobile,
             nanti otomatis muncul di sini
-          </VixText>
+          </EmptyText>
         ) : (
           transactions.map((t) => {
             const cat = categoryOf('expense', t.category);
@@ -85,5 +86,4 @@ export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  empty: { textAlign: 'center', marginVertical: 10 },
 });

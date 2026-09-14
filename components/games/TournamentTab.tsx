@@ -252,7 +252,7 @@ export function TournamentTab() {
                 {selected.champion}
               </VixText>
               <VixText heading="label" additionalStyle={styles.championSub}>
-                🎉 Turnamen selesai — selamat!
+                🎉 Turnamen selesai, selamat!
               </VixText>
             </Animated.View>
           )}

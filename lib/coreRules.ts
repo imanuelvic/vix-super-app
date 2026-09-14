@@ -349,22 +349,22 @@ Fokus pada 3 pilar CORE
 const CHARITY_BODY = `➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
 🔴 RULES
-Ini bukan pilihan — ini fondasi. Kalau ini dilanggar, acaranya bisa kehilangan arah sepenuhnya.
+Ini bukan pilihan, ini fondasi. Kalau ini dilanggar, acaranya bisa kehilangan arah sepenuhnya.
 
 🎯 Prioritas Utama Charity
-Sebelum CL memilih Ketua Charity kemudian ngurusin acara, konsumsi, transportasi — pahami dulu kenapa kalian ngadain ini. Urutan prioritasnya:
+Sebelum CL memilih Ketua Charity kemudian ngurusin acara, konsumsi, transportasi, pahami dulu kenapa kalian ngadain ini. Urutan prioritasnya:
 
 1. Kemuliaan nama Tuhan Yesus
 Bukan nama NDC, CORE, CL, ataupun nama panitia. Semua yang kalian lakukan harus bisa dipertanggungjawabkan ke Tuhan dulu. Apakah ini memuliakan Dia?
 
 2. Pertumbuhan CORE Member
-Target yang terutama bukan tempat yang dikunjungi — tapi kalian sendiri. Pengalaman berbagi, melayani, empati dan keluar dari zona nyaman itu yang bikin kita bertumbuh. Isi acara Firman perlu banyak kontribusi CORE Member.
+Target yang terutama bukan tempat yang dikunjungi, tapi kalian sendiri. Pengalaman berbagi, melayani, empati dan keluar dari zona nyaman itu yang bikin kita bertumbuh. Isi acara Firman perlu banyak kontribusi CORE Member.
 
 3. Pertumbuhan & Kesatuan Panitia
 Panitia bukan sekadar "yang repot." Kalian lagi belajar bikin event rohani yang berkesan. INGAT: lebih baik acaranya sederhana tapi panitia kompak dan bahagia, daripada acaranya mewah tapi di balik layar penuh drama dan konflik.
 
 4. Berkat untuk Tempat yang Dikunjungi
-Mereka menerima banyak kunjungan dari berbagai lembaga dan gereja. Tapi kehadiran kalian tetap harus meninggalkan kesan yang baik — bukan sekadar datang, berbagi, foto, konten, pulang.
+Mereka menerima banyak kunjungan dari berbagai lembaga dan gereja. Tapi kehadiran kalian tetap harus meninggalkan kesan yang baik, bukan sekadar datang, berbagi, foto, konten, pulang.
 
 ⚠️ Penting banget dipahami:
 - Charity ≠ Penginjilan. Charity adalah berbagi kasih dan sukacita. Momen ini tidak bisa dijadikan sebagai sesi penginjilan atau pengajaran berat pada orang-orang di tempat tujuan.
@@ -376,7 +376,7 @@ Mereka menerima banyak kunjungan dari berbagai lembaga dan gereja. Tapi kehadira
 Sebelum posting apapun ke medsos atau grup, pastikan kedua poin ini sudah dipenuhi:
 
 ❌ Jangan mencantumkan nomor rekening di poster atau caption manapun.
-❓Kenapa? Karena ini bukan kampanye donasi publik. Begitu ada rekening di poster, orang akan melihat ini sebagai penggalangan dana — dan itu bukan tujuannya.
+❓Kenapa? Karena ini bukan kampanye donasi publik. Begitu ada rekening di poster, orang akan melihat ini sebagai penggalangan dana, dan itu bukan tujuannya.
 👟Solusi: Cantumkan Contact Person jika ada yang ingin bertanya lebih lanjut mengenai Charity.
 
 ❌ Jangan membuat kesan seolah sedang meminta-minta.
@@ -394,51 +394,51 @@ Sebelum posting apapun ke medsos atau grup, pastikan kedua poin ini sudah dipenu
 💵 Aturan Keuangan
 Uang itu sensitif. Bukan berarti harus ditakuti, tapi harus dikelola dengan transparan, jujur, dan jelas. Seluruh kegiatan CORE jika ada uang yang masuk ke event ini (dari dalam maupun luar CORE):
 
-✅ Buat Laporan Keuangan yang mencakup garis besar pemasukan dan pengeluaran — diselesaikan segera setelah acara berakhir (maks. 3 hari).
+✅ Buat Laporan Keuangan yang mencakup garis besar pemasukan dan pengeluaran, diselesaikan segera setelah acara berakhir (maks. 3 hari).
 ✅ Laporan harus diketahui dan disetujui oleh: Ketua Acara, CL, dan MCL.
-ℹ️ Laporan ini tidak perlu diserahkan ke Pastor — cukup sampai ke MCL.
+ℹ️ Laporan ini tidak perlu diserahkan ke Pastor, cukup sampai ke MCL.
 
 ❓Kenapa? Supaya tidak ada ruang untuk salah sangka, konflik, atau rasa tidak percaya di antara kalian. Transparansi adalah bentuk kasih juga.
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
 🟡 SUGGESTIONS
-Ini bukan perintah, bukan kebenaran mutlak — tapi bimbingan dari pengalaman dan sudut pandang yang lebih luas. Kalian bebas mempertimbangkan dan mendiskusikannya.
+Ini bukan perintah, bukan kebenaran mutlak, tapi bimbingan dari pengalaman dan sudut pandang yang lebih luas. Kalian bebas mempertimbangkan dan mendiskusikannya.
 
 🎁 Soal Jumlah Sumbangan
 Disarankan total akumulasi sumbangan CORE (dalam bentuk sembako, konsumsi, uang tunai atau transfer) ke tempat Charity tidak melebihi angka level tempat kunjungan, dan selalu gunakan angka yang bulat.
 
-❓Kenapa? Karena tujuan Charity bukan membuktikan seberapa banyak uang yang bisa kalian kumpulkan. Kalau terlalu besar, fokus bisa bergeser ke "prestasi donasi" atau "prestasi fundraising" — padahal yang paling penting adalah kehadiran dan kasih yang kalian bawa.
+❓Kenapa? Karena tujuan Charity bukan membuktikan seberapa banyak uang yang bisa kalian kumpulkan. Kalau terlalu besar, fokus bisa bergeser ke "prestasi donasi" atau "prestasi fundraising", padahal yang paling penting adalah kehadiran dan kasih yang kalian bawa.
 
 🏡 Level Tempat Kunjungan
-- 🟢 Kecil — 15–30 jiwa — Rp1.5-3jt (Cukup sembako + snack + cash kecil)
-- 🟡 Sedang — 31–60 jiwa — Rp3-5jt (Sembako + konsumsi makan siang + cash)
-- 🟠 Besar — 61–100 jiwa — Rp5-8jt (Koordinasi lebih matang, bagi tugas jelas, rekom untuk CORE yang sudah dewasa)
-- 🔴 Sangat Besar — 100+ jiwa — Rp8-12jt (⚠️Pertimbangkan ulang — ini terlalu besar untuk satu CORE)
+- 🟢 Kecil · 15–30 jiwa, Rp1.5-3jt (Cukup sembako + snack + cash kecil)
+- 🟡 Sedang · 31–60 jiwa, Rp3-5jt (Sembako + konsumsi makan siang + cash)
+- 🟠 Besar · 61–100 jiwa, Rp5-8jt (Koordinasi lebih matang, bagi tugas jelas, rekom untuk CORE yang sudah dewasa)
+- 🔴 Sangat Besar · 100+ jiwa, Rp8-12jt (⚠️Pertimbangkan ulang, ini terlalu besar untuk satu CORE)
 
 ✅ Rekomendasi:
-Paling ideal adalah level Sedang (🟡) — panti 31–60, sumbangan Rp 3–5jt terasa bermakna buat mereka dan tidak membebani CORE. Dan skalanya juga pas, interaksi lebih personal — CM bisa ngobrol, main, dan punya momen nyata dengan anak-anak di sana.
+Paling ideal adalah level Sedang (🟡), panti 31–60, sumbangan Rp 3–5jt terasa bermakna buat mereka dan tidak membebani CORE. Dan skalanya juga pas, interaksi lebih personal, CM bisa ngobrol, main, dan punya momen nyata dengan anak-anak di sana.
 
-Level Sangat Besar (🔴) tidak disarankan — bukan karena salah, tapi karena CORE bisa "tenggelam" di sana dan kehilangan momen pertumbuhan personalnya. Kalau mau adakan Charity Gabungan.
+Level Sangat Besar (🔴) tidak disarankan, bukan karena salah, tapi karena CORE bisa "tenggelam" di sana dan kehilangan momen pertumbuhan personalnya. Kalau mau adakan Charity Gabungan.
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
 💸 Soal Sisa Dana
-Kalau ada sisa dana setelah acara selesai dan laporan keuangan sudah beres — pertimbangkan untuk memberikannya sebagai persembahan ke NDC Ministry, baik itu ke dana pembangunan (building fund) atau ke diakonia.
+Kalau ada sisa dana setelah acara selesai dan laporan keuangan sudah beres, pertimbangkan untuk memberikannya sebagai persembahan ke NDC Ministry, baik itu ke dana pembangunan (building fund) atau ke diakonia.
 
-NDC sudah sangat banyak membantu dan memfasilitasi CORE kalian — dari tempat hingga dukungan pastoral. Ini salah satu cara kita ikut ambil bagian dalam visi gereja secara nyata.
+NDC sudah sangat banyak membantu dan memfasilitasi CORE kalian, dari tempat hingga dukungan pastoral. Ini salah satu cara kita ikut ambil bagian dalam visi gereja secara nyata.
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
 📋 Soal Konsep Acara
-- Buat sesi yang interaktif dan melibatkan CM secara aktif — bukan cuma nonton atau duduk. Bikin mereka ngerasa jadi bagian dari cerita, bukan penonton.
+- Buat sesi yang interaktif dan melibatkan CM secara aktif, bukan cuma nonton atau duduk. Bikin mereka ngerasa jadi bagian dari cerita, bukan penonton.
 - Charity yang paling berkesan bukan yang paling banyak sumbangnya, tapi yang paling autentik. Satu momen tulus lebih berbekas dari satu jam program yang kaku.
-- Adakan refleksi singkat setelah acara — bisa di perjalanan pulang atau di CORE minggu berikutnya. Apa yang kalian rasakan? Apa yang Tuhan ajarkan hari itu? Ini yang bikin Charity jadi pengalaman rohani, bukan sekadar program wajib atau tahunan.
+- Adakan refleksi singkat setelah acara, bisa di perjalanan pulang atau di CORE minggu berikutnya. Apa yang kalian rasakan? Apa yang Tuhan ajarkan hari itu? Ini yang bikin Charity jadi pengalaman rohani, bukan sekadar program wajib atau tahunan.
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
 🤝 Soal Panitia & Peserta
-- Briefing panitia bukan cuma soal teknis — tapi juga soal hati. Pastikan semua orang tahu kenapa mereka ada di sana.
+- Briefing panitia bukan cuma soal teknis, tapi juga soal hati. Pastikan semua orang tahu kenapa mereka ada di sana.
 - Lebih baik peserta hanya seluruh CORE Member saja, tidak perlu mengajak atau mengundang non member, kecuali dia adalah calon CORE Member.
 - Kalau ada konflik internal di panitia, selesaikan sebelum hari-H. Jangan bawa luka ke lapangan.
 

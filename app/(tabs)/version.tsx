@@ -113,7 +113,7 @@ export default function VersionScreen() {
               📊 Minggu ini
             </VixText>
             <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
-              {weekTop ? `${weekTop.label}` : '—'}
+              {weekTop ? `${weekTop.label}` : '-'}
             </VixText>
             <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
               {weekTop ? `${weekTop.count}× · ${weekTotal} total` : 'Belum ada data'}
@@ -128,7 +128,7 @@ export default function VersionScreen() {
               📊 Bulan {thisMonth}
             </VixText>
             <VixText heading="subheader" additionalStyle={styles.usageHeroValue}>
-              {monthTop ? `${monthTop.label}` : '—'}
+              {monthTop ? `${monthTop.label}` : '-'}
             </VixText>
             <VixText heading="label" additionalStyle={styles.usageHeroLabel}>
               {monthTop ? `${monthTop.count}× · ${monthTotal} total` : 'Belum ada data'}
@@ -167,7 +167,7 @@ export default function VersionScreen() {
 
         {/* Per hari (minggu berjalan) — fitur teratas tiap hari */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Per Hari — Minggu Ini
+          Per Hari · Minggu Ini
         </VixText>
         <View style={styles.usageCard}>
           {weekMerged.length === 0 ? (
@@ -185,7 +185,7 @@ export default function VersionScreen() {
                   <VixText
                     heading="paragraph"
                     additionalStyle={top ? styles.usageName : styles.usageEmpty}>
-                    {top ? `${top.label} (${top.count}×)` : '—'}
+                    {top ? `${top.label} (${top.count}×)` : '-'}
                   </VixText>
                 </View>
               );

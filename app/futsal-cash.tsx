@@ -7,6 +7,7 @@ import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -109,7 +110,7 @@ export default function FutsalCashScreen() {
     if (!user || !data || busy) return;
     const jumlah = parseAmount(fJumlah);
     if (!fJudul.trim()) {
-      setFormError('Judulnya diisi dulu — kas bersama tanpa keterangan itu yang bikin ribut.');
+      setFormError('Judulnya diisi dulu, kas bersama tanpa keterangan itu yang bikin ribut.');
       return;
     }
     if (jumlah <= 0) {
@@ -189,7 +190,7 @@ export default function FutsalCashScreen() {
               </VixText>
               {saldo < 0 && (
                 <VixText heading="label" additionalStyle={styles.saldoWarn}>
-                  ⚠️ Minus — pengeluaran melebihi yang terkumpul. Biasanya ada
+                  ⚠️ Minus, pengeluaran melebihi yang terkumpul. Biasanya ada
                   iuran yang belum disetor ke kas.
                 </VixText>
               )}
@@ -208,9 +209,9 @@ export default function FutsalCashScreen() {
               🧾 Mutasi {meta.label}
             </VixText>
             {mutasi.length === 0 ? (
-              <VixText heading="label" additionalStyle={styles.empty}>
+              <EmptyText>
                 Belum ada mutasi kas {meta.label}.
-              </VixText>
+              </EmptyText>
             ) : (
               <>
                 {pageItems.map((c) => {
@@ -333,7 +334,6 @@ const styles = StyleSheet.create({
   saldoWarn: { color: Color.DANGER },
   addButton: { marginTop: 10 },
   sectionTitle: { ...SECTION_SPACE },
-  empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     ...CARD,
     flexDirection: 'row',

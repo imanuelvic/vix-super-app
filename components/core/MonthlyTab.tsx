@@ -13,6 +13,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
 import { SheetModal } from '@/components/common/SheetModal';
+import { SoftPill } from '@/components/common/SoftPill';
 import { StickyTop } from '@/components/common/StickyTop';
 import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
@@ -40,6 +41,7 @@ import {
 } from '@/lib/coreNotes';
 import { formatCompactDateTime, MONTH_NAMES } from '@/lib/format';
 import { DELETE_ERROR, PHOTO_ERROR } from '@/lib/messages';
+import { notulenAiErrorMessage, rapikanNotulen } from '@/lib/notulenAi';
 import { shareMonthlyPdf } from '@/lib/monthlyPdf';
 import { photoUri } from '@/lib/photo';
 
@@ -84,6 +86,34 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const [fPhotos, setFPhotos] = useState<string[]>([]);
   const foto = useBusyTask<'foto'>();
   const photoBusy = foto.busy !== null;
+  // ✨ Rapihkan: sedang menunggu jawaban Gemini (lib/notulenAi.ts).
+  const [merapikan, setMerapikan] = useState(false);
+  // Sudah berhasil dirapihkan di sheet ini → tombolnya mati sampai sheet
+  // dibuka lagi. Click kedua cuma merapikan yang sudah rapi (dan membayar
+  // Claude dua kali); kalau memang mau diulang, tutup dan buka lagi.
+  const [sudahRapi, setSudahRapi] = useState(false);
+
+  // Kirim kelima bagian ke server, terima versi kesimpulannya, isikan ke
+  // kolom. Kolom TIDAK disimpan otomatis: kamu baca dulu, baru Simpan.
+  async function handleRapikan() {
+    if (merapikan || busy || sudahRapi) return;
+    const adaIsi = MONTHLY_AGENDA_POINTS.some((p) => (fPoints[p.key] ?? '').trim());
+    if (!adaIsi) {
+      setFormError('Isi dulu catatannya, baru dirapikan.');
+      return;
+    }
+    setMerapikan(true);
+    setFormError(null);
+    try {
+      const rapi = await rapikanNotulen(fPoints);
+      setFPoints((prev) => ({ ...prev, ...rapi }));
+      setSudahRapi(true);
+    } catch (e) {
+      setFormError(notulenAiErrorMessage(e));
+    } finally {
+      setMerapikan(false);
+    }
+  }
   // Notulen yang PDF-nya sedang dibuat (null = tidak ada).
   const pdf = useBusyTask();
 
@@ -110,6 +140,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     setFPoints(emptyMonthlyPoints());
     setFPhotos([]);
     setFormError(null);
+    setSudahRapi(false);
   }
 
   function openEdit(m: MonthlyMeeting) {
@@ -119,6 +150,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     setFPlace(m.place);
     setFPoints({ ...emptyMonthlyPoints(), ...m.points });
     setFPhotos(m.photos);
+    setSudahRapi(false);
     setFormError(null);
   }
 
@@ -263,7 +295,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
                   <VixText
                     heading="paragraph"
                     additionalStyle={text ? styles.pointText : styles.pointEmpty}>
-                    {text || '—'}
+                    {text || '-'}
                   </VixText>
                 </View>
               );
@@ -386,6 +418,25 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           editable={!busy}
         />
 
+        {/* ✨ Rapihkan: tulisan cepat saat rapat → kesimpulan rapi, tetap lima
+            bagian yang sama. Dikerjakan Gemini lewat Firebase AI Logic, kuota
+            gratis paket Spark (lib/notulenAi.ts). Hasilnya langsung mengisi
+            kelima kolom di bawah; Simpan tetap di tanganmu. Sekali click per
+            sheet (lihat sudahRapi). */}
+        <SoftPill
+          label={
+            merapikan
+              ? 'Merapihkan…'
+              : sudahRapi
+                ? '✓ Sudah dirapihkan'
+                : '✨ Rapihkan dengan AI'
+          }
+          busy={merapikan}
+          disabled={busy || sudahRapi}
+          onPress={handleRapikan}
+          additionalStyle={[styles.rapikanGap, sudahRapi && styles.rapikanDone]}
+        />
+
         {MONTHLY_AGENDA_POINTS.map((p) => (
           <View key={p.key}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -398,7 +449,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               onChangeText={(text) =>
                 setFPoints((prev) => ({ ...prev, [p.key]: text }))
               }
-              editable={!busy}
+              editable={!busy && !merapikan}
               multiline
             />
           </View>
@@ -407,7 +458,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
         {/* Dokumentasi rapat — ikut tercetak di PDF sebagai bukti foto.
             Dibatasi {MAX_MEETING_PHOTOS} biar dokumen notulennya tetap ringan. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📸 Dokumentasi rapat (opsional) — {fPhotos.length}/
+          📸 Dokumentasi rapat (opsional), {fPhotos.length}/
           {MAX_MEETING_PHOTOS}
         </VixText>
         <View style={styles.photoWrap}>
@@ -497,6 +548,11 @@ const styles = StyleSheet.create({
   },
   pointBlock: { gap: 1 },
   pointLabel: { color: Color.MAIN_DARK, marginTop: 10, },
+  // Tombol ✨ Rapihkan (SoftPill) di atas kelima kolom. Jarak ke Tempat di
+  // atasnya = formGap 10 + 4, ke label MENTORSHIP di bawahnya 14 → sama.
+  rapikanGap: { marginTop: 4, marginBottom: 14 },
+  // Sudah dipakai → pudar, supaya terbaca "tidak bisa lagi", bukan "belum".
+  rapikanDone: { opacity: 0.5 },
   pointText: { color: Color.TEXT_PARAGRAPH },
   pointEmpty: { color: Color.TEXT_PLACEHOLDER },
   // Foto dokumentasi di dalam kartu — selebar kartu, ditumpuk ke bawah.

@@ -311,7 +311,7 @@ Kiranya semua yang kamu kerjakan berkenan & menyenangkan hati Tuhan.
 Kiranya kamu makin mengenal dan makin mengasihi Dia setiap hari.
 Kiranya Tuhan kasih hikmat & perbesar kapasitasmu, biar makin jadi berkat buat orang-orang di sekitarmu.
 Bukan kehendak kita, tapi kehendak-Nya yang jadi.
-Dan Tuhan kirimkan orang-orang baik di sekelilingmu — yang mendukung, yang mendoakan, yang menemani.`;
+Dan Tuhan kirimkan orang-orang baik di sekelilingmu, yang mendukung, yang mendoakan, yang menemani.`;
 }
 
 /**
@@ -390,11 +390,11 @@ export const DISC_OPTIONS: { key: string; label: string; chat: string }[] = [
 
 /** 5 Love Language + ide tindakan yang bikin dia merasa dikasihi. */
 export const LOVE_LANG_OPTIONS: { key: string; label: string; idea: string }[] = [
-  { key: 'words', label: '💬 Kata Afirmasi', idea: 'Kirim pujian tulus / ayat penguatan — sebut hal spesifik yang kamu hargai darinya.' },
-  { key: 'time', label: '⏳ Waktu Berkualitas', idea: 'Ajak ngopi / video call fokus tanpa main HP — hadir penuh untuk dia.' },
-  { key: 'gifts', label: '🎁 Hadiah', idea: 'Kasih kejutan kecil bermakna (jajan favorit, buku, stiker) — tanda kamu ingat dia.' },
+  { key: 'words', label: '💬 Kata Afirmasi', idea: 'Kirim pujian tulus / ayat penguatan, sebut hal spesifik yang kamu hargai darinya.' },
+  { key: 'time', label: '⏳ Waktu Berkualitas', idea: 'Ajak ngopi / video call fokus tanpa main HP, hadir penuh untuk dia.' },
+  { key: 'gifts', label: '🎁 Hadiah', idea: 'Kasih kejutan kecil bermakna (jajan favorit, buku, stiker), tanda kamu ingat dia.' },
   { key: 'service', label: '🤝 Melayani', idea: 'Tawarkan bantuan konkret: antar-jemput, doakan hal spesifik, bantu tugas yang berat.' },
-  { key: 'touch', label: '🤗 Sentuhan Fisik', idea: 'Salaman hangat / side-hug / tepuk pundak saat ketemu — kehadiran fisik yang menguatkan.' },
+  { key: 'touch', label: '🤗 Sentuhan Fisik', idea: 'Salaman hangat / side-hug / tepuk pundak saat ketemu, kehadiran fisik yang menguatkan.' },
 ];
 
 /** 16 tipe MBTI. */
@@ -865,12 +865,12 @@ export function visitReminderWindow(v: Visitation, today: Date): boolean {
 }
 
 export const VISIT_TIPS: string[] = [
-  '📅 Kabari CORE Leader-nya minimal H-3 — pastikan jadwal & tempat fix.',
+  '📅 Kabari CORE Leader-nya minimal H-3, pastikan jadwal & tempat fix.',
   '👂 Datang untuk mendengar dulu, bukan mengoreksi. Evaluasi belakangan.',
-  '🍔 Bawa konsumsi kecil — perhatian sederhana yang selalu diingat.',
+  '🍔 Bawa konsumsi kecil, perhatian sederhana yang selalu diingat.',
   '📖 Siapkan encouragement / firman singkat untuk CL & member.',
   '📸 Foto kegiatan CORE untuk dikirim ke WAG 😄',
-  '🕐 Datang lebih awal, pulang jangan buru-buru — ngobrol dengan member.',
+  '🕐 Datang lebih awal, pulang jangan buru-buru, ngobrol dengan member.',
   '📝 Catat kondisi member yang butuh perhatian khusus untuk follow up.',
   '🙏 Tutup dengan mendoakan CL & CORE-nya secara spesifik.',
 ];
@@ -988,7 +988,7 @@ const CORE_CATEGORIES: CoreCategory[] = [
     questions: [
       'Gimana kondisi badanmu akhir-akhir ini? Tidurnya cukup?',
       'Lagi rutin olahraga nggak? 😄',
-      'Makannya gimana — sehat kan?',
+      'Makannya gimana, sehat kan?',
       'Tidur jam berapa biasanya? 😴',
       'Sehari minum air berapa gelas?',
       'Ada kebiasaan yang pengen kamu stop?',
@@ -1475,7 +1475,7 @@ const PERSONALITY_QUESTIONS: {
     icon: '💞',
     label: 'Love Language',
     question:
-      'Kamu paling ngerasa disayang lewat apa — kata-kata, waktu bareng, hadiah, dibantuin, atau pelukan?',
+      'Kamu paling ngerasa disayang lewat apa, kata-kata, waktu bareng, hadiah, dibantuin, atau pelukan?',
   },
 ];
 

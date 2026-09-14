@@ -63,6 +63,8 @@ const ROUTE_FEATURE: Record<string, string> = {
   diseases: 'health',
   'health-info': 'health',
   donor: 'health',
+  // Isian satu Race (app/race/[id]) — Race tinggal di Health, pitanya ikut.
+  race: 'health',
 
   // CORE 👥
   core: 'core',

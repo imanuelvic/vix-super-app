@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EditFooter } from '@/components/common/EditFooter';
 import { BadgeTile, badgeGrid } from '@/components/common/BadgeTile';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
@@ -107,7 +108,7 @@ export default function AchievementsScreen() {
     }
     const price = parseAmount(fPrice);
     if (price <= 0) {
-      setFormError('Harganya diisi dulu — itu yang jadi patokan bisa diklaim.');
+      setFormError('Harganya diisi dulu, itu yang jadi patokan bisa diklaim.');
       return;
     }
     setBusy(true);
@@ -284,10 +285,10 @@ export default function AchievementsScreen() {
         </View>
 
         {rewards.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada hadiah. Tulis sendiri apa saja yang ingin kamu klaim
             kalau sakunya sudah cukup 🎁
-          </VixText>
+          </EmptyText>
         )}
 
         {/* Tombol Klaim & area ubah sengaja jadi SAUDARA, bukan bersarang:
@@ -355,7 +356,7 @@ export default function AchievementsScreen() {
       <SheetModal
         visible={!!editing}
         title={editing === 'new' ? 'Tambah Self-Reward' : 'Ubah Self-Reward'}
-        subtitle="Hadiahnya bebas — yang penting kamu sendiri yang mau"
+        subtitle="Hadiahnya bebas, yang penting kamu sendiri yang mau"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🎁 Emoji
@@ -381,7 +382,7 @@ export default function AchievementsScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          💰 Harga — batas saldo sebelum bisa diklaim
+          💰 Harga, batas saldo sebelum bisa diklaim
         </VixText>
         <MoneyInput
           style={styles.formGap}
@@ -410,7 +411,7 @@ export default function AchievementsScreen() {
         title={`Klaim ${claiming?.icon ?? ''} ${claiming?.label ?? ''}?`.trim()}
         detail={
           claiming
-            ? `Kamu menyatakan self-reward ini SUDAH benar-benar kamu ambil.\n\n💸 Saku Self-Reward berkurang ${formatRupiah(claiming.price)} → sisa ${formatRupiah(balance - claiming.price)}.\n🗄️ Satu baris masuk ke Archive lengkap dengan tanggal hari ini.\n\nJangan dicatat lagi sebagai mutasi keluar di Saku yang sama — nanti terpotong dua kali.`
+            ? `Kamu menyatakan self-reward ini SUDAH benar-benar kamu ambil.\n\n💸 Saku Self-Reward berkurang ${formatRupiah(claiming.price)} → sisa ${formatRupiah(balance - claiming.price)}.\n🗄️ Satu baris masuk ke Archive lengkap dengan tanggal hari ini.\n\nJangan dicatat lagi sebagai mutasi keluar di Saku yang sama, nanti terpotong dua kali.`
             : ''
         }
         confirmLabel="Ya, Sudah Kuklaim"
@@ -491,7 +492,6 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { color: Color.ACCENT_DARK },
   balanceValue: { color: Color.ACCENT_DARK },
-  empty: { textAlign: 'center', marginVertical: 10 },
   // Tombol Klaim — hijau penuh, dibedakan tegas dari baris yang belum cukup
   // saldonya (yang cuma menampilkan tulisan "kurang …").
   claimButton: {

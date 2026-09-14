@@ -359,7 +359,7 @@ export default function TasksScreen() {
       return;
     }
     if (recurDays.length > MAX_RECURRING) {
-      setRError(`Maksimal ${MAX_RECURRING} task — persempit rentangnya.`);
+      setRError(`Maksimal ${MAX_RECURRING} task, persempit rentangnya.`);
       return;
     }
     setRBusy(true);
@@ -857,7 +857,7 @@ export default function TasksScreen() {
               {recurDays.length === 0
                 ? 'Rentang tanggal belum valid.'
                 : recurDays.length > MAX_RECURRING
-                  ? `Lebih dari ${MAX_RECURRING} reminder — persempit rentangnya.`
+                  ? `Lebih dari ${MAX_RECURRING} reminder, persempit rentangnya.`
                   : `Akan membuat ${recurDays.length} reminder pada ${activeMeta.label} ${activeMeta.icon}.`}
             </VixText>
             <FormError message={rError} />

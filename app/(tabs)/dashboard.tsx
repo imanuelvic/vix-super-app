@@ -378,10 +378,10 @@ export default function DashboardScreen() {
       id: b.m.id,
       text:
         b.daysUntil === 0
-          ? `${b.m.name} — HARI INI 🎉 (ke-${b.turningAge})`
-          : `${b.m.name} — ${b.daysUntil} hari lagi (${formatDayDate(
+          ? `${b.m.name}, HARI INI 🎉 (ke-${b.turningAge})`
+          : `${b.m.name} - ${b.daysUntil} hari lagi (${formatDayDate(
               b.date,
-            )}) — ke-${b.turningAge}`,
+            )}), ke-${b.turningAge}`,
     }));
 
   // Reminder KIRIM PDF: pertemuan biasa H-3; acara besar (Gathering, Charity,
@@ -397,7 +397,7 @@ export default function DashboardScreen() {
       });
       return {
         id: `pdf-${v.id}`,
-        text: `📄 Kirim panduan ${meetingKindMeta(v.kind).label} ke ${cl} — H-${visitDaysUntil(v, now)}`,
+        text: `📄 Kirim panduan ${meetingKindMeta(v.kind).label} ke ${cl}, H-${visitDaysUntil(v, now)}`,
       };
     });
 
@@ -415,7 +415,7 @@ export default function DashboardScreen() {
       });
       return {
         id: v.id,
-        text: `${meetingKindMeta(v.kind).icon} ${cl} — ${
+        text: `${meetingKindMeta(v.kind).icon} ${cl} - ${
           days === 0 ? 'HARI INI' : `${days} hari lagi`
         } (${formatDayDate(v.date.toDate())})`,
       };
@@ -449,12 +449,12 @@ export default function DashboardScreen() {
     .sort((a, b) => a.daysUntil - b.daysUntil)
     .map((b) => ({
       id: b.id,
-      text: `${b.label}${b.sub ? ` · ${b.sub}` : ''} — ${
+      text: `${b.label}${b.sub ? ` · ${b.sub}` : ''} - ${
         b.daysUntil === 0
           ? `HARI INI 🎉 (ke-${b.turningAge})`
           : `${b.daysUntil} hari lagi (${formatDayDate(
               b.date,
-            )}) — ke-${b.turningAge}`
+            )}), ke-${b.turningAge}`
       }`,
     }));
 
@@ -472,14 +472,14 @@ export default function DashboardScreen() {
       const arrow = d.direction === 'mine' ? '💸 Bayar' : '💰 Tagih';
       return {
         id: d.id,
-        text: `${arrow} ${d.person} — ${formatRupiah(debtRemaining(d))} · ${when}`,
+        text: `${arrow} ${d.person} - ${formatRupiah(debtRemaining(d))} · ${when}`,
       };
     });
 
   // Reminder cek kesehatan: 6 bulan sejak tensi / gula darah terakhir.
   const checkupReminders = checkupDueReminders(checkups, now).map((c) => ({
     id: c.type,
-    text: `${c.icon} ${c.label} — waktunya cek lagi${
+    text: `${c.icon} ${c.label}, waktunya cek lagi${
       c.days < 0 ? ` (lewat ${-c.days} hari)` : ''
     }`,
   }));
@@ -536,7 +536,7 @@ export default function DashboardScreen() {
       id: 'weigh',
       // Data Tubuh sekarang tinggal di tab Profile — ?weighIn=1 langsung
       // membuka editornya begitu layar Profile terbuka.
-      text: '⚖️ Timbang berat minggu ini — update berat (kg)',
+      text: '⚖️ Timbang berat minggu ini, update berat (kg)',
       onPress: () =>
         router.push({ pathname: '/profile', params: { weighIn: '1' } }),
     });
@@ -560,7 +560,7 @@ export default function DashboardScreen() {
     const d = scheduleDaysUntil(s, now);
     healthRows.push({
       id: `donor-sch-${s.id}`,
-      text: `📅 Donor${s.location ? ` di ${s.location}` : ''} — ${
+      text: `📅 Donor${s.location ? ` di ${s.location}` : ''} - ${
         d === 0 ? 'HARI INI' : `${d} hari lagi`
       }`,
       onPress: () => router.push('/donor'),
@@ -645,13 +645,13 @@ export default function DashboardScreen() {
     .filter((c) => c.tone === 'over')
     .map((c) => ({
       id: c.key,
-      text: `${c.label} — ${whenLabel(daysBetween(now, c.dueDate))}`,
+      text: `${c.label} - ${whenLabel(daysBetween(now, c.dueDate))}`,
     }));
   const carReminders = carAttentionList(carParts, now)
     .filter((p) => p.tone === 'over')
     .map((p) => ({
       id: p.key,
-      text: `${p.label} — ${whenLabel(daysBetween(now, p.dueDate))}`,
+      text: `${p.label} - ${whenLabel(daysBetween(now, p.dueDate))}`,
     }));
 
   // Badge yang belum punya kartu khususnya di sini. Angkanya dihitung dengan
@@ -717,7 +717,7 @@ export default function DashboardScreen() {
     productivity.push({
       id: `pf-${p.id}`,
       tab: 'freelance',
-      text: `🌐 Lanjutkan "${p.name}"${p.client ? ` — ${p.client}` : ''} (${whenLabel(
+      text: `🌐 Lanjutkan "${p.name}"${p.client ? ` - ${p.client}` : ''} (${whenLabel(
         deadlineDaysUntil(p, now),
       )})`,
     });
@@ -934,7 +934,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.SPIRITUAL}
               fg={Color.SPIRITUAL_DARK}
-              title={`🍽️ Reminder Puasa — hari ke-${fastingDayNumber(
+              title={`🍽️ Reminder Puasa, hari ke-${fastingDayNumber(
                 fastingNow,
                 todayId,
               )} dari ${fastingProgress(fastingNow).total}`}
@@ -969,7 +969,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.SPIRITUAL}
               fg={Color.SPIRITUAL_DARK}
-              title={`📅 Reminder Pokok Doa Bulanan — ${prayerMonthTitle}`}
+              title={`📅 Reminder Pokok Doa Bulanan, ${prayerMonthTitle}`}
               onPress={() => router.push('/monthly-prayers')}>
               <VixText heading="label" additionalStyle={styles.prayerText}>
                 Awal bulan! Follow up tiap CORE Leader & tanyakan pokok doa mereka
@@ -1118,7 +1118,7 @@ export default function DashboardScreen() {
                   </VixText>
                   <VixText heading="label" additionalStyle={styles.visitText}>
                     Waktunya kasih masukan ide baru (
-                    {IDEA_CADENCE_LABEL[coreIdeas.cadence].toLowerCase()}) — share
+                    {IDEA_CADENCE_LABEL[coreIdeas.cadence].toLowerCase()}), share
                     juga ke grup MT 🙌
                   </VixText>
                 </PressableScale>
@@ -1191,7 +1191,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.LEARNING}
               fg={Color.LEARNING_DARK}
-              title={`🎓 Reminder Learning — ${learningDue.emoji} ${learningDue.label}`}
+              title={`🎓 Reminder Learning · ${learningDue.emoji} ${learningDue.label}`}
               // Sub-tab 🎯 Target — langkah mingguannya ada di situ,
               // sedangkan Discussion punya remindernya sendiri di bawah.
               onPress={() =>
@@ -1239,7 +1239,7 @@ export default function DashboardScreen() {
               title="🤔 Reminder Olahraga Hari Ini"
               texts={[
                 `${fitWindowLabel(now)} · belum pilih olahraga apa pun hari ini`,
-                `💡 Program menyarankan ${fitSaran.emoji} ${fitSaran.title} — atau pilih sendiri`,
+                `💡 Program menyarankan ${fitSaran.emoji} ${fitSaran.title}, atau pilih sendiri`,
               ]}
               // Sub-tab 💪 Exercise — di situlah memilihnya.
               onPress={() =>
@@ -1324,7 +1324,7 @@ export default function DashboardScreen() {
               onPress={() => router.push('/fun')}>
               <VixText heading="label" additionalStyle={styles.funSub}>
                 {funGap === null
-                  ? 'Belum ada kegiatan Fun yang tercatat — yuk mulai satu!'
+                  ? 'Belum ada kegiatan Fun yang tercatat, yuk mulai satu!'
                   : `Sudah ${funGap} hari tanpa kegiatan seru. Jangan lupa refreshing 🙌`}
               </VixText>
               {funIdeas.map((idea, i) => (
@@ -1340,10 +1340,10 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.WHEEL}
               fg={Color.WHEEL_DARK}
-              title={`🎡 Reminder Kuartal Baru — ${wheelQLabel}`}
+              title={`🎡 Reminder Kuartal Baru, ${wheelQLabel}`}
               onPress={() => router.push('/wheel')}>
               <VixText heading="label" additionalStyle={styles.wheelText}>
-                Yuk isi Wheel of Life kuartal ini — nilai 8 area hidupmu biar tahu
+                Yuk isi Wheel of Life kuartal ini, nilai 8 area hidupmu biar tahu
                 progres & area yang perlu dikembangkan 🎯
               </VixText>
             </ReminderCard>
@@ -1438,7 +1438,7 @@ export default function DashboardScreen() {
                 💼 Produktif Hari Ini
               </VixText>
               <VixText heading="label" additionalStyle={styles.productivitySub}>
-                Tidak ada agenda mendesak — ini yang bisa kamu kerjakan biar tetap
+                Tidak ada agenda mendesak, ini yang bisa kamu kerjakan biar tetap
                 cuan 💪
               </VixText>
               {productivity.map((p) => (

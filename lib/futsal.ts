@@ -543,7 +543,7 @@ export function futsalReminders(
     const belum = sessionUnpaidCount(s);
     return {
       id: s.id,
-      text: `${meta.emoji} ${meta.label} · 🗓️ ${formatDayDate(dayIdToDate(s.dayId))} · ${s.time} — ${kapan}${belum > 0 ? ` · 💸 ${belum} belum setor` : ''}`,
+      text: `${meta.emoji} ${meta.label} · 🗓️ ${formatDayDate(dayIdToDate(s.dayId))} · ${s.time} - ${kapan}${belum > 0 ? ` · 💸 ${belum} belum setor` : ''}`,
     };
   });
 }

@@ -15,12 +15,12 @@ export function BusinessTab() {
         </VixText>
         <VixText heading="paragraph" additionalStyle={styles.text}>
           Rencana bisnis: <VixText heading="bold">Es Cendol</VixText> &{' '}
-          <VixText heading="bold">Roa khas Manado</VixText> — resep masakan
+          <VixText heading="bold">Roa khas Manado</VixText> , resep masakan
           mama sendiri 💛
         </VixText>
         <VixText heading="label" additionalStyle={styles.hint}>
           Belum gerak dulu, dan itu tidak apa-apa. Kalau sudah siap mulai
-          (resep, modal, uji rasa, jualan pertama) — bilang saja, fitur
+          (resep, modal, uji rasa, jualan pertama), bilang saja, fitur
           bisnisnya kita bangun bareng: HPP, stok, sampai catatan penjualan.
         </VixText>
       </View>

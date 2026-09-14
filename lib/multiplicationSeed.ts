@@ -133,8 +133,8 @@ const SEEDS: Seed[] = [
           '31 Januari CL Cevo buka sistem di app',
           'Bubar WAG CORE Victor',
           'Bubar WAG CL MT CORE Victor',
-          'Buat WAG CORE Victor (new) — Invite MCL Steven Gunawan',
-          'Buat WAG CORE Cevo — Invite MCL Steven Gunawan',
+          'Buat WAG CORE Victor (new), Invite MCL Steven Gunawan',
+          'Buat WAG CORE Cevo, Invite MCL Steven Gunawan',
         ],
       },
       {
@@ -142,7 +142,7 @@ const SEEDS: Seed[] = [
         title:
           'Cevo buka sistem CORE under MCL Steven Gunawan / Victor Nathanael',
         mark: '⏳',
-        notes: ['Di catatanmu tertulis “Rabu, 4 Jan” — Rabu-nya jatuh 4 Februari'],
+        notes: ['Di catatanmu tertulis “Rabu, 4 Jan”, Rabu-nya jatuh 4 Februari'],
       },
       { on: [2026, 2, 6], title: 'CORE Perdana CL Cevo', mark: '⏳' },
     ],
@@ -213,7 +213,7 @@ const SEEDS: Seed[] = [
         on: [2026, 1, 17],
         title: 'Reyki Last Fellowship CORE Sarah (Kepulauan Seribu)',
         mark: '❌',
-        notes: ['Batal — diganti di R. Tifara, NDC Central Park'],
+        notes: ['Batal, diganti di R. Tifara, NDC Central Park'],
       },
       {
         on: [2026, 1, 17],
@@ -356,7 +356,7 @@ const SEEDS: Seed[] = [
         on: [2026, 8, 1],
         title: 'Riky pulang ke Ketapang, Kalimantan Barat',
         mark: '⏳',
-        notes: ['Di catatanmu: “Week 1, Agustus 2026” — tanggal pastinya belum ada'],
+        notes: ['Di catatanmu: “Week 1, Agustus 2026”, tanggal pastinya belum ada'],
       },
       { on: [2026, 9, 16], title: 'Riky kembali CORE', mark: '⏳' },
     ],

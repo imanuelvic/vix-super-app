@@ -162,7 +162,7 @@ const BLOCK_A: FitSession[] = [
     minutes: 45,
     exercises: [
       { id: 'warmupwalk', emoji: '🚶', name: 'Jalan cepat pemanasan', sets: 1, reps: '5 menit', weight: null, cardio: true },
-      { id: 'easyrun', emoji: '🏃', name: 'Lari santai — masih sanggup ngobrol', sets: 1, reps: '30 menit', weight: null, cardio: true },
+      { id: 'easyrun', emoji: '🏃', name: 'Lari santai, masih sanggup ngobrol', sets: 1, reps: '30 menit', weight: null, cardio: true },
       { id: 'plank', emoji: '🧘', name: 'Plank', sets: 3, reps: '45 detik', weight: null, video: 'https://youtu.be/Fcbw82ykBvY', core: true },
       { id: 'bicyclecrunch', emoji: '🚴', name: 'Bicycle Crunches', sets: 3, reps: '40 detik', weight: null, video: 'https://youtu.be/lv6BT8_5iIs', core: true },
       { id: 'legraise', emoji: '⚡', name: 'Leg Raises', sets: 3, reps: '15', weight: null, video: 'https://youtu.be/dGKbTKLnym4', core: true },
@@ -260,7 +260,7 @@ const BLOCK_B: FitSession[] = [
     minutes: 50,
     exercises: [
       { id: 'warmupwalk', emoji: '🚶', name: 'Jalan cepat pemanasan', sets: 1, reps: '5 menit', weight: null, cardio: true },
-      { id: 'easyrun', emoji: '🏃', name: 'Lari santai — masih sanggup ngobrol', sets: 1, reps: '35 menit', weight: null, cardio: true },
+      { id: 'easyrun', emoji: '🏃', name: 'Lari santai, masih sanggup ngobrol', sets: 1, reps: '35 menit', weight: null, cardio: true },
       { id: 'sideplank', emoji: '🧘', name: 'Side Plank', sets: 3, reps: '40 detik / sisi', weight: null, core: true },
       { id: 'deadbug', emoji: '⚡', name: 'Dead Bug Dumbbell', sets: 3, reps: '15', weight: 2, core: true },
       { id: 'flutterkick', emoji: '🔥', name: 'Flutter Kicks', sets: 3, reps: '40 detik', weight: null, core: true },
@@ -370,7 +370,7 @@ const BLOCK_C: FitSession[] = [
     minutes: 45,
     exercises: [
       { id: 'warmupwalk', emoji: '🚶', name: 'Jalan cepat pemanasan', sets: 1, reps: '5 menit', weight: null, cardio: true },
-      { id: 'easyrun', emoji: '🏃', name: 'Lari santai — masih sanggup ngobrol', sets: 1, reps: '30 menit', weight: null, cardio: true },
+      { id: 'easyrun', emoji: '🏃', name: 'Lari santai, masih sanggup ngobrol', sets: 1, reps: '30 menit', weight: null, cardio: true },
       { id: 'plank', emoji: '🧘', name: 'Plank', sets: 3, reps: '45 detik', weight: null, video: 'https://youtu.be/Fcbw82ykBvY', core: true },
       { id: 'hollowhold', emoji: '⚡', name: 'Hollow Body Hold', sets: 3, reps: '40 detik', weight: null, core: true },
     ],
@@ -403,7 +403,7 @@ const BLOCK_C: FitSession[] = [
     minutes: 45,
     exercises: [
       { id: 'warmupjog', emoji: '🚶', name: 'Jogging pemanasan', sets: 1, reps: '8 menit', weight: null, cardio: true },
-      { id: 'temporun', emoji: '⚡', name: 'Tempo — kecepatan targetmu di race', sets: 1, reps: '25 menit', weight: null, cardio: true },
+      { id: 'temporun', emoji: '⚡', name: 'Tempo, kecepatan targetmu di race', sets: 1, reps: '25 menit', weight: null, cardio: true },
       { id: 'cooldownwalk', emoji: '🚶', name: 'Jalan pendinginan', sets: 1, reps: '5 menit', weight: null, cardio: true },
       { id: 'russiantwist', emoji: '💥', name: 'Russian Twists', sets: 3, reps: '20', weight: 4, video: 'https://youtu.be/DJQGX2J4IVw', core: true },
     ],
@@ -431,11 +431,11 @@ const BLOCK_C: FitSession[] = [
     kind: 'run',
     emoji: '🏁',
     title: 'Long Run Persiapan Race',
-    focus: 'Jarak terjauh minggu ini — modal utama menuju hari race',
+    focus: 'Jarak terjauh minggu ini, modal utama menuju hari race',
     minutes: 75,
     exercises: [
       { id: 'warmupjog', emoji: '🚶', name: 'Jogging pemanasan', sets: 1, reps: '8 menit', weight: null, cardio: true },
-      { id: 'longrun', emoji: '🏁', name: 'Long run pelan — tambah ±10% tiap minggu', sets: 1, reps: '50 menit', weight: null, cardio: true },
+      { id: 'longrun', emoji: '🏁', name: 'Long run pelan, tambah ±10% tiap minggu', sets: 1, reps: '50 menit', weight: null, cardio: true },
       { id: 'cooldownwalk', emoji: '🚶', name: 'Jalan pendinginan', sets: 1, reps: '7 menit', weight: null, cardio: true },
       { id: 'stretching', emoji: '🧘', name: 'Stretching seluruh badan', sets: 1, reps: '10 menit', weight: null, cardio: true },
     ],
@@ -531,11 +531,6 @@ export function fitSessionFor(d: Date): FitSession {
   return fitSessionOfWeekday(d.getDay(), fitBlockOf(d));
 }
 
-/** Perkiraan durasi sesi, termasuk pemanasan. */
-export function fitSessionMinutes(session: FitSession): number {
-  return session.minutes;
-}
-
 /**
  * Kartu reminder & badge Fitness tampil di DUA jendela: 05.00–08.59 (sesi
  * pagi) dan 16.00–20.59 (sesi sore). Latihannya boleh kapan saja; jendela ini
@@ -575,7 +570,7 @@ const FIT_QUOTES: string[] = [
   '🪞 Perubahan tidak kelihatan tiap hari, tapi kelihatan tiap bulan.',
   '⚡ Mood tidak menentukan jadwal. Jadwal menentukan mood.',
   '🏃 Beban membentuk ototnya, lari membuka tutupnya. Dua-duanya perlu.',
-  '🌅 Pagi atau sore sama saja — yang tidak sama itu jadi atau tidak.',
+  '🌅 Pagi atau sore sama saja, yang tidak sama itu jadi atau tidak.',
   '🫁 Napas ngos-ngosan hari ini = napas panjang tahun depan.',
 ];
 
@@ -584,7 +579,7 @@ export function fitQuote(dayId: string): string {
 }
 
 export const FIT_RECOVERY: string[] = [
-  '😴 Tidur 7–8 jam — ini saat otot benar-benar dibangun',
+  '😴 Tidur 7–8 jam, ini saat otot benar-benar dibangun',
   '🧘 Stretching ringan 10 menit biar tidak kaku',
   '🚶 Jalan pagi 20–30 menit, jangan diam total',
   '🥩 Protein tetap jalan walau tidak angkat beban',

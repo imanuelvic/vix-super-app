@@ -111,6 +111,10 @@ const MAPPING = {
   'link': 'link',
   // Sub-tab Creators 🎬 di Fun — video terbaru kanal YouTube yang diikuti.
   'play.rectangle.fill': 'smart-display',
+  // Sheet Catatan Hari Ini (Habits): salin seluruh catatan. (Tombol ChatGPT
+  // di sebelahnya memakai 'bubble.left.fill' yang sudah ada di atas; ✨ di app
+  // ini khusus berarti AI, yaitu tombol Rapihkan di CORE & AI Reflection.)
+  'doc.on.doc': 'content-copy',
 } as IconMapping;
 
 /**

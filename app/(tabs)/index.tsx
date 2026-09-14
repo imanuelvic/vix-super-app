@@ -776,7 +776,7 @@ export default function HomeScreen() {
             <ReminderCard
               bg={Color.SPIRITUAL}
               fg={Color.SPIRITUAL_DARK}
-              title={`🙏 Doa Syafaat — ${intercession.emoji} ${intercession.label} ${
+              title={`🙏 Doa Syafaat · ${intercession.emoji} ${intercession.label} ${
                 intercessionChain ? '→' : intercessionOpen ? '▴' : '▾'
               }`}
               texts={intercessionTexts}
@@ -839,7 +839,7 @@ export default function HomeScreen() {
                 fg={Color.SPIRITUAL_DARK}
                 title={`🍽️ ${fastingDue.title}`}
                 texts={[
-                  `Hari ke-${fastingDayNumber(fastingDue, todayId)} — sudah dijalani? Centang sekarang`,
+                  `Hari ke-${fastingDayNumber(fastingDue, todayId)}, sudah dijalani? Centang sekarang`,
                 ]}
                 onPress={() =>
                   router.push({

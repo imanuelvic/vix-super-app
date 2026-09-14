@@ -114,7 +114,7 @@ export default function ExLeadersScreen() {
               </VixText>
               <VixText heading="label" additionalStyle={styles.emptyText}>
                 Saat kamu tak lagi memegang seorang CORE Leader, tandai lewat
-                “sudah tidak saya pegang” di Edit CORE Leader — mereka pindah ke
+                “sudah tidak saya pegang” di Edit CORE Leader, mereka pindah ke
                 sini beserta alasannya.
               </VixText>
             </View>
@@ -157,7 +157,7 @@ export default function ExLeadersScreen() {
                     Alasan
                   </VixText>
                   <VixText heading="paragraph" additionalStyle={styles.reasonText}>
-                    {ex.exReason || '—'}
+                    {ex.exReason || '-'}
                   </VixText>
                 </View>
 
@@ -183,7 +183,7 @@ export default function ExLeadersScreen() {
       <ConfirmDialog
         visible={confirmRestore !== null}
         title={`Kembalikan ${confirmRestore?.name ?? ''} jadi CORE Leader?`}
-        detail={`${confirmRestore?.name ?? 'Dia'} akan masuk lagi ke daftar CORE Leader..`}
+        detail={`${confirmRestore?.name ?? 'Dia'} akan masuk lagi ke daftar CORE Leader.`}
         confirmLabel="Ya, kembalikan"
         danger={false}
         busy={busyId !== null && busyId === confirmRestore?.id}

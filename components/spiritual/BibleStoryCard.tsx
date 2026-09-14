@@ -157,7 +157,7 @@ export const BibleStoryCard = forwardRef<
           fontSize={34}
           fontFamily="Inter_600SemiBold"
           letterSpacing={2}>
-          — {acuan}
+          - {acuan}
         </SvgText>
       ) : null}
 

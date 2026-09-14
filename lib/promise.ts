@@ -49,16 +49,6 @@ export type Promise = {
   updatedId: string;
 };
 
-/** Isian kosong untuk janji baru. */
-export const EMPTY_PROMISE: Omit<Promise, 'id' | 'createdId' | 'updatedId'> = {
-  promise: '',
-  verse: '',
-  struggle: '',
-  story: '',
-  prayed: false,
-  answeredId: '',
-};
-
 /** ID unik untuk janji baru. Bentuknya sama dengan periode puasa & sesi futsal. */
 export function newPromiseId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

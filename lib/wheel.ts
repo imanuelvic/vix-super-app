@@ -48,7 +48,7 @@ export const MIN_FOCUS = 3;
 export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
   spirituality: [
     '📖 Saat teduh tiap pagi: baca 1 pasal + doa 10 menit.',
-    '⛪ Ibadah & CORE rutin — jangan bolong.',
+    '⛪ Ibadah & CORE rutin, jangan bolong.',
     '✍️ Revive: catat pergumulan & jawaban Tuhan.',
     '🧠 Hafal 1 ayat tiap minggu.',
     '🙇 Sisihkan waktu puasa/doa khusus 1x sebulan.',
@@ -62,7 +62,7 @@ export const WHEEL_TIPS: Record<WheelAreaKey, string[]> = {
   ],
   family: [
     '📞 Kabari / telepon orang tua tiap minggu.',
-    '🍽️ Quality time tanpa HP — hadir penuh.',
+    '🍽️ Quality time tanpa HP, hadir penuh.',
     '🎁 Ingat & rayakan momen penting mereka.',
     '🤝 Bantu kebutuhan keluarga secara konkret.',
     '🙏 Doakan tiap anggota keluarga secara spesifik.',
@@ -142,7 +142,7 @@ export const WHEEL_REFLECTIONS: Record<WheelAreaKey, string[]> = {
     '🙏 Kamu melayani karena cinta, atau karena rutinitas?',
   ],
   career: [
-    '🎯 Target kerjamu minggu ini apa — bisa kamu sebut sekarang?',
+    '🎯 Target kerjamu minggu ini apa, bisa kamu sebut sekarang?',
     '📚 Skill apa yang kamu pelajari 3 bulan terakhir?',
     '🗣️ Kapan terakhir kamu minta feedback jujur soal kerjamu?',
     '✨ Seberapa enjoy/passion kamu bekerja di tempat sekarang?',

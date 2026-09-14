@@ -77,7 +77,7 @@ export function WeekTargetCard({ km }: { km: number }) {
           🎯 Target Langkah Mingguan
         </VixText>
         <VixText heading="label" additionalStyle={styles.hint}>
-          Belum dipasang. Tentukan targetmu minggu ini — biar ada yang dikejar,
+          Belum dipasang. Tentukan targetmu minggu ini, biar ada yang dikejar,
           bukan cuma dicatat ›
         </VixText>
         {dialog()}

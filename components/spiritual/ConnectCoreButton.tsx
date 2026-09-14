@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -139,10 +140,10 @@ export function ConnectCoreButton({
         {memuat ? (
           <LoadingCenter />
         ) : pilihan.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada Visitation atau Monthly yang akan datang. Jadwalkan dulu
             di fitur CORE 🙏
-          </VixText>
+          </EmptyText>
         ) : (
           pilihan.map((p) => {
             const dipilih = isNoteLinked(links!, p.id, kind, noteId);
@@ -167,7 +168,7 @@ export function ConnectCoreButton({
         )}
         {!memuat && tersambung > 0 && (
           <VixText heading="label" additionalStyle={styles.foot}>
-            🔗 Tersambung ke {tersambung} acara. Buka acaranya di CORE — tombol
+            🔗 Tersambung ke {tersambung} acara. Buka acaranya di CORE, tombol
             🔗-nya membuka catatan ini.
           </VixText>
         )}
@@ -202,6 +203,5 @@ const styles = StyleSheet.create({
   },
   rowMain: { flex: 1, gap: 2 },
   rowSub: { color: Color.TEXT_LABEL },
-  empty: { textAlign: 'center', marginVertical: 10 },
   foot: { color: Color.TEXT_LABEL, marginTop: 4 },
 });

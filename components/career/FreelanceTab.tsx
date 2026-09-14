@@ -77,7 +77,7 @@ export function FreelanceTab({
         {/* Ringkasan usaha freelance */}
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>
-            🌐 Website & App Developer — Freelance
+            🌐 Website & App Developer, Freelance
           </VixText>
           <VixText heading="subheader" additionalStyle={summaryText.value}>
             {active.length}{' '}
@@ -98,7 +98,7 @@ export function FreelanceTab({
 
         {sorted.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada proyek — catat proyek client pertamamu di sini 🚀
+            Belum ada proyek, catat proyek client pertamamu di sini 🚀
           </VixText>
         )}
 

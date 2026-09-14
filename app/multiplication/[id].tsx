@@ -361,7 +361,7 @@ export default function MultiplicationDetailScreen() {
 
             {groups.length === 0 ? (
               <VixText heading="label" additionalStyle={styles.empty}>
-                Timeline-nya masih kosong. Mulai dari langkah pertama —
+                Timeline-nya masih kosong. Mulai dari langkah pertama, 
                 mis. “Training Calon CORE Leader Sesi 1” 🌱
               </VixText>
             ) : (
@@ -471,7 +471,7 @@ export default function MultiplicationDetailScreen() {
                       {p.name}
                     </VixText>
                     <VixText heading="label" additionalStyle={styles.memberAge}>
-                      {p.age === null ? '—' : `${p.age} th`}
+                      {p.age === null ? '-' : `${p.age} th`}
                     </VixText>
                   </View>
                   {p.reason ? (

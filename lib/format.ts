@@ -259,6 +259,48 @@ export function dayIdToDate(dayId: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** Posisi hari dalam minggu Senin-dulu: Sen=0, Sel=1, …, Min=6. */
+export function mondayIndex(d: Date): number {
+  return (d.getDay() + 6) % 7;
+}
+
+/**
+ * Nomor minggu ISO 8601 dari tanggal SENIN-nya: minggu 1 = minggu yang memuat
+ * 4 Januari, dan tahunnya ikut Kamis minggu itu (29 Des 2025 = minggu 1 tahun
+ * 2026; 1 Jan 2027 masih minggu 53 tahun 2026). Ini hitungan minggu yang sama
+ * dengan kalender HP & Google Calendar, jadi angkanya bisa dicocokkan.
+ */
+export function isoWeekOfMonday(monday: Date): { week: number; year: number } {
+  const thu = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 3);
+  const year = thu.getFullYear();
+  const jan4 = new Date(year, 0, 4);
+  const week1 = new Date(year, 0, 4 - mondayIndex(jan4));
+  // Indonesia tanpa DST, jadi jarak antar-Senin selalu tepat 7 hari.
+  const week = Math.round((monday.getTime() - week1.getTime()) / 604_800_000) + 1;
+  return { week, year };
+}
+
+/**
+ * "7-13 Sep 2026" — rentang Senin s.d. Minggu dari tanggal SENIN-nya. Kalau
+ * minggunya menyeberang bulan: "28 Sep - 4 Okt 2026"; menyeberang tahun:
+ * "29 Des 2025 - 4 Jan 2026".
+ */
+export function formatWeekRange(monday: Date): string {
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+  if (monday.getFullYear() !== sunday.getFullYear()) {
+    return `${formatShortDate(monday)} - ${formatShortDate(sunday)}`;
+  }
+  if (monday.getMonth() !== sunday.getMonth()) {
+    return `${monday.getDate()} ${monthShort(monday)} - ${formatShortDate(sunday)}`;
+  }
+  return `${monday.getDate()}-${sunday.getDate()} ${monthShort(sunday)} ${sunday.getFullYear()}`;
+}
+
+/** "Minggu ke-37 (7-13 Sep 2026)" — label satu minggu dari tanggal SENIN-nya. */
+export function formatWeekLabel(monday: Date): string {
+  return `Minggu ke-${isoWeekOfMonday(monday).week} (${formatWeekRange(monday)})`;
+}
+
 /** Kamis, 6 Agustus (tanpa tahun — untuk daftar harian). */
 export function formatDayMonth(d: Date): string {
   return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;

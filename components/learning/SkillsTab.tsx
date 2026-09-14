@@ -206,7 +206,7 @@ export function SkillsTab({
                       📚 {openBook.title}
                     </VixText>
                     <VixText heading="label" additionalStyle={styles.rowWhat}>
-                      {openBook.author} · {openBook.chapters.length} bab — buka di
+                      {openBook.author} · {openBook.chapters.length} bab, buka di
                       fitur Book
                     </VixText>
                   </View>

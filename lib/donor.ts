@@ -126,5 +126,5 @@ export const DONOR_TIPS: string[] = [
   '😴 Tidur cukup malam sebelumnya (min. 5 jam)',
   '🚭 Hindari rokok & alkohol 24 jam sebelum donor',
   '💪 Setelah donor: istirahat sebentar, hindari angkat berat 12 jam',
-  '🩸 1 kantong darah bisa menolong sampai 3 nyawa — kamu pahlawan!',
+  '🩸 1 kantong darah bisa menolong sampai 3 nyawa, kamu pahlawan!',
 ];

@@ -89,7 +89,7 @@ export function PopulationTab({ saved }: { saved: PopulationSaved }) {
     if (!user || busy) return;
     const jumlah = parseAmount(fJumlah);
     if (jumlah <= 0) {
-      setFormError('Angkanya diisi dulu — salin dari worldometers.info.');
+      setFormError('Angkanya diisi dulu, salin dari worldometers.info.');
       return;
     }
     const dayId = toDayId(fTanggal);

@@ -159,7 +159,7 @@ export default function MonthlyPrayersScreen() {
                 🔄 Sudah masuk {monthTitle}
               </VixText>
               <VixText heading="label" additionalStyle={styles.staleSub}>
-                Pokok doa di bawah masih dari bulan lalu — tinjau & perbarui bila
+                Pokok doa di bawah masih dari bulan lalu, tinjau & perbarui bila
                 perlu. Yang lama tidak dihapus otomatis.
               </VixText>
             </View>
@@ -240,7 +240,7 @@ export default function MonthlyPrayersScreen() {
                       <VixText
                         heading="label"
                         additionalStyle={styles.emptyPoint}>
-                        Belum ada pokok doa — tambahkan di bawah 👇
+                        Belum ada pokok doa, tambahkan di bawah 👇
                       </VixText>
                     )}
 

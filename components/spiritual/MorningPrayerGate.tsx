@@ -147,7 +147,7 @@ export function MorningPrayerGate({
               ⏰ Tinggal {minutesLeft} menit lagi
             </VixText>
             <VixText heading="label" additionalStyle={styles.warnSub}>
-              Lewat jam 09.00 doa pagi hari ini otomatis terlewat — gerbang ini
+              Lewat jam 09.00 doa pagi hari ini otomatis terlewat, gerbang ini
               menghilang sendiri & streak 🔥 hangus.
             </VixText>
           </Animated.View>
@@ -185,7 +185,7 @@ export function MorningPrayerGate({
             style={styles.stepCard}>
             <VixText heading="title" additionalStyle={styles.stepTitle}>
               {nChain}. Doa Rantai
-              {chainIsToday ? ` — syafaat hari ini ${topic.emoji}` : ''}
+              {chainIsToday ? `, syafaat hari ini ${topic.emoji}` : ''}
             </VixText>
 
             {chainLeaders.map((l) => {
@@ -254,7 +254,7 @@ export function MorningPrayerGate({
               <CheckCircle checked={chainLeft === 0} locked />
               <VixText heading="bold" additionalStyle={styles.checkText}>
                 {chainLeft === 0
-                  ? `Kuota pagi beres — ${chainDoneCount}/${chainLeaders.length} CORE Leader sudah didoakan`
+                  ? `Kuota pagi beres · ${chainDoneCount}/${chainLeaders.length} CORE Leader sudah didoakan`
                   : `Doakan ${chainLeft} CORE Leader lagi pagi ini (${chainDoneCount}/${chainQuota})`}
               </VixText>
             </View>
@@ -269,7 +269,7 @@ export function MorningPrayerGate({
             entering={FadeInDown.delay(290).duration(350)}
             style={styles.stepCard}>
             <VixText heading="title" additionalStyle={styles.stepTitle}>
-              {nIntercession}. Doa Syafaat — {topic.emoji} {topic.label}
+              {nIntercession}. Doa Syafaat · {topic.emoji} {topic.label}
             </VixText>
             <View style={styles.prayerBox}>
               {topic.points.map((p) => (
@@ -307,7 +307,7 @@ export function MorningPrayerGate({
               {worship.text}
             </VixText>
             <VixText heading="label" additionalStyle={styles.verseRef}>
-              — {worship.ref}
+              - {worship.ref}
             </VixText>
           </View>
           <PressableScale
@@ -370,7 +370,7 @@ export function MorningPrayerGate({
             style={styles.skipButton}
             onPress={() => setSkipConfirm(true)}>
             <VixText heading="label" additionalStyle={styles.skipText}>
-              Keadaan mendesak? Lewati doa pagi hari ini — streak 🔥 hangus
+              Keadaan mendesak? Lewati doa pagi hari ini, streak 🔥 hangus
             </VixText>
           </PressableScale>
         )}

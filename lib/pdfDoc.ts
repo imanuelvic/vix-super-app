@@ -66,7 +66,7 @@ export function htmlParagraphs(text: string): string {
   const lines = text.split('\n').map((l) => l.trim());
   while (lines.length > 0 && !lines[0]) lines.shift();
   while (lines.length > 0 && !lines[lines.length - 1]) lines.pop();
-  if (lines.length === 0) return '<p class="kosong">— belum diisi —</p>';
+  if (lines.length === 0) return '<p class="kosong">belum diisi</p>';
 
   const out: string[] = [];
   let adaJeda = false;
@@ -100,7 +100,7 @@ const BASE_CSS = `
     font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
     color: #10221C;
     /* Jarak tepi TIDAK diatur di sini, melainkan lewat opsi margins
-       expo-print (lihat PAGE_MARGINS) — padding body cuma berlaku sekali di
+       expo-print (lihat PAGE_MARGINS), padding body cuma berlaku sekali di
        awal dokumen, jadi halaman kedua dan seterusnya akan mepet tanpa jeda. */
     margin: 0;
     padding: 0;
@@ -145,7 +145,7 @@ const BASE_CSS = `
   }
 
   /* Sudut kanan atas: logo CORE + pemilik dokumen. Logonya lingkaran GELAP,
-     jadi diberi alas putih — kalau ditempel langsung ke hijau tua ia hilang. */
+     jadi diberi alas putih, kalau ditempel langsung ke hijau tua ia hilang. */
   .kop-kanan {
     flex: none;
     display: flex;

@@ -5,6 +5,7 @@ import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { EditButton } from '@/components/common/EditButton';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { Pagination } from '@/components/common/Pagination';
@@ -107,10 +108,10 @@ export function NotesTab({ notes }: { notes: FitNote[] }) {
         />
 
         {notes.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada catatan. Tempel link video gerakan, program, atau artikel
             yang mau kamu simpan 📝
-          </VixText>
+          </EmptyText>
         )}
 
         {pageItems.map((n) => {
@@ -211,7 +212,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   card: {
     ...CARD,
     flexDirection: 'row',

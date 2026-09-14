@@ -8,6 +8,7 @@ import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -126,9 +127,9 @@ export default function FutsalSessionScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="Friends" title="Futsal ⚽" />
         <ScreenError message={error} />
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText>
           Jadwal ini sudah tidak ada.
-        </VixText>
+        </EmptyText>
       </SafeAreaView>
     );
   }
@@ -219,7 +220,7 @@ export default function FutsalSessionScreen() {
   function tagih(m: FutsalMember) {
     if (!sesi) return;
     if (!m.phone) {
-      setError('Nomor HP-nya belum diisi — isi dulu di daftar anggota.');
+      setError('Nomor HP-nya belum diisi, isi dulu di daftar anggota.');
       return;
     }
     openWhatsAppChat(m.phone, sessionReminder(sesi), () =>
@@ -419,9 +420,9 @@ export default function FutsalSessionScreen() {
         <View style={styles.sectionGap}>
           {squadOpen &&
             (anggota.length === 0 ? (
-              <VixText heading="label" additionalStyle={styles.empty}>
-                Belum ada anggota {meta.label} — tambahkan dulu di sub-tab Futsal.
-              </VixText>
+              <EmptyText>
+                Belum ada anggota {meta.label} , tambahkan dulu di sub-tab Futsal.
+              </EmptyText>
             ) : (
               barisSquad.map((m) => {
                 const ikut = sesi.squad.includes(m.id);
@@ -445,7 +446,7 @@ export default function FutsalSessionScreen() {
                       <VixText heading="label">
                         {lunas
                           ? `✅ Sudah setor ${formatRupiah(sesi.fee)}${
-                              ikut ? '' : ' — walau tidak ikut main'
+                              ikut ? '' : ', walau tidak ikut main'
                             }`
                           : ikut
                             ? `💸 Belum setor ${formatRupiah(sesi.fee)}`
@@ -496,9 +497,9 @@ export default function FutsalSessionScreen() {
           {gamesOpen && (
             <>
               {sesi.games.length === 0 ? (
-                <VixText heading="label" additionalStyle={styles.empty}>
+                <EmptyText>
                   Belum ada game tercatat.
-                </VixText>
+                </EmptyText>
               ) : (
                 sesi.games.map((g, i) => (
                   <PressableScale
@@ -693,7 +694,6 @@ const styles = StyleSheet.create({
   // di atas), jadi ia turun ke blok yang mendahuluinya. Angkanya tetap yang
   // sama supaya jarak antar-bagian di layar ini tak bergeser sedikit pun.
   sectionGap: { marginBottom: SECTION_SPACE.marginTop },
-  empty: { textAlign: 'center', marginVertical: 10 },
   // Setor ke kas: garis saja, bukan tombol penuh — memindahkan uang ke kas itu
   // langkah lanjutan, bukan tindakan utama layar ini.
   kasButton: {

@@ -60,7 +60,7 @@ export function BadgeReminders({ counts }: { counts: Record<string, number> }) {
             key={f.key}
             bg={f.bg}
             fg={f.fg}
-            title={`${nota.emoji} Reminder ${f.label} — ${jumlah} hal`}
+            title={`${nota.emoji} Reminder ${f.label} - ${jumlah} hal`}
             texts={[nota.apa, nota.aksi]}
             onPress={() => router.push(f.route)}
           />

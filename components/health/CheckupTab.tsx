@@ -9,6 +9,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
@@ -211,9 +212,9 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
           Riwayat
         </VixText>
         {checkups.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada catatan pemeriksaan.
-          </VixText>
+          </EmptyText>
         )}
         {pageItems.map((c) => {
           const meta = TYPE_META[c.type];
@@ -388,7 +389,6 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   chipFlex: { flex: 1 },
   formGap: { marginBottom: 10 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     ...CARD,
     flexDirection: 'row',

@@ -26,12 +26,12 @@ export default function MarriedScreen() {
             Coming Soon 🚧
           </VixText>
           <VixText heading="paragraph" additionalStyle={styles.text}>
-            Tempatnya sudah disiapkan — isinya menyusul.
+            Tempatnya sudah disiapkan, isinya menyusul.
           </VixText>
           <VixText heading="label" additionalStyle={styles.hint}>
             Kalau nanti sudah waktunya, bilang saja apa yang mau dicatat di sini
             (persiapan, tabungan nikah, daftar undangan, konseling pranikah,
-            rencana rumah tangga) — fiturnya kita bangun bareng.
+            rencana rumah tangga), fiturnya kita bangun bareng.
           </VixText>
         </View>
       </ScrollView>

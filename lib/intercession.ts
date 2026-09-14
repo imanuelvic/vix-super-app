@@ -37,7 +37,7 @@ const CHAIN: IntercessionTopic = {
   label: 'Doa Rantai CL',
   points: [
     'Doakan pokok doa tiap CORE Leader yang giliran hari ini',
-    'Tanyakan perkembangan pergumulannya — jangan cuma didoakan, di-follow up',
+    'Tanyakan perkembangan pergumulannya, jangan cuma didoakan, di-follow up',
   ],
 };
 
@@ -49,10 +49,10 @@ const INTERCESSION_WEEK: IntercessionTopic[] = [
     emoji: '🇮🇩',
     label: 'Negara',
     points: [
-      'Presiden & para pemimpin bangsa — hikmat, hati takut Tuhan, bersih dari korupsi',
+      'Presiden & para pemimpin bangsa, hikmat, hati takut Tuhan, bersih dari korupsi',
       'Damai sejahtera, keadilan & kerukunan antarumat beragama',
       'Ekonomi bangsa, lapangan kerja & harga kebutuhan pokok',
-      'Kebangunan rohani atas Indonesia — gereja jadi terang di tengah bangsa',
+      'Kebangunan rohani atas Indonesia, gereja jadi terang di tengah bangsa',
     ],
   },
   // 1 — Senin
@@ -61,10 +61,10 @@ const INTERCESSION_WEEK: IntercessionTopic[] = [
     emoji: '🩺',
     label: 'Keluarga · Kesehatan',
     points: [
-      'Kesehatan papa & mama — kekuatan, umur panjang & pemulihan',
+      'Kesehatan papa & mama, kekuatan, umur panjang & pemulihan',
       'Perlindungan seisi rumah dari penyakit & kecelakaan',
       'Pola makan, istirahat & olahraga tiap anggota keluarga',
-      'Kesehatan calon pasangan — kedewasaan, fisik, roh & jiwa',
+      'Kesehatan calon pasangan, kedewasaan, fisik, roh & jiwa',
     ],
   },
   // 2 — Selasa
@@ -76,7 +76,7 @@ const INTERCESSION_WEEK: IntercessionTopic[] = [
     label: 'Keluarga · Ekonomi',
     points: [
       'Kecukupan & hikmat mengelola keuangan keluarga',
-      'Pekerjaan/usaha papa, mama & saudara — dibukakan pintu & diberkati',
+      'Pekerjaan/usaha papa, mama & saudara, dibukakan pintu & diberkati',
       'Lepas dari hutang, sampai ada kelebihan untuk memberi',
       'Persiapan ekonomi menuju pernikahan bersama pasangan',
     ],
@@ -89,7 +89,7 @@ const INTERCESSION_WEEK: IntercessionTopic[] = [
     emoji: '🤝',
     label: 'Keluarga · Kesatuan',
     points: [
-      'Kesatuan hati papa, mama & saudara — satu rumah, satu arah',
+      'Kesatuan hati papa, mama & saudara, satu rumah, satu arah',
       'Pengampunan & pemulihan relasi yang sempat renggang',
       'Keluarga jadi mezbah doa, bukan sekadar tempat tinggal',
       'Kesatuan visi & hati dengan pasangan',
@@ -101,10 +101,10 @@ const INTERCESSION_WEEK: IntercessionTopic[] = [
     emoji: '⛪',
     label: 'Gereja',
     points: [
-      'Gembala & para pemimpin gereja — hikmat, kekuatan & kemurnian hati',
+      'Gembala & para pemimpin gereja, hikmat, kekuatan & kemurnian hati',
       'Ibadah besok: hadirat Tuhan turun & jiwa-jiwa baru dimenangkan',
       'CORE & Main Team bertumbuh, tiap anggota dipulihkan',
-      'Kesatuan tubuh Kristus — tidak ada perpecahan di antara pelayan',
+      'Kesatuan tubuh Kristus, tidak ada perpecahan di antara pelayan',
     ],
   },
 ];

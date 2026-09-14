@@ -6,6 +6,7 @@ import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InfoChip } from '@/components/common/InfoChip';
@@ -331,9 +332,9 @@ export function FutsalTab({
         <View>
           {anggotaOpen &&
             (anggota.length === 0 ? (
-              <VixText heading="label" additionalStyle={styles.empty}>
+              <EmptyText>
                 Tambah anggota {meta.label}.
-              </VixText>
+              </EmptyText>
             ) : (
               <>
                 {/* Urut abjad nama — lihat gangMembers di lib/futsal.ts. */}
@@ -468,7 +469,6 @@ const styles = StyleSheet.create({
   heroGang: { flex: 1, minWidth: 0 },
   heroChevron: { color: Color.TEXT_ON_DARK_SOFT },
   heroChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   // Baris anggota.
   orangRow: {
     ...CARD,

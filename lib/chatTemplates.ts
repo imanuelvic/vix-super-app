@@ -51,7 +51,7 @@ export const CHAT_CATEGORIES: ChatCategory[] = [
   {
     key: 'motivational',
     title: '🔥 Motivational Words',
-    hint: 'Satu untuk tiap hari — kirim ke grup CORE Leaders tiap pagi',
+    hint: 'Satu untuk tiap hari, kirim ke grup CORE Leaders tiap pagi',
     fields: ['nama'],
     byDay: true,
     variants: [
@@ -168,7 +168,7 @@ Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi ke
     variants: [
       {
         key: 'A',
-        text: 'Selamatt wisuda <nama>, <gelar>! 🎓🎉 Skripsi, revisi, begadang — kebayar semua hari ini. Bangga bangett sama kamu! Tuhan buka pintu-pintu berikutnya yaa 🙏✨',
+        text: 'Selamatt wisuda <nama>, <gelar>! 🎓🎉 Skripsi, revisi, begadang, kebayar semua hari ini. Bangga bangett sama kamu! Tuhan buka pintu-pintu berikutnya yaa 🙏✨',
       },
       {
         key: 'B',
@@ -236,7 +236,7 @@ Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi ke
       },
       {
         key: 'C',
-        text: 'Wahh selamat <nama>! 🙌 Babak baru, tantangan baru. Kerjain dengan segenap hati kayak untuk Tuhan yaa — pasti kelihatan bedanya ✨',
+        text: 'Wahh selamat <nama>! 🙌 Babak baru, tantangan baru. Kerjain dengan segenap hati kayak untuk Tuhan yaa, pasti kelihatan bedanya ✨',
       },
     ],
   },
@@ -303,7 +303,7 @@ Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi ke
   {
     key: 'ajakan',
     title: '📣 Ajakan Datang CORE',
-    hint: 'Untuk dikirim ke grup — mengingatkan & memanggil pulang',
+    hint: 'Untuk dikirim ke grup, mengingatkan & memanggil pulang',
     fields: [],
     variants: [
       {
@@ -316,7 +316,7 @@ Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi ke
       },
       {
         key: 'C',
-        text: 'Guysss, ditunggu di CORE yaa! 🙌 Gak perlu datang dalam keadaan sempurna — datang aja apa adanya, Tuhan yang kerjain sisanya 🤍',
+        text: 'Guysss, ditunggu di CORE yaa! 🙌 Gak perlu datang dalam keadaan sempurna, datang aja apa adanya, Tuhan yang kerjain sisanya 🤍',
       },
     ],
   },

@@ -161,7 +161,7 @@ export const SEED_HISTORY: Omit<HistoryItem, 'id'>[] = [
   seed(2006, null, 'family', 'Pernikahan', 'Rendie & Inne', ''),
   seed(2007, null, 'family', 'Pernikahan', 'Natalie & Glend', ''),
   seed(2024, null, 'family', 'Pernikahan', 'Angely & Kevin', ''),
-  seed(2027, null, 'family', 'Pernikahan', 'Imanuel & Resita', 'Rencana di sheet — belum terjadi'),
+  seed(2027, null, 'family', 'Pernikahan', 'Imanuel & Resita', 'Rencana di sheet, belum terjadi'),
 
   // ---------- 🙏 Ministry: ibadah minggu ----------
   seed(2015, 2019, 'ministry', 'Ibadah Minggu', 'Usher', 'NDC Central Park (Pk. 11.00)'),
@@ -182,14 +182,14 @@ export const SEED_HISTORY: Omit<HistoryItem, 'id'>[] = [
   seed(2026, null, 'ministry', 'Pembicara', 'NDC Youth', ''),
 
   // ---------- 💼 Career: organisasi ----------
-  seed(2016, 2017, 'career', 'Organisasi', 'Treasurer — BASIC', 'PIC Syahdan - PO'),
+  seed(2016, 2017, 'career', 'Organisasi', 'Treasurer · BASIC', 'PIC Syahdan - PO'),
   seed(2018, 2019, 'career', 'Organisasi', 'Treasurer', 'PO BINUS'),
   seed(2020, 2022, 'career', 'Organisasi', 'Badan Pengurus Umum', 'Tim Dana Sekretariat'),
 
   // ---------- 💼 Career: pekerjaan utama ----------
   seed(2019, 2020, 'career', 'Pekerjaan Utama', 'Parttime', 'NDC'),
   seed(2021, null, 'career', 'Pekerjaan Utama', 'ROYAL R1CH', ''),
-  seed(2022, 2025, 'career', 'Pekerjaan Utama', 'Fulltimer — Digital Works', 'Nafiri Discipleship Church'),
+  seed(2022, 2025, 'career', 'Pekerjaan Utama', 'Fulltimer · Digital Works', 'Nafiri Discipleship Church'),
 
   // ---------- 💵 Finance ----------
   seed(2023, 2024, 'finance', 'Side Job', 'Versatility in Scents (ViS)', ''),

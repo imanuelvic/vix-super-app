@@ -73,7 +73,7 @@ function bar(score: number, warna: string, target?: number): string {
 
 function focusHtml(data: WheelData): string {
   if (data.focus.length === 0) {
-    return `<p class="kosong">Belum ada area fokus — minimal ${MIN_FOCUS} area dipilih tiap kuartal.</p>`;
+    return `<p class="kosong">Belum ada area fokus, minimal ${MIN_FOCUS} area dipilih tiap kuartal.</p>`;
   }
   return data.focus
     .map((f) => {
@@ -112,7 +112,7 @@ function scoresHtml(data: WheelData): string {
       ${bar(score, t.warna)}
       <div class="area-tanya">${escapeHtml(a.question)}</div>
       <div class="area-catatan">${
-        catatan ? htmlParagraphs(catatan) : '<p class="kosong">— tanpa catatan —</p>'
+        catatan ? htmlParagraphs(catatan) : '<p class="kosong">tanpa catatan</p>'
       }</div>
     </div>`;
   }).join('');
@@ -138,7 +138,7 @@ const EXTRA_CSS = `
     padding: 9px 6px; font-size: 11px; font-weight: 700;
   }
 
-  /* Batang score — dipakai kartu fokus & daftar area */
+  /* Batang score, dipakai kartu fokus & daftar area */
   .bar {
     position: relative; height: 9px; border-radius: 5px;
     background: #F1E7D6; overflow: hidden; margin: 7px 0 0;
@@ -242,7 +242,7 @@ export async function shareWheelPdf(
 
     <h2>🎯 Fokus Kuartal${
       data.focus.length > 0
-        ? ` — ${data.focus.length} area${sisaPoin > 0 ? `, kurang ${sisaPoin} poin lagi` : ', semua target tercapai 🎉'}`
+        ? ` - ${data.focus.length} area${sisaPoin > 0 ? `, kurang ${sisaPoin} poin lagi` : ', semua target tercapai 🎉'}`
         : ''
     }</h2>
     ${focusHtml(data)}
@@ -253,7 +253,7 @@ export async function shareWheelPdf(
 
   const html = pdfShellHtml({
     eyebrow: 'WHEEL OF LIFE',
-    title: `${judul} — ${kuartal}`,
+    title: `${judul} - ${kuartal}`,
     subtitle: orang
       ? `8 area hidup ${orang.name}, dinilai bersama saat visitasi.`
       : '8 area hidup, dinilai ulang tiap kuartal.',
@@ -267,13 +267,13 @@ export async function shareWheelPdf(
         label: 'Dibuat',
         value: data.createdAt
           ? formatCompactDateTime(data.createdAt.toDate())
-          : '—',
+          : '-',
       },
       {
         label: 'Terakhir diubah',
         value: data.updatedAt
           ? formatCompactDateTime(data.updatedAt.toDate())
-          : '—',
+          : '-',
       },
       { label: 'Rata-rata', value: `${avg.toFixed(1).replace('.', ',')} / 10` },
     ],

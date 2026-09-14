@@ -10,7 +10,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { usePagination } from '@/hooks/usePagination';
-import { dayIdToDate, formatShortDayDate } from '@/lib/format';
+import { dayIdToDate, formatWeekLabel } from '@/lib/format';
 import {
   SKILL_AREAS,
   skillOfNote,
@@ -68,7 +68,7 @@ export default function LearningArchiveScreen() {
                 return (
                   <View key={n.weekId} style={styles.noteCard}>
                     <VixText heading="label" additionalStyle={styles.noteDate}>
-                      📅 {formatShortDayDate(dayIdToDate(n.weekId))}
+                      📅 {formatWeekLabel(dayIdToDate(n.weekId))}
                     </VixText>
                     <VixText heading="bold" additionalStyle={styles.noteTitle}>
                       {SKILL_AREAS.find((a) => a.key === s.area)?.emoji}{' '}

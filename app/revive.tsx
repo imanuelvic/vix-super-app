@@ -146,11 +146,11 @@ export default function ReviveEditorScreen() {
       return;
     }
     if (!fRhema.trim()) {
-      setFormError('Tulis rhema-nya — firman apa yang ngena di hatimu?');
+      setFormError('Tulis rhema-nya, firman apa yang ngena di hatimu?');
       return;
     }
     if (!fReflection.trim()) {
-      setFormError('Isi bagian Aplikasi — mau lakukan apa menanggapi firman ini?');
+      setFormError('Isi bagian Aplikasi, mau lakukan apa menanggapi firman ini?');
       return;
     }
     setBusy(true);

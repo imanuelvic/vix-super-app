@@ -33,7 +33,7 @@ export const RULE_ISI_CSS = `
   /* Poin bernomor pakai angka hijau tua, bukan bulatan */
   .isi .poin.angka .tanda { color: #0C5C50; min-width: 14px; }
 
-  /* Blok ⚠️ Penting — kartu kuning lembut biar tak mungkin terlewat */
+  /* Blok ⚠️ Penting, kartu kuning lembut biar tak mungkin terlewat */
   .isi .penting {
     background: #FFF6E0;
     border-left: 3px solid #E8B84B;

@@ -164,7 +164,7 @@ export default function FastingScreen() {
         }
         subtitle={
           terkunci
-            ? '🔒 Sudah dikunci — tinggal dibaca'
+            ? '🔒 Sudah dikunci, tinggal dibaca'
             : 'Pokok doa, peraturan & jawaban doa'
         }
       />
@@ -325,7 +325,7 @@ export default function FastingScreen() {
           {terkunci ? (
             <VixText heading="label" additionalStyle={styles.locked}>
               🔒 Puasa ini sudah selesai lebih dari {FASTING_GRACE_DAYS} hari
-              lalu, jadi catatannya dikunci — tinggal dibaca.
+              lalu, jadi catatannya dikunci, tinggal dibaca.
             </VixText>
           ) : (
             <PrimaryButton

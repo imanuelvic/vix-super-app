@@ -25,7 +25,7 @@ import { daysBetween } from './format';
 // ===================== Identitas rumah (tetap) =====================
 
 export const RESIDENCE_INFO = {
-  name: 'Casa Jardin — No. G5-6',
+  name: 'Casa Jardin · No. G5-6',
   owner: 'Dewi Sintia', // pemilik rumah
   address:
     'Jl. Casa Cluster Gladiola Blok G5 No.6, RT.1/RW.4, Kedaung Kali Angke, Cengkareng, Jakarta Barat, 11710',
@@ -173,7 +173,7 @@ export const CHORE_GROUPS: ChoreGroup[] = [
     parts: [
       { key: 'sisir', label: '🧹 Bersihkan Sisir', intervalDays: 7, tip: 'Minyak, debu & rambut rontok menumpuk bisa bikin kulit kepala berminyak & ketombe.' },
       { key: 'handuk-mandi', label: '🧴 Ganti Handuk Mandi', intervalDays: 7, tip: 'Handuk lembap jadi tempat berkembang bakteri & jamur kalau jarang diganti.' },
-      { key: 'kamar-mandi', label: '🚿 Bersihkan Kamar Mandi', intervalDays: 7, tip: 'Area basah gampang berkerak & berjamur — lap wastafel, keran & lantai.' },
+      { key: 'kamar-mandi', label: '🚿 Bersihkan Kamar Mandi', intervalDays: 7, tip: 'Area basah gampang berkerak & berjamur, lap wastafel, keran & lantai.' },
     ],
   },
   {
@@ -181,7 +181,7 @@ export const CHORE_GROUPS: ChoreGroup[] = [
     label: '🗓️ Dua Mingguan',
     parts: [
       { key: 'gagang-saklar', label: '🚪 Gagang Pintu & Saklar', intervalDays: 14, tip: 'Area yang sering disentuh jadi tempat berkembang bakteri.' },
-      { key: 'dapur', label: '🧽 Bersihkan Area Dapur', intervalDays: 14, tip: 'Dapur tempat menyiapkan makanan — kebersihannya cegah kontaminasi & serangga.' },
+      { key: 'dapur', label: '🧽 Bersihkan Area Dapur', intervalDays: 14, tip: 'Dapur tempat menyiapkan makanan, kebersihannya cegah kontaminasi & serangga.' },
       { key: 'kipas', label: '🪭 Bersihkan Kipas Angin', intervalDays: 14, tip: 'Debu menempel di kipas menurunkan kualitas udara & bikin alergi.' },
       { key: 'sapu-pel', label: '🧹 Sapu & Pel Semua Ruangan', intervalDays: 14, tip: 'Debu & kotoran menumpuk bisa sebabkan alergi & ruangan terasa kotor.' },
       { key: 'lap-tangan', label: '🧻 Ganti Lap Tangan', intervalDays: 14, tip: 'Lap tangan sering kena kuman dari tangan kotor.' },
@@ -197,7 +197,7 @@ export const CHORE_GROUPS: ChoreGroup[] = [
       { key: 'kaca-cermin', label: '🪞 Bersihkan Kaca & Cermin', intervalDays: 30, tip: 'Kaca sering kena noda air, sidik jari & debu yang bikin kusam.' },
       { key: 'sofa', label: '🛋️ Bersihkan Sofa', intervalDays: 30, tip: 'Sofa menumpuk debu, kotoran & tungau penyebab alergi.' },
       { key: 'meja-lemari', label: '🗄️ Bersihkan Meja & Lemari', intervalDays: 30, tip: 'Meja & lemari rapi bikin nyaman bekerja & mengurangi debu.' },
-      { key: 'toilet', label: '🚽 Bersihkan Toilet & Keran', intervalDays: 30, tip: 'Toilet & keran mudah kena bakteri & kerak air — sikat rutin.' },
+      { key: 'toilet', label: '🚽 Bersihkan Toilet & Keran', intervalDays: 30, tip: 'Toilet & keran mudah kena bakteri & kerak air, sikat rutin.' },
     ],
   },
   {

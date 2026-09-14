@@ -450,7 +450,7 @@ function MileageCard({
       </VixText>
       <VixText heading="label" additionalStyle={styles.subText}>
         {next
-          ? `Menuju ${next.emoji} ${next.label} — kurang ${formatDecimal(next.km - km)} km`
+          ? `Menuju ${next.emoji} ${next.label}, kurang ${formatDecimal(next.km - km)} km`
           : '🎉 Semua patokan periode ini sudah tembus!'}
       </VixText>
     </View>

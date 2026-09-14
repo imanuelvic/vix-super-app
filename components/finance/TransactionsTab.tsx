@@ -1,5 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
     FlatList,
     KeyboardAvoidingView,
@@ -69,10 +68,6 @@ import {
     type Transaction,
 } from '@/lib/transactions';
 
-// Preferensi tampil/sembunyi nominal — disimpan (AsyncStorage) supaya
-// pilihannya global & konsisten tiap kali masuk Finance. "1" = disembunyikan.
-const AMOUNTS_HIDDEN_KEY = 'finance:amountsHidden';
-
 // Tab Transaction Log: ringkasan bulan, form tambah, daftar transaksi,
 // modal edit (nominal/catatan/tanggal), dan konfirmasi hapus.
 // `budget` (alokasi per kategori bulan ini) dipakai untuk mewarnai pilihan
@@ -81,35 +76,22 @@ export function TransactionsTab({
   items,
   budget,
   subcats,
+  amountsHidden,
 }: {
   items: Transaction[];
   budget: BudgetMap;
   subcats: SubcategoryMap;
+  /**
+   * Nominal disamarkan ("Rp ••••••")? Sakelarnya 👁 ada di baris bulan layar
+   * Finance (hooks/useAmountsHidden.ts) — dulu di kartu ringkasan sini.
+   */
+  amountsHidden: boolean;
 }) {
   const { user } = useAuth();
 
-  // Ringkasan dikecilkan by default. Nominal default TAMPIL — pilihan
-  // sembunyi/tampil disimpan & dimuat lagi tiap masuk (tidak tergantung
-  // buka/tutup ringkasan).
+  // Ringkasan dikecilkan by default.
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [amountsHidden, setAmountsHidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Muat preferensi tersimpan sekali di awal.
-  useEffect(() => {
-    AsyncStorage.getItem(AMOUNTS_HIDDEN_KEY).then((v) => {
-      if (v != null) setAmountsHidden(v === '1');
-    });
-  }, []);
-
-  // Sembunyikan / tampilkan nominal + simpan pilihannya.
-  function toggleAmountsHidden() {
-    setAmountsHidden((hidden) => {
-      const next = !hidden;
-      AsyncStorage.setItem(AMOUNTS_HIDDEN_KEY, next ? '1' : '0').catch(() => {});
-      return next;
-    });
-  }
 
   // Form tambah transaksi.
   const [type, setType] = useState<FinanceType>('expense');
@@ -250,7 +232,7 @@ export function TransactionsTab({
 
   function validate(value: number, noteText: string): string | null {
     if (!value) return 'Isi nominalnya dulu.';
-    if (!noteText.trim()) return 'Isi catatannya dulu — biar tahu ini buat apa.';
+    if (!noteText.trim()) return 'Isi catatannya dulu, biar tahu ini buat apa.';
     return null;
   }
 
@@ -501,10 +483,10 @@ export function TransactionsTab({
           📆 {formatFullDate(new Date())}
         </VixText>
 
-        {/* Ringkasan bulan — bisa diminimize seperti dropdown */}
+        {/* Ringkasan bulan — bisa diminimize seperti dropdown. Tombol mata
+            yang dulu di kanan sini sudah naik ke baris bulan (layar Finance). */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
-            {/* Kiri: perbesar / kecilkan ringkasan (tidak mengubah visibilitas) */}
             <PressableScale
               style={styles.summaryHeaderMain}
               onPress={() => setSummaryOpen((o) => !o)}>
@@ -521,14 +503,6 @@ export function TransactionsTab({
                   color={Color.TEXT_ON_DARK_MUTED}
                 />
               </View>
-            </PressableScale>
-            {/* Kanan: sembunyikan / tampilkan nominal (pilihan tersimpan) */}
-            <PressableScale onPress={toggleAmountsHidden} hitSlop={10}>
-              <IconSymbol
-                name={amountsHidden ? 'eye.slash' : 'eye'}
-                size={20}
-                color={Color.TEXT_ON_DARK_MUTED}
-              />
             </PressableScale>
           </View>
 
@@ -903,14 +877,9 @@ export function TransactionsTab({
           onChangeText={(t) => setEditAmount(groupDigits(t))}
           editable={!editSaving}
         />
-        <FormInput
-          style={styles.inputGap}
-          placeholder="Catatan"
-          value={editNote}
-          onChangeText={setEditNote}
-          editable={!editSaving}
-        />
-        {/* Sub-kategori transaksi ini — muncul kalau kategorinya punya sub */}
+        {/* Sub-kategori DULU, baru catatan — urutan yang sama dengan form
+            tambah di atas (kategori → sub → catatan). Dulu terbalik di sini,
+            jadi tangan yang sudah hafal urutan form tambah salah kolom. */}
         {editingSubs.length > 0 && (
           <View style={styles.inputGap}>
             <SelectField
@@ -924,6 +893,13 @@ export function TransactionsTab({
             />
           </View>
         )}
+        <FormInput
+          style={styles.inputGap}
+          placeholder="Catatan"
+          value={editNote}
+          onChangeText={setEditNote}
+          editable={!editSaving}
+        />
         {/* Liter bensin — perubahannya ikut ke catatan di fitur Car */}
         {editing &&
           isFuelTransaction(

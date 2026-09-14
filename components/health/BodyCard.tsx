@@ -260,7 +260,7 @@ export function BodyCard({ profile }: { profile: HealthProfile }) {
       <SheetModal
         visible={editOpen}
         title="Ubah Data Tubuh 🧍"
-        subtitle="Kosongkan yang belum diukur — tidak wajib semua"
+        subtitle="Kosongkan yang belum diukur, tidak wajib semua"
         onClose={() => setEditOpen(false)}
         footer={
           <DualButtons

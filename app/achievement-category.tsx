@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BadgeTile, badgeGrid } from '@/components/common/BadgeTile';
+import { EmptyText } from '@/components/common/EmptyText';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -43,9 +44,9 @@ export default function AchievementCategoryScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="Achievement" title="Achievement 🏆" />
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText>
           Kategori pencapaian ini sudah tidak ada.
-        </VixText>
+        </EmptyText>
       </SafeAreaView>
     );
   }
@@ -160,7 +161,6 @@ export default function AchievementCategoryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
-  empty: { textAlign: 'center', marginVertical: 10 },
 
   // Angka sekarang di pojok kanan atas — dua baris, angkanya yang besar.
   nowPill: { alignItems: 'flex-end' },

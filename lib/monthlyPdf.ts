@@ -28,7 +28,7 @@ const ISI_CSS = `
     font-size: 13px; margin: 0;
     letter-spacing: 0.7px; color: #0C5C50; font-weight: 700;
   }
-  /* Catatan dikemas jadi kartu bertepi aksen — lebih terbaca daripada teks
+  /* Catatan dikemas jadi kartu bertepi aksen, lebih terbaca daripada teks
      telanjang, dan blok kosong jadi jelas terlihat kosong. */
   .poin-isi {
     margin: 9px 0 0 35px;
@@ -41,7 +41,7 @@ const ISI_CSS = `
   .poin-isi p:last-child { margin-bottom: 0; }
   .poin-isi .kosong { color: #A8B3AB; font-style: italic; }
 
-  /* Dokumentasi foto rapat — sejajar dengan kartu catatan di atasnya (35px),
+  /* Dokumentasi foto rapat, sejajar dengan kartu catatan di atasnya (35px),
      dua kolom supaya satu halaman tidak habis oleh satu foto saja. Foto
      tunggal dibiarkan selebar isi. Tinggi TIDAK dipatok: fotonya tampil utuh
      apa adanya, tidak ada wajah yang terpotong. */

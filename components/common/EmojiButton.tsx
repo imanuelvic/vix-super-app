@@ -47,6 +47,7 @@ export function EmojiButton({
   badge = 0,
   busy = false,
   danger = false,
+  locked = false,
   disabled = false,
 }: {
   emoji?: string;
@@ -62,6 +63,12 @@ export function EmojiButton({
   busy?: boolean;
   /** Aksi merusak (hapus permanen) → merah, tidak ikut warna fitur. */
   danger?: boolean;
+  /**
+   * Di balik tombol ini ada gerbang PIN → garis tepinya ABU, bukan sewarna
+   * fitur. Tanda kecil yang terbaca sebelum jarinya sampai: "yang ini beda,
+   * ada kuncinya". Isinya tidak berubah.
+   */
+  locked?: boolean;
   disabled?: boolean;
 }) {
   const theme = useFeatureTheme();
@@ -75,7 +82,7 @@ export function EmojiButton({
   // pekat. Garis tepinya sama di kedua keadaan → ukurannya tidak berubah.
   const latarDiam = danger ? Color.DANGER : theme.fg;
   const latarNyala = danger ? Color.DANGER : theme.bg;
-  const tepi = danger ? Color.DANGER : theme.fg;
+  const tepi = danger ? Color.DANGER : locked ? Color.TEXT_PLACEHOLDER : theme.fg;
   // Isi tombol: putih di atas bundaran pekat, warna fitur di atas pastelnya.
   const isi = active && !danger ? theme.fg : Color.TEXT_REVERSE;
 

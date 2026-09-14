@@ -25,20 +25,18 @@ import {
   type BudgetMap,
   type SubcategoryMap,
 } from '@/lib/budgets';
+import { useAmountsHidden } from '@/hooks/useAmountsHidden';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useNow } from '@/hooks/useNow';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { MONTH_NAMES } from '@/lib/format';
+import { PRIVACY_PIN } from '@/lib/pin';
 import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactions';
 
 type FinanceTab = 'dashboard' | 'transactions' | 'budgeting';
 type IconName = ComponentProps<typeof IconSymbol>['name'];
-
-// PIN pembuka layar Finance. Kunci privasi (biar isi dompet tidak kelihatan
-// kalau HP dipegang orang lain) — bukan pengamanan data.
-const FINANCE_PIN = '9811';
 
 // Sub-menu Finance — tab bar DI BAWAH (pakai komponen BottomTabs bersama).
 const SEGMENTS: { key: FinanceTab; label: string; icon: IconName }[] = [
@@ -58,6 +56,9 @@ export default function FinanceScreen() {
   // Bulan yang sedang dilihat (default: bulan ini) — dipakai semua sub-menu.
   const now = new Date();
   const { year, month, shiftMonth, goNow } = useMonthCursor(now);
+  // 👁 sembunyikan nominal — pilihannya tersimpan di HP (lihat hook-nya).
+  const { hidden: amountsHidden, toggle: toggleAmountsHidden } =
+    useAmountsHidden();
 
   // Transaksi dikunci ke bulan yang dilihat: begitu bulannya digeser, daftarnya
   // kosong lagi (loading) di render yang sama — tak ada sekejap pun angka bulan
@@ -158,7 +159,7 @@ export default function FinanceScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <PinLock
-          pin={FINANCE_PIN}
+          pin={PRIVACY_PIN}
           title="Finance Terkunci"
           subtitle="Masukkan PIN untuk membuka"
           onUnlock={() => setUnlocked(true)}
@@ -206,6 +207,19 @@ export default function FinanceScreen() {
             <IconSymbol name="chevron.right" size={22} color={Color.MAIN} />
           </PressableScale>
         </View>
+        {/* 👁 sembunyikan / tampilkan nominal — di ujung kanan baris bulan,
+            sejajar navigasi bulannya. Dulu terselip di kartu "Ringkasan bulan"
+            di dalam tab Transaksi dan sering tak ketemu. Cuma tampil di tab
+            Transaksi karena memang hanya nominal di situ yang disamarkan. */}
+        {tab === 'transactions' && (
+          <PressableScale onPress={toggleAmountsHidden} hitSlop={10}>
+            <IconSymbol
+              name={amountsHidden ? 'eye.slash' : 'eye'}
+              size={22}
+              color={Color.MAIN}
+            />
+          </PressableScale>
+        )}
       </View>
 
       <ScreenError message={error} />
@@ -222,7 +236,12 @@ export default function FinanceScreen() {
             month={month}
           />
         ) : tab === 'transactions' ? (
-          <TransactionsTab items={items} budget={budget} subcats={subcats} />
+          <TransactionsTab
+            items={items}
+            budget={budget}
+            subcats={subcats}
+            amountsHidden={amountsHidden}
+          />
         ) : (
           <BudgetingTab
             items={items}
@@ -243,10 +262,11 @@ export default function FinanceScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  // 'space-between': navigasi bulan di kiri, tombol mata 👁 di ujung kanan.
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     // Nafas ATAS & BAWAH kira-kira sama, jadi baris bulannya duduk di tengah
     // celah antara pita header & daftar — bukan menempel ke pita seperti dulu

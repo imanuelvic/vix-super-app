@@ -62,7 +62,7 @@ export default function FutsalScheduleScreen() {
       <ScreenHeader
         backLabel="Friends"
         title="Jadwal Main 📅"
-        subtitle="Semua pertandingan — yang akan datang & riwayatnya."
+        subtitle="Semua pertandingan, yang akan datang & riwayatnya."
       />
 
       <ScreenError message={error} />

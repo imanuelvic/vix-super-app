@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
@@ -9,50 +9,33 @@ import {
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
-import { DateField } from '@/components/common/DateField';
-import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
-import { FormInput } from '@/components/common/FormInput';
-import { InlineDelete } from '@/components/common/InlineDelete';
-import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
-import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
-import { formatShortDayDate, groupDigits, parseAmount } from '@/lib/format';
+import { formatDecimal, formatShortDayDate } from '@/lib/format';
 import {
     EMPTY_FUN,
+    formatFinish,
+    formatPace,
     funCategoryMeta,
-    newFunId,
-    pickCompressedMedal,
-    saveFun,
+    raceFinishSec,
+    racePace,
     subscribeFun,
     summitTotal,
     type FunCategory,
     type FunData,
-    type FunEntry,
 } from '@/lib/fun';
-import {
-    DELETE_ERROR,
-    LOAD_ERROR,
-    PHOTO_ERROR,
-    SAVE_ERROR,
-} from '@/lib/messages';
+import { LOAD_ERROR } from '@/lib/messages';
 import { photoUri } from '@/lib/photo';
 import { formatRupiah } from '@/lib/transactions';
 
-/** Format waktu tempuh race: "1j 5m" kalau ≥ 60 menit, selain itu "X menit". */
-function formatFinish(min: number): string {
-  if (!min || min <= 0) return '';
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}j ${m}m` : `${m} menit`;
-}
-
-// Arsip satu kategori Fun — daftar + form tambah/edit/hapus.
+// Arsip satu kategori Fun — DAFTARNYA saja. Tambah/edit/hapus ada di layar
+// sendiri (components/fun/FunEntryScreen.tsx): click "Tambah" atau click
+// kartunya → pindah ke sana. Dulu semuanya sheet di sini; isian Race yang
+// panjang (plus foto medali) berdesakan dengan keyboard di dalam sheet.
 //
 // DIPAKAI DUA LAYAR, dan itu sebabnya ia berdiri sendiri di sini:
 //   • Fun & Recreation 🎉 → Summit, Creators & Rekreasi
@@ -77,6 +60,7 @@ export function FunArchive({
   accent?: string;
 }) {
   const { user } = useAuth();
+  const router = useRouter();
 
   // Arsipnya dikunci ke pemiliknya: ganti akun → kosong lagi (loading), tak ada
   // sekejap pun data pemilik lama yang ikut terlihat.
@@ -87,32 +71,6 @@ export function FunArchive({
   const data = loaded ?? EMPTY_FUN;
   const loading = loaded === null;
   const [error, setError] = useState<string | null>(null);
-
-  // Form tambah/edit — editingId null = mode tambah.
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
-  const [place, setPlace] = useState('');
-  const [detail, setDetail] = useState('');
-  const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date());
-  // Field khusus Race.
-  const [price, setPrice] = useState('');
-  const [finishMin, setFinishMin] = useState('');
-  const [medalPhoto, setMedalPhoto] = useState<string | null>(null);
-  const foto = useBusyTask<'foto'>();
-  const photoBusy = foto.busy !== null;
-  // Field khusus Summit — rincian anggaran pendakian.
-  const [costOT, setCostOT] = useState('');
-  const [costRent, setCostRent] = useState('');
-  const [costTransport, setCostTransport] = useState('');
-  const [costPermit, setCostPermit] = useState('');
-  const [costOther, setCostOther] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  // Proses hapus (dari dalam modal edit).
-  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -153,128 +111,16 @@ export function FunArchive({
     [data.entries, category],
   );
 
-  // Total anggaran Summit yang sedang diketik — untuk pratinjau live di form.
-  const summitBudgetLive =
-    parseAmount(costOT) +
-    parseAmount(costRent) +
-    parseAmount(costTransport) +
-    parseAmount(costPermit) +
-    parseAmount(costOther);
-
-  function openAdd() {
-    setEditingId(null);
-    setTitle('');
-    setPlace('');
-    setDetail('');
-    setNote('');
-    setDate(new Date());
-    setPrice('');
-    setFinishMin('');
-    setMedalPhoto(null);
-    setCostOT('');
-    setCostRent('');
-    setCostTransport('');
-    setCostPermit('');
-    setCostOther('');
-    setFormError(null);
-    setFormOpen(true);
-  }
-
-  function openEdit(entry: FunEntry) {
-    setEditingId(entry.id);
-    setTitle(entry.title);
-    setPlace(entry.place);
-    setDetail(entry.detail);
-    setNote(entry.note);
-    setDate(entry.date ? entry.date.toDate() : new Date());
-    setPrice(entry.price ? groupDigits(String(entry.price)) : '');
-    setFinishMin(entry.finishMinutes ? String(entry.finishMinutes) : '');
-    setMedalPhoto(entry.medalPhoto ?? null);
-    setCostOT(entry.costOT ? groupDigits(String(entry.costOT)) : '');
-    setCostRent(entry.costRent ? groupDigits(String(entry.costRent)) : '');
-    setCostTransport(
-      entry.costTransport ? groupDigits(String(entry.costTransport)) : '',
-    );
-    setCostPermit(entry.costPermit ? groupDigits(String(entry.costPermit)) : '');
-    setCostOther(entry.costOther ? groupDigits(String(entry.costOther)) : '');
-    setFormError(null);
-    setFormOpen(true);
-  }
-
-  function handlePickMedal() {
-    if (saving) return;
-    return foto.run({
-      key: 'foto',
-      task: async () => {
-        const photo = await pickCompressedMedal();
-        if (photo) setMedalPhoto(photo);
-      },
-      fail: () => setFormError(PHOTO_ERROR),
-    });
-  }
-
-  async function handleSave() {
-    if (!user || saving) return;
-    const trimmed = title.trim();
-    if (!trimmed) {
-      setFormError(`Isi ${meta.titleLabel.toLowerCase()} dulu.`);
-      return;
-    }
-    setFormError(null);
-    setSaving(true);
-    try {
-      const entry: FunEntry = {
-        id: editingId ?? newFunId(),
-        category,
-        title: trimmed,
-        place: place.trim(),
-        detail: detail.trim(),
-        note: note.trim(),
-        date: Timestamp.fromDate(date),
-      };
-      // Field khusus Race — hanya ditulis untuk kategori race supaya tidak ada
-      // key undefined yang dikirim ke Firestore pada kategori lain.
-      if (category === 'race') {
-        entry.price = parseAmount(price);
-        entry.finishMinutes = Math.max(0, parseInt(finishMin, 10) || 0);
-        entry.medalPhoto = medalPhoto;
-      }
-      // Field khusus Summit — rincian anggaran (total dihitung otomatis saat
-      // ditampilkan, jadi tidak perlu disimpan terpisah).
-      if (category === 'summit') {
-        entry.costOT = parseAmount(costOT);
-        entry.costRent = parseAmount(costRent);
-        entry.costTransport = parseAmount(costTransport);
-        entry.costPermit = parseAmount(costPermit);
-        entry.costOther = parseAmount(costOther);
-      }
-      const nextEntries = editingId
-        ? data.entries.map((e) => (e.id === editingId ? entry : e))
-        : [...data.entries, entry];
-      await saveFun(user.uid, { entries: nextEntries });
-      setFormOpen(false);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setSaving(false);
+  // Satu layar isian untuk semua kategori; yang beda cuma PINTUNYA. Race
+  // lewat /race (pitanya Health), sisanya lewat /fun — warna pita mengikuti
+  // nama rute, lihat lib/featureTheme.ts.
+  function bukaIsian(id: string) {
+    if (category === 'race') {
+      router.push({ pathname: '/race/[id]', params: { id } });
+    } else {
+      router.push({ pathname: '/fun/[id]', params: { id, category } });
     }
   }
-
-  // Hapus entri yang sedang dibuka di modal (permanen — tulis ulang daftar).
-  async function handleDelete() {
-    if (!user || !editingId || deleteBusy) return;
-    setDeleteBusy(true);
-    try {
-      const nextEntries = data.entries.filter((e) => e.id !== editingId);
-      await saveFun(user.uid, { entries: nextEntries });
-      setFormOpen(false);
-    } catch {
-      setError(DELETE_ERROR);
-    } finally {
-      setDeleteBusy(false);
-    }
-  }
-
 
   return (
     <>
@@ -297,7 +143,7 @@ export function FunArchive({
                   label={`Tambah ${meta.label}`}
                   icon="plus"
                   background={warna}
-                  onPress={openAdd}
+                  onPress={() => bukaIsian('new')}
                 />
                 <FormError message={error} gap="top" />
               </View>
@@ -343,7 +189,7 @@ export function FunArchive({
                           : '',
                       ]
                         .filter(Boolean)
-                        .join(' · ') || '—'}
+                        .join(' · ') || '-'}
                     </VixText>
                   </View>
                 </View>
@@ -398,27 +244,32 @@ export function FunArchive({
                     </View>
                   </View>
                 ) : null}
-                {/* Info khusus Race: harga pendaftaran & waktu tempuh */}
+                {/* Info khusus Race: harga, jarak, waktu tempuh, & pace (dihitung
+                    dari dua yang terakhir — tidak pernah diketik). */}
                 {item.category === 'race' &&
-                (item.price || item.finishMinutes) ? (
+                (item.price || item.distanceKm || raceFinishSec(item) > 0) ? (
                   <VixText heading="label" additionalStyle={styles.raceStats}>
-                    {[
-                      item.price ? `💵 ${formatRupiah(item.price)}` : '',
-                      item.finishMinutes
-                        ? `⏱️ ${formatFinish(item.finishMinutes)}`
-                        : '',
-                    ]
-                      .filter(Boolean)
-                      .join('   ·   ')}
+                    {(() => {
+                      const detikTempuh = raceFinishSec(item);
+                      const paceItem = racePace(detikTempuh, item.distanceKm ?? 0);
+                      return [
+                        item.price ? `💵 ${formatRupiah(item.price)}` : '',
+                        item.distanceKm ? `📏 ${formatDecimal(item.distanceKm)} km` : '',
+                        detikTempuh > 0 ? `⏱️ ${formatFinish(detikTempuh)}` : '',
+                        paceItem !== null ? `🏃 ${formatPace(paceItem)}` : '',
+                      ]
+                        .filter(Boolean)
+                        .join('   ·   ');
+                    })()}
                   </VixText>
                 ) : null}
                 </>
               );
-              // Tekan kartu untuk mengedit. Border mengikuti warna kategori.
+              // Click kartu → layar isiannya. Border mengikuti warna kategori.
               return (
                 <PressableScale
                   style={[styles.card, { borderColor: warna }]}
-                  onPress={() => openEdit(item)}>
+                  onPress={() => bukaIsian(item.id)}>
                   {medali ? (
                     <View style={styles.medalRow}>
                       <View style={styles.medalMain}>{keterangan}</View>
@@ -438,167 +289,6 @@ export function FunArchive({
         )}
       </View>
 
-      {/* Tab bar bawah = kategori arsip */}
-
-      {/* Sheet tambah/edit */}
-      <SheetModal
-        visible={formOpen}
-        title={editingId ? `Edit ${meta.label}` : `Tambah ${meta.label}`}
-        subtitle={`${meta.emoji} ${meta.label}`}
-        onClose={() => setFormOpen(false)}>
-        <FormInput
-          placeholder={meta.titleLabel}
-          value={title}
-          onChangeText={setTitle}
-          editable={!saving}
-          autoFocus
-        />
-        <FormInput
-          style={styles.inputGap}
-          placeholder="Lokasi (opsional)"
-          value={place}
-          onChangeText={setPlace}
-          editable={!saving}
-        />
-        <FormInput
-          style={styles.inputGap}
-          placeholder={meta.detailLabel}
-          value={detail}
-          onChangeText={setDetail}
-          editable={!saving}
-        />
-        {category === 'race' && (
-          <>
-            <MoneyInput
-              style={styles.inputGap}
-              placeholder="Harga pendaftaran"
-              value={price}
-              onChangeText={(t) => setPrice(groupDigits(t))}
-              editable={!saving}
-            />
-            <FormInput
-              style={styles.inputGap}
-              placeholder="Waktu tempuh (menit)"
-              keyboardType="number-pad"
-              value={finishMin}
-              onChangeText={(t) => setFinishMin(t.replace(/[^0-9]/g, ''))}
-              editable={!saving}
-            />
-          </>
-        )}
-        {/* Rincian anggaran khusus Summit — total dihitung otomatis */}
-        {category === 'summit' && (
-          <>
-            <View style={styles.inputGap}>
-              <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                Rincian anggaran pendakian (Rp)
-              </VixText>
-            </View>
-            <MoneyInput
-              style={styles.inputGap}
-              placeholder="Jasa OT (open trip / guide)"
-              value={costOT}
-              onChangeText={(t) => setCostOT(groupDigits(t))}
-              editable={!saving}
-            />
-            <MoneyInput
-              style={styles.inputGap}
-              placeholder="Sewa barang / alat"
-              value={costRent}
-              onChangeText={(t) => setCostRent(groupDigits(t))}
-              editable={!saving}
-            />
-            <MoneyInput
-              style={styles.inputGap}
-              placeholder="Transportasi"
-              value={costTransport}
-              onChangeText={(t) => setCostTransport(groupDigits(t))}
-              editable={!saving}
-            />
-            <MoneyInput
-              style={styles.inputGap}
-              placeholder="SIMAKSI / tiket masuk"
-              value={costPermit}
-              onChangeText={(t) => setCostPermit(groupDigits(t))}
-              editable={!saving}
-            />
-            <MoneyInput
-              style={styles.inputGap}
-              placeholder="Lain-lain"
-              value={costOther}
-              onChangeText={(t) => setCostOther(groupDigits(t))}
-              editable={!saving}
-            />
-            <View style={styles.budgetTotalRow}>
-              <VixText heading="label" additionalStyle={styles.budgetTotalLabel}>
-                💰 Total anggaran
-              </VixText>
-              <VixText heading="bold" additionalStyle={styles.budgetTotalValue}>
-                {formatRupiah(summitBudgetLive)}
-              </VixText>
-            </View>
-          </>
-        )}
-        <View style={styles.inputGap}>
-          <DateField key={editingId ?? 'new'} value={date} onChange={setDate} />
-        </View>
-        <FormInput
-          style={styles.inputGap}
-          placeholder="Catatan (opsional)"
-          value={note}
-          onChangeText={setNote}
-          editable={!saving}
-        />
-        {category === 'race' && (
-          <View style={styles.inputGap}>
-            <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Foto medali (opsional)
-            </VixText>
-            <PressableScale
-              style={styles.medalPicker}
-              onPress={handlePickMedal}
-              disabled={photoBusy || saving}>
-              {photoBusy ? (
-                <ActivityIndicator color={Color.MAIN} />
-              ) : medalPhoto ? (
-                <Image
-                  source={{ uri: photoUri(medalPhoto) }}
-                  style={styles.medalPreview}
-                  resizeMode="cover"
-                />
-              ) : (
-                <VixText heading="label" additionalStyle={styles.medalHint}>
-                  🏅{'\n'}Tambah Foto Medali
-                </VixText>
-              )}
-            </PressableScale>
-            {medalPhoto && (
-              <PressableScale onPress={() => setMedalPhoto(null)} hitSlop={8}>
-                <VixText heading="label" additionalStyle={styles.medalRemove}>
-                  Hapus foto
-                </VixText>
-              </PressableScale>
-            )}
-          </View>
-        )}
-        <FormError message={formError} gap="top" />
-        {/* Hapus dari DALAM modal (hanya saat mengedit) — konfirmasi inline,
-            sama seperti "Hapus kebiasaan ini" / "Hapus jadwal ini". */}
-        {editingId && (
-          <InlineDelete
-            key={editingId}
-            label={`Hapus ${meta.label.toLowerCase()} ini`}
-            busy={deleteBusy}
-            onDelete={handleDelete}
-          />
-        )}
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={saving}
-          onCancel={() => setFormOpen(false)}
-          onConfirm={handleSave}
-        />
-      </SheetModal>
     </>
   );
 }
@@ -669,20 +359,4 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Color.BORDER,
   },
-  inputGap: { marginTop: 8 },
-  fieldLabel: { marginBottom: 6 },
-  // Kotak pemilih foto medali di form.
-  medalPicker: {
-    height: 150,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.BACKGROUND,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  medalPreview: { width: '100%', height: '100%' },
-  medalHint: { textAlign: 'center', color: Color.TEXT_LABEL },
-  medalRemove: { color: Color.DANGER, textAlign: 'center', marginTop: 6 },
 });

@@ -9,12 +9,12 @@ import { formatDate } from '@/lib/format';
 
 // Tips ala mekanik — hal kecil yang bikin mobil awet.
 const TIPS: string[] = [
-  '🔥 Skyactiv kompresi tinggi (13:1) — minimal RON 90, idealnya Pertamax RON 92. Jangan Premium.',
-  '🌡️ Panaskan mesin cukup 30–60 detik, lalu jalan pelan — idle lama justru boros & buang waktu.',
-  '🅿️ Parkir hindari terik langsung terus-menerus — jaga cat Soul Red & karet-karet pintu.',
-  '🛞 Cek tekanan ban tiap isi bensin (standar Mazda 2: ±33 psi) — ban kurang angin = boros + cepat aus.',
+  '🔥 Skyactiv kompresi tinggi (13:1), minimal RON 90, idealnya Pertamax RON 92. Jangan Premium.',
+  '🌡️ Panaskan mesin cukup 30–60 detik, lalu jalan pelan, idle lama justru boros & buang waktu.',
+  '🅿️ Parkir hindari terik langsung terus-menerus, jaga cat Soul Red & karet-karet pintu.',
+  '🛞 Cek tekanan ban tiap isi bensin (standar Mazda 2: ±33 psi), ban kurang angin = boros + cepat aus.',
   '🔋 Mobil jarang dipakai? Panaskan / bawa jalan minimal seminggu sekali biar aki tidak tekor.',
-  '💧 Jangan tunda kalau ada bunyi aneh, getaran, atau rembesan — kerusakan kecil murah, telat = mahal.',
+  '💧 Jangan tunda kalau ada bunyi aneh, getaran, atau rembesan, kerusakan kecil murah, telat = mahal.',
 ];
 
 // Tab Info: identitas mobil + pengingat STNK tahunan + tips perawatan.
@@ -44,7 +44,7 @@ export function InfoTab() {
           heading="label"
           additionalStyle={stnkSoon ? styles.stnkWarnText : undefined}>
           {stnkSoon
-            ? `⚠️ Tinggal ${daysUntil} hari lagi — siapkan dananya!`
+            ? `⚠️ Tinggal ${daysUntil} hari lagi, siapkan dananya!`
             : `${daysUntil} hari lagi.`}
         </VixText>
       </View>

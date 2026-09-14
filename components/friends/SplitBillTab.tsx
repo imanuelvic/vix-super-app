@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -102,9 +103,9 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
         <FormError message={error} />
 
         {list.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada patungan.
-          </VixText>
+          </EmptyText>
         ) : (
           <>
             {pageItems.map((bill) => {
@@ -185,7 +186,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   card: {
     ...CARD,
     flexDirection: 'row',

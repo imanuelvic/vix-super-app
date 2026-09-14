@@ -5,6 +5,7 @@ import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -168,9 +169,9 @@ export function LogTab({ items }: { items: CarLog[] }) {
         />
 
         {items.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada catatan. Servis, parkir & surat dicatat di sini 🔧
-          </VixText>
+          </EmptyText>
         )}
 
         {pageItems.map((item) => {
@@ -321,7 +322,6 @@ const styles = StyleSheet.create({
   // di bawahnya (kartunya cuma punya marginBottom, tidak punya marginTop).
   addButton: { marginBottom: 10 },
   fromFinance: { color: Color.MAIN },
-  empty: { textAlign: 'center', marginVertical: 10 },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

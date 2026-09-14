@@ -116,6 +116,12 @@ export function FulltimeTab({
       if (STATUS_ORDER[a.status] !== STATUS_ORDER[b.status]) {
         return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
       }
+      // Kolom Selesai: yang tanggalnya PALING BARU di atas. Prioritas sudah
+      // tak berarti untuk kartu yang selesai; yang masih ingin dilihat justru
+      // apa yang baru saja ditutup. Tanpa tanggal → paling bawah.
+      if (a.status === 'done') {
+        return (b.deadline?.toMillis() ?? 0) - (a.deadline?.toMillis() ?? 0);
+      }
       return a.priority - b.priority;
     });
   const doneCount = items.filter((i) => i.status === 'done').length;
@@ -257,7 +263,7 @@ export function FulltimeTab({
         {board === 'todo' && urgentIn('todo') > 0 && (
           <View style={styles.warnCard}>
             <VixText heading="bold" additionalStyle={styles.warnText}>
-              ⚠️ {urgentIn('todo')} kartu di Rencana sudah H-7 — buka kartunya
+              ⚠️ {urgentIn('todo')} kartu di Rencana sudah H-7, buka kartunya
               & ubah statusnya jadi Dikerjakan.
             </VixText>
           </View>
@@ -266,7 +272,7 @@ export function FulltimeTab({
         {column.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
             {items.length === 0
-              ? 'Belum ada roadmap — tulis prioritas kerjamu minggu ini 💪'
+              ? 'Belum ada roadmap, tulis prioritas kerjamu minggu ini 💪'
               : `Kolom ${STATUS_META[board].label} masih kosong.`}
           </VixText>
         )}
@@ -339,7 +345,7 @@ export function FulltimeTab({
 
               {mustMove && (
                 <VixText heading="label" additionalStyle={styles.mustMoveText}>
-                  ⚠️ Sudah H-7 tapi masih Rencana — harus mulai dikerjakan.
+                  ⚠️ Sudah H-7 tapi masih Rencana, harus mulai dikerjakan.
                 </VixText>
               )}
             </PressableScale>
@@ -437,7 +443,7 @@ export function FulltimeTab({
             </View>
             {fBacklog ? (
               <VixText heading="label" additionalStyle={styles.backlogHint}>
-                Tanpa deadline — masuk backlog, jadi PR yang dikerjakan saat ada
+                Tanpa deadline, masuk backlog, jadi PR yang dikerjakan saat ada
                 waktu. Tidak muncul sebagai reminder mendesak di Home.
               </VixText>
             ) : (

@@ -9,11 +9,11 @@ import { RESIDENCE_INFO } from '@/lib/residence';
 
 // Tips ringan biar rumah kontrakan awet & nyaman.
 const TIPS: string[] = [
-  '⚡ Daya 5.500 watt — aman untuk AC + water heater, tapi hindari nyalakan alat berat bersamaan biar tidak jeglek.',
-  '💧 Catat token & meteran air tiap isi ulang — biar kelihatan pola pemakaian & tidak kaget di akhir bulan.',
+  '⚡ Daya 5.500 watt, aman untuk AC + water heater, tapi hindari nyalakan alat berat bersamaan biar tidak jeglek.',
+  '💧 Catat token & meteran air tiap isi ulang, biar kelihatan pola pemakaian & tidak kaget di akhir bulan.',
   '👨🏽‍🔧 Water heater Rinnai REU-5CFM: servis/cek berkala biar awet & aman dari gas.',
-  '🏘️ Iuran lingkungan dibayar per tahun — sisihkan dananya dari awal.',
-  '🧾 Simpan bukti bayar (sewa, iuran, servis) — memudahkan saat perpanjang kontrak.',
+  '🏘️ Iuran lingkungan dibayar per tahun, sisihkan dananya dari awal.',
+  '🧾 Simpan bukti bayar (sewa, iuran, servis), memudahkan saat perpanjang kontrak.',
 ];
 
 // Tab Info: identitas rumah kontrakan + kontrak + tips.

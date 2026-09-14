@@ -26,13 +26,13 @@ const QNA: { q: string; a: string }[] = [
 ];
 
 const TIPS: string[] = [
-  '😴 Tidur 7–8 jam di jam yang konsisten — otot pulih & tumbuh saat tidur.',
+  '😴 Tidur 7–8 jam di jam yang konsisten, otot pulih & tumbuh saat tidur.',
   '🏃 Olahraga minimal 150 menit per minggu, plus latihan beban 2–3× kalau mau otot besar.',
   '🍗 Cukupi protein ±1,6 g per kg berat badan untuk membangun otot.',
-  '🌅 Kena sinar matahari pagi 10–15 menit — vitamin D alami & mood lebih baik.',
+  '🌅 Kena sinar matahari pagi 10–15 menit, vitamin D alami & mood lebih baik.',
   '🍬 Kurangi gula, gorengan, dan jajanan pinggir jalan (ingat kejadian cilor 2024 🤧).',
   '🧘 Kelola stres: napas dalam, jalan santai, atau rehat dari layar.',
-  '🩺 Cek tekanan darah & gula darah tiap 6 bulan — catat di tab Check-up.',
+  '🩺 Cek tekanan darah & gula darah tiap 6 bulan, catat di tab Check-up.',
 ];
 
 export default function HealthInfoScreen() {

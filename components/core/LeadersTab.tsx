@@ -464,8 +464,12 @@ export function LeadersTab({
                     Yang turun ke bawah sengaja yang 🧍: ia paling jarang
                     ditekan, dan ruang di bawah ✏️ memang menganggur. */}
                 <View style={styles.cardActions}>
+                  {/* 🎡 & 📍 bergaris abu: keduanya membuka data pribadi CL
+                      ini dan dikunci PIN di layarnya (PIN yang sama dengan
+                      Finance, lihat lib/pin.ts). ✏️ & 🧍 tidak. */}
                   <EmojiButton
                     emoji="🎡"
+                    locked
                     onPress={() =>
                       router.push({
                         pathname: '/wheel',
@@ -483,6 +487,7 @@ export function LeadersTab({
                 <View style={styles.cardActions}>
                   <EmojiButton
                     emoji="📍"
+                    locked
                     onPress={() =>
                       router.push({
                         pathname: '/timeline',

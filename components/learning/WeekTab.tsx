@@ -12,8 +12,6 @@ import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScroll
 import { NoteField } from '@/components/common/NoteField';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
-import { SelectField } from '@/components/common/SelectField';
-import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -22,6 +20,7 @@ import { BOOKS } from '@/lib/books';
 import {
     bumpLearningStreak,
     canChangeWeekSkill,
+    drawWeekSkill,
     dueStep,
     LEARNING_STEPS,
     learningNoteDone,
@@ -35,7 +34,6 @@ import {
     skillAreaMeta,
     skillOf,
     skillOfWeek,
-    SKILLS,
     stepsDone,
     weekComplete,
     type LearningStep,
@@ -67,7 +65,8 @@ export function WeekTab({
   const router = useRouter();
   const { user } = useAuth();
 
-  const [pickOpen, setPickOpen] = useState(false);
+  // Sedang mengundi topik (menunggu Firestore) → tombolnya dikunci sebentar.
+  const [mengacak, setMengacak] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Topik minggu ini: hasil rotasi otomatis, KECUALI kalau sudah diganti manual.
@@ -148,13 +147,22 @@ export function WeekTab({
     }
   }
 
-  async function pickSkill(key: string) {
-    if (!user) return;
+  // Satu click = langsung diundi (aturannya di drawWeekSkill, lib/learning.ts).
+  // Dulu membuka sheet lalu memilih sendiri; mengundi memang lebih cocok
+  // untuk "satu ilmu baru tiap minggu": yang dipilih tangan cenderung yang
+  // itu-itu lagi.
+  async function acakTopik() {
+    if (!user || mengacak) return;
+    const key = drawWeekSkill(skill.key, skillsDone);
+    if (!key) return;
+    setMengacak(true);
+    setError(null);
     try {
       await setWeekSkill(user.uid, weekId, key);
-      setPickOpen(false);
     } catch {
       setError(SAVE_ERROR);
+    } finally {
+      setMengacak(false);
     }
   }
 
@@ -215,9 +223,10 @@ export function WeekTab({
           {bisaGanti && (
             <PressableScale
               style={styles.changeButton}
-              onPress={() => setPickOpen(true)}>
+              onPress={acakTopik}
+              disabled={mengacak}>
               <VixText heading="label" additionalStyle={styles.changeText}>
-                🔀 Ganti topik minggu ini
+                🔀 Acak topik minggu ini
               </VixText>
             </PressableScale>
           )}
@@ -248,7 +257,7 @@ export function WeekTab({
                   📚 {skill.book}
                 </VixText>
                 <VixText heading="label" additionalStyle={styles.bookSub}>
-                  Belum ada di fitur Book — pakai sumber lain dulu (artikel/video)
+                  Belum ada di fitur Book, pakai sumber lain dulu (artikel/video)
                 </VixText>
               </View>
             </View>
@@ -298,7 +307,7 @@ export function WeekTab({
                   <VixText
                     heading="bold"
                     additionalStyle={checked ? styles.stepTitleDone : undefined}>
-                    {s.emoji} {s.day} — {s.label}
+                    {s.emoji} {s.day} - {s.label}
                   </VixText>
                   {/* Jendela jam mengerjakannya (Senin/Rabu/Jumat). Langkah
                       "Ceritakan" tidak punya jam — ia ikut kapan kamu ketemu
@@ -339,7 +348,7 @@ export function WeekTab({
                   // soal apa" justru yang paling dibutuhkan saat menulis.
                   // Aba-abanya diambil dari LEARNING_STEPS, bukan ditulis
                   // ulang, jadi tak mungkin beda dengan kartu di atasnya.
-                  subtitle={`${skill.title} — ${s.how}`}
+                  subtitle={`${skill.title} - ${s.how}`}
                   placeholder={'1. …\n2. …\n3. …'}
                   value={week.note}
                   boxStyle={styles.noteBox}
@@ -358,22 +367,6 @@ export function WeekTab({
         <FormError message={error} gap="none" additionalStyle={styles.error} />
       </KeyboardAwareScrollView>
 
-      {/* Sheet ganti topik */}
-      <SheetModal
-        visible={pickOpen}
-        title="Ganti Topik Minggu Ini"
-        subtitle="Rotasi otomatis akan ditimpa, khusus minggu ini saja"
-        onClose={() => setPickOpen(false)}>
-        <SelectField
-          value={skill.key}
-          options={SKILLS.map((s) => ({
-            key: s.key,
-            label: `${skillsDone[s.key] ? '✅ ' : ''}${s.title}`,
-            sub: skillAreaMeta(s.area).label,
-          }))}
-          onChange={(key) => key && pickSkill(key)}
-        />
-      </SheetModal>
     </View>
   );
 }

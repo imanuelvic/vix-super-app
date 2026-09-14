@@ -6,6 +6,7 @@ import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
@@ -221,9 +222,9 @@ export function PlanTab({
         />
 
         {milik.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada paket tercatat. Catat paket yang sedang aktif di {meta.label} 📶
-          </VixText>
+          </EmptyText>
         )}
 
         {milik.map((p) => {
@@ -399,7 +400,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginTop: 12, marginBottom: 12 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

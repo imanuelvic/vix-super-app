@@ -107,7 +107,7 @@ export function useFutsalSessionForm(data: FutsalData, gang: FutsalGangKey) {
   async function simpan() {
     if (!user || busy) return;
     if (!venue.trim()) {
-      setFormError('Lapangannya diisi dulu — itu yang paling sering ditanya di grup.');
+      setFormError('Lapangannya diisi dulu, itu yang paling sering ditanya di grup.');
       return;
     }
     // Roda jamnya sudah menolak jam yang lebih awal (minimumDate), tapi data

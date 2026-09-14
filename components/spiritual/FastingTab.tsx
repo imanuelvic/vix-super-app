@@ -45,7 +45,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
             style={styles.activeCard}
             onPress={() => open(active.id)}>
             <VixText heading="label" additionalStyle={styles.activeLabel}>
-              🍽️ Sedang Puasa — hari ke-
+              🍽️ Sedang Puasa, hari ke-
               {fastingDayNumber(active, todayId)} dari{' '}
               {fastingProgress(active).total}
             </VixText>

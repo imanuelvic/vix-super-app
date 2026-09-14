@@ -213,7 +213,7 @@ export default function GratitudeScreen() {
               harus disebut, bukan didiamkan. */}
           {belumAda && (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Baris 🙏 Bersyukur 3 Hal sudah tidak ada di daftar kebiasaanmu —
+              Baris 🙏 Bersyukur 3 Hal sudah tidak ada di daftar kebiasaanmu, 
               catatan lama tetap tersimpan, tapi yang baru belum bisa diisi.
             </VixText>
           )}

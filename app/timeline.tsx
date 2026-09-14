@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -11,6 +11,7 @@ import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { PinLock } from '@/components/common/PinLock';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -26,6 +27,7 @@ import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { PRIVACY_PIN } from '@/lib/pin';
 import {
   BIRTH_YEAR,
   fetchTimelineAll,
@@ -60,6 +62,10 @@ export default function TimelineScreen() {
   }>();
   const owner = params.leaderId || null;
   const orang = params.name?.trim() || 'CORE Leader';
+  const router = useRouter();
+  // Timeline milik CL dikunci PIN — alasan & bentuknya sama dengan Wheel
+  // (lihat app/wheel.tsx). Timeline-ku sendiri tidak dikunci.
+  const [unlocked, setUnlocked] = useState(owner === null);
   // Umur dihitung dari tahun lahir PEMILIK timeline-nya. Tanpa param (punyaku
   // sendiri) jatuh ke BIRTH_YEAR.
   const birthYear = Number(params.birthYear) || BIRTH_YEAR;
@@ -88,7 +94,7 @@ export default function TimelineScreen() {
   const [rekapOpen, setRekapOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !unlocked) return;
     return subscribeTimelineYear(
       user.uid,
       year,
@@ -99,7 +105,7 @@ export default function TimelineScreen() {
       () => setError(LOAD_ERROR),
       owner,
     );
-  }, [user, year, owner, setItems]);
+  }, [user, year, owner, unlocked, setItems]);
 
   const age = year - birthYear; // ulang tahun 1 Januari → pas per tahun
   const doneCount = items?.filter((i) => i.done).length ?? 0;
@@ -272,12 +278,26 @@ export default function TimelineScreen() {
         </View>
         {monthItems.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.emptyMonth}>
-            —
+            -
           </VixText>
         ) : (
           monthItems.map(renderItem)
         )}
       </>
+    );
+  }
+
+  if (!unlocked) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <PinLock
+          pin={PRIVACY_PIN}
+          title={`Timeline ${params.heart ?? '📍'} ${orang} Terkunci`}
+          subtitle="Masukkan PIN untuk membuka"
+          onUnlock={() => setUnlocked(true)}
+          onCancel={() => router.back()}
+        />
+      </SafeAreaView>
     );
   }
 

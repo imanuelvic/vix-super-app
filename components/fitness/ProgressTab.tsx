@@ -151,7 +151,7 @@ export function ProgressTab({
             </View>
             <View style={styles.bodyItem}>
               <VixText heading="bold" additionalStyle={styles.bodyValue}>
-                {profile.waistCm ? `${formatDecimal(profile.waistCm)} cm` : '—'}
+                {profile.waistCm ? `${formatDecimal(profile.waistCm)} cm` : '-'}
               </VixText>
               <VixText heading="label">Lingkar perut</VixText>
             </View>

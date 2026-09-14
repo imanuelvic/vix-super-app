@@ -29,24 +29,24 @@ type CategoryTotal = {
 // Psychology of Money, dan Atomic Habits.
 const QUOTES: { text: string; source: string }[] = [
   {
-    text: 'Akar segala kejahatan adalah CINTA uang — bukan uangnya. Kelola uang, jangan dikuasai uang.',
+    text: 'Akar segala kejahatan adalah CINTA uang, bukan uangnya. Kelola uang, jangan dikuasai uang.',
     source: '1 Timotius 6:10',
   },
   {
-    text: 'Kekayaan sejati adalah uang yang TIDAK kamu belanjakan. Yang kelihatan mewah itu bukan kaya — itu uang yang sudah pergi.',
-    source: 'Psychology of Money — Morgan Housel',
+    text: 'Kekayaan sejati adalah uang yang TIDAK kamu belanjakan. Yang kelihatan mewah itu bukan kaya, itu uang yang sudah pergi.',
+    source: 'Psychology of Money · Morgan Housel',
   },
   {
     text: 'Menabung adalah jarak antara ego dan penghasilanmu. Makin kecil gengsi, makin cepat tenang.',
-    source: 'Psychology of Money — Morgan Housel',
+    source: 'Psychology of Money · Morgan Housel',
   },
   {
-    text: 'Kamu tidak naik ke level tujuanmu — kamu turun ke level sistemmu. Bangun sistem keuangan, bukan sekadar niat.',
-    source: 'Atomic Habits — James Clear',
+    text: 'Kamu tidak naik ke level tujuanmu, kamu turun ke level sistemmu. Bangun sistem keuangan, bukan sekadar niat.',
+    source: 'Atomic Habits · James Clear',
   },
   {
     text: 'Lebih baik 1% lebih baik setiap hari daripada sempurna sekali lalu berhenti. Catat terus transaksimu!',
-    source: 'Atomic Habits — James Clear',
+    source: 'Atomic Habits · James Clear',
   },
   {
     text: 'Orang bijak menyimpan harta dan minyak di rumahnya, tetapi orang bebal memboroskannya.',
@@ -54,7 +54,7 @@ const QUOTES: { text: string; source: string }[] = [
   },
   {
     text: 'Kebebasan finansial bukan soal banyaknya uang, tapi kendali penuh atas waktumu.',
-    source: 'Psychology of Money — Morgan Housel',
+    source: 'Psychology of Money · Morgan Housel',
   },
   {
     text: 'Kamu tidak dapat mengabdi kepada Allah dan kepada Mamon. Uang itu alat, bukan tuan.',
@@ -251,7 +251,7 @@ export function DashboardTab({
                           ? styles.toneDanger
                           : styles.toneOk
                     }>
-                    {usedPct === null ? '—' : `${usedPct.toFixed(0)}%`}
+                    {usedPct === null ? '-' : `${usedPct.toFixed(0)}%`}
                   </VixText>
                 </View>
               );
@@ -317,7 +317,7 @@ export function DashboardTab({
           “{quote.text}”
         </VixText>
         <VixText heading="label" additionalStyle={styles.quoteSource}>
-          — {quote.source}
+          - {quote.source}
         </VixText>
       </View>
 

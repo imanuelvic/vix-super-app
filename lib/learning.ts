@@ -10,7 +10,7 @@ import {
 import { type LoginStreak as WeekStreak } from './achievements';
 import { hashString } from './core';
 import { db } from './firebase';
-import { dayIdToDate } from './format';
+import { dayIdToDate, mondayIndex } from './format';
 import { dayDocId } from './health';
 import { liveDoc } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
@@ -58,21 +58,21 @@ export const SKILLS: Skill[] = [
     area: 'productivity',
     title: 'Critical Thinking & Problem Solving',
     what: 'Kemampuan berpikir logis dan menyelesaikan masalah.',
-    book: 'Critical Thinking — Richard Paul (2006)',
+    book: 'Critical Thinking · Richard Paul (2006)',
   },
   {
     key: 'soft-skills',
     area: 'productivity',
     title: 'Soft Skills & Leadership',
     what: 'Cara berkomunikasi, negosiasi, dan bekerja dalam tim.',
-    book: 'How to Win Friends and Influence People — Dale Carnegie (1981)',
+    book: 'How to Win Friends and Influence People, Dale Carnegie (1981)',
   },
   {
     key: 'creativity',
     area: 'productivity',
     title: 'Creativity & Innovation',
     what: 'Cara berpikir "out of the box", desain, seni, storytelling.',
-    book: 'The Creative Habit — Twyla Tharp',
+    book: 'The Creative Habit · Twyla Tharp',
   },
   // ---------- 🧰 Basic Life Skills ----------
   {
@@ -94,7 +94,7 @@ export const SKILLS: Skill[] = [
     area: 'life',
     title: 'Emotional Intelligence (EQ)',
     what: 'Kemampuan mengelola emosi, empati, komunikasi yang baik.',
-    book: 'Emotional Intelligence — Daniel Goleman',
+    book: 'Emotional Intelligence · Daniel Goleman',
   },
   // ---------- 🌱 Science & Environment ----------
   {
@@ -102,14 +102,14 @@ export const SKILLS: Skill[] = [
     area: 'science',
     title: 'Climate Change & Renewable Energy',
     what: 'Cara menghemat energi, solusi masa depan (solar, angin, dll.).',
-    book: 'This Changes Everything — Naomi Klein (2014)',
+    book: 'This Changes Everything · Naomi Klein (2014)',
   },
   {
     key: 'biotech',
     area: 'science',
     title: 'Biotechnology & Health',
     what: 'Pemahaman tentang vaksin, terapi gen, dan kemajuan medis.',
-    book: 'The Gene — Siddhartha Mukherjee',
+    book: 'The Gene · Siddhartha Mukherjee',
   },
   {
     key: 'urban-farming',
@@ -150,7 +150,7 @@ export const SKILLS: Skill[] = [
     area: 'politics',
     title: 'Geopolitics & International Relations',
     what: 'Cara kerja negara, konflik global, ekonomi dunia.',
-    book: 'Sapiens — Yuval Noah Harari',
+    book: 'Sapiens · Yuval Noah Harari',
     bookKey: 'sapiens',
   },
   {
@@ -158,14 +158,14 @@ export const SKILLS: Skill[] = [
     area: 'politics',
     title: 'Basic Law & Human Rights',
     what: 'Hak kita sebagai warga negara, hukum global.',
-    book: 'The Rule of Law — Tom Bingham',
+    book: 'The Rule of Law, Tom Bingham',
   },
   {
     key: 'media-literacy',
     area: 'politics',
     title: 'Social Psychology & Media Manipulation',
     what: 'Cara memahami propaganda, hoax, dan bias informasi.',
-    book: 'Thinking, Fast and Slow — Daniel Kahneman',
+    book: 'Thinking, Fast and Slow, Daniel Kahneman',
     bookKey: 'thinking-fast-and-slow',
   },
   {
@@ -173,7 +173,7 @@ export const SKILLS: Skill[] = [
     area: 'politics',
     title: 'Ethics & Philosophy',
     what: 'Cara berpikir kritis, membuat keputusan moral yang tepat.',
-    book: 'The Ethics of Ambiguity — Simone de Beauvoir',
+    book: 'The Ethics of Ambiguity, Simone de Beauvoir',
   },
   // ---------- 💼 Economics & Business ----------
   // Empat baris di bawah kolom "What I Learn"-nya masih kosong di daftarmu —
@@ -182,14 +182,14 @@ export const SKILLS: Skill[] = [
     key: 'storytelling',
     area: 'business',
     title: 'How To Become A Master Storyteller',
-    what: 'Menyusun cerita yang bikin orang mau mendengar — kepakai untuk jualan, presentasi, sampai kesaksian.',
+    what: 'Menyusun cerita yang bikin orang mau mendengar, kepakai untuk jualan, presentasi, sampai kesaksian.',
   },
   {
     key: 'personal-finance',
     area: 'business',
     title: 'Personal Finance',
     what: 'Manajemen keuangan, investasi, cara mengelola utang, inflasi.',
-    book: 'Rich Dad Poor Dad — Robert T. Kiyosaki (1997)',
+    book: 'Rich Dad Poor Dad, Robert T. Kiyosaki (1997)',
     bookKey: 'rich-dad-poor-dad',
   },
   {
@@ -214,6 +214,27 @@ export const SKILLS: Skill[] = [
 
 export function skillOf(key: string): Skill | null {
   return SKILLS.find((s) => s.key === key) ?? null;
+}
+
+/**
+ * Undi topik minggu ini (14 Sep 2026). Kolamnya: skill yang BELUM tercentang
+ * dan BUKAN yang sedang dipakai, jadi satu click selalu benar-benar berganti
+ * ke sesuatu yang memang masih perlu dipelajari. Kalau semuanya sudah
+ * tercentang, kolamnya jadi semua kecuali yang sedang dipakai. null hanya
+ * kalau memang tak ada pilihan lain sama sekali.
+ *
+ * `random` bisa dioper untuk pengujian.
+ */
+export function drawWeekSkill(
+  currentKey: string,
+  done: SkillsDone,
+  random: () => number = Math.random,
+): string | null {
+  const lain = SKILLS.filter((s) => s.key !== currentKey);
+  const belum = lain.filter((s) => !done[s.key]);
+  const kolam = belum.length > 0 ? belum : lain;
+  if (kolam.length === 0) return null;
+  return kolam[Math.floor(random() * kolam.length)].key;
 }
 
 // ===================== Topik diskusi =====================
@@ -244,7 +265,7 @@ export const TOPIC_GROUPS: TopicGroup[] = [
     key: 'job',
     label: 'Job & Study',
     emoji: '🏢',
-    hint: 'Bidang kerja & keilmuan — bagus untuk networking',
+    hint: 'Bidang kerja & keilmuan, bagus untuk networking',
   },
   {
     key: 'faith',
@@ -412,11 +433,6 @@ export const LEARNING_STEPS: {
   },
 ];
 
-/** Posisi hari dalam minggu Senin-dulu: Sen=0 … Min=6. */
-function dayPos(d: Date): number {
-  return (d.getDay() + 6) % 7;
-}
-
 /** id minggu = dayId hari Senin minggu itu, mis. "2026-08-10". */
 export function weekDocId(now = new Date()): string {
   return dayDocId(weekStart(now));
@@ -530,7 +546,7 @@ export function overdueSteps(
   steps: Record<string, boolean>,
   now: Date,
 ): typeof LEARNING_STEPS {
-  const today = dayPos(now);
+  const today = mondayIndex(now);
   return LEARNING_STEPS.filter((s) => s.pos <= today && !steps[s.key]);
 }
 

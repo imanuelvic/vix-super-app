@@ -114,7 +114,7 @@ export function ProgramTab({
           value={hari}
           options={sesiBlok.map((s) => ({
             key: String(s.weekday),
-            label: `${FIT_DAY_SHORT[s.weekday]} — ${s.emoji} ${s.title}`,
+            label: `${FIT_DAY_SHORT[s.weekday]} - ${s.emoji} ${s.title}`,
             sub:
               s.weekday === todayWeekday
                 ? `● hari ini · ±${s.minutes} menit`
@@ -126,7 +126,7 @@ export function ProgramTab({
 
       <View style={styles.dayBlock}>
         <VixText heading="title" additionalStyle={styles.dayTitle}>
-          {FIT_DAY_SHORT[session.weekday]} — {session.emoji}{' '}
+          {FIT_DAY_SHORT[session.weekday]} - {session.emoji}{' '}
           {fitMenuLabel(session)}
         </VixText>
         <VixText heading="label" additionalStyle={styles.dayFocus}>

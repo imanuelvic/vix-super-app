@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { copyText } from '@/lib/clipboard';
 import { filledNoteLines, joinNoteLines, splitNoteLines } from '@/lib/habits';
+import { openChatGptProject } from '@/lib/linking';
 
 // Catatan panjang yang diisi lewat MODAL, bukan kolom yang terjepit di daftar.
 //
@@ -30,6 +33,17 @@ import { filledNoteLines, joinNoteLines, splitNoteLines } from '@/lib/habits';
 // kartu daftar di sekelilingnya; yang biasanya perlu ditimpa cuma tinggi
 // minimumnya lewat `boxStyle` — samakan dengan kolom yang digantikannya supaya
 // daftarnya tidak bergeser sedikit pun saat perubahan ini dipasang.
+//
+// `tools` = dua tombol bundar di kanan judul sheet:
+//   📋 salin SELURUH isi yang sedang ditulis (termasuk yang belum disimpan),
+//   💬 lompat ke project ChatGPT pribadi (lib/linking.ts) — isinya disalin
+//      dulu ke papan klip, jadi sesampainya di sana tinggal tempel.
+// Sheet-nya tidak ditutup: pulang dari ChatGPT, draf masih ada dan Simpan
+// masih menunggu.
+//
+// `below` = isi tambahan DI BAWAH kolom paragraf (mis. panel ✨ AI Reflection
+// di jurnal harian). Ia menerima draf yang sedang ditulis dan boleh
+// menggantinya; menyimpannya tetap lewat tombol Simpan yang sama.
 export function NoteField({
   title,
   placeholder,
@@ -37,6 +51,8 @@ export function NoteField({
   value,
   lines = 0,
   boxStyle,
+  tools = false,
+  below,
   onSave,
 }: {
   /** Judul sheet-nya, mis. "📓 Catatan Hari Ini". */
@@ -54,6 +70,10 @@ export function NoteField({
   lines?: number;
   /** Tambahan gaya untuk kotak pratinjau (biasanya `minHeight`). */
   boxStyle?: StyleProp<ViewStyle>;
+  /** Tampilkan tombol 📋 salin & 💬 ChatGPT di kanan judul sheet. */
+  tools?: boolean;
+  /** Isi tambahan di bawah kolom paragraf (diabaikan saat `lines` > 0). */
+  below?: (ctx: { text: string; setText: (t: string) => void }) => ReactNode;
   onSave: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -67,10 +87,27 @@ export function NoteField({
   // tidak memanjang tiga kali lipat.
   const pratinjau = berpoin ? filledNoteLines(value).join(' · ') : value;
 
+  // Isi yang SEDANG ditulis di sheet (bukan yang tersimpan).
+  const draf = berpoin ? joinNoteLines(poin) : text.trim();
+
   function simpan() {
-    const isi = berpoin ? joinNoteLines(poin) : text.trim();
-    if (isi !== value) onSave(isi);
+    if (draf !== value) onSave(draf);
     setOpen(false);
+  }
+
+  // 📋 → ikonnya berganti ✓ sebentar sebagai tanda tersalin (tidak ada toast
+  // di app ini, dan dialog di atas sheet tidak muncul di iOS).
+  const [tersalin, setTersalin] = useState(false);
+
+  async function salin() {
+    if (!draf || !(await copyText(draf))) return;
+    setTersalin(true);
+    setTimeout(() => setTersalin(false), 1500);
+  }
+
+  async function keChatGpt() {
+    if (draf) await copyText(draf);
+    await openChatGptProject();
   }
 
   return (
@@ -98,6 +135,19 @@ export function NoteField({
         title={title}
         subtitle={subtitle ?? placeholder}
         onClose={() => setOpen(false)}
+        headerRight={
+          tools ? (
+            <View style={styles.tools}>
+              <EmojiButton
+                icon={tersalin ? 'checkmark' : 'doc.on.doc'}
+                active={tersalin}
+                onPress={salin}
+                disabled={!draf}
+              />
+              <EmojiButton icon="bubble.left.fill" onPress={keChatGpt} />
+            </View>
+          ) : undefined
+        }
         footer={
           <DualButtons
             confirmLabel="Simpan"
@@ -123,14 +173,17 @@ export function NoteField({
             </View>
           ))
         ) : (
-          <FormInput
-            style={styles.noteSheetInput}
-            placeholder={placeholder}
-            value={text}
-            onChangeText={setText}
-            multiline
-            autoFocus
-          />
+          <>
+            <FormInput
+              style={styles.noteSheetInput}
+              placeholder={placeholder}
+              value={text}
+              onChangeText={setText}
+              multiline
+              autoFocus
+            />
+            {below?.({ text, setText })}
+          </>
         )}
       </SheetModal>
     </>
@@ -153,6 +206,7 @@ const styles = StyleSheet.create({
   noteFilled: { flex: 1, color: Color.TEXT_TITLE },
   notePlaceholder: { flex: 1, color: Color.TEXT_PLACEHOLDER },
   noteHint: { color: Color.TEXT_LABEL },
+  tools: { flexDirection: 'row', gap: 8 },
   // Kolom isian DI DALAM sheet — dibuat lega, karena di sinilah menulisnya.
   noteSheetInput: { minHeight: 180, textAlignVertical: 'top' },
   // Tiga kotak kecil bernomor — bentuk untuk catatan yang isinya poin.

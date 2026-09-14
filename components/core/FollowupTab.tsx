@@ -383,7 +383,7 @@ export function FollowupTab({
               🎂 {b.label} ulang tahun HARI INI!
             </VixText>
             <VixText heading="paragraph" additionalStyle={styles.birthdayText}>
-              {b.sub ? `${b.sub} — ` : ''}Genap {b.turningAge} tahun. Jangan
+              {b.sub ? `${b.sub} - ` : ''}Genap {b.turningAge} tahun. Jangan
               lupa kirim ucapan & doa 🥳
             </VixText>
             {/* Dua ucapan, dua templat berbeda:
@@ -421,12 +421,12 @@ export function FollowupTab({
             </View>
             {!b.phone && (
               <VixText heading="label" additionalStyle={styles.birthdayHint}>
-                ℹ️ Nomor WA-nya belum diisi — chat pribadi belum bisa langsung.
+                ℹ️ Nomor WA-nya belum diisi, chat pribadi belum bisa langsung.
               </VixText>
             )}
             {!b.gender && (
               <VixText heading="label" additionalStyle={styles.birthdayHint}>
-                ℹ️ Cowok/cewek belum diisi di tab Leaders — ucapan pribadinya
+                ℹ️ Cowok/cewek belum diisi di tab Leaders, ucapan pribadinya
                 pakai versi umum dulu.
               </VixText>
             )}
@@ -445,7 +445,7 @@ export function FollowupTab({
             <VixText key={b.key} heading="label">
               🎂 {b.label}
               {b.sub ? ` (${b.sub})` : ''} ultah {b.daysUntil} hari lagi (
-              {formatDayMonth(b.date)}) — ke-{b.turningAge}
+              {formatDayMonth(b.date)}), ke-{b.turningAge}
             </VixText>
           ))}
         </View>
@@ -457,10 +457,10 @@ export function FollowupTab({
           style={styles.prayerFillCard}
           onPress={() => router.push('/monthly-prayers')}>
           <VixText heading="title" additionalStyle={styles.prayerFillTitle}>
-            🔗 Doa Rantai — {monthTitle}
+            🔗 Doa Rantai · {monthTitle}
           </VixText>
           <VixText heading="label" additionalStyle={styles.prayerFillText}>
-            Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader dulu — ini yang
+            Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader dulu, ini yang
             jadi dasar follow up Selasa & Kamis 🙏
           </VixText>
           <View style={styles.prayerFillButton}>
@@ -502,7 +502,7 @@ export function FollowupTab({
         <VixText additionalStyle={styles.weekLeadersText}>
           {weekLeaders.length > 0
             ? weekLeaders.map((l) => `${l.heart} ${l.name}`).join('  &  ')
-            : 'Belum ada CORE Leader — tambah dulu di tab Leaders.'}
+            : 'Belum ada CORE Leader, tambah dulu di tab Leaders.'}
         </VixText>
       </View>
       {weekLeaders.map((l) =>

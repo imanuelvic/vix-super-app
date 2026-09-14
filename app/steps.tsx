@@ -103,7 +103,7 @@ export default function StepsScreen() {
           <View style={styles.bestCard}>
             <VixText heading="subheader" additionalStyle={styles.bestValue}>
               🥇 {groupDigits(String(ach.best.steps))}
-              <VixText heading="label"> langkah — rekor terbaik</VixText>
+              <VixText heading="label"> langkah, rekor terbaik</VixText>
             </VixText>
             <VixText heading="label" additionalStyle={styles.bestDate}>
               {formatShortDayDate(dayIdToDate(ach.best.dayId))}

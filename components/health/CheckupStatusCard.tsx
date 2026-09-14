@@ -40,7 +40,7 @@ export function CheckupStatusCard({
           Normal: {info.normal}
         </VixText>
         <VixText heading="label" additionalStyle={styles.warnText}>
-          ⚠️ Belum pernah dicatat — segera periksa dan catat di sub-tab
+          ⚠️ Belum pernah dicatat, segera periksa dan catat di sub-tab
           Check-up.
         </VixText>
       </View>
@@ -108,7 +108,7 @@ export function checkupSummary(
   type: CheckupType,
   latest?: Checkup,
 ): { value: string; perhatian: boolean } {
-  if (!latest) return { value: '—', perhatian: true };
+  if (!latest) return { value: '-', perhatian: true };
   const hasil = evaluateCheckup(type, latest.value);
   const due = checkupDaysUntil(latest, new Date()) <= 0;
   return {

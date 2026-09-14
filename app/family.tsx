@@ -336,7 +336,7 @@ export default function FamilyScreen() {
   const bday = selected ? nextBirthday(selected, today) : null;
   // Daftar nama relasi (pakai nama panggilan), "—" kalau kosong.
   const relNames = (list: FamilyMember[]) =>
-    list.length ? list.map(displayName).join(', ') : '—';
+    list.length ? list.map(displayName).join(', ') : '-';
 
   function openAdd() {
     setEditing('new');
@@ -779,12 +779,12 @@ export default function FamilyScreen() {
 
           {/* Orang tua (maks 2) — picker buka-tutup */}
           <MemberPicker
-            label="👪 Orang tuanya siapa? (maks 2 — anak otomatis terhubung)"
+            label="👪 Orang tuanya siapa? (maks 2, anak otomatis terhubung)"
             candidates={others}
             selectedIds={fParents}
             open={openPicker === 'parents'}
             placeholder="Pilih orang tua…"
-            emptyText="Belum ada anggota lain — tambah dulu, hubungkan belakangan."
+            emptyText="Belum ada anggota lain, tambah dulu, hubungkan belakangan."
             onToggleOpen={() =>
               setOpenPicker((p) => (p === 'parents' ? null : 'parents'))
             }
@@ -793,7 +793,7 @@ export default function FamilyScreen() {
 
           {/* Pasangan (suami/istri) — hanya 1, picker buka-tutup */}
           <MemberPicker
-            label="💍 Pasangannya siapa? (pilih 1 — suami / istri)"
+            label="💍 Pasangannya siapa? (pilih 1, suami / istri)"
             candidates={others}
             selectedIds={fPartners}
             open={openPicker === 'partners'}

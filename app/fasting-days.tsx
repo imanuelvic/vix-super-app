@@ -157,7 +157,7 @@ export default function FastingDaysScreen() {
 
           {terkunci && (
             <VixText heading="label" additionalStyle={styles.locked}>
-              🔒 Sudah dikunci — puasanya selesai lebih dari 3 hari lalu, jadi
+              🔒 Sudah dikunci, puasanya selesai lebih dari 3 hari lalu, jadi
               catatannya tinggal dibaca.
             </VixText>
           )}

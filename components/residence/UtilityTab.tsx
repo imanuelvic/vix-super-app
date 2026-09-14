@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { EmptyText } from '@/components/common/EmptyText';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { formatShortDayDate, monthLabel, sameMonth } from '@/lib/format';
@@ -92,10 +93,10 @@ export function UtilityTab({
         </VixText>
 
         {transactions.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada transaksi listrik/air. Catat di Finance dengan kategori 🏠
             Residence → 💧 Air PAM atau ⚡ Listrik Token.
-          </VixText>
+          </EmptyText>
         ) : (
           transactions.map((t) => {
             // Judulnya JENIS-nya (Air PAM / Listrik Token), bukan nama
@@ -148,7 +149,6 @@ const styles = StyleSheet.create({
   },
   // Penanda asal data — bunyinya sama persis dengan tab Log & Log di Car 🚗.
   source: { color: Color.MAIN, marginBottom: 10 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   row: {
     ...CARD,
     flexDirection: 'row',

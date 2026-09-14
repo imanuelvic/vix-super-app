@@ -104,7 +104,7 @@ export default function ChatTemplatesScreen() {
   // Isi dropdown: grup dulu (paling sering — Motivational Words tiap pagi),
   // lalu para CL, dan "ketik sendiri" paling bawah untuk orang di luar daftar.
   const pilihanNama: SelectOption<string>[] = [
-    { key: GRUP, label: '👥 Grup CORE', sub: 'Tanpa nama — untuk kirim ke grup' },
+    { key: GRUP, label: '👥 Grup CORE', sub: 'Tanpa nama, untuk kirim ke grup' },
     ...leaders.map((l) => ({ key: l.id, label: `${l.heart} ${l.name}` })),
     { key: MANUAL, label: '✍️ Ketik nama lain…', sub: 'Untuk orang di luar daftar CL' },
   ];
@@ -175,7 +175,7 @@ export default function ChatTemplatesScreen() {
                 additionalStyle={cl.phone ? styles.tujuanOn : styles.tujuanOff}>
                 {cl.phone
                   ? `💬 Langsung ke chat ${cl.name} · +62${cl.phone}`
-                  : `⚠️ Nomor WA ${cl.name} belum diisi — nanti masih pilih chat sendiri. Isi di CORE › Leaders ›`}
+                  : `⚠️ Nomor WA ${cl.name} belum diisi, nanti masih pilih chat sendiri. Isi di CORE › Leaders ›`}
               </VixText>
             </PressableScale>
           )}
@@ -287,7 +287,7 @@ function CategoryCard({
                 </VixText>
                 {hasPlaceholder(text) && (
                   <VixText heading="label" additionalStyle={styles.warnText}>
-                    ⚠️ Masih ada penanda yang belum diisi — isi di atas, atau
+                    ⚠️ Masih ada penanda yang belum diisi, isi di atas, atau
                     ketik langsung di WhatsApp.
                   </VixText>
                 )}

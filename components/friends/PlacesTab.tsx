@@ -5,6 +5,7 @@ import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -159,11 +160,11 @@ export function PlacesTab({ places }: { places: Place[] }) {
         />
 
         {shown.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             {places.length === 0
               ? 'Belum ada tempat.'
               : 'Tidak ada yang cocok dengan saringan ini.'}
-          </VixText>
+          </EmptyText>
         )}
 
         {pageItems.map((p) => {
@@ -334,7 +335,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   card: {
     ...CARD,
     flexDirection: 'row',

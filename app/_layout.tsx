@@ -96,6 +96,8 @@ function RootNavigator() {
         <Stack.Screen name="learning" />
 
         <Stack.Screen name="health" />
+        {/* Isian satu Race 🏃 — layar sendiri, bukan sheet (14 Sep 2026) */}
+        <Stack.Screen name="race/[id]" />
         <Stack.Screen name="steps" />
         <Stack.Screen name="diseases" />
         <Stack.Screen name="health-info" />
@@ -123,6 +125,8 @@ function RootNavigator() {
         <Stack.Screen name="project/edit/[id]" />
         <Stack.Screen name="family" />
         <Stack.Screen name="fun" />
+        {/* Isian satu entri Fun (Summit / Rekreasi) — layar yang sama dengan race/[id] */}
+        <Stack.Screen name="fun/[id]" />
         <Stack.Screen name="fitness" />
         <Stack.Screen name="book" />
         <Stack.Screen name="book/[key]" />

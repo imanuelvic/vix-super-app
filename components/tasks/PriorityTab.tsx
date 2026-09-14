@@ -274,10 +274,10 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
                     }>
                     🗓️ {formatDate(item.deadline.toDate())}
                     {days === 0
-                      ? ' — HARI INI!'
+                      ? ', HARI INI!'
                       : late
-                        ? ` — lewat ${-days!} hari`
-                        : ` — ${days} hari lagi`}
+                        ? `, lewat ${-days!} hari`
+                        : ` - ${days} hari lagi`}
                   </VixText>
                 ) : null}
               </PressableScale>

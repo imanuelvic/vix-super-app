@@ -1,0 +1,91 @@
+# Build iOS GRATIS tanpa Mac dan tanpa jatah EAS Cloud.
+#
+# Laptop Windows tidak bisa membangun iOS (butuh Xcode, cuma ada di macOS).
+# Yang bisa: runner macOS milik GitHub Actions, gratis untuk repo publik.
+# Di situ dijalankan `eas build --local`, persis perintah yang kamu mau, lalu
+# hasilnya dikirim ke TestFlight (gratis di paket Free EAS) supaya tinggal
+# di-install dari HP tanpa kabel dan tanpa alat tambahan.
+#
+# Jalankan dari tab Actions › "Build iOS (gratis)" › Run workflow.
+# Butuh SATU secret di repo: EXPO_TOKEN (lihat BUILD-GRATIS.md).
+name: Build iOS (gratis)
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Profil eas.json'
+        type: choice
+        default: development-testflight
+        options:
+          - development-testflight
+          - preview-testflight
+          - development
+          - preview
+      kirim_testflight:
+        description: 'Kirim ke TestFlight sesudah build (hanya profil *-testflight)'
+        type: boolean
+        default: true
+      simpan_ipa:
+        description: 'Simpan .ipa sebagai artifact (repo ini PUBLIK: siapa pun yang login GitHub bisa mengunduhnya)'
+        type: boolean
+        default: false
+
+# Satu build sekaligus. Build baru membatalkan yang masih jalan.
+concurrency:
+  group: ios-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: eas build --local (${{ inputs.profile }})
+    # Standard runner macOS: gratis untuk repo publik. Xcode, fastlane, dan
+    # CocoaPods sudah terpasang di image ini.
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Pasang dependensi
+        run: yarn install --frozen-lockfile
+
+      - name: Pasang EAS CLI
+        run: npm install -g eas-cli
+
+      # `--local` = dibangun DI RUNNER INI, bukan di EAS Cloud, jadi tidak
+      # memakai jatah build EAS sama sekali. Kredensial (sertifikat &
+      # provisioning profile) dan variabel EXPO_PUBLIC_* tetap diambil dari
+      # akun EAS-mu lewat EXPO_TOKEN, sama seperti build cloud.
+      - name: Build iOS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          mkdir -p build
+          eas build --local --platform ios --profile "${{ inputs.profile }}" \
+            --non-interactive --output "build/vix-${{ inputs.profile }}.ipa"
+
+      # TestFlight hanya menerima build bertanda tangan App Store, yaitu
+      # profil *-testflight. Butuh App Store Connect API Key yang tersimpan di
+      # EAS (sekali saja: `eas credentials --platform ios`).
+      - name: Kirim ke TestFlight
+        if: ${{ inputs.kirim_testflight && endsWith(inputs.profile, '-testflight') }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas submit --platform ios --non-interactive \
+            --path "build/vix-${{ inputs.profile }}.ipa"
+
+      - name: Simpan .ipa
+        if: ${{ inputs.simpan_ipa }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: vix-${{ inputs.profile }}
+          path: build/vix-${{ inputs.profile }}.ipa
+          retention-days: 7

@@ -29,6 +29,9 @@ import Animated, {
 
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EditDelete } from '@/components/common/EditDelete';
+import { EditFooter } from '@/components/common/EditFooter';
+import { InlineDelete } from '@/components/common/InlineDelete';
 import { PickerScrollView } from '@/components/common/PickerScrollView';
 import { VixText } from '@/components/common/VixText';
 
@@ -139,16 +142,30 @@ export function SheetModal({
     Math.min(height * 0.75, height - keyboardHeight - TOP_GAP),
   );
 
-  // Bar aksi (Batal/Simpan = DualButtons) OTOMATIS dipisah dari isi lalu dipin
-  // di footer yang menempel — jadi selalu terlihat tanpa perlu scroll. `footer`
-  // eksplisit (bila dioper) menang atas deteksi otomatis.
+  // Bar aksi OTOMATIS dipisah dari isi lalu dipin di footer yang menempel —
+  // selalu terlihat tanpa perlu scroll. `footer` eksplisit (bila dioper)
+  // menang atas deteksi otomatis.
+  //
+  // Yang dikenali sebagai bar aksi: Batal/Simpan (DualButtons), tombol hapus
+  // (InlineDelete / EditDelete), dan pasangan keduanya (EditFooter). Dulu
+  // cuma DualButtons telanjang — 16 sheet yang memakai <EditFooter> tak
+  // dikenali, jadi tombolnya ikut tergulung bersama isi dan baru muncul kalau
+  // digulung sampai bawah. Urutannya di footer mengikuti urutan penulisannya
+  // (hapus di atas Batal/Simpan), jadi tak ada sheet yang perlu diubah.
   const kids = Children.toArray(children);
   const autoBar =
     footer != null
-      ? undefined
-      : kids.find((c) => isValidElement(c) && c.type === DualButtons);
-  const contentKids = autoBar ? kids.filter((c) => c !== autoBar) : kids;
-  const footerContent = footer ?? autoBar;
+      ? []
+      : kids.filter(
+          (c) =>
+            isValidElement(c) &&
+            (c.type === DualButtons ||
+              c.type === EditFooter ||
+              c.type === EditDelete ||
+              c.type === InlineDelete),
+        );
+  const contentKids = kids.filter((c) => !autoBar.includes(c));
+  const footerContent = footer ?? (autoBar.length > 0 ? autoBar : null);
 
   // PickerScrollView, bukan ScrollView biasa: kolom tanggal/jam yang duduk di
   // bagian bawah form melahirkan spinner iOS-nya DI LUAR layar. Wadah ini

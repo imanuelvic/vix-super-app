@@ -59,7 +59,7 @@ export default function ReviveHistoryScreen() {
         backLabel="Spiritual"
         title="Riwayat Revive 📖"
         subtitle={
-          entries ? `${entries.length} Revive — satu rhema sehari 🌱` : undefined
+          entries ? `${entries.length} Revive, satu rhema sehari 🌱` : undefined
         }
       />
 
@@ -89,7 +89,7 @@ export default function ReviveHistoryScreen() {
               <VixText heading="label" additionalStyle={styles.empty}>
                 {q !== ''
                   ? 'Tidak ada Revive yang cocok dengan pencarianmu.'
-                  : 'Belum ada Revive — mulai hari ini ✍️'}
+                  : 'Belum ada Revive, mulai hari ini ✍️'}
               </VixText>
             ) : (
               <>

@@ -23,6 +23,7 @@ import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
+import { ReflectionAiPanel } from '@/components/habits/ReflectionAiPanel';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useScrollTop } from '@/hooks/useScrollTop';
@@ -48,6 +49,7 @@ import {
     isFixedHabit,
     isGratitudeHabit,
     isNoteDrivenHabit,
+    isReflectionJournal,
     newHabitId,
     saveHabits,
     slotMeta,
@@ -507,7 +509,7 @@ export function HabitsTab({
     if (!user || savingTarget) return;
     const value = parseDecimal(fTarget);
     if (value < 30 || value > 250) {
-      setTargetError('Target berat tidak masuk akal — cek lagi.');
+      setTargetError('Target berat tidak masuk akal, cek lagi.');
       return;
     }
     setSavingTarget(true);
@@ -653,7 +655,7 @@ export function HabitsTab({
                           ? styles.areaTextKept
                           : styles.areaText
                   }>
-                  {a.total === 0 ? '—' : `${a.done}/${a.total}`}
+                  {a.total === 0 ? '-' : `${a.done}/${a.total}`}
                 </VixText>
               </PressableScale>
             );
@@ -835,6 +837,19 @@ export function HabitsTab({
                     // "🙏 Bersyukur 3 Hal" minta TIGA poin, bukan satu
                     // paragraf — lihat habitNoteLines di lib/habits.ts.
                     lines={habitNoteLines(habit)}
+                    // 📋 salin & 💬 ChatGPT: catatan harian dirapikan di
+                    // project ChatGPT pribadi (lib/linking.ts).
+                    tools
+                    // ✨ AI Reflection hanya di 📓 Daily Reflection Journal:
+                    // Gemini merapikan & merenungkan tulisannya (kuota gratis,
+                    // sekali sehari; lib/reflectionAi.ts).
+                    below={
+                      isReflectionJournal(habit)
+                        ? ({ text, setText }) => (
+                            <ReflectionAiPanel dayId={dayId} text={text} onUse={setText} />
+                          )
+                        : undefined
+                    }
                     onSave={(t) => handleNote(habit, t)}
                   />
                 )}

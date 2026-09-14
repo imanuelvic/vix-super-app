@@ -348,7 +348,7 @@ export function VisitationTab({
 
           {words.length === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Ketik kata yang kamu ingat dari judul atau agendanya — urutan kata
+              Ketik kata yang kamu ingat dari judul atau agendanya, urutan kata
               tidak harus sama 🔍
             </VixText>
           ) : results.length === 0 ? (
@@ -424,7 +424,7 @@ export function VisitationTab({
               <VixText heading="label" additionalStyle={styles.empty}>
                 {hasFilter
                   ? 'Tidak ada jadwal yang cocok dengan filter ini.'
-                  : 'Belum ada jadwal — CORE mana yang mau kamu temui bulan ini? 😉'}
+                  : 'Belum ada jadwal · CORE mana yang mau kamu temui bulan ini? 😉'}
               </VixText>
             ) : (
               <>

@@ -84,7 +84,7 @@ export function PinLock({
       {wrong && (
         <Animated.View entering={FadeIn.duration(150)}>
           <VixText heading="label" additionalStyle={styles.errorText}>
-            PIN salah — coba lagi
+            PIN salah, coba lagi
           </VixText>
         </Animated.View>
       )}

@@ -52,7 +52,7 @@ function sectionHtml(section: CriteriaSection): string {
   }
   const judul =
     escapeHtml(`${section.icon} ${section.title}`) +
-    (section.note ? ` — ${escapeHtml(section.note)}` : '');
+    (section.note ? ` - ${escapeHtml(section.note)}` : '');
   return `<h2>${judul}</h2>${poin}`;
 }
 

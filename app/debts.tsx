@@ -301,7 +301,7 @@ export default function DebtsScreen() {
           {list.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
               {isMine
-                ? 'Belum ada pinjaman — semoga tetap begini 😌'
+                ? 'Belum ada pinjaman, semoga tetap begini 😌'
                 : 'Belum ada yang meminjam dari kamu.'}
             </VixText>
           )}
@@ -531,7 +531,7 @@ export default function DebtsScreen() {
       {/* ===== Sheet bayar cicilan + riwayat ===== */}
       <SheetModal
         visible={!!paying}
-        title={payingLive ? `Bayar — ${payingLive.person}` : 'Bayar'}
+        title={payingLive ? `Bayar · ${payingLive.person}` : 'Bayar'}
         subtitle={
           payingLive ? `Sisa ${formatRupiah(debtRemaining(payingLive))}` : undefined
         }

@@ -216,17 +216,17 @@ export function bodyAdvice(profile: HealthProfile, age: number): string[] {
   if (whtr != null && whtr >= 0.5) {
     const target = profile.heightCm * 0.49;
     out.push(
-      `📏 Lingkar perut ideal di bawah ${Math.round(target)} cm — lemak perut paling berisiko untuk jantung.`,
+      `📏 Lingkar perut ideal di bawah ${Math.round(target)} cm, lemak perut paling berisiko untuk jantung.`,
     );
   }
 
   if (fat != null) {
     if (fat >= 18) {
       out.push(
-        `🔥 Lemak tubuh ±${formatKg(fat)}%. Untuk sixpack biasanya perlu di bawah 15% — defisit kalori pelan + latihan beban.`,
+        `🔥 Lemak tubuh ±${formatKg(fat)}%. Untuk sixpack biasanya perlu di bawah 15%, defisit kalori pelan + latihan beban.`,
       );
     } else {
-      out.push(`💪 Lemak tubuh ±${formatKg(fat)}% — sudah bagus, jaga massa otot dengan latihan beban.`);
+      out.push(`💪 Lemak tubuh ±${formatKg(fat)}%, sudah bagus, jaga massa otot dengan latihan beban.`);
     }
   } else {
     out.push('📐 Isi lingkar leher & pinggang untuk melihat perkiraan persen lemak tubuh.');

@@ -103,7 +103,7 @@ export function LinkedNotesButton({
 
                   {hilang && (
                     <VixText heading="label" additionalStyle={styles.gone}>
-                      Catatannya sudah dihapus — tinggal judulnya yang tercatat
+                      Catatannya sudah dihapus, tinggal judulnya yang tercatat
                       di sini.
                     </VixText>
                   )}

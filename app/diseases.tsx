@@ -130,7 +130,7 @@ export default function DiseasesScreen() {
       <ScreenHeader
         backLabel="Health"
         title="Disease 🤧"
-        subtitle="Riwayat sakit — biar tahu pola & penyebabnya"
+        subtitle="Riwayat sakit, biar tahu pola & penyebabnya"
       />
 
       <ScrollView key={currentPage} contentContainerStyle={styles.content}>

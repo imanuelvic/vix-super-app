@@ -27,6 +27,30 @@ export function openChatGpt() {
   return openExternalUrl(CHATGPT_SCHEME, { fallback: CHATGPT_WEB });
 }
 
+// Project ChatGPT pribadi (mis. "Business - vix Super App") — tujuan tombol ✨
+// di sheet Catatan Hari Ini (Habits), supaya catatannya langsung dirapikan di
+// obrolan yang memang sudah tahu konteksnya.
+//
+// CARA MENGISI: buka chatgpt.com di browser laptop › sidebar › click
+// project-nya › salin alamat di bilah alamat. Bentuknya:
+//   https://chatgpt.com/g/g-p-xxxxxxxxxxxxxxxxxxxxxxxx-business-vix-super-app/project
+// Kosong → tombolnya membuka ChatGPT saja (obrolan baru).
+//
+// Ini UNIVERSAL LINK: app ChatGPT iOS mengklaim jalur chatgpt.com/g/* di
+// apple-app-site-association-nya, jadi iOS membuka app-nya langsung di project
+// itu (tanpa app → Safari). Alamatnya bukan rahasia: project pribadi hanya
+// terbuka untuk akun pemiliknya, orang lain cuma dapat "tidak ditemukan".
+//
+// Isi catatannya TIDAK dititipkan lewat ?q= : OpenAI hanya menjamin ?q= untuk
+// obrolan baru di web, dan di app iOS-nya tidak diproses. Karena itu tombol ✨
+// menyalin catatan ke papan klip dulu, lalu tinggal tempel di sana.
+export const CHATGPT_PROJECT_URL = '';
+
+export function openChatGptProject() {
+  if (!CHATGPT_PROJECT_URL) return openChatGpt();
+  return openExternalUrl(CHATGPT_PROJECT_URL, { fallback: CHATGPT_WEB });
+}
+
 /**
  * Buka `url`. Kalau gagal & `fallback` diisi, tautan cadangannya yang dibuka.
  * `onError` hanya dipanggil kalau SEMUA percobaan gagal.

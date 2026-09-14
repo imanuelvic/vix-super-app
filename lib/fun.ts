@@ -31,7 +31,10 @@ export type FunEntry = {
   date: Timestamp | null; // kapan dikunjungi / didaki
   // Field khusus kategori Race (opsional) — tidak diisi untuk kategori lain.
   price?: number; // biaya pendaftaran (Rp)
-  finishMinutes?: number; // waktu tempuh / catatan waktu (menit)
+  distanceKm?: number; // jarak lomba (km), boleh desimal: 21,1
+  finishSec?: number; // waktu tempuh, DETIK utuh (jam·menit·detik digabung)
+  /** LAMA (sebelum 14 Sep 2026): menit saja. Dibaca lewat raceFinishSec(). */
+  finishMinutes?: number;
   medalPhoto?: string | null; // foto medali JPEG base64 (tanpa prefix data:)
   // Field khusus kategori Summit (opsional) — rincian anggaran pendakian (Rp).
   // Total tidak disimpan, dihitung otomatis dari komponen (lihat summitTotal).
@@ -41,6 +44,61 @@ export type FunEntry = {
   costPermit?: number; // SIMAKSI / tiket masuk kawasan
   costOther?: number; // lain-lain
 };
+
+// ===================== Race: waktu tempuh & pace =====================
+
+/**
+ * Waktu tempuh dalam DETIK — dari `finishSec` (baru) atau `finishMinutes`
+ * (data lama, menit saja). 0 = belum diisi.
+ */
+export function raceFinishSec(e: {
+  finishSec?: number;
+  finishMinutes?: number;
+}): number {
+  if (e.finishSec && e.finishSec > 0) return Math.round(e.finishSec);
+  if (e.finishMinutes && e.finishMinutes > 0) return e.finishMinutes * 60;
+  return 0;
+}
+
+/** Jam·menit·detik → detik utuh. Yang kosong/ngawur dihitung 0. */
+export function toFinishSec(h: number, m: number, s: number): number {
+  const n = (x: number) => (Number.isFinite(x) && x > 0 ? Math.floor(x) : 0);
+  return n(h) * 3600 + n(m) * 60 + n(s);
+}
+
+/** Detik utuh → { h, m, s } untuk diisi ke tiga kolomnya. */
+export function splitFinishSec(sec: number): { h: number; m: number; s: number } {
+  const t = Math.max(0, Math.floor(sec));
+  return { h: Math.floor(t / 3600), m: Math.floor((t % 3600) / 60), s: t % 60 };
+}
+
+/**
+ * "1j 25m 30d" / "25m 30d" / "45d". Detik 0 tidak ditulis ("1j 25m") —
+ * kecuali memang cuma detik yang ada.
+ */
+export function formatFinish(sec: number): string {
+  if (!sec || sec <= 0) return '';
+  const { h, m, s } = splitFinishSec(sec);
+  const bagian: string[] = [];
+  if (h > 0) bagian.push(`${h}j`);
+  if (h > 0 || m > 0) bagian.push(`${m}m`);
+  if (s > 0 || bagian.length === 0) bagian.push(`${s}d`);
+  return bagian.join(' ');
+}
+
+/** Pace = detik per km. null kalau jarak atau waktunya belum ada. */
+export function racePace(sec: number, km: number): number | null {
+  if (!sec || sec <= 0 || !km || km <= 0) return null;
+  return sec / km;
+}
+
+/** Pace untuk dibaca: 513 detik/km → 8'33"/km. */
+export function formatPace(secPerKm: number): string {
+  const t = Math.round(secPerKm);
+  const m = Math.floor(t / 60);
+  const s = t % 60;
+  return `${m}'${String(s).padStart(2, '0')}"/km`;
+}
 
 /** Total anggaran pendakian Summit = akumulasi semua komponen biaya. */
 export function summitTotal(e: {
@@ -92,7 +150,9 @@ const FUN_CATEGORIES: {
     bg: Color.FINANCE_EXPENSE,
     fg: Color.FINANCE_EXPENSE_DARK,
     titleLabel: 'Nama race',
-    detailLabel: 'Jarak & hasil',
+    // Jaraknya punya kolom sendiri (distanceKm) sejak 14 Sep 2026; kolom ini
+    // untuk hasilnya: finisher, PB, kategori umur, dsb.
+    detailLabel: 'Hasil (mis. finisher, PB)',
   },
   {
     key: 'reflection',
@@ -190,17 +250,17 @@ export function daysSinceLastFun(data: FunData, now: Date): number | null {
 // Ide kegiatan Fun — biar tidak bingung mau ngapain hari ini.
 const FUN_IDEAS: string[] = [
   '⛰️ Cari info & jadwalkan hiking ke gunung terdekat akhir pekan ini.',
-  '🏃 Ikut fun run / lari santai 5K — target kecil yang seru.',
-  '🏝️ Staycation atau ke pantai sehari — recharge total.',
+  '🏃 Ikut fun run / lari santai 5K, target kecil yang seru.',
+  '🏝️ Staycation atau ke pantai sehari, recharge total.',
   '🎬 Nonton film yang lagi hype di bioskop, sendiri atau bareng.',
   '☕ Coba coffee shop baru yang belum pernah kamu datangi.',
   '🚴 Sepedaan pagi keliling kota sebelum panas.',
-  '🧘 Waktu hening di tempat tenang — baca Revive.',
+  '🧘 Waktu hening di tempat tenang, baca Revive.',
   '🍜 Food adventure: cari makanan khas yang belum pernah dicoba.',
   '📸 Jalan sambil foto (street photography) di spot estetik.',
   '🎮 Game night atau board game bareng teman.',
   '🏊 Berenang buat lepas penat sekaligus olahraga ringan.',
-  '🌅 Kejar sunrise / sunset di spot bagus — reset pikiran.',
+  '🌅 Kejar sunrise / sunset di spot bagus, reset pikiran.',
 ];
 
 /** Beberapa ide Fun untuk hari ini — deterministik, ganti otomatis tiap hari. */

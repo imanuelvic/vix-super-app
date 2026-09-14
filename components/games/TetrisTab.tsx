@@ -316,7 +316,7 @@ export function TetrisTab() {
               <VixText heading="label" additionalStyle={styles.overlayText}>
                 {game.status === 'over'
                   ? `${game.lines} baris · score ${game.score}`
-                  : 'Susun baloknya sampai satu baris penuh — barisnya hilang.'}
+                  : 'Susun baloknya sampai satu baris penuh, barisnya hilang.'}
               </VixText>
               <PrimaryButton
                 label={game.status === 'over' ? '🔄 Main Lagi' : '▶️ Mulai'}

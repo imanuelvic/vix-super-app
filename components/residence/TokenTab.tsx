@@ -9,6 +9,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { MoneyInput } from '@/components/common/MoneyInput';
@@ -119,7 +120,7 @@ export function TokenTab({
   const { currentPage, pageCount, pageItems, setPage } = usePagination(riwayat);
 
   const rupiah = (kwh: number) =>
-    rate > 0 ? formatRupiah(Math.round(kwh * rate)) : '—';
+    rate > 0 ? formatRupiah(Math.round(kwh * rate)) : '-';
 
   // ===== Catat meteran =====
 
@@ -220,7 +221,7 @@ export function TokenTab({
     const cost = parseAmount(bCost);
     const kwh = parseDecimal(bKwh);
     if (cost <= 0 || kwh <= 0) {
-      setBError('Biaya & kWh-nya diisi dua-duanya — itu yang jadi harga per kWh.');
+      setBError('Biaya & kWh-nya diisi dua-duanya, itu yang jadi harga per kWh.');
       return;
     }
     setBusy(true);
@@ -299,7 +300,7 @@ export function TokenTab({
             <VixText heading="bold" additionalStyle={styles.heroDays}>
               {hampirHabis ? '⚠️ ' : '📆 '}
               Cukup ±{formatDecimal(hariLagi)} hari lagi
-              {hampirHabis ? ' — siap-siap beli' : ''}
+              {hampirHabis ? ', siap-siap beli' : ''}
             </VixText>
           ) : null}
         </View>
@@ -324,8 +325,8 @@ export function TokenTab({
               {tagihan.missing.length > 0
                 ? `Tinggal ${tagihan.missing
                     .map((k) => `${k.icon} ${k.label}`)
-                    .join(' & ')} — badge ⚡ padam begitu hari ini tercatat 2×.`
-                : 'Catat sekali lagi — badge ⚡ padam begitu hari ini tercatat 2×.'}
+                    .join(' & ')}, badge ⚡ padam begitu hari ini tercatat 2×.`
+                : 'Catat sekali lagi, badge ⚡ padam begitu hari ini tercatat 2×.'}
             </VixText>
           </PressableScale>
         )}
@@ -382,10 +383,10 @@ export function TokenTab({
           ⚡ Riwayat pemakaian
         </VixText>
         {riwayat.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
-            Belum ada. Catat meteran dua kali (pagi & malam) — dari dua angka
+          <EmptyText>
+            Belum ada. Catat meteran dua kali (pagi & malam), dari dua angka
             itu pemakaiannya baru bisa dihitung.
-          </VixText>
+          </EmptyText>
         ) : (
           <>
             {pageItems.map((s) => (
@@ -451,9 +452,9 @@ export function TokenTab({
           🧾 Pembelian token
         </VixText>
         {purchases.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada. Catat sekali saja, biar app tahu harga per kWh-mu.
-          </VixText>
+          </EmptyText>
         ) : (
           [...purchases]
             .sort((a, b) => b.date.toMillis() - a.date.toMillis())
@@ -665,7 +666,6 @@ const styles = StyleSheet.create({
   buttonRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
   buttonFlex: { flex: 1 },
   sectionTitle: { ...SECTION_SPACE },
-  empty: { textAlign: 'center', marginVertical: 10 },
   hint: { color: Color.TEXT_LABEL, marginTop: 8 },
   hintTight: { color: Color.TEXT_LABEL, marginBottom: 10 },
   splitRow: { flexDirection: 'row', gap: 8 },

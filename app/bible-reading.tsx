@@ -139,7 +139,7 @@ export default function BibleReadingScreen() {
       : saran.next
         ? `💡 Lanjutan dari ${saran.last} · ${formatShortDayDate(dayIdToDate(saran.dayId))}`
         : saran.finished
-          ? `🎉 ${saran.last} — kitabnya tamat. Pilih kitab baru ya.`
+          ? `🎉 ${saran.last}, kitabnya tamat. Pilih kitab baru ya.`
           : null;
 
   // Sisa waktu jendela sesi ini. ≤ 0 = sudah lewat; ≤ 30 menit = aba-aba merah.

@@ -161,21 +161,21 @@ export const PART_GROUPS: PartGroup[] = [
     key: 'mesin',
     label: '🔧 Mesin',
     parts: [
-      { key: 'oli-mesin', label: '🛢️ Oli Mesin', intervalMonths: 6, tip: 'Ganti tiap 6 bulan / 10.000 km — nyawa mesin Skyactiv.' },
+      { key: 'oli-mesin', label: '🛢️ Oli Mesin', intervalMonths: 6, tip: 'Ganti tiap 6 bulan / 10.000 km, nyawa mesin Skyactiv.' },
       { key: 'filter-oli', label: '🛢️ Filter Oli', intervalMonths: 6, tip: 'Ganti bersamaan dengan oli mesin.' },
       { key: 'filter-udara', label: '💨 Filter Udara Mesin', intervalMonths: 12, tip: 'Filter kotor bikin boros bensin & tarikan berat.' },
-      { key: 'busi', label: '⚡ Busi', intervalMonths: 24, tip: 'Skyactiv kompresi tinggi — pakai busi iridium sesuai spek.' },
+      { key: 'busi', label: '⚡ Busi', intervalMonths: 24, tip: 'Skyactiv kompresi tinggi, pakai busi iridium sesuai spek.' },
       { key: 'aki', label: '🔋 Aki', intervalMonths: 6, tip: 'Cek tegangan tiap 6 bulan; umur aki biasanya ±2 tahun.' },
-      { key: 'coolant', label: '🌡️ Air Radiator (Coolant)', intervalMonths: 24, tip: 'Kuras tiap 2 tahun — jangan pernah isi air keran.' },
-      { key: 'v-belt', label: '🔩 V-Belt / Fan Belt', intervalMonths: 12, tip: 'Cek retak/berdecit — putus di jalan = mogok.' },
+      { key: 'coolant', label: '🌡️ Air Radiator (Coolant)', intervalMonths: 24, tip: 'Kuras tiap 2 tahun, jangan pernah isi air keran.' },
+      { key: 'v-belt', label: '🔩 V-Belt / Fan Belt', intervalMonths: 12, tip: 'Cek retak/berdecit, putus di jalan = mogok.' },
     ],
   },
   {
     key: 'kaki',
     label: '🛞 Kaki-kaki & Rem',
     parts: [
-      { key: 'kampas-rem', label: '🛑 Kampas Rem', intervalMonths: 6, tip: 'Cek ketebalan tiap 6 bulan — keselamatan nomor satu.' },
-      { key: 'minyak-rem', label: '💧 Minyak Rem', intervalMonths: 24, tip: 'Ganti tiap 2 tahun — minyak rem menyerap air.' },
+      { key: 'kampas-rem', label: '🛑 Kampas Rem', intervalMonths: 6, tip: 'Cek ketebalan tiap 6 bulan, keselamatan nomor satu.' },
+      { key: 'minyak-rem', label: '💧 Minyak Rem', intervalMonths: 24, tip: 'Ganti tiap 2 tahun, minyak rem menyerap air.' },
       { key: 'ban', label: '🛞 Ban & Tekanan Angin', intervalMonths: 6, tip: 'Rotasi tiap 6 bulan; cek tekanan tiap isi bensin.' },
       { key: 'spooring', label: '⚖️ Spooring & Balancing', intervalMonths: 12, tip: 'Setahun sekali / setelah hantam lubang keras.' },
       { key: 'shock', label: '🪛 Shock Absorber', intervalMonths: 12, tip: 'Cek rembesan oli di tabung shock.' },
@@ -188,23 +188,23 @@ export const PART_GROUPS: PartGroup[] = [
     parts: [
       { key: 'filter-kabin', label: '❄️ Filter AC / Kabin', intervalMonths: 12, tip: 'Filter kotor = AC bau & kurang dingin.' },
       { key: 'freon', label: '🧊 Freon AC', intervalMonths: 12, tip: 'Cek tekanan freon & kebersihan kondensor.' },
-      { key: 'interior', label: '🧽 Detailing Interior', intervalMonths: 6, tip: 'Jok, karpet, dashboard — kabin bersih, nyaman dipakai.' },
+      { key: 'interior', label: '🧽 Detailing Interior', intervalMonths: 6, tip: 'Jok, karpet, dashboard, kabin bersih, nyaman dipakai.' },
     ],
   },
   {
     key: 'eksterior',
     label: '✨ Eksterior',
     parts: [
-      { key: 'wiper', label: '🌧️ Karet Wiper', intervalMonths: 12, tip: 'Karet getas bisa baret kaca — ganti setahun sekali.' },
-      { key: 'lampu', label: '💡 Lampu-lampu', intervalMonths: 6, tip: 'Cek dekat/jauh, sein, rem, mundur — tilang & keselamatan.' },
-      { key: 'cat', label: '✨ Cat & Coating', intervalMonths: 6, tip: 'Wax/poles tiap 6 bulan — jaga Soul Red tetap kinclong.' },
+      { key: 'wiper', label: '🌧️ Karet Wiper', intervalMonths: 12, tip: 'Karet getas bisa baret kaca, ganti setahun sekali.' },
+      { key: 'lampu', label: '💡 Lampu-lampu', intervalMonths: 6, tip: 'Cek dekat/jauh, sein, rem, mundur, tilang & keselamatan.' },
+      { key: 'cat', label: '✨ Cat & Coating', intervalMonths: 6, tip: 'Wax/poles tiap 6 bulan, jaga Soul Red tetap kinclong.' },
     ],
   },
   {
     key: 'surat',
     label: '📋 Surat & Pajak',
     parts: [
-      { key: 'stnk', label: '📋 STNK Tahunan', intervalMonths: 12, tip: 'Perpanjang tiap 8 Maret — jangan sampai telat.' },
+      { key: 'stnk', label: '📋 STNK Tahunan', intervalMonths: 12, tip: 'Perpanjang tiap 8 Maret, jangan sampai telat.' },
     ],
   },
 ];

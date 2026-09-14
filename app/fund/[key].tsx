@@ -151,7 +151,7 @@ export default function FundScreen() {
   function validate(t: string, c: string, value: number): string | null {
     if (!value) return 'Isi nominalnya dulu.';
     if (!t.trim()) return 'Isi nama transaksinya dulu.';
-    if (!c.trim()) return 'Isi catatannya dulu — biar tahu ini buat apa.';
+    if (!c.trim()) return 'Isi catatannya dulu, biar tahu ini buat apa.';
     return null;
   }
 

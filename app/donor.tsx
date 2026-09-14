@@ -252,7 +252,7 @@ export default function DonorScreen() {
             <View style={styles.heroRow}>
               <View style={styles.bloodBadge}>
                 <VixText heading="header" additionalStyle={styles.bloodText}>
-                  {profile?.bloodType ?? '—'}
+                  {profile?.bloodType ?? '-'}
                 </VixText>
               </View>
               <View style={styles.heroInfo}>

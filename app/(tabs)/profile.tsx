@@ -185,10 +185,10 @@ const IKIGAI: Quadrant<'love' | 'goodAt' | 'worldNeeds' | 'paidFor'>[] = [
 
 // Empat kotak SWOT — dua ke dalam (S/W), dua ke luar (O/T).
 const SWOT: Quadrant<'strengths' | 'weaknesses' | 'opportunities' | 'threats'>[] = [
-  { key: 'strengths', emoji: '💚', title: 'Strengths — Kekuatan', hint: 'Apa keunggulanmu dibanding orang lain?', bg: Color.GREEN_SOFT, fg: Color.GREEN_SOFT_DARK },
-  { key: 'weaknesses', emoji: '🧡', title: 'Weaknesses — Kelemahan', hint: 'Apa yang masih jadi PR-mu, jujur saja.', bg: Color.CAREER, fg: Color.ACCENT_DARK },
-  { key: 'opportunities', emoji: '💙', title: 'Opportunities — Peluang', hint: 'Peluang apa yang terbuka buatmu tahun ini?', bg: Color.FINANCE_INVESTMENT, fg: Color.FINANCE_INVESTMENT_DARK },
-  { key: 'threats', emoji: '❤️', title: 'Threats — Ancaman', hint: 'Apa yang bisa menggagalkan rencanamu?', bg: Color.FINANCE_EXPENSE, fg: Color.FINANCE_EXPENSE_DARK },
+  { key: 'strengths', emoji: '💚', title: 'Strengths · Kekuatan', hint: 'Apa keunggulanmu dibanding orang lain?', bg: Color.GREEN_SOFT, fg: Color.GREEN_SOFT_DARK },
+  { key: 'weaknesses', emoji: '🧡', title: 'Weaknesses · Kelemahan', hint: 'Apa yang masih jadi PR-mu, jujur saja.', bg: Color.CAREER, fg: Color.ACCENT_DARK },
+  { key: 'opportunities', emoji: '💙', title: 'Opportunities · Peluang', hint: 'Peluang apa yang terbuka buatmu tahun ini?', bg: Color.FINANCE_INVESTMENT, fg: Color.FINANCE_INVESTMENT_DARK },
+  { key: 'threats', emoji: '❤️', title: 'Threats · Ancaman', hint: 'Apa yang bisa menggagalkan rencanamu?', bg: Color.FINANCE_EXPENSE, fg: Color.FINANCE_EXPENSE_DARK },
 ];
 
 // Tab Profile 🪪 — data penting diri sendiri (view-only), diedit lewat modal.

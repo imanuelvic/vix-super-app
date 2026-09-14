@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
-import { monthShort, sameMonth } from './format';
+import { mondayIndex, monthShort, sameMonth } from './format';
 import { dayDocId } from './health';
 import { liveDoc } from './liveDoc';
 
@@ -107,8 +107,7 @@ export async function fetchUsageDays(
 /** Tanggal Senin 00:00 dari minggu yang memuat `now` (waktu lokal). */
 export function weekStart(now = new Date()): Date {
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diff = (d.getDay() + 6) % 7; // Sen→0, Sel→1, …, Min→6
-  d.setDate(d.getDate() - diff);
+  d.setDate(d.getDate() - mondayIndex(d));
   return d;
 }
 

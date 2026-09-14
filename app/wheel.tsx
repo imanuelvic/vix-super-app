@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { PinLock } from '@/components/common/PinLock';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
@@ -20,7 +21,6 @@ import { SectionToggle } from '@/components/common/SectionToggle';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
-import { ReflectionBubbles } from '@/components/wheel/ReflectionBubbles';
 import { ScoreMeter } from '@/components/wheel/ScoreMeter';
 import { useAuth } from '@/contexts/auth';
 import { useAccordion } from '@/hooks/useAccordion';
@@ -28,6 +28,7 @@ import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { formatDayDate, formatDecimal } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { PRIVACY_PIN } from '@/lib/pin';
 import {
     MIN_FOCUS,
     quarterDocId,
@@ -93,6 +94,13 @@ export default function WheelScreen() {
   }>();
   const owner = params.leaderId || null;
   const orang = params.name?.trim() || 'CORE Leader';
+  const router = useRouter();
+
+  // Roda milik CL dikunci PIN (14 Sep 2026): isinya penilaian pribadi orang
+  // lain, dan layar ini cuma sejauh satu click dari daftar Leaders. Rodaku
+  // sendiri tidak dikunci. Selama terkunci Firestore-nya belum dibaca sama
+  // sekali — sama seperti Finance.
+  const [unlocked, setUnlocked] = useState(owner === null);
 
   const nowQ = quarterOf(new Date());
   const [year, setYear] = useState(nowQ.year);
@@ -127,13 +135,15 @@ export default function WheelScreen() {
 
   // Modal tips: area yang sedang dilihat tips-nya (null = tertutup).
   const [tipArea, setTipArea] = useState<WheelAreaKey | null>(null);
+  // Modal pertanyaan refleksi 💭 saat menilai satu area (mode assess).
+  const [reflectOpen, setReflectOpen] = useState(false);
 
   // Sedang mencetak PDF (bisa beberapa detik untuk radar + semua areanya).
   const pdf = useBusyTask<'pdf'>();
   const sharing = pdf.busy !== null;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !unlocked) return;
     return subscribeWheel(
       user.uid,
       qid,
@@ -144,7 +154,7 @@ export default function WheelScreen() {
       () => setError(LOAD_ERROR),
       owner,
     );
-  }, [user, qid, owner, setData]);
+  }, [user, qid, owner, unlocked, setData]);
 
   function shift(delta: number) {
     const next = shiftQuarter(year, q, delta);
@@ -298,6 +308,22 @@ export default function WheelScreen() {
   const area = WHEEL_AREAS[idx];
   const tipMeta = tipArea ? WHEEL_AREAS.find((a) => a.key === tipArea)! : null;
 
+  // Belum buka PIN → keypad dulu; isi rodanya belum digambar sama sekali.
+  // Batal → kembali ke daftar Leaders.
+  if (!unlocked) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <PinLock
+          pin={PRIVACY_PIN}
+          title={`Wheel ${params.heart ?? '🎡'} ${orang} Terkunci`}
+          subtitle="Masukkan PIN untuk membuka"
+          onUnlock={() => setUnlocked(true)}
+          onCancel={() => router.back()}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
@@ -369,13 +395,20 @@ export default function WheelScreen() {
             {area.question}
           </VixText>
 
-          {/* Pertanyaan refleksi 💭 — naik pelan sebelum kamu memilih angka.
-              Ditaruh DI ATAS deretan nilai, bukan di bawahnya: gunanya
-              menahan tangan sebentar supaya skornya dipikirkan, bukan
-              membenarkan score yang sudah terlanjur dipilih. BACA SAJA —
-              tidak ada yang bisa di-click di situ. Sama untuk assessment
-              punyaku maupun punya CORE Leader — layarnya memang satu. */}
-          <ReflectionBubbles questions={WHEEL_REFLECTIONS[area.key]} />
+          {/* Pertanyaan refleksi 💭 — dibuka lewat tombol, dibaca di modal.
+              Dulu gelembung yang naik pelan (14 Sep 2026 dibuang): kalimat
+              yang bergerak justru sulit dibaca tuntas, dan yang belum sempat
+              terbaca keburu hilang di atas. Di modal, kelimanya diam dan bisa
+              dibaca sampai habis sebelum angkanya dipilih. Tetap DI ATAS
+              deretan nilai: gunanya menahan tangan sebentar supaya skornya
+              dipikirkan, bukan membenarkan score yang terlanjur dipilih. */}
+          <PressableScale
+            style={styles.reflectButton}
+            onPress={() => setReflectOpen(true)}>
+            <VixText heading="bold" additionalStyle={styles.reflectButtonText}>
+              💭 Lihat pertanyaan refleksi
+            </VixText>
+          </PressableScale>
 
           {/* Pilihan nilai 1–10 */}
           <View style={styles.scoreWrap}>
@@ -478,7 +511,7 @@ export default function WheelScreen() {
                 </View>
                 <FormInput
                   style={styles.noteInput}
-                  placeholder="Action plan — apa yang akan kamu lakukan?"
+                  placeholder="Action plan, apa yang akan kamu lakukan?"
                   value={plans[key] ?? ''}
                   onChangeText={(t) =>
                     setPlans((prev) => ({ ...prev, [key]: t }))
@@ -635,7 +668,7 @@ export default function WheelScreen() {
               <>
               {data.focus.length === 0 ? (
                 <VixText heading="label" additionalStyle={styles.emptyFocus}>
-                  Belum ada area fokus — pilih minimal {MIN_FOCUS} untuk kuartal
+                  Belum ada area fokus, pilih minimal {MIN_FOCUS} untuk kuartal
                   ini.
                 </VixText>
               ) : (
@@ -795,11 +828,10 @@ export default function WheelScreen() {
                       color={tone.color}
                       height={7}
                     />
-                    {note ? (
-                      <VixText heading="label" numberOfLines={2}>
-                        {note}
-                      </VixText>
-                    ) : null}
+                    {/* Catatannya UTUH, sepanjang apa pun. Dulu dipotong 2
+                        baris dengan "…" — yang dibaca ulang di sini justru
+                        alasan di balik angkanya, dan itu yang terpotong. */}
+                    {note ? <VixText heading="label">{note}</VixText> : null}
                   </PressableScale>
                 );
               })}
@@ -824,6 +856,35 @@ export default function WheelScreen() {
           </View>
         </ScrollView>
       )}
+
+      {/* Modal pertanyaan refleksi 💭 — bentuknya sama persis dengan modal
+          tips di bawah, cuma isinya pertanyaan area yang sedang dinilai. */}
+      <CenterDialog visible={reflectOpen} onClose={() => setReflectOpen(false)}>
+        <VixText heading="subheader" additionalStyle={styles.tipDialogTitle}>
+          {area.icon} {area.label}
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.tipDialogSub}>
+          💭 Pertanyaan untuk membantumu menilai
+        </VixText>
+        <ScrollView
+          style={styles.tipDialogList}
+          showsVerticalScrollIndicator={false}>
+          {WHEEL_REFLECTIONS[area.key].map((q) => (
+            <View key={q} style={styles.tipRow}>
+              <VixText heading="paragraph" additionalStyle={styles.tipRowText}>
+                {q}
+              </VixText>
+            </View>
+          ))}
+        </ScrollView>
+        <PressableScale
+          style={styles.tipCloseButton}
+          onPress={() => setReflectOpen(false)}>
+          <VixText heading="bold" additionalStyle={styles.tipCloseText}>
+            Tutup
+          </VixText>
+        </PressableScale>
+      </CenterDialog>
 
       {/* Modal tips & ide menaikkan score area fokus */}
       <CenterDialog visible={tipArea !== null} onClose={() => setTipArea(null)}>
@@ -906,6 +967,20 @@ const styles = StyleSheet.create({
   scoreActive: { backgroundColor: Color.MAIN, borderColor: Color.MAIN },
   scoreTextActive: { color: Color.TEXT_REVERSE },
   noteInput: { marginTop: 12, minHeight: 80, textAlignVertical: 'top' },
+  // Tombol 💭 pertanyaan refleksi — tombol sekunder (garis tepi, latar krem),
+  // sebentuk dengan Kembali/Batal di bawah supaya tidak bersaing dengan
+  // deretan nilai yang jadi aksi utamanya.
+  reflectButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.CONTAINER,
+    marginBottom: 14,
+  },
+  reflectButtonText: { color: Color.TEXT_TITLE },
   navRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
   backButton: {
     flex: 1,

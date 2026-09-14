@@ -451,7 +451,7 @@ export function ExerciseTab({
             <VixText heading="label" additionalStyle={styles.heroSub}>
               {belumPilih
                 ? isToday
-                  ? 'Pilih olahraganya di bawah — kamu yang tahu badanmu hari ini.'
+                  ? 'Pilih olahraganya di bawah, kamu yang tahu badanmu hari ini.'
                   : 'Tidak ada olahraga tercatat di hari ini.'
                 : sesiHari.map((s) => s.focus).join(' · ')}
             </VixText>
@@ -567,7 +567,7 @@ export function ExerciseTab({
                   cuma sudah terkunci. Deretan harinya ikut berganti sendiri
                   tiap Senin, jadi tandanya mulai kosong lagi tiap pekan. */}
               {!sudahLewat
-                ? '👀 Hari depan — pilihannya dibuat pada hari-H'
+                ? '👀 Hari depan, pilihannya dibuat pada hari-H'
                 : daySkipped
                   ? '❌ Hari dilewati'
                   : '🔒 Sudah berlalu'}
@@ -683,7 +683,7 @@ export function ExerciseTab({
                   {ada
                     ? `${formatDecimal(run.km)} km · ${formatDecimal(run.minutes)} menit${pace ? ` · ${pace}` : ''}`
                     : isToday
-                      ? 'Belum diisi — click untuk mencatat jarak & waktunya'
+                      ? 'Belum diisi, click untuk mencatat jarak & waktunya'
                       : 'Jaraknya tidak dicatat'}
                 </VixText>
               </View>
@@ -719,7 +719,7 @@ export function ExerciseTab({
       <SheetModal
         visible={pickerOpen}
         title="Pilih Olahraga"
-        subtitle="Boleh lebih dari satu — daftar gerakannya digabung"
+        subtitle="Boleh lebih dari satu, daftar gerakannya digabung"
         onClose={() => setPickerOpen(false)}
         footer={
           <DualButtons
@@ -783,7 +783,7 @@ export function ExerciseTab({
           🏃 Hasil {runOf?.title}
         </VixText>
         <FormInput
-          placeholder="Jarak (km) — mis. 5"
+          placeholder="Jarak (km), mis. 5"
           keyboardType="decimal-pad"
           value={fKm}
           onChangeText={setFKm}
@@ -791,7 +791,7 @@ export function ExerciseTab({
         />
         <FormInput
           style={styles.formGap}
-          placeholder="Waktu (menit) — mis. 32"
+          placeholder="Waktu (menit), mis. 32"
           keyboardType="decimal-pad"
           value={fMinutes}
           onChangeText={setFMinutes}

@@ -194,8 +194,8 @@ export default function BillScreen() {
       } else if (!hasil.ok) {
         setError(
           hasil.reason === 'no-module'
-            ? 'Pemindai nota belum ada di versi app ini. Fotonya tetap tersimpan — itemnya ketik manual dulu ya.'
-            : 'Notanya tidak terbaca. Fotonya tetap tersimpan — coba foto ulang lebih terang, atau ketik manual.',
+            ? 'Pemindai nota belum ada di versi app ini. Fotonya tetap tersimpan, itemnya ketik manual dulu ya.'
+            : 'Notanya tidak terbaca. Fotonya tetap tersimpan, coba foto ulang lebih terang, atau ketik manual.',
         );
       } else {
         setError(
@@ -378,7 +378,7 @@ export default function BillScreen() {
         </View>
         <VixText heading="label" additionalStyle={styles.scanHint}>
           {canScanReceipt()
-            ? 'Dibaca langsung di HP — fotonya tidak dikirim ke mana pun. Struk kasir sering salah terbaca, jadi periksa & betulkan itemnya ya.'
+            ? 'Dibaca langsung di HP, fotonya tidak dikirim ke mana pun. Struk kasir sering salah terbaca, jadi periksa & betulkan itemnya ya.'
             : '⚠️ Pemindai nota belum ada di versi app yang terpasang. Fotonya tetap bisa disimpan, itemnya ketik manual dulu.'}
         </VixText>
 
@@ -416,7 +416,7 @@ export default function BillScreen() {
         </VixText>
         {belumDibagi.length > 0 && (
           <VixText heading="label" additionalStyle={styles.warnLine}>
-            ⚠️ {belumDibagi.length} item belum ditandai siapa yang makan —
+            ⚠️ {belumDibagi.length} item belum ditandai siapa yang makan, 
             harganya belum masuk hitungan siapa pun.
           </VixText>
         )}
@@ -495,7 +495,7 @@ export default function BillScreen() {
           <VixText heading="label" additionalStyle={styles.hint}>
             Jumlah tiap orang
             dibulatkan ke rupiah, jadi totalnya bisa meleset satu-dua rupiah dari
-            nota — itu memang tak terhindarkan saat satu angka dibagi beberapa.
+            nota, itu memang tak terhindarkan saat satu angka dibagi beberapa.
           </VixText>
         )}
 
@@ -543,7 +543,7 @@ export default function BillScreen() {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🧾 Pajak (%) — PB1 biasanya 10–11
+          🧾 Pajak (%) · PB1 biasanya 10–11
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -555,7 +555,7 @@ export default function BillScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🛎️ Service charge (%) — biasanya 5–10
+          🛎️ Service charge (%), biasanya 5–10
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -642,7 +642,7 @@ export default function BillScreen() {
         </VixText>
         {b.people.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.hint}>
-            Belum ada orangnya — tambahkan dulu di layar sebelumnya.
+            Belum ada orangnya, tambahkan dulu di layar sebelumnya.
           </VixText>
         ) : (
           <>

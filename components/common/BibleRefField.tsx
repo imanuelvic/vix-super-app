@@ -145,7 +145,7 @@ export function BibleRefField({
         Pasal
       </VixText>
       <FormInput
-        placeholder={meta ? `1–${meta.chapters}` : '—'}
+        placeholder={meta ? `1–${meta.chapters}` : '-'}
         keyboardType="number-pad"
         value={chapter}
         onChangeText={(v) => emit({ chapter: v.replace(/\D/g, '') })}

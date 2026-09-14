@@ -241,7 +241,7 @@ const CATEGORIES: {
   { key: 'bibleNight', feature: 'spiritual', icon: DAYPART.night, label: 'Night Reading', desc: 'Streak baca Alkitab malam', now: (s) => s.bibleNightBest, unit: 'hari streak' },
   { key: 'health', feature: 'health', icon: '🍎', label: 'Good Habit', desc: 'Streak habit setiap hari', now: (s) => s.habitStreak, unit: 'hari streak' },
   { key: 'steps', feature: 'health', icon: '👣', label: 'Daily Steps', desc: 'Rekor jumlah langkah dalam sehari', now: (s) => s.bestSteps, unit: 'langkah (rekor sehari)' },
-  { key: 'run', feature: 'health', icon: '🏃', label: 'Distance', desc: 'Patokan pelari — harian, mingguan & bulanan', now: (s) => s.bestDayKm, unit: 'km (rekor sehari)', fmt: km },
+  { key: 'run', feature: 'health', icon: '🏃', label: 'Distance', desc: 'Patokan pelari, harian, mingguan & bulanan', now: (s) => s.bestDayKm, unit: 'km (rekor sehari)', fmt: km },
   // Dulu SATU kategori "Target Mingguan" berisi langkah & angkat beban
   // sekaligus — dan itu membuat daftarnya sulit dibaca: dua ladder yang
   // kemajuannya sama sekali tidak berhubungan berselang-seling di satu kolom.

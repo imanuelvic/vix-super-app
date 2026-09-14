@@ -233,7 +233,7 @@ export default function PromiseScreen() {
               <DateField
                 value={fAnswered}
                 onChange={setFAnswered}
-                placeholder="Belum terjawab — biarkan kosong"
+                placeholder="Belum terjawab, biarkan kosong"
                 disabled={busy}
               />
             </>
@@ -265,7 +265,7 @@ export default function PromiseScreen() {
       <ConfirmDialog
         visible={confirmDelete}
         title="Hapus janji ini?"
-        detail="Catatannya hilang permanen — tanggal & ceritanya tidak bisa dikembalikan."
+        detail="Catatannya hilang permanen, tanggal & ceritanya tidak bisa dikembalikan."
         confirmLabel="Hapus"
         busy={busy}
         onCancel={() => setConfirmDelete(false)}

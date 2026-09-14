@@ -164,7 +164,7 @@ export default function VisitationsScreen() {
 
           {sorted.length === 0 && (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Belum ada riwayat — visitasi yang sudah selesai atau terlewat
+              Belum ada riwayat, visitasi yang sudah selesai atau terlewat
               akan muncul di sini 📅
             </VixText>
           )}

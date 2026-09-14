@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -92,10 +93,10 @@ export default function FutsalBoardScreen() {
             }
           />
           {papan.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada gol yang tercatat di {meta.label}. Gol dicatat per game
               di layar sesinya.
-            </VixText>
+            </EmptyText>
           ) : (
             <View style={styles.papan}>
               {papan.map((r, i) => (
@@ -125,9 +126,9 @@ export default function FutsalBoardScreen() {
           {/* ===== Paling rajin datang ===== */}
           <SectionRow title="🔥 Kehadiran Anggota" />
           {sesiLewat === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada sesi {meta.label} yang sudah lewat.
-            </VixText>
+            </EmptyText>
           ) : (
             <View style={styles.papan}>
               {rajin.map((r, i) => (
@@ -142,7 +143,7 @@ export default function FutsalBoardScreen() {
                     {r.present} dari {r.possible} sesi
                   </VixText>
                   <VixText heading="bold" additionalStyle={styles.papanGol}>
-                    {r.possible > 0 ? `${Math.round(r.rate * 100)}%` : '—'}
+                    {r.possible > 0 ? `${Math.round(r.rate * 100)}%` : '-'}
                   </VixText>
                 </View>
               ))}
@@ -163,7 +164,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
   per: { color: Color.TEXT_PLACEHOLDER },
-  empty: { textAlign: 'center', marginVertical: 10 },
   sisa: { color: Color.TEXT_PLACEHOLDER, marginTop: 6 },
   papan: { ...CARD, paddingVertical: 4 },
   papanRow: {

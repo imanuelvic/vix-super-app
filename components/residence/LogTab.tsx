@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { EmptyText } from '@/components/common/EmptyText';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { Pagination } from '@/components/common/Pagination';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
@@ -65,10 +66,10 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
         </VixText>
 
         {logs.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada catatan. Catat pengeluaran rumahmu di Finance dengan
             kategori 🏠 Residence, nanti otomatis muncul di sini.
-          </VixText>
+          </EmptyText>
         ) : (
           pageItems.map((item) => {
             const meta = TYPE_META[item.type];
@@ -101,5 +102,4 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   source: { color: Color.MAIN, marginTop: 8, marginBottom: 10 },
-  empty: { textAlign: 'center', marginVertical: 10 },
 });

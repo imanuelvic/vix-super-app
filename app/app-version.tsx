@@ -54,7 +54,7 @@ export default function AppVersionScreen() {
         setMessage({ kind: 'success', text: 'Aplikasi sudah versi terbaru ✅' });
         return;
       }
-      setMessage({ kind: 'info', text: 'Update ditemukan — mengunduh…' });
+      setMessage({ kind: 'info', text: 'Update ditemukan, mengunduh…' });
       await Updates.fetchUpdateAsync();
       setMessage({ kind: 'info', text: 'Memasang update…' });
       // Restart app dengan bundle baru — layar akan reload sendiri.
@@ -98,7 +98,7 @@ export default function AppVersionScreen() {
             label="Update terakhir"
             value={
               Updates.isEmbeddedLaunch || !Updates.createdAt
-                ? 'Belum ada — bundle build'
+                ? 'Belum ada, bundle build'
                 : formatShortDayDateTime(Updates.createdAt)
             }
           />

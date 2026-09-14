@@ -285,7 +285,7 @@ export function BudgetingTab({
           <VixText heading="label" additionalStyle={styles.summaryLabel}>
             {totalAllocated > 0
               ? `${totalPercent.toFixed(1)}% terpakai`
-              : 'Belum ada budget — tekan kategori untuk mengatur.'}
+              : 'Belum ada budget, tekan kategori untuk mengatur.'}
           </VixText>
         </View>
 
@@ -313,7 +313,7 @@ export function BudgetingTab({
                     ? `${percent.toFixed(0)}%`
                     : row.realized > 0
                       ? 'tanpa budget'
-                      : '—'}
+                      : '-'}
                 </VixText>
               </View>
               <BudgetBar percent={percent} />
@@ -451,7 +451,7 @@ export function BudgetingTab({
               mengisi). Begitu sudah ada isinya, tulisannya dihapus. */}
           {!rolledUp && (
             <VixText heading="label" additionalStyle={styles.modalHint}>
-              Isi sub-budget kalau mau dirinci — totalnya otomatis jadi budget
+              Isi sub-budget kalau mau dirinci, totalnya otomatis jadi budget
               kategori ini.
             </VixText>
           )}

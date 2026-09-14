@@ -201,10 +201,10 @@ export function PersonalityTab({ data }: { data: Personality }) {
                   • {t.title}
                   {d != null
                     ? d < 0
-                      ? ` — lewat ${Math.abs(d)} hari`
+                      ? `, lewat ${Math.abs(d)} hari`
                       : d === 0
-                        ? ' — HARI INI'
-                        : ` — ${d} hari lagi`
+                        ? ', HARI INI'
+                        : ` - ${d} hari lagi`
                     : ''}
                 </VixText>
               );
@@ -223,7 +223,7 @@ export function PersonalityTab({ data }: { data: Personality }) {
       <SheetModal
         visible={editOpen}
         title="Kepribadianku 🧠"
-        subtitle="Isi seadanya — bisa dilengkapi kapan saja"
+        subtitle="Isi seadanya, bisa dilengkapi kapan saja"
         onClose={() => setEditOpen(false)}
         footer={
           <DualButtons
@@ -414,7 +414,7 @@ function TestRow({
         </VixText>
       </View>
       <VixText heading="bold" additionalStyle={due ? styles.testDue : styles.testOk}>
-        {left == null ? '—' : due ? 'Waktunya!' : `${left} hari`}
+        {left == null ? '-' : due ? 'Waktunya!' : `${left} hari`}
       </VixText>
     </View>
   );

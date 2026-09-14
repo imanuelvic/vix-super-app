@@ -144,6 +144,17 @@ export function isNoteDrivenHabit(h: ScheduledHabit): boolean {
   return /rhema|reflection journal|bersyukur/i.test(h.label);
 }
 
+/**
+ * 📓 Daily Reflection Journal saja (tanpa 🙏 Bersyukur): baris yang tulisannya
+ * jadi Feed vixtory.archive dan yang boleh minta ✨ AI Reflection. "rhema"
+ * ikut, alasannya sama dengan isNoteDrivenHabit.
+ */
+export const REFLECTION_JOURNAL_MATCH = /reflection journal|rhema/i;
+
+export function isReflectionJournal(h: ScheduledHabit): boolean {
+  return REFLECTION_JOURNAL_MATCH.test(h.label);
+}
+
 // ===================== Catatan yang isinya POIN =====================
 // Daftar pendek berjumlah tetap (mis. "🙏 Bersyukur 3 Hal"). Tersimpan tetap
 // SATU teks di habitDays/{hari}.notes[id], dipisah baris — tanpa bentuk data
@@ -574,7 +585,7 @@ export const HABIT_LINKS: HabitLink[] = [
   // satu-satunya pintu yang menetap: kartu di Home hilang begitu feed-nya
   // jadi, sedangkan baris ini tetap ada sepanjang hari.
   {
-    match: /reflection journal|rhema/i,
+    match: REFLECTION_JOURNAL_MATCH,
     note: 'Buka Instagram Feed 🖼️',
     color: Color.INSTAGRAM,
     route: { pathname: '/reflection-feed' },

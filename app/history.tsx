@@ -131,7 +131,7 @@ export default function HistoryScreen() {
     if (!user || !items || !editing || busy) return;
     const year = Number(fYear);
     if (!Number.isInteger(year) || year < 1900 || year > 2200) {
-      setFormError('Tahun tidak masuk akal — cek lagi.');
+      setFormError('Tahun tidak masuk akal, cek lagi.');
       return;
     }
     if (!fTitle.trim()) {
@@ -200,7 +200,7 @@ export default function HistoryScreen() {
             </VixText>
             <VixText heading="label" additionalStyle={styles.seedText}>
               Aku sudah menyiapkan {SEED_HISTORY.length} entri dari sheet
-              &quot;My Life Journey&quot;-mu — sekolah, gereja, pertobatan,
+              &quot;My Life Journey&quot;-mu, sekolah, gereja, pertobatan,
               pelayanan, kerja, sampai relasi. Semuanya bisa kamu ubah & hapus
               setelah masuk.
             </VixText>
@@ -365,7 +365,7 @@ export default function HistoryScreen() {
               Sampai (opsional)
             </VixText>
             <FormInput
-              placeholder="—"
+              placeholder="-"
               keyboardType="number-pad"
               value={fEndYear}
               onChangeText={setFEndYear}

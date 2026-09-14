@@ -5,6 +5,7 @@ import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -168,7 +169,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
               ? 'Belum ada ide 💡'
               : `${counts.posted} tayang · ${counts.idea + counts.making} antre`
           }
-          sub="Tulis dulu semua idenya — memilih mana yang digarap itu urusan nanti."
+          sub="Tulis dulu semua idenya, memilih mana yang digarap itu urusan nanti."
         />
 
         <PrimaryButton
@@ -192,11 +193,11 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
         />
 
         {shown.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             {stageFilter
               ? 'Tidak ada yang di tahap ini.'
               : 'Belum ada ide konten. Tulis satu yang barusan kepikiran 💡'}
-          </VixText>
+          </EmptyText>
         )}
 
         {pageItems.map((i) => {
@@ -343,7 +344,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📝 Catatan — hook, angle, caption
+          📝 Catatan, hook, angle, caption
         </VixText>
         <FormInput
           style={[styles.textArea, styles.formGap]}
@@ -372,7 +373,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   addButton: { marginBottom: 12 },
-  empty: { textAlign: 'center', marginVertical: 10 },
   card: {
     ...CARD,
     marginBottom: 10,

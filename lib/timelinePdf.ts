@@ -121,7 +121,7 @@ const EXTRA_CSS = `
   .titik.besar {
     left: 0; top: 0; width: 18px; height: 18px; border-width: 3px;
   }
-  /* Yang sudah berlalu tetap dicetak — cuma warnanya lebih tenang. */
+  /* Yang sudah berlalu tetap dicetak, cuma warnanya lebih tenang. */
   .lewat .titik { background: ${TITIK_LEWAT}; }
   .lewat .isi-baris { opacity: 0.72; }
 
@@ -169,7 +169,7 @@ export async function shareTimelinePdf(
       ? years[0].year === years[years.length - 1].year
         ? String(years[0].year)
         : `${years[0].year} – ${years[years.length - 1].year}`
-      : '—';
+      : '-';
 
   const bodyHtml =
     years.length === 0
