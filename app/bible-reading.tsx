@@ -13,7 +13,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
-import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
+import { INTRO_GAP, SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useDraft } from '@/hooks/useDraft';
@@ -396,13 +396,15 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
   // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
   // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.
+  // Jarak ke bawahnya = INTRO_GAP milik SpiritualIntro: hitung mundur,
+  // Reminder, tombol YouVersion, lalu kartu Bacaan — satu tumpukan, satu irama.
   countdown: {
     backgroundColor: Color.CONTRAST_CONTAINER,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 2,
-    marginBottom: 10,
+    marginBottom: INTRO_GAP,
   },
   countdownSoon: { backgroundColor: Color.DANGER_TRANSPARENT },
   countdownText: { color: Color.ACCENT_DARK },

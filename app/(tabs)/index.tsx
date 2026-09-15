@@ -952,13 +952,14 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 24, alignItems: 'center' },
   // Lebar konten dibatasi & otomatis di tengah (HP: penuh; iPad: ~680 di tengah).
   contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20 },
-  // Jarak ke kartu di bawahnya dirapatkan supaya reminder (Doa Syafaat & Baca
-  // Alkitab) naik sedikit dan grid fitur tetap muat sekali layar.
+  // Udara di BAWAH kartu = udara di ATAS-nya. Di atas: padding baris merek 8
+  // + sisa tinggi baris header (45) di sekeliling pil 🏆🔥 setinggi 31,5 →
+  // 8 + 6,75 ≈ 14. Dulu 8, jadi kartunya terlihat menempel ke grid.
   welcomeCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
     padding: 18,
-    marginBottom: 8,
+    marginBottom: 14,
   },
   // Kartu Doa Syafaat — tepat di bawah kartu sapaan, di atas Baca Alkitab.
   // Penyegar acak — jaraknya sama dengan kartu Doa Syafaat di bawahnya.

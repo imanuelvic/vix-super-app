@@ -56,6 +56,11 @@ import { SAVE_ERROR } from '@/lib/messages';
 // yang termasuk periode berjalan, jadi begitu tanggalnya bergeser, hitungannya
 // otomatis mulai dari nol. Tidak ada yang bisa lupa berjalan.
 const RESET_HARIAN = '🔄 Mulai lagi tiap hari, jam 00.00';
+// Apple tidak pernah memberi tahu kalau izin bacanya DITOLAK: angkanya cuma
+// 0 terus. Jadi saat 0, tunjukkan jalan ke sakelarnya. Kalau memang belum
+// jalan, kalimatnya tidak mengganggu — ia bersyarat.
+const PETUNJUK_IZIN =
+  'Sudah jalan tapi tetap 0? Buka Pengaturan iPhone → Kesehatan → Akses Data & Perangkat → vix, lalu nyalakan Langkah.';
 const RESET_MINGGUAN = '🔄 Mulai lagi tiap Senin';
 const RESET_BULANAN = '🔄 Mulai lagi tiap tanggal 1';
 export function StepsTab({
@@ -202,6 +207,11 @@ export function StepsTab({
         <VixText heading="label" additionalStyle={summaryText.label}>
           {RESET_HARIAN}
         </VixText>
+        {hkStatus === 'ok' && !hkBusy && (hk?.steps ?? 0) === 0 && (
+          <VixText heading="label" additionalStyle={summaryText.label}>
+            {PETUNJUK_IZIN}
+          </VixText>
+        )}
       </SummaryCard>
 
       <ManualStepsModal

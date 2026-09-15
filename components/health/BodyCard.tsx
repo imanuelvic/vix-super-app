@@ -18,7 +18,6 @@ import {
   bmiCategory,
   bmiValue,
   bmrMale,
-  bodyAdvice,
   bodyFatCategory,
   bodyFatMale,
   idealWeightRange,
@@ -73,7 +72,6 @@ export function BodyCard({ profile }: { profile: HealthProfile }) {
   const whr = waistHipRatio(profile.waistCm, profile.hipCm);
   const fat = bodyFatMale(profile.waistCm, profile.neckCm, profile.heightCm);
   const fatCat = fat != null ? bodyFatCategory(fat) : null;
-  const advice = bodyAdvice(profile, age);
 
   function openEdit() {
     setFBirthYear(String(profile.birthYear));
@@ -244,18 +242,6 @@ export function BodyCard({ profile }: { profile: HealthProfile }) {
         />
       </View>
 
-      {/* ===== Saran supaya badan makin sehat & mendekati ideal ===== */}
-      <View style={styles.adviceCard}>
-        <VixText heading="title" additionalStyle={styles.adviceTitle}>
-          🎯 Menuju Badan Ideal
-        </VixText>
-        {advice.map((a) => (
-          <VixText key={a} heading="label" additionalStyle={styles.adviceText}>
-            {a}
-          </VixText>
-        ))}
-      </View>
-
       {/* Modal ubah data tubuh */}
       <SheetModal
         visible={editOpen}
@@ -406,17 +392,6 @@ const styles = StyleSheet.create({
   ok: { color: Color.SUCCESS },
   warn: { color: Color.WARNING },
   danger: { color: Color.DANGER },
-  adviceCard: {
-    backgroundColor: Color.MAIN_TRANSPARENT,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: Color.MAIN_LIGHT,
-    padding: 16,
-    marginBottom: 12,
-    gap: 6,
-  },
-  adviceTitle: { color: Color.MAIN_DARK, marginBottom: 2 },
-  adviceText: { color: Color.TEXT_PARAGRAPH },
   // Modal
   input: { marginBottom: 10, marginTop: 4 },
   section: { color: Color.MAIN_DARK, marginTop: 6, marginBottom: 8 },

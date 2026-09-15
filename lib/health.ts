@@ -189,63 +189,6 @@ export function waistHipRatio(
   return waistCm / hipCm;
 }
 
-/**
- * Saran praktis dari Data Tubuh — apa yang perlu dikejar supaya badan makin
- * sehat & mendekati bentuk ideal. Urut dari yang paling berdampak.
- */
-export function bodyAdvice(profile: HealthProfile, age: number): string[] {
-  const out: string[] = [];
-  const bmi = bmiValue(profile.weightKg, profile.heightCm);
-  const ideal = idealWeightRange(profile.heightCm);
-  const fat = bodyFatMale(profile.waistCm, profile.neckCm, profile.heightCm);
-  const whtr = profile.waistCm ? profile.waistCm / profile.heightCm : null;
-
-  if (bmi >= 23) {
-    const turun = profile.weightKg - ideal.max;
-    out.push(
-      `⚖️ Turun ±${formatKg(turun)} kg lagi supaya BMI masuk rentang sehat (${formatKg(ideal.min)}–${formatKg(ideal.max)} kg).`,
-    );
-  } else if (bmi < 18.5) {
-    out.push(
-      `⚖️ Naik ±${formatKg(ideal.min - profile.weightKg)} kg supaya berat masuk rentang sehat.`,
-    );
-  } else {
-    out.push(`✅ Berat sudah di rentang sehat (${formatKg(ideal.min)}–${formatKg(ideal.max)} kg). Pertahankan.`);
-  }
-
-  if (whtr != null && whtr >= 0.5) {
-    const target = profile.heightCm * 0.49;
-    out.push(
-      `📏 Lingkar perut ideal di bawah ${Math.round(target)} cm, lemak perut paling berisiko untuk jantung.`,
-    );
-  }
-
-  if (fat != null) {
-    if (fat >= 18) {
-      out.push(
-        `🔥 Lemak tubuh ±${formatKg(fat)}%. Untuk sixpack biasanya perlu di bawah 15%, defisit kalori pelan + latihan beban.`,
-      );
-    } else {
-      out.push(`💪 Lemak tubuh ±${formatKg(fat)}%, sudah bagus, jaga massa otot dengan latihan beban.`);
-    }
-  } else {
-    out.push('📐 Isi lingkar leher & pinggang untuk melihat perkiraan persen lemak tubuh.');
-  }
-
-  const bmr = bmrMale(profile.weightKg, profile.heightCm, age);
-  out.push(
-    `🍽️ Kebutuhan harian ±${Math.round(bmr * 1.4)} kkal (aktivitas ringan). Defisit sehat = kurangi ±400 kkal.`,
-  );
-  out.push('💧 Minum 8 gelas air & tidur 7–8 jam.');
-  return out;
-}
-
-/** 1 desimal, koma ala Indonesia — dipakai di teks saran. */
-function formatKg(n: number): string {
-  const s = Math.abs(n).toFixed(1);
-  return (s.endsWith('.0') ? s.slice(0, -2) : s).replace('.', ',');
-}
-
 // ============================== Target berat ==============================
 // users/{uid}/health/target — satu dokumen. startWeightKg = berat saat target
 // dipasang, dipakai sebagai titik nol supaya progress dihitung konsisten.
@@ -332,6 +275,35 @@ export function weekTargetLeft(km: number, targetKm: number): number {
 export function idealWeightRange(heightCm: number): { min: number; max: number } {
   const m2 = (heightCm / 100) ** 2;
   return { min: 18.5 * m2, max: 22.9 * m2 };
+}
+
+/**
+ * Ringkasan turunan dari tiga angka badan (tinggi, berat, lingkar perut).
+ * Dipakai dialog Data Tubuh CL DAN PDF-nya, supaya angka di layar dan di
+ * kertas tidak pernah beda hitungan. Tinggi & berat yang belum lengkap
+ * membuat BMI/kategori null (bukan 0); berat ideal cukup dari tinggi; rasio
+ * perut/tinggi (< 0,5 = lemak perut terjaga) cukup dari lingkar perut + tinggi.
+ */
+export function bodySummary(p: {
+  heightCm?: number | null;
+  weightKg?: number | null;
+  waistCm?: number | null;
+}): {
+  lengkap: boolean;
+  bmi: number | null;
+  kategori: { label: string; tone: BmiTone } | null;
+  ideal: { min: number; max: number } | null;
+  rasio: number | null;
+} {
+  const lengkap = !!p.heightCm && !!p.weightKg;
+  const bmi = lengkap ? bmiValue(p.weightKg!, p.heightCm!) : null;
+  return {
+    lengkap,
+    bmi,
+    kategori: bmi != null ? bmiCategory(bmi) : null,
+    ideal: p.heightCm ? idealWeightRange(p.heightCm) : null,
+    rasio: p.waistCm && p.heightCm ? p.waistCm / p.heightCm : null,
+  };
 }
 
 // ========================= Ceklis kebiasaan harian =========================

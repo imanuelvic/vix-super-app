@@ -51,18 +51,34 @@ const READ_TYPES = [
 ] as const;
 
 /**
- * Minta izin baca. Catatan: Apple sengaja TIDAK memberi tahu apakah izin
- * baca dikabulkan (privasi) — kalau ditolak, query hanya mengembalikan
- * data kosong, bukan error.
+ * Minta izin baca — SEKALI per sesi app, tepat sebelum bacaan pertama.
+ * Dipanggil sendiri oleh readTodaySummary & readRecentDailySteps, jadi
+ * layar mana pun yang membaca Apple Health otomatis memunculkan dialognya.
+ *
+ * iOS hanya menampilkan dialog izin saat requestAuthorization BENAR-BENAR
+ * dipanggil. Sejak tombol "Hubungkan Apple Health" dibuang (v1.2.0) tidak ada
+ * lagi yang memanggilnya → install baru tak pernah ditanya, dan setiap bacaan
+ * diam-diam mengembalikan 0. Panggilan berikutnya (izin sudah diputuskan)
+ * selesai seketika tanpa dialog, jadi aman diulang tiap sesi.
+ *
+ * Catatan: Apple sengaja TIDAK memberi tahu apakah izin baca dikabulkan
+ * (privasi) — kalau ditolak, query hanya mengembalikan data kosong, bukan
+ * error. Karena itu hasilnya tidak dipakai untuk menggagalkan bacaan; kalau
+ * permintaannya sendiri gagal, sesi berikutnya dicoba lagi.
  */
-export async function requestHealthAccess(): Promise<boolean> {
-  const mod = getModule();
-  if (!mod) return false;
-  try {
-    return await mod.requestAuthorization({ toRead: [...READ_TYPES] });
-  } catch {
-    return false;
+let izinDiminta: Promise<void> | null = null;
+function pastikanIzin(mod: HealthKitModule): Promise<void> {
+  if (!izinDiminta) {
+    izinDiminta = mod
+      .requestAuthorization({ toRead: [...READ_TYPES] })
+      .then(
+        () => undefined,
+        () => {
+          izinDiminta = null;
+        },
+      );
   }
+  return izinDiminta;
 }
 
 export type DailyHealthSummary = {
@@ -74,6 +90,7 @@ export type DailyHealthSummary = {
 export async function readTodaySummary(): Promise<DailyHealthSummary | null> {
   const mod = getModule();
   if (!mod) return null;
+  await pastikanIzin(mod);
 
   const now = new Date();
   const dayStart = startOfDay(now);
@@ -130,6 +147,7 @@ export async function readRecentDailySteps(
 ): Promise<{ dayId: string; steps: number }[] | null> {
   const mod = getModule();
   if (!mod) return null;
+  await pastikanIzin(mod);
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());

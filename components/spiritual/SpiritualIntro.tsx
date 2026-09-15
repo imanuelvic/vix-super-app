@@ -32,7 +32,7 @@ export function SpiritualIntro({
    * Acuan yang sudah kamu isi ("Amsal 29", "Yohanes 3:16"). Kalau ada, tombol
    * YouVersion tidak lagi membuka halaman depannya, tapi LANGSUNG ke pasal itu
    * — dan tulisannya ikut menyebutkan tujuannya, supaya jelas ke mana ia
-   * membawa sebelum ditekan.
+   * membawa sebelum di-click.
    */
   passage?: string;
   /** Singkatan terjemahannya (TB, TSI, …) — lihat YOUVERSION_VERSION_ID. */
@@ -73,6 +73,14 @@ export function SpiritualIntro({
   );
 }
 
+/**
+ * Jarak antar-kartu pembuka (Reminder → tombol app → isi layar). Dulu 14 dan
+ * terasa menempel; kini selebar tepi kiri-kanan halaman (20) supaya tiap
+ * kartu terbaca sebagai bagian sendiri. Diekspor supaya kartu yang ditumpuk
+ * DI ATAS blok ini (hitung mundur di Baca Alkitab) memakai jarak yang sama.
+ */
+export const INTRO_GAP = 20;
+
 const styles = StyleSheet.create({
   reminderCard: {
     backgroundColor: Color.CONTAINER,
@@ -83,7 +91,7 @@ const styles = StyleSheet.create({
     borderLeftColor: Color.SPIRITUAL_DARK,
     padding: 14,
     gap: 4,
-    marginBottom: 14,
+    marginBottom: INTRO_GAP,
   },
   reminderLabel: { color: Color.SPIRITUAL_DARK },
   reminderText: { color: Color.TEXT_TITLE },
@@ -96,7 +104,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 14,
+    marginBottom: INTRO_GAP,
   },
   appButtonMain: { flex: 1, gap: 1 },
   appButtonText: { color: Color.TEXT_REVERSE },

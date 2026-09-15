@@ -1,13 +1,18 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
+import { EmojiButton } from '@/components/common/EmojiButton';
+import { FormError } from '@/components/common/FormError';
 import { InfoRow } from '@/components/common/InfoRow';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { hasLeaderBody, type CoreLeader } from '@/lib/core';
 import { dayIdToDate, formatDecimal, formatFullDate } from '@/lib/format';
-import { bmiCategory, bmiValue, idealWeightRange } from '@/lib/health';
+import { bodySummary } from '@/lib/health';
+import { shareLeaderBodyPdf } from '@/lib/leaderBodyPdf';
 
 // Data Tubuh CL 🧍 — BACA SAJA.
 //
@@ -19,6 +24,11 @@ import { bmiCategory, bmiValue, idealWeightRange } from '@/lib/health';
 // TIDAK ada tombol ubah di sini. Mengubahnya lewat ✏️ seperti data CL yang
 // lain, jadi cuma ada SATU pintu masuk perubahan — tidak ada dua form yang
 // bisa berbeda pendapat, dan modal ini tidak pernah tidak sengaja tersimpan.
+//
+// Yang ada tombol BAGIKAN (15 Sep 2026): angkanya dicetak jadi PDF bersama
+// penjelasan yang lembut & tips hidup sehat (lib/leaderBodyPdf.ts), lalu
+// dikirim ke CL-nya lewat share sheet, sekeluarga dengan PDF Wheel of Life &
+// Timeline. Yang dikirim ke orangnya bukan sekadar angka, itu sebabnya.
 
 /** Warna penilaian — sama persis dengan kartu Data Tubuh di Profile. */
 function toneColor(tone: 'ok' | 'warn' | 'danger'): string {
@@ -38,25 +48,48 @@ export function LeaderBodyDialog({
 }) {
   const ada = leader ? hasLeaderBody(leader) : false;
 
-  // Angka turunan hanya masuk akal kalau tinggi & beratnya lengkap.
-  const lengkap = !!leader?.heightCm && !!leader?.weightKg;
-  const bmi = lengkap ? bmiValue(leader!.weightKg!, leader!.heightCm!) : null;
-  const kategori = bmi != null ? bmiCategory(bmi) : null;
-  const ideal = leader?.heightCm ? idealWeightRange(leader.heightCm) : null;
-  // Rasio perut/tinggi — patokan paling sederhana untuk lemak perut:
-  // di bawah 0,5 berarti lingkar perut kurang dari setengah tinggi badan.
-  const rasio =
-    leader?.waistCm && leader?.heightCm
-      ? leader.waistCm / leader.heightCm
-      : null;
+  // Angka turunan (BMI, berat ideal, rasio perut/tinggi) dihitung di satu
+  // tempat bersama PDF-nya: lib/health.bodySummary. Tinggi & berat yang belum
+  // lengkap membuat BMI-nya null, bukan angka ngawur.
+  const { lengkap, bmi, kategori, ideal, rasio } = bodySummary(leader ?? {});
+
+  // Cetak PDF-nya. Satu tugas yang tak boleh jalan dobel; pesan gagalnya
+  // tampil di dalam dialog ini, tidak perlu ditutup dulu.
+  const tugas = useBusyTask<'pdf'>();
+  const [error, setError] = useState<string | null>(null);
+  function bagikan() {
+    if (!leader) return;
+    void tugas.run({
+      key: 'pdf',
+      start: () => setError(null),
+      task: () => shareLeaderBodyPdf(leader),
+      fail: () => setError('Gagal membuat PDF Data Tubuh. Coba lagi.'),
+    });
+  }
+  // Pesan gagal milik sesi dialog ini saja: CL berikutnya mulai bersih.
+  function tutup() {
+    setError(null);
+    onClose();
+  }
 
   return (
-    <CenterDialog visible={!!leader} onClose={onClose}>
+    <CenterDialog visible={!!leader} onClose={tutup}>
       {leader && (
         <>
-          <VixText heading="title" additionalStyle={styles.title}>
-            🧍 Data Tubuh {leader.name}
-          </VixText>
+          <View style={styles.head}>
+            <VixText heading="title" additionalStyle={styles.title}>
+              🧍 Data Tubuh {leader.name}
+            </VixText>
+            {/* Bagikan sebagai PDF, cuma kalau memang ada yang bisa dicetak. */}
+            {ada && (
+              <EmojiButton
+                icon="square.and.arrow.up"
+                onPress={bagikan}
+                busy={tugas.busy === 'pdf'}
+                disabled={tugas.busy !== null}
+              />
+            )}
+          </View>
           <VixText heading="label" additionalStyle={styles.updated}>
             {leader.bodyUpdatedDayId
               ? `Diperbarui: ${formatFullDate(dayIdToDate(leader.bodyUpdatedDayId))}`
@@ -112,7 +145,9 @@ export function LeaderBodyDialog({
             </View>
           )}
 
-          <PressableScale style={styles.close} onPress={onClose}>
+          <FormError message={error} gap="top" />
+
+          <PressableScale style={styles.close} onPress={tutup}>
             <VixText heading="label" additionalStyle={styles.closeText}>
               Tutup
             </VixText>
@@ -124,7 +159,14 @@ export function LeaderBodyDialog({
 }
 
 const styles = StyleSheet.create({
-  title: { color: Color.TEXT_TITLE },
+  // Judul di kiri, tombol bagikan di kanan, satu baris.
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  title: { color: Color.TEXT_TITLE, flexShrink: 1 },
   updated: { marginTop: 2, marginBottom: 10 },
   empty: { color: Color.TEXT_PARAGRAPH },
   rows: {

@@ -900,7 +900,7 @@ export function LeadersTab({
   );
 }
 
-// Cowok / cewek — penentu ucapan ulang tahun mana yang dikirim. Tekan pilihan
+// Gender — penentu ucapan ulang tahun mana yang dikirim. Click pilihan
 // yang sedang aktif untuk mengosongkannya lagi (sama seperti chip lain).
 function GenderField({
   value,
@@ -912,7 +912,7 @@ function GenderField({
   return (
     <>
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        🚻 Cowok / Cewek
+        🚻 Gender
       </VixText>
       <View style={styles.genderRow}>
         {GENDER_OPTIONS.map((g) => (
@@ -1115,24 +1115,44 @@ function PersonView({
             : `${daysUntil} hari lagi · genap ${turningAge} th`
         }
       />
-      <InfoRow
-        label="📱 No. HP"
-        value={person.phone ? `+62${person.phone}` : 'Belum ada nomor'}
-      />
-      {jenis ? <InfoRow label="🚻 Cowok / Cewek" value={jenis} /> : null}
+      {/* Dua isian pendek BERDAMPINGAN (No. HP + Gender, MBTI + Love
+          Language): modalnya jadi lebih pendek, tidak perlu digulung untuk
+          data yang cuma satu-dua kata. Kalau pasangannya kosong, yang ada
+          melebar sendiri memenuhi barisnya. */}
+      <View style={styles.viewPair}>
+        <InfoRow
+          label="📱 No. HP"
+          value={person.phone ? `+62${person.phone}` : 'Belum ada nomor'}
+          half
+        />
+        {jenis ? <InfoRow label="🚻 Gender" value={jenis} half /> : null}
+      </View>
       {belajar ? <InfoRow label="🎓 Pendidikan" value={belajar.slice(2)} /> : null}
       {kerja ? <InfoRow label="💼 Pekerjaan" value={kerja.slice(2)} /> : null}
       {disc ? <InfoRow label="🎨 DISC" value={disc} /> : null}
-      {person.mbti ? <InfoRow label="🧩 MBTI" value={person.mbti} /> : null}
-      {love ? <InfoRow label="💞 Love Language" value={love} /> : null}
+      {person.mbti || love ? (
+        <View style={styles.viewPair}>
+          {person.mbti ? <InfoRow label="🧩 MBTI" value={person.mbti} half /> : null}
+          {love ? <InfoRow label="💞 Love Language" value={love} half /> : null}
+        </View>
+      ) : null}
     </View>
   );
 }
 
 // Satu baris data di modal baca-saja: keterangan kecil di atas, isinya di bawah.
-function InfoRow({ label, value }: { label: string; value: string }) {
+// `half` = berbagi baris dengan pasangannya (lihat viewPair).
+function InfoRow({
+  label,
+  value,
+  half = false,
+}: {
+  label: string;
+  value: string;
+  half?: boolean;
+}) {
   return (
-    <View style={styles.viewRow}>
+    <View style={[styles.viewRow, half && styles.viewHalf]}>
       <VixText heading="label">{label}</VixText>
       <VixText heading="paragraph" additionalStyle={styles.viewValue}>
         {value}
@@ -1281,6 +1301,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   viewRow: { gap: 2 },
+  // Dua baris pendek berdampingan; tiap paruh membagi lebar sama rata.
+  viewPair: { flexDirection: 'row', gap: 12 },
+  viewHalf: { flex: 1 },
   viewValue: { color: Color.TEXT_TITLE },
   closeButton: {
     marginTop: 16,

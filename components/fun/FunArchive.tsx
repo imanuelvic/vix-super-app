@@ -245,7 +245,12 @@ export function FunArchive({
                   </View>
                 ) : null}
                 {/* Info khusus Race: harga, jarak, waktu tempuh, & pace (dihitung
-                    dari dua yang terakhir — tidak pernah diketik). */}
+                    dari dua yang terakhir — tidak pernah diketik).
+
+                    Spasi di DALAM tiap keping diganti spasi tak-putus (U+00A0):
+                    baris hanya boleh patah di pemisah " · ", jadi "⏱️ 1j 25m
+                    47d" selalu pindah baris bersama-sama, bukan emojinya
+                    tertinggal sendirian di ujung baris atas. */}
                 {item.category === 'race' &&
                 (item.price || item.distanceKm || raceFinishSec(item) > 0) ? (
                   <VixText heading="label" additionalStyle={styles.raceStats}>
@@ -259,6 +264,7 @@ export function FunArchive({
                         paceItem !== null ? `🏃 ${formatPace(paceItem)}` : '',
                       ]
                         .filter(Boolean)
+                        .map((keping) => keping.replace(/ /g, '\u00A0'))
                         .join('   ·   ');
                     })()}
                   </VixText>
