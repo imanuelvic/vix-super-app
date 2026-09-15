@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import {
   withBadge,
   type BottomTab,
 } from '@/components/common/BottomTabs';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
@@ -57,8 +59,9 @@ const TABS: BottomTab<ResidenceTab>[] = [
 // Finance), log pengeluaran rumah lain, dan identitas rumah.
 export default function ResidenceScreen() {
   const { user } = useAuth();
+  const router = useRouter();
 
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
+  // Hook bersama: ganti tab + scroll ke atas tiap tab di-click.
   //
   // Masuk langsung ke Token ⚡ — sub-tab yang paling sering DIISI, bukan cuma
   // dilihat: meteran dicatat dua kali sehari (pagi & malam), sedangkan
@@ -123,7 +126,21 @@ export default function ResidenceScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <ScreenHeader backLabel="Home" title="Residence 🏠" subtitle={RESIDENCE_INFO.name} />
+      <ScreenHeader
+        backLabel="Home"
+        title="Residence 🏠"
+        subtitle={RESIDENCE_INFO.name}
+        right={
+          /* 🧾 = seluruh riwayat pembelian token (app/token-purchases.tsx).
+             Di pojok header, bukan bagian di dalam daftar sub-tab Token:
+             di sana ia paling bawah dari tiga daftar, dan pintu yang ikut
+             menggulung itu pintu yang dicari-cari. Hanya saat sub-tab Token,
+             pola yang sama dengan 💰📅🏅 di Friends. */
+          tab === 'token' ? (
+            <EmojiButton emoji="🧾" onPress={() => router.push('/token-purchases')} />
+          ) : undefined
+        }
+      />
 
       <ScreenError message={error} />
 

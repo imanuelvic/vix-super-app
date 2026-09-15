@@ -96,6 +96,8 @@ export function FollowupTab({
       mbti?: string | null;
       loveLanguage?: string | null;
     };
+    /** CL-nya utuh: tombol 🎡 Wheel & 📋 Rekap wishlist di kepala modal. */
+    leader: CoreLeader;
   } | null>(null);
 
   const leaderById = useMemo(
@@ -252,6 +254,7 @@ export function FollowupTab({
     sub,
     phone,
     person,
+    leader,
     done,
     onDone,
   }: {
@@ -260,6 +263,7 @@ export function FollowupTab({
     sub: string | null;
     phone: string | null;
     person: { disc?: string | null; mbti?: string | null; loveLanguage?: string | null };
+    leader: CoreLeader;
     done: boolean;
     onDone: () => void;
   }) {
@@ -276,7 +280,7 @@ export function FollowupTab({
           attentionBorder(!done),
         ]}
         onLayout={(e) => setRowY(id, e.nativeEvent.layout.y)}
-        onPress={() => setFollowupModal({ id, title, phone, person })}>
+        onPress={() => setFollowupModal({ id, title, phone, person, leader })}>
         <View style={styles.followMain}>
           <VixText heading="bold" additionalStyle={styles.leaderName}>
             {title}
@@ -512,6 +516,7 @@ export function FollowupTab({
           sub: null,
           phone: l.phone,
           person: l,
+          leader: l,
           done: l.lastFollowupDayId === dayId,
           onDone: () => handleDoneLeader(l),
         }),
@@ -590,12 +595,54 @@ export function FollowupTab({
       onClose={() => setFollowupModal(null)}>
       {followupModal && fmTopic && (
         <>
-          <VixText heading="title" additionalStyle={styles.modalTitle}>
-            {followupModal.title}
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.modalSub}>
-            {fmTopic.icon} {fmTopic.label}
-          </VixText>
+          {/* Kepala modal: nama CL di kiri, di kanan dua pintu ke data
+              pribadinya (14 Sep 2026) — 🎡 Wheel of Life-nya dan 📋 rekap
+              seluruh wishlist Timeline-nya (langsung terbuka di sana). Keduanya
+              tetap dikunci PIN di layarnya masing-masing, sama seperti dari
+              tab Leaders. Modalnya ditutup dulu: layar yang didorong akan
+              tersembunyi di balik Modal kalau tidak. */}
+          <View style={styles.modalHead}>
+            <View style={styles.modalHeadMain}>
+              <VixText heading="title" additionalStyle={styles.modalTitle}>
+                {followupModal.title}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.modalSub}>
+                {fmTopic.icon} {fmTopic.label}
+              </VixText>
+            </View>
+            <View style={styles.modalHeadButtons}>
+              <EmojiButton
+                emoji="🎡"
+                locked
+                onPress={() => {
+                  const l = followupModal.leader;
+                  setFollowupModal(null);
+                  router.push({
+                    pathname: '/wheel',
+                    params: { leaderId: l.id, name: l.name, heart: l.heart },
+                  });
+                }}
+              />
+              <EmojiButton
+                emoji="📋"
+                locked
+                onPress={() => {
+                  const l = followupModal.leader;
+                  setFollowupModal(null);
+                  router.push({
+                    pathname: '/timeline',
+                    params: {
+                      leaderId: l.id,
+                      name: l.name,
+                      heart: l.heart,
+                      birthYear: String(l.birthYear),
+                      rekap: '1',
+                    },
+                  });
+                }}
+              />
+            </View>
+          </View>
           <ScrollView
             style={styles.modalScroll}
             showsVerticalScrollIndicator={false}>
@@ -864,6 +911,10 @@ const styles = StyleSheet.create({
   modalShuffleText: { color: Color.TEXT_LABEL },
   modalTipsLabel: { color: Color.TEXT_LABEL, marginTop: 8, marginBottom: 6 },
   // Modal tengah (pokok doa & ide pendekatan)
+  // Kepala modal follow up: judul + topik di kiri, 🎡 📋 di kanan.
+  modalHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  modalHeadMain: { flex: 1 },
+  modalHeadButtons: { flexDirection: 'row', gap: 8 },
   modalTitle: { color: Color.TEXT_TITLE, marginBottom: 2 },
   modalSub: { color: Color.TEXT_LABEL, marginBottom: 10 },
   modalScroll: { maxHeight: 320, marginBottom: 12 },

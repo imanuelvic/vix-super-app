@@ -2,9 +2,9 @@ import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 
 import { Color } from '@/assets/style/color';
+import { BounceTabIcon } from '@/components/bounce-tab-icon';
 import { HapticTab } from '@/components/haptic-tab';
 import { RaisedHomeTab } from '@/components/raised-home-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useNow } from '@/hooks/useNow';
 import {
@@ -50,6 +50,8 @@ export default function TabLayout() {
           borderTopColor: Color.BORDER,
         },
         headerShown: false,
+        // Tombolnya mengecil saat disentuh & ikonnya melompat saat jadi aktif
+        // (BounceTabIcon) — pantulan yang sama dengan sub-tab di dalam fitur.
         tabBarButton: HapticTab,
         freezeOnBlur: true,
       }}>
@@ -57,8 +59,8 @@ export default function TabLayout() {
         name="dashboard"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="square.grid.2x2.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <BounceTabIcon name="square.grid.2x2.fill" color={color} focused={focused} />
           ),
         }}
       />
@@ -68,8 +70,8 @@ export default function TabLayout() {
           title: 'Habits',
           tabBarBadge: habitsLeft > 0 ? habitsLeft : undefined,
           tabBarBadgeStyle: { backgroundColor: Color.DANGER },
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="checklist" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <BounceTabIcon name="checklist" color={color} focused={focused} />
           ),
         }}
       />
@@ -84,8 +86,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.crop.circle.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <BounceTabIcon name="person.crop.circle.fill" color={color} focused={focused} />
           ),
         }}
       />
@@ -93,8 +95,8 @@ export default function TabLayout() {
         name="version"
         options={{
           title: 'System',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="gearshape.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <BounceTabIcon name="gearshape.fill" color={color} focused={focused} />
           ),
         }}
       />

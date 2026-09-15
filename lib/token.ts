@@ -2,7 +2,7 @@ import { doc, setDoc, Timestamp, type FirestoreError } from 'firebase/firestore'
 
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
-import { sameDay, sameMonth } from './format';
+import { dayId, sameDay, sameMonth } from './format';
 
 // Token listrik ⚡ — versi aplikasi dari spreadsheet "Electric Token".
 //
@@ -188,6 +188,82 @@ export function usageSpans(list: MeterReading[]): UsageSpan[] {
     });
   }
   return out;
+}
+
+// ===================== Riwayat harian =====================
+
+/**
+ * Satu catatan meteran beserta apa yang terjadi SESUDAHNYA sampai catatan
+ * berikutnya.
+ */
+export type DayLogEntry = {
+  reading: MeterReading;
+  /**
+   * Selang pemakaian yang DIMULAI catatan ini. null = catatan terakhir (belum
+   * ada catatan berikutnya) atau token diisi di antaranya (lihat `refill`).
+   */
+  span: UsageSpan | null;
+  /** Angka meteran NAIK di catatan berikutnya = token diisi di antaranya. */
+  refill: boolean;
+};
+
+export type DayLog = {
+  /** "2026-09-15" — kunci & key daftar. */
+  dayId: string;
+  date: Date;
+  /** Urut jam NAIK — pagi dulu, lalu malam: dibaca seperti buku harian. */
+  entries: DayLogEntry[];
+  /** kWh terpakai dari semua selang yang DIMULAI hari ini. */
+  kwh: number;
+};
+
+/**
+ * Riwayat per HARI, terbaru di atas.
+ *
+ * Tiap hari memuat catatan meteran hari itu (urut jam) dan, di bawah tiap
+ * catatan, selang pemakaian yang dimulainya sampai catatan berikutnya — walau
+ * catatan berikutnya baru besok pagi. Jadi "Sel, 15 Sep" = seluruh pemakaian
+ * sejak catatan pertama hari itu sampai catatan pertama hari berikutnya, dan
+ * angka kWh di kepalanya adalah jumlah selang-selang itu.
+ *
+ * Dulu (sampai 15 Sep 2026) selang & catatan meteran dua daftar terpisah:
+ * yang satu bilang "9,5 jam · 2,1 kWh", yang lain "07.30 · 118,6 kWh", dan
+ * mencocokkan keduanya harus bolak-balik menggulung. Di sini satu hari dibaca
+ * sekali jalan: jam berapa dicatat berapa, lalu sampai catatan berikutnya
+ * habis berapa & kira-kira berapa rupiah.
+ */
+export function dailyLog(readings: MeterReading[]): DayLog[] {
+  const urut = sortedReadings(readings);
+  // Selang dicari dari id catatan PEMBUKANYA — usageSpans sudah membuang
+  // selang yang meterannya naik (token diisi) & yang jamnya nol.
+  const spanDari = new Map<string, UsageSpan>();
+  for (const s of usageSpans(readings)) spanDari.set(s.from.id, s);
+
+  const hari = new Map<string, DayLog>();
+  urut.forEach((r, i) => {
+    const berikut: MeterReading | undefined = urut[i + 1];
+    const at = r.at.toDate();
+    const id = dayId(at);
+    let h = hari.get(id);
+    if (!h) {
+      h = {
+        dayId: id,
+        date: new Date(at.getFullYear(), at.getMonth(), at.getDate()),
+        entries: [],
+        kwh: 0,
+      };
+      hari.set(id, h);
+    }
+    const span = spanDari.get(r.id) ?? null;
+    h.entries.push({
+      reading: r,
+      span,
+      refill: berikut !== undefined && berikut.kwh > r.kwh,
+    });
+    if (span) h.kwh += span.kwh;
+  });
+  // Map menjaga urutan penyisipan (naik) → dibalik supaya terbaru di atas.
+  return [...hari.values()].reverse();
 }
 
 /** Selang yang berakhir di dalam bulan `month` (0–11) tahun `year`. */

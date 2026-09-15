@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { Badge } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { Greeting } from '@/components/common/Greeting';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -26,6 +27,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconGlyph } from '@/components/ui/icon-glyph';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useDailyDismiss } from '@/hooks/useDailyDismiss';
 import { useNow } from '@/hooks/useNow';
 import { useReadyGate } from '@/hooks/useReadyGate';
 import { useScrollTop } from '@/hooks/useScrollTop';
@@ -100,11 +102,7 @@ import {
   type ScheduledHabit,
 } from '@/lib/habits';
 import {
-  bumpWaterStreak,
-  setWater,
   subscribeHabitDay,
-  subscribeWaterStreak,
-  WATER_GOAL,
   type HabitDay,
 } from '@/lib/health';
 import { HOME_FEATURES } from '@/lib/homeGrid';
@@ -149,6 +147,7 @@ import {
   subscribeChoreStatus,
   type ChoreStatusMap,
 } from '@/lib/residence';
+import { readingDue, subscribeMeterReadings, type MeterReading } from '@/lib/token';
 import {
   sermonShareDue,
   subscribeSermons,
@@ -180,7 +179,7 @@ import { logFeatureUse } from '@/lib/usage';
 // useReadyGate untuk menahan badge sampai semuanya tiba, jadi kalau nanti ada
 // sumber badge baru, tambahkan juga di sini — kalau tidak, badge-nya tidak
 // akan pernah muncul (gerbangnya menunggu sumber yang tak pernah datang).
-const BADGE_SOURCES = 21;
+const BADGE_SOURCES = 22;
 
 // Nama sapaan di Home memakai OWNER_NAME bersama (lib/family) — dipakai juga
 // untuk mengenali "saya" di pohon keluarga. Ganti di sana kalau mau ubah.
@@ -214,6 +213,10 @@ export default function HomeScreen() {
   );
   const [carParts, setCarParts] = useState<PartStatusMap>({});
   const [residenceChores, setResidenceChores] = useState<ChoreStatusMap>({});
+  // Catatan meteran listrik — badge Token di Residence ("belum dicatat dua
+  // kali hari ini") ikut dijumlahkan ke tile Residence, jadi angka di grid
+  // selalu sama dengan jumlah badge di dalam layarnya.
+  const [meterReadings, setMeterReadings] = useState<MeterReading[]>([]);
   // Centang gerakan gym hari ini (+ tanda ✕ kalau dilewati) — untuk badge
   // tile Fitness 💪.
   const [fitDay, setFitDay] = useState<FitDay>(EMPTY_FIT_DAY);
@@ -232,8 +235,6 @@ export default function HomeScreen() {
   // Bacaan Alkitab hari ini — null = belum termuat.
   const [bibleReading, setBibleReading] =
     useState<BibleReadingSessions | null>(null);
-  // Streak hari "cukup 8 gelas" — dicatat saat gelas ke-8 hari ini tercapai.
-  const [waterStreak, setWaterStreak] = useState<LoginStreak | null>(null);
   // Tiga prioritas hari ini 💡 — untuk angka di tombol header. Dokumennya per
   // tanggal, jadi ganti hari = daftar kosong lagi tanpa perlu direset.
   const [priorities, setPriorities] = useState<PriorityDay>(EMPTY_PRIORITY_DAY);
@@ -248,6 +249,8 @@ export default function HomeScreen() {
   );
   // Kartu Doa Syafaat sedang dibuka (menampilkan seluruh pokok doanya)?
   const [intercessionOpen, setIntercessionOpen] = useState(false);
+  // Dialog "tutup kartu Doa Syafaat untuk hari ini?" sedang tampil?
+  const [intercessionAsk, setIntercessionAsk] = useState(false);
   // Kalimat penyegar yang barusan di-click "sudah dibaca" (null = belum ada).
   const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
   // Rhema & Aplikasi yang kamu pasang sendiri dari Revive 📌 — salah satunya
@@ -273,6 +276,11 @@ export default function HomeScreen() {
   // langganan Learning di bawah tidak ikut dipasang ulang tiap menit.
   const weekId = weekDocId(now);
 
+  // Doa Syafaat 🙏 bisa DITUTUP untuk hari ini lewat ✕ di pojok kartunya
+  // (15 Sep 2026) — sesudah didoakan, kartunya tak perlu terus menagih. Besok
+  // ia kembali sendiri (kuncinya per hari, lihat hooks/useDailyDismiss.ts).
+  const intercessionDismiss = useDailyDismiss('home:intercession', todayId);
+
   // Badge tile baru digambar SETELAH keempat belas sumbernya tiba, supaya
   // angkanya muncul serentak — bukan menetes satu per satu selama beberapa
   // detik seperti sebelumnya. Grid & sapaan tetap tampil seketika.
@@ -286,6 +294,7 @@ export default function HomeScreen() {
       subscribeTopicsDone(user.uid, mark('topicsDone', setTopicsDone)),
       subscribeBills(user.uid, mark('bills', setBills)),
       subscribeChoreStatus(user.uid, mark('chores', setResidenceChores)),
+      subscribeMeterReadings(user.uid, mark('readings', setMeterReadings)),
       subscribeTasks(user.uid, mark('tasks', setTasks)),
       subscribeCoreLeaders(user.uid, mark('leaders', setLeaders)),
       // Undian ulang 🎲 fokus minggu ini — ikut ditunggu supaya badge CORE
@@ -314,7 +323,6 @@ export default function HomeScreen() {
       subscribeHabitSchedule(user.uid, setHabits),
       subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
       subscribeMyReminders(user.uid, setMyReminders),
-      subscribeWaterStreak(user.uid, setWaterStreak),
       subscribePrayerNews(user.uid, setPrayerNews),
       subscribePriorityDay(user.uid, todayId, setPriorities),
       subscribeFeedGenerated(user.uid, todayId, setFeedGenerated),
@@ -348,9 +356,8 @@ export default function HomeScreen() {
     }
   }, [user, prayerMissed, login]);
 
-  // Air putih 💧 — gelas terminum hari ini (0..). Tersimpan per hari (HabitDay
-  // per dayId) → otomatis kembali 0 tiap ganti hari.
-  const water = day?.water ?? 0;
+  // Air putih 💧 tidak lagi di layar ini: sejak 15 Sep 2026 ia tombol
+  // mengambang di semua layar (components/habits/WaterFloat.tsx).
 
   // Baca Alkitab 📖: kartu hanya muncul di dalam jendela jamnya & selama sesi
   // itu belum diisi. null = belum termuat (biar kartunya tidak berkedip).
@@ -482,8 +489,11 @@ export default function HomeScreen() {
       revive === undefined ? 0 : reviveHandledToday(revive, todayId) ? 0 : 1,
     // Jumlah part mobil yang perlu perhatian (segera/lewat jadwal).
     car: countCarAttention(carParts, now),
-    // Jumlah perawatan/kebersihan rumah yang perlu perhatian.
-    residence: countResidenceAttention(residenceChores, now),
+    // Perawatan rumah yang perlu perhatian + 1 kalau meteran listrik hari ini
+    // belum dicatat dua kali — akumulasi badge sub-tab Perawatan & Token.
+    residence:
+      countResidenceAttention(residenceChores, now) +
+      (readingDue(meterReadings, now) ? 1 : 0),
     // Gerakan gym hari ini yang belum dicentang — menyala dari pagi jam 09.00,
     // bareng kartu reminder di Dashboard. Hari yang ditandai ✕ (dilewati)
     // tidak memunculkan badge sama sekali.
@@ -509,22 +519,6 @@ export default function HomeScreen() {
     // tanggal 1 sampai angkanya kamu salin dari worldometers.
     news: populationDue(population, now),
   };
-
-  // Air putih 💧 — tombol cepat harian di kartu sapaan (tersimpan di HabitDay).
-  async function changeWater(delta: number) {
-    if (!user || !day) return;
-    const next = day.water + delta;
-    try {
-      await setWater(user.uid, todayId, next);
-      // Streak naik SEKALI per hari, tepat saat target tercapai. Turun lagi
-      // ke bawah target tidak membatalkan — harinya memang sudah tercapai.
-      if (next >= WATER_GOAL) {
-        await bumpWaterStreak(user.uid, waterStreak, todayId);
-      }
-    } catch {
-      // Diamkan — snapshot akan mengoreksi tampilan otomatis.
-    }
-  }
 
   // Selagi status streak doa belum termuat → loading singkat, biar tidak
   // "berkedip" Home dulu baru muncul lock screen doa pagi.
@@ -608,33 +602,6 @@ export default function HomeScreen() {
             <VixText heading="subheader" additionalStyle={styles.welcomeName}>
               {OWNER_NAME.toUpperCase()}
             </VixText>
-            {/* Air putih 💧 — tombol harian yang sering dipencet, dibuat ringkas */}
-            <View style={styles.waterRow}>
-              <VixText heading="bold" additionalStyle={styles.waterLabel}>
-                💧 Air putih {water}/{WATER_GOAL} gelas
-              </VixText>
-              <View style={styles.waterButtons}>
-                <PressableScale
-                  style={styles.waterButton}
-                  onPress={() => changeWater(-1)}
-                  hitSlop={6}>
-                  <VixText heading="bold" additionalStyle={styles.waterButtonText}>
-                    −
-                  </VixText>
-                </PressableScale>
-                <PressableScale
-                  style={[styles.waterButton, styles.waterButtonPlus]}
-                  onPress={() => changeWater(1)}
-                  hitSlop={6}>
-                  <IconSymbol name="plus" size={16} color={Color.MAIN_DARK} />
-                </PressableScale>
-              </View>
-            </View>
-            {water >= WATER_GOAL && (
-              <VixText heading="label" additionalStyle={styles.waterDone}>
-                ✅ Telah mencukupi air seharian 🎉
-              </VixText>
-            )}
           </Animated.View>
 
           {/* Penyegar 🕊️ — muncul 3× sehari pada jam yang DIUNDI (lihat
@@ -769,27 +736,31 @@ export default function HomeScreen() {
 
           {/* Doa Syafaat 🙏 — pokok doa tetap sesuai hari dalam seminggu.
               Hari Doa Rantai CL (Selasa & Kamis) kartunya menuju CORE Follow
-              Up; hari lain di-click untuk membuka/menutup pokok doanya. */}
-          <Animated.View
-            entering={FadeInDown.delay(40).duration(350)}
-            style={styles.intercessionCard}>
-            <ReminderCard
-              bg={Color.SPIRITUAL}
-              fg={Color.SPIRITUAL_DARK}
-              title={`🙏 Doa Syafaat · ${intercession.emoji} ${intercession.label} ${
-                intercessionChain ? '→' : intercessionOpen ? '▴' : '▾'
-              }`}
-              texts={intercessionTexts}
-              onPress={() =>
-                intercessionChain
-                  ? router.push({
-                      pathname: '/core',
-                      params: { tab: 'followup' },
-                    })
-                  : setIntercessionOpen((v) => !v)
-              }
-            />
-          </Animated.View>
+              Up; hari lain di-click untuk membuka/menutup pokok doanya.
+              ✕ di pojok → konfirmasi → disembunyikan sampai besok. */}
+          {!intercessionDismiss.dismissed && (
+            <Animated.View
+              entering={FadeInDown.delay(40).duration(350)}
+              style={styles.intercessionCard}>
+              <ReminderCard
+                bg={Color.SPIRITUAL}
+                fg={Color.SPIRITUAL_DARK}
+                title={`🙏 Doa Syafaat · ${intercession.emoji} ${intercession.label} ${
+                  intercessionChain ? '→' : intercessionOpen ? '▴' : '▾'
+                }`}
+                texts={intercessionTexts}
+                onPress={() =>
+                  intercessionChain
+                    ? router.push({
+                        pathname: '/core',
+                        params: { tab: 'followup' },
+                      })
+                    : setIntercessionOpen((v) => !v)
+                }
+                onClose={() => setIntercessionAsk(true)}
+              />
+            </Animated.View>
+          )}
 
           {/* Refleksi Hari Ini 📓 — yang kamu tulis tadi pagi, dibaca ulang
               siang (12–13), sore (17–18), & malam (21–22). Click tulisannya →
@@ -946,6 +917,19 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <ConfirmDialog
+        visible={intercessionAsk}
+        title="Tutup Doa Syafaat"
+        detail="Kotak ini ditutup untuk hari ini"
+        confirmLabel="Tutup"
+        danger={false}
+        onCancel={() => setIntercessionAsk(false)}
+        onConfirm={() => {
+          setIntercessionAsk(false);
+          intercessionDismiss.dismiss();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -1002,25 +986,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 4,
   },
-  waterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-  },
-  waterLabel: { color: Color.MAIN_LIGHT, flexShrink: 1 },
-  waterButtons: { flexDirection: 'row', gap: 8 },
-  waterButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Color.MAIN_LIGHT,
-  },
-  waterButtonPlus: { backgroundColor: Color.ACCENT },
-  waterButtonText: { color: Color.MAIN_DARK, fontSize: 18, lineHeight: 22 },
-  waterDone: { color: Color.MAIN_LIGHT, marginTop: 2 },
   streakPill: {
     backgroundColor: Color.ACCENT,
     borderRadius: 999,

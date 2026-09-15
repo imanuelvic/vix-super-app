@@ -105,17 +105,8 @@ const FEATURES: HomeFeature[] = [
 
 /**
  * Grid siap pakai — SUDAH urut nomor. Semua pemakainya (grid Home, kartu
- * Dashboard, kategori Achievement) cukup memakainya apa adanya.
+ * Dashboard) cukup memakainya apa adanya.
  */
 export const HOME_FEATURES: HomeFeature[] = [...FEATURES].sort(
   (a, b) => a.sort - b.sort,
 );
-
-/**
- * Nomor urut sebuah fitur. Fitur yang tidak ada di grid ditaruh paling
- * belakang, bukan di depan — supaya menambah kategori yang lupa dipetakan
- * tidak diam-diam melompat ke atas.
- */
-export function homeFeatureIndex(key: string): number {
-  return HOME_FEATURES.find((f) => f.key === key)?.sort ?? Number.MAX_SAFE_INTEGER;
-}

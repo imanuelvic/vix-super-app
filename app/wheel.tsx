@@ -1,13 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -18,6 +19,7 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SectionToggle } from '@/components/common/SectionToggle';
+import { SoftPill } from '@/components/common/SoftPill';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
@@ -45,6 +47,7 @@ import {
     type WheelData,
     type WheelFocus,
 } from '@/lib/wheel';
+import { rapikanJawabanWheel, wheelAiErrorMessage } from '@/lib/wheelAi';
 import { shareWheelPdf } from '@/lib/wheelPdf';
 
 type Mode = 'overview' | 'assess' | 'focus';
@@ -126,6 +129,11 @@ export default function WheelScreen() {
   const [draftScores, setDraftScores] = useState<WheelData['scores']>({});
   const [draftNotes, setDraftNotes] = useState<WheelData['notes']>({});
   const [assessError, setAssessError] = useState<string | null>(null);
+  // ✨ Rapihkan semua jawaban: sedang menunggu Gemini (lib/wheelAi.ts), dan
+  // sudah pernah berhasil di assessment ini (sekali saja; mulai assessment
+  // lagi = boleh lagi).
+  const [merapikan, setMerapikan] = useState(false);
+  const [sudahRapi, setSudahRapi] = useState(false);
 
   // ---- Editor fokus ----
   const [selected, setSelected] = useState<WheelAreaKey[]>([]);
@@ -141,6 +149,9 @@ export default function WheelScreen() {
   // Sedang mencetak PDF (bisa beberapa detik untuk radar + semua areanya).
   const pdf = useBusyTask<'pdf'>();
   const sharing = pdf.busy !== null;
+  // Footer Batal/Lanjut dipatok di dasar layar; SafeAreaView layar ini cuma
+  // menjaga sisi atas, jadi ruang aman bawahnya ditambahkan ke footernya.
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!user || !unlocked) return;
@@ -194,7 +205,29 @@ export default function WheelScreen() {
     setDraftNotes({ ...(data?.notes ?? {}) });
     setIdx(0);
     setAssessError(null);
+    setSudahRapi(false);
     setMode('assess');
+  }
+
+  // Kedelapan catatan → poin-poin "- " lewat Gemini, langsung mengisi ulang
+  // draftNotes. BELUM tersimpan: kamu baca dulu, baru Selesai ✅.
+  async function handleRapikanJawaban() {
+    if (merapikan || busy || sudahRapi) return;
+    if (!WHEEL_AREAS.some((a) => (draftNotes[a.key] ?? '').trim())) {
+      setAssessError('Belum ada catatan yang bisa dirapikan.');
+      return;
+    }
+    setMerapikan(true);
+    setAssessError(null);
+    try {
+      const rapi = await rapikanJawabanWheel(draftNotes);
+      setDraftNotes((prev) => ({ ...prev, ...rapi }));
+      setSudahRapi(true);
+    } catch (e) {
+      setAssessError(wheelAiErrorMessage(e));
+    } finally {
+      setMerapikan(false);
+    }
   }
 
   async function nextAssess() {
@@ -373,7 +406,10 @@ export default function WheelScreen() {
       {data === null ? (
         <LoadingCenter />
       ) : mode === 'assess' ? (
-        /* ===== Wizard assessment: 1 pertanyaan per layar ===== */
+        /* ===== Wizard assessment: 1 pertanyaan per layar =====
+           Batal/Lanjut di footer yang DIPATOK (14 Sep 2026): catatannya bisa
+           panjang, dan tombolnya jangan sampai harus dicari dengan menggulung. */
+        <>
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <VixText heading="label">
             Pertanyaan {idx + 1} dari {WHEEL_AREAS.length}
@@ -439,16 +475,39 @@ export default function WheelScreen() {
               setDraftNotes((prev) => ({ ...prev, [area.key]: t }))
             }
             multiline
-            editable={!busy}
+            editable={!busy && !merapikan}
           />
 
-          <ScreenError message={assessError} />
+          {/* ✨ Di pertanyaan TERAKHIR saja: kedelapan catatan dipecah jadi
+              poin-poin "- " oleh Gemini (lib/wheelAi.ts), isinya tidak
+              diubah. Sekali per assessment; hasilnya tetap bisa dilihat lewat
+              Kembali sebelum Selesai. */}
+          {idx === WHEEL_AREAS.length - 1 && (
+            <View style={styles.rapikanBox}>
+              <SoftPill
+                label={
+                  merapikan
+                    ? 'Merapihkan…'
+                    : sudahRapi
+                      ? '✓ Sudah dirapihkan'
+                      : '✨ Rapihkan semua jawaban'
+                }
+                busy={merapikan}
+                disabled={busy || sudahRapi}
+                onPress={handleRapikanJawaban}
+                additionalStyle={sudahRapi && styles.rapikanDone}
+              />
+            </View>
+          )}
+        </KeyboardAwareScrollView>
 
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <FormError message={assessError} />
           <View style={styles.navRow}>
             <PressableScale
               style={styles.backButton}
               onPress={() => (idx > 0 ? setIdx(idx - 1) : setMode('overview'))}
-              disabled={busy}>
+              disabled={busy || merapikan}>
               <VixText heading="bold">{idx > 0 ? 'Kembali' : 'Batal'}</VixText>
             </PressableScale>
             <PrimaryButton
@@ -458,9 +517,11 @@ export default function WheelScreen() {
               additionalStyle={styles.nextButton}
             />
           </View>
-        </KeyboardAwareScrollView>
+        </View>
+        </>
       ) : mode === 'focus' ? (
         /* ===== Editor fokus kuartal ===== */
+        <>
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <VixText heading="title">🎯 Fokus {quarterLabel(year, q)}</VixText>
           <VixText heading="label" additionalStyle={styles.focusHint}>
@@ -523,7 +584,10 @@ export default function WheelScreen() {
             );
           })}
 
-          <ScreenError message={focusError} />
+        </KeyboardAwareScrollView>
+
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <FormError message={focusError} />
           <View style={styles.navRow}>
             <PressableScale
               style={styles.backButton}
@@ -538,7 +602,8 @@ export default function WheelScreen() {
               additionalStyle={styles.nextButton}
             />
           </View>
-        </KeyboardAwareScrollView>
+        </View>
+        </>
       ) : (
         /* ===== Overview ===== */
         /* Judul "🎯 Fokus Kuartal" & "📋 Score per Area" DIPATOK di atas saat
@@ -614,6 +679,26 @@ export default function WheelScreen() {
                   </View>
                 </View>
               </View>
+
+              {/* Kapan kuartal ini mulai diisi & terakhir disentuh. Di ATAS
+                  "🎯 Fokus Kuartal" (14 Sep 2026), selalu terlihat, bukan
+                  tersembunyi di dalam seksi fokus. Di layar cukup TANGGALNYA;
+                  PDF-nya memakai cap lengkap berikut jam (lib/wheelPdf.ts). */}
+              {(data.createdAt || data.updatedAt) && (
+                <View style={styles.stampBox}>
+                  {data.createdAt && (
+                    <VixText heading="label" additionalStyle={styles.updatedLabel}>
+                      🆕 Dibuat: {formatDayDate(data.createdAt.toDate())}
+                    </VixText>
+                  )}
+                  {data.updatedAt && (
+                    <VixText heading="label" additionalStyle={styles.updatedLabel}>
+                      🕒 Terakhir diubah:{' '}
+                      {formatDayDate(data.updatedAt.toDate())}
+                    </VixText>
+                  )}
+                </View>
+              )}
               </>
             ) : (
             <View style={styles.introCard}>
@@ -744,27 +829,6 @@ export default function WheelScreen() {
                     </PressableScale>
                   );
                 })
-              )}
-
-              {/* Kapan kuartal ini mulai diisi & terakhir disentuh. Di layar
-                  cukup TANGGALNYA — isian kuartalan disentuh beberapa kali per
-                  tiga bulan, jamnya tidak menjawab apa pun. PDF-nya tetap
-                  memakai cap lengkap berikut jam (lib/wheelPdf.ts): itu
-                  dokumen arsip, dan di situ ketepatannya baru berguna. */}
-              {(data.createdAt || data.updatedAt) && (
-                <View style={styles.stampBox}>
-                  {data.createdAt && (
-                    <VixText heading="label" additionalStyle={styles.updatedLabel}>
-                      🆕 Dibuat: {formatDayDate(data.createdAt.toDate())}
-                    </VixText>
-                  )}
-                  {data.updatedAt && (
-                    <VixText heading="label" additionalStyle={styles.updatedLabel}>
-                      🕒 Terakhir diubah:{' '}
-                      {formatDayDate(data.updatedAt.toDate())}
-                    </VixText>
-                  )}
-                </View>
               )}
               </>
             )}
@@ -978,10 +1042,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Color.BORDER,
     backgroundColor: Color.CONTAINER,
+    marginTop: 12,
     marginBottom: 14,
   },
   reflectButtonText: { color: Color.TEXT_TITLE },
-  navRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  rapikanBox: { marginTop: 14, gap: 6 },
+  rapikanDone: { opacity: 0.5 },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    backgroundColor: Color.BACKGROUND,
+  },
+  navRow: { flexDirection: 'row', gap: 10 },
   backButton: {
     flex: 1,
     alignItems: 'center',
@@ -1113,11 +1187,12 @@ const styles = StyleSheet.create({
   },
   editText: { color: Color.MAIN },
   emptyFocus: { marginBottom: 10 },
-  // Dua baris cap waktu (dibuat & terakhir diubah) dirapatkan jadi satu blok.
-  stampBox: { marginTop: 2, marginBottom: 4, gap: 1 },
+  // Dua baris cap waktu (dibuat & terakhir diubah) dirapatkan jadi satu blok,
+  // duduk di antara sebaran nada dan judul "🎯 Fokus Kuartal".
+  stampBox: { marginBottom: 12, gap: 1 },
   updatedLabel: { color: Color.TEXT_LABEL },
   // ===== Sebaran nada kedelapan area =====
-  spreadBox: { marginBottom: 14, gap: 8 },
+  spreadBox: { marginBottom: 10, gap: 8 },
   // Batang proporsi: lebar tiap ruas = BANYAKNYA area bernada itu (flex diisi
   // angkanya langsung), jadi perbandingannya kebaca tanpa membaca angkanya
   // dulu. Nada yang kosong tidak digambar sama sekali — bukan ruas setipis

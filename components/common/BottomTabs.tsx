@@ -93,9 +93,39 @@ export function BottomTabs<T extends string>({
   );
 }
 
-// Satu tab. Saat jadi aktif, ikonnya melompat kecil (membesar + naik lalu
-// memantul balik) — penanda "kamu sekarang di sini" yang terasa, bukan cuma
-// warna yang berubah diam-diam.
+/**
+ * Lompatan kecil ikon tab saat tab-nya JADI aktif: membesar + naik, lalu
+ * memantul balik. Penanda "kamu sekarang di sini" yang terasa, bukan cuma
+ * warna yang berubah diam-diam. Tidak melompat saat layar pertama dibuka —
+ * hanya saat pengguna berpindah.
+ *
+ * Diekspor supaya tab UTAMA di kaki app (Dashboard · Habits · Home · Profile ·
+ * System, app/(tabs)/_layout.tsx) memantul persis sama dengan sub-tab fitur
+ * (15 Sep 2026); sebelumnya yang di bawah cuma berganti warna.
+ */
+export function useTabJump(active: boolean) {
+  const jump = useSharedValue(0);
+  const mounted = useRef(false);
+
+  useEffect(() => {
+    if (active && mounted.current) {
+      jump.value = withSequence(
+        withTiming(1, { duration: 130 }),
+        withSpring(0, { damping: 8, stiffness: 260 }),
+      );
+    }
+    mounted.current = true;
+  }, [active, jump]);
+
+  return useAnimatedStyle(() => ({
+    transform: [
+      { scale: 1 + jump.value * 0.25 },
+      { translateY: jump.value * -4 },
+    ],
+  }));
+}
+
+// Satu tab. Saat jadi aktif, ikonnya melompat kecil (lihat useTabJump).
 function Tab<T extends string>({
   tab,
   active,
@@ -109,26 +139,7 @@ function Tab<T extends string>({
   fg: string;
   onPress: () => void;
 }) {
-  const jump = useSharedValue(0);
-  // Jangan melompat saat layar pertama dibuka — hanya saat pengguna berpindah.
-  const mounted = useRef(false);
-
-  useEffect(() => {
-    if (active && mounted.current) {
-      jump.value = withSequence(
-        withTiming(1, { duration: 130 }),
-        withSpring(0, { damping: 8, stiffness: 260 }),
-      );
-    }
-    mounted.current = true;
-  }, [active, jump]);
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: 1 + jump.value * 0.25 },
-      { translateY: jump.value * -4 },
-    ],
-  }));
+  const iconStyle = useTabJump(active);
 
   return (
     <PressableScale style={styles.tabButton} onPress={onPress}>

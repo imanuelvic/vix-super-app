@@ -16,6 +16,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { WaterFloat } from '@/components/habits/WaterFloat';
 import { MorningPrayerWatcher } from '@/components/spiritual/MorningPrayerWatcher';
 import { AuthProvider, useAuth } from '@/contexts/auth';
 import { FutsalGangProvider } from '@/contexts/futsalGang';
@@ -120,6 +121,8 @@ function RootNavigator() {
         <Stack.Screen name="investment" />
         <Stack.Screen name="car" />
         <Stack.Screen name="residence" />
+        {/* Pembelian Token 🧾 — seluruh riwayat beli token listrik Residence */}
+        <Stack.Screen name="token-purchases" />
         <Stack.Screen name="wheel" />
         <Stack.Screen name="career" />
         {/* Freelance: rincian satu proyek (baca-saja) + layar isiannya */}
@@ -161,6 +164,10 @@ function RootNavigator() {
     {/* Pengawal doa pagi — tidak menggambar apa pun, hanya mengalihkan ke
         lock screen begitu jam doa tiba, dari layar mana pun. */}
     {!!user && <MorningPrayerWatcher />}
+
+    {/* 💧 Gelas air mengambang — di atas SEMUA layar (kecuali gerbang pagi &
+        fitur CORE; ia menyembunyikan dirinya sendiri lewat pathname). */}
+    {!!user && <WaterFloat />}
     </>
   );
 }

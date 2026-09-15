@@ -1157,8 +1157,7 @@ export default function DashboardScreen() {
                 router.push({ pathname: '/core', params: { tab: 'followup' } })
               }>
               <VixText heading="label" additionalStyle={styles.coreText}>
-                Hari ini {prayerUndone} CORE Leader untuk didoakan & ditanya
-                perkembangan pergumulannya 🙏
+                Hari ini {prayerUndone} CORE Leader didoakan
               </VixText>
             </ReminderCard>
           )}
@@ -1170,9 +1169,6 @@ export default function DashboardScreen() {
               fg={Color.FINANCE_EXPENSE_DARK}
               title="🤝 Reminder Pinjaman"
               texts={debtReminders}
-              // Tiap baris menuju tabnya SENDIRI: "💰 Tagih" tinggal di Lent
-              // Out, "💸 Bayar" di My Debt. Satu kartu memang memuat dua arah
-              // sekaligus, jadi satu tujuan untuk semuanya pasti salah separuh.
               onItemPress={(id) =>
                 router.push({
                   pathname: '/debts',

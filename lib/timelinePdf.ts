@@ -1,12 +1,29 @@
 import { escapeHtml, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
 import { formatFullDateTime, MONTH_NAMES } from './format';
 import {
+  BIRTH_YEAR,
   timelineGroups,
   timelineTotals,
   TIMELINE_CATEGORY_META,
   type TimelineItem,
   type TimelineYear,
 } from './timeline';
+
+/** Siapa pemilik timeline-nya (null = punyaku) — nama, hati, & tahun lahir. */
+export type TimelineOrang = { name: string; heart: string; birthYear: number } | null;
+
+/**
+ * Baris umur di kepala tiap tahun: umur PEMILIK timeline di tahun itu (14 Sep
+ * 2026) — supaya "married 2028" terbaca sebagai "waktu dia 30". Hanya umur
+ * si pemilik; umurku tidak ikut (15 Sep 2026), dokumennya tentang dia.
+ * Ulang tahun dianggap 1 Januari, sama dengan chip umur di layar.
+ */
+function umurHtml(year: number, orang: TimelineOrang): string {
+  const isi = orang
+    ? `${escapeHtml(orang.name)} ${year - orang.birthYear} th`
+    : `Umur ${year - BIRTH_YEAR} th`;
+  return `<div class="tahun-umur">🎂 ${isi}</div>`;
+}
 
 // PDF My Timeline 📍 — SELURUH wishlist yang pernah dicatat, dari tahun paling
 // awal sampai yang paling jauh ke depan, digambar sebagai GARIS WAKTU: satu
@@ -60,7 +77,12 @@ function barisHtml(
   </div>`;
 }
 
-function tahunHtml(t: TimelineYear, now: Date, terakhirSekali: boolean): string {
+function tahunHtml(
+  t: TimelineYear,
+  now: Date,
+  terakhirSekali: boolean,
+  orang: TimelineOrang,
+): string {
   const kelompok = timelineGroups(t.items);
   const beres = t.items.filter((i) => i.done).length;
 
@@ -74,6 +96,7 @@ function tahunHtml(t: TimelineYear, now: Date, terakhirSekali: boolean): string 
     <div class="isi-baris">
       <div class="tahun-judul">${t.year}</div>
       <div class="tahun-meta">${t.items.length} wishlist · ${beres} tercapai</div>
+      ${umurHtml(t.year, orang)}
     </div>
   </div>`;
 
@@ -132,6 +155,7 @@ const EXTRA_CSS = `
     font-size: 16px; font-weight: 700; color: ${TITIK}; line-height: 1.2;
   }
   .tahun-meta { color: #9AA79F; font-size: 10.5px; margin-top: 1px; }
+  .tahun-umur { color: #8A6B3E; font-size: 10.5px; font-weight: 700; margin-top: 2px; }
 
   /* Satu wishlist */
   .wish { display: flex; gap: 7px; margin-bottom: 3px; align-items: baseline; }
@@ -156,7 +180,7 @@ const EXTRA_CSS = `
  */
 export async function shareTimelinePdf(
   years: TimelineYear[],
-  orang: { name: string; heart: string } | null,
+  orang: TimelineOrang,
   now: Date = new Date(),
 ): Promise<void> {
   const { total, done } = timelineTotals(years);
@@ -175,7 +199,7 @@ export async function shareTimelinePdf(
     years.length === 0
       ? '<p class="kosong">Belum ada wishlist yang dicatat.</p>'
       : years
-          .map((t, i) => tahunHtml(t, now, i === years.length - 1))
+          .map((t, i) => tahunHtml(t, now, i === years.length - 1, orang))
           .join('');
 
   const html = pdfShellHtml({

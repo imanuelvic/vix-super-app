@@ -49,7 +49,7 @@ export function BadgeTile({
         additionalStyle={[styles.title, !unlocked && styles.titleLocked]}>
         {title}
       </VixText>
-      {children}
+      <View style={styles.foot}>{children}</View>
     </PressableScale>
   );
 }
@@ -74,6 +74,11 @@ const styles = StyleSheet.create({
   // Tiga kolom: cukup lega untuk lambang besar + judul dua baris, dan pas untuk
   // tangga 7–10 tingkat tanpa perlu digulung.
   tile: { width: '33.33%', alignItems: 'center', paddingHorizontal: 4, gap: 4 },
+  // Kaki petak (batang kemajuan / teks angka) DIDORONG ke dasar. Petak dalam
+  // satu baris direntang setinggi tetangganya yang paling tinggi (alignItems
+  // stretch bawaan grid), jadi judul satu baris dan dua baris tetap membuat
+  // kakinya sejajar, bukan naik-turun mengikuti panjang judul.
+  foot: { marginTop: 'auto', alignSelf: 'stretch', alignItems: 'center' },
   badge: {
     width: 62,
     height: 62,

@@ -14,8 +14,8 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useDueJump } from '@/hooks/useDueJump';
+import { useFormSave } from '@/hooks/useFormSave';
 import { deadlineDue, type DeadlineTone } from '@/lib/deadline';
-import { SAVE_ERROR } from '@/lib/messages';
 
 // Daftar perawatan berkala: barang dikelompokkan, tiap baris punya tenggat
 // (🔴 sekarang / 🟡 besok / 🟢 aman / ❓ belum dicatat), dan menekannya membuka
@@ -73,8 +73,7 @@ export function UpkeepList({
   const [editing, setEditing] = useState<UpkeepRow | null>(null);
   const [fDate, setFDate] = useState(new Date());
   const [fNote, setFNote] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, formError: error, setFormError: setError, save } = useFormSave();
 
   // Baris jatuh tempo PERTAMA menurut urutan tampilnya — sama isinya dengan
   // yang dihitung badge tab (🔴 sekarang / 🟡 besok).
@@ -90,32 +89,20 @@ export function UpkeepList({
   }
 
   async function handleSave() {
-    if (!editing || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
+    if (!editing) return;
+    await save(async () => {
       await onSave(editing.key, fDate, fNote.trim());
       setEditing(null);
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /** Pasang / lepas tanda "sekarang" lalu tutup dialognya. */
   async function handleDueNow() {
-    if (!editing || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
+    if (!editing) return;
+    await save(async () => {
       await onDueNow(editing.key, !dueNowOf(editing.key));
       setEditing(null);
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   return (

@@ -198,17 +198,11 @@ export default function BibleStoryScreen() {
           <VixText heading="title" additionalStyle={styles.sectionTitle}>
             ✍️ Isi Ayat
           </VixText>
-          <FormInput
-            style={styles.verseInput}
-            placeholder="mis. TUHAN adalah gembalaku, takkan kekurangan aku."
-            value={verse}
-            onChangeText={setVerse}
-            multiline
-            editable={kerja.busy === null}
-          />
 
           {/* Dari ayat berapa sampai ayat berapa — judul kitab di kartunya
-              ikut berubah sendiri. Dikosongkan = pasalnya saja ("Amsal 5"). */}
+              ikut berubah sendiri. Dikosongkan = pasalnya saja ("Amsal 5").
+              Nomor ayatnya DI ATAS kolom isi (14 Sep 2026): urutan mengisinya
+              memang begitu, tahu ayat berapa dulu, baru menyalin bunyinya. */}
           <View style={styles.ayatRow}>
             <View style={styles.ayatBox}>
               <VixText heading="label" additionalStyle={styles.ayatLabel}>
@@ -235,6 +229,15 @@ export default function BibleStoryScreen() {
               />
             </View>
           </View>
+
+          <FormInput
+            style={styles.verseInput}
+            placeholder="mis. TUHAN adalah gembalaku, takkan kekurangan aku."
+            value={verse}
+            onChangeText={setVerse}
+            multiline
+            editable={kerja.busy === null}
+          />
 
           <View style={styles.previewWrap}>
             <View
@@ -301,10 +304,10 @@ const styles = StyleSheet.create({
   emptyWrap: { paddingHorizontal: 20, paddingTop: 20 },
   empty: { textAlign: 'center' },
   sectionTitle: { ...SECTION_SPACE },
-  verseInput: { minHeight: 96, textAlignVertical: 'top' },
+  verseInput: { minHeight: 96, textAlignVertical: 'top', marginTop: 10 },
   // Dua kolom angka, bentuknya sama dengan kolom ayat di layar mana pun
   // (components/common/BibleRefField).
-  ayatRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  ayatRow: { flexDirection: 'row', gap: 8 },
   ayatBox: { flex: 1, gap: 4 },
   ayatLabel: { marginLeft: 2 },
   previewWrap: { alignItems: 'center', paddingVertical: 14 },

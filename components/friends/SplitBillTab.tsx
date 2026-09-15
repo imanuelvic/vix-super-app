@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
@@ -15,9 +14,9 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
+import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { formatCompactDate } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
 import {
   billTotal,
   billUnsettled,
@@ -40,8 +39,8 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  // Penjaga click-ganda & pesan gagalnya ada di dalam save() (hook bersama).
+  const { formError: error, save } = useFormSave();
 
   const list = sortedBills(bills);
   const { currentPage, pageCount, pageItems, setPage } = usePagination(list);
@@ -58,18 +57,12 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
 
   /** Buat tagihan kosong lalu langsung buka rinciannya — di sanalah isinya. */
   async function handleAdd() {
-    if (!user || busy) return;
-    setBusy(true);
-    setError(null);
+    if (!user) return;
     const bill = emptyBill(newBillId());
-    try {
+    await save(async () => {
       await saveBill(user.uid, bill);
       router.push({ pathname: '/bill/[id]', params: { id: bill.id } });
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   return (

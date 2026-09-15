@@ -13,6 +13,7 @@ import { Color } from '@/assets/style/color';
 import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { isFirebaseConfigured } from '@/lib/firebase';
 
@@ -48,6 +49,8 @@ export default function LoginScreen() {
   // Email pemilik langsung terisi — tinggal ketik password.
   const [email, setEmail] = useState(process.env.EXPO_PUBLIC_OWNER_EMAIL ?? '');
   const [password, setPassword] = useState('');
+  // 👁️ tampilkan password apa adanya (bawaannya disamarkan).
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -107,15 +110,39 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             editable={!loading}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={Color.TEXT_PLACEHOLDER}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            editable={!loading}
-          />
+          {/* Password: ✕ menghapus seluruh isinya (muncul begitu ada yang
+              diketik), 👁️ menampilkan/menyamarkan. Keduanya duduk di dalam
+              kolomnya, di kanan; teksnya diberi ruang supaya tidak tertutup. */}
+          <View style={styles.passwordWrap}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              placeholder="Password"
+              placeholderTextColor={Color.TEXT_PLACEHOLDER}
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              editable={!loading}
+            />
+            <View style={styles.passwordTools}>
+              {password.length > 0 && (
+                <PressableScale
+                  onPress={() => setPassword('')}
+                  hitSlop={8}
+                  disabled={loading}>
+                  <IconSymbol name="xmark" size={18} color={Color.TEXT_LABEL} />
+                </PressableScale>
+              )}
+              <PressableScale
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={8}>
+                <IconSymbol
+                  name={showPassword ? 'eye.slash' : 'eye'}
+                  size={20}
+                  color={Color.TEXT_LABEL}
+                />
+              </PressableScale>
+            </View>
+          </View>
 
           <FormError message={error} gap="none" />
 
@@ -169,6 +196,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     borderWidth: 1,
     borderColor: Color.BORDER,
+  },
+  passwordWrap: { justifyContent: 'center' },
+  // Ruang di kanan untuk ✕ + 👁️ (dua ikon + jarak), supaya ketikan panjang
+  // tidak tersembunyi di bawahnya.
+  passwordInput: { paddingRight: 84 },
+  passwordTools: {
+    position: 'absolute',
+    right: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
   },
   button: {
     backgroundColor: Color.MAIN,

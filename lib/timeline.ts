@@ -3,6 +3,7 @@ import {
   doc,
   getDocs,
   setDoc,
+  Timestamp,
   type FirestoreError,
 } from 'firebase/firestore';
 
@@ -91,14 +92,17 @@ export function subscribeTimelineYear(
   );
 }
 
-/** Simpan seluruh wishlist satu tahun (array kecil, ditulis utuh). */
+/**
+ * Simpan seluruh wishlist satu tahun (array kecil, ditulis utuh), berikut cap
+ * kapan terakhir disentuh — dipakai rekap semua tahun ("terakhir diperbarui").
+ */
 export function saveTimelineYear(
   uid: string,
   year: number,
   items: TimelineItem[],
   owner?: TimelineOwner,
 ) {
-  return setDoc(timelineRef(uid, year, owner), { items });
+  return setDoc(timelineRef(uid, year, owner), { items, updatedAt: Timestamp.now() });
 }
 
 /** Id unik untuk item baru. */
@@ -111,8 +115,19 @@ export function newTimelineId(): string {
 // dipakai sehari-hari. Tapi rekap & PDF harus melihat semuanya sekaligus —
 // yang sudah berlalu maupun yang akan datang.
 
-/** Satu tahun beserta isinya. */
-export type TimelineYear = { year: number; items: TimelineItem[] };
+/** Satu tahun beserta isinya. updatedAt kosong = tahun lama, belum disentuh lagi. */
+export type TimelineYear = { year: number; items: TimelineItem[]; updatedAt?: Timestamp };
+
+/** Kapan terakhir kali salah satu tahunnya disentuh (null = belum tercatat). */
+export function timelineLastUpdated(years: TimelineYear[]): Date | null {
+  let terbaru: Timestamp | null = null;
+  for (const t of years) {
+    if (t.updatedAt && (!terbaru || t.updatedAt.toMillis() > terbaru.toMillis())) {
+      terbaru = t.updatedAt;
+    }
+  }
+  return terbaru ? terbaru.toDate() : null;
+}
 
 function timelineCollection(uid: string, owner: TimelineOwner) {
   return owner
@@ -139,6 +154,7 @@ export async function fetchTimelineAll(
     .map((d) => ({
       year: Number(d.id),
       items: (d.data()?.items as TimelineItem[]) ?? [],
+      updatedAt: (d.data()?.updatedAt as Timestamp | undefined) ?? undefined,
     }))
     .filter((t) => Number.isFinite(t.year) && t.items.length > 0)
     .sort((a, b) => a.year - b.year);

@@ -93,6 +93,12 @@ export const Color = {
   // Invest) supaya tetangga serona tidak terbaca sebagai warna yang sama.
   // ══════════════════════════════════════════════════════════════════════
 
+  // Air putih 💧 — biru air untuk tombol gelas mengambang (WaterFloat):
+  // isi gelas, cincin kemajuan, & angkanya. Bukan warna fitur mana pun.
+  WATER: '#5FB4E5',
+  WATER_DARK: '#1F6FA3',
+  WATER_LIGHT: '#D6ECF9',
+
   // Spiritual ✝️ — ungu, warna keagungan.
   SPIRITUAL: '#E4D7F5',
   SPIRITUAL_DARK: '#6B4E9B',

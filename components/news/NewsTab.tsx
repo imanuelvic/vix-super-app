@@ -61,7 +61,10 @@ export function NewsTab({
    */
   function pilihSumber(key: NewsSource) {
     if (key !== source) {
+      // Sumber baru = daftar baru: langsung dari atas, jangan mewarisi posisi
+      // gulungan sumber sebelumnya (15 Sep 2026).
       setSource(key);
+      listRef.current?.scrollTo({ y: 0, animated: false });
       return;
     }
     reload();

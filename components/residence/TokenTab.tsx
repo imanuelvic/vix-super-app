@@ -12,42 +12,41 @@ import { EditDelete } from '@/components/common/EditDelete';
 import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
-import { MoneyInput } from '@/components/common/MoneyInput';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { SectionToggle } from '@/components/common/SectionToggle';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { TimeField } from '@/components/common/TimeField';
 import { VixText } from '@/components/common/VixText';
+import { TokenPurchaseSheet } from '@/components/residence/TokenPurchaseSheet';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
+import { useTokenPurchaseForm } from '@/hooks/useTokenPurchaseForm';
 import {
   formatCompactDate,
+  formatDayDate,
   formatDecimal,
   formatTime,
-  groupDigits,
-  parseAmount,
   parseDecimal,
 } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
 import {
   currentRate,
+  dailyLog,
   daysLeft,
   latestReading,
-  newPurchaseId,
   newReadingId,
   purchasesOfMonth,
   READING_KINDS,
   readingKindMeta,
   readingTodo,
   saveMeterReadings,
-  saveTokenPurchases,
   sortedReadings,
   spansOfMonth,
   summarize,
   TOKEN_LOW_DAYS,
-  TOKEN_PLATFORMS,
   totalCost,
   usageSpans,
   type MeterReading,
@@ -63,6 +62,19 @@ function jamLabel(hours: number): string {
   if (hours < 1) return `${Math.round(hours * 60)} menit`;
   return `${formatDecimal(hours)} jam`;
 }
+
+/**
+ * Anak ScrollView yang DIPATOK di atas saat digulung: judul "⚡ Riwayat
+ * Pemakaian" (5).
+ *
+ * Urutan anaknya, dan semuanya SELALU ada (yang bersyarat dibungkus <View>
+ * kosong): 0 kartu ringkas · 1 kartu sisa · 2 kartu penjelas badge ·
+ * 3 baris tombol · 4 pecahan bulan ini · 5 judul Riwayat · 6 daftar Riwayat
+ * (per hari; sejak 15 Sep 2026 catatan meteran ada di dalamnya, bukan daftar
+ * sendiri). Menyisipkan anak baru DI ATAS nomor 5 berarti angka di sini ikut
+ * digeser. Ditaruh di luar komponen supaya bukan array baru tiap render.
+ */
+const STICKY_HEADERS = [5];
 
 // Sub-tab Token ⚡ — listrik prabayar.
 //
@@ -80,7 +92,10 @@ export function TokenTab({
 }) {
   const { user } = useAuth();
 
-  const [busy, setBusy] = useState(false);
+  // Riwayat harian TERBUKA saat sub-tab ini dibuka: inilah isi utama
+  // layarnya. Tombol tutupnya (di judul yang dipatok) gunanya meringkas layar
+  // saat yang dicari cuma angka sisa & tombol catatnya.
+  const [riwayatOpen, setRiwayatOpen] = useState(true);
 
   // Sheet catat meteran.
   const [editReading, setEditReading] = useState<MeterReading | 'new' | null>(null);
@@ -88,16 +103,12 @@ export function TokenTab({
   const [rKwh, setRKwh] = useState('');
   const [rKind, setRKind] = useState<ReadingKind>('home');
   const [rNote, setRNote] = useState('');
-  const [rError, setRError] = useState<string | null>(null);
+  // Penanda sibuk + pesan gagal sheet catat meteran (hook bersama).
+  const { busy, formError: rError, setFormError: setRError, save, remove } = useFormSave();
 
-  // Sheet beli token.
-  const [editBuy, setEditBuy] = useState<TokenPurchase | 'new' | null>(null);
-  const [bDate, setBDate] = useState(new Date());
-  const [bCost, setBCost] = useState('');
-  const [bKwh, setBKwh] = useState('');
-  const [bPlatform, setBPlatform] = useState(TOKEN_PLATFORMS[0]);
-  const [bNote, setBNote] = useState('');
-  const [bError, setBError] = useState<string | null>(null);
+  // Sheet beli token — formulirnya bersama dengan halaman Pembelian Token
+  // (app/token-purchases.tsx), tempat daftar & pengubahannya tinggal sekarang.
+  const beli = useTokenPurchaseForm(purchases);
 
   const now = new Date();
   const spans = usageSpans(readings);
@@ -115,8 +126,9 @@ export function TokenTab({
   // SAMA dengan badge-nya (lihat app/residence.tsx).
   const tagihan = readingTodo(readings, now);
 
-  // Riwayat selang waktu, terbaru di atas.
-  const riwayat = [...spans].reverse();
+  // Riwayat per HARI, terbaru di atas: catatan meteran + selang pemakaian
+  // yang dimulainya, dalam satu kartu per tanggal (lib/token.ts dailyLog).
+  const riwayat = dailyLog(readings);
   const { currentPage, pageCount, pageItems, setPage } = usePagination(riwayat);
 
   const rupiah = (kwh: number) =>
@@ -153,8 +165,6 @@ export function TokenTab({
       setRError('Angka meterannya diisi dulu ya.');
       return;
     }
-    setBusy(true);
-    setRError(null);
     const data: MeterReading = {
       id: editReading === 'new' ? newReadingId() : editReading.id,
       at: Timestamp.fromDate(rAt),
@@ -162,7 +172,7 @@ export function TokenTab({
       kind: rKind,
       note: rNote.trim(),
     };
-    try {
+    await save(async () => {
       await saveMeterReadings(
         user.uid,
         editReading === 'new'
@@ -170,104 +180,37 @@ export function TokenTab({
           : readings.map((r) => (r.id === editReading.id ? data : r)),
       );
       setEditReading(null);
-    } catch {
-      setRError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /** Hapus permanen — daftarnya ditulis ulang tanpa catatan ini. */
   async function deleteReading() {
     if (!user || !editReading || editReading === 'new' || busy) return;
-    setBusy(true);
-    try {
+    await remove(async () => {
       await saveMeterReadings(
         user.uid,
         readings.filter((r) => r.id !== editReading.id),
       );
       setEditReading(null);
-    } catch {
-      setRError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  // ===== Beli token =====
-
-  function openBuyAdd() {
-    setEditBuy('new');
-    setBDate(new Date());
-    setBCost('');
-    setBKwh('');
-    setBPlatform(TOKEN_PLATFORMS[0]);
-    setBNote('');
-    setBError(null);
-  }
-
-  function openBuyEdit(p: TokenPurchase) {
-    setEditBuy(p);
-    setBDate(p.date.toDate());
-    setBCost(groupDigits(String(p.cost)));
-    setBKwh(formatDecimal(p.kwh));
-    setBPlatform(p.platform || TOKEN_PLATFORMS[0]);
-    setBNote(p.note);
-    setBError(null);
-  }
-
-  async function saveBuy() {
-    if (!user || !editBuy || busy) return;
-    const cost = parseAmount(bCost);
-    const kwh = parseDecimal(bKwh);
-    if (cost <= 0 || kwh <= 0) {
-      setBError('Biaya & kWh-nya diisi dua-duanya, itu yang jadi harga per kWh.');
-      return;
-    }
-    setBusy(true);
-    setBError(null);
-    const data: TokenPurchase = {
-      id: editBuy === 'new' ? newPurchaseId() : editBuy.id,
-      date: Timestamp.fromDate(bDate),
-      cost,
-      kwh,
-      platform: bPlatform,
-      note: bNote.trim(),
-    };
-    try {
-      await saveTokenPurchases(
-        user.uid,
-        editBuy === 'new'
-          ? [...purchases, data]
-          : purchases.map((p) => (p.id === editBuy.id ? data : p)),
-      );
-      setEditBuy(null);
-    } catch {
-      setBError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function deleteBuy() {
-    if (!user || !editBuy || editBuy === 'new' || busy) return;
-    setBusy(true);
-    try {
-      await saveTokenPurchases(
-        user.uid,
-        purchases.filter((p) => p.id !== editBuy.id),
-      );
-      setEditBuy(null);
-    } catch {
-      setBError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   return (
     <View style={styles.flex}>
-      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
+      {/* Judul "⚡ Riwayat Pemakaian" DIPATOK di atas selama daftarnya digulung
+          — jadi tombol tutupnya tetap terjangkau tanpa menggulung balik lewat
+          satu halaman selang waktu dulu. Pola & alasannya sama dengan Anggota
+          di Fun Futsal dan CL/MT di CORE.
+
+          `stickyHeaderIndices` menghitung ANAK LANGSUNG ScrollView, jadi
+          jumlahnya tidak boleh berubah-ubah. Karena itu tiap bagian bersyarat
+          di atas judulnya dibungkus <View> yang SELALU ada (isinya saja yang
+          kosong) — ditulis `{syarat && …}` telanjang, anaknya lenyap saat
+          syaratnya salah dan nomor patokannya meleset ke elemen lain. */}
+      <ScrollView
+        key={currentPage}
+        contentContainerStyle={styles.content}
+        stickyHeaderIndices={STICKY_HEADERS}>
         <SummaryCard
           label="Token bulan ini"
           value={
@@ -310,30 +253,32 @@ export function TokenTab({
             pernah menyebut sebabnya — dan badge yang tidak bisa dijelaskan
             akan berhenti dipercaya, lalu diabaikan. Di-click → langsung ke
             sheet catat meteran. */}
-        {tagihan.due && (
-          <PressableScale
-            style={[styles.dueCard, attentionBorder(true)]}
-            onPress={openReadingAdd}>
-            <AttentionMark corner />
-            <VixText heading="bold" additionalStyle={styles.dueTitle}>
-              ⚡ Meteran hari ini{' '}
-              {tagihan.count === 0
-                ? 'belum dicatat'
-                : `baru tercatat ${tagihan.count}×`}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.dueText}>
-              {tagihan.missing.length > 0
-                ? `Tinggal ${tagihan.missing
-                    .map((k) => `${k.icon} ${k.label}`)
-                    .join(' & ')}, badge ⚡ padam begitu hari ini tercatat 2×.`
-                : 'Catat sekali lagi, badge ⚡ padam begitu hari ini tercatat 2×.'}
-            </VixText>
-          </PressableScale>
-        )}
+        <View>
+          {tagihan.due && (
+            <PressableScale
+              style={[styles.dueCard, attentionBorder(true)]}
+              onPress={openReadingAdd}>
+              <AttentionMark corner />
+              <VixText heading="bold" additionalStyle={styles.dueTitle}>
+                ⚡ Meteran hari ini{' '}
+                {tagihan.count === 0
+                  ? 'belum dicatat'
+                  : `tercatat ${tagihan.count}×`}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.dueText}>
+                {tagihan.missing.length > 0
+                  ? `Catat meteran ${tagihan.missing
+                      .map((k) => `${k.icon} ${k.label}`)
+                      .join(' & ')}`
+                  : 'Catat sekali lagi'}
+              </VixText>
+            </PressableScale>
+          )}
+        </View>
 
         <View style={styles.buttonRow}>
           <PrimaryButton
-            label="Catat kWh"
+            label="Catat Meteran"
             icon="plus"
             onPress={openReadingAdd}
             additionalStyle={styles.buttonFlex}
@@ -343,138 +288,135 @@ export function TokenTab({
             icon="plus"
             background={Color.ACCENT}
             textColor={Color.ACCENT_DARK}
-            onPress={openBuyAdd}
+            onPress={beli.bukaBaru}
             additionalStyle={styles.buttonFlex}
           />
         </View>
 
         {/* Pecahan di rumah vs ditinggal — di sinilah pemborosan ketahuan. */}
-        {bulanIni.kwh > 0 && (
-          <>
-            <VixText heading="title" additionalStyle={styles.sectionTitle}>
-              📊 Bulan ini
-            </VixText>
-            <View style={styles.splitRow}>
-              <View style={styles.splitBox}>
-                <VixText heading="label">🏠 Saat di rumah</VixText>
-                <VixText heading="bold" additionalStyle={styles.splitValue}>
-                  {formatDecimal(bulanIni.homeKwh)} kWh
-                </VixText>
-                <VixText heading="label">{rupiah(bulanIni.homeKwh)}</VixText>
+        <View style={styles.bulanIniBox}>
+          {bulanIni.kwh > 0 && (
+            <>
+              <VixText heading="title" additionalStyle={styles.sectionTitle}>
+                📊 Bulan ini
+              </VixText>
+              <View style={styles.splitRow}>
+                <View style={styles.splitBox}>
+                  <VixText heading="label">🏠 Saat di rumah</VixText>
+                  <VixText heading="bold" additionalStyle={styles.splitValue}>
+                    {formatDecimal(bulanIni.homeKwh)} kWh
+                  </VixText>
+                  <VixText heading="label">{rupiah(bulanIni.homeKwh)}</VixText>
+                </View>
+                <View style={styles.splitBox}>
+                  <VixText heading="label">🚪 Saat ditinggal</VixText>
+                  <VixText heading="bold" additionalStyle={styles.splitValue}>
+                    {formatDecimal(bulanIni.awayKwh)} kWh
+                  </VixText>
+                  <VixText heading="label">{rupiah(bulanIni.awayKwh)}</VixText>
+                </View>
               </View>
-              <View style={styles.splitBox}>
-                <VixText heading="label">🚪 Saat ditinggal</VixText>
-                <VixText heading="bold" additionalStyle={styles.splitValue}>
-                  {formatDecimal(bulanIni.awayKwh)} kWh
-                </VixText>
-                <VixText heading="label">{rupiah(bulanIni.awayKwh)}</VixText>
-              </View>
-            </View>
-            <VixText heading="label" additionalStyle={styles.hint}>
-              Rata-rata {formatDecimal(bulanIni.perDay)} kWh/hari ≈{' '}
-              {rupiah(bulanIni.perDay)}/hari. Kalau segini terus sebulan penuh,
-              perkiraannya {rupiah(bulanIni.perDay * 30)}.
-            </VixText>
-          </>
-        )}
+              <VixText heading="label" additionalStyle={styles.hint}>
+                Rata-rata {formatDecimal(bulanIni.perDay)} kWh/hari ≈{' '} {rupiah(bulanIni.perDay)} / hari {"\n"}
+                Estimasi sebulan penuh {rupiah(bulanIni.perDay * 30)}
+              </VixText>
+            </>
+          )}
+        </View>
 
-        {/* ===== Riwayat pemakaian ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          ⚡ Riwayat pemakaian
-        </VixText>
-        {riwayat.length === 0 ? (
-          <EmptyText>
-            Belum ada. Catat meteran dua kali (pagi & malam), dari dua angka
-            itu pemakaiannya baru bisa dihitung.
-          </EmptyText>
-        ) : (
-          <>
-            {pageItems.map((s) => (
-              <View
-                key={s.to.id}
-                style={[styles.spanRow, s.atHome && styles.spanRowHome]}>
-                <View style={styles.spanMain}>
-                  <VixText heading="bold" additionalStyle={styles.spanTitle}>
-                    {s.atHome ? '🏠 Di rumah' : '🚪 Ditinggal'} ·{' '}
-                    {jamLabel(s.hours)}
-                  </VixText>
-                  <VixText heading="label">
-                    {formatCompactDate(s.from.at.toDate())}{' '}
-                    {formatTime(s.from.at.toDate())} →{' '}
-                    {formatTime(s.to.at.toDate())}
-                  </VixText>
-                  <VixText heading="label" additionalStyle={styles.spanRate}>
-                    {formatDecimal(s.perHour)} kWh/jam
-                  </VixText>
-                </View>
-                <View style={styles.spanRight}>
-                  <VixText heading="bold" additionalStyle={styles.spanKwh}>
-                    {formatDecimal(s.kwh)} kWh
-                  </VixText>
-                  <VixText heading="label">{rupiah(s.kwh)}</VixText>
-                </View>
-              </View>
+        {/* ===== Riwayat pemakaian ===== (judulnya DIPATOK, lihat
+            STICKY_HEADERS). Jarak atasnya dipegang pembungkus di atas:
+            SectionToggle sengaja tanpa jarak atas, supaya saat dipatok tidak
+            menyisakan pita kosong. */}
+        <SectionToggle
+          title={`⚡ Riwayat Pemakaian (${riwayat.length} hari)`}
+          open={riwayatOpen}
+          onToggle={() => setRiwayatOpen((v) => !v)}
+        />
+        <View>
+          {riwayatOpen &&
+            (riwayat.length === 0 ? (
+              <EmptyText>
+                Belum ada. Catat meteran dua kali (pagi & malam), dari dua angka
+                itu pemakaiannya baru bisa dihitung.
+              </EmptyText>
+            ) : (
+              <>
+                {/* Satu kartu per HARI (15 Sep 2026; dulu selang & catatan
+                    meteran dua daftar terpisah). Kepala: tanggal + total kWh
+                    & rupiah hari itu. Isi: tiap catatan meteran (jam, angka,
+                    catatan; di-click → ubah), dan di bawahnya garis selang
+                    "sampai catatan berikutnya habis berapa". */}
+                {pageItems.map((h) => (
+                  <View key={h.dayId} style={styles.dayCard}>
+                    <View style={styles.dayHead}>
+                      <VixText heading="bold" additionalStyle={styles.dayTitle}>
+                        📆 {formatDayDate(h.date)}
+                      </VixText>
+                      {h.kwh > 0 ? (
+                        <VixText heading="bold" additionalStyle={styles.dayKwh}>
+                          {formatDecimal(h.kwh)} kWh ≈ {rupiah(h.kwh)}
+                        </VixText>
+                      ) : null}
+                    </View>
+                    {h.entries.map((e) => {
+                      const meta = readingKindMeta(e.reading.kind);
+                      return (
+                        <View key={e.reading.id}>
+                          <PressableScale
+                            style={styles.readingLine}
+                            onPress={() => openReadingEdit(e.reading)}>
+                            <VixText heading="bold" additionalStyle={styles.readingTime}>
+                              {meta.icon} {formatTime(e.reading.at.toDate())}
+                            </VixText>
+                            <View style={styles.readingMain}>
+                              <VixText heading="bold" additionalStyle={styles.readingKwh}>
+                                {formatDecimal(e.reading.kwh)} kWh · {meta.label}
+                              </VixText>
+                              {e.reading.note ? (
+                                <VixText heading="label" additionalStyle={styles.readingNote}>
+                                  📝 {e.reading.note}
+                                </VixText>
+                              ) : null}
+                            </View>
+                          </PressableScale>
+                          {/* Garis selang: apa yang terjadi SESUDAH catatan ini
+                              sampai catatan berikutnya. Warna garisnya ikut
+                              jenisnya (di rumah = warna Residence) supaya dua
+                              jenis selang kebedakan tanpa membaca. */}
+                          {e.span ? (
+                            <View style={[styles.spanLine, e.span.atHome && styles.spanLineHome]}>
+                              <VixText heading="label" additionalStyle={styles.spanText}>
+                                {e.span.atHome ? '🏠 Di rumah' : '🚪 Ditinggal'}{' '}
+                                {jamLabel(e.span.hours)} · {formatDecimal(e.span.kwh)} kWh
+                                {' '}≈ {rupiah(e.span.kwh)}
+                              </VixText>
+                            </View>
+                          ) : e.refill ? (
+                            <View style={styles.spanLine}>
+                              <VixText heading="label" additionalStyle={styles.spanText}>
+                                🔋 Token diisi sebelum catatan berikutnya
+                              </VixText>
+                            </View>
+                          ) : null}
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
+                <Pagination
+                  page={currentPage}
+                  pageCount={pageCount}
+                  onChange={setPage}
+                />
+              </>
             ))}
-            <Pagination
-              page={currentPage}
-              pageCount={pageCount}
-              onChange={setPage}
-            />
-          </>
-        )}
+        </View>
 
-        {/* ===== Catatan meteran (untuk dibetulkan kalau salah ketik) ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          📋 Catatan meteran
-        </VixText>
-        {[...sortedReadings(readings)].reverse().slice(0, 8).map((r) => {
-          const meta = readingKindMeta(r.kind);
-          return (
-            <PressableScale
-              key={r.id}
-              style={styles.readingRow}
-              onPress={() => openReadingEdit(r)}>
-              <View style={styles.spanMain}>
-                <VixText heading="bold" additionalStyle={styles.spanTitle}>
-                  {meta.icon} {formatDecimal(r.kwh)} kWh
-                </VixText>
-                <VixText heading="label">
-                  {formatCompactDate(r.at.toDate())} ·{' '}
-                  {formatTime(r.at.toDate())} · {meta.label}
-                </VixText>
-              </View>
-            </PressableScale>
-          );
-        })}
-
-        {/* ===== Pembelian ===== */}
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          🧾 Pembelian token
-        </VixText>
-        {purchases.length === 0 ? (
-          <EmptyText>
-            Belum ada. Catat sekali saja, biar app tahu harga per kWh-mu.
-          </EmptyText>
-        ) : (
-          [...purchases]
-            .sort((a, b) => b.date.toMillis() - a.date.toMillis())
-            .map((p) => (
-              <PressableScale
-                key={p.id}
-                style={styles.readingRow}
-                onPress={() => openBuyEdit(p)}>
-                <View style={styles.spanMain}>
-                  <VixText heading="bold" additionalStyle={styles.spanTitle}>
-                    {formatRupiah(p.cost)} · {formatDecimal(p.kwh)} kWh
-                  </VixText>
-                  <VixText heading="label">
-                    {formatCompactDate(p.date.toDate())} · {p.platform} ·{' '}
-                    {formatRupiah(Math.round(p.cost / p.kwh))}/kWh
-                  </VixText>
-                </View>
-              </PressableScale>
-            ))
-        )}
+        {/* Daftar pembelian TIDAK di sini lagi (15 Sep 2026): ia halaman
+            sendiri, app/token-purchases.tsx, lewat tombol 🧾 di pojok header
+            Residence. Di sini ia paling bawah dari tiga daftar, dan yang
+            paling bawah itu yang tak pernah sampai dilihat. */}
       </ScrollView>
 
       {/* ===== Sheet catat meteran ===== */}
@@ -553,91 +495,8 @@ export function TokenTab({
         />
       </SheetModal>
 
-      {/* ===== Sheet beli token ===== */}
-      <SheetModal
-        visible={!!editBuy}
-        title={editBuy === 'new' ? 'Beli Token' : 'Ubah Pembelian'}
-        onClose={() => setEditBuy(null)}>
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          💰 Beli
-        </VixText>
-        <MoneyInput
-          style={styles.formGap}
-          placeholder="1.001.900"
-          value={bCost}
-          onChangeText={(t) => setBCost(groupDigits(t))}
-          editable={!busy}
-        />
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          ⚡ kWh
-        </VixText>
-        <FormInput
-          style={styles.formGap}
-          placeholder="114,96"
-          keyboardType="decimal-pad"
-          value={bKwh}
-          onChangeText={setBKwh}
-          editable={!busy}
-        />
-        {parseAmount(bCost) > 0 && parseDecimal(bKwh) > 0 ? (
-          <VixText heading="label" additionalStyle={styles.hintTight}>
-            Berarti{' '}
-            {formatRupiah(Math.round(parseAmount(bCost) / parseDecimal(bKwh)))}
-            /kWh.
-          </VixText>
-        ) : null}
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Platform
-        </VixText>
-        <View style={styles.chipWrap}>
-          {TOKEN_PLATFORMS.map((p) => (
-            <Chip
-              key={p}
-              label={p}
-              active={bPlatform === p}
-              onPress={() => setBPlatform(p)}
-            />
-          ))}
-        </View>
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📆 Tanggal
-        </VixText>
-        <View style={styles.formGap}>
-          <DateField
-            key={`b-${editBuy === 'new' ? 'new' : editBuy?.id}`}
-            value={bDate}
-            onChange={setBDate}
-          />
-        </View>
-
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📝 Catatan (opsional)
-        </VixText>
-        <FormInput
-          style={styles.formGap}
-          placeholder="Catatan bebas"
-          value={bNote}
-          onChangeText={setBNote}
-          editable={!busy}
-        />
-
-        <FormError message={bError} />
-        <EditDelete
-          editing={editBuy}
-          label="Hapus pembelian ini"
-          busy={busy}
-          onDelete={deleteBuy}
-        />
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={busy}
-          onCancel={() => setEditBuy(null)}
-          onConfirm={saveBuy}
-        />
-      </SheetModal>
+      {/* ===== Sheet beli token ===== (formulir bersama, lihat hook-nya) */}
+      <TokenPurchaseSheet form={beli} />
     </View>
   );
 }
@@ -666,8 +525,12 @@ const styles = StyleSheet.create({
   buttonRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
   buttonFlex: { flex: 1 },
   sectionTitle: { ...SECTION_SPACE },
+  // Jarak ke judul Riwayat di bawahnya: pengganti marginTop SECTION_SPACE
+  // yang sengaja tidak ada di SectionToggle (judul yang dipatok harus mepet ke
+  // atas). Ditaruh di pembungkus INI, bukan di judulnya, dan tetap ada walau
+  // isinya kosong: jaraknya jadi persis seperti judul bagian biasa.
+  bulanIniBox: { marginBottom: SECTION_SPACE.marginTop },
   hint: { color: Color.TEXT_LABEL, marginTop: 8 },
-  hintTight: { color: Color.TEXT_LABEL, marginBottom: 10 },
   splitRow: { flexDirection: 'row', gap: 8 },
   splitBox: {
     ...CARD,
@@ -675,25 +538,42 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   splitValue: { color: Color.HOUSE_DARK },
-  spanRow: {
-    ...CARD,
+  // Kartu satu hari: kepala tanggal + total, lalu catatan & garis selangnya.
+  dayCard: { ...CARD, gap: 4, marginBottom: 8 },
+  dayHead: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 2,
+  },
+  dayTitle: { color: Color.TEXT_TITLE, flexShrink: 1 },
+  dayKwh: { color: Color.HOUSE_DARK },
+  // Baris catatan meteran (bisa di-click → ubah): jam di kiri selebar tetap
+  // supaya angka kWh-nya rata satu kolom dari hari ke hari.
+  readingLine: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 10,
-    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  readingTime: { color: Color.HOUSE_DARK, width: 74 },
+  readingMain: { flex: 1, gap: 1 },
+  readingKwh: { color: Color.TEXT_TITLE },
+  readingNote: { color: Color.TEXT_LABEL },
+  // Garis selang di bawah catatan: menjorok & bergaris kiri seperti anak
+  // tangga waktu — "dari catatan di atas sampai catatan berikutnya".
+  spanLine: {
+    marginLeft: 14,
+    paddingLeft: 10,
+    paddingVertical: 3,
+    borderLeftWidth: 2,
+    borderLeftColor: Color.BORDER,
   },
   // Selang saat di rumah diberi warna Residence — supaya dua jenis selang
   // langsung kebedakan tanpa harus membaca tulisannya.
-  spanRowHome: { backgroundColor: Color.HOUSE, borderColor: Color.HOUSE_DARK },
-  spanMain: { flex: 1, gap: 2 },
-  spanRight: { alignItems: 'flex-end', gap: 2 },
-  spanTitle: { color: Color.TEXT_TITLE },
-  spanRate: { color: Color.TEXT_PLACEHOLDER },
-  spanKwh: { color: Color.HOUSE_DARK },
-  readingRow: {
-    ...CARD,
-    marginBottom: 8,
-  },
+  spanLineHome: { borderLeftColor: Color.HOUSE_DARK },
+  spanText: { color: Color.TEXT_LABEL },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   chipWrap: {

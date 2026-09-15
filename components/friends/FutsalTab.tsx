@@ -23,6 +23,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { FutsalSessionSheet } from '@/components/friends/FutsalSessionSheet';
 import { useAuth } from '@/contexts/auth';
+import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 import { useFormSave } from '@/hooks/useFormSave';
 import { usePagination } from '@/hooks/usePagination';
 import { useFutsalSessionForm } from '@/hooks/useFutsalSessionForm';
@@ -89,6 +90,8 @@ export function FutsalTab({
 }) {
   const router = useRouter();
   const { user } = useAuth();
+  // Warna fitur Friends: garis tepi kartu jadwal berikutnya.
+  const theme = useFeatureTheme();
   const now = new Date();
   const todayId = toDayId(now);
 
@@ -227,7 +230,12 @@ export function FutsalTab({
         <PressableScale
           disabled={!berikut}
           onPress={() => berikut && bukaRincian(berikut)}>
-          <SummaryCard>
+          {/* Bergaris tepi pastel fitur (15 Sep 2026) kalau ada jadwalnya:
+              kartu gelap polos terbaca papan pengumuman; garisnya (bersama
+              tanda › di pojok) yang membuatnya terbaca sebagai tombol, dan
+              ini memang tombol terpenting di tab ini. */}
+          <SummaryCard
+            style={berikut ? [styles.heroPressable, { borderColor: theme.bg }] : undefined}>
             <View style={styles.heroTop}>
               <VixText
                 heading="label"
@@ -465,6 +473,9 @@ const styles = StyleSheet.create({
   },
   ulangText: { color: Color.FRIENDS_DARK },
   // ---- Kartu jadwal terdekat ----
+  // Garis 2 pt sewarna pastel fitur di atas kartu gelap; padding dikurangi
+  // 2 supaya isinya tidak bergeser.
+  heroPressable: { borderWidth: 2, padding: 16 },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   heroGang: { flex: 1, minWidth: 0 },
   heroChevron: { color: Color.TEXT_ON_DARK_SOFT },

@@ -25,7 +25,7 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
-import { MONTH_NAMES } from '@/lib/format';
+import { formatDayDate, MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { PRIVACY_PIN } from '@/lib/pin';
 import {
@@ -35,6 +35,7 @@ import {
   saveTimelineYear,
   subscribeTimelineYear,
   timelineGroups,
+  timelineLastUpdated,
   timelineTotals,
   TIMELINE_CATEGORIES,
   TIMELINE_CATEGORY_META,
@@ -59,6 +60,8 @@ export default function TimelineScreen() {
     name?: string;
     heart?: string;
     birthYear?: string;
+    /** '1' = langsung buka rekap semua wishlist (dari modal Follow Up). */
+    rekap?: string;
   }>();
   const owner = params.leaderId || null;
   const orang = params.name?.trim() || 'CORE Leader';
@@ -91,7 +94,10 @@ export default function TimelineScreen() {
   // dibuka — jadi keduanya memakai satu pengambilan yang sama.
   const tugas = useBusyTask<'pdf' | 'rekap'>();
   const [semua, setSemua] = useState<TimelineYear[] | null>(null);
-  const [rekapOpen, setRekapOpen] = useState(false);
+  // Dibuka dari modal Follow Up dengan ?rekap=1 → rekapnya langsung tampil,
+  // isinya dimuat begitu PIN terbuka (lihat efek di bawah).
+  const rekapAwal = params.rekap === '1';
+  const [rekapOpen, setRekapOpen] = useState(rekapAwal);
 
   useEffect(() => {
     if (!user || !unlocked) return;
@@ -214,14 +220,13 @@ export default function TimelineScreen() {
       task: async () =>
         shareTimelinePdf(
           await muatSemua(),
-          owner ? { name: orang, heart: params.heart ?? '📍' } : null,
+          owner ? { name: orang, heart: params.heart ?? '📍', birthYear } : null,
         ),
       fail: () => setError('Gagal membuat PDF Timeline. Coba lagi.'),
     });
   }
 
-  function openRekap() {
-    setRekapOpen(true);
+  function muatRekap() {
     void tugas.run({
       key: 'rekap',
       start: () => setError(null),
@@ -231,6 +236,20 @@ export default function TimelineScreen() {
       fail: () => setError(LOAD_ERROR),
     });
   }
+
+  function openRekap() {
+    setRekapOpen(true);
+    muatRekap();
+  }
+
+  // ?rekap=1: sheet-nya sudah terbuka sejak awal; isinya baru bisa dibaca
+  // sesudah PIN terbuka. Sekali saja per pembukaan layar.
+  useEffect(() => {
+    if (!user || !unlocked || !rekapAwal) return;
+    muatRekap();
+    // Hanya saat PIN terbuka — muatRekap/tugas sengaja bukan dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, unlocked, rekapAwal]);
 
   // Baris satu item wishlist (dipakai di target tahunan & bulanan).
   function renderItem(item: TimelineItem) {
@@ -317,12 +336,23 @@ export default function TimelineScreen() {
         // tahun, jadi tahun berjalan yang kebetulan kosong bukan berarti tak
         // ada apa-apa untuk dibagikan.
         right={
-          <EmojiButton
-            icon="square.and.arrow.up"
-            onPress={handleShare}
-            busy={tugas.busy === 'pdf'}
-            disabled={tugas.busy !== null}
-          />
+          <>
+            {/* 📋 rekap semua tahun — di header (14 Sep 2026), bukan petak
+                kecil di samping "Tambah Wishlist": ia jalan pintas lintas
+                tahun, sederajat dengan tombol bagikan di sebelahnya. */}
+            <EmojiButton
+              emoji="📋"
+              onPress={openRekap}
+              busy={tugas.busy === 'rekap'}
+              disabled={tugas.busy !== null}
+            />
+            <EmojiButton
+              icon="square.and.arrow.up"
+              onPress={handleShare}
+              busy={tugas.busy === 'pdf'}
+              disabled={tugas.busy !== null}
+            />
+          </>
         }>
         {/* Navigasi tahun + umur */}
         <View style={styles.yearRow}>
@@ -387,23 +417,12 @@ export default function TimelineScreen() {
             </VixText>
           </SummaryCard>
 
-          {/* Satu baris: menambah wishlist yang melebar, rekap cuma petak
-              kecil di sebelahnya. Rekapnya membuka SEMUA tahun sekaligus
-              (layar ini bekerja setahun demi setahun), jadi ia jalan pintas —
-              bukan tindakan utama yang pantas selebar layar. */}
-          <View style={styles.aksiRow}>
-            <PrimaryButton
-              label="Tambah Wishlist"
-              icon="plus"
-              onPress={() => openAdd(null)}
-              additionalStyle={styles.addButton}
-            />
-            <PressableScale style={styles.recapButton} onPress={openRekap} hitSlop={6}>
-              <VixText heading="bold" additionalStyle={styles.recapText}>
-                📋
-              </VixText>
-            </PressableScale>
-          </View>
+          <PrimaryButton
+            label="Tambah Wishlist"
+            icon="plus"
+            onPress={() => openAdd(null)}
+            additionalStyle={styles.addButton}
+          />
 
           {/* Target tahunan (tanpa bulan) */}
           <View style={styles.yearCard}>
@@ -543,7 +562,9 @@ export default function TimelineScreen() {
       <SheetModal
         visible={rekapOpen}
         title="📋 Rekap Semua Wishlist"
-        subtitle={owner ? orang : 'Semua tahun yang pernah kamu isi'}
+        subtitle={
+          owner ? `${params.heart ?? '📍'} ${orang}` : 'Semua tahun yang pernah kamu isi'
+        }
         onClose={() => setRekapOpen(false)}>
         {semua === null ? (
           <LoadingCenter />
@@ -554,17 +575,32 @@ export default function TimelineScreen() {
         ) : (
           <>
             <View style={styles.recapTotal}>
-              <VixText heading="subheader" additionalStyle={styles.recapTotalValue}>
-                {timelineTotals(semua).done}
-                <VixText heading="label" additionalStyle={styles.recapTotalLabel}>
-                  {' '}
-                  dari {timelineTotals(semua).total} tercapai
+              <View style={styles.recapTotalMain}>
+                <VixText heading="subheader" additionalStyle={styles.recapTotalValue}>
+                  {timelineTotals(semua).done}
+                  <VixText heading="label" additionalStyle={styles.recapTotalLabel}>
+                    {' '}
+                    dari {timelineTotals(semua).total} tercapai
+                  </VixText>
                 </VixText>
-              </VixText>
-              <VixText heading="label" additionalStyle={styles.recapTotalLabel}>
-                {semua.length} tahun · {semua[0].year} –{' '}
-                {semua[semua.length - 1].year}
-              </VixText>
+                <VixText heading="label" additionalStyle={styles.recapTotalLabel}>
+                  {semua.length} tahun · {semua[0].year} –{' '}
+                  {semua[semua.length - 1].year}
+                </VixText>
+              </View>
+              {/* Kapan terakhir ada yang disentuh (14 Sep 2026). "-" untuk
+                  data lama yang belum pernah disimpan lagi sejak capnya ada. */}
+              <View style={styles.recapStamp}>
+                <VixText heading="label" additionalStyle={styles.recapTotalLabel}>
+                  🕒 Terakhir diperbarui
+                </VixText>
+                <VixText heading="bold" additionalStyle={styles.recapStampValue}>
+                  {(() => {
+                    const kapan = timelineLastUpdated(semua);
+                    return kapan ? formatDayDate(kapan) : '-';
+                  })()}
+                </VixText>
+              </View>
             </View>
 
             {semua.map((t) => (
@@ -637,7 +673,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: Color.MAIN_LIGHT,
   },
-  addButton: { flex: 1 },
+  addButton: { marginBottom: 12 },
   yearCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,
@@ -710,30 +746,23 @@ const styles = StyleSheet.create({
   },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
-  // Pintu ke rekap semua tahun — sengaja bergaris putus-putus seperti tombol
-  // "Tambah kitab lain" di Baca Alkitab: pintu tambahan, bukan tombol utama.
-  aksiRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8, marginBottom: 12 },
-  recapButton: {
-    width: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Color.MAIN,
-  },
-  recapText: { color: Color.MAIN_DARK },
   recapEmpty: { textAlign: 'center', marginVertical: 12 },
+  // Kartu ringkasan rekap: angka di kiri, cap "terakhir diperbarui" di kanan.
   recapTotal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: Color.CONTRAST_CONTAINER,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    gap: 2,
     marginBottom: 12,
   },
+  recapTotalMain: { flex: 1, gap: 2 },
   recapTotalValue: { color: Color.MAIN_DARK },
   recapTotalLabel: { color: Color.TEXT_LABEL },
+  recapStamp: { alignItems: 'flex-end', gap: 2 },
+  recapStampValue: { color: Color.MAIN_DARK },
   recapYear: {
     borderTopWidth: 1,
     borderTopColor: Color.BORDER,

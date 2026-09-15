@@ -14,6 +14,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { BOOKS } from '@/lib/books';
 import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import {
@@ -28,7 +29,6 @@ import {
   type Skill,
   type SkillsDone,
 } from '@/lib/learning';
-import { SAVE_ERROR } from '@/lib/messages';
 
 // Sub-tab 🧠 Skills — 22 topik dari daftarmu, dikelompokkan per bidang.
 // Sebuah topik otomatis tercentang kalau 4 langkah mingguannya beres; dari sini
@@ -48,8 +48,7 @@ export function SkillsTab({
   const { user } = useAuth();
 
   const [open, setOpen] = useState<Skill | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, formError: error, save } = useFormSave();
 
   const current = (week.skillKey ? skillOf(week.skillKey) : null) ?? skillOfWeek(now);
   const doneCount = SKILLS.filter((s) => skillsDone[s.key]).length;
@@ -59,31 +58,19 @@ export function SkillsTab({
   const bisaGanti = canChangeWeekSkill(now);
 
   async function makeCurrent(skill: Skill) {
-    if (!user || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
+    if (!user) return;
+    await save(async () => {
       await setWeekSkill(user.uid, weekId, skill.key);
       setOpen(null);
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function toggleDone(skill: Skill) {
-    if (!user || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
+    if (!user) return;
+    await save(async () => {
       await setSkillDone(user.uid, skill.key, skillsDone[skill.key] ? null : weekId);
       setOpen(null);
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   const openBook = open?.bookKey

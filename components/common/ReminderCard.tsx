@@ -4,12 +4,13 @@ import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 // Kartu reminder di Home: latar pastel + border & teks gelap senada, judul
 // tebal lalu daftar baris teks. Semua reminder memakai ini biar seragam
 // (satu tempat mengatur bentuk & jarak kartunya).
 //
-// Dua mode tekan:
+// Dua mode click:
 // - `onPress`  → seluruh kartu satu tombol (perilaku default).
 // - `onItemPress` → TIAP baris (yang berbentuk {id,text}) jadi tombol sendiri
 //   dengan tanda › — dipakai saat tiap baris menuju tujuan berbeda (mis. tiap
@@ -22,6 +23,7 @@ export function ReminderCard({
   onPress,
   onItemPress,
   action,
+  onClose,
   children,
 }: {
   bg: string; // warna latar pastel
@@ -39,12 +41,23 @@ export function ReminderCard({
    * baru selesai dibaca — dan itu memang saat kamu memutuskan mau
    * membagikannya.
    *
-   * Ada = kartunya TIDAK lagi jadi satu tombol besar; yang bisa ditekan cuma
+   * Ada = kartunya TIDAK lagi jadi satu tombol besar; yang bisa di-click cuma
    * badan teksnya. Pressable bersarang di iOS bikin tombol di dalam ikut
    * memicu tombol pembungkusnya — jadi keduanya sengaja bersaudara, bukan
    * bertumpuk.
    */
   action?: ReactNode;
+  /**
+   * Tombol ✕ kecil di pojok kanan ATAS kartu — "singkirkan kartu ini" (mis.
+   * Doa Syafaat: tutup untuk hari ini, muncul lagi besok; 15 Sep 2026).
+   *
+   * Sama seperti `action`, adanya tombol ini membuat kartunya TIDAK lagi satu
+   * tombol besar: ✕ berdiri sebagai SAUDARA badan teks yang bisa di-click,
+   * bukan anaknya — Pressable bersarang di iOS bikin click ✕ ikut memicu
+   * tombol pembungkusnya. Judulnya diberi ruang kanan supaya tidak
+   * terselip di bawah ✕.
+   */
+  onClose?: () => void;
   children?: ReactNode; // isi khusus (mis. kutipan yang di-clamp)
 }) {
   const color: StyleProp<TextStyle> = { color: fg };
@@ -52,10 +65,24 @@ export function ReminderCard({
 
   // Judul selalu hitam (kontras di semua warna kartu); isi baris ikut fg.
   const judul = (
-    <VixText heading="bold" additionalStyle={styles.title}>
+    <VixText
+      heading="bold"
+      additionalStyle={[styles.title, onClose ? styles.titleRoom : undefined]}>
       {title}
     </VixText>
   );
+
+  // ✕ di pojok — posisi mutlak supaya menambahkannya tidak menggeser judul
+  // maupun tinggi kartu; hitSlop-nya lebar karena ikonnya kecil.
+  const tutup = onClose ? (
+    <PressableScale
+      style={styles.closeButton}
+      onPress={onClose}
+      hitSlop={10}
+      accessibilityLabel="Tutup kartu ini">
+      <IconSymbol name="xmark" size={13} color={fg} />
+    </PressableScale>
+  ) : null;
 
   const isi = (
     <>
@@ -100,20 +127,23 @@ export function ReminderCard({
       <View style={cardStyle}>
         {judul}
         {isi}
+        {tutup}
       </View>
     );
   }
 
-  // Ada tombol aksi → ia berdiri sendiri di kaki kartu, rata kanan, dan yang
-  // bisa ditekan cuma judul + badan teksnya (tanpa Pressable bersarang).
-  if (action) {
+  // Ada tombol aksi / tombol tutup → keduanya berdiri sendiri (kaki kartu
+  // rata kanan / pojok kanan atas), dan yang bisa di-click cuma judul + badan
+  // teksnya (tanpa Pressable bersarang).
+  if (action || onClose) {
     return (
       <View style={cardStyle}>
         <PressableScale onPress={onPress}>
           {judul}
           {isi}
         </PressableScale>
-        <View style={styles.actionRow}>{action}</View>
+        {action ? <View style={styles.actionRow}>{action}</View> : null}
+        {tutup}
       </View>
     );
   }
@@ -137,6 +167,18 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   title: { color: Color.TEXT_TITLE },
+  // Ruang untuk ✕ di kanan judul (lebar tombolnya + celah).
+  titleRoom: { paddingRight: 28 },
+  // ✕ di pojok kanan atas, di dalam padding kartu.
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   // Kaki kartu saat ia punya tombol aksi sendiri — menempel ke kanan bawah.
   actionRow: { alignItems: 'flex-end', marginTop: 4 },
   itemRow: {

@@ -20,7 +20,8 @@ import {
 // beberapa KB saja. Letak titiknya memakai `radarGeometry` yang sama dengan
 // <RadarChart/> di layar, jadi bentuknya identik.
 
-const RADAR_SIZE = 340;
+// 400 (dari 340): halaman pertama kini cuma radar + sebaran, jadi ada ruang.
+const RADAR_SIZE = 400;
 
 /** Warna nada score — angka yang sama dengan `scoreTone` di layar Wheel. */
 function tone(score: number): { warna: string; label: string } {
@@ -124,6 +125,9 @@ const EXTRA_CSS = `
     border-bottom: 2px solid #EBDCC5; padding-bottom: 6px;
   }
   .kosong { color: #9AA79F; font-style: italic; margin: 0; }
+  /* Fokus Kuartal SELALU mulai di halaman baru: judulnya sempat sendirian di
+     dasar halaman pertama, terpisah dari kartu-kartunya. */
+  h2.halaman-baru { page-break-before: always; margin-top: 0; }
 
   /* Radar + rata-rata */
   .radar { text-align: center; margin-top: 20px; }
@@ -240,7 +244,7 @@ export async function shareWheelPdf(
       <div style="background:#FBEAE7;color:#C0392B">${darurat} darurat</div>
     </div>
 
-    <h2>🎯 Fokus Kuartal${
+    <h2 class="halaman-baru">🎯 Fokus Kuartal${
       data.focus.length > 0
         ? ` - ${data.focus.length} area${sisaPoin > 0 ? `, kurang ${sisaPoin} poin lagi` : ', semua target tercapai 🎉'}`
         : ''

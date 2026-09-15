@@ -69,12 +69,12 @@ export default function NewsScreen() {
         title="News 📰"
         subtitle="Berita terkini & populasi dunia"
         // 🔖 Berita tersimpan — hanya di tab News; di tab Population tak ada
-        // yang bisa ditandai, jadi tombolnya pun tak perlu ada di sana.
+        // yang bisa ditandai, jadi tombolnya pun tak perlu ada di sana. Tanpa
+        // angka (15 Sep 2026): ini pintu ke daftar simpanan, bukan tagihan.
         right={
           tab === 'news' ? (
             <EmojiButton
               icon="bookmark.fill"
-              badge={bookmarks.length}
               onPress={() => router.push('/news-saved')}
             />
           ) : undefined
