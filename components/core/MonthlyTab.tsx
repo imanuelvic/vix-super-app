@@ -186,7 +186,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           tidak ikut hilang ke atas saat notulen digulung ke bawah. */}
       <StickyTop>
         {searchMode ? (
-          <View style={styles.searchWrap}>
+          <View>
             <SearchBar
               value={query}
               onChangeText={setQuery}
@@ -199,7 +199,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
             label="Buat Rapat Bulanan"
             icon="plus"
             onPress={() => openEditor('new')}
-            additionalStyle={styles.addButton}
           />
         )}
       </StickyTop>
@@ -248,8 +247,6 @@ const styles = StyleSheet.create({
   // paddingTop 0 — jarak atasnya sudah dipegang StickyTop di atas daftar ini.
   // paddingBottom lega supaya kartu terakhir tidak tertutup FAB.
   content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 90 },
-  addButton: { marginBottom: 12 },
-  searchWrap: { marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 10 },
   card: {
     backgroundColor: Color.CONTAINER,

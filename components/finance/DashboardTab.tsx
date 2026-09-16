@@ -420,7 +420,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   verdictCard: {
     backgroundColor: Color.CONTRAST_CONTAINER,
     borderRadius: 20,

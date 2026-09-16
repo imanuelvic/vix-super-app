@@ -159,7 +159,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   versionCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,

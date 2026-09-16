@@ -68,7 +68,7 @@ export function VisitationFormFields({
       )}
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        {form.multiLeader ? 'CORE mana saja yang gabung?' : 'CORE-nya siapa?'}
+        {form.multiLeader ? 'CORE Gabungan' : 'CORE'}
       </VixText>
       {form.multiLeader ? (
         // Acara gabungan → centang sebanyak-banyaknya.
@@ -97,7 +97,7 @@ export function VisitationFormFields({
       )}
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        Tanggal visitasi
+        Tanggal Visitasi
       </VixText>
       <View style={styles.formGap}>
         <DateField key={dateKey} value={form.date} onChange={form.setDate} />
@@ -108,7 +108,7 @@ export function VisitationFormFields({
           tersimpan sebagai satu kolom. Jamnya ikut tampil di kartu daftar
           ("Sen, 31 Agu, 26 Pk. 19.00") dan di PDF-nya ("Mulai: 15.00 WIB"). */}
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        🕒 Jam pertemuan
+        🕒 Jam Pertemuan
       </VixText>
       <View style={styles.formGap}>
         <TimeField
@@ -130,7 +130,7 @@ export function VisitationFormFields({
       />
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        🗒️ Agenda visitasi
+        🗒️ Agenda Visitasi
       </VixText>
       <FormInput
         style={[styles.textArea, styles.formGap]}

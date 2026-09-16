@@ -2,6 +2,7 @@ import { Timestamp } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
@@ -474,8 +475,8 @@ export function FulltimeTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  addButton: { marginBottom: 12 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     backgroundColor: Color.CONTAINER,

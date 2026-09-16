@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   body: { flex: 1 },
   // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   writeWrap: { marginTop: 4 },
   // Bentuk kartu & tombolnya ada di components/common/SkipToday.tsx.
   skippedGap: { marginTop: 4 },

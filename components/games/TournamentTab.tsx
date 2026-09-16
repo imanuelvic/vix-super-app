@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -16,6 +17,7 @@ import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { formatFullDate, formatShortDayDate } from '@/lib/format';
 import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
@@ -63,8 +65,10 @@ export function TournamentTab() {
   const [cDate, setCDate] = useState(() => new Date());
   const [cSize, setCSize] = useState<BracketSize>(8);
   const [cNames, setCNames] = useState<string[]>(() => Array(8).fill(''));
-  const [busy, setBusy] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  // Satu penanda sibuk untuk sheet buat, sheet ubah, & hapus (hook bersama).
+  // Sheet ubah punya pesan gagalnya sendiri (editError), jadi cuma sheet buat
+  // yang lewat save(); dua lainnya memakai setBusy dari hook.
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // Form ubah keterangan turnamen yang sudah jalan (nama & tanggal saja).
   const [editOpen, setEditOpen] = useState(false);
@@ -126,18 +130,12 @@ export function TournamentTab() {
       setFormError(`Semua ${cSize} nama peserta wajib diisi.`);
       return;
     }
-    setBusy(true);
-    setFormError(null);
-    try {
+    await save(async () => {
       const t = createTournament(user.uid, cName.trim(), cSize, names, cDate);
       await saveTournament(user.uid, t);
       setCreateOpen(false);
       openTournament(t.id);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   function openEdit() {
@@ -611,7 +609,7 @@ const styles = StyleSheet.create({
   },
   statValue: { color: Color.TOURNAMENT_DARK },
   statLabel: { color: Color.TOURNAMENT_DARK },
-  addBtn: { marginBottom: 16 },
+  addBtn: { marginBottom: CARD_GAP },
   emptyCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,
@@ -667,7 +665,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 20,
     gap: 4,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   heroKicker: { color: Color.TOURNAMENT, letterSpacing: 1 },
   heroName: { color: Color.TEXT_REVERSE },

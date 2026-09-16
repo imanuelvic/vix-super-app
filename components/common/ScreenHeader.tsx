@@ -113,6 +113,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 24,
     // Sedikit napas sebelum isi layar, menggantikan garis pemisah yang dulu
     // tak pernah ada: batas pita sekarang yang memisahkan kepala dari isi.
+    // 6 + paddingTop 4 milik isi layar = CARD_GAP (10), jarak yang sama
+    // dengan antar-kartu di bawahnya (lihat assets/style/card.ts).
     marginBottom: 6,
   },
   backRow: {

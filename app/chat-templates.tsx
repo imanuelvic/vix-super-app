@@ -179,7 +179,6 @@ export default function ChatTemplatesScreen() {
               </VixText>
             </PressableScale>
           )}
-          <View style={styles.stickyGap} />
         </StickyTop>
       )}
 
@@ -313,7 +312,6 @@ const styles = StyleSheet.create({
   // Jarak dropdown ke kartu kategori pertama. Ditaruh sebagai elemen sendiri,
   // bukan margin bawah SelectField — daftar pilihannya terbuka INLINE di bawah
   // kolom, jadi margin di kolomnya akan menyisipkan celah di tengah.
-  stickyGap: { height: 10 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

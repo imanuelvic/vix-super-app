@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
@@ -831,7 +832,7 @@ export default function FamilyScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  addButton: { marginBottom: 12 },
+  addButton: { marginBottom: CARD_GAP },
   emptyCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,
@@ -955,7 +956,7 @@ const styles = StyleSheet.create({
     borderColor: Color.BORDER,
     padding: 16,
     gap: 4,
-    marginBottom: 14,
+    marginBottom: CARD_GAP,
   },
   infoName: { color: Color.TEXT_TITLE },
   infoLine: { color: Color.TEXT_PARAGRAPH },

@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { EditButton } from '@/components/common/EditButton';
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   seedButton: { alignSelf: 'stretch', marginTop: 10 },
   seedLink: { color: Color.MAIN, marginTop: 6 },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
-  heroCard: { gap: 2, marginBottom: 12 },
+  heroCard: { gap: 2, marginBottom: CARD_GAP },
   searchWrap: { marginBottom: 10 },
   sortRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   empty: { textAlign: 'center', marginTop: 10 },

@@ -53,10 +53,6 @@ import {
 // membangun hubungan — Senin pertanyaan doa wajib, hari lain pertanyaan acak
 // (8 aspek hidup / diskusi ringan / penggali kepribadian). Plus pengingat
 // ulang tahun.
-//
-// 💡 Idea For CORE pindah ke layarnya sendiri (app/core-ideas.tsx, tombol 💡
-// di pojok kanan atas) — dulu ia menumpang di ujung bawah tab ini dan selalu
-// kalah: harus digulung jauh dulu tiap mau menambah satu baris.
 export function FollowupTab({
   leaders,
   mainTeam,
@@ -735,7 +731,7 @@ export function FollowupTab({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   birthdayCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,

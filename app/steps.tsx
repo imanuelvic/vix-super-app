@@ -171,7 +171,7 @@ export default function StepsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   todayCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 18,

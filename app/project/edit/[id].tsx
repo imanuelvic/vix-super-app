@@ -363,7 +363,7 @@ export default function ProjectEditScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 12 },
   reqInput: { minHeight: 90, textAlignVertical: 'top', marginBottom: 12 },

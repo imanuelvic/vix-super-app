@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -598,7 +599,7 @@ const styles = StyleSheet.create({
     padding: 22,
     alignItems: 'center',
     gap: 6,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   // Lencana 📷 harus MENGGANTUNG di luar lingkaran, sedangkan lingkarannya
   // sendiri memotong isinya (overflow hidden, biar fotonya bulat). Dua sifat

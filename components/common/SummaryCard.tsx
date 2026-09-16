@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 import { useFeatureTheme } from '@/hooks/useFeatureTheme';
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     gap: 4,
-    marginBottom: 10,
+    marginBottom: CARD_GAP,
   },
   center: { alignItems: 'center' },
 });

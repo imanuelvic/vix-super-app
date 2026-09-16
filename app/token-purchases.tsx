@@ -138,7 +138,7 @@ export default function TokenPurchasesScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   row: { ...CARD, marginBottom: 8 },
   rowMain: { flex: 1, gap: 2 },
   rowTitle: { color: Color.TEXT_TITLE },

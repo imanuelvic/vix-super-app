@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EmojiButton } from '@/components/common/EmojiButton';
@@ -182,7 +182,10 @@ export function NoteField({
               multiline
               autoFocus
             />
-            {below?.({ text, setText })}
+            {/* Apa pun yang diletakkan di bawah kotak teks (mis. tombol ✨
+                Generate with AI) diberi jarak satu CARD_GAP, jangan menempel
+                ke garis tepi kotaknya. */}
+            {below ? <View style={styles.below}>{below({ text, setText })}</View> : null}
           </>
         )}
       </SheetModal>
@@ -209,6 +212,7 @@ const styles = StyleSheet.create({
   tools: { flexDirection: 'row', gap: 8 },
   // Kolom isian DI DALAM sheet — dibuat lega, karena di sinilah menulisnya.
   noteSheetInput: { minHeight: 180, textAlignVertical: 'top' },
+  below: { marginTop: CARD_GAP },
   // Tiga kotak kecil bernomor — bentuk untuk catatan yang isinya poin.
   noteLineBox: {
     flexDirection: 'row',

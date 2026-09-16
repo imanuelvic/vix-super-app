@@ -108,6 +108,9 @@ function RootNavigator() {
         {/* Catat/ubah notulen rapat bulanan — dari sub-tab Monthly */}
         <Stack.Screen name="core/monthly/[id]" />
         <Stack.Screen name="visitations" />
+        {/* Kalender 📆 (visitasi + rapat bulanan) & Rekap Visitasi 📊 setahun */}
+        <Stack.Screen name="core-calendar" />
+        <Stack.Screen name="core-recap" />
         <Stack.Screen name="monthly-prayers" />
         {/* Pedoman CORE Leader (syarat calon + tugasnya) — dari sub-tab Multiplication */}
         <Stack.Screen name="leader-criteria" />

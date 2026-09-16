@@ -160,7 +160,7 @@ export default function AchievementCategoryScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
 
   // Angka sekarang di pojok kanan atas — dua baris, angkanya yang besar.
   nowPill: { alignItems: 'flex-end' },

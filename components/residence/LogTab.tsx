@@ -100,6 +100,6 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   source: { color: Color.MAIN, marginTop: 8, marginBottom: 10 },
 });

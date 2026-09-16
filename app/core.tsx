@@ -156,26 +156,28 @@ export default function CoreScreen() {
         right={
           tab === 'visitation' ? (
             <View style={styles.headerButtons}>
+              {/* Kalender 📆 — visitasi & rapat bulanan dalam satu bulan
+                  (16 Sep 2026). Rules 📜 turun ke samping judul Jadwal
+                  Visitasi, bersama Rekap 📊. */}
               <EmojiButton
-                emoji="📜"
-                onPress={() => router.push('/core-rules')}
+                emoji="📆"
+                onPress={() => router.push('/core-calendar')}
               />
               <EmojiButton
                 emoji="🕘"
                 onPress={() => router.push('/visitations')}
               />
             </View>
+          ) : tab === 'monthly' ? (
+            /* Rapat bulanan ikut tampil di kalender yang sama. */
+            <EmojiButton
+              emoji="📆"
+              onPress={() => router.push('/core-calendar')}
+            />
           ) : tab === 'followup' ? (
             <View style={styles.headerButtons}>
               {/* Template chat 💬 — kata-kata siap kirim (kedukaan, get well,
                   wisuda, motivasi harian) untuk CL maupun grup CORE. */}
-              {/* Idea For CORE 💡 — masukan yang dikumpulkan pelan-pelan.
-                  Dulu menumpang di ujung bawah tab ini; sekarang layarnya
-                  sendiri, dan pintunya di sini, sebelah template chat. */}
-              <EmojiButton
-                emoji="💡"
-                onPress={() => router.push('/core-ideas')}
-              />
               <EmojiButton
                 emoji="💬"
                 onPress={() => router.push('/chat-templates')}

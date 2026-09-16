@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     gap: 14,
-    marginBottom: 6,
+    marginBottom: CARD_GAP,
   },
   heroEmoji: { fontSize: 40, lineHeight: 50 },
   heroMain: { flex: 1 },

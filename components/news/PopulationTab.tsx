@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -247,14 +247,14 @@ export function PopulationTab({ saved }: { saved: PopulationSaved }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.NEWS_DARK,
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
     gap: 4,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   heroValue: { color: Color.TEXT_REVERSE },

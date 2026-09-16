@@ -126,7 +126,7 @@ export default function BookScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   catTitle: { marginTop: 14, marginBottom: 8 },
   row: {
     ...CARD,

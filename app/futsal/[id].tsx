@@ -684,7 +684,7 @@ export default function FutsalSessionScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Jaraknya ditaruh di BAWAH blok uang, bukan di atas judul "Squad &
   // Setoran": judul itu dipatok (sticky), dan jarak atas pada yang dipatok
   // ikut menempel di layar sebagai pita menganga selama daftarnya digulung.

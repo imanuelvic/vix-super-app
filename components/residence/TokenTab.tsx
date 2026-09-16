@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
@@ -503,14 +503,13 @@ export function TokenTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.HOUSE_DARK,
     borderRadius: 20,
     padding: 18,
     gap: 2,
-    marginTop: 10,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   // Hampir habis → merah, supaya tidak kelewat sampai listriknya benar mati.
   heroLow: { backgroundColor: Color.DANGER },
@@ -519,7 +518,7 @@ const styles = StyleSheet.create({
   heroDays: { color: Color.TEXT_REVERSE, marginTop: 6 },
   // Kartu penjelas badge ⚡ — bentuk kartu daftar biasa, yang membedakan cuma
   // garis merahnya (attentionBorder) & titik berdenyut di pojok.
-  dueCard: { ...CARD, gap: 2, marginBottom: 10 },
+  dueCard: { ...CARD, gap: 2, marginBottom: CARD_GAP },
   dueTitle: { color: Color.TEXT_TITLE },
   dueText: { color: Color.TEXT_LABEL },
   buttonRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },

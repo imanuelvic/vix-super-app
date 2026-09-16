@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { ACTION_TOP } from '@/assets/style/space';
 import { DateField } from '@/components/common/DateField';
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
   locked: { color: Color.TEXT_LABEL, marginTop: ACTION_TOP },
 
   // ── Kartu keadaan ──────────────────────────────────────────────────────
-  hero: { gap: 8, marginBottom: 14 },
+  hero: { gap: 8, marginBottom: CARD_GAP },
   heroTop: {
     flexDirection: 'row',
     alignItems: 'center',

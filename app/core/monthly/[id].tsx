@@ -332,7 +332,7 @@ export default function MonthlyMeetingEditScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   empty: { textAlign: 'center', marginTop: 24, paddingHorizontal: 20 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },

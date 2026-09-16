@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { InfoChip } from '@/components/common/InfoChip';
 import { Pagination } from '@/components/common/Pagination';
@@ -95,8 +96,8 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  addButton: { marginBottom: 12 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     backgroundColor: Color.CONTAINER,

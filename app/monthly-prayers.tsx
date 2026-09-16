@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
@@ -297,14 +298,14 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
-  introCard: { gap: 6, marginBottom: 14 },
+  introCard: { gap: 6, marginBottom: CARD_GAP },
   introQuote: { color: Color.MAIN_LIGHT, fontStyle: 'italic' },
   staleCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,
     padding: 14,
     gap: 4,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   staleText: { color: Color.ACCENT_DARK },
   staleSub: { color: Color.ACCENT_DARK },

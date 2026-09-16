@@ -29,7 +29,7 @@ export function BusinessTab() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,

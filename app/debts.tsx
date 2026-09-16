@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
@@ -620,7 +621,7 @@ export default function DebtsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
-  addButton: { marginBottom: 12 },
+  addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     backgroundColor: Color.CONTAINER,

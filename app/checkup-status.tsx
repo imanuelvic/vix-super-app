@@ -85,7 +85,7 @@ export default function CheckupStatusScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   infoButton: {
     backgroundColor: Color.ACCENT,
     borderRadius: 14,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -421,13 +422,13 @@ function TestRow({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   hero: {
     backgroundColor: Color.SPIRITUAL_DARK,
     borderRadius: 22,
     padding: 20,
     gap: 3,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   heroCode: { color: Color.TEXT_REVERSE, letterSpacing: 3 },

@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 2,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   nextLabel: { color: Color.SPIRITUAL_DARK },
   nextTitle: { color: Color.SPIRITUAL_DARK },

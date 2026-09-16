@@ -1236,7 +1236,7 @@ const styles = StyleSheet.create({
   pBadgeText: { color: Color.MAIN_DARK },
   // paddingTop 0 — jarak atasnya sudah dipegang StickyTop (tombol tambah).
   content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 },
-  addRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  addRow: { flexDirection: 'row', gap: 10 },
   addFlex: { flex: 1 },
   // Judul ini dipatok (sticky) di ScrollView. PENTING: ScrollView memindahkan
   // style anak sticky-nya ke pembungkus buatannya sendiri, lalu memberi anaknya

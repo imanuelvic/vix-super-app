@@ -1,25 +1,22 @@
 import { BottomTabBarButtonProps } from "expo-router/js-tabs";
 import { PlatformPressable } from "expo-router/react-navigation";
-import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Reanimated from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
 import { useTabJump } from '@/components/common/BottomTabs';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-
-// Pegas yang sama dengan PressableScale & HapticTab.
-const SPRING = { damping: 15, stiffness: 320, mass: 0.5, useNativeDriver: true };
+import { useTabPress } from '@/hooks/useTabPress';
 
 // Tombol Home menonjol (mengambang) di tengah tab bar — meniru tombol aksi
 // utama (spt tombol "Scan" di aplikasi lain). Lingkaran teal timbul ke atas dari
 // bar dengan ikon rumah putih; label "Home" di bawahnya.
 //
-// Ikut memantul seperti tab lain (15 Sep 2026): mengecil saat disentuh
-// (Animated bawaan RN, lihat HapticTab) & lingkarannya melompat saat Home jadi
-// tab aktif (useTabJump, pegas yang sama dengan sub-tab fitur).
+// Ikut memantul seperti tab lain (15 Sep 2026): mengecil + bergetar saat
+// disentuh (useTabPress, rasa yang sama dengan HapticTab) & lingkarannya
+// melompat saat Home jadi tab aktif (useTabJump, pegas yang sama dengan
+// sub-tab fitur).
 export function RaisedHomeTab({
   accessibilityState,
   onPressIn,
@@ -28,26 +25,15 @@ export function RaisedHomeTab({
   ...rest
 }: BottomTabBarButtonProps) {
   const selected = !!accessibilityState?.selected;
-  const [scale] = useState(() => new Animated.Value(1));
-  const pegas = (toValue: number) =>
-    Animated.spring(scale, { toValue, ...SPRING }).start();
+  const sentuh = useTabPress(onPressIn, onPressOut);
   const lompat = useTabJump(selected);
   return (
     <PlatformPressable
       {...rest}
       accessibilityState={accessibilityState}
-      style={[styles.button, { transform: [{ scale }] }]}
-      onPressIn={(ev) => {
-        pegas(0.94);
-        if (process.env.EXPO_OS === 'ios') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        onPressIn?.(ev);
-      }}
-      onPressOut={(ev) => {
-        pegas(1);
-        onPressOut?.(ev);
-      }}>
+      style={[styles.button, sentuh.scaleStyle]}
+      onPressIn={sentuh.onPressIn}
+      onPressOut={sentuh.onPressOut}>
       <View style={styles.lift}>
         <Reanimated.View style={[styles.circle, selected && styles.circleActive, lompat]}>
           <IconSymbol name="house.fill" size={28} color={Color.TEXT_REVERSE} />

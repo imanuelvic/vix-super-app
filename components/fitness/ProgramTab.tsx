@@ -173,7 +173,7 @@ export function ProgramTab({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   picker: { marginTop: 10, marginBottom: 10 },
   dayBlock: {
     backgroundColor: Color.CONTAINER,

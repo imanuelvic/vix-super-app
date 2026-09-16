@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
@@ -373,7 +373,7 @@ export function WeekTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.LEARNING,
     borderRadius: 20,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     borderColor: Color.LEARNING_DARK,
     padding: 16,
     gap: 4,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   heroTop: {
     flexDirection: 'row',

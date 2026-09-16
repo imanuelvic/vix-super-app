@@ -882,7 +882,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: Color.FITNESS_DARK,
   },
-  content: { paddingHorizontal: 20, paddingTop: 6, paddingBottom: 28, gap: 10 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28, gap: 10 },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',

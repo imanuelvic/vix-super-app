@@ -74,7 +74,7 @@ export function InfoTab() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   heroEmoji: { fontSize: 44, lineHeight: 54 },
   heroName: { color: Color.TEXT_REVERSE, textAlign: 'center' },
   heroSub: { color: Color.TEXT_ON_DARK_MUTED },

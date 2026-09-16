@@ -347,7 +347,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   navRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   navButton: {
     flex: 1,

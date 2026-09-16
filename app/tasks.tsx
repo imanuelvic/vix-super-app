@@ -38,11 +38,12 @@ import { VixText } from '@/components/common/VixText';
 import { PriorityTab } from '@/components/tasks/PriorityTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { loadErrorOf, SAVE_ERROR, saveErrorOf } from '@/lib/messages';
+import { loadErrorOf, saveErrorOf } from '@/lib/messages';
 import {
     addRecurringTasks,
     addTask,
@@ -160,8 +161,9 @@ export default function TasksScreen() {
   const [editing, setEditing] = useState<Task | 'new' | null>(null);
   const [fTitle, setFTitle] = useState('');
   const [fDate, setFDate] = useState(new Date());
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  // Penanda sibuk + pesan gagal sheet task (hook bersama); setBusy-nya
+  // dipakai handleDelete yang sengaja tanpa pesan gagal.
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
   // FAB speed-dial ⋯: submenu bulat kecil muncul di atas tombolnya.
   const [fabOpen, setFabOpen] = useState(false);
@@ -295,9 +297,7 @@ export default function TasksScreen() {
       setFormError('Isi task-nya dulu ya.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
-    try {
+    await save(async () => {
       if (editing === 'new') {
         await addTask(user.uid, title, category, dayDocId(fDate));
       } else {
@@ -308,11 +308,7 @@ export default function TasksScreen() {
         });
       }
       setEditing(null);
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

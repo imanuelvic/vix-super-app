@@ -151,7 +151,7 @@ export function QuadrantTab<K extends string>({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   introCard: {
     backgroundColor: Color.CONTRAST_CONTAINER,
     borderRadius: 14,

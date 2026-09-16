@@ -38,12 +38,9 @@ import {
     type RoadmapItem,
 } from '@/lib/career';
 import {
-    EMPTY_CORE_IDEAS,
     EMPTY_MONTHLY_PRAYERS,
     EMPTY_WEEKLY_FOCUS,
     followupDue,
-    IDEA_CADENCE_LABEL,
-    ideaReminderDue,
     isPrayerFollowupDay,
     meetingKindMeta,
     meetingLeaderNames,
@@ -52,7 +49,6 @@ import {
     needsPdfShare,
     nextBirthday,
     prayerFollowupLeaders,
-    subscribeCoreIdeas,
     subscribeCoreLeaders,
     subscribeMainTeam,
     subscribeMonthlyPrayers,
@@ -60,7 +56,6 @@ import {
     subscribeWeeklyFocus,
     visitDaysUntil,
     visitReminderWindow,
-    type CoreIdeasData,
     type CoreLeader,
     type MainTeamMember,
     type MonthlyPrayers,
@@ -246,7 +241,6 @@ export default function DashboardScreen() {
   // Streak kebiasaan harian ✅ — ditampilkan di kartu Achievement atas.
   const [habitStreak, setHabitStreak] = useState<Streak | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
-  const [coreIdeas, setCoreIdeas] = useState<CoreIdeasData>(EMPTY_CORE_IDEAS);
   const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
@@ -306,7 +300,6 @@ export default function DashboardScreen() {
       subscribeStreak(user.uid, setHabitStreak),
       subscribeFastingPlans(user.uid, setFastingPlans),
       subscribeRoadmap(user.uid, setRoadmap),
-      subscribeCoreIdeas(user.uid, setCoreIdeas),
       subscribeDonor(user.uid, setDonor),
       subscribeFreelance(user.uid, setFreelance),
       subscribeFun(user.uid, setFun),
@@ -457,9 +450,6 @@ export default function DashboardScreen() {
             )}), ke-${b.turningAge}`
       }`,
     }));
-
-  // Reminder Idea For CORE: waktunya kasih masukan ide baru (mingguan/bulanan).
-  const coreIdeaDue = ideaReminderDue(coreIdeas, now);
 
   // Reminder bayar pinjaman: yang belum lunas & jatuh tempo ≤ 3 hari (termasuk
   // lewat). Fokus ke "Pinjaman Saya", tapi tagihan ke orang juga diingatkan.
@@ -688,7 +678,6 @@ export default function DashboardScreen() {
     pdfReminders.length > 0 ||
     visitReminders.length > 0 ||
     coreBirthdays.length > 0 ||
-    coreIdeaDue ||
     debtReminders.length > 0 ||
     healthRows.length > 0 ||
     !!sundaySermon ||
@@ -1018,11 +1007,10 @@ export default function DashboardScreen() {
           )}
 
           {/* Reminder CORE: visitasi (H-3 s/d hari-H) + ulang tahun CL & Main
-              Team (≤7 hari) + Idea For CORE mingguan */}
+              Team (≤7 hari) */}
           {(pdfReminders.length > 0 ||
             visitReminders.length > 0 ||
-            coreBirthdays.length > 0 ||
-            coreIdeaDue) && (
+            coreBirthdays.length > 0) && (
             <View style={styles.visitCard}>
               {/* Kirim panduan acara — ditaruh PALING ATAS karena ini yang
                   punya tenggat paling jauh (acara besar sudah menagih H-14). */}
@@ -1052,7 +1040,7 @@ export default function DashboardScreen() {
               {visitReminders.length > 0 && (
                 <View
                   style={
-                    pdfReminders.length > 0 ? styles.ideaReminder : undefined
+                    pdfReminders.length > 0 ? styles.reminderDivider : undefined
                   }>
                   <VixText heading="bold" additionalStyle={styles.visitTitle}>
                     📍 Reminder Pertemuan CORE
@@ -1082,7 +1070,7 @@ export default function DashboardScreen() {
                 <PressableScale
                   style={
                     pdfReminders.length > 0 || visitReminders.length > 0
-                      ? styles.ideaReminder
+                      ? styles.reminderDivider
                       : undefined
                   }
                   onPress={() =>
@@ -1099,28 +1087,6 @@ export default function DashboardScreen() {
                       {b.text}
                     </VixText>
                   ))}
-                </PressableScale>
-              )}
-              {coreIdeaDue && (
-                <PressableScale
-                  style={
-                    pdfReminders.length > 0 ||
-                    visitReminders.length > 0 ||
-                    coreBirthdays.length > 0
-                      ? styles.ideaReminder
-                      : undefined
-                  }
-                  onPress={() =>
-                    router.push({ pathname: '/core', params: { tab: 'followup' } })
-                  }>
-                  <VixText heading="bold" additionalStyle={styles.visitTitle}>
-                    💡 Idea untuk CORE
-                  </VixText>
-                  <VixText heading="label" additionalStyle={styles.visitText}>
-                    Waktunya kasih masukan ide baru (
-                    {IDEA_CADENCE_LABEL[coreIdeas.cadence].toLowerCase()}), share
-                    juga ke grup MT 🙌
-                  </VixText>
                 </PressableScale>
               )}
             </View>
@@ -1522,7 +1488,8 @@ const styles = StyleSheet.create({
   },
   visitTitle: { color: Color.TEXT_TITLE },
   visitText: { color: Color.FINANCE_INVESTMENT_DARK },
-  ideaReminder: {
+  // Garis pemisah antar-baris pengingat di kartu CORE.
+  reminderDivider: {
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,

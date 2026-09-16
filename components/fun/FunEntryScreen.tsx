@@ -429,7 +429,7 @@ export function FunEntryScreen({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   inputGap: { marginTop: 8 },
   fieldLabel: { marginTop: 10, marginBottom: 6 },
   // Jam · menit · detik: tiga kolom selebar sama.

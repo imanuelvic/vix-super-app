@@ -217,7 +217,7 @@ export function UpkeepList({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   groupTitle: { marginTop: 14, marginBottom: 8 },
   row: {
     ...CARD,

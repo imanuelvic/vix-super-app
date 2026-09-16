@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 18,
     gap: 12,
-    marginBottom: 16,
+    marginBottom: CARD_GAP,
   },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   bloodBadge: {
@@ -496,7 +497,7 @@ const styles = StyleSheet.create({
   },
   // Dua tombol lambang (✅ syarat · 💡 tips) di ujung kanan judul.
   sectionActions: { flexDirection: 'row', gap: 8 },
-  addButton: { marginBottom: 12 },
+  addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginBottom: 8 },
   historyLabel: { marginTop: 6, marginBottom: 8, color: Color.TEXT_LABEL },
   card: {

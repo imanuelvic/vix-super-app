@@ -175,7 +175,7 @@ export function DiscussionTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   barWrap: { marginTop: -4, marginBottom: 10 },
   row: {
     ...CARD,

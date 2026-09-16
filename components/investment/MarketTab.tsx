@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -200,13 +201,13 @@ export function MarketTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   hero: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 18,
     padding: 16,
     gap: 6,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   heroTitle: { color: Color.TEXT_REVERSE },
   heroSub: { color: Color.TEXT_ON_DARK_MUTED },

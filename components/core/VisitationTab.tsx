@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -80,6 +81,7 @@ export function VisitationTab({
   // Dipanggil setelah editId dipakai — induk membersihkan param dari URL.
   onEditConsumed?: () => void;
 }) {
+  const router = useRouter();
   const { user } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
@@ -348,8 +350,7 @@ export function VisitationTab({
 
           {words.length === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
-              Ketik kata yang kamu ingat dari judul atau agendanya, urutan kata
-              tidak harus sama 🔍
+              Cari judul atau agendanya 🔍
             </VixText>
           ) : results.length === 0 ? (
             <VixText heading="label" additionalStyle={styles.empty}>
@@ -369,12 +370,7 @@ export function VisitationTab({
           {/* Dipatok di atas: tombol jadwalkan selalu terjangkau, tidak ikut
               hilang ke atas saat daftar jadwalnya digulung ke bawah. */}
           <StickyTop>
-            <PrimaryButton
-              label="Jadwalkan Visitasi"
-              icon="plus"
-              onPress={openAdd}
-              additionalStyle={styles.addButton}
-            />
+            <PrimaryButton label="Jadwalkan Visitasi" icon="plus" onPress={openAdd} />
           </StickyTop>
 
           {/* key = halaman → balik ke atas tiap ganti halaman (pola yang sama
@@ -390,6 +386,12 @@ export function VisitationTab({
                 📅 Jadwal Visitasi
               </VixText>
               <View style={styles.sectionActions}>
+                {/* Rekap setahun 📊: berapa kali tiap CL sudah ditemui, per
+                    jenis (16 Sep 2026). */}
+                <EmojiButton emoji="📊" onPress={() => router.push('/core-recap')} />
+                {/* Rules & Suggestion 📜 — dulu di kanan atas header; pindah
+                    ke sini supaya dekat dengan jadwal yang memakainya. */}
+                <EmojiButton emoji="📜" onPress={() => router.push('/core-rules')} />
                 {/* Tips visitasi (buka modal) */}
                 <EmojiButton emoji="💡" onPress={() => setTipsModal(true)} />
                 {/* Filter jadwal (per CL / jenis) — nyala kalau ada filter aktif */}
@@ -557,7 +559,7 @@ export function VisitationTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   // paddingBottom disisakan lega supaya kartu terakhir tidak tertutup FAB.
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 90 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 90 },
   // Daftar jadwal: jarak atasnya sudah dipegang StickyTop (tombol Jadwalkan).
   // Mode cari 🔍 tidak pakai ini — di sana kolom carinya yang butuh jarak atas.
   contentPinned: { paddingTop: 0 },
@@ -575,7 +577,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addButton: { marginBottom: 6 },
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',

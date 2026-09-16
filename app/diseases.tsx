@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
@@ -266,7 +266,7 @@ export default function DiseasesScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  addButton: { marginBottom: 14 },
+  addButton: { marginBottom: CARD_GAP },
   center: { alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
   card: {
     ...CARD,

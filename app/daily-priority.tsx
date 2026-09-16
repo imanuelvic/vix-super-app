@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FormError } from '@/components/common/FormError';
@@ -253,13 +254,13 @@ export default function DailyPriorityScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   hero: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
     padding: 18,
     gap: 6,
-    marginBottom: 14,
+    marginBottom: CARD_GAP,
   },
   heroSub: { color: Color.TEXT_ON_DARK_MUTED },
   heroValue: { color: Color.TEXT_REVERSE },

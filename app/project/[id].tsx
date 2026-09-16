@@ -263,7 +263,7 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   gone: { textAlign: 'center', marginTop: 24 },
   statusRow: { alignItems: 'center', paddingVertical: 10 },
   statusDone: { color: Color.SUCCESS },

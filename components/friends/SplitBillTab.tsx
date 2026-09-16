@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { EmptyText } from '@/components/common/EmptyText';
@@ -177,8 +177,8 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  addButton: { marginBottom: 12 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  addButton: { marginBottom: CARD_GAP },
   card: {
     ...CARD,
     flexDirection: 'row',

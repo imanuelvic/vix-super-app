@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { EditButton } from '@/components/common/EditButton';
@@ -661,7 +662,7 @@ const styles = StyleSheet.create({
   ageText: { color: Color.ACCENT_DARK },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
-  progressCard: { gap: 6, marginBottom: 12 },
+  progressCard: { gap: 6, marginBottom: CARD_GAP },
   barTrack: {
     height: 8,
     borderRadius: 4,
@@ -673,7 +674,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: Color.MAIN_LIGHT,
   },
-  addButton: { marginBottom: 12 },
+  addButton: { marginBottom: CARD_GAP },
   yearCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

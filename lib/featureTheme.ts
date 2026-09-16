@@ -69,10 +69,11 @@ const ROUTE_FEATURE: Record<string, string> = {
   // CORE 👥
   core: 'core',
   'core-rules': 'core',
-  'core-ideas': 'core',
   'ex-leaders': 'core',
   'leader-criteria': 'core',
   visitations: 'core',
+  'core-calendar': 'core',
+  'core-recap': 'core',
   'chat-templates': 'core',
   multiplication: 'core',
   'monthly-prayers': 'core',

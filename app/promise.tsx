@@ -21,9 +21,10 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
+import { useFormSave } from '@/hooks/useFormSave';
 import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR } from '@/lib/messages';
 import {
     deletePromise,
     newPromiseId,
@@ -53,8 +54,7 @@ export default function PromiseScreen() {
   // `queryEqual` di lib/liveDoc.ts).
   const [list, setList] = useState<HisPromise[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, formError, setFormError, save, remove } = useFormSave();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -86,9 +86,7 @@ export default function PromiseScreen() {
       setFormError('Tulis dulu janji Tuhan yang kamu pegang.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
-    try {
+    await save(async () => {
       await savePromise(
         user.uid,
         editId || newPromiseId(),
@@ -103,26 +101,16 @@ export default function PromiseScreen() {
         { baru: !editId },
       );
       router.back();
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function hapus() {
     if (!user || !editId || busy) return;
-    setBusy(true);
-    setFormError(null);
-    try {
+    await remove(async () => {
       await deletePromise(user.uid, editId);
       router.back();
-    } catch {
-      setFormError(DELETE_ERROR);
-    } finally {
-      setConfirmDelete(false);
-      setBusy(false);
-    }
+    });
+    setConfirmDelete(false);
   }
 
   return (
@@ -277,7 +265,7 @@ export default function PromiseScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Riwayat tanggalnya: keterangan, bukan isian — jadi dibedakan dengan latar
   // krem, bukan kotak isian berbingkai.
   riwayat: {

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -308,7 +309,7 @@ export function LogTab({ items }: { items: CarLog[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   quickCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
   },
   // Jarak ke catatan pertama — tanpa ini tombolnya menempel mepet ke kartu
   // di bawahnya (kartunya cuma punya marginBottom, tidak punya marginTop).
-  addButton: { marginBottom: 10 },
+  addButton: { marginBottom: CARD_GAP },
   fromFinance: { color: Color.MAIN },
   chipRow: {
     flexDirection: 'row',

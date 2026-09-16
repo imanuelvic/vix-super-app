@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -156,7 +157,7 @@ export default function BookDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   notFound: { paddingHorizontal: 20, marginTop: 12 },
   progressCard: {
     backgroundColor: Color.CONTAINER,
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     borderColor: Color.BORDER,
     padding: 14,
     gap: 10,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   progressTop: {
     flexDirection: 'row',

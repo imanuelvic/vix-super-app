@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
 import { Chip } from '@/components/common/Chip';
@@ -531,7 +532,7 @@ const styles = StyleSheet.create({
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,
     padding: 18,
-    marginBottom: 14,
+    marginBottom: CARD_GAP,
   },
   summaryLabel: { color: Color.TEXT_ON_DARK_MUTED },
   summaryBalance: { color: Color.TEXT_REVERSE, marginTop: 2, marginBottom: 10 },

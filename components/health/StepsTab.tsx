@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -508,9 +509,9 @@ function GoalRow({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
-  heroCard: { gap: 2, marginBottom: 14 },
+  heroCard: { gap: 2, marginBottom: CARD_GAP },
   heroActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   modalHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   // Judul kartu + tombol muat-ulang Apple Health di ujung kanannya.

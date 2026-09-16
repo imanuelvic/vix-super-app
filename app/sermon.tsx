@@ -19,10 +19,11 @@ import { ShareWhatsAppButton } from '@/components/common/ShareWhatsAppButton';
 import { VixText } from '@/components/common/VixText';
 import { ConnectCoreButton } from '@/components/spiritual/ConnectCoreButton';
 import { useAuth } from '@/contexts/auth';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { purgeNoteLinks } from '@/lib/coreNotes';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
 import {
   deleteSermon,
   saveSermon,
@@ -61,8 +62,9 @@ export default function SermonScreen() {
   const note = loaded === 'kosong' ? null : loaded;
 
   const [error, setError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  // setBusy-nya dipakai handleDelete: pesan gagal hapus tampil di ScreenError
+  // (layar), bukan di form, jadi ia tidak lewat save()/remove().
+  const { busy, setBusy, formError, setFormError, save } = useFormSave();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Isian form. Diisi dari dokumennya lewat tombol "Ubah", bukan lewat efek —
@@ -111,9 +113,7 @@ export default function SermonScreen() {
       setFormError('Isi judul khotbahnya dulu.');
       return;
     }
-    setBusy(true);
-    setFormError(null);
-    try {
+    await save(async () => {
       await saveSermon(user.uid, sundayId, {
         title: fTitle.trim(),
         preacher: fPreacher.trim(),
@@ -126,11 +126,7 @@ export default function SermonScreen() {
       setEditing(false);
       // Catatan baru: begitu tersimpan, kembali ke daftarnya.
       if (mulaiKosong) router.back();
-    } catch {
-      setFormError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   async function handleDelete() {

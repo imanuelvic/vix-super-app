@@ -15,6 +15,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { SheetModal } from '@/components/common/SheetModal';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
@@ -141,17 +142,21 @@ export function MultiplicationTab() {
       {list === null ? (
         <LoadingCenter />
       ) : (
+        <>
+          {/* Dipatok di atas seperti Jadwalkan Visitasi & Buat Rapat Bulanan:
+              tombolnya selalu terjangkau saat daftarnya digulung. */}
+          <StickyTop>
+            <PrimaryButton
+              label="Buat Rencana Multiplikasi"
+              icon="plus"
+              onPress={openAdd}
+            />
+          </StickyTop>
+
         <ScrollView contentContainerStyle={styles.content}>
           {/* Kartu ringkasan "x multiplikasi · y selesai · z berjalan"
               DIHAPUS: angkanya toh terbaca langsung dari daftar di bawahnya,
               dan menyingkirkannya membuat kartu pertama muncul lebih awal. */}
-          <PrimaryButton
-            label="Buat Rencana Multiplikasi"
-            icon="plus"
-            onPress={openAdd}
-            additionalStyle={styles.addButton}
-          />
-
           <FormError message={error} />
 
           {list.length === 0 ? (
@@ -223,6 +228,7 @@ export function MultiplicationTab() {
             })
           )}
         </ScrollView>
+        </>
       )}
 
       {/* Sheet buat / ubah keterangan multiplikasi. Timeline & anggotanya
@@ -324,8 +330,8 @@ function HeartRow({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
-  addButton: { marginBottom: 14 },
+  // paddingTop 0 — jarak atasnya sudah dipegang StickyTop di atas daftar ini.
+  content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 40 },
   empty: { textAlign: 'center', marginTop: 10 },
   card: {
     backgroundColor: Color.CONTAINER,

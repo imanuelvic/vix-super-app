@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   runLabel: { color: Color.TEXT_LABEL },
   runValue: { color: Color.TEXT_TITLE },
   runSub: { color: Color.FITNESS_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.FITNESS_DARK,
     borderRadius: 20,

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AchievementButton } from '@/components/common/AchievementButton';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
@@ -17,6 +17,7 @@ import { INTRO_GAP, SpiritualIntro } from '@/components/spiritual/SpiritualIntro
 import { useAuth } from '@/contexts/auth';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useDraft } from '@/hooks/useDraft';
+import { useFormSave } from '@/hooks/useFormSave';
 import { useNow } from '@/hooks/useNow';
 import { BIBLE_CATEGORY } from '@/lib/achievements';
 import {
@@ -27,7 +28,7 @@ import {
 } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR } from '@/lib/messages';
 import {
   BIBLE_SKIPPED,
   BIBLE_VERSION_DEFAULT,
@@ -66,8 +67,8 @@ export default function BibleReadingScreen() {
   const [today, setToday] = useState<BibleReadingSessions | null>(null);
   const [versions, setVersions] = useState<BibleReadingVersions | null>(null);
   const [streaks, setStreaks] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Penanda sibuk + pesan gagal formulir (hook bersama).
+  const { busy, formError: error, save } = useFormSave();
 
   const dayId = dayDocId(new Date());
 
@@ -152,10 +153,8 @@ export default function BibleReadingScreen() {
   const terlewat = !existing && minutesLeft <= 0;
 
   async function handleSave() {
-    if (!user || !today || filled.length === 0 || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
+    if (!user || !today || filled.length === 0) return;
+    await save(async () => {
       await saveBibleReading(
         user.uid,
         dayId,
@@ -188,11 +187,7 @@ export default function BibleReadingScreen() {
         pathname: '/spiritual',
         params: { tab: 'bible', session },
       });
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   /**
@@ -201,10 +196,8 @@ export default function BibleReadingScreen() {
    * Menekannya lagi (saat sudah dilewati) membatalkan status itu.
    */
   async function handleSkip() {
-    if (!user || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
+    if (!user) return;
+    await save(async () => {
       await saveBibleReading(
         user.uid,
         dayId,
@@ -212,11 +205,7 @@ export default function BibleReadingScreen() {
         skipped ? '' : BIBLE_SKIPPED,
       );
       if (!skipped) router.back();
-    } catch {
-      setError(SAVE_ERROR);
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   return (
@@ -393,7 +382,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   // Ikut warna pita header ungu di belakangnya.
   dateLine: { marginTop: 2, color: Color.SPIRITUAL_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
   // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.
   // Jarak ke bawahnya = INTRO_GAP milik SpiritualIntro: hitung mundur,
@@ -424,7 +413,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     ...CARD,
     gap: 2,
-    marginBottom: 12,
+    marginBottom: CARD_GAP,
   },
   summaryLabel: { color: Color.TEXT_LABEL },
   summaryText: { color: Color.TEXT_TITLE },
@@ -432,5 +421,5 @@ const styles = StyleSheet.create({
   saveDisabled: { opacity: 0.45 },
   // Bentuk kartunya ada di components/common/SkipToday.tsx — di sini cukup
   // jaraknya saja, karena tiap layar menaruhnya di posisi berbeda.
-  skippedGap: { marginBottom: 12 },
+  skippedGap: { marginBottom: CARD_GAP },
 });
