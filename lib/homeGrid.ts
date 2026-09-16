@@ -89,13 +89,15 @@ const FEATURES: HomeFeature[] = [
 
   { key: 'investment', sort: 9, label: 'Invest', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.INVEST, fg: Color.INVEST_DARK, deep: Color.INVEST_DEEP },
   { key: 'career', sort: 10, label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.CAREER_DARK, deep: Color.CAREER_DEEP },
-  { key: 'fun', sort: 11, label: 'Fun', icon: 'party.popper.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK, deep: Color.FUN_DEEP },
-  { key: 'wheel', sort: 12, label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK, deep: Color.WHEEL_DEEP },
+  // 16 Sep 2026: Fun ↔ News & Wheel ↔ Book bertukar tempat (permintaan user):
+  // Fun & Wheel turun ke baris Car, News & Book naik ke baris Invest.
+  { key: 'fun', sort: 15, label: 'Fun', icon: 'party.popper.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK, deep: Color.FUN_DEEP },
+  { key: 'wheel', sort: 16, label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK, deep: Color.WHEEL_DEEP },
 
   { key: 'car', sort: 13, label: 'Car', icon: 'car.fill', route: '/car', bg: Color.CAR, fg: Color.CAR_DARK, deep: Color.CAR_DEEP },
   { key: 'residence', sort: 14, label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK, deep: Color.HOUSE_DEEP },
-  { key: 'news', sort: 15, label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK, deep: Color.NEWS_DEEP },
-  { key: 'book', sort: 16, label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK, deep: Color.BOOK_DEEP },
+  { key: 'news', sort: 11, label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK, deep: Color.NEWS_DEEP },
+  { key: 'book', sort: 12, label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK, deep: Color.BOOK_DEEP },
 
   { key: 'device', sort: 17, label: 'Device', icon: 'iphone', route: '/device', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
   { key: 'games', sort: 18, label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },

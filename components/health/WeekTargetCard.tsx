@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLive } from '@/hooks/useLive';
 import { formatDecimal, parseDecimal } from '@/lib/format';
 import {
   clearWeekTarget,
@@ -30,15 +31,10 @@ import {
 // Senin jam 00.00.
 export function WeekTargetCard({ km }: { km: number }) {
   const { user } = useAuth();
-  const [target, setTarget] = useState<WeekDistanceTarget | null>(null);
+  const [target] = useLive<WeekDistanceTarget | null>(subscribeWeekTarget);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const { busy, formError, setFormError, save, remove } = useFormSave();
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeWeekTarget(user.uid, setTarget);
-  }, [user]);
 
   function bukaDialog() {
     setInput(

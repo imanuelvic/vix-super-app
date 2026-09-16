@@ -93,6 +93,8 @@ const ROUTE_FEATURE: Record<string, string> = {
   career: 'career',
   project: 'career',
   fun: 'fun',
+  // Gunung di Jawa (app/mountains.tsx) dibuka dari sub-tab Summit → pita Fun.
+  mountains: 'fun',
   wheel: 'wheel',
   car: 'car',
   residence: 'residence',

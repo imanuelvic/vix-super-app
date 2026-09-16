@@ -1,5 +1,13 @@
 import { formatCompactDateTime, formatFullDateTime } from './format';
-import { escapeHtml, htmlParagraphs, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
+import {
+    escapeHtml,
+    htmlParagraphs,
+    pdfFileName,
+    pdfShellHtml,
+    recipientChips,
+    sharePdf,
+    type PdfRecipient,
+} from './pdfDoc';
 import {
     MIN_FOCUS,
     quarterLabel,
@@ -197,13 +205,16 @@ const EXTRA_CSS = `
  * (WhatsApp ada di situ).
  *
  * `orang` = null berarti rodaku sendiri; diisi nama berarti roda CORE Leader
- * itu. Melempar error kalau gagal supaya layar bisa menampilkan pesannya.
+ * itu. `penerima` = CL yang dipilih di sheet "Bagikan ke CORE Leader" (dicetak
+ * di kop bersama tanggal terakhir dibagikan); null = dibagikan biasa.
+ * Melempar error kalau gagal supaya layar bisa menampilkan pesannya.
  */
 export async function shareWheelPdf(
   data: WheelData,
   year: number,
   q: number,
   orang: { name: string; heart: string } | null,
+  penerima: PdfRecipient | null = null,
 ): Promise<void> {
   const kuartal = quarterLabel(year, q);
   const values = WHEEL_AREAS.map((a) => data.scores[a.key] ?? 0);
@@ -280,6 +291,7 @@ export async function shareWheelPdf(
           : '-',
       },
       { label: 'Rata-rata', value: `${avg.toFixed(1).replace('.', ',')} / 10` },
+      ...recipientChips(penerima),
     ],
     bodyHtml,
     footerNote: `Wheel of Life ${kuartal} · dicetak ${formatFullDateTime(new Date())}`,
@@ -288,7 +300,9 @@ export async function shareWheelPdf(
 
   await sharePdf(
     html,
-    'Bagikan Wheel of Life',
+    penerima
+      ? `Kirim ke WhatsApp ${penerima.heart} ${penerima.name}`
+      : 'Bagikan Wheel of Life',
     pdfFileName(`${judul} - ${kuartal}`, 'Wheel of Life'),
   );
 }

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,9 +22,9 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLive } from '@/hooks/useLive';
 import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
     deletePromise,
     newPromiseId,
@@ -52,15 +52,10 @@ export default function PromiseScreen() {
   // Firestore: kuerinya sama persis dengan yang dipakai sub-tab His Promise,
   // dan liveList berbagi satu pendengar untuk kueri yang sama (lihat
   // `queryEqual` di lib/liveDoc.ts).
-  const [list, setList] = useState<HisPromise[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [list] = useLive<HisPromise[]>(subscribePromises, { onError: setError });
   const { busy, formError, setFormError, save, remove } = useFormSave();
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribePromises(user.uid, setList, () => setError(LOAD_ERROR));
-  }, [user]);
 
   const janji = editId ? (list?.find((p) => p.id === editId) ?? null) : null;
   // Janji baru tidak perlu menunggu daftarnya sampai — formulirnya kosong.
@@ -114,7 +109,7 @@ export default function PromiseScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
         title={editId ? 'Ubah Janji 🚩' : 'Janji Tuhan 🚩'}

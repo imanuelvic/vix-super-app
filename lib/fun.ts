@@ -38,6 +38,12 @@ export type FunEntry = {
   medalPhoto?: string | null; // foto medali JPEG base64 (tanpa prefix data:)
   // Field khusus kategori Summit (opsional) — rincian anggaran pendakian (Rp).
   // Total tidak disimpan, dihitung otomatis dari komponen (lihat summitTotal).
+  /**
+   * Gunung dari daftar lib/mountains.ts (16 Sep 2026) — dipilih lewat
+   * provinsi → nama gunung di isiannya. null/kosong = gunung di luar daftar
+   * (namanya diketik bebas); entri lama tanpa ini dicocokkan dari namanya.
+   */
+  mountainId?: string | null;
   costOT?: number; // jasa Open Trip / guide
   costRent?: number; // sewa barang / alat
   costTransport?: number; // transportasi
@@ -75,14 +81,19 @@ export function splitFinishSec(sec: number): { h: number; m: number; s: number }
 /**
  * "1j 25m 30d" / "25m 30d" / "45d". Detik 0 tidak ditulis ("1j 25m") —
  * kecuali memang cuma detik yang ada.
+ *
+ * `detik: false` → detiknya disembunyikan ("1j 25m"), untuk kartu di DAFTAR
+ * race (16 Sep 2026): di sana cukup jam & menit, detik lengkapnya tetap ada
+ * di layar isiannya. Race yang cuma berdetik tetap menampilkan detiknya
+ * (lebih baik "45d" daripada kosong).
  */
-export function formatFinish(sec: number): string {
+export function formatFinish(sec: number, { detik = true } = {}): string {
   if (!sec || sec <= 0) return '';
   const { h, m, s } = splitFinishSec(sec);
   const bagian: string[] = [];
   if (h > 0) bagian.push(`${h}j`);
   if (h > 0 || m > 0) bagian.push(`${m}m`);
-  if (s > 0 || bagian.length === 0) bagian.push(`${s}d`);
+  if ((detik && s > 0) || bagian.length === 0) bagian.push(`${s}d`);
   return bagian.join(' ');
 }
 

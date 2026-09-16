@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD_GAP } from '@/assets/style/card';
@@ -12,6 +12,7 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLive } from '@/hooks/useLive';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
   DISC_OPTIONS,
@@ -50,11 +51,7 @@ export function PersonalityTab({ data }: { data: Personality }) {
 
   // Reminder prioritas yang menyinggung tes kepribadian — ditarik dari fitur
   // Reminder supaya jadwal tesnya tidak tercatat di dua tempat berbeda.
-  const [tasks, setTasks] = useState<OtherTask[]>([]);
-  useEffect(() => {
-    if (!user) return;
-    return subscribeOtherTasks(user.uid, setTasks);
-  }, [user]);
+  const [tasks] = useLive<OtherTask[]>(subscribeOtherTasks, { initial: [] });
   const testTasks = tasks.filter((t) =>
     /mbti|love language|kepribadian|personality|disc/i.test(`${t.title} ${t.note}`),
   );

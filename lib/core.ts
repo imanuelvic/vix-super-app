@@ -218,6 +218,33 @@ const DEFAULT_LEADERS: CoreLeader[] = [
 /** Pilihan warna hati untuk CL baru. */
 export const HEARTS = ['🩷', '❤️', '🧡', '💛', '💚', '🩵', '💙', '💜', '🖤', '🩶', '🤍', '🤎'];
 
+/**
+ * Warna PEKAT tiap hati — kop PDF yang dikirim ke satu CORE memakai warna
+ * love CORE itu, bukan hijau tua kop bersama. Semuanya cukup gelap untuk
+ * tulisan putih di atasnya: 💛 bukan kuning terang melainkan emas tua, 🤍
+ * bukan putih melainkan abu kebiruan. Hati yang tak dikenal (data lama, emoji
+ * lain) jatuh ke hijau tua kop CORE biasa.
+ */
+const HEART_COLOR: Record<string, string> = {
+  '🩷': '#C2185B',
+  '❤': '#B71C1C',
+  '🧡': '#C75000',
+  '💛': '#8A6500',
+  '💚': '#0C5C50',
+  '🩵': '#0277BD',
+  '💙': '#1A4FA0',
+  '💜': '#6A2C91',
+  '🖤': '#1F1F1F',
+  '🩶': '#5F6368',
+  '🤍': '#37474F',
+  '🤎': '#6D4C41',
+};
+
+/** Warna hex untuk kop PDF CORE ini. (❤️ disimpan dengan/tanpa VS16, dua-duanya kena.) */
+export function heartColor(heart: string): string {
+  return HEART_COLOR[heart.replace(/️/g, '')] ?? HEART_COLOR['💚'];
+}
+
 // Main Team: 2–4 orang yang membantu tiap CORE Leader. Disimpan di dokumen
 // terpisah (users/{uid}/core/mainTeam) supaya dokumen leaders tetap kecil.
 export type MainTeamMember = {
@@ -547,6 +574,57 @@ export function deleteExLeader(uid: string, exLeaders: ExLeader[], id: string) {
     uid,
     exLeaders.filter((e) => e.id !== id),
   );
+}
+
+// ==================== Bagikan PDF ke CL 📤 ====================
+// Rekap Visitasi, Timeline, & Wheel of Life dikirim ke SATU CL lewat share
+// sheet (WhatsApp), dan kapan terakhir tiap dokumen dikirim ke tiap CL dicatat
+// di satu dokumen kecil: users/{uid}/core/shares →
+//   { [leaderId]: { recap?: Timestamp, timeline?: Timestamp, wheel?: Timestamp } }
+// Sengaja terpisah dari dokumen leaders: mencatat "sudah dikirim" cuma menulis
+// satu field (merge), tidak perlu menulis ulang seluruh daftar CL, dan tidak
+// berebut dengan form CL yang kebetulan sedang disimpan.
+
+export type ShareDocKind = 'recap' | 'timeline' | 'wheel';
+
+export type ShareLog = Record<string, Partial<Record<ShareDocKind, Timestamp>>>;
+
+export function subscribeShareLog(
+  uid: string,
+  onChange: (log: ShareLog) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const ref = doc(db, 'users', uid, 'core', 'shares');
+  return liveDoc(
+    ref,
+    (snapshot) => onChange((snapshot.data() as ShareLog | undefined) ?? {}),
+    onError,
+  );
+}
+
+/** Catat: dokumen `kind` barusan dibagikan ke CL `leaderId`. */
+export function markSharedToLeader(
+  uid: string,
+  leaderId: string,
+  kind: ShareDocKind,
+  when: Date,
+) {
+  const ref = doc(db, 'users', uid, 'core', 'shares');
+  return setDoc(
+    ref,
+    { [leaderId]: { [kind]: Timestamp.fromDate(when) } },
+    { merge: true },
+  );
+}
+
+/** Kapan dokumen `kind` terakhir dibagikan ke CL ini; null = belum pernah. */
+export function lastSharedTo(
+  log: ShareLog | null,
+  leaderId: string,
+  kind: ShareDocKind,
+): Date | null {
+  const t = log?.[leaderId]?.[kind];
+  return t ? t.toDate() : null;
 }
 
 // ==================== Pertemuan CORE 📅 ====================

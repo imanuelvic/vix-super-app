@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,8 +25,9 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLive } from '@/hooks/useLive';
 import { formatFullDate } from '@/lib/format';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
     deleteMultiplication,
     membersOf,
@@ -66,8 +67,10 @@ export default function MultiplicationDetailScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
-  const [list, setList] = useState<Multiplication[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [list] = useLive<Multiplication[]>(subscribeMultiplications, {
+    onError: setError,
+  });
   const [tab, setTab] = useState<DetailTab>('timeline');
   const [side, setSide] = useState<MultiSide>('a');
 
@@ -87,13 +90,6 @@ export default function MultiplicationDetailScreen() {
 
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeMultiplications(user.uid, setList, () =>
-      setError(LOAD_ERROR),
-    );
-  }, [user]);
 
   const m = list?.find((x) => x.id === id) ?? null;
 
@@ -253,7 +249,7 @@ export default function MultiplicationDetailScreen() {
 
   if (list === null) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="CORE" title="Multiplikasi 🌱" />
         <LoadingCenter />
       </SafeAreaView>
@@ -262,7 +258,7 @@ export default function MultiplicationDetailScreen() {
 
   if (!m) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="CORE" title="Multiplikasi 🌱" />
         <VixText heading="label" additionalStyle={styles.empty}>
           Multiplikasi ini sudah tidak ada.
@@ -278,7 +274,7 @@ export default function MultiplicationDetailScreen() {
   const shownMembers = membersOf(m, side);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
         title="Multiplikasi 🌱"

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -7,6 +7,7 @@ import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { deadlineBorder } from '@/components/common/Deadline';
+import { DualButtons } from '@/components/common/DualButtons';
 import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
@@ -29,6 +30,7 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useEditParam } from '@/hooks/useEditParam';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLive } from '@/hooks/useLive';
 import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
@@ -90,13 +92,9 @@ export function VisitationTab({
   // Catatan Revive/Khotbah yang disambungkan ke visitasi — untuk tombol 🔗.
   // Dokumennya SATU dan liveDoc menggabungkan langganan dokumen yang sama,
   // jadi sub-tab Monthly yang juga membacanya tidak menambah biaya baca.
-  const [noteLinks, setNoteLinks] = useState<CoreNoteLinks>(
-    EMPTY_CORE_NOTE_LINKS,
-  );
-  useEffect(() => {
-    if (!user) return;
-    return subscribeCoreNoteLinks(user.uid, setNoteLinks);
-  }, [user]);
+  const [noteLinks] = useLive<CoreNoteLinks>(subscribeCoreNoteLinks, {
+    initial: EMPTY_CORE_NOTE_LINKS,
+  });
 
   // Form tambah/edit ('new' = sedang menambah baru). Isian & aturannya dipakai
   // bersama layar Riwayat Visitasi (lihat hooks/useVisitationForm.ts).
@@ -112,14 +110,9 @@ export function VisitationTab({
   const { searchMode, query, setQuery, toggleSearch } = useSearchMode();
 
   // Panduan acara ikut ditempel ke notulen visitasi PDF, jadi didengarkan di sini.
-  const [rules, setRules] = useState<CoreRule[]>([]);
+  const [rules] = useLive<CoreRule[]>(subscribeCoreRules, { initial: [] });
   // Visitasi yang PDF-nya sedang dibuat (null = tidak ada).
   const pdf = useBusyTask();
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeCoreRules(user.uid, setRules, () => undefined);
-  }, [user]);
 
   const today = new Date();
   const todayId = dayDocId(today);
@@ -496,25 +489,15 @@ export function VisitationTab({
         subtitle="Tampilkan hanya yang cocok"
         onClose={() => setFilterModal(false)}
         footer={
-          <View style={styles.filterFooter}>
-            <PressableScale
-              style={styles.clearBtn}
-              onPress={() => {
-                setFilterLeaderId(null);
-                setFilterKind(null);
-              }}>
-              <VixText heading="bold" additionalStyle={styles.clearText}>
-                Bersihkan
-              </VixText>
-            </PressableScale>
-            <PressableScale
-              style={styles.doneBtn}
-              onPress={() => setFilterModal(false)}>
-              <VixText heading="bold" additionalStyle={styles.doneBtnText}>
-                Selesai
-              </VixText>
-            </PressableScale>
-          </View>
+          <DualButtons
+            cancelLabel="Bersihkan"
+            confirmLabel="Selesai"
+            onCancel={() => {
+              setFilterLeaderId(null);
+              setFilterKind(null);
+            }}
+            onConfirm={() => setFilterModal(false)}
+          />
         }>
         {/* Picker, bukan deretan chip: 10 CORE + 9 jenis visitasi bikin modal
             langsung penuh. Bentuknya sama persis dengan modal "Jadwalkan
@@ -619,26 +602,6 @@ const styles = StyleSheet.create({
   // Dua tombol aksi berdampingan (bahan tersambung 🔗 lalu kirim).
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tip: { color: Color.TEXT_PARAGRAPH, marginBottom: 12 },
-  // Footer modal filter: dua tombol (Bersihkan / Selesai).
-  filterFooter: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  clearBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: Color.CONTAINER,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-  },
-  clearText: { color: Color.TEXT_TITLE },
-  doneBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: Color.MAIN,
-  },
-  doneBtnText: { color: Color.TEXT_REVERSE },
   fieldLabel: { marginBottom: 6 },
   // Jarak bawah tiap picker filter — sama dengan jarak antar-kolom di modal
   // "Jadwalkan Visitasi" (formGap), jadi kedua modal terasa satu keluarga.

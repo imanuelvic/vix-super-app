@@ -158,7 +158,7 @@ export default function DailyPriorityScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Home"
         title="Daily Priority 💡"
@@ -254,7 +254,7 @@ export default function DailyPriorityScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   hero: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,

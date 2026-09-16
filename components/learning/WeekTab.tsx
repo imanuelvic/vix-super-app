@@ -232,36 +232,26 @@ export function WeekTab({
           )}
         </View>
 
-        {/* ===== Buku rujukan ===== */}
-        {skill.book ? (
-          book ? (
-            <PressableScale
-              style={styles.bookCard}
-              onPress={() =>
-                router.push({ pathname: '/book/[key]', params: { key: book.key } })
-              }>
-              <View style={styles.bookMain}>
-                <VixText heading="bold" additionalStyle={styles.bookTitle}>
-                  📚 {book.title}
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.bookSub}>
-                  {book.author} · {book.chapters.length} bab
-                </VixText>
-              </View>
-              <IconSymbol name="chevron.right" size={18} color={Color.MAIN_DARK} />
-            </PressableScale>
-          ) : (
-            <View style={styles.bookCard}>
-              <View style={styles.bookMain}>
-                <VixText heading="bold" additionalStyle={styles.bookTitle}>
-                  📚 {skill.book}
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.bookSub}>
-                  Belum ada di fitur Book, pakai sumber lain dulu (artikel/video)
-                </VixText>
-              </View>
+        {/* ===== Buku rujukan =====
+            Hanya tampil kalau bukunya ADA di fitur Book (16 Sep 2026): click
+            → langsung ke halaman bacanya. Skill tanpa buku tidak menampilkan
+            apa-apa di sini, bukan kartu "pakai sumber lain dulu". */}
+        {book ? (
+          <PressableScale
+            style={styles.bookCard}
+            onPress={() =>
+              router.push({ pathname: '/book/[key]', params: { key: book.key } })
+            }>
+            <View style={styles.bookMain}>
+              <VixText heading="bold" additionalStyle={styles.bookTitle}>
+                📚 {book.title}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.bookSub}>
+                {book.author} · {book.chapters.length} bab · baca di fitur Book
+              </VixText>
             </View>
-          )
+            <IconSymbol name="chevron.right" size={18} color={Color.MAIN_DARK} />
+          </PressableScale>
         ) : null}
 
         {/* ===== 4 langkah ===== */}

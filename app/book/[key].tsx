@@ -1,5 +1,4 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +11,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useLive } from '@/hooks/useLive';
 import { openExternalUrl } from '@/lib/linking';
 import {
   BOOKS,
@@ -27,16 +27,14 @@ export default function BookDetailScreen() {
   const { key } = useLocalSearchParams<{ key: string }>();
   const book = BOOKS.find((b) => b.key === key);
 
-  const [chapters, setChapters] = useState<ChaptersReadMap>({});
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeReadingProgress(user.uid, setChapters);
-  }, [user]);
+  const [chapters, setChapters] = useLive<ChaptersReadMap>(
+    subscribeReadingProgress,
+    { initial: {} },
+  );
 
   if (!book) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="Book" title="Buku tidak ditemukan" />
         <VixText heading="label" additionalStyle={styles.notFound}>
           Buku ini tidak ada di daftar.
@@ -66,7 +64,7 @@ export default function BookDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Book"
         title={book.title}
@@ -157,7 +155,7 @@ export default function BookDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   notFound: { paddingHorizontal: 20, marginTop: 12 },
   progressCard: {
     backgroundColor: Color.CONTAINER,

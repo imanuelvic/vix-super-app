@@ -45,7 +45,11 @@ export type Skill = {
   what: string;
   /** Judul buku rujukan (apa adanya dari daftarmu). */
   book?: string;
-  /** Diisi kalau bukunya SUDAH ada di fitur Book → bisa dibuka langsung. */
+  /**
+   * Kunci bukunya di fitur Book (lib/books.ts) → kartunya bisa dibuka & dibaca
+   * per bab. Sejak 16 Sep 2026 SEMUA skill yang menyebut buku punya ini;
+   * skill tanpa bookKey tidak menampilkan kartu buku sama sekali.
+   */
   bookKey?: string;
 };
 
@@ -59,6 +63,7 @@ export const SKILLS: Skill[] = [
     title: 'Critical Thinking & Problem Solving',
     what: 'Kemampuan berpikir logis dan menyelesaikan masalah.',
     book: 'Critical Thinking · Richard Paul (2006)',
+    bookKey: 'critical-thinking',
   },
   {
     key: 'soft-skills',
@@ -66,6 +71,7 @@ export const SKILLS: Skill[] = [
     title: 'Soft Skills & Leadership',
     what: 'Cara berkomunikasi, negosiasi, dan bekerja dalam tim.',
     book: 'How to Win Friends and Influence People, Dale Carnegie (1981)',
+    bookKey: 'how-to-win-friends',
   },
   {
     key: 'creativity',
@@ -73,6 +79,7 @@ export const SKILLS: Skill[] = [
     title: 'Creativity & Innovation',
     what: 'Cara berpikir "out of the box", desain, seni, storytelling.',
     book: 'The Creative Habit · Twyla Tharp',
+    bookKey: 'creative-habit',
   },
   // ---------- 🧰 Basic Life Skills ----------
   {
@@ -80,14 +87,16 @@ export const SKILLS: Skill[] = [
     area: 'life',
     title: 'Health & First Aid',
     what: 'Cara menjaga kesehatan, pertolongan pertama (CPR, luka, cedera), pola makan sehat.',
-    book: 'Buku P3K',
+    book: 'First Aid Manual · St John Ambulance (2021)',
+    bookKey: 'first-aid-manual',
   },
   {
     key: 'survival',
     area: 'life',
     title: 'Survival Skills',
     what: 'Cara menghadapi bencana alam, survival di alam liar atau situasi darurat.',
-    book: 'Buku Survival',
+    book: 'SAS Survival Handbook · John Wiseman',
+    bookKey: 'sas-survival-handbook',
   },
   {
     key: 'eq',
@@ -95,6 +104,7 @@ export const SKILLS: Skill[] = [
     title: 'Emotional Intelligence (EQ)',
     what: 'Kemampuan mengelola emosi, empati, komunikasi yang baik.',
     book: 'Emotional Intelligence · Daniel Goleman',
+    bookKey: 'emotional-intelligence',
   },
   // ---------- 🌱 Science & Environment ----------
   {
@@ -103,6 +113,7 @@ export const SKILLS: Skill[] = [
     title: 'Climate Change & Renewable Energy',
     what: 'Cara menghemat energi, solusi masa depan (solar, angin, dll.).',
     book: 'This Changes Everything · Naomi Klein (2014)',
+    bookKey: 'this-changes-everything',
   },
   {
     key: 'biotech',
@@ -110,13 +121,15 @@ export const SKILLS: Skill[] = [
     title: 'Biotechnology & Health',
     what: 'Pemahaman tentang vaksin, terapi gen, dan kemajuan medis.',
     book: 'The Gene · Siddhartha Mukherjee',
+    bookKey: 'the-gene',
   },
   {
     key: 'urban-farming',
     area: 'science',
     title: 'Food Security & Urban Farming',
     what: 'Menanam makanan sendiri, memahami pertanian modern.',
-    book: 'The Urban Farmer',
+    book: 'The Urban Farmer · Curtis Stone',
+    bookKey: 'urban-farmer',
   },
   // ---------- 💻 Technology & Digital ----------
   {
@@ -143,6 +156,7 @@ export const SKILLS: Skill[] = [
     title: 'Digital Marketing & E-commerce',
     what: 'Penting untuk bisnis dan karier masa depan.',
     book: 'Digital Marketing for Dummies',
+    bookKey: 'digital-marketing-dummies',
   },
   // ---------- ⚖️ Politics & Social ----------
   {
@@ -159,6 +173,7 @@ export const SKILLS: Skill[] = [
     title: 'Basic Law & Human Rights',
     what: 'Hak kita sebagai warga negara, hukum global.',
     book: 'The Rule of Law, Tom Bingham',
+    bookKey: 'rule-of-law',
   },
   {
     key: 'media-literacy',
@@ -174,6 +189,7 @@ export const SKILLS: Skill[] = [
     title: 'Ethics & Philosophy',
     what: 'Cara berpikir kritis, membuat keputusan moral yang tepat.',
     book: 'The Ethics of Ambiguity, Simone de Beauvoir',
+    bookKey: 'ethics-of-ambiguity',
   },
   // ---------- 💼 Economics & Business ----------
   // Empat baris di bawah kolom "What I Learn"-nya masih kosong di daftarmu —
@@ -410,7 +426,7 @@ export const LEARNING_STEPS: {
     day: 'Rabu',
     emoji: '📖',
     label: 'Gali',
-    how: 'SATU sumber saja: 1 bab buku, 1 artikel, atau 1 video.',
+    how: 'Cari buku yang berkaitan dengan skill tersebut',
     time: LEARNING_TIME_LABEL,
   },
   {

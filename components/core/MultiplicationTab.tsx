@@ -19,9 +19,9 @@ import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLive } from '@/hooks/useLive';
 import { HEARTS } from '@/lib/core';
 import { formatFullDate } from '@/lib/format';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
     multiProgress,
     multiStatus,
@@ -42,8 +42,10 @@ export function MultiplicationTab() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [list, setList] = useState<Multiplication[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [list] = useLive<Multiplication[]>(subscribeMultiplications, {
+    onError: setError,
+  });
 
   // Form buat/ubah keterangan satu multiplikasi.
   const [editing, setEditing] = useState<Multiplication | 'new' | null>(null);
@@ -56,13 +58,6 @@ export function MultiplicationTab() {
   const [fDay, setFDay] = useState('');
   const [fPlace, setFPlace] = useState('');
   const { busy, formError, setFormError, save } = useFormSave();
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeMultiplications(user.uid, setList, () =>
-      setError(LOAD_ERROR),
-    );
-  }, [user]);
 
   // Isi awal SEKALI: catatan multiplikasi lamamu (timeline + pembagian
   // anggota) dipindahkan dari spreadsheet ke sini saat daftarnya masih benar-

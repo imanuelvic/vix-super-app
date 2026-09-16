@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +14,7 @@ import { SelectField, type SelectOption } from '@/components/common/SelectField'
 import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/contexts/auth';
+import { useLive } from '@/hooks/useLive';
 import {
   CHAT_CATEGORIES,
   fillTemplate,
@@ -46,10 +46,9 @@ const GRUP = '__grup__';
 const MANUAL = '__manual__';
 
 export default function ChatTemplatesScreen() {
-  const { user } = useAuth();
   const router = useRouter();
 
-  const [leaders, setLeaders] = useState<CoreLeader[]>([]);
+  const [leaders] = useLive<CoreLeader[]>(subscribeCoreLeaders, { initial: [] });
   const [error, setError] = useState<string | null>(null);
 
   // Isian penanda. Dipakai bersama SEMUA kategori — ganti nama sekali,
@@ -69,11 +68,6 @@ export default function ChatTemplatesScreen() {
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   const hariIni = todayName();
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeCoreLeaders(user.uid, setLeaders, () => undefined);
-  }, [user]);
 
   /**
    * Kirim ke WhatsApp. Dua jalan, dan yang menentukan siapa yang dituju:

@@ -4,6 +4,8 @@ import * as Sharing from 'expo-sharing';
 
 import { LOGO_CORE_GWU_DATA_URI } from '@/assets/logoCoreGwu';
 
+import { formatCompactDateTime } from './format';
+
 // Kerangka bersama semua PDF CORE (notulen bulanan & Rules & Suggestions):
 // kop hijau berlogo, kartu keterangan, kaki dokumen, lalu dicetak expo-print
 // dan dibagikan lewat share sheet OS.
@@ -84,6 +86,28 @@ export function htmlParagraphs(text: string): string {
 
 /** Satu kartu keterangan di dalam kop, mis. "TANGGAL / Rabu, 19 Agustus 2026". */
 export type PdfChip = { label: string; value: string };
+
+/**
+ * Penerima PDF ini: CL yang dipilih di sheet "Bagikan ke CORE Leader", plus
+ * kapan dokumen yang SAMA terakhir dikirim padanya (null = baru pertama kali).
+ * Dua-duanya dicetak di kop, jadi penerima maupun pengirim sama-sama tahu ini
+ * kiriman yang ke berapa.
+ */
+export type PdfRecipient = { name: string; heart: string; lastShared: Date | null };
+
+/** "Sen, 7 Sep 2026 · 🕒 19.00" atau "Baru pertama kali". */
+export function lastSharedLabel(d: Date | null): string {
+  return d ? formatCompactDateTime(d) : 'Baru pertama kali';
+}
+
+/** Dua chip kop untuk penerimanya; kosong kalau dibagikan tanpa memilih CL. */
+export function recipientChips(r: PdfRecipient | null | undefined): PdfChip[] {
+  if (!r) return [];
+  return [
+    { label: 'Untuk', value: `${r.heart} ${r.name}` },
+    { label: 'Terakhir dibagikan', value: lastSharedLabel(r.lastShared) },
+  ];
+}
 
 /** CSS bersama — kop, kartu keterangan, & kaki. Isi dokumen menambah sendiri. */
 const BASE_CSS = `
@@ -215,6 +239,7 @@ export function pdfShellHtml({
   bodyHtml,
   footerNote,
   extraCss = '',
+  accent,
 }: {
   eyebrow: string;
   title: string;
@@ -224,6 +249,13 @@ export function pdfShellHtml({
   bodyHtml: string;
   footerNote: string;
   extraCss?: string;
+  /**
+   * Warna kop (hex "#RRGGBB") pengganti hijau tua bersama — PDF untuk satu
+   * CORE memakai warna hatinya (lihat heartColor di lib/core.ts). Teks kecil
+   * di kop yang tadinya mint ikut jadi putih redup supaya terbaca di warna
+   * apa pun. Kosong = kop hijau seperti biasa.
+   */
+  accent?: string;
 }): string {
   const chipHtml = chips
     .filter((c) => c.value)
@@ -233,12 +265,20 @@ export function pdfShellHtml({
     )
     .join('');
 
+  const accentCss =
+    accent && /^#[0-9A-Fa-f]{6}$/.test(accent)
+      ? `
+  .kop { background: ${accent}; }
+  .kop .jenis, .kop .anak-judul, .info span { color: rgba(255,255,255,0.8); }
+  .kaki-teks b { color: ${accent}; }`
+      : '';
+
   return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>${BASE_CSS}${extraCss}</style>
+<style>${BASE_CSS}${accentCss}${extraCss}</style>
 </head>
 <body>
   <div class="kop">

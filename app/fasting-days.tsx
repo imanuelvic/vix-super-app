@@ -130,7 +130,7 @@ export default function FastingDaysScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
         title="Hari per Hari 🍽️"
@@ -269,7 +269,7 @@ export default function FastingDaysScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   empty: { textAlign: 'center', marginTop: 20 },
   locked: { color: Color.TEXT_LABEL, marginBottom: 10 },
   fieldLabel: { marginTop: 12, marginBottom: 6 },

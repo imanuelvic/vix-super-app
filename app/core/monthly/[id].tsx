@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useDraft } from '@/hooks/useDraft';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLive } from '@/hooks/useLive';
 import {
     deleteMonthlyMeeting,
     emptyMonthlyPoints,
@@ -32,7 +33,7 @@ import {
     type MonthlyMeeting,
 } from '@/lib/core';
 import { MONTH_NAMES } from '@/lib/format';
-import { DELETE_ERROR, LOAD_ERROR, PHOTO_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, PHOTO_ERROR } from '@/lib/messages';
 import { notulenAiErrorMessage, rapikanNotulen } from '@/lib/notulenAi';
 import { photoUri } from '@/lib/photo';
 
@@ -51,20 +52,19 @@ import { photoUri } from '@/lib/photo';
 // bacaan Firestore dan isiannya langsung terisi.
 export default function MonthlyMeetingEditScreen() {
   const router = useRouter();
+  // Footer dipatok di dasar layar; SafeAreaView layar ini cuma menjaga sisi
+  // atas (seperti Family), jadi ruang aman bawahnya ditambahkan ke footernya
+  // sendiri — pola yang sama dengan app/wheel.tsx.
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = id === 'new';
 
-  const [meetings, setMeetings] = useState<MonthlyMeeting[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [meetings] = useLive<MonthlyMeeting[]>(subscribeMonthlyMeetings, {
+    onError: setError,
+  });
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeMonthlyMeetings(user.uid, setMeetings, () =>
-      setError(LOAD_ERROR),
-    );
-  }, [user]);
 
   const meeting = isNew ? null : (meetings?.find((m) => m.id === id) ?? null);
 
@@ -171,7 +171,7 @@ export default function MonthlyMeetingEditScreen() {
   const hilang = !isNew && !loading && meeting === null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
         title={isNew ? 'Catat Rapat' : 'Ubah Notulen'}
@@ -315,7 +315,7 @@ export default function MonthlyMeetingEditScreen() {
           {/* Pesan gagal ikut di footer, bukan di ujung gulungan: sumbernya
               bisa dari ✨ di paling atas (kuota, offline) maupun Simpan di
               paling bawah, jadi harus terlihat di posisi gulung mana pun. */}
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <FormError message={formError} />
             <DualButtons
               confirmLabel="Simpan"

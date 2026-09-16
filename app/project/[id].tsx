@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,7 +13,7 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { useAuth } from '@/contexts/auth';
+import { useLive } from '@/hooks/useLive';
 import {
     deadlineDaysUntil,
     invoiceTotal,
@@ -23,7 +23,6 @@ import {
 import { deadlineLabel, deadlineTone } from '@/lib/deadline';
 import { formatDate } from '@/lib/format';
 import { INVOICE_PRESETS, presetPrice, shareInvoicePdf } from '@/lib/invoice';
-import { LOAD_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Rincian satu proyek freelance 🌐 — halaman BACA saja.
@@ -34,17 +33,13 @@ import { formatRupiah } from '@/lib/transactions';
 // Mengubah datanya sekali click lagi, lewat tombol ✏️ di kanan atas.
 export default function ProjectScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [projects, setProjects] = useState<FreelanceProject[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [projects] = useLive<FreelanceProject[]>(subscribeFreelance, {
+    onError: setError,
+  });
   const [pdfBusy, setPdfBusy] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeFreelance(user.uid, setProjects, () => setError(LOAD_ERROR));
-  }, [user]);
 
   const project = projects?.find((p) => p.id === id) ?? null;
   const items = project?.invoiceItems ?? [];
@@ -69,7 +64,7 @@ export default function ProjectScreen() {
 
   if (projects === null) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="Career" title="Proyek" />
         <LoadingCenter />
       </SafeAreaView>
@@ -80,7 +75,7 @@ export default function ProjectScreen() {
   // halaman kosong yang membingungkan.
   if (!project) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="Career" title="Proyek" />
         <VixText heading="label" additionalStyle={styles.gone}>
           Proyek ini sudah tidak ada.
@@ -97,7 +92,7 @@ export default function ProjectScreen() {
   const nilai = project.fee > 0 ? project.fee : total;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Career"
         title={project.name}
@@ -263,7 +258,7 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   gone: { textAlign: 'center', marginTop: 24 },
   statusRow: { alignItems: 'center', paddingVertical: 10 },
   statusDone: { color: Color.SUCCESS },

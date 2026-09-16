@@ -200,6 +200,14 @@ export function LeadersTab({
       setFormError('Nama wajib diisi.');
       return;
     }
+    // Nomor HP WAJIB untuk CL (16 Sep 2026): PDF rekap/timeline/wheel dikirim
+    // ke chat WhatsApp nomor ini. "08…" / "+62…" / "62…" semua dirapikan;
+    // kurang dari 8 angka dianggap belum diisi.
+    const phone = normalizePhone(fPhone);
+    if (!phone) {
+      setFormError('No. HP wajib diisi (nomor WhatsApp CL).');
+      return;
+    }
     const data: CoreLeader = {
       id: editing === 'new' ? newCoreLeaderId() : editing.id,
       name: fName.trim(),
@@ -207,7 +215,7 @@ export function LeadersTab({
       birthYear: fBirthday.getFullYear(),
       birthMonth: fBirthday.getMonth(),
       birthDay: fBirthday.getDate(),
-      phone: normalizePhone(fPhone), // "08…" / "+62…" / "62…" semua dirapikan
+      phone,
       lastFollowupDayId: editing === 'new' ? null : editing.lastFollowupDayId,
       gender: fGender,
       disc: fDisc,

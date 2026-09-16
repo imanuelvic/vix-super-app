@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -14,8 +14,8 @@ import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { LinkedNotesButton } from '@/components/core/LinkedNotesButton';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useLive } from '@/hooks/useLive';
 import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { MONTHLY_AGENDA_POINTS, type MonthlyMeeting } from '@/lib/core';
@@ -39,19 +39,14 @@ import { photoUri } from '@/lib/photo';
 // header.
 export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const router = useRouter();
-  const { user } = useAuth();
 
   // Catatan Revive/Khotbah yang disambungkan ke rapat — untuk tombol 🔗.
   // Dilanggan di sini, bukan dioper dari layarnya: dokumennya SATU dan
   // liveDoc menggabungkan langganan dokumen yang sama, jadi sub-tab Visitation
   // yang juga membacanya tidak menambah biaya baca sama sekali.
-  const [noteLinks, setNoteLinks] = useState<CoreNoteLinks>(
-    EMPTY_CORE_NOTE_LINKS,
-  );
-  useEffect(() => {
-    if (!user) return;
-    return subscribeCoreNoteLinks(user.uid, setNoteLinks);
-  }, [user]);
+  const [noteLinks] = useLive<CoreNoteLinks>(subscribeCoreNoteLinks, {
+    initial: EMPTY_CORE_NOTE_LINKS,
+  });
 
   const [error, setError] = useState<string | null>(null);
   // Kartu yang sedang dibentangkan (rapat lama default tertutup biar ringkas).

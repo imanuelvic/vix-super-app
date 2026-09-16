@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
@@ -45,6 +45,9 @@ import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 // belakang biar tidak lupa, yang satu melihat ke depan biar tidak melantur.
 export default function HistoryScreen() {
   const { user } = useAuth();
+  // FAB dipatok di pojok bawah; SafeAreaView layar ini cuma menjaga sisi
+  // atas (seperti Family), jadi ruang aman bawahnya ditambahkan ke FAB-nya.
+  const insets = useSafeAreaInsets();
 
   const [items, setItems] = useState<HistoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +182,7 @@ export default function HistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Profile"
         title="My History 📜"
@@ -337,7 +340,9 @@ export default function HistoryScreen() {
 
       {/* FAB tambah kejadian */}
       {items !== null && all.length > 0 && (
-        <PressableScale style={styles.fab} onPress={openAdd}>
+        <PressableScale
+          style={[styles.fab, { bottom: 24 + insets.bottom }]}
+          onPress={openAdd}>
           <IconSymbol name="plus" size={24} color={Color.TEXT_REVERSE} />
         </PressableScale>
       )}

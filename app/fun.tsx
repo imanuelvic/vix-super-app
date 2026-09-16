@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CreatorsTab } from '@/components/fun/CreatorsTab';
@@ -36,6 +38,7 @@ export default function FunScreen() {
   const { tab, scrollKey, onTabPress } = useTabScroll<FunTab>('creators', {
     tabs: FUN_TABS,
   });
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -43,6 +46,13 @@ export default function FunScreen() {
         backLabel="Home"
         title="Fun & Recreation 🎉"
         subtitle="Arsip petualangan & hiburan terbaru"
+        // 🏔️ hanya di Summit: daftar gunung di Jawa + tanda ✓ yang sudah
+        // ditaklukkan (app/mountains.tsx).
+        right={
+          tab === 'summit' ? (
+            <EmojiButton emoji="🏔️" onPress={() => router.push('/mountains')} />
+          ) : undefined
+        }
       />
 
       <View style={styles.content} key={scrollKey}>

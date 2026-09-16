@@ -4,13 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
+import { ShareToLeaderSheet } from '@/components/core/ShareToLeaderSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import {
@@ -24,17 +25,8 @@ import { visitationRecap } from '@/lib/coreCalendar';
 import { monthShort } from '@/lib/format';
 import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
+import { shareRecapPdf } from '@/lib/recapPdf';
 
-// Rekap Visitasi 📊 — tabel setahun: baris = jenis pertemuan, kolom = CORE
-// Leader (hatinya), isinya berapa kali visitasi jenis itu SELESAI ✅ dengan
-// CL itu. Bentuknya mengikuti lembar rekap yang dulu dibuat manual di
-// spreadsheet: baris Thanksgiving berisi tanggalnya, baris Total di dasar.
-//
-// Adil: acara gabungan dihitung untuk tiap CL yang ikut, dan yang dihitung
-// hanya yang sudah benar-benar terjadi (jadwal yang masih menunggu disebut
-// terpisah di kartu ringkasan). Hitungannya di lib/coreCalendar.ts.
-
-/** Tahun paling awal yang ada datanya — app ini mulai dipakai 2026. */
 const MIN_YEAR = 2026;
 
 export default function CoreRecapScreen() {
@@ -43,6 +35,9 @@ export default function CoreRecapScreen() {
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Sheet "Bagikan ke CORE Leader": PDF rekap tahun ini untuk SATU CORE
+  // (warna hatinya), dikirim ke CL-nya lewat WhatsApp.
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -66,7 +61,15 @@ export default function CoreRecapScreen() {
       <ScreenHeader
         backLabel="CORE"
         title="Rekap Visitasi 📊"
-        subtitle="Berapa kali tiap CL sudah kamu temui, per jenis"
+        subtitle="Rekap visitasi setiap CORE"
+        right={
+          leaders && leaders.length > 0 ? (
+            <EmojiButton
+              icon="square.and.arrow.up"
+              onPress={() => setShareOpen(true)}
+            />
+          ) : undefined
+        }
       />
       <ScreenError message={error} />
 
@@ -74,7 +77,6 @@ export default function CoreRecapScreen() {
         <LoadingCenter />
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Navigasi tahun */}
           <View style={styles.yearRow}>
             <PressableScale
               onPress={() => setYear((y) => y - 1)}
@@ -87,7 +89,7 @@ export default function CoreRecapScreen() {
               />
             </PressableScale>
             <VixText heading="title" additionalStyle={styles.yearText}>
-              Tahun {year}
+              {year}
             </VixText>
             <PressableScale
               onPress={() => setYear((y) => y + 1)}
@@ -101,18 +103,9 @@ export default function CoreRecapScreen() {
             </PressableScale>
           </View>
 
-          <SummaryCard
-            label={`Visitasi selesai ${year}`}
-            value={`${rekap.grand}× pertemuan`}
-            sub={`${leaders.length} CORE Leader · ${rekap.planned} jadwal masih menunggu`}
-          />
-
           {leaders.length === 0 ? (
             <EmptyText>Belum ada CORE Leader untuk direkap.</EmptyText>
           ) : (
-            /* Tabel: label jenis di kiri, satu kolom per CL, Σ di kanan.
-               Kolomnya melebar mengisi layar; kalau CL-nya banyak sekali,
-               tabelnya bisa digeser ke samping. */
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.tableScroll}>
               <View style={styles.table}>
@@ -153,7 +146,7 @@ export default function CoreRecapScreen() {
                   return (
                     <View key={r.kind} style={styles.row}>
                       <VixText heading="label" additionalStyle={styles.labelCol} numberOfLines={2}>
-                        {meta.icon} {meta.label}
+                        {meta.icon}
                       </VixText>
                       {r.counts.map((n, i) => (
                         <VixText
@@ -188,14 +181,18 @@ export default function CoreRecapScreen() {
               </View>
             </ScrollView>
           )}
-
-          <VixText heading="label" additionalStyle={styles.note}>
-            Yang dihitung hanya visitasi yang sudah ditandai ✅ selesai. Acara
-            gabungan dihitung untuk tiap CL yang ikut. Baris Thanksgiving
-            menunjukkan tanggal Thanksgiving tiap CL tahun itu.
-          </VixText>
         </ScrollView>
       )}
+
+      <ShareToLeaderSheet
+        visible={shareOpen}
+        onClose={() => setShareOpen(false)}
+        kind="recap"
+        doc={`Rekap Visitasi ${year}`}
+        share={(l, lastShared) =>
+          shareRecapPdf(l, visitations ?? [], year, lastShared)
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -239,5 +236,4 @@ const styles = StyleSheet.create({
   cellZero: { color: Color.TEXT_PLACEHOLDER },
   cellDate: { fontSize: 11, lineHeight: 14 },
   totalText: { color: Color.CORE_DARK },
-  note: { color: Color.TEXT_LABEL, marginTop: CARD_GAP },
 });

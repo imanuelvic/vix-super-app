@@ -5,13 +5,19 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
 // Sepasang tombol modal: Batal + aksi utama (Simpan/Hapus/dll).
+//
+// `cancelLabel` untuk sheet filter ("Bersihkan" + "Selesai"): bentuknya persis
+// pasangan Batal/Simpan, cuma tulisannya yang lain. Dulu Visitation menulis
+// ulang kedua gaya tombolnya sendiri untuk itu.
 export function DualButtons({
+  cancelLabel = 'Batal',
   confirmLabel,
   danger = false,
   busy = false,
   onCancel,
   onConfirm,
 }: {
+  cancelLabel?: string;
   confirmLabel: string;
   danger?: boolean; // true = tombol merah (aksi destruktif)
   busy?: boolean;
@@ -21,7 +27,7 @@ export function DualButtons({
   return (
     <View style={styles.row}>
       <PressableScale style={styles.cancel} onPress={onCancel} disabled={busy}>
-        <VixText heading="bold">Batal</VixText>
+        <VixText heading="bold">{cancelLabel}</VixText>
       </PressableScale>
       <PressableScale
         style={[styles.confirm, danger && styles.danger, busy && styles.busy]}

@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -20,6 +20,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
+import { useLive } from '@/hooks/useLive';
 import {
     invoiceTotal,
     newCareerId,
@@ -30,7 +31,7 @@ import {
 } from '@/lib/career';
 import { formatShortRupiah, groupDigits, parseAmount } from '@/lib/format';
 import { INVOICE_PRESETS, presetPrice } from '@/lib/invoice';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 // Draft item invoice — qty & harga sebagai string supaya enak diedit di input.
@@ -54,18 +55,19 @@ function toDraft(it: InvoiceItem): ItemDraft {
 // bawahnya susah dijangkau. Di layar penuh semuanya lega.
 export default function ProjectEditScreen() {
   const router = useRouter();
+  // Footer dipatok di dasar layar; SafeAreaView layar ini cuma menjaga sisi
+  // atas (seperti Family), jadi ruang aman bawahnya ditambahkan ke footernya
+  // sendiri — pola yang sama dengan app/wheel.tsx.
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const isNew = id === 'new';
 
-  const [projects, setProjects] = useState<FreelanceProject[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [projects] = useLive<FreelanceProject[]>(subscribeFreelance, {
+    onError: setError,
+  });
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeFreelance(user.uid, setProjects, () => setError(LOAD_ERROR));
-  }, [user]);
 
   const project = isNew ? null : (projects?.find((p) => p.id === id) ?? null);
 
@@ -173,7 +175,7 @@ export default function ProjectEditScreen() {
   const loading = !isNew && projects === null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Kembali"
         title={isNew ? 'Tambah Proyek' : 'Ubah Proyek'}
@@ -347,7 +349,7 @@ export default function ProjectEditScreen() {
             )}
           </KeyboardAwareScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <DualButtons
               confirmLabel="Simpan"
               busy={busy}

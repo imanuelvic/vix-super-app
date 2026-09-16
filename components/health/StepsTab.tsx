@@ -15,6 +15,7 @@ import { WeekTargetCard } from '@/components/health/WeekTargetCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useHealthToday } from '@/hooks/useHealthToday';
+import { useLive } from '@/hooks/useLive';
 import { formatDecimal, groupDigits, MONTH_NAMES } from '@/lib/format';
 import {
   dayDocId,
@@ -107,11 +108,7 @@ export function StepsTab({
   // Langkah yang dicatat sendiri (jalan tanpa HP — jam tangan Huawei tidak
   // tersambung ke Apple Health). Dokumennya SAMA dengan langganan langkah di
   // atas, jadi liveDoc menggabungkannya jadi satu listener: nol baca tambahan.
-  const [manual, setManual] = useState<StepManualMap>({});
-  useEffect(() => {
-    if (!user) return;
-    return subscribeManualSteps(user.uid, setManual);
-  }, [user]);
+  const [manual] = useLive<StepManualMap>(subscribeManualSteps, { initial: {} });
 
   // `bukaKe` naik tiap modal tambah-manual dibuka, dan dipakai sebagai `key`
   // modalnya — jadi tiap dibuka isinya segar lagi. Sengaja TIDAK ikut berubah

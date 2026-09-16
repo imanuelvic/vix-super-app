@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -25,6 +25,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
+import { useLive } from '@/hooks/useLive';
 import {
   deleteFastingPlan,
   FASTING_GRACE_DAYS,
@@ -50,17 +51,12 @@ export default function FastingScreen() {
   // ?id=<puasa> membuka periode tertentu.
   const { id: idParam } = useLocalSearchParams<{ id?: string }>();
 
-  const [plans, setPlans] = useState<FastingPlan[] | null>(null);
+  const [plans] = useLive<FastingPlan[]>(subscribeFastingPlans);
   const [planId, setPlanId] = useState(
     typeof idParam === 'string' ? idParam : '',
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeFastingPlans(user.uid, setPlans);
-  }, [user]);
 
   const plan = plans?.find((p) => p.id === planId) ?? null;
 
@@ -157,7 +153,7 @@ export default function FastingScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
         title={
@@ -398,7 +394,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   flex: { flex: 1 },
   // paddingTop 4 = sama dengan layar berisian lain (mis. Template Chat).
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
   error: { marginTop: 10 },
   // Jarak tombol aksi dari isian di atasnya — sama dengan layar Spiritual lain.

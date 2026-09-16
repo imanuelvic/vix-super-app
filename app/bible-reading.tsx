@@ -209,7 +209,7 @@ export default function BibleReadingScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Home"
         title={`${meta.title} ${meta.emoji}`}
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   // Ikut warna pita header ungu di belakangnya.
   dateLine: { marginTop: 2, color: Color.SPIRITUAL_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
   // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.
   // Jarak ke bawahnya = INTRO_GAP milik SpiritualIntro: hitung mundur,

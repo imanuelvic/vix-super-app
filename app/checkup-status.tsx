@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,14 +10,13 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { CheckupStatusCard } from '@/components/health/CheckupStatusCard';
-import { useAuth } from '@/contexts/auth';
+import { useLive } from '@/hooks/useLive';
 import {
   CHECKUP_TYPES,
   subscribeCheckups,
   type Checkup,
   type CheckupType,
 } from '@/lib/health';
-import { LOAD_ERROR } from '@/lib/messages';
 
 // Layar 🩺 Hasil Pemeriksaan — Tekanan Darah & Gula Darah, lengkap.
 //
@@ -27,15 +26,9 @@ import { LOAD_ERROR } from '@/lib/messages';
 // keterangan panjangnya di sini.
 export default function CheckupStatusScreen() {
   const router = useRouter();
-  const { user } = useAuth();
 
-  const [checkups, setCheckups] = useState<Checkup[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeCheckups(user.uid, setCheckups, () => setError(LOAD_ERROR));
-  }, [user]);
+  const [checkups] = useLive<Checkup[]>(subscribeCheckups, { onError: setError });
 
   // Catatan TERBARU per jenis — daftarnya sudah urut terbaru dulu, jadi yang
   // pertama ketemu itulah yang terakhir dicek.

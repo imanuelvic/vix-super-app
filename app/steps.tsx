@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useAccordion } from '@/hooks/useAccordion';
 import { useHealthToday } from '@/hooks/useHealthToday';
+import { useLive } from '@/hooks/useLive';
 import { dayIdToDate, formatShortDayDate, groupDigits } from '@/lib/format';
 import {
   recordStepDays,
@@ -42,15 +43,9 @@ export default function StepsScreen() {
   // Galatnya didiamkan di dalam hook: HK opsional, rekor tetap tampil dari
   // data tersimpan.
   const { status: hkStatus, today: hk } = useHealthToday();
-  const [stepDays, setStepDays] = useState<StepDaysMap>({});
+  const [stepDays] = useLive<StepDaysMap>(subscribeStepDays, { initial: {} });
   // Satu tier terbuka sekaligus — aturannya di hooks/useAccordion.ts.
   const { isOpen: tierTerbuka, toggle: toggleTier } = useAccordion<number>();
-
-  // Dengarkan rekor langkah tersimpan (dokumen kecil, 1 listener).
-  useEffect(() => {
-    if (!user) return;
-    return subscribeStepDays(user.uid, setStepDays);
-  }, [user]);
 
   // Isi rekor dari riwayat Apple Health — hanya hari yang SUDAH SELESAI &
   // tembus tier terendah. Sekali per buka; 1 tulis (merge).
@@ -70,7 +65,7 @@ export default function StepsScreen() {
   const todayTier = hk?.steps != null ? stepTierOf(hk.steps) : null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Health"
         title="Langkah Kaki👣"
@@ -171,7 +166,7 @@ export default function StepsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   todayCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 18,

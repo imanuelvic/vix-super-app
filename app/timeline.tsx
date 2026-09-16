@@ -21,6 +21,7 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
+import { ShareToLeaderSheet } from '@/components/core/ShareToLeaderSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
@@ -211,18 +212,23 @@ export default function TimelineScreen() {
     return isi;
   }
 
-  // Cetak SELURUH wishlist (tahun berlalu & mendatang) jadi PDF garis waktu,
-  // lalu buka share sheet — WhatsApp ada di situ. Bentuknya sama dengan tombol
-  // share di Wheel of Life.
+  const pemilik = owner
+    ? { name: orang, heart: params.heart ?? '📍', birthYear }
+    : null;
+  const judulDok = owner ? `Timeline ${params.heart ?? '📍'} ${orang}` : 'My Timeline';
+
+  // Tombol share di header membuka sheet "Bagikan ke CORE Leader" (16 Sep
+  // 2026): pilih CL-nya, PDF SELURUH wishlist (tahun berlalu & mendatang)
+  // dibuat sebagai garis waktu lalu share sheet terbuka, dan chat WA nomornya
+  // menyusul. Bentuknya sama dengan Wheel of Life & Rekap Visitasi.
+  const [shareOpen, setShareOpen] = useState(false);
+
+  // Bagikan biasa, tanpa memilih CL (baris terakhir di sheet).
   function handleShare() {
     void tugas.run({
       key: 'pdf',
       start: () => setError(null),
-      task: async () =>
-        shareTimelinePdf(
-          await muatSemua(),
-          owner ? { name: orang, heart: params.heart ?? '📍', birthYear } : null,
-        ),
+      task: async () => shareTimelinePdf(await muatSemua(), pemilik),
       fail: () => setError('Gagal membuat PDF Timeline. Coba lagi.'),
     });
   }
@@ -349,7 +355,7 @@ export default function TimelineScreen() {
             />
             <EmojiButton
               icon="square.and.arrow.up"
-              onPress={handleShare}
+              onPress={() => setShareOpen(true)}
               busy={tugas.busy === 'pdf'}
               disabled={tugas.busy !== null}
             />
@@ -639,6 +645,21 @@ export default function TimelineScreen() {
           </>
         )}
       </SheetModal>
+
+      <ShareToLeaderSheet
+        visible={shareOpen}
+        onClose={() => setShareOpen(false)}
+        kind="timeline"
+        doc={judulDok}
+        share={async (l, lastShared) =>
+          shareTimelinePdf(await muatSemua(), pemilik, {
+            name: l.name,
+            heart: l.heart,
+            lastShared,
+          })
+        }
+        onSharePlain={handleShare}
+      />
     </SafeAreaView>
   );
 }

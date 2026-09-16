@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -12,6 +12,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
+import { useLive } from '@/hooks/useLive';
 import { todayName } from '@/lib/chatTemplates';
 import {
     birthdayGroupText,
@@ -71,11 +72,7 @@ export function FollowupTab({
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   // Siapa yang sudah dikirimi ucapan ulang tahun hari ini → kartunya hilang.
-  const [greets, setGreets] = useState<BirthdayGreets>({});
-  useEffect(() => {
-    if (!user) return;
-    return subscribeBirthdayGreets(user.uid, setGreets);
-  }, [user]);
+  const [greets] = useLive<BirthdayGreets>(subscribeBirthdayGreets, { initial: {} });
   // "Ganti pertanyaan" → seed acak per orang untuk memilih pertanyaan lain.
   const [topicOverride, setTopicOverride] = useState<Record<string, number>>({});
   // Modal tengah: pokok doa 1 CL (follow up), dan ide pendekatan 1 CL.

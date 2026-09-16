@@ -1,4 +1,11 @@
-import { escapeHtml, pdfFileName, pdfShellHtml, sharePdf } from './pdfDoc';
+import {
+  escapeHtml,
+  pdfFileName,
+  pdfShellHtml,
+  recipientChips,
+  sharePdf,
+  type PdfRecipient,
+} from './pdfDoc';
 import { formatFullDateTime, MONTH_NAMES } from './format';
 import {
   BIRTH_YEAR,
@@ -175,12 +182,14 @@ const EXTRA_CSS = `
  * (WhatsApp ada di situ).
  *
  * `orang` = null berarti timeline-ku sendiri; diisi nama berarti timeline
- * CORE Leader itu. Melempar error kalau gagal supaya layar bisa menampilkan
- * pesannya.
+ * CORE Leader itu. `penerima` = CL yang dipilih di sheet "Bagikan ke CORE
+ * Leader" (dicetak di kop bersama tanggal terakhir dibagikan); null = dibagikan
+ * biasa. Melempar error kalau gagal supaya layar bisa menampilkan pesannya.
  */
 export async function shareTimelinePdf(
   years: TimelineYear[],
   orang: TimelineOrang,
+  penerima: PdfRecipient | null = null,
   now: Date = new Date(),
 ): Promise<void> {
   const { total, done } = timelineTotals(years);
@@ -212,6 +221,7 @@ export async function shareTimelinePdf(
       { label: 'Rentang', value: rentang },
       { label: 'Wishlist', value: String(total) },
       { label: 'Tercapai', value: `${done} dari ${total}` },
+      ...recipientChips(penerima),
       { label: 'Dicetak', value: formatFullDateTime(now) },
     ],
     bodyHtml,
@@ -219,5 +229,9 @@ export async function shareTimelinePdf(
     extraCss: EXTRA_CSS,
   });
 
-  await sharePdf(html, 'Bagikan Timeline', pdfFileName(judul, 'Timeline'));
+  await sharePdf(
+    html,
+    penerima ? `Kirim ke WhatsApp ${penerima.heart} ${penerima.name}` : 'Bagikan Timeline',
+    pdfFileName(judul, 'Timeline'),
+  );
 }

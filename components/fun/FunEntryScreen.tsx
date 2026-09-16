@@ -1,8 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { DateField } from '@/components/common/DateField';
@@ -15,10 +15,12 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SelectField, type SelectOption } from '@/components/common/SelectField';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useDraft } from '@/hooks/useDraft';
+import { useLive } from '@/hooks/useLive';
 import { groupDigits, parseAmount, parseDecimal } from '@/lib/format';
 import {
     formatPace,
@@ -37,14 +39,30 @@ import {
 } from '@/lib/fun';
 import {
     DELETE_ERROR,
-    LOAD_ERROR,
     PHOTO_ERROR,
     SAVE_ERROR,
 } from '@/lib/messages';
+import {
+    elevationLabel,
+    MOUNTAIN_PROVINCES,
+    mountainOf,
+    mountainOfEntry,
+    mountainsOf,
+    mountainTitle,
+    provinceLabel,
+    type MountainProvince,
+} from '@/lib/mountains';
 import { photoUri } from '@/lib/photo';
 import { formatRupiah } from '@/lib/transactions';
 
 const KATEGORI: FunCategory[] = ['summit', 'race', 'reflection', 'recreation'];
+
+/** Pilihan provinsi di isian Summit: tiga provinsi Jawa + "Lainnya" (ketik bebas). */
+type ProvinsiPilihan = MountainProvince | 'other';
+const PROVINSI_OPTIONS: SelectOption<ProvinsiPilihan>[] = [
+  ...MOUNTAIN_PROVINCES.map((p) => ({ key: p.key, label: p.label })),
+  { key: 'other', label: 'Lainnya', sub: 'di luar daftar / luar Jawa, nama diketik sendiri' },
+];
 
 /** Angka tersimpan → teks kolom uang ("" kalau nol). */
 const rupiahDraft = (n?: number) => (n ? groupDigits(String(n)) : '');
@@ -71,36 +89,59 @@ export function FunEntryScreen({
 }) {
   const router = useRouter();
   const { user } = useAuth();
-  const { id, category: kategoriParam } = useLocalSearchParams<{
-    id: string;
-    category?: string;
-  }>();
+  // Footer dipatok di dasar layar; SafeAreaView layar ini cuma menjaga sisi
+  // atas (seperti Family), jadi ruang aman bawahnya ditambahkan ke footernya
+  // sendiri — pola yang sama dengan app/wheel.tsx.
+  const insets = useSafeAreaInsets();
+  const { id, category: kategoriParam, mountain: mountainParam } =
+    useLocalSearchParams<{
+      id: string;
+      category?: string;
+      /** Summit baru dari halaman Gunung di Jawa: gunungnya sudah terpilih. */
+      mountain?: string;
+    }>();
   const isNew = id === 'new';
   const category: FunCategory =
     kategoriTetap ??
     (KATEGORI.find((k) => k === kategoriParam) ?? 'recreation');
   const meta = funCategoryMeta(category);
 
-  const [data, setData] = useState<FunData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [data] = useLive<FunData>(subscribeFun, { onError: setError });
   const [busy, setBusy] = useState(false);
   const foto = useBusyTask<'foto'>();
   const photoBusy = foto.busy !== null;
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeFun(user.uid, setData, () => setError(LOAD_ERROR));
-  }, [user]);
-
   const entry = isNew ? null : (data?.entries.find((e) => e.id === id) ?? null);
+
+  // Khusus Summit — gunung dari daftar lib/mountains.ts (16 Sep 2026): pilih
+  // provinsi → nama gunung, lalu nama, lokasi & ketinggiannya terisi sendiri
+  // (tetap boleh diubah). Entri lama tanpa `mountainId` dicocokkan dari
+  // namanya ("Gunung Semeru (Ranu Kumbolo)" → Semeru); yang tak ada di
+  // daftar jatuh ke "Lainnya" dan namanya tetap ketikan bebas seperti dulu.
+  const awalGunung = isNew
+    ? mountainOf(mountainParam)
+    : entry
+      ? mountainOfEntry(entry)
+      : null;
+  const [mountainId, setMountainId] = useDraft<string | null>(awalGunung?.id ?? null);
+  const [province, setProvince] = useDraft<ProvinsiPilihan | null>(
+    awalGunung ? awalGunung.province : entry ? 'other' : null,
+  );
 
   // Isian form. `useDraft` menyimpan HANYA yang kamu ketik — sebelum itu
   // nilainya ikut data Firestore yang datang belakangan, tanpa useEffect yang
   // mengisi state (dilarang React Compiler).
   const [today] = useState(() => new Date());
-  const [title, setTitle] = useDraft(entry?.title ?? '');
-  const [place, setPlace] = useDraft(entry?.place ?? '');
-  const [detail, setDetail] = useDraft(entry?.detail ?? '');
+  const [title, setTitle] = useDraft(
+    entry?.title ?? (awalGunung ? mountainTitle(awalGunung) : ''),
+  );
+  const [place, setPlace] = useDraft(
+    entry?.place ?? (awalGunung ? provinceLabel(awalGunung.province) : ''),
+  );
+  const [detail, setDetail] = useDraft(
+    entry?.detail ?? (awalGunung ? elevationLabel(awalGunung.elevation) : ''),
+  );
   const [note, setNote] = useDraft(entry?.note ?? '');
   const [date, setDate] = useDraft(entry?.date ? entry.date.toDate() : today);
   // Khusus Race.
@@ -140,6 +181,19 @@ export function FunEntryScreen({
     parseAmount(costPermit) +
     parseAmount(costOther);
 
+  function pilihProvinsi(p: ProvinsiPilihan | null) {
+    setProvince(p);
+    setMountainId(null);
+  }
+
+  function pilihGunung(idGunung: string | null) {
+    setMountainId(idGunung);
+    const m = mountainOf(idGunung);
+    if (!m) return;
+    setTitle(mountainTitle(m));
+    setPlace(provinceLabel(m.province));
+    setDetail(elevationLabel(m.elevation));
+  }
   function handlePickMedal() {
     if (busy) return;
     return foto.run({
@@ -180,6 +234,7 @@ export function FunEntryScreen({
       next.medalPhoto = medalPhoto;
     }
     if (category === 'summit') {
+      next.mountainId = province === 'other' ? null : mountainId;
       next.costOT = parseAmount(costOT);
       next.costRent = parseAmount(costRent);
       next.costTransport = parseAmount(costTransport);
@@ -218,7 +273,7 @@ export function FunEntryScreen({
   const loading = !isNew && data === null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         // Race tinggal di Health sejak 30 Agu 2026; yang lain di Fun.
         backLabel={category === 'race' ? 'Health' : 'Fun'}
@@ -231,13 +286,55 @@ export function FunEntryScreen({
       ) : (
         <>
           <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-            <FormInput
-              placeholder={meta.titleLabel}
-              value={title}
-              onChangeText={setTitle}
-              editable={!busy}
-              autoFocus={isNew}
-            />
+            {category === 'summit' ? (
+              <>
+                {/* Provinsi → gunung dari daftar; nama di bawahnya terisi
+                    sendiri tapi tetap bisa ditambahi, mis. "(Ranu Kumbolo)". */}
+                <VixText heading="label" additionalStyle={styles.fieldLabelFirst}>
+                  🗺️ Provinsi
+                </VixText>
+                <SelectField
+                  value={province}
+                  options={PROVINSI_OPTIONS}
+                  onChange={pilihProvinsi}
+                  placeholder="Pilih provinsi"
+                  disabled={busy}
+                />
+                {province && province !== 'other' ? (
+                  <>
+                    <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                      ⛰️ Gunung
+                    </VixText>
+                    <SelectField
+                      value={mountainId}
+                      options={mountainsOf(province).map((m) => ({
+                        key: m.id,
+                        label: mountainTitle(m),
+                        sub: `${elevationLabel(m.elevation)} · ${m.note}`,
+                      }))}
+                      onChange={pilihGunung}
+                      placeholder="Pilih gunung yang didaki"
+                      disabled={busy}
+                    />
+                  </>
+                ) : null}
+                <FormInput
+                  style={styles.inputGap}
+                  placeholder={meta.titleLabel}
+                  value={title}
+                  onChangeText={setTitle}
+                  editable={!busy}
+                />
+              </>
+            ) : (
+              <FormInput
+                placeholder={meta.titleLabel}
+                value={title}
+                onChangeText={setTitle}
+                editable={!busy}
+                autoFocus={isNew}
+              />
+            )}
             <FormInput
               style={styles.inputGap}
               placeholder="Lokasi (opsional)"
@@ -413,7 +510,7 @@ export function FunEntryScreen({
             )}
           </KeyboardAwareScrollView>
 
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <DualButtons
               confirmLabel="Simpan"
               busy={busy}
@@ -432,6 +529,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   inputGap: { marginTop: 8 },
   fieldLabel: { marginTop: 10, marginBottom: 6 },
+  fieldLabelFirst: { marginBottom: 6 },
   // Jam · menit · detik: tiga kolom selebar sama.
   timeRow: { flexDirection: 'row', gap: 8 },
   timeInput: { flex: 1 },

@@ -146,3 +146,62 @@ export function visitationRecap(
     planned,
   };
 }
+
+// ======================= Rekap SATU CORE (untuk PDF-nya) =======================
+
+export type LeaderRecapRow = {
+  kind: MeetingKind;
+  /** Tanggal tiap pertemuan SELESAI jenis ini dengan CL ini, urut naik. */
+  dates: Date[];
+};
+
+export type LeaderRecap = {
+  year: number;
+  /** Satu baris per jenis pertemuan, urutan MEETING_KINDS. */
+  rows: LeaderRecapRow[];
+  /** Seluruh pertemuan selesai tahun itu dengan CL ini. */
+  total: number;
+  /** Tanggal Thanksgiving CL ini tahun itu (yang paling awal); null = belum. */
+  thanksgiving: Date | null;
+  /** Jadwal tahun itu yang BELUM selesai, urut naik: masih menunggu / terlewat. */
+  upcoming: { kind: MeetingKind; date: Date }[];
+};
+
+/**
+ * Rekap satu tahun dari sudut pandang SATU CL — isi PDF yang dikirim ke CORE
+ * itu sendiri. Aturannya sama dengan tabel di layar (visitationRecap): yang
+ * dihitung hanya yang ✅ selesai, acara gabungan tetap sebuah pertemuan,
+ * Thanksgiving diambil yang paling awal. Bedanya, di sini TANGGALNYA ikut:
+ * "3× Visitasi CORE" tanpa tanggal tidak berarti apa-apa buat yang menerima.
+ */
+export function leaderRecap(
+  visitations: Visitation[],
+  leaderId: string,
+  year: number,
+): LeaderRecap {
+  const rows: LeaderRecapRow[] = MEETING_KINDS.map((k) => ({ kind: k.key, dates: [] }));
+  const upcoming: LeaderRecap['upcoming'] = [];
+  let thanksgiving: Date | null = null;
+
+  const urut = [...visitations].sort((a, b) => a.date.toMillis() - b.date.toMillis());
+  for (const v of urut) {
+    if (!v.leaderIds.includes(leaderId)) continue;
+    const d = v.date.toDate();
+    if (d.getFullYear() !== year) continue;
+    if (!v.done) {
+      upcoming.push({ kind: v.kind, date: d });
+      continue;
+    }
+    (rows.find((r) => r.kind === v.kind) ?? rows[0]).dates.push(d);
+    const syukur = v.kind === 'thanksgiving' || v.thanksgiving;
+    if (syukur && (!thanksgiving || d.getTime() < thanksgiving.getTime())) thanksgiving = d;
+  }
+
+  return {
+    year,
+    rows,
+    total: rows.reduce((s, r) => s + r.dates.length, 0),
+    thanksgiving,
+    upcoming,
+  };
+}

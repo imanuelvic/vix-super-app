@@ -12,6 +12,7 @@ import { Color } from '@/assets/style/color';
 import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useKeyedData } from '@/hooks/useKeyedData';
@@ -124,6 +125,18 @@ export function FunArchive({
 
   return (
     <>
+      {/* Tombol tambah DIPATOK di atas daftar (16 Sep 2026), sama seperti
+          tombol utama sub-tab CORE: tetap kelihatan walau daftarnya digulung,
+          jarak atas-bawahnya milik StickyTop (CARD_GAP). Dulu ia kepala
+          FlatList dan ikut naik hilang. */}
+      <StickyTop>
+        <PrimaryButton
+          label={`Tambah ${meta.label}`}
+          icon="plus"
+          background={warna}
+          onPress={() => bukaIsian('new')}
+        />
+      </StickyTop>
       <View style={styles.content}>
         {loading ? (
           <View style={styles.center}>
@@ -137,17 +150,7 @@ export function FunArchive({
             showsVerticalScrollIndicator
             persistentScrollbar
             indicatorStyle="black"
-            ListHeaderComponent={
-              <View style={styles.listHeader}>
-                <PrimaryButton
-                  label={`Tambah ${meta.label}`}
-                  icon="plus"
-                  background={warna}
-                  onPress={() => bukaIsian('new')}
-                />
-                <FormError message={error} gap="top" />
-              </View>
-            }
+            ListHeaderComponent={<FormError message={error} />}
             ListEmptyComponent={
               <View style={styles.center}>
                 <VixText heading="label" additionalStyle={styles.emptyText}>
@@ -260,7 +263,8 @@ export function FunArchive({
                       return [
                         item.price ? `💵 ${formatRupiah(item.price)}` : '',
                         item.distanceKm ? `📏 ${formatDecimal(item.distanceKm)} km` : '',
-                        detikTempuh > 0 ? `⏱️ ${formatFinish(detikTempuh)}` : '',
+                        // Di daftar cukup jam & menit; detiknya ada di layar isiannya.
+                        detikTempuh > 0 ? `⏱️ ${formatFinish(detikTempuh, { detik: false })}` : '',
                         paceItem !== null ? `🏃 ${formatPace(paceItem)}` : '',
                       ]
                         .filter(Boolean)
@@ -303,15 +307,15 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   center: { alignItems: 'center', justifyContent: 'center', paddingTop: 40 },
   emptyText: { textAlign: 'center', paddingHorizontal: 20 },
-  listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  listHeader: { marginBottom: 6 },
+  // paddingTop 0: jarak dari tombol yang dipatok sudah milik StickyTop.
+  listContent: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,
     borderWidth: 1.5,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginTop: 10,
+    marginBottom: 10,
     gap: 6,
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },

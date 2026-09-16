@@ -177,44 +177,33 @@ export function SkillsTab({
               {open.what}
             </VixText>
 
-            {open.book ? (
-              openBook ? (
-                <PressableScale
-                  style={styles.detailBook}
-                  onPress={() => {
-                    setOpen(null);
-                    router.push({
-                      pathname: '/book/[key]',
-                      params: { key: openBook.key },
-                    });
-                  }}>
-                  <View style={styles.rowMain}>
-                    <VixText heading="bold" additionalStyle={styles.bookTitle}>
-                      📚 {openBook.title}
-                    </VixText>
-                    <VixText heading="label" additionalStyle={styles.rowWhat}>
-                      {openBook.author} · {openBook.chapters.length} bab, buka di
-                      fitur Book
-                    </VixText>
-                  </View>
-                  <IconSymbol
-                    name="chevron.right"
-                    size={18}
-                    color={Color.MAIN_DARK}
-                  />
-                </PressableScale>
-              ) : (
-                <View style={styles.detailBook}>
-                  <View style={styles.rowMain}>
-                    <VixText heading="bold" additionalStyle={styles.bookTitle}>
-                      📚 {open.book}
-                    </VixText>
-                    <VixText heading="label" additionalStyle={styles.rowWhat}>
-                      Belum ada di fitur Book
-                    </VixText>
-                  </View>
+            {/* Kartu buku hanya kalau bukunya ADA di fitur Book (16 Sep 2026);
+                click → langsung ke halaman bacanya. */}
+            {openBook ? (
+              <PressableScale
+                style={styles.detailBook}
+                onPress={() => {
+                  setOpen(null);
+                  router.push({
+                    pathname: '/book/[key]',
+                    params: { key: openBook.key },
+                  });
+                }}>
+                <View style={styles.rowMain}>
+                  <VixText heading="bold" additionalStyle={styles.bookTitle}>
+                    📚 {openBook.title}
+                  </VixText>
+                  <VixText heading="label" additionalStyle={styles.rowWhat}>
+                    {openBook.author} · {openBook.chapters.length} bab, buka di
+                    fitur Book
+                  </VixText>
                 </View>
-              )
+                <IconSymbol
+                  name="chevron.right"
+                  size={18}
+                  color={Color.MAIN_DARK}
+                />
+              </PressableScale>
             ) : null}
 
             {skillsDone[open.key] ? (

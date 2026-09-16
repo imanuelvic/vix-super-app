@@ -132,7 +132,7 @@ export function MorningPrayerGate({
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
           <VixText additionalStyle={styles.sun}>🌅</VixText>
@@ -394,7 +394,7 @@ export function MorningPrayerGate({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.SPIRITUAL_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   header: { alignItems: 'center', gap: 6, marginBottom: 18 },
   sun: { fontSize: 56, lineHeight: 68 },
   title: { color: Color.TEXT_REVERSE },
