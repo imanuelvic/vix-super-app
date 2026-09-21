@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/auth';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useDraft } from '@/hooks/useDraft';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { BIBLE_CATEGORY } from '@/lib/achievements';
 import {
@@ -27,7 +28,6 @@ import {
   formatShortDayDate,
 } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
   BIBLE_SKIPPED,
@@ -72,16 +72,16 @@ export default function BibleReadingScreen() {
 
   const dayId = dayDocId(new Date());
 
-  useEffect(() => {
-    if (!user) return;
-    return unsubscribeAll([
-      subscribeBibleReadingToday(user.uid, dayId, (sessions, versi) => {
+  useLiveAll(
+    (uid) => [
+      subscribeBibleReadingToday(uid, dayId, (sessions, versi) => {
         setToday(sessions);
         setVersions(versi);
       }),
-      subscribeBibleStreaks(user.uid, setStreaks),
-    ]);
-  }, [user, dayId]);
+      subscribeBibleStreaks(uid, setStreaks),
+    ],
+    { deps: [dayId] },
+  );
 
   // Sudah pernah diisi hari ini → tampilkan lagi supaya bisa ditambah/dibetulkan.
   const existing = today?.[session] ?? '';

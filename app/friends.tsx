@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,7 +17,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { PlacesTab } from '@/components/friends/PlacesTab';
 import { SplitBillTab } from '@/components/friends/SplitBillTab';
 import { FutsalTab } from '@/components/friends/FutsalTab';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useFutsalGang } from '@/contexts/futsalGang';
 import {
   billUnsettled,
@@ -26,8 +26,6 @@ import {
   type Bill,
   type Place,
 } from '@/lib/friends';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
   EMPTY_FUTSAL,
   futsalAttention,
@@ -58,7 +56,6 @@ const TABS: BottomTab<FriendsTab>[] = [
 // Places 🍜 menjawab pertanyaan yang selalu paling lama dijawab di grup:
 // "besok ngumpul di mana?"
 export default function FriendsScreen() {
-  const { user } = useAuth();
   const router = useRouter();
   const { tab, scrollKey, onTabPress } = useTabScroll<FriendsTab>('futsal');
 
@@ -72,15 +69,14 @@ export default function FriendsScreen() {
   const [futsal, setFutsal] = useState<FutsalData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeBills(user.uid, setBills, fail),
-      subscribePlaces(user.uid, setPlaces, fail),
-      subscribeFutsal(user.uid, setFutsal, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeBills(uid, setBills, fail),
+      subscribePlaces(uid, setPlaces, fail),
+      subscribeFutsal(uid, setFutsal, fail),
+    ],
+    { onError: setError },
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

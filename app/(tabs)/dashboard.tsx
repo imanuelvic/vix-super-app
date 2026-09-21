@@ -8,7 +8,7 @@
 // reminder pindah ke sini supaya Home lebih ringkas.
 // ============================================================================
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,6 +19,7 @@ import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { type LoginStreak } from '@/lib/achievements';
@@ -170,7 +171,6 @@ import {
     type LearningWeek,
     type TopicsDone,
 } from '@/lib/learning';
-import { unsubscribeAll } from '@/lib/liveDoc';
 import {
     residenceAttentionList,
     subscribeChoreStatus,
@@ -267,46 +267,48 @@ export default function DashboardScreen() {
   // langganan Learning di bawah tidak ikut dipasang ulang tiap menit.
   const weekId = weekDocId(now);
 
-  useEffect(() => {
-    if (!user) return;
-    const nowQ = quarterOf(new Date());
-    const wheelQid = quarterDocId(nowQ.year, nowQ.q);
-    return unsubscribeAll([
-      subscribeLearningWeek(user.uid, weekId, setLearningWeek),
-      subscribeTopicsDone(user.uid, setTopicsDone),
-      // Sumber badge Friends & Device — dua badge yang belum punya kartunya
-      // sendiri di sini (lihat components/dashboard/BadgeReminders.tsx).
-      subscribeBills(user.uid, setBills),
-      subscribeDataPlans(user.uid, setDataPlans),
-      subscribePopulationLog(user.uid, setPopulation),
-      subscribeFutsal(user.uid, setFutsal),
-      subscribeWheel(user.uid, wheelQid, setWheel),
-      subscribeMonthlyPrayers(user.uid, setMonthlyPrayers),
-      subscribeFitDay(user.uid, todayId, setFitDay),
-      subscribeTasks(user.uid, setTasks),
-      subscribeOtherTasks(user.uid, setOtherTasks),
-      subscribeHabitSchedule(user.uid, setSchedule),
-      subscribeHabitDay(user.uid, todayId, setDay),
-      subscribeCoreLeaders(user.uid, setLeaders),
-      subscribeWeeklyFocus(user.uid, setWeeklyFocus),
-      subscribeMainTeam(user.uid, setMainTeam),
-      subscribeVisitations(user.uid, setVisitations),
-      subscribeFamily(user.uid, setFamily),
-      subscribeDebts(user.uid, setDebts),
-      subscribeCheckups(user.uid, setCheckups),
-      subscribeHealthProfile(user.uid, setProfile),
-      subscribeSermons(user.uid, setSermons),
-      subscribeReviveStreak(user.uid, setRevive),
-      subscribeStreak(user.uid, setHabitStreak),
-      subscribeFastingPlans(user.uid, setFastingPlans),
-      subscribeRoadmap(user.uid, setRoadmap),
-      subscribeDonor(user.uid, setDonor),
-      subscribeFreelance(user.uid, setFreelance),
-      subscribeFun(user.uid, setFun),
-      subscribePartStatus(user.uid, setCarParts),
-      subscribeChoreStatus(user.uid, setResidenceChores),
-    ]);
-  }, [user, todayId, weekId]);
+  useLiveAll(
+    (uid) => {
+      const nowQ = quarterOf(new Date());
+      const wheelQid = quarterDocId(nowQ.year, nowQ.q);
+      return [
+        subscribeLearningWeek(uid, weekId, setLearningWeek),
+        subscribeTopicsDone(uid, setTopicsDone),
+        // Sumber badge Friends & Device — dua badge yang belum punya kartunya
+        // sendiri di sini (lihat components/dashboard/BadgeReminders.tsx).
+        subscribeBills(uid, setBills),
+        subscribeDataPlans(uid, setDataPlans),
+        subscribePopulationLog(uid, setPopulation),
+        subscribeFutsal(uid, setFutsal),
+        subscribeWheel(uid, wheelQid, setWheel),
+        subscribeMonthlyPrayers(uid, setMonthlyPrayers),
+        subscribeFitDay(uid, todayId, setFitDay),
+        subscribeTasks(uid, setTasks),
+        subscribeOtherTasks(uid, setOtherTasks),
+        subscribeHabitSchedule(uid, setSchedule),
+        subscribeHabitDay(uid, todayId, setDay),
+        subscribeCoreLeaders(uid, setLeaders),
+        subscribeWeeklyFocus(uid, setWeeklyFocus),
+        subscribeMainTeam(uid, setMainTeam),
+        subscribeVisitations(uid, setVisitations),
+        subscribeFamily(uid, setFamily),
+        subscribeDebts(uid, setDebts),
+        subscribeCheckups(uid, setCheckups),
+        subscribeHealthProfile(uid, setProfile),
+        subscribeSermons(uid, setSermons),
+        subscribeReviveStreak(uid, setRevive),
+        subscribeStreak(uid, setHabitStreak),
+        subscribeFastingPlans(uid, setFastingPlans),
+        subscribeRoadmap(uid, setRoadmap),
+        subscribeDonor(uid, setDonor),
+        subscribeFreelance(uid, setFreelance),
+        subscribeFun(uid, setFun),
+        subscribePartStatus(uid, setCarParts),
+        subscribeChoreStatus(uid, setResidenceChores),
+      ];
+    },
+    { deps: [todayId, weekId] },
+  );
 
   // Kebiasaan harian (sama tiap hari) — untuk reminder sesi.
   const daySchedule = schedule ?? [];

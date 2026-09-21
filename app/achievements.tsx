@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +22,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useAchievementStats } from '@/hooks/useAchievementStats';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORIES,
@@ -30,8 +31,7 @@ import {
   type AchievementCategoryKey,
 } from '@/lib/achievements';
 import { formatShortRupiah, groupDigits, parseAmount } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   claimSelfReward,
   newRewardId,
@@ -174,15 +174,14 @@ export default function AchievementsScreen() {
     }
   }
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeSelfRewardBalance(user.uid, setBalance, fail),
-      subscribeSelfRewards(user.uid, setRewards, fail),
-      subscribeClaimedRewards(user.uid, setClaimed, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeSelfRewardBalance(uid, setBalance, fail),
+      subscribeSelfRewards(uid, setRewards, fail),
+      subscribeClaimedRewards(uid, setClaimed, fail),
+    ],
+    { onError: setError },
+  );
 
   const unlocked = ACHIEVEMENTS.filter((a) => a.of(stats) >= a.target).length;
 

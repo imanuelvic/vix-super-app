@@ -40,7 +40,53 @@ export type ReviveEntry = {
   rhema: string; // firman yang merhema di hati
   reflection: string; // refleksi diri & komitmen
   date: Timestamp;
+  // Dua isian Morning Journey 🌅 (21 Sep 2026) yang MENUMPANG di dokumen
+  // Revive hari itu — lihat lib/journey.ts. Revive lama belum punya keduanya.
+  /** ❤️ Respond: kunci RESPONSE_OPTIONS yang dipilih pagi itu. */
+  responses?: string[];
+  /** 🙏 Pray: doa pribadi pagi itu ("hal yang ingin kuserahkan"). */
+  prayer?: string;
 };
+
+/**
+ * Dokumen Revive → ReviveEntry yang semua kolom teksnya PASTI string.
+ * Morning Journey bisa membuat dokumennya lebih dulu (mis. baru rhema atau doa
+ * pagi), jadi jangan pernah percaya sebuah kolom ada.
+ */
+function isTimestamp(v: unknown): v is Timestamp {
+  return typeof (v as Timestamp | null)?.toDate === 'function';
+}
+
+function normalizeRevive(id: string, d: Record<string, unknown>): ReviveEntry {
+  const teks = (v: unknown) => (typeof v === 'string' ? v : '');
+  return {
+    id,
+    title: teks(d.title),
+    passage: teks(d.passage),
+    verse: teks(d.verse),
+    rhema: teks(d.rhema),
+    reflection: teks(d.reflection),
+    date: isTimestamp(d.date) ? d.date : Timestamp.now(),
+    responses: Array.isArray(d.responses) ? d.responses.filter((r): r is string => typeof r === 'string') : [],
+    prayer: teks(d.prayer),
+  };
+}
+
+/**
+ * Revive-nya sudah DITULIS utuh (keempat kolom wajib editor terisi)? Dokumen
+ * yang baru berisi isian Morning Journey belum dihitung Revive: tidak masuk
+ * streak Revive, dan di layar Spiritual masih dianggap "belum ditulis".
+ */
+export function reviveWritten(
+  e: Pick<ReviveEntry, 'title' | 'passage' | 'rhema' | 'reflection'>,
+): boolean {
+  return (
+    e.title.trim().length > 0 &&
+    e.passage.trim().length > 0 &&
+    e.rhema.trim().length > 0 &&
+    e.reflection.trim().length > 0
+  );
+}
 
 export function subscribeReviveEntries(
   uid: string,
@@ -53,7 +99,28 @@ export function subscribeReviveEntries(
     orderBy('date', 'desc'),
     limit(90),
   );
-  return liveList<ReviveEntry>(q, onChange, onError);
+  return liveList<ReviveEntry>(q, onChange, onError, (d) =>
+    normalizeRevive(d.id, d.data()),
+  );
+}
+
+/** SATU Revive (hari tertentu) — null kalau belum ada dokumennya. */
+export function subscribeReviveEntry(
+  uid: string,
+  dayId: string,
+  onChange: (entry: ReviveEntry | null) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    doc(db, 'users', uid, 'revive', dayId),
+    (snapshot) =>
+      onChange(
+        snapshot.exists()
+          ? normalizeRevive(snapshot.id, snapshot.data() as Record<string, unknown>)
+          : null,
+      ),
+    onError,
+  );
 }
 
 export function saveReviveEntry(
@@ -68,9 +135,47 @@ export function saveReviveEntry(
     date: Date;
   },
 ) {
-  return setDoc(doc(db, 'users', uid, 'revive', dayId), {
-    ...data,
-    date: Timestamp.fromDate(data.date),
+  // merge: isian Morning Journey (responses, prayer) di dokumen yang sama
+  // tidak ikut terhapus saat Revive-nya diperbaiki dari editor.
+  return setDoc(
+    doc(db, 'users', uid, 'revive', dayId),
+    { ...data, date: Timestamp.fromDate(data.date) },
+    { merge: true },
+  );
+}
+
+/** Kolom Revive yang boleh ditulis Morning Journey, sebagian-sebagian. */
+export type JourneyFields = Partial<
+  Pick<ReviveEntry, 'title' | 'passage' | 'rhema' | 'reflection' | 'responses' | 'prayer'>
+>;
+
+/**
+ * Simpan isian satu langkah Morning Journey ke Revive hari itu.
+ *
+ * Dokumennya belum ada → dibuat LENGKAP dengan kolom kosong (supaya pembaca
+ * lain tidak menemukan kolom yang hilang) dan `date` = sekarang, yang
+ * membuatnya ikut terbaca daftar Revive (orderBy date). Sudah ada → cuma kolom
+ * yang dikirim yang diganti (merge); judul, bacaan, dan isian lain tetap.
+ */
+export function saveJourneyFields(
+  uid: string,
+  dayId: string,
+  current: ReviveEntry | null,
+  fields: JourneyFields,
+  now: Date,
+) {
+  const ref = doc(db, 'users', uid, 'revive', dayId);
+  if (current) return setDoc(ref, fields, { merge: true });
+  return setDoc(ref, {
+    title: '',
+    passage: '',
+    verse: '',
+    rhema: '',
+    reflection: '',
+    responses: [],
+    prayer: '',
+    ...fields,
+    date: Timestamp.fromDate(now),
   });
 }
 
@@ -108,7 +213,7 @@ export function subscribeReviveStreak(
 /**
  * Revive hari ini selesai diurus (ditulis ATAU sengaja dilewati)?
  * Satu-satunya penentu badge Revive — dipakai tile Home, sub-tab Revive, &
- * gerbang doa pagi, jadi ketiganya tak mungkin beda pendapat.
+ * Morning Journey (lewat streak), jadi ketiganya tak mungkin beda pendapat.
  */
 export function reviveHandledToday(
   streak: ReviveStreak | null,
@@ -927,7 +1032,7 @@ export const WORSHIP_VERSES: string[] = [
   'Korban bibir yang memuji nama-Nya (Ibrani 13:15)',
 ];
 
-// Bacaan penuh untuk langkah "Memuji & Menyembah 🎶" di gerbang doa pagi.
+// Bacaan penuh untuk langkah 🎵 Worship di Morning Journey.
 //
 // Bedanya dengan WORSHIP_VERSES di atas: yang itu SATU BARIS untuk subjudul
 // header (panjangnya dibatasi lebar header). Yang ini bacaan utuh yang benar

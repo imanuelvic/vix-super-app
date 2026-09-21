@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type Svg from 'react-native-svg';
@@ -15,6 +15,7 @@ import { VixText } from '@/components/common/VixText';
 import { ReflectionFeedCard } from '@/components/spiritual/ReflectionFeedCard';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { formatFullDate } from '@/lib/format';
 import {
@@ -24,8 +25,6 @@ import {
   type ScheduledHabit,
 } from '@/lib/habits';
 import { subscribeHabitDay, type HabitDay } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
   archiveNo,
   designOf,
@@ -64,14 +63,13 @@ export default function ReflectionFeedScreen() {
 
   const svgRef = useRef<Svg>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeHabitSchedule(user.uid, setHabits, fail),
-      subscribeHabitDay(user.uid, todayId, setDay, fail),
-    ]);
-  }, [user, todayId]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeHabitSchedule(uid, setHabits, fail),
+      subscribeHabitDay(uid, todayId, setDay, fail),
+    ],
+    { onError: setError, deps: [todayId] },
+  );
 
   const reflectionHabit = habits?.find(isNoteDrivenHabit);
   const text = reflectionHabit ? (day?.notes[reflectionHabit.id] ?? '') : '';

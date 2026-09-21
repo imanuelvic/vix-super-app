@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -6,14 +6,13 @@ import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   NOTE_KIND_META,
   noteLinksOf,
   type CoreNoteLinks,
 } from '@/lib/coreNotes';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
@@ -34,20 +33,19 @@ export function LinkedNotesButton({
   /** id acara CORE-nya (visitasi / rapat bulanan). */
   coreId: string;
 }) {
-  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [revives, setRevives] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[] | null>(null);
 
   const tersambung = noteLinksOf(links, coreId);
 
-  useEffect(() => {
-    if (!user || !open) return;
-    return unsubscribeAll([
-      subscribeReviveEntries(user.uid, setRevives),
-      subscribeSermons(user.uid, setSermons),
-    ]);
-  }, [user, open]);
+  useLiveAll(
+    (uid) => [
+      subscribeReviveEntries(uid, setRevives),
+      subscribeSermons(uid, setSermons),
+    ],
+    { when: open },
+  );
 
   if (tersambung.length === 0) return null;
 

@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,6 +21,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
     daysUntilEligible,
     DONOR_REQUIREMENTS,
@@ -36,8 +37,7 @@ import {
 } from '@/lib/donor';
 import { formatFullDate, formatMonthsDays } from '@/lib/format';
 import { subscribeHealthProfile, type HealthProfile } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 
 // Donor Darah 🩸 — jadwal & tempat donor, hitung mundur boleh donor lagi,
 // catatan pribadi, plus syarat & tips donor.
@@ -72,21 +72,20 @@ export default function DonorScreen() {
   // otomatis tertutup.
   const [info, setInfo] = useState<'syarat' | 'tips' | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeDonor(
-        user.uid,
+        uid,
         (next) => {
           setData(next);
           setError(null);
         },
         fail,
       ),
-      subscribeHealthProfile(user.uid, setProfile, fail),
-    ]);
-  }, [user]);
+      subscribeHealthProfile(uid, setProfile, fail),
+    ],
+    { onError: setError },
+  );
 
   const today = new Date();
   const d = data ?? EMPTY_DONOR;

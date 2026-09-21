@@ -24,7 +24,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 // miringnya ke arah berlawanan supaya rasanya beda: centang = "berhasil",
 // ✕ = "dilewati". Bentuk & ukurannya identik, jadi baris tidak bergeser.
 // `locked` = lingkaran ini BUKAN tombol: isinya terisi sendiri dari data lain
-// (mis. langkah "Revive" di gerbang doa pagi yang tercentang otomatis begitu
+// (mis. dulu langkah "Revive" di gerbang doa pagi yang tercentang otomatis begitu
 // Revive tersimpan). Bedanya dibuat kelihatan supaya tidak ada yang menekan
 // lingkaran yang memang tidak akan menanggapi:
 //   • cincinnya ABU-ABU, bukan mint — mint = "silakan tekan"

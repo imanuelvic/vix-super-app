@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,7 +17,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   pendingIdeas,
   subscribeAffiliateIdeas,
@@ -31,8 +31,6 @@ import {
   type FreelanceProject,
   type RoadmapItem,
 } from '@/lib/career';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 
 type CareerTab = 'fulltime' | 'freelance' | 'affiliate' | 'business';
 
@@ -47,7 +45,6 @@ const TABS: BottomTab<CareerTab>[] = [
 // Career 💼 — empat topi pekerjaan: engineer NDC, freelancer, content creator /
 // affiliate, dan (nanti) bisnis kuliner Manado.
 export default function CareerScreen() {
-  const { user } = useAuth();
   const router = useRouter();
 
   // ?edit=<id> untuk otomatis membuka modal edit item yang ditekan.
@@ -72,22 +69,21 @@ export default function CareerScreen() {
   const [ideas, setIdeas] = useState<ContentIdea[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeRoadmap(
-        user.uid,
+        uid,
         (next) => {
           setRoadmap(next);
           setError(null);
         },
         fail,
       ),
-      subscribeFreelance(user.uid, setFreelance, fail),
-      subscribeAffiliateIdeas(user.uid, setIdeas, fail),
-    ]);
-  }, [user]);
+      subscribeFreelance(uid, setFreelance, fail),
+      subscribeAffiliateIdeas(uid, setIdeas, fail),
+    ],
+    { onError: setError },
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

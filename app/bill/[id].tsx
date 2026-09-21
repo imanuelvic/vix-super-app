@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Timestamp } from 'firebase/firestore';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,9 +22,9 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { formatCompactDate, groupDigits, parseAmount } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { DELETE_ERROR, LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { photoUri, pickPhotoToRead } from '@/lib/photo';
 import { canScanReceipt, scanReceipt } from '@/lib/receiptOcr';
 import {
@@ -86,13 +86,13 @@ export default function BillScreen() {
   const [personOpen, setPersonOpen] = useState(false);
   const [pName, setPName] = useState('');
 
-  useEffect(() => {
-    if (!user || !id) return;
-    return unsubscribeAll([
-      subscribeBill(user.uid, id, setBill, () => setError(LOAD_ERROR)),
-      subscribeBillPhoto(user.uid, id, setPhoto),
-    ]);
-  }, [user, id]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeBill(uid, id, setBill, fail),
+      subscribeBillPhoto(uid, id, setPhoto),
+    ],
+    { onError: setError, deps: [id], when: !!id },
+  );
 
   /** Simpan seluruh tagihan. Semua perubahan di layar ini lewat sini. */
   const simpan = useCallback(

@@ -10,13 +10,15 @@ import {
 
 const GATE_PATH = '/morning-prayer';
 
-// Layar yang BOLEH dibuka selagi gerbang pagi aktif — semuanya bagian dari
-// menyelesaikan langkahnya: gerbang itu sendiri, Revive (langkah 1), dan CORE
-// (langkah 3 Doa Rantai). Selain ini, ditarik balik ke gerbang.
+// Layar yang BOLEH dibuka selagi Morning Journey aktif — semuanya bagian
+// darinya: journey itu sendiri, Revive (kalau mau menulisnya di editor
+// lengkap), dan CORE (Doa Rantai di langkah 🙏 Pray). Selain ini, ditarik
+// balik ke journey.
 const ALLOWED_PATHS = [GATE_PATH, '/revive', '/core'];
 
 /**
- * Pengawal doa pagi — dipasang SEKALI di root layout, tidak menggambar apa pun.
+ * Pengawal Morning Journey 🌅 — dipasang SEKALI di root layout, tidak
+ * menggambar apa pun. (Nama berkas & rute tetap "morning-prayer".)
  *
  * Jendela doa pagi: 00.00 (hari berganti) sampai 08.59. Selama jendela itu dan
  * doa hari ini belum dikonfirmasi, layar mana pun otomatis dialihkan ke gerbang

@@ -5,7 +5,7 @@ import {
   type MonthlyMeeting,
   type Visitation,
 } from './core';
-import { dayId, mondayIndex } from './format';
+import { dayId, dayIdToDate, mondayIndex } from './format';
 
 // Kalender CORE 📆 & Rekap Visitasi 📊 — hitungan murni, tanpa Firestore dan
 // tanpa tampilan, supaya bisa diuji sendiri.
@@ -67,6 +67,20 @@ export function calendarCells(year: number, month: number): CalendarCell[] {
 
 // ============================== Rekap ==============================
 
+/**
+ * Tanggal Thanksgiving yang DIISI di data CL (thanksgivingDayId) kalau
+ * tahunnya sama dengan tahun rekap; selain itu null. Ini sumber utama baris
+ * 🎉 — visitasi ber-penanda Thanksgiving cuma cadangan (lihat pemakainya).
+ */
+function plannedThanksgiving(
+  thanksgivingDayId: string | null | undefined,
+  year: number,
+): Date | null {
+  if (!thanksgivingDayId) return null;
+  const d = dayIdToDate(thanksgivingDayId);
+  return d.getFullYear() === year ? d : null;
+}
+
 export type RecapRow = {
   kind: MeetingKind;
   /** Jumlah visitasi SELESAI jenis ini per CL, urutan sama dengan `leaders`. */
@@ -96,9 +110,10 @@ export type VisitationRecap = {
  *
  * Acara gabungan dihitung untuk SETIAP CL yang ikut — dari sudut pandang
  * "CL ini sudah kutemui berapa kali", ikut acara gabungan tetap sebuah
- * pertemuan. Thanksgiving: baik jenisnya Thanksgiving maupun acara lain yang
- * diberi penanda 🎉, tanggalnya dicatat di baris Thanksgiving (yang paling
- * awal tahun itu), sementara hitungannya tetap masuk jenis aslinya.
+ * pertemuan. Baris Thanksgiving: tanggal yang DIISI di data CL tahun itu
+ * (thanksgivingDayId) menang; kalau belum diisi, dipakai visitasi tahun itu
+ * yang jenisnya Thanksgiving atau diberi penanda 🎉 (yang paling awal),
+ * sementara hitungannya tetap masuk jenis aslinya.
  */
 export function visitationRecap(
   visitations: Visitation[],
@@ -111,6 +126,7 @@ export function visitationRecap(
     counts: leaders.map(() => 0),
     total: 0,
   }));
+  const diisi = leaders.map((l) => plannedThanksgiving(l.thanksgivingDayId, year));
   const thanksgiving: (Date | null)[] = leaders.map(() => null);
   let planned = 0;
 
@@ -142,7 +158,7 @@ export function visitationRecap(
     rows,
     totals,
     grand: totals.reduce((s, n) => s + n, 0),
-    thanksgiving,
+    thanksgiving: thanksgiving.map((d, i) => diisi[i] ?? d),
     planned,
   };
 }
@@ -171,13 +187,16 @@ export type LeaderRecap = {
  * Rekap satu tahun dari sudut pandang SATU CL — isi PDF yang dikirim ke CORE
  * itu sendiri. Aturannya sama dengan tabel di layar (visitationRecap): yang
  * dihitung hanya yang ✅ selesai, acara gabungan tetap sebuah pertemuan,
- * Thanksgiving diambil yang paling awal. Bedanya, di sini TANGGALNYA ikut:
- * "3× Visitasi CORE" tanpa tanggal tidak berarti apa-apa buat yang menerima.
+ * Thanksgiving = tanggal yang diisi di data CL (`thanksgivingDayId`) kalau
+ * tahunnya itu, kalau tidak yang paling awal dari visitasinya. Bedanya, di
+ * sini TANGGALNYA ikut: "3× Visitasi CORE" tanpa tanggal tidak berarti
+ * apa-apa buat yang menerima.
  */
 export function leaderRecap(
   visitations: Visitation[],
   leaderId: string,
   year: number,
+  thanksgivingDayId: string | null = null,
 ): LeaderRecap {
   const rows: LeaderRecapRow[] = MEETING_KINDS.map((k) => ({ kind: k.key, dates: [] }));
   const upcoming: LeaderRecap['upcoming'] = [];
@@ -201,7 +220,7 @@ export function leaderRecap(
     year,
     rows,
     total: rows.reduce((s, r) => s + r.dates.length, 0),
-    thanksgiving,
+    thanksgiving: plannedThanksgiving(thanksgivingDayId, year) ?? thanksgiving,
     upcoming,
   };
 }

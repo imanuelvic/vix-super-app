@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,7 +19,6 @@ import { LeadersTab } from '@/components/core/LeadersTab';
 import { MonthlyTab } from '@/components/core/MonthlyTab';
 import { MultiplicationTab } from '@/components/core/MultiplicationTab';
 import { VisitationTab } from '@/components/core/VisitationTab';
-import { useAuth } from '@/contexts/auth';
 import {
     EMPTY_MONTHLY_PRAYERS,
     subscribeBirthdayGreets,
@@ -41,9 +40,8 @@ import {
     type MonthlyPrayers,
     type Visitation,
 } from '@/lib/core';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 
 type CoreTab =
   | 'visitation'
@@ -64,7 +62,6 @@ const TABS: BottomTab<CoreTab>[] = [
 // CORE — penggembalaan sebagai MCL: follow up harian para CORE Leader.
 export default function CoreScreen() {
   const router = useRouter();
-  const { user } = useAuth();
 
   // Default masuk ke Follow Up: itu tugas harianmu. Bisa dioverride lewat
   // param ?tab=… (mis. kartu reminder visitasi di Dashboard), plus ?edit=<id>
@@ -108,27 +105,26 @@ export default function CoreScreen() {
   // tahun hari ini ikut dihitung ulang tanpa perlu layarnya dibuka ulang.
   const { now, todayId: dayId } = useNow();
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeCoreLeaders(
-        user.uid,
+        uid,
         (next) => {
           setLeaders(next);
           setError(null);
         },
         fail,
       ),
-      subscribeExLeaders(user.uid, setExLeaders, fail),
-      subscribeMainTeam(user.uid, setMainTeam, fail),
-      subscribeVisitations(user.uid, setVisitations, fail),
-      subscribeMonthlyPrayers(user.uid, setMonthlyPrayers, fail),
-      subscribeMonthlyMeetings(user.uid, setMeetings, fail),
-      subscribeWeeklyFocus(user.uid, setWeeklyFocus, fail),
-      subscribeBirthdayGreets(user.uid, setGreets, fail),
-    ]);
-  }, [user]);
+      subscribeExLeaders(uid, setExLeaders, fail),
+      subscribeMainTeam(uid, setMainTeam, fail),
+      subscribeVisitations(uid, setVisitations, fail),
+      subscribeMonthlyPrayers(uid, setMonthlyPrayers, fail),
+      subscribeMonthlyMeetings(uid, setMeetings, fail),
+      subscribeWeeklyFocus(uid, setWeeklyFocus, fail),
+      subscribeBirthdayGreets(uid, setGreets, fail),
+    ],
+    { onError: setError },
+  );
 
   // Tagihan CORE hari ini — angka yang SAMA dipakai badge tile di Home.
   const perhatian = coreAttention({

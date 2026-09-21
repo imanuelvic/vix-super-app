@@ -17,6 +17,7 @@ import { NotesTab } from '@/components/fitness/NotesTab';
 import { ProgramTab } from '@/components/fitness/ProgramTab';
 import { ProgressTab } from '@/components/fitness/ProgressTab';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { type LoginStreak } from '@/lib/achievements';
 import { subscribeFitNotes, type FitNote } from '@/lib/fitNotes';
@@ -36,8 +37,6 @@ import {
   type HealthProfile,
   type WeightTarget,
 } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 
 type Tab = 'program' | 'exercise' | 'progress' | 'notes';
 
@@ -80,18 +79,17 @@ export default function FitnessScreen() {
   // sendiri lewat tengah malam (lihat hooks/useNow.ts).
   const { now, todayId: dayId } = useNow();
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeFitWeights(user.uid, setWeights, fail),
-      subscribeFitDay(user.uid, dayId, setDay, fail),
-      subscribeFitStreak(user.uid, setStreak, fail),
-      subscribeHealthProfile(user.uid, setProfile, fail),
-      subscribeWeightTarget(user.uid, setTarget, fail),
-      subscribeFitNotes(user.uid, setNotes, fail),
-    ]);
-  }, [user, dayId]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeFitWeights(uid, setWeights, fail),
+      subscribeFitDay(uid, dayId, setDay, fail),
+      subscribeFitStreak(uid, setStreak, fail),
+      subscribeHealthProfile(uid, setProfile, fail),
+      subscribeWeightTarget(uid, setTarget, fail),
+      subscribeFitNotes(uid, setNotes, fail),
+    ],
+    { onError: setError, deps: [dayId] },
+  );
 
   // Tutup buku hari-hari yang sudah lewat 🔥 — streak & achievement baru
   // dihitung SETELAH harinya habis (jam 00.00), bukan saat gerakan terakhir

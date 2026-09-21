@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,6 +21,7 @@ import {
 import { VisitationFormFields } from '@/components/core/VisitationFormFields';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { usePagination } from '@/hooks/usePagination';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { useVisitationForm } from '@/hooks/useVisitationForm';
@@ -36,8 +37,7 @@ import {
     type Visitation,
 } from '@/lib/core';
 import { deadlineTone } from '@/lib/deadline';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 
 // Riwayat Visitasi 🕘 — seluruh jadwal dari dulu sampai mendatang.
 // Click kartu → edit (ubah CL/tanggal/catatan, tandai selesai/belum) atau
@@ -58,15 +58,14 @@ export default function VisitationsScreen() {
   const form = useVisitationForm();
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeVisitations(user.uid, setVisitations, fail),
-      subscribeCoreLeaders(user.uid, setLeaders, fail),
-      subscribeExLeaders(user.uid, setExLeaders, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeVisitations(uid, setVisitations, fail),
+      subscribeCoreLeaders(uid, setLeaders, fail),
+      subscribeExLeaders(uid, setExLeaders, fail),
+    ],
+    { onError: setError },
+  );
 
   const today = new Date();
   const all = visitations ?? [];

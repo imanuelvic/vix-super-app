@@ -8,7 +8,7 @@
 //   Kamis  Doa Rantai CL
 //
 // Dipakai DUA kali sehari:
-//   • Pagi  → langkah WAJIB di Morning Gateway (app/morning-prayer.tsx)
+//   • Pagi  → langkah 🙏 Pray di Morning Journey (app/morning-prayer.tsx)
 //   • Malam → kartu pengingat di Home, biar didoakan sekali lagi sebelum tidur
 //
 // Hari "Doa Rantai CL" tidak punya pokok doa karangan sendiri — sumbernya

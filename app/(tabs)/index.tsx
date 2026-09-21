@@ -28,6 +28,7 @@ import { IconGlyph } from '@/components/ui/icon-glyph';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useDailyDismiss } from '@/hooks/useDailyDismiss';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { useReadyGate } from '@/hooks/useReadyGate';
 import { useScrollTop } from '@/hooks/useScrollTop';
@@ -123,7 +124,6 @@ import {
   type LearningWeek,
   type TopicsDone,
 } from '@/lib/learning';
-import { unsubscribeAll } from '@/lib/liveDoc';
 import {
   refreshPrayerNews,
   subscribePrayerNews,
@@ -286,49 +286,49 @@ export default function HomeScreen() {
   // detik seperti sebelumnya. Grid & sapaan tetap tampil seketika.
   const { ready: badgesReady, mark } = useReadyGate(BADGE_SOURCES);
 
-  useEffect(() => {
-    if (!user) return;
-    return unsubscribeAll([
+  useLiveAll(
+    (uid) => [
       // --- Sumber badge (ikut ditunggu useReadyGate) ---
-      subscribeLearningWeek(user.uid, weekId, mark('learningWeek', setLearningWeek)),
-      subscribeTopicsDone(user.uid, mark('topicsDone', setTopicsDone)),
-      subscribeBills(user.uid, mark('bills', setBills)),
-      subscribeChoreStatus(user.uid, mark('chores', setResidenceChores)),
-      subscribeMeterReadings(user.uid, mark('readings', setMeterReadings)),
-      subscribeTasks(user.uid, mark('tasks', setTasks)),
-      subscribeCoreLeaders(user.uid, mark('leaders', setLeaders)),
+      subscribeLearningWeek(uid, weekId, mark('learningWeek', setLearningWeek)),
+      subscribeTopicsDone(uid, mark('topicsDone', setTopicsDone)),
+      subscribeBills(uid, mark('bills', setBills)),
+      subscribeChoreStatus(uid, mark('chores', setResidenceChores)),
+      subscribeMeterReadings(uid, mark('readings', setMeterReadings)),
+      subscribeTasks(uid, mark('tasks', setTasks)),
+      subscribeCoreLeaders(uid, mark('leaders', setLeaders)),
       // Undian ulang 🎲 fokus minggu ini — ikut ditunggu supaya badge CORE
       // menghitung ORANG YANG SAMA dengan yang tampil di tab Follow Up.
-      subscribeWeeklyFocus(user.uid, mark('weeklyFocus', setWeeklyFocus)),
-      subscribeVisitations(user.uid, mark('visitations', setVisitations)),
+      subscribeWeeklyFocus(uid, mark('weeklyFocus', setWeeklyFocus)),
+      subscribeVisitations(uid, mark('visitations', setVisitations)),
       // Main Team & ucapan ulang tahun — bukan hiasan: ulang tahun hari ini
       // yang belum diucapkan ikut jadi tagihan CORE, persis seperti di badge
       // sub-tab Follow Up (lihat coreAttention di lib/core.ts).
-      subscribeMainTeam(user.uid, mark('mainTeam', setMainTeam)),
-      subscribeBirthdayGreets(user.uid, mark('greets', setGreets)),
-      subscribeSermons(user.uid, mark('sermons', setSermons)),
-      subscribePopulationLog(user.uid, mark('population', setPopulation)),
-      subscribeReviveStreak(user.uid, mark('revive', setRevive)),
-      subscribePartStatus(user.uid, mark('carParts', setCarParts)),
-      subscribeRoadmap(user.uid, mark('roadmap', setRoadmap)),
-      subscribeFreelance(user.uid, mark('freelance', setFreelance)),
-      subscribeOtherTasks(user.uid, mark('otherTasks', setOtherTasks)),
-      subscribeFitDay(user.uid, todayId, mark('fitDay', setFitDay)),
-      subscribeDebts(user.uid, mark('debts', setDebts)),
-      subscribeDataPlans(user.uid, mark('dataPlans', setDataPlans)),
-      subscribeFutsal(user.uid, mark('futsal', setFutsal)),
+      subscribeMainTeam(uid, mark('mainTeam', setMainTeam)),
+      subscribeBirthdayGreets(uid, mark('greets', setGreets)),
+      subscribeSermons(uid, mark('sermons', setSermons)),
+      subscribePopulationLog(uid, mark('population', setPopulation)),
+      subscribeReviveStreak(uid, mark('revive', setRevive)),
+      subscribePartStatus(uid, mark('carParts', setCarParts)),
+      subscribeRoadmap(uid, mark('roadmap', setRoadmap)),
+      subscribeFreelance(uid, mark('freelance', setFreelance)),
+      subscribeOtherTasks(uid, mark('otherTasks', setOtherTasks)),
+      subscribeFitDay(uid, todayId, mark('fitDay', setFitDay)),
+      subscribeDebts(uid, mark('debts', setDebts)),
+      subscribeDataPlans(uid, mark('dataPlans', setDataPlans)),
+      subscribeFutsal(uid, mark('futsal', setFutsal)),
       // --- Sisanya mengisi kartu & sapaan, bukan badge ---
-      subscribeLoginStreak(user.uid, setLogin),
-      subscribeHabitDay(user.uid, todayId, setDay),
-      subscribeHabitSchedule(user.uid, setHabits),
-      subscribeBibleReadingToday(user.uid, todayId, setBibleReading),
-      subscribeMyReminders(user.uid, setMyReminders),
-      subscribePrayerNews(user.uid, setPrayerNews),
-      subscribePriorityDay(user.uid, todayId, setPriorities),
-      subscribeFeedGenerated(user.uid, todayId, setFeedGenerated),
-      subscribeFastingPlans(user.uid, setFastingPlans),
-    ]);
-  }, [user, todayId, weekId, mark]);
+      subscribeLoginStreak(uid, setLogin),
+      subscribeHabitDay(uid, todayId, setDay),
+      subscribeHabitSchedule(uid, setHabits),
+      subscribeBibleReadingToday(uid, todayId, setBibleReading),
+      subscribeMyReminders(uid, setMyReminders),
+      subscribePrayerNews(uid, setPrayerNews),
+      subscribePriorityDay(uid, todayId, setPriorities),
+      subscribeFeedGenerated(uid, todayId, setFeedGenerated),
+      subscribeFastingPlans(uid, setFastingPlans),
+    ],
+    { deps: [todayId, weekId, mark] },
+  );
 
   // "Cron" kliping doa syafaat 📰🙏 — app ini tidak punya server maupun tugas
   // latar, jadi penjadwalnya ya Home: sekali seminggu, saat pertama dibuka.
@@ -745,9 +745,11 @@ export default function HomeScreen() {
               <ReminderCard
                 bg={Color.SPIRITUAL}
                 fg={Color.SPIRITUAL_DARK}
-                title={`🙏 Doa Syafaat · ${intercession.emoji} ${intercession.label} ${
-                  intercessionChain ? '→' : intercessionOpen ? '▴' : '▾'
-                }`}
+                title={`🙏 Doa Syafaat · ${intercession.emoji} ${intercession.label}`}
+                // Lambang buka/tutup di pojok kanan bawah, di bawah ✕ — bukan
+                // di ujung judul (di sana ia jatuh ke kiri saat judulnya
+                // membungkus).
+                corner={intercessionChain ? '→' : intercessionOpen ? '▴' : '▾'}
                 texts={intercessionTexts}
                 onPress={() =>
                   intercessionChain

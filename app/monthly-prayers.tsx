@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +15,7 @@ import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useAccordion } from '@/hooks/useAccordion';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   EMPTY_MONTHLY_PRAYERS,
   isCurrentMonthPrayers,
@@ -28,8 +29,7 @@ import {
 } from '@/lib/core';
 import { dayIdToDate, formatShortDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 
 // Pokok Doa Bulanan 🙏 — kumpulkan pergumulan tiap CORE Leader untuk bulan ini.
 // Pokok doa inilah yang menentukan follow up berkala (Selasa & Kamis). Poin TIDAK
@@ -52,21 +52,20 @@ export default function MonthlyPrayersScreen() {
     idx: number;
   } | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeCoreLeaders(
-        user.uid,
+        uid,
         (next) => {
           setLeaders(next);
           setError(null);
         },
         fail,
       ),
-      subscribeMonthlyPrayers(user.uid, setData, fail),
-    ]);
-  }, [user]);
+      subscribeMonthlyPrayers(uid, setData, fail),
+    ],
+    { onError: setError },
+  );
 
   const now = new Date();
   const monthTitle = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;

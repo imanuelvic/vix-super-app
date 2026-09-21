@@ -18,6 +18,7 @@ import { StreakPill } from '@/components/common/StreakPill';
 import { VixText } from '@/components/common/VixText';
 import { HabitsTab } from '@/components/habits/HabitsTab';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import {
   fitMirrorState,
@@ -49,8 +50,6 @@ import {
   type Streak,
   type WeightTarget,
 } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
   priorityMirrorState,
   subscribePriorityDay,
@@ -138,30 +137,29 @@ export default function HabitsScreen() {
   // jadi ✗ sendiri tanpa perlu layarnya dibuka ulang.
   const { now, todayId: dayId } = useNow();
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeHealthProfile(
-        user.uid,
+        uid,
         (p) => {
           setProfile(p);
           setError(null);
         },
         fail,
       ),
-      subscribeHabitSchedule(user.uid, setSchedule, fail),
-      subscribeHabitDay(user.uid, dayId, setDay, fail),
-      subscribeWeightTarget(user.uid, setTarget, fail),
-      subscribeStreak(user.uid, setStreak, fail),
+      subscribeHabitSchedule(uid, setSchedule, fail),
+      subscribeHabitDay(uid, dayId, setDay, fail),
+      subscribeWeightTarget(uid, setTarget, fail),
+      subscribeStreak(uid, setStreak, fail),
       // Bukan untuk ditampilkan — hanya untuk menyelaraskan baris olahraga
       // (lihat efek di bawah). Listener-nya dipakai bersama lewat liveDoc,
       // jadi tidak menambah pembacaan Firestore.
-      subscribeFitDay(user.uid, dayId, setFitDay),
-      subscribePriorityDay(user.uid, dayId, setPriorities),
-      subscribeBibleReadingToday(user.uid, dayId, setBible),
-    ]);
-  }, [user, dayId]);
+      subscribeFitDay(uid, dayId, setFitDay),
+      subscribePriorityDay(uid, dayId, setPriorities),
+      subscribeBibleReadingToday(uid, dayId, setBible),
+    ],
+    { onError: setError, deps: [dayId] },
+  );
 
   // Baris "📖 Midday Bible Reading" disisipkan sekali kalau belum ada — Baca
   // Alkitab punya tiga sesi, jadi Siang pun harus tertagih di Habits. Menulis

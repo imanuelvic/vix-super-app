@@ -71,10 +71,16 @@ export function formatDayDate(d: Date): string {
  * sampai membungkus ke baris berikutnya.
  */
 export function formatCompactDate(d: Date): string {
-  const day = d.getDate();
-  const month = monthShort(d);
-  const year = String(d.getFullYear()).slice(-2);
-  return `${dayShort(d)}, ${day} ${month} ${year}`;
+  return `${dayShort(d)}, ${formatTinyDate(d)}`;
+}
+
+/**
+ * 7 Agu 26 — "d mmm yy" TANPA nama hari. Untuk petak yang benar-benar sempit
+ * (sel tabel Rekap Visitasi, baris data CL): tahunnya tetap ikut supaya
+ * tanggalnya utuh, tapi cuma 2 angka.
+ */
+export function formatTinyDate(d: Date): string {
+  return `${d.getDate()} ${monthShort(d)} ${String(d.getFullYear()).slice(-2)}`;
 }
 
 /**
@@ -102,10 +108,7 @@ export function formatCompactDateTime(d: Date): string {
 
 /** Rabu, 12 Agu 26 — "dddd, d mmm yy" untuk baris sapaan (<GreetingHeader/>). */
 export function formatGreetingDate(d: Date): string {
-  const day = d.getDate();
-  const month = monthShort(d);
-  const year = String(d.getFullYear()).slice(-2);
-  return `${DAY_NAMES[d.getDay()]}, ${day} ${month} ${year}`;
+  return `${DAY_NAMES[d.getDay()]}, ${formatTinyDate(d)}`;
 }
 
 /** "Sel" — nama hari 3 huruf. */

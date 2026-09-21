@@ -20,6 +20,7 @@ import { TokenTab } from '@/components/residence/TokenTab';
 import { UtilityTab } from '@/components/residence/UtilityTab';
 import { InfoTab } from '@/components/residence/InfoTab';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   countResidenceAttention,
   deleteResidenceLogs,
@@ -30,8 +31,6 @@ import {
   type ChoreStatusMap,
   type ResidenceLog,
 } from '@/lib/residence';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
   readingDue,
   subscribeMeterReadings,
@@ -80,24 +79,23 @@ export default function ResidenceScreen() {
   const [readings, setReadings] = useState<MeterReading[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeResidenceLogs(
-        user.uid,
+        uid,
         (next) => {
           setLogs(next);
           setError(null);
         },
         fail,
       ),
-      subscribeUtilityTransactions(user.uid, setUtilityTx, fail),
-      subscribeChoreStatus(user.uid, setChores, fail),
-      subscribeTokenPurchases(user.uid, setPurchases, fail),
-      subscribeMeterReadings(user.uid, setReadings, fail),
-    ]);
-  }, [user]);
+      subscribeUtilityTransactions(uid, setUtilityTx, fail),
+      subscribeChoreStatus(uid, setChores, fail),
+      subscribeTokenPurchases(uid, setPurchases, fail),
+      subscribeMeterReadings(uid, setReadings, fail),
+    ],
+    { onError: setError },
+  );
 
   // Bersih-bersih SEKALI: log air/listrik lama yang diinput manual dihapus
   // permanen — angkanya sekarang dibaca dari transaksi Finance. Jalan hanya

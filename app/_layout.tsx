@@ -73,7 +73,7 @@ function RootNavigator() {
         {/* Home + tab bar utama */}
         <Stack.Screen name="(tabs)" />
 
-        {/* Lock screen doa pagi — full screen, tak bisa di-swipe balik */}
+        {/* Morning Journey 🌅 pagi hari — full screen, tak bisa di-swipe balik */}
         <Stack.Screen name="morning-prayer" options={{ gestureEnabled: false }} />
 
         {/* Fitur utama — urut mengikuti grid di Home, dikelompokkan per fitur
@@ -83,6 +83,8 @@ function RootNavigator() {
         <Stack.Screen name="spiritual" />
         <Stack.Screen name="revive" />
         <Stack.Screen name="revive-history" />
+        {/* Riwayat Morning Journey (refleksi, respons, doa pagi per hari) */}
+        <Stack.Screen name="journey-history" />
         <Stack.Screen name="bible-reading" />
         {/* Ayat yang dibaca → gambar Instagram Story (vixtory.archive) */}
         <Stack.Screen name="bible-story" />
@@ -166,7 +168,7 @@ function RootNavigator() {
       </Stack.Protected>
     </Stack>
 
-    {/* Pengawal doa pagi — tidak menggambar apa pun, hanya mengalihkan ke
+    {/* Pengawal Morning Journey — tidak menggambar apa pun, hanya mengalihkan ke
         lock screen begitu jam doa tiba, dari layar mana pun. */}
     {!!user && <MorningPrayerWatcher />}
 

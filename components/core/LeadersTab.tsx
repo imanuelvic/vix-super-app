@@ -51,7 +51,7 @@ import {
     type MainTeamMember,
     type StudyWork,
 } from '@/lib/core';
-import { MONTH_NAMES } from '@/lib/format';
+import { dayId, dayIdToDate, formatTinyDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { localPhone } from '@/lib/phone';
@@ -116,6 +116,9 @@ export function LeadersTab({
   const [fHeart, setFHeart] = useState('❤️');
   const [fBirthday, setFBirthday] = useState(new Date(2000, 0, 1));
   const [fPhone, setFPhone] = useState('');
+  // Tanggal Thanksgiving CORE ini (null = belum ditentukan) — mengisi baris
+  // 🎉 di Rekap Visitasi & PDF rekapnya.
+  const [fThanksgiving, setFThanksgiving] = useState<Date | null>(null);
   const [fGender, setFGender] = useState<Gender | null>(null);
   const [fDisc, setFDisc] = useState<string | null>(null);
   const [fMbti, setFMbti] = useState<string | null>(null);
@@ -166,6 +169,7 @@ export function LeadersTab({
     setFHeart('💚');
     setFBirthday(new Date(2000, 0, 1));
     setFPhone('');
+    setFThanksgiving(null);
     setFGender(null);
     setFDisc(null);
     setFMbti(null);
@@ -183,6 +187,7 @@ export function LeadersTab({
     setFHeart(l.heart);
     setFBirthday(new Date(l.birthYear, l.birthMonth, l.birthDay));
     setFPhone(localPhone(l.phone ?? ''));
+    setFThanksgiving(l.thanksgivingDayId ? dayIdToDate(l.thanksgivingDayId) : null);
     setFGender(l.gender ?? null);
     setFDisc(l.disc ?? null);
     setFMbti(l.mbti ?? null);
@@ -217,6 +222,7 @@ export function LeadersTab({
       birthDay: fBirthday.getDate(),
       phone,
       lastFollowupDayId: editing === 'new' ? null : editing.lastFollowupDayId,
+      thanksgivingDayId: fThanksgiving ? dayId(fThanksgiving) : null,
       gender: fGender,
       disc: fDisc,
       mbti: fMbti,
@@ -740,6 +746,21 @@ export function LeadersTab({
                 />
               </View>
 
+              {/* Thanksgiving CORE ini — tampil "d mmm yy" di tabel Rekap
+                  Visitasi & PDF rekap. Boleh kosong. */}
+              <VixText heading="label" additionalStyle={styles.fieldLabel}>
+                🎉 Tanggal Thanksgiving
+              </VixText>
+              <View style={styles.formGap}>
+                <DateField
+                  key={`tg-${editing === 'new' ? 'new' : editing?.id}`}
+                  value={fThanksgiving}
+                  onChange={setFThanksgiving}
+                  placeholder="Belum ditentukan"
+                  disabled={busy}
+                />
+              </View>
+
               <GenderField value={fGender} onChange={setFGender} />
 
               {/* Pendidikan & pekerjaan — bahan obrolan visitasi & doa */}
@@ -1135,6 +1156,12 @@ function PersonView({
         />
         {jenis ? <InfoRow label="🚻 Gender" value={jenis} half /> : null}
       </View>
+      {'thanksgivingDayId' in person && person.thanksgivingDayId ? (
+        <InfoRow
+          label="🎉 Thanksgiving CORE"
+          value={formatTinyDate(dayIdToDate(person.thanksgivingDayId))}
+        />
+      ) : null}
       {belajar ? <InfoRow label="🎓 Pendidikan" value={belajar.slice(2)} /> : null}
       {kerja ? <InfoRow label="💼 Pekerjaan" value={kerja.slice(2)} /> : null}
       {disc ? <InfoRow label="🎨 DISC" value={disc} /> : null}

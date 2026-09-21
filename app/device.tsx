@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,7 +14,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { DeviceLogTab } from '@/components/device/DeviceLogTab';
 import { PlanTab } from '@/components/device/PlanTab';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import {
   subscribeSubcategories,
@@ -30,8 +30,6 @@ import {
   subscribeDataPlans,
   type DataPlan,
 } from '@/lib/device';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
   subscribeCategoryTransactions,
   type Transaction,
@@ -66,7 +64,6 @@ const TABS: BottomTab<DeviceTab>[] = [
 // sebulan habis berapa untuk kuota, dan pemakaian sehari rata-rata berapa —
 // baru bisa dijawab kalau paketnya punya riwayat.
 export default function DeviceScreen() {
-  const { user } = useAuth();
   const { tab, scrollKey, onTabPress } = useTabScroll<DeviceTab>('log');
 
   const [plans, setPlans] = useState<DataPlan[] | null>(null);
@@ -80,12 +77,10 @@ export default function DeviceScreen() {
   // tanpa perlu layarnya dibuka ulang.
   const { now } = useNow();
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeDataPlans(
-        user.uid,
+        uid,
         (next) => {
           setPlans(next);
           setError(null);
@@ -93,14 +88,15 @@ export default function DeviceScreen() {
         fail,
       ),
       subscribeCategoryTransactions(
-        user.uid,
+        uid,
         DEVICE_EXPENSE_CATEGORIES,
         setExpenses,
         fail,
       ),
-      subscribeSubcategories(user.uid, setSubcats, fail),
-    ]);
-  }, [user]);
+      subscribeSubcategories(uid, setSubcats, fail),
+    ],
+    { onError: setError },
+  );
 
   // Yang masuk tab Log CUMA sub "Mobile". Kategori Mobile, Data &
   // Administration juga menampung Admin Bank, Cost/Taxes & Subscriptions —

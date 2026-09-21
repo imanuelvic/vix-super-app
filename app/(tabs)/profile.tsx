@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -29,6 +29,7 @@ import { QuadrantTab, type Quadrant } from '@/components/profile/QuadrantTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { pickCompressedPhoto } from '@/lib/family';
 import { formatDate, parseLongDate } from '@/lib/format';
@@ -37,8 +38,7 @@ import {
     subscribeHealthProfile,
     type HealthProfile,
 } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR, PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { PHOTO_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { localPhone } from '@/lib/phone';
 import { photoUri } from '@/lib/photo';
 import {
@@ -232,21 +232,21 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeProfile(
-        user.uid,
+        uid,
         (p) => {
           setProfile(p);
           setError(null);
         },
-        () => setError(LOAD_ERROR),
+        fail,
       ),
-      subscribeHealthProfile(user.uid, setBody, () => setError(LOAD_ERROR)),
-      subscribeSelfKnowledge(user.uid, setSelf, () => setError(LOAD_ERROR)),
-    ]);
-  }, [user]);
+      subscribeHealthProfile(uid, setBody, fail),
+      subscribeSelfKnowledge(uid, setSelf, fail),
+    ],
+    { onError: setError },
+  );
 
   function openEdit() {
     if (!profile) return;

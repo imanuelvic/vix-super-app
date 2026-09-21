@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,7 +13,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { ShareToLeaderSheet } from '@/components/core/ShareToLeaderSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   meetingKindMeta,
   subscribeCoreLeaders,
@@ -22,16 +22,19 @@ import {
   type Visitation,
 } from '@/lib/core';
 import { visitationRecap } from '@/lib/coreCalendar';
-import { monthShort } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
+import { formatTinyDate } from '@/lib/format';
 import { shareRecapPdf } from '@/lib/recapPdf';
 
 const MIN_YEAR = 2026;
 
-export default function CoreRecapScreen() {
-  const { user } = useAuth();
+// Garis tegak di depan kolom Σ — jumlah per jenis terlihat terpisah dari
+// angka per CL, seperti baris Total yang dipisah garis mendatar. Menembus
+// padding barisnya (margin negatif) supaya garisnya bersambung antar-baris.
+function SumLine() {
+  return <View style={styles.sumLine} />;
+}
 
+export default function CoreRecapScreen() {
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
   const [leaders, setLeaders] = useState<CoreLeader[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +42,13 @@ export default function CoreRecapScreen() {
   // (warna hatinya), dikirim ke CL-nya lewat WhatsApp.
   const [shareOpen, setShareOpen] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeVisitations(user.uid, setVisitations, fail),
-      subscribeCoreLeaders(user.uid, setLeaders, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeVisitations(uid, setVisitations, fail),
+      subscribeCoreLeaders(uid, setLeaders, fail),
+    ],
+    { onError: setError },
+  );
 
   const tahunIni = new Date().getFullYear();
   const [year, setYear] = useState(tahunIni);
@@ -118,12 +120,14 @@ export default function CoreRecapScreen() {
                       {l.heart}
                     </VixText>
                   ))}
+                  <SumLine />
                   <VixText heading="bold" additionalStyle={[styles.cell, styles.sumCol]}>
                     Σ
                   </VixText>
                 </View>
 
-                {/* Tanggal Thanksgiving tiap CL — seperti di lembar rekapnya */}
+                {/* Tanggal Thanksgiving tiap CL ("d mmm yy", dua baris) — dari
+                    data CL-nya; visitasi ber-penanda 🎉 jadi cadangan. */}
                 <View style={styles.row}>
                   <VixText heading="label" additionalStyle={styles.labelCol} numberOfLines={2}>
                     🎉 Thanksgiving
@@ -133,9 +137,10 @@ export default function CoreRecapScreen() {
                       key={leaders[i].id}
                       heading="label"
                       additionalStyle={[styles.cell, d ? styles.cellDate : styles.cellZero]}>
-                      {d ? `${d.getDate()}\n${monthShort(d)}` : '·'}
+                      {d ? formatTinyDate(d).replace(/ (\d+)$/, '\n$1') : '·'}
                     </VixText>
                   ))}
+                  <SumLine />
                   <VixText heading="label" additionalStyle={[styles.cell, styles.sumCol]}>
                     {rekap.thanksgiving.filter(Boolean).length}
                   </VixText>
@@ -156,6 +161,7 @@ export default function CoreRecapScreen() {
                           {n > 0 ? n : '·'}
                         </VixText>
                       ))}
+                      <SumLine />
                       <VixText
                         heading={r.total > 0 ? 'bold' : 'label'}
                         additionalStyle={[styles.cell, styles.sumCol, r.total === 0 && styles.cellZero]}>
@@ -174,6 +180,7 @@ export default function CoreRecapScreen() {
                       {n}
                     </VixText>
                   ))}
+                  <SumLine />
                   <VixText heading="bold" additionalStyle={[styles.cell, styles.sumCol, styles.totalText]}>
                     {rekap.grand}
                   </VixText>
@@ -233,7 +240,17 @@ const styles = StyleSheet.create({
   // Tiap CL satu kolom sempit; 8 CL + Σ masih muat di iPhone 15 tanpa geser.
   cell: { flex: 1, minWidth: 28, textAlign: 'center', color: Color.TEXT_TITLE },
   sumCol: { color: Color.CORE_DARK },
+  // Garis tegak pemisah kolom Σ — setebal & sewarna garis di atas baris Total.
+  sumLine: {
+    width: 1.5,
+    alignSelf: 'stretch',
+    marginVertical: -8,
+    marginLeft: 4,
+    backgroundColor: Color.CORE_DARK,
+  },
   cellZero: { color: Color.TEXT_PLACEHOLDER },
-  cellDate: { fontSize: 11, lineHeight: 14 },
+  // "7 Agu" di atas, "26" di bawah — kolomnya dilebarkan sedikit supaya
+  // "17 Agu" tidak pecah jadi tiga baris (kolom lain ikut melebar, tetap rata).
+  cellDate: { fontSize: 11, lineHeight: 14, minWidth: 40 },
   totalText: { color: Color.CORE_DARK },
 });

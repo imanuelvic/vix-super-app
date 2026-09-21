@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,7 +18,7 @@ import {
   VisitationCardBody,
   VisitationStatus,
 } from '@/components/core/VisitationCardBody';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useMonthCursor } from '@/hooks/useMonthCursor';
 import {
   subscribeCoreLeaders,
@@ -39,8 +39,6 @@ import {
   formatShortDayDate,
   MONTH_NAMES,
 } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 
 // Kalender CORE 📆 — satu bulan sekali lihat: tanggal yang punya jadwal
 // (visitasi dari sub-tab Visitation, rapat bulanan dari sub-tab Monthly)
@@ -55,7 +53,6 @@ const HARI = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
 export default function CoreCalendarScreen() {
   const router = useRouter();
-  const { user } = useAuth();
 
   const [visitations, setVisitations] = useState<Visitation[] | null>(null);
   const [meetings, setMeetings] = useState<MonthlyMeeting[] | null>(null);
@@ -63,16 +60,15 @@ export default function CoreCalendarScreen() {
   const [exLeaders, setExLeaders] = useState<CoreLeader[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeVisitations(user.uid, setVisitations, fail),
-      subscribeMonthlyMeetings(user.uid, setMeetings, fail),
-      subscribeCoreLeaders(user.uid, setLeaders, fail),
-      subscribeExLeaders(user.uid, setExLeaders, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeVisitations(uid, setVisitations, fail),
+      subscribeMonthlyMeetings(uid, setMeetings, fail),
+      subscribeCoreLeaders(uid, setLeaders, fail),
+      subscribeExLeaders(uid, setExLeaders, fail),
+    ],
+    { onError: setError },
+  );
 
   const today = new Date();
   const todayId = dayId(today);

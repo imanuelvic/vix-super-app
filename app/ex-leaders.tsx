@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   currentAge,
   deleteExLeader,
@@ -21,8 +22,7 @@ import {
   type ExLeader,
 } from '@/lib/core';
 import { dayIdToDate, formatShortDate, MONTH_NAMES } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // Arsip Ex CORE Leader 🗂️ — CL yang sudah tidak digembalakan lagi, beserta
 // alasan & tanggalnya. Bisa dikembalikan jadi CL aktif atau dihapus permanen.
@@ -40,21 +40,20 @@ export default function ExLeadersScreen() {
   // mingguan — jadi jangan sampai kepencet tanpa sengaja.
   const [confirmRestore, setConfirmRestore] = useState<ExLeader | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeCoreLeaders(
-        user.uid,
+        uid,
         (l) => {
           setLeaders(l);
           setError(null);
         },
         fail,
       ),
-      subscribeExLeaders(user.uid, setExLeaders, fail),
-    ]);
-  }, [user]);
+      subscribeExLeaders(uid, setExLeaders, fail),
+    ],
+    { onError: setError },
+  );
 
   const today = new Date();
 

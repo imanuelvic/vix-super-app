@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,7 +11,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { DiscussionTab } from '@/components/learning/DiscussionTab';
 import { SkillsTab } from '@/components/learning/SkillsTab';
 import { WeekTab } from '@/components/learning/WeekTab';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import {
   EMPTY_WEEK,
@@ -27,7 +27,6 @@ import {
   type TopicsDone,
   type WeekStreak,
 } from '@/lib/learning';
-import { unsubscribeAll } from '@/lib/liveDoc';
 import { EMPTY_DAY_STREAK as EMPTY_WEEK_STREAK } from '@/lib/streak';
 
 type LearningTabKey = 'week' | 'skills' | 'topics';
@@ -43,7 +42,6 @@ const TABS: BottomTab<LearningTabKey>[] = [
 ];
 
 export default function LearningScreen() {
-  const { user } = useAuth();
   // Reminder "Diskusi Dalam Minggu Ini" di Dashboard mendarat di ?tab=topics.
   const { tab, scrollKey, onTabPress } = useTabScroll<LearningTabKey>('week', {
     tabs: TABS,
@@ -61,15 +59,15 @@ export default function LearningScreen() {
   // Streak minggu tuntas berturut-turut 🔥 — dasar achievement 🎓 Learning.
   const [streak, setStreak] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
 
-  useEffect(() => {
-    if (!user) return;
-    return unsubscribeAll([
-      subscribeLearningWeek(user.uid, weekId, setWeek),
-      subscribeSkillsDone(user.uid, setSkillsDone),
-      subscribeTopicsDone(user.uid, setTopicsDone),
-      subscribeLearningStreak(user.uid, setStreak),
-    ]);
-  }, [user, weekId]);
+  useLiveAll(
+    (uid) => [
+      subscribeLearningWeek(uid, weekId, setWeek),
+      subscribeSkillsDone(uid, setSkillsDone),
+      subscribeTopicsDone(uid, setTopicsDone),
+      subscribeLearningStreak(uid, setStreak),
+    ],
+    { deps: [weekId] },
+  );
 
   const current = week ?? EMPTY_WEEK;
   // Badge dipecah mengikuti tempat pekerjaannya — sejak "Diskusi Dalam Minggu

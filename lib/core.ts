@@ -42,6 +42,9 @@ export type CoreLeader = {
   birthDay: number;
   phone: string | null; // digit SETELAH +62 (semua CL orang Indonesia)
   lastFollowupDayId: string | null; // "YYYY-MM-DD" terakhir di follow up
+  /** "YYYY-MM-DD" Thanksgiving CORE ini (21 Sep 2026) — diisi di form CL,
+      tampil di baris 🎉 Rekap Visitasi & PDF rekapnya. null = belum diisi. */
+  thanksgivingDayId?: string | null;
   /** Cowok/cewek — dipakai memilih ucapan ulang tahun. null = belum diisi. */
   gender?: Gender | null;
   // Kepribadian (opsional) — bantu cara pendekatan & ide chat.
@@ -663,7 +666,9 @@ export const MEETING_KINDS: {
   { key: 'thanksgiving', label: 'Thanksgiving', icon: '🎉', bigEvent: true },
   { key: 'christmas', label: 'Christmas CORE', icon: '🎄', bigEvent: true },
   { key: 'coreGabungan', label: 'CORE Gabungan', icon: '⛪', multiLeader: true },
-  { key: 'fellowshipGabungan', label: 'Fellowship CORE Gabungan', icon: '👥', multiLeader: true, },
+  // 🫂, bukan 👥 lagi (21 Sep 2026): di tabel Rekap Visitasi jenisnya cuma
+  // tampil sebagai lambang, dan dua baris 👥 tak bisa dibedakan.
+  { key: 'fellowshipGabungan', label: 'Fellowship CORE Gabungan', icon: '🫂', multiLeader: true, },
 ];
 
 /** Meta satu jenis pertemuan — fallback ke Visitasi kalau tak dikenal. */
@@ -1717,10 +1722,9 @@ export function monthlyPrayersFilled(data: MonthlyPrayers, now: Date): boolean {
 //
 // Jadwalnya SENGAJA dikunci sama dengan Doa Syafaat (lib/intercession.ts):
 // Selasa & Kamis di sana memang bertopik "🔗 Doa Rantai CL". Dulu Sabtu ikut,
-// padahal syafaat Sabtu bertopik ⛪ Gereja — akibatnya gerbang doa pagi Sabtu
-// punya satu langkah lebih banyak dari hari lain. Sekarang jumlahnya selalu
-// sama: Revive → (Doa Rantai ATAU Doa Syafaat) → Memuji & Menyembah →
-// Bapa Kami.
+// padahal syafaat Sabtu bertopik ⛪ Gereja — akibatnya pagi Sabtu punya satu
+// bagian doa lebih banyak dari hari lain. Sekarang langkah 🙏 Pray di Morning
+// Journey selalu berisi SATU: Doa Rantai ATAU Doa Syafaat, tidak keduanya.
 const PRAYER_FOLLOWUP_DAYS = [2, 4];
 const PRAYER_FOLLOWUP_COUNT = 4; // CL yang difokuskan tiap sesi (bergilir)
 

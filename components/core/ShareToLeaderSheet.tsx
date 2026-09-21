@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
@@ -14,6 +14,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFeatureTheme } from '@/hooks/useFeatureTheme';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   lastSharedTo,
   markSharedToLeader,
@@ -24,8 +25,6 @@ import {
   type ShareLog,
 } from '@/lib/core';
 import { formatCompactDateTime } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
 // Sheet "Bagikan ke CORE Leader" — dipakai tombol share Rekap Visitasi 📊,
@@ -76,14 +75,13 @@ export function ShareToLeaderSheet({
   const [pernahDibuka, setPernahDibuka] = useState(visible);
   if (visible && !pernahDibuka) setPernahDibuka(true);
 
-  useEffect(() => {
-    if (!user || !pernahDibuka) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeCoreLeaders(user.uid, setLeaders, fail),
-      subscribeShareLog(user.uid, setLog, fail),
-    ]);
-  }, [user, pernahDibuka]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeCoreLeaders(uid, setLeaders, fail),
+      subscribeShareLog(uid, setLog, fail),
+    ],
+    { onError: setError, when: pernahDibuka },
+  );
 
   // key = id CL yang PDF-nya sedang dibuat → cuma baris itu yang berputar.
   const tugas = useBusyTask<string>();

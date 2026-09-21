@@ -98,7 +98,7 @@ export async function shareRecapPdf(
   lastShared: Date | null,
   now: Date = new Date(),
 ): Promise<void> {
-  const r = leaderRecap(visitations, leader.id, year);
+  const r = leaderRecap(visitations, leader.id, year, leader.thanksgivingDayId ?? null);
   const judul = `Rekap Visitasi ${leader.heart} ${leader.name}`;
 
   const bodyHtml = `

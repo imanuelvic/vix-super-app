@@ -42,7 +42,7 @@ export default function ReviveHistoryScreen() {
   const q = query.trim().toLowerCase();
   const filtered = q
     ? (entries ?? []).filter((e) =>
-        `${e.title} ${e.rhema} ${e.reflection} ${e.passage} ${e.verse}`
+        `${e.title} ${e.rhema} ${e.reflection} ${e.passage} ${e.verse} ${e.prayer ?? ''}`
           .toLowerCase()
           .includes(q),
       )
@@ -104,11 +104,13 @@ export default function ReviveHistoryScreen() {
                       {formatFullDate(e.date.toDate())}
                       {e.passage ? ` · 📖 ${e.passage}` : ''}
                     </VixText>
+                    {/* Hari yang baru berisi isian Morning Journey (judulnya
+                        belum ditulis) tetap tampil, dengan nama journey-nya. */}
                     <VixText heading="bold" additionalStyle={styles.cardTitle}>
-                      {e.title}
+                      {e.title || '🌤️ Morning Journey'}
                     </VixText>
                     <VixText heading="paragraph" numberOfLines={3}>
-                      {e.rhema}
+                      {e.rhema || (e.prayer ? `🙏 ${e.prayer}` : '')}
                     </VixText>
                   </PressableScale>
                 ))}

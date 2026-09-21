@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
@@ -11,6 +11,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   meetingKindMeta,
   meetingLeaderNames,
@@ -30,7 +31,6 @@ import {
   type NoteKind,
 } from '@/lib/coreNotes';
 import { formatFullDate } from '@/lib/format';
-import { unsubscribeAll } from '@/lib/liveDoc';
 import { SAVE_ERROR } from '@/lib/messages';
 
 // Tombol 🔗 Connect ke CORE di layar Catatan Revive 📖 & Catatan Khotbah ⛪.
@@ -65,15 +65,15 @@ export function ConnectCoreButton({
   // rangkuman di Learning. Layar catatan tidak perlu tahu apa-apa soal CORE
   // sampai tombolnya benar-benar ditekan, jadi tidak ada baca Firestore
   // tambahan untuk yang cuma membaca catatannya.
-  useEffect(() => {
-    if (!user || !open) return;
-    return unsubscribeAll([
-      subscribeCoreNoteLinks(user.uid, setLinks),
-      subscribeVisitations(user.uid, setVisitations),
-      subscribeMonthlyMeetings(user.uid, setMeetings),
-      subscribeCoreLeaders(user.uid, setLeaders),
-    ]);
-  }, [user, open]);
+  useLiveAll(
+    (uid) => [
+      subscribeCoreNoteLinks(uid, setLinks),
+      subscribeVisitations(uid, setVisitations),
+      subscribeMonthlyMeetings(uid, setMeetings),
+      subscribeCoreLeaders(uid, setLeaders),
+    ],
+    { when: open },
+  );
 
   const now = new Date();
   const awalHariIni = new Date(

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,7 +14,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { CheckupTab } from '@/components/health/CheckupTab';
 import { FunArchive } from '@/components/fun/FunArchive';
 import { StepsTab } from '@/components/health/StepsTab';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   subscribeCheckups,
   subscribeHealthProfile,
@@ -25,8 +25,6 @@ import {
   type StepDaysMap,
   type WeekStatsMap,
 } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 
 type HealthTab = 'steps' | 'race' | 'checkup';
 
@@ -57,7 +55,6 @@ const TABS: BottomTab<HealthTab>[] = [
 ];
 
 export default function HealthScreen() {
-  const { user } = useAuth();
   const router = useRouter();
   const { tab: tabParam } = useLocalSearchParams<{ tab?: string }>();
 
@@ -78,23 +75,22 @@ export default function HealthScreen() {
   const [weeks, setWeeks] = useState<WeekStatsMap>({});
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeHealthProfile(
-        user.uid,
+        uid,
         (p) => {
           setProfile(p);
           setError(null);
         },
         fail,
       ),
-      subscribeCheckups(user.uid, setCheckups, fail),
-      subscribeStepDays(user.uid, setStepDays, fail),
-      subscribeWeekStats(user.uid, setWeeks, fail),
-    ]);
-  }, [user]);
+      subscribeCheckups(uid, setCheckups, fail),
+      subscribeStepDays(uid, setStepDays, fail),
+      subscribeWeekStats(uid, setWeeks, fail),
+    ],
+    { onError: setError },
+  );
 
   // Air putih 💧 tidak diurus dari layar ini lagi — pencatatannya cuma di
   // kartu sapaan Home (satu tombol, satu angka, satu streak).

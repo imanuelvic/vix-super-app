@@ -20,6 +20,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { type LoginStreak } from '@/lib/achievements';
 import { featureKeyForRoute } from '@/lib/featureTheme';
@@ -32,7 +33,6 @@ import {
   WATER_GOAL,
   type HabitDay,
 } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
 
 // 💧 Gelas air hari ini sebagai tombol MENGAMBANG (14 Sep 2026), seperti
 // AssistiveTouch iPhone: ada di semua layar, bisa diseret ke mana saja dan
@@ -144,13 +144,13 @@ export function WaterFloat() {
   const [day, setDay] = useState<HabitDay | null>(null);
   const [streak, setStreak] = useState<LoginStreak | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return unsubscribeAll([
-      subscribeHabitDay(user.uid, todayId, setDay),
-      subscribeWaterStreak(user.uid, setStreak),
-    ]);
-  }, [user, todayId]);
+  useLiveAll(
+    (uid) => [
+      subscribeHabitDay(uid, todayId, setDay),
+      subscribeWaterStreak(uid, setStreak),
+    ],
+    { deps: [todayId] },
+  );
 
   // ---- letak ----
   const batasX = (side: Letak['side']) => (side === 'left' ? MARGIN : width - SIZE - MARGIN);

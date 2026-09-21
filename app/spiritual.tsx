@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AchievementButton } from '@/components/common/AchievementButton';
 import { AttentionMark } from '@/components/common/Badge';
@@ -27,11 +28,11 @@ import { PromiseTab } from '@/components/spiritual/PromiseTab';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { BIBLE_CATEGORY } from '@/lib/achievements';
 import { subscribeFastingPlans, type FastingPlan } from '@/lib/fasting';
 import { dayDocId } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 import { subscribePromises, type Promise as HisPromise } from '@/lib/promise';
 import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
@@ -40,6 +41,7 @@ import {
   repairedReviveStreak,
   saveReviveStreak,
   reviveHandledToday,
+  reviveWritten,
   setReviveSkipped,
   subscribeBibleReadingDays,
   subscribeReviveEntries,
@@ -90,29 +92,33 @@ export default function SpiritualScreen() {
   const [skipBusy, setSkipBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeReviveEntries(
-        user.uid,
+        uid,
         (next) => {
           setEntries(next);
           setError(null);
         },
         fail,
       ),
-      subscribeSermons(user.uid, setSermons, fail),
-      subscribeBibleReadingDays(user.uid, setBibleDays, fail),
-      subscribeFastingPlans(user.uid, setFastingPlans, fail),
-      subscribePromises(user.uid, setPromises, fail),
-      subscribeReviveStreak(user.uid, setReviveStreak, fail),
-    ]);
-  }, [user]);
+      subscribeSermons(uid, setSermons, fail),
+      subscribeBibleReadingDays(uid, setBibleDays, fail),
+      subscribeFastingPlans(uid, setFastingPlans, fail),
+      subscribePromises(uid, setPromises, fail),
+      subscribeReviveStreak(uid, setReviveStreak, fail),
+    ],
+    { onError: setError },
+  );
 
   const now = new Date();
   const todayId = dayDocId(now);
-  const todayEntry = entries?.find((e) => e.id === todayId) ?? null;
+  // Hanya Revive yang UTUH. Morning Journey bisa membuat dokumen hari ini
+  // lebih dulu (baru rhema atau doa pagi); selama judul/bacaan/aplikasinya
+  // belum lengkap, di sini ia masih "belum ditulis" (tombolnya tetap tampil,
+  // editornya sudah terisi sebagian).
+  const todayEntry =
+    entries?.find((e) => e.id === todayId && reviveWritten(e)) ?? null;
   // Hari ini sengaja dilewati? (tandanya menempel di dokumen streak yang sama)
   const skippedToday = reviveStreak?.skippedDayId === todayId;
 
@@ -142,7 +148,7 @@ export default function SpiritualScreen() {
     if (!user || !entries || diperbaiki.current) return;
     const benar = repairedReviveStreak(
       reviveStreak,
-      entries.map((e) => e.id),
+      entries.filter(reviveWritten).map((e) => e.id),
       todayId,
     );
     if (!benar) return;
@@ -297,6 +303,24 @@ export default function SpiritualScreen() {
                 additionalStyle={styles.skippedGap}
               />
             )}
+
+            {/* 🌤️ Morning Journey — refleksi, respons, & doa pagi hari-hari
+                sebelumnya (isiannya menumpang di Revive & jurnal Habits). */}
+            <PressableScale
+              style={styles.journeyCard}
+              onPress={() => router.push('/journey-history')}>
+              <View style={styles.journeyMain}>
+                <VixText heading="bold" additionalStyle={styles.journeyTitle}>
+                  🌤️ Morning Journey
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.journeySub}>
+                  Lihat refleksi, respons, & doa pagi sebelumnya
+                </VixText>
+              </View>
+              <VixText heading="label" additionalStyle={styles.journeySub}>
+                ›
+              </VixText>
+            </PressableScale>
           </ScrollView>
         ) : tab === 'sermon' ? (
           <SermonTab sermons={sermons} />
@@ -338,6 +362,22 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   todayTitle: { color: Color.TEXT_TITLE },
+  // Kartu pintu riwayat Morning Journey — kartu blok biasa (putih, bergaris).
+  journeyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: CARD_GAP,
+  },
+  journeyMain: { flex: 1, gap: 1 },
+  journeyTitle: { color: Color.SPIRITUAL_DARK },
+  journeySub: { color: Color.TEXT_LABEL },
   todayPassage: { color: Color.SPIRITUAL_DARK },
   todayReflection: { color: Color.SPIRITUAL_DARK },
 });

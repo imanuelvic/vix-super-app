@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,7 +15,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   CAR_INFO,
   countCarAttention,
@@ -24,8 +24,6 @@ import {
   type CarLog,
   type PartStatusMap,
 } from '@/lib/car';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 
 type CarTab = 'log' | 'parts' | 'info';
 
@@ -39,8 +37,6 @@ const TABS: BottomTab<CarTab>[] = [
 // Car 🚗 — rawat Mazda 2 kesayangan: log pengeluaran, jadwal sparepart,
 // dan identitas mobil.
 export default function CarScreen() {
-  const { user } = useAuth();
-
   // Default masuk ke Sparepart — kondisi mobil yang paling penting dilihat.
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan.
   // `repress` = tombol Parts ditekan lagi saat sudah aktif → daftarnya langsung
@@ -53,21 +49,20 @@ export default function CarScreen() {
   const [parts, setParts] = useState<PartStatusMap | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
+  useLiveAll(
+    (uid, fail) => [
       subscribeCarLogs(
-        user.uid,
+        uid,
         (next) => {
           setLogs(next);
           setError(null);
         },
         fail,
       ),
-      subscribePartStatus(user.uid, setParts, fail),
-    ]);
-  }, [user]);
+      subscribePartStatus(uid, setParts, fail),
+    ],
+    { onError: setError },
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>

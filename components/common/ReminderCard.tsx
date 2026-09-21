@@ -24,6 +24,7 @@ export function ReminderCard({
   onItemPress,
   action,
   onClose,
+  corner,
   children,
 }: {
   bg: string; // warna latar pastel
@@ -58,6 +59,14 @@ export function ReminderCard({
    * terselip di bawah ✕.
    */
   onClose?: () => void;
+  /**
+   * Lambang kecil di pojok kanan BAWAH kartu, tepat di bawah ✕ (21 Sep 2026)
+   * — mis. ▾/▴ "kartu ini bisa dibuka/ditutup" atau → "menuju layar lain".
+   * Dulu ditempel di ujung judul; begitu judulnya membungkus, lambangnya
+   * jatuh sendirian di kiri baris kedua. Ia kolom sendiri di kanan badan
+   * teks (rata bawah), jadi tak pernah menimpa tulisan sepanjang apa pun.
+   */
+  corner?: string;
   children?: ReactNode; // isi khusus (mis. kutipan yang di-clamp)
 }) {
   const color: StyleProp<TextStyle> = { color: fg };
@@ -121,12 +130,30 @@ export function ReminderCard({
     </>
   );
 
+  // Judul + baris teks, dan (kalau ada) lambang pojok di kolom kanannya yang
+  // rata bawah — badan teks yang memanjang tinggal mendorongnya ke bawah.
+  const badan = corner ? (
+    <View style={styles.bodyRow}>
+      <View style={styles.bodyMain}>
+        {judul}
+        {isi}
+      </View>
+      <VixText heading="bold" additionalStyle={[styles.title, styles.corner]}>
+        {corner}
+      </VixText>
+    </View>
+  ) : (
+    <>
+      {judul}
+      {isi}
+    </>
+  );
+
   // Mode per-baris: bungkus View biasa (tombolnya ada di tiap baris).
   if (onItemPress) {
     return (
       <View style={cardStyle}>
-        {judul}
-        {isi}
+        {badan}
         {tutup}
       </View>
     );
@@ -138,10 +165,7 @@ export function ReminderCard({
   if (action || onClose) {
     return (
       <View style={cardStyle}>
-        <PressableScale onPress={onPress}>
-          {judul}
-          {isi}
-        </PressableScale>
+        <PressableScale onPress={onPress}>{badan}</PressableScale>
         {action ? <View style={styles.actionRow}>{action}</View> : null}
         {tutup}
       </View>
@@ -150,8 +174,7 @@ export function ReminderCard({
 
   return (
     <PressableScale style={cardStyle} onPress={onPress}>
-      {judul}
-      {isi}
+      {badan}
     </PressableScale>
   );
 }
@@ -181,6 +204,13 @@ const styles = StyleSheet.create({
   },
   // Kaki kartu saat ia punya tombol aksi sendiri — menempel ke kanan bawah.
   actionRow: { alignItems: 'flex-end', marginTop: 4 },
+  // Badan teks + kolom lambang pojok. `gap` kartu pindah ke bodyMain supaya
+  // jarak judul–baris teks tetap sama dengan kartu tanpa lambang.
+  bodyRow: { flexDirection: 'row', alignItems: 'flex-end' },
+  bodyMain: { flex: 1, gap: 3 },
+  // Selebar tombol ✕ dan segaris dengannya (✕ ada di right 12, di dalam
+  // padding 16 → margin kanan -4), jadi lambangnya persis di bawah ✕.
+  corner: { width: 24, textAlign: 'center', marginRight: -4 },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',

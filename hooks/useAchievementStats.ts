@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   subscribeLoginStreak,
   type AchievementStats,
@@ -25,8 +26,6 @@ import {
   type WeekStatsMap,
 } from '@/lib/health';
 import { subscribeLearningStreak, type WeekStreak } from '@/lib/learning';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
   EMPTY_BIBLE_STREAKS,
   subscribeBibleStreaks,
@@ -65,21 +64,20 @@ export function useAchievementStats(): {
   const [learning, setLearning] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeLoginStreak(user.uid, setLogin, fail),
-      subscribeStreak(user.uid, setHabit, fail),
-      subscribeBibleStreaks(user.uid, setBible, fail),
-      subscribeFitStreak(user.uid, setFit, fail),
-      subscribeWaterStreak(user.uid, setWater, fail),
-      subscribeStepDays(user.uid, setStepDays, fail),
-      subscribeHealthProfile(user.uid, setBody, fail),
-      subscribeWeekStats(user.uid, setWeeks, fail),
-      subscribeLearningStreak(user.uid, setLearning, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeLoginStreak(uid, setLogin, fail),
+      subscribeStreak(uid, setHabit, fail),
+      subscribeBibleStreaks(uid, setBible, fail),
+      subscribeFitStreak(uid, setFit, fail),
+      subscribeWaterStreak(uid, setWater, fail),
+      subscribeStepDays(uid, setStepDays, fail),
+      subscribeHealthProfile(uid, setBody, fail),
+      subscribeWeekStats(uid, setWeeks, fail),
+      subscribeLearningStreak(uid, setLearning, fail),
+    ],
+    { onError: setError },
+  );
 
   // Tutup buku sesi gym yang harinya sudah habis 🔥 — sama seperti yang
   // dijalankan layar Fitness. Diulang di sini karena layar INI yang menampilkan

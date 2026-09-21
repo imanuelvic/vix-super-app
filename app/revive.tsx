@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -26,12 +26,13 @@ import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useDraft } from '@/hooks/useDraft';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { type LoginStreak as DayStreak } from '@/lib/achievements';
 import { purgeNoteLinks } from '@/lib/coreNotes';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { responsesLine } from '@/lib/journey';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
     applicationPrompt,
     bumpReviveStreak,
@@ -39,6 +40,7 @@ import {
     deleteReviveEntry,
     myReminderOn,
     refreshMyReminders,
+    reviveWritten,
     rhemaPrompt,
     saveMyReminders,
     saveReviveEntry,
@@ -88,7 +90,11 @@ export default function ReviveEditorScreen() {
   // yang sudah masuk riwayat memang tidak ditulis ulang, dan membiarkannya
   // bisa diubah cuma bikin catatan lama pelan-pelan bergeser dari aslinya.
   // Revive HARI INI tetap bisa diisi & diperbaiki sepuasnya.
-  const arsip = exists && targetDay !== todayId;
+  //
+  // Dokumen yang BELUM UTUH (Morning Journey baru menulis rhema/doa paginya,
+  // judul & bacaannya belum) juga tidak dikunci: masih form, supaya bisa
+  // dilengkapi walau harinya sudah lewat.
+  const arsip = exists && reviveWritten(entry) && targetDay !== todayId;
 
   // Isian form: ikut Revive tersimpan SELAMA belum diketik; sekali diketik,
   // ketikan itu yang menang (snapshot berikutnya tidak menimpanya). Hook
@@ -108,15 +114,14 @@ export default function ReviveEditorScreen() {
   const editingDate = entry ? entry.date.toDate() : openedAt;
   const fVerse = entry?.verse ?? '';
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setFormError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribeReviveEntries(user.uid, setEntries, fail),
-      subscribeReviveStreak(user.uid, setStreak, fail),
-      subscribeMyReminders(user.uid, setMine, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeReviveEntries(uid, setEntries, fail),
+      subscribeReviveStreak(uid, setStreak, fail),
+      subscribeMyReminders(uid, setMine, fail),
+    ],
+    { onError: setFormError },
+  );
 
   /**
    * Pasang / lepas isi satu kolom sebagai reminder harian. Yang dipasang teks
@@ -282,6 +287,7 @@ export default function ReviveEditorScreen() {
               />
             }
           />
+          <JourneyBlocks entry={entry} />
 
           <ActionStack>
             <ShareWhatsAppButton onPress={shareToWhatsApp} />
@@ -362,6 +368,7 @@ export default function ReviveEditorScreen() {
               multiline
               editable={!busy}
             />
+            {entry && <JourneyBlocks entry={entry} />}
             <ActionStack>
               {/* Setelah keempat bagian terisi → langsung tombol share (tanpa
                   preview isi pesan; teksnya tetap dibuat di shareToWhatsApp). */}
@@ -391,6 +398,20 @@ export default function ReviveEditorScreen() {
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>
+  );
+}
+
+/**
+ * Isian Morning Journey 🌅 yang menumpang di Revive hari itu: ❤️ respons hati
+ * & 🙏 doa pagi. Baca saja di sini (ditulisnya dari journey pagi); kosong =
+ * tidak digambar sama sekali.
+ */
+function JourneyBlocks({ entry }: { entry: ReviveEntry }) {
+  return (
+    <>
+      <BacaBlok label="❤️ Respons hati" text={responsesLine(entry.responses)} />
+      <BacaBlok label="🙏 Doa pagi" text={entry.prayer ?? ''} />
+    </>
   );
 }
 

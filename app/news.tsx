@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,8 +12,8 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { NewsTab } from '@/components/news/NewsTab';
 import { PopulationTab } from '@/components/news/PopulationTab';
 import { useAuth } from '@/contexts/auth';
-import { unsubscribeAll } from '@/lib/liveDoc';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { useLiveAll } from '@/hooks/useLiveAll';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   saveNewsBookmarks,
   subscribeNewsBookmarks,
@@ -46,14 +46,13 @@ export default function NewsScreen() {
   const [bookmarks, setBookmarks] = useState<NewsBookmark[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    const fail = () => setError(LOAD_ERROR);
-    return unsubscribeAll([
-      subscribePopulationLog(user.uid, setSaved, fail),
-      subscribeNewsBookmarks(user.uid, setBookmarks, fail),
-    ]);
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribePopulationLog(uid, setSaved, fail),
+      subscribeNewsBookmarks(uid, setBookmarks, fail),
+    ],
+    { onError: setError },
+  );
 
   function handleToggleBookmark(item: NewsItem) {
     if (!user) return;

@@ -1,11 +1,11 @@
 import { Tabs } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { Color } from '@/assets/style/color';
 import { BounceTabIcon } from '@/components/bounce-tab-icon';
 import { HapticTab } from '@/components/haptic-tab';
 import { RaisedHomeTab } from '@/components/raised-home-tab';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import {
   countedHabits,
@@ -14,27 +14,24 @@ import {
   type ScheduledHabit,
 } from '@/lib/habits';
 import { subscribeHabitDay, type HabitDay } from '@/lib/health';
-import { unsubscribeAll } from '@/lib/liveDoc';
 
 export const unstable_settings = {
   initialRouteName: 'index',
 };
 
 export default function TabLayout() {
-  const { user } = useAuth();
-
   const [schedule, setSchedule] = useState<ScheduledHabit[]>([]);
   const [day, setDay] = useState<HabitDay | null>(null);
 
   const { now, todayId } = useNow();
 
-  useEffect(() => {
-    if (!user) return;
-    return unsubscribeAll([
-      subscribeHabitSchedule(user.uid, setSchedule),
-      subscribeHabitDay(user.uid, todayId, setDay),
-    ]);
-  }, [user, todayId]);
+  useLiveAll(
+    (uid) => [
+      subscribeHabitSchedule(uid, setSchedule),
+      subscribeHabitDay(uid, todayId, setDay),
+    ],
+    { deps: [todayId] },
+  );
 
   const habitsLeft = day
     ? pendingHabits(countedHabits(schedule, day.skipped), day.done, now).length

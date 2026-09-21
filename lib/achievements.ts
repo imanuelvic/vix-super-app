@@ -229,7 +229,7 @@ const CATEGORIES: {
   /** Angkanya perlu bentuk khusus? (mis. km 1 desimal) */
   fmt?: (n: number) => string;
 }[] = [
-  { key: 'login', icon: '🙏', label: 'Morning Prayer', desc: 'Streak doa pagi di gerbang pagi', now: (s) => s.loginCount, unit: 'hari streak' },
+  { key: 'login', icon: '🙏', label: 'Morning Prayer', desc: 'Streak Morning Journey, "Mulai Hariku" tiap pagi', now: (s) => s.loginCount, unit: 'hari streak' },
   { key: 'bibleMorning', icon: DAYPART.morning, label: 'Morning Reading', desc: 'Streak baca Alkitab pagi', now: (s) => s.bibleMorningBest, unit: 'hari streak' },
   { key: 'bibleDaytime', icon: DAYPART.daytime, label: 'Midday Reading', desc: 'Streak baca Alkitab siang', now: (s) => s.bibleDaytimeBest, unit: 'hari streak' },
   { key: 'bibleNight', icon: DAYPART.night, label: 'Night Reading', desc: 'Streak baca Alkitab malam', now: (s) => s.bibleNightBest, unit: 'hari streak' },
