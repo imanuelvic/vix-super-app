@@ -7,6 +7,7 @@ import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { CrossButton } from '@/components/common/CrossButton';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditButton } from '@/components/common/EditButton';
@@ -809,17 +810,7 @@ export function HabitsTab({
                         dilakukan di layar asalnya (Fitness / Baca Alkitab),
                         biar tandanya tidak bisa beda antara dua layar. */}
                     {!mirrored && (
-                      <PressableScale
-                        style={[styles.skipButton, skipped && styles.skipButtonOn]}
-                        onPress={() => handleSkip(habit)}
-                        hitSlop={8}
-                        haptic="warning">
-                        <IconSymbol
-                          name="xmark"
-                          size={19}
-                          color={skipped ? Color.DANGER : Color.TEXT_LABEL}
-                        />
-                      </PressableScale>
+                      <CrossButton on={skipped} onPress={() => handleSkip(habit)} />
                     )}
                     {/* Tombol edit → buka modal ubah / urutkan / hapus.
                         Rupanya sama dengan tombol ✏️ di seluruh app. */}
@@ -1230,10 +1221,6 @@ const styles = StyleSheet.create({
     backgroundColor: Color.DANGER_TRANSPARENT,
     borderColor: Color.DANGER,
   },
-  skipButtonOn: {
-    backgroundColor: Color.FINANCE_EXPENSE,
-    borderColor: Color.DANGER,
-  },
   // Centang "Kebiasaan inti" di sheet tambah kebiasaan.
   coreToggle: {
     ...CARD,
@@ -1249,18 +1236,8 @@ const styles = StyleSheet.create({
   pickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   rowMain: { flex: 1 },
   rowActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  // ✗ lewati hari ini — ukuran & bentuknya disamakan persis dengan tombol ✏️
-  // di sebelahnya (EmojiButton 42×42), jadi pasangannya tidak timpang.
-  skipButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 1.5,
-    borderColor: Color.ACCENT,
-    backgroundColor: Color.ACCENT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // (Tombol ✗ lewati hari ini = components/common/CrossButton.tsx, dipakai
+  // juga Hari per Hari puasa.)
   habitText: { color: Color.TEXT_TITLE, flexShrink: 1 },
   habitTextDone: {
     color: Color.TEXT_PLACEHOLDER,

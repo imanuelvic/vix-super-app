@@ -120,6 +120,7 @@ export default function FastingScreen() {
       return;
     }
     const id = planId || newFastingId();
+    const sudahAda = !!planId;
     setBusy(true);
     setError(null);
     try {
@@ -131,7 +132,12 @@ export default function FastingScreen() {
         startId: dayDocId(startDate),
         endId: dayDocId(endDate),
       });
-      setPlanId(id);
+      // 💾 Simpan Perubahan → langsung kembali (22 Sep 2026): perubahannya
+      // sudah tersimpan, tak ada lagi yang perlu dilihat di sini. Puasa BARU
+      // tetap tinggal di layar ini (jadi mode edit) supaya Hari per Hari-nya
+      // langsung bisa dibuka.
+      if (sudahAda) router.back();
+      else setPlanId(id);
     } catch {
       setError(SAVE_ERROR);
     } finally {

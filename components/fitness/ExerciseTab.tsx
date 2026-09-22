@@ -58,6 +58,7 @@ import {
   type FitWeights,
 } from '@/lib/fitness';
 import { dayIdToDate, formatDecimal, parseDecimal } from '@/lib/format';
+import { formatFinish, splitFinishSec, toFinishSec } from '@/lib/fun';
 import { weekDayIds } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
 
@@ -139,7 +140,12 @@ export function ExerciseTab({
   // Modal isian hasil lari — dikunci id PAKETNYA (satu paket lari = sekali lari).
   const [runOf, setRunOf] = useState<FitSession | null>(null);
   const [fKm, setFKm] = useState('');
-  const [fMinutes, setFMinutes] = useState('');
+  // Waktu tempuh: jam · menit · detik, PERSIS seperti isian Race (22 Sep 2026).
+  // Tersimpan tetap sebagai `minutes` desimal (32 menit 30 detik = 32,5), jadi
+  // catatan lama tetap terbaca & pace-nya tetap dari rumus yang sama.
+  const [fJam, setFJam] = useState('');
+  const [fMenit, setFMenit] = useState('');
+  const [fDetik, setFDetik] = useState('');
 
   const { skipped } = day;
   const isToday = weekday === todayWeekday;
@@ -315,7 +321,12 @@ export function ExerciseTab({
   function openRun(s: FitSession) {
     const ada = viewDay.runs[s.id];
     setFKm(ada && ada.km > 0 ? String(ada.km) : '');
-    setFMinutes(ada && ada.minutes > 0 ? String(ada.minutes) : '');
+    const t = ada && ada.minutes > 0
+      ? splitFinishSec(Math.round(ada.minutes * 60))
+      : { h: 0, m: 0, s: 0 };
+    setFJam(t.h > 0 ? String(t.h) : '');
+    setFMenit(t.h > 0 || t.m > 0 ? String(t.m) : '');
+    setFDetik(t.s > 0 ? String(t.s) : '');
     setRunOf(s);
   }
 
@@ -324,7 +335,7 @@ export function ExerciseTab({
     try {
       await setFitRun(user.uid, dayId, runOf.id, {
         km: parseDecimal(fKm),
-        minutes: parseDecimal(fMinutes),
+        minutes: toFinishSec(Number(fJam), Number(fMenit), Number(fDetik)) / 60,
       });
     } catch {
       // Diamkan — snapshot akan mengoreksi tampilan otomatis.
@@ -681,7 +692,7 @@ export function ExerciseTab({
                 </VixText>
                 <VixText heading="label" additionalStyle={styles.runValue}>
                   {ada
-                    ? `${formatDecimal(run.km)} km · ${formatDecimal(run.minutes)} menit${pace ? ` · ${pace}` : ''}`
+                    ? `${formatDecimal(run.km)} km · ${formatFinish(Math.round(run.minutes * 60))}${pace ? ` · ${pace}` : ''}`
                     : isToday
                       ? 'Belum diisi, click untuk mencatat jarak & waktunya'
                       : 'Jaraknya tidak dicatat'}
@@ -789,13 +800,29 @@ export function ExerciseTab({
           onChangeText={setFKm}
           autoFocus
         />
-        <FormInput
-          style={styles.formGap}
-          placeholder="Waktu (menit), mis. 32"
-          keyboardType="decimal-pad"
-          value={fMinutes}
-          onChangeText={setFMinutes}
-        />
+        {/* Waktu tempuh — jam · menit · detik berdampingan, sama seperti
+            isian Race: pace butuh detiknya. */}
+        <VixText heading="label" additionalStyle={styles.timeLabel}>
+          ⏱️ Waktu tempuh
+        </VixText>
+        <View style={styles.timeRow}>
+          {(
+            [
+              ['Jam', fJam, setFJam],
+              ['Menit', fMenit, setFMenit],
+              ['Detik', fDetik, setFDetik],
+            ] as const
+          ).map(([label, nilai, ubah]) => (
+            <FormInput
+              key={label}
+              style={styles.timeInput}
+              placeholder={label}
+              keyboardType="number-pad"
+              value={nilai}
+              onChangeText={(t) => ubah(t.replace(/[^0-9]/g, '').slice(0, 2))}
+            />
+          ))}
+        </View>
         <DualButtons
           confirmLabel="Simpan"
           onCancel={() => setRunOf(null)}
@@ -1021,5 +1048,8 @@ const styles = StyleSheet.create({
   tipRow: CARD,
   tipText: { color: Color.TEXT_TITLE },
   modalTitle: { color: Color.TEXT_TITLE, marginBottom: 4 },
-  formGap: { marginTop: 10 },
+  // Jam · menit · detik: tiga kolom selebar sama (bentuk yang sama dengan Race).
+  timeLabel: { marginTop: 10, marginBottom: 6 },
+  timeRow: { flexDirection: 'row', gap: 8 },
+  timeInput: { flex: 1 },
 });

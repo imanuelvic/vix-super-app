@@ -126,12 +126,33 @@ export function subscribeTransactionsByMonth(
   onChange: (items: Transaction[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const start = Timestamp.fromDate(new Date(year, month, 1));
-  const end = Timestamp.fromDate(new Date(year, month + 1, 1));
+  return subscribeTransactionsRange(
+    uid,
+    new Date(year, month, 1),
+    new Date(year, month + 1, 1),
+    onChange,
+    onError,
+  );
+}
+
+/**
+ * Dengarkan transaksi dalam rentang tanggal [start, end) — terbaru dulu.
+ * Bentuk query-nya sama persis dengan per-bulan (range + orderBy di field
+ * yang sama, tanpa composite index); dipakai riwayat 3 bulan untuk analisis
+ * pola pengeluaran (22 Sep 2026). Rentangnya sengaja dipatok pemanggil, jadi
+ * biaya bacanya selalu terbatas.
+ */
+export function subscribeTransactionsRange(
+  uid: string,
+  start: Date,
+  end: Date,
+  onChange: (items: Transaction[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
   const q = query(
     transactionsCollection(uid),
-    where('date', '>=', start),
-    where('date', '<', end),
+    where('date', '>=', Timestamp.fromDate(start)),
+    where('date', '<', Timestamp.fromDate(end)),
     orderBy('date', 'desc'),
   );
   return liveList<Transaction>(q, onChange, onError);

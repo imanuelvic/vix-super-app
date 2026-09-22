@@ -21,12 +21,12 @@ import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
-import { ShareToLeaderSheet } from '@/components/core/ShareToLeaderSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useOwnerLeader } from '@/hooks/useOwnerLeader';
 import { formatDayDate, MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { PRIVACY_PIN } from '@/lib/pin';
@@ -45,7 +45,9 @@ import {
   type TimelineItem,
   type TimelineYear,
 } from '@/lib/timeline';
+import { shareDocToLeader } from '@/lib/shareLeader';
 import { shareTimelinePdf } from '@/lib/timelinePdf';
+import { WHATSAPP_ERROR } from '@/lib/whatsapp';
 
 // Tahun paling awal = tahun aplikasi dibuat (2026). Tidak ada data sebelumnya,
 // jadi navigasi tahun mentok di sini (tidak bisa mundur ke 2025 dan sebelumnya).
@@ -217,18 +219,36 @@ export default function TimelineScreen() {
     : null;
   const judulDok = owner ? `Timeline ${params.heart ?? '📍'} ${orang}` : 'My Timeline';
 
-  // Tombol share di header membuka sheet "Bagikan ke CORE Leader" (16 Sep
-  // 2026): pilih CL-nya, PDF SELURUH wishlist (tahun berlalu & mendatang)
-  // dibuat sebagai garis waktu lalu share sheet terbuka, dan chat WA nomornya
-  // menyusul. Bentuknya sama dengan Wheel of Life & Rekap Visitasi.
-  const [shareOpen, setShareOpen] = useState(false);
+  // Tombol share di header (22 Sep 2026): timeline milik satu CL LANGSUNG ke
+  // orangnya, tanpa sheet pilih CL. PDF SELURUH wishlist (tahun berlalu &
+  // mendatang) dibuat → share sheet (pilih WhatsApp) → tanggalnya dicatat →
+  // chat WA CL itu terbuka (lib/shareLeader.ts). Timeline-ku sendiri (tanpa
+  // pemilik) tetap bagikan biasa. Sama dengan Wheel of Life.
+  const { leader: ownerLeader, log: shareLog } = useOwnerLeader(owner, unlocked);
 
-  // Bagikan biasa, tanpa memilih CL (baris terakhir di sheet).
   function handleShare() {
+    if (!user) return;
+    const uid = user.uid;
     void tugas.run({
       key: 'pdf',
       start: () => setError(null),
-      task: async () => shareTimelinePdf(await muatSemua(), pemilik),
+      task: async () =>
+        ownerLeader
+          ? shareDocToLeader({
+              uid,
+              leader: ownerLeader,
+              kind: 'timeline',
+              doc: judulDok,
+              log: shareLog,
+              share: async (l, lastShared) =>
+                shareTimelinePdf(await muatSemua(), pemilik, {
+                  name: l.name,
+                  heart: l.heart,
+                  lastShared,
+                }),
+              onWaError: () => setError(WHATSAPP_ERROR),
+            })
+          : shareTimelinePdf(await muatSemua(), pemilik),
       fail: () => setError('Gagal membuat PDF Timeline. Coba lagi.'),
     });
   }
@@ -355,7 +375,7 @@ export default function TimelineScreen() {
             />
             <EmojiButton
               icon="square.and.arrow.up"
-              onPress={() => setShareOpen(true)}
+              onPress={handleShare}
               busy={tugas.busy === 'pdf'}
               disabled={tugas.busy !== null}
             />
@@ -646,20 +666,6 @@ export default function TimelineScreen() {
         )}
       </SheetModal>
 
-      <ShareToLeaderSheet
-        visible={shareOpen}
-        onClose={() => setShareOpen(false)}
-        kind="timeline"
-        doc={judulDok}
-        share={async (l, lastShared) =>
-          shareTimelinePdf(await muatSemua(), pemilik, {
-            name: l.name,
-            heart: l.heart,
-            lastShared,
-          })
-        }
-        onSharePlain={handleShare}
-      />
     </SafeAreaView>
   );
 }

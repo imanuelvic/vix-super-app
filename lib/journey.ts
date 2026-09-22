@@ -88,20 +88,22 @@ export function reflectPromptOfDay(dayId: string): string {
 export type ResponseKey = 'grateful' | 'surrender' | 'brave' | 'forgive' | 'grow';
 
 export const RESPONSE_OPTIONS: { key: ResponseKey; emoji: string; label: string }[] = [
-  { key: 'grateful', emoji: '❤️', label: 'Bersyukur' },
+  // 💚 (bukan ❤️): hati merah sudah jadi lambang langkah Respond di jejak
+  // journey, jadi chip Bersyukur pakai hati hijau supaya tidak kembar (22 Sep 2026).
+  { key: 'grateful', emoji: '💚', label: 'Bersyukur' },
   { key: 'surrender', emoji: '🕊️', label: 'Menyerahkan' },
   { key: 'brave', emoji: '💪', label: 'Berani melangkah' },
   { key: 'forgive', emoji: '🤝', label: 'Mengampuni' },
   { key: 'grow', emoji: '🌱', label: 'Bertumbuh' },
 ];
 
-/** "❤️ Bersyukur" untuk kunci yang dikenal; kunci asing dicetak apa adanya. */
+/** "💚 Bersyukur" untuk kunci yang dikenal; kunci asing dicetak apa adanya. */
 export function responseLabel(key: string): string {
   const o = RESPONSE_OPTIONS.find((r) => r.key === key);
   return o ? `${o.emoji} ${o.label}` : key;
 }
 
-/** "❤️ Bersyukur · 🌱 Bertumbuh" — untuk baris riwayat & arsip Revive. */
+/** "💚 Bersyukur · 🌱 Bertumbuh" — untuk baris riwayat & arsip Revive. */
 export function responsesLine(keys: string[] | undefined): string {
   return (keys ?? []).map(responseLabel).join(' · ');
 }

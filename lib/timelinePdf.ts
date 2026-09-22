@@ -1,19 +1,19 @@
-import {
-  escapeHtml,
-  pdfFileName,
-  pdfShellHtml,
-  recipientChips,
-  sharePdf,
-  type PdfRecipient,
-} from './pdfDoc';
 import { formatFullDateTime, MONTH_NAMES } from './format';
 import {
-  BIRTH_YEAR,
-  timelineGroups,
-  timelineTotals,
-  TIMELINE_CATEGORY_META,
-  type TimelineItem,
-  type TimelineYear,
+    escapeHtml,
+    pdfFileName,
+    pdfShellHtml,
+    recipientChips,
+    sharePdf,
+    type PdfRecipient,
+} from './pdfDoc';
+import {
+    BIRTH_YEAR,
+    TIMELINE_CATEGORY_META,
+    timelineGroups,
+    timelineTotals,
+    type TimelineItem,
+    type TimelineYear,
 } from './timeline';
 
 /** Siapa pemilik timeline-nya (null = punyaku) — nama, hati, & tahun lahir. */
@@ -23,7 +23,7 @@ export type TimelineOrang = { name: string; heart: string; birthYear: number } |
  * Baris umur di kepala tiap tahun: umur PEMILIK timeline di tahun itu (14 Sep
  * 2026) — supaya "married 2028" terbaca sebagai "waktu dia 30". Hanya umur
  * si pemilik; umurku tidak ikut (15 Sep 2026), dokumennya tentang dia.
- * Ulang tahun dianggap 1 Januari, sama dengan chip umur di layar.
+ * Ulang Tahun dianggap 1 Januari, sama dengan chip umur di layar.
  */
 function umurHtml(year: number, orang: TimelineOrang): string {
   const isi = orang

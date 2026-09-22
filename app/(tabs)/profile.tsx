@@ -97,7 +97,7 @@ const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
       { key: 'fullName', label: 'Nama lengkap' },
       { key: 'nickname', label: 'Nama panggilan' },
       { key: 'birthPlace', label: 'Tempat lahir' },
-      { key: 'birthDate', label: 'Tanggal lahir', date: true },
+      { key: 'birthDate', label: 'Tanggal Lahir', date: true },
       { key: 'gender', label: 'Jenis kelamin', options: GENDERS },
       { key: 'religion', label: 'Agama', options: RELIGIONS },
       { key: 'bloodType', label: 'Golongan darah', options: BLOOD_TYPES },

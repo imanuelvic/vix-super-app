@@ -68,17 +68,14 @@ export function calendarCells(year: number, month: number): CalendarCell[] {
 // ============================== Rekap ==============================
 
 /**
- * Tanggal Thanksgiving yang DIISI di data CL (thanksgivingDayId) kalau
- * tahunnya sama dengan tahun rekap; selain itu null. Ini sumber utama baris
- * 🎉 — visitasi ber-penanda Thanksgiving cuma cadangan (lihat pemakainya).
+ * Tanggal Thanksgiving yang DIISI di data CL (thanksgivingDayId), apa pun
+ * tahunnya — ini tanggal milik CORE-nya, bukan hitungan per tahun (22 Sep
+ * 2026; dulu disaring tahun rekap, jadi isian tahun lain tampil "belum").
+ * Sumber utama baris 📅 Tanggal — visitasi ber-penanda Thanksgiving cuma
+ * cadangan kalau belum diisi (lihat pemakainya).
  */
-function plannedThanksgiving(
-  thanksgivingDayId: string | null | undefined,
-  year: number,
-): Date | null {
-  if (!thanksgivingDayId) return null;
-  const d = dayIdToDate(thanksgivingDayId);
-  return d.getFullYear() === year ? d : null;
+function plannedThanksgiving(thanksgivingDayId: string | null | undefined): Date | null {
+  return thanksgivingDayId ? dayIdToDate(thanksgivingDayId) : null;
 }
 
 export type RecapRow = {
@@ -98,7 +95,8 @@ export type VisitationRecap = {
   totals: number[];
   /** Seluruh visitasi selesai tahun itu, dihitung per CL (gabungan = tiap CL). */
   grand: number;
-  /** Tanggal Thanksgiving tiap CL tahun itu (null = belum), urutan `leaders`. */
+  /** Tanggal Thanksgiving tiap CL (isian CL, tahun apa pun; null = belum),
+      urutan `leaders`. */
   thanksgiving: (Date | null)[];
   /** Visitasi tahun itu yang BELUM selesai (masih terjadwal / terlewat). */
   planned: number;
@@ -110,10 +108,10 @@ export type VisitationRecap = {
  *
  * Acara gabungan dihitung untuk SETIAP CL yang ikut — dari sudut pandang
  * "CL ini sudah kutemui berapa kali", ikut acara gabungan tetap sebuah
- * pertemuan. Baris Thanksgiving: tanggal yang DIISI di data CL tahun itu
- * (thanksgivingDayId) menang; kalau belum diisi, dipakai visitasi tahun itu
- * yang jenisnya Thanksgiving atau diberi penanda 🎉 (yang paling awal),
- * sementara hitungannya tetap masuk jenis aslinya.
+ * pertemuan. Baris 📅 Tanggal: tanggal yang DIISI di data CL
+ * (thanksgivingDayId, tahun apa pun) menang; kalau belum diisi, dipakai
+ * visitasi tahun itu yang jenisnya Thanksgiving atau diberi penanda 🎉 (yang
+ * paling awal), sementara hitungannya tetap masuk jenis aslinya.
  */
 export function visitationRecap(
   visitations: Visitation[],
@@ -126,7 +124,7 @@ export function visitationRecap(
     counts: leaders.map(() => 0),
     total: 0,
   }));
-  const diisi = leaders.map((l) => plannedThanksgiving(l.thanksgivingDayId, year));
+  const diisi = leaders.map((l) => plannedThanksgiving(l.thanksgivingDayId));
   const thanksgiving: (Date | null)[] = leaders.map(() => null);
   let planned = 0;
 
@@ -177,7 +175,8 @@ export type LeaderRecap = {
   rows: LeaderRecapRow[];
   /** Seluruh pertemuan selesai tahun itu dengan CL ini. */
   total: number;
-  /** Tanggal Thanksgiving CL ini tahun itu (yang paling awal); null = belum. */
+  /** Tanggal Thanksgiving CL ini: isian CL (tahun apa pun), atau yang paling
+      awal dari visitasinya tahun itu; null = belum. */
   thanksgiving: Date | null;
   /** Jadwal tahun itu yang BELUM selesai, urut naik: masih menunggu / terlewat. */
   upcoming: { kind: MeetingKind; date: Date }[];
@@ -187,8 +186,8 @@ export type LeaderRecap = {
  * Rekap satu tahun dari sudut pandang SATU CL — isi PDF yang dikirim ke CORE
  * itu sendiri. Aturannya sama dengan tabel di layar (visitationRecap): yang
  * dihitung hanya yang ✅ selesai, acara gabungan tetap sebuah pertemuan,
- * Thanksgiving = tanggal yang diisi di data CL (`thanksgivingDayId`) kalau
- * tahunnya itu, kalau tidak yang paling awal dari visitasinya. Bedanya, di
+ * Thanksgiving = tanggal yang diisi di data CL (`thanksgivingDayId`, tahun
+ * apa pun), kalau belum diisi yang paling awal dari visitasinya. Bedanya, di
  * sini TANGGALNYA ikut: "3× Visitasi CORE" tanpa tanggal tidak berarti
  * apa-apa buat yang menerima.
  */
@@ -220,7 +219,7 @@ export function leaderRecap(
     year,
     rows,
     total: rows.reduce((s, r) => s + r.dates.length, 0),
-    thanksgiving: plannedThanksgiving(thanksgivingDayId, year) ?? thanksgiving,
+    thanksgiving: plannedThanksgiving(thanksgivingDayId) ?? thanksgiving,
     upcoming,
   };
 }

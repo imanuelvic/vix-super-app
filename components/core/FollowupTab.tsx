@@ -98,7 +98,7 @@ export function FollowupTab({
     [leaders],
   );
 
-  // Ulang tahun CL + MT: hari ini & yang mendekat (≤ 7 hari).
+  // Ulang Tahun CL + MT: hari ini & yang mendekat (≤ 7 hari).
   const birthdays = useMemo(() => {
     const today = new Date();
     const entries = [
@@ -154,7 +154,7 @@ export function FollowupTab({
     canDrawWeeklyFocus(new Date()) && leaders.length > WEEKLY_FOCUS_COUNT;
   const [drawing, setDrawing] = useState(false);
 
-  // Buka sub-tab ini → langsung ke penyebab badge merahnya. Ulang tahun
+  // Buka sub-tab ini → langsung ke penyebab badge merahnya. Ulang Tahun
   // didahulukan karena ia hangus hari itu juga; follow up masih bisa dikejar
   // sampai akhir minggu.
   const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
@@ -363,7 +363,7 @@ export function FollowupTab({
 
       <FormError message={error} />
 
-      {/* ===== Ulang tahun hari ini (CL + Main Team) =====
+      {/* ===== Ulang Tahun hari ini (CL + Main Team) =====
           Yang sudah dikirimi ucapan hari ini tidak ditampilkan lagi. */}
       {birthdays.today
         .filter((b) => greets[b.key] !== dayId)
@@ -430,7 +430,7 @@ export function FollowupTab({
           </View>
         ))}
 
-      {/* Ulang tahun mendekat (≤ 7 hari) */}
+      {/* Ulang Tahun mendekat (≤ 7 hari) */}
       {birthdays.upcoming.length > 0 && (
         <View style={styles.upcomingCard}>
           {birthdays.upcoming.map((b) => (

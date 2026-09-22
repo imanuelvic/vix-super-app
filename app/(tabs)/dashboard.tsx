@@ -17,6 +17,8 @@ import { CheckCircle } from '@/components/common/CheckCircle';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
+import { anyBadgeReminder, BadgeReminders } from '@/components/dashboard/BadgeReminders';
+import { FinanceStatusCard } from '@/components/dashboard/FinanceStatusCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
@@ -71,6 +73,11 @@ import {
     type Debt,
 } from '@/lib/debts';
 import {
+    devicesNeedingTopUp,
+    subscribeDataPlans,
+    type DataPlan,
+} from '@/lib/device';
+import {
     daysUntilEligible,
     donorReminderDue,
     donorScheduleReminders,
@@ -80,27 +87,7 @@ import {
     subscribeDonor,
     type DonorData,
 } from '@/lib/donor';
-import {
-    devicesNeedingTopUp,
-    subscribeDataPlans,
-    type DataPlan,
-} from '@/lib/device';
 import { subscribeFamily, type FamilyMember } from '@/lib/family';
-import {
-    billUnsettled,
-    outstandingTotal,
-    sortedBills,
-    subscribeBills,
-    unpaidCount,
-    type Bill,
-} from '@/lib/friends';
-import {
-    EMPTY_FUTSAL,
-    futsalReminders,
-    subscribeFutsal,
-    type FutsalData,
-} from '@/lib/futsal';
-import { anyBadgeReminder, BadgeReminders } from '@/components/dashboard/BadgeReminders';
 import {
     activeFasting,
     fastingDay,
@@ -130,6 +117,14 @@ import {
     whenLabel,
 } from '@/lib/format';
 import {
+    billUnsettled,
+    outstandingTotal,
+    sortedBills,
+    subscribeBills,
+    unpaidCount,
+    type Bill,
+} from '@/lib/friends';
+import {
     daysSinceLastFun,
     EMPTY_FUN,
     funIdeasToday,
@@ -137,6 +132,12 @@ import {
     subscribeFun,
     type FunData,
 } from '@/lib/fun';
+import {
+    EMPTY_FUTSAL,
+    futsalReminders,
+    subscribeFutsal,
+    type FutsalData,
+} from '@/lib/futsal';
 import {
     countedHabits,
     currentOpenSlot,
@@ -172,6 +173,11 @@ import {
     type TopicsDone,
 } from '@/lib/learning';
 import {
+    populationDue,
+    subscribePopulationLog,
+    type PopulationSaved,
+} from '@/lib/news';
+import {
     residenceAttentionList,
     subscribeChoreStatus,
     type ChoreStatusMap,
@@ -182,11 +188,6 @@ import {
     subscribeSermons,
     type SermonNote,
 } from '@/lib/sermon';
-import {
-    populationDue,
-    subscribePopulationLog,
-    type PopulationSaved,
-} from '@/lib/news';
 import { subscribeReviveStreak } from '@/lib/spiritual';
 import {
     otherTaskDaysUntil,
@@ -421,7 +422,7 @@ export default function DashboardScreen() {
   // lewat tengah malam sampai dikerjakan, tanpa menunggu jam berapa pun.
   const followupPending = followupDue(leaders, now, weeklyFocus, todayId);
 
-  // Ulang tahun CORE Leader & Main Team: hari ini + 7 hari ke depan.
+  // Ulang Tahun CORE Leader & Main Team: hari ini + 7 hari ke depan.
   // Sumber & jendelanya sama dengan daftar di CORE → tab Follow Up.
   const coreBirthdays = [
     ...leaders.map((l) => ({
@@ -1067,7 +1068,7 @@ export default function DashboardScreen() {
                   ))}
                 </View>
               )}
-              {/* Ulang tahun CL & Main Team → CORE tab Follow Up */}
+              {/* Ulang Tahun CL & Main Team → CORE tab Follow Up */}
               {coreBirthdays.length > 0 && (
                 <PressableScale
                   style={
@@ -1129,6 +1130,10 @@ export default function DashboardScreen() {
               </VixText>
             </ReminderCard>
           )}
+
+          {/* 💰 Finance hari ini: status budget & fokus mingguan TANPA nominal
+              (Finance dikunci PIN); angkanya menunggu di dalam. */}
+          <FinanceStatusCard now={now} />
 
           {/* Reminder bayar pinjaman (jatuh tempo ≤ 3 hari / lewat) */}
           {debtReminders.length > 0 && (

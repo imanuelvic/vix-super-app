@@ -1,6 +1,6 @@
 import { heartColor, meetingKindMeta, type CoreLeader, type Visitation } from './core';
 import { leaderRecap, type LeaderRecap } from './coreCalendar';
-import { formatFullDate, formatFullDateTime, monthShort } from './format';
+import { formatFullDate, formatFullDateTime, formatTinyDate, monthShort } from './format';
 import {
   escapeHtml,
   lastSharedLabel,
@@ -21,6 +21,15 @@ import {
 /** "12 Feb" — tanggal pendek untuk deretan di satu baris. */
 function tanggalPendek(d: Date): string {
   return `${d.getDate()} ${monthShort(d)}`;
+}
+
+/**
+ * Tanggal Thanksgiving di chip kop: "12 Feb" kalau tahun rekap, "8 Jan 25"
+ * kalau isian CL-nya tahun lain (tahunnya harus ikut supaya tidak terbaca
+ * sebagai tanggal tahun rekap).
+ */
+function tanggalSyukur(d: Date, year: number): string {
+  return d.getFullYear() === year ? tanggalPendek(d) : formatTinyDate(d);
 }
 
 function barisJenis(r: LeaderRecap['rows'][number]): string {
@@ -106,8 +115,10 @@ export async function shareRecapPdf(
     <div class="tabel">
       ${r.rows.map(barisJenis).join('')}
       <div class="baris${r.thanksgiving ? '' : ' kosong'}">
-        <span class="label">🎉 Tanggal Thanksgiving</span>
-        <span class="jumlah">${r.thanksgiving ? '1×' : '·'}</span>
+        <span class="label">📅 Tanggal Thanksgiving</span>
+        <span class="jumlah">${
+          r.thanksgiving ? (r.thanksgiving.getFullYear() === year ? '1×' : '') : '·'
+        }</span>
         <span class="tanggal">${
           r.thanksgiving ? escapeHtml(formatFullDate(r.thanksgiving)) : 'belum ada'
         }</span>
@@ -131,7 +142,7 @@ export async function shareRecapPdf(
       { label: 'Pertemuan selesai', value: `${r.total}×` },
       {
         label: 'Thanksgiving',
-        value: r.thanksgiving ? tanggalPendek(r.thanksgiving) : '',
+        value: r.thanksgiving ? tanggalSyukur(r.thanksgiving, year) : '',
       },
       { label: 'Terakhir dibagikan', value: lastSharedLabel(lastShared) },
       { label: 'Dicetak', value: formatFullDateTime(now) },

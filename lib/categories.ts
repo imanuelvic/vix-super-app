@@ -10,11 +10,24 @@ import { Color } from '@/assets/style/color';
 
 export type FinanceType = 'income' | 'expense' | 'saving' | 'investment';
 
+/**
+ * Irama pemakaian sebuah kategori EXPENSE (22 Sep 2026, Financial Awareness):
+ *   • `daily` — dipakai sedikit-sedikit hampir tiap hari (makan, jajan, ojek,
+ *     belanja). Inilah yang dihitung jadi Safe to Spend & jatah harian, dan
+ *     yang paling rawan pembelian impulsif.
+ *   • `fixed` — keluar sekali-dua kali sebulan dalam jumlah besar (rumah,
+ *     asuransi, orang tua). Dipantau lewat Budget Health saja; tidak masuk
+ *     jatah harian karena membaginya per hari tak berarti apa-apa.
+ * Kategori income/saving/investment tidak punya irama (undefined).
+ */
+export type CategoryPace = 'daily' | 'fixed';
+
 export type FinanceCategory = {
   key: string; // id stabil yang disimpan di Firestore — JANGAN diubah setelah dipakai
   label: string;
   icon: string; // emoji
   active: boolean;
+  pace?: CategoryPace;
 };
 
 export const FINANCE_TYPES: FinanceType[] = [
@@ -61,15 +74,17 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     { key: 'business', label: 'Business', icon: '💎', active: true },
   ],
   expense: [
-    { key: 'food-drink', label: 'Food Drink', icon: '🍛', active: true },
-    { key: 'transportation', label: 'Transportation', icon: '🚗', active: true },
-    { key: 'snacks', label: 'Snacks', icon: '🍟', active: true },
-    { key: 'groceries', label: 'Groceries', icon: '🍗', active: true },
-    { key: 'fun-recreation', label: 'Fun Recreation', icon: '🎢', active: true },
-    { key: 'personal-services', label: 'Personal Services', icon: '👤', active: true },
-    { key: 'shopping', label: 'Shopping', icon: '🛍️', active: true },
-    { key: 'mobile-data-admin', label: 'Mobile, Data & Administration', icon: '📱', active: true },
-    { key: 'parents', label: 'Parents', icon: '👨🏻', active: true },
+    // `pace` (lihat CategoryPace): tujuh teratas dipakai harian → jadi dasar
+    // Safe to Spend; sisanya pengeluaran tetap bulanan.
+    { key: 'food-drink', label: 'Food Drink', icon: '🍛', active: true, pace: 'daily' },
+    { key: 'transportation', label: 'Transportation', icon: '🚗', active: true, pace: 'daily' },
+    { key: 'snacks', label: 'Snacks', icon: '🍟', active: true, pace: 'daily' },
+    { key: 'groceries', label: 'Groceries', icon: '🍗', active: true, pace: 'daily' },
+    { key: 'fun-recreation', label: 'Fun Recreation', icon: '🎢', active: true, pace: 'daily' },
+    { key: 'personal-services', label: 'Personal Services', icon: '👤', active: true, pace: 'daily' },
+    { key: 'shopping', label: 'Shopping', icon: '🛍️', active: true, pace: 'daily' },
+    { key: 'mobile-data-admin', label: 'Mobile, Data & Administration', icon: '📱', active: true, pace: 'fixed' },
+    { key: 'parents', label: 'Parents', icon: '👨🏻', active: true, pace: 'fixed' },
     // Pengeluaran rumah — sub-kategorinya = jenis catatan di fitur Residence
     // (lib/residence.ts), dan transaksinya otomatis ikut tercatat di Log
     // Residence. Pola yang sama dengan Transportation › Bensin ⛽ → Car.
@@ -79,8 +94,8 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     // sekarang jadi sub-kategori di sini. Rent ikut melebur, tapi kategorinya
     // ditahan `active: false` — beda dengan keempat itu, transaksi lamanya
     // masih ada, dan menghapusnya akan membuat riwayatnya tampil sebagai "❓".
-    { key: 'residence', label: 'Residence', icon: '🏠', active: true },
-    { key: 'rent', label: 'Rent', icon: '🏘️', active: false },
+    { key: 'residence', label: 'Residence', icon: '🏠', active: true, pace: 'fixed' },
+    { key: 'rent', label: 'Rent', icon: '🏘️', active: false, pace: 'fixed' },
     // Tiga paling bawah, urutannya sesuai permintaan pemilik app: Ministry,
     // Insurance, lalu Travel paling akhir. Ketiganya kebetulan sama-sama
     // pengeluaran yang tidak dianggarkan bulanan.
@@ -89,9 +104,9 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
     // key inilah yang tersimpan di tiap transaksi & budget lama. Menggantinya
     // berarti seluruh riwayat Gathering CORE berubah jadi "❓ kategori tak
     // dikenal" — yang berganti cuma nama & lambang yang kamu lihat.
-    { key: 'gathering-core', label: 'Ministry', icon: '🙏', active: true },
-    { key: 'insurance', label: 'Insurance', icon: '☂️', active: true },
-    { key: 'travel', label: 'Travel', icon: '✈️', active: true },
+    { key: 'gathering-core', label: 'Ministry', icon: '🙏', active: true, pace: 'fixed' },
+    { key: 'insurance', label: 'Insurance', icon: '☂️', active: true, pace: 'fixed' },
+    { key: 'travel', label: 'Travel', icon: '✈️', active: true, pace: 'fixed' },
   ],
   saving: [
     { key: 'emergency-fund', label: 'Emergency Fund', icon: '🚨', active: true },
@@ -140,6 +155,11 @@ export const FINANCE_CATEGORIES: Record<FinanceType, FinanceCategory[]> = {
 /** Kategori yang tampil di pilihan saat menambah transaksi. */
 export function activeCategories(type: FinanceType): FinanceCategory[] {
   return FINANCE_CATEGORIES[type].filter((c) => c.active);
+}
+
+/** Kategori expense berirama harian (dasar Safe to Spend), termasuk yang nonaktif. */
+export function dailyPaceCategories(): FinanceCategory[] {
+  return FINANCE_CATEGORIES.expense.filter((c) => c.pace === 'daily');
 }
 
 /** Cari kategori dari key tersimpan — fallback kalau kategori sudah dihapus. */

@@ -21,7 +21,6 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SectionToggle } from '@/components/common/SectionToggle';
 import { SoftPill } from '@/components/common/SoftPill';
 import { VixText } from '@/components/common/VixText';
-import { ShareToLeaderSheet } from '@/components/core/ShareToLeaderSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { RadarChart } from '@/components/wheel/RadarChart';
 import { ScoreMeter } from '@/components/wheel/ScoreMeter';
@@ -29,6 +28,7 @@ import { useAuth } from '@/contexts/auth';
 import { useAccordion } from '@/hooks/useAccordion';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useOwnerLeader } from '@/hooks/useOwnerLeader';
 import { formatDayDate, formatDecimal } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { PRIVACY_PIN } from '@/lib/pin';
@@ -48,6 +48,8 @@ import {
     type WheelData,
     type WheelFocus,
 } from '@/lib/wheel';
+import { shareDocToLeader } from '@/lib/shareLeader';
+import { WHATSAPP_ERROR } from '@/lib/whatsapp';
 import { rapikanJawabanWheel, wheelAiErrorMessage } from '@/lib/wheelAi';
 import { shareWheelPdf } from '@/lib/wheelPdf';
 
@@ -326,18 +328,35 @@ export default function WheelScreen() {
     ? `Wheel of Life ${params.heart ?? '🎡'} ${orang}`
     : 'Wheel of Life';
 
-  // Tombol share di header membuka sheet "Bagikan ke CORE Leader" (16 Sep
-  // 2026): pilih CL-nya, PDF kuartal ini dibuat lalu share sheet terbuka, dan
-  // chat WA nomornya menyusul. Sama dengan Timeline & Rekap Visitasi.
-  const [shareOpen, setShareOpen] = useState(false);
+  // Tombol share di header (22 Sep 2026): roda milik satu CL LANGSUNG ke
+  // orangnya, tanpa sheet pilih CL. PDF kuartal ini dibuat → share sheet
+  // (pilih WhatsApp) → tanggalnya dicatat → chat WA CL itu terbuka
+  // (lib/shareLeader.ts). Rodaku sendiri (tanpa pemilik) tetap bagikan biasa.
+  const { leader: ownerLeader, log: shareLog } = useOwnerLeader(owner, unlocked);
 
-  // Bagikan biasa, tanpa memilih CL (baris terakhir di sheet).
   function handleShare() {
-    if (!data) return;
+    if (!data || !user) return;
+    const uid = user.uid;
     return pdf.run({
       key: 'pdf',
       start: () => setError(null),
-      task: () => shareWheelPdf(data, year, q, pemilik),
+      task: () =>
+        ownerLeader
+          ? shareDocToLeader({
+              uid,
+              leader: ownerLeader,
+              kind: 'wheel',
+              doc: `${judulDok} ${quarterLabel(year, q)}`,
+              log: shareLog,
+              share: (l, lastShared) =>
+                shareWheelPdf(data, year, q, pemilik, {
+                  name: l.name,
+                  heart: l.heart,
+                  lastShared,
+                }),
+              onWaError: () => setError(WHATSAPP_ERROR),
+            })
+          : shareWheelPdf(data, year, q, pemilik),
       fail: () => setError('Gagal membuat PDF Wheel of Life. Coba lagi.'),
     });
   }
@@ -371,14 +390,14 @@ export default function WheelScreen() {
         subtitle={
           owner ? `8 area hidup ${orang} per kuartal` : '8 area hidupmu per kuartal'
         }
-        // Cetak SELURUH isi kuartal ini jadi PDF lalu buka share sheet
-        // (WhatsApp ada di situ). Baru menyala setelah ada yang dinilai —
+        // Cetak SELURUH isi kuartal ini jadi PDF lalu langsung ke CL-nya
+        // (share sheet → chat WA). Baru menyala setelah ada yang dinilai —
         // membagikan roda kosong tidak ada gunanya.
         right={
           mode === 'overview' && hasScores ? (
             <EmojiButton
               icon="square.and.arrow.up"
-              onPress={() => setShareOpen(true)}
+              onPress={handleShare}
               busy={sharing}
               disabled={sharing}
             />
@@ -988,22 +1007,6 @@ export default function WheelScreen() {
         ) : null}
       </CenterDialog>
 
-      <ShareToLeaderSheet
-        visible={shareOpen}
-        onClose={() => setShareOpen(false)}
-        kind="wheel"
-        doc={`${judulDok} ${quarterLabel(year, q)}`}
-        share={(l, lastShared) =>
-          data
-            ? shareWheelPdf(data, year, q, pemilik, {
-                name: l.name,
-                heart: l.heart,
-                lastShared,
-              })
-            : Promise.resolve()
-        }
-        onSharePlain={handleShare}
-      />
     </SafeAreaView>
   );
 }

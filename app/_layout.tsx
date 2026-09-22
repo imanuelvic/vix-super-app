@@ -119,6 +119,8 @@ function RootNavigator() {
 
         {/* Finance: dulu tab utama, kini dibuka dari grid Home */}
         <Stack.Screen name="finance" />
+        {/* Weekly Money Review & Monthly Review (Financial Awareness) */}
+        <Stack.Screen name="finance-review" />
         <Stack.Screen name="funds" />
         <Stack.Screen name="fund/[key]" />
         <Stack.Screen name="debts" />

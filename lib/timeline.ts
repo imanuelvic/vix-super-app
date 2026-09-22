@@ -1,10 +1,10 @@
 import {
-  collection,
-  doc,
-  getDocs,
-  setDoc,
-  Timestamp,
-  type FirestoreError,
+    collection,
+    doc,
+    getDocs,
+    setDoc,
+    Timestamp,
+    type FirestoreError,
 } from 'firebase/firestore';
 
 import { db } from './firebase';
@@ -18,7 +18,7 @@ import { WHEEL_AREAS, type WheelAreaKey } from './wheel';
 // Penyimpanan: SATU dokumen per tahun (users/{uid}/timeline/{year}) berisi
 // array item — wishlist setahun itu kecil, jadi 1 read per tahun dibuka.
 
-/** Tanggal lahir pemilik app: 1 Januari 1998 → umur = tahun − 1998. */
+/** Tanggal Lahir pemilik app: 1 Januari 1998 → umur = tahun − 1998. */
 export const BIRTH_YEAR = 1998;
 
 /**

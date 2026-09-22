@@ -25,6 +25,7 @@ import { SearchBar } from '@/components/common/SearchBar';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
+import { QuickCheckDialog } from '@/components/finance/QuickCheckDialog';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -39,6 +40,8 @@ import {
     type SubcategoryMap,
 } from '@/lib/budgets';
 import { deleteCarLog, syncFuelLog } from '@/lib/car';
+import { quickCheck, type QuickCheck } from '@/lib/financeInsight';
+import { markQuickCheckSeen, quickCheckSeen } from '@/lib/financeMemo';
 import {
     activeCategories,
     categoryOf,
@@ -47,6 +50,7 @@ import {
     type FinanceType,
 } from '@/lib/categories';
 import {
+    dayId,
     dayShort,
     formatFullDate,
     groupDigits,
@@ -78,6 +82,9 @@ export function TransactionsTab({
   budget,
   subcats,
   amountsHidden,
+  year,
+  month,
+  onShowBudget,
 }: {
   items: Transaction[];
   budget: BudgetMap;
@@ -87,6 +94,11 @@ export function TransactionsTab({
    * Finance (hooks/useAmountsHidden.ts) — dulu di kartu ringkasan sini.
    */
   amountsHidden: boolean;
+  /** Bulan yang sedang dilihat — untuk Quick check (jatah harian dari tanggal aktual). */
+  year: number;
+  month: number;
+  /** "Lihat Budget" di Quick check → pindah ke sub-tab Budgeting. */
+  onShowBudget: () => void;
 }) {
   const { user } = useAuth();
 
@@ -107,6 +119,8 @@ export function TransactionsTab({
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  // Quick check 👀 yang sedang menunggu jawaban (lihat QuickCheckDialog).
+  const [quick, setQuick] = useState<QuickCheck | null>(null);
 
   // Mode cari (dibuka via FAB 🔍): cari kata + urutkan terbesar/terkecil.
   // listRef → lompat ke paling atas saat mode cari dibuka/ditutup.
@@ -248,6 +262,33 @@ export function TransactionsTab({
       return;
     }
     setError(null);
+    // Quick check 👀: kalau transaksi ini membuat kategorinya minus / hampir
+    // habis / jauh di atas jatah harian, tanya dulu, simpan belakangan.
+    // Sekali dijawab "Tetap Tambahkan", kategori itu tidak ditanya lagi hari ini.
+    // Transaksi baru selalu bertanggal hari ini, jadi pembandingnya budget bulan
+    // BERJALAN; saat sedang melihat bulan lain, jeda ini dilewati.
+    const now = new Date();
+    const bulanIni = now.getFullYear() === year && now.getMonth() === month;
+    const check = bulanIni
+      ? quickCheck({ type, category: category!, amount: value, budget, items, now, year, month })
+      : null;
+    if (check && !(await quickCheckSeen(dayId(now), category!))) {
+      setQuick(check);
+      return;
+    }
+    await simpanBaru(value);
+  }
+
+  /** "Tetap Tambahkan" di Quick check: catat jawabannya, lalu simpan. */
+  async function handleKeep() {
+    if (!quick || !category) return;
+    await markQuickCheckSeen(dayId(new Date()), category);
+    setQuick(null);
+    await simpanBaru(parseAmount(amount));
+  }
+
+  async function simpanBaru(value: number) {
+    if (!user || saving || !category) return;
     setSaving(true);
     const fuelLiters = isFuel ? parseDecimal(liters) : 0;
     try {
@@ -928,6 +969,19 @@ export function TransactionsTab({
           onConfirm={handleSaveEdit}
         />
       </SheetModal>
+
+      {/* Quick check 👀 sebelum menyimpan (hanya saat ambang terpenuhi) */}
+      <QuickCheckDialog
+        check={quick}
+        amount={parseAmount(amount)}
+        busy={saving}
+        onKeep={handleKeep}
+        onCancel={() => setQuick(null)}
+        onShowBudget={() => {
+          setQuick(null);
+          onShowBudget();
+        }}
+      />
 
       {/* Konfirmasi hapus */}
       <ConfirmDialog

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { CheckCircle } from '@/components/common/CheckCircle';
+import { CrossButton, CrossMark } from '@/components/common/CrossButton';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -110,11 +111,19 @@ export default function FastingDaysScreen() {
     }
   }
 
-  // Centang langsung dari kartu — 1 tulis, tanpa buka modal.
+  // ✓ / ✗ langsung dari kartu — 1 tulis, tanpa buka modal. Keduanya saling
+  // meniadakan (seperti centang & lewati di Habits): ✓ berhasil melepas ✗,
+  // ✗ gagal melepas ✓; click lagi = kembali belum dijawab.
   function toggleDay(dayId: string) {
     if (!plan || terkunci) return;
     const d = fastingDay(plan, dayId);
-    saveDay(dayId, { ...d, done: !d.done });
+    saveDay(dayId, { ...d, done: !d.done, failed: false });
+  }
+
+  function toggleFailed(dayId: string) {
+    if (!plan || terkunci) return;
+    const d = fastingDay(plan, dayId);
+    saveDay(dayId, { ...d, done: false, failed: !d.failed });
   }
 
   async function handleSaveDay() {
@@ -124,6 +133,7 @@ export default function FastingDaysScreen() {
       prayer: draft.prayer.trim(),
       answer: draft.answer.trim(),
       done: draft.done,
+      failed: !!draft.failed,
     });
     setBusy(false);
     setEditDay(null);
@@ -171,9 +181,9 @@ export default function FastingDaysScreen() {
                 style={[styles.dayCard, isToday && styles.dayCardToday]}>
                 <PressableScale
                   onPress={() => toggleDay(dayId)}
-                  disabled={terkunci}
+                  disabled={terkunci || !!d.failed}
                   hitSlop={8}>
-                  <CheckCircle checked={d.done} size={26} />
+                  <CheckCircle checked={d.done} skipped={!!d.failed} size={26} />
                 </PressableScale>
                 <PressableScale
                   style={styles.dayMain}
@@ -202,6 +212,10 @@ export default function FastingDaysScreen() {
                     </VixText>
                   ) : null}
                 </PressableScale>
+                {/* ✗ gagal hari itu — pasangan centangnya, seperti di Habits. */}
+                {!terkunci && (
+                  <CrossButton on={!!d.failed} onPress={() => toggleFailed(dayId)} />
+                )}
               </View>
             );
           })}
@@ -229,15 +243,31 @@ export default function FastingDaysScreen() {
             />
           )
         }>
-        <PressableScale
-          style={styles.doneRow}
-          disabled={terkunci}
-          onPress={() => setDraft({ done: !draft.done })}>
-          <CheckCircle checked={draft.done} size={26} />
-          <VixText heading="bold" additionalStyle={styles.doneText}>
-            {draft.done ? 'Berhasil berpuasa' : '❌ Gagal'}
-          </VixText>
-        </PressableScale>
+        {/* Dua jawaban tegas berdampingan: ✓ berhasil · ✗ gagal. Tidak ada yang
+            dipilih = belum dijawab (bukan otomatis "gagal"). */}
+        <View style={styles.doneRow}>
+          <PressableScale
+            style={styles.doneChoice}
+            disabled={terkunci}
+            onPress={() => setDraft({ done: !draft.done, failed: false })}>
+            <CheckCircle checked={draft.done} size={26} />
+            <VixText heading="bold" additionalStyle={styles.doneText}>
+              Berhasil
+            </VixText>
+          </PressableScale>
+          <PressableScale
+            style={styles.doneChoice}
+            disabled={terkunci}
+            haptic="warning"
+            onPress={() => setDraft({ done: false, failed: !draft.failed })}>
+            <CrossMark on={!!draft.failed} />
+            <VixText
+              heading="bold"
+              additionalStyle={draft.failed ? styles.failedText : styles.doneText}>
+              Gagal
+            </VixText>
+          </PressableScale>
+        </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🙏 Pokok doa hari ini
@@ -292,6 +322,8 @@ const styles = StyleSheet.create({
   dayDate: { color: Color.TEXT_LABEL },
   dayPrayer: { color: Color.SPIRITUAL_DARK },
   dayAnswer: { color: Color.MAIN_DARK },
-  doneRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  doneRow: { flexDirection: 'row', alignItems: 'center', gap: 18 },
+  doneChoice: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   doneText: { color: Color.TEXT_TITLE },
+  failedText: { color: Color.DANGER },
 });

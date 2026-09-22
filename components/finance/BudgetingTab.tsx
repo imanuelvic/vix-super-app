@@ -12,6 +12,7 @@ import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { VixText } from '@/components/common/VixText';
+import { PlanningCard } from '@/components/finance/PlanningCard';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -19,13 +20,15 @@ import {
   budgetKey,
   copyBudgetFromPreviousMonth,
   customSubsOf,
+  lockBudget,
   newSubKey,
   saveCategoryBudget,
   saveSubcategories,
   subBudgetKey,
   subsOf,
   totalBudgetOf,
-  type BudgetMap,
+  unlockBudget,
+  type BudgetDoc,
   type SubcategoryMap,
 } from '@/lib/budgets';
 import {
@@ -35,7 +38,7 @@ import {
   type FinanceCategory,
   type FinanceType,
 } from '@/lib/categories';
-import { groupDigits, parseAmount } from '@/lib/format';
+import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
 import { saveErrorOf } from '@/lib/messages';
 import { formatRupiah, type Transaction } from '@/lib/transactions';
 
@@ -60,27 +63,40 @@ type SubDraft = {
 
 // Tab Budgeting: budget per kategori per bulan (di-set manual) dibandingkan
 // dengan realisasi yang terhitung otomatis dari transaksi bulan itu.
-// `budget` & `copied` datang dari layar Finance (satu langganan dipakai
-// bersama tab Transaksi supaya tidak double-read).
+// `budgetDoc` datang dari layar Finance (satu langganan dipakai bersama tab
+// Transaksi supaya tidak double-read): alokasi, status salin, dan KUNCI.
+//
+// Monthly Budget Lock (22 Sep 2026): begitu dikunci, dialog Set Budget & tombol
+// salin bulan lalu tidak jalan; mengubahnya harus lewat Unlock dengan alasan
+// (tercatat di dokumen). Tujuannya bukan mempersulit, tapi mencegah budget
+// digeser diam-diam hanya karena sudah hampir habis.
 export function BudgetingTab({
   items,
   year,
   month,
-  budget,
-  copied,
+  budgetDoc,
   subcats,
 }: {
   items: Transaction[];
   year: number;
   month: number;
-  budget: BudgetMap;
-  copied: boolean;
+  budgetDoc: BudgetDoc;
   subcats: SubcategoryMap;
 }) {
   const { user } = useAuth();
+  const budget = budgetDoc.allocations;
+  const copied = budgetDoc.copiedFromPrev;
+  const locked = budgetDoc.locked;
 
   const [type, setType] = useState<FinanceType>('expense');
   const [error, setError] = useState<string | null>(null);
+
+  // 🔒 Lock / 🔓 Unlock (alasan wajib) — lihat PlanningCard.
+  const [confirmLock, setConfirmLock] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [unlockReason, setUnlockReason] = useState('');
+  const [lockBusy, setLockBusy] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
 
   // Tombol "samakan dengan bulan lalu" — abu-abu kalau sudah pernah ditekan
   // untuk bulan ini (status `copied` disuplai dari layar Finance).
@@ -148,6 +164,12 @@ export function BudgetingTab({
   const mainAmount = rolledUp ? subTotal : parseAmount(editAmount);
 
   function openEdit(category: FinanceCategory) {
+    // Terkunci → bukan dialog Set Budget, tapi dialog Unlock (tindakan sadar).
+    if (locked) {
+      setUnlockError(null);
+      setUnlockOpen(true);
+      return;
+    }
     setEditing(category);
     const current = budget[budgetKey(type, category.key)] ?? 0;
     setEditAmount(current > 0 ? groupDigits(String(current)) : '');
@@ -189,9 +211,47 @@ export function BudgetingTab({
   }
 
   function handleCopyPress() {
+    if (locked) {
+      setUnlockError(null);
+      setUnlockOpen(true);
+      return;
+    }
     // Sudah pernah disamakan → minta konfirmasi dulu sebelum menimpa lagi.
     if (copied) setConfirmCopy(true);
     else doCopy();
+  }
+
+  async function doLock() {
+    if (!user || lockBusy) return;
+    setLockBusy(true);
+    setError(null);
+    try {
+      await lockBudget(user.uid, year, month);
+    } catch {
+      setError(saveErrorOf('kunci budget'));
+    } finally {
+      setConfirmLock(false);
+      setLockBusy(false);
+    }
+  }
+
+  async function doUnlock() {
+    if (!user || lockBusy) return;
+    if (unlockReason.trim().length < 3) {
+      setUnlockError('Tulis alasannya dulu (minimal 3 huruf), supaya tercatat kenapa budget diubah.');
+      return;
+    }
+    setLockBusy(true);
+    setUnlockError(null);
+    try {
+      await unlockBudget(user.uid, year, month, unlockReason);
+      setUnlockOpen(false);
+      setUnlockReason('');
+    } catch {
+      setUnlockError(saveErrorOf('unlock budget'));
+    } finally {
+      setLockBusy(false);
+    }
   }
 
   async function doCopy() {
@@ -254,6 +314,23 @@ export function BudgetingTab({
       <ScrollView contentContainerStyle={styles.content}>
         <FormError message={error} />
 
+        <PlanningCard
+          budgetDoc={budgetDoc}
+          year={year}
+          month={month}
+          onLock={() => {
+            if (Object.keys(budget).length === 0) {
+              setError('Isi budget minimal satu kategori dulu sebelum mengunci.');
+              return;
+            }
+            setConfirmLock(true);
+          }}
+          onUnlock={() => {
+            setUnlockError(null);
+            setUnlockOpen(true);
+          }}
+        />
+
         {/* Ringkasan budget jenis terpilih */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryTop}>
@@ -262,7 +339,7 @@ export function BudgetingTab({
             </VixText>
             {/* 📋 = samakan dengan bulan lalu; abu-abu = sudah pernah */}
             <PressableScale
-              style={[styles.copyChip, copied && styles.copyChipUsed]}
+              style={[styles.copyChip, (copied || locked) && styles.copyChipUsed]}
               onPress={handleCopyPress}
               disabled={copying}
               hitSlop={6}>
@@ -270,7 +347,7 @@ export function BudgetingTab({
                 <ActivityIndicator size="small" color={Color.TEXT_REVERSE} />
               ) : (
                 <VixText heading="label" additionalStyle={styles.copyChipText}>
-                  {copied ? '✓ 📋' : '📋'}
+                  {locked ? '🔒' : copied ? '✓ 📋' : '📋'}
                 </VixText>
               )}
             </PressableScale>
@@ -284,8 +361,8 @@ export function BudgetingTab({
           <BudgetBar percent={totalPercent} onDark />
           <VixText heading="label" additionalStyle={styles.summaryLabel}>
             {totalAllocated > 0
-              ? `${totalPercent.toFixed(1)}% terpakai`
-              : 'Belum ada budget, tekan kategori untuk mengatur.'}
+              ? `${totalPercent.toFixed(1)}% terpakai${locked ? ' · 🔒 budget terkunci' : ''}`
+              : 'Belum ada budget, click kategori untuk mengatur.'}
           </VixText>
         </View>
 
@@ -475,6 +552,52 @@ export function BudgetingTab({
         onCancel={() => setConfirmCopy(false)}
         onConfirm={doCopy}
       />
+
+      {/* 🔒 Kunci budget bulan ini (komitmen) */}
+      <ConfirmDialog
+        visible={confirmLock}
+        title={`Kunci budget ${MONTH_NAMES[month]} ${year}?`}
+        detail="Setelah dikunci, budget jadi komitmenmu bulan ini: tidak bisa diubah tanpa Unlock (dengan alasan, dan tercatat). Transaksi tetap bertambah dan dibandingkan dengan budget yang dikunci."
+        confirmLabel="Kunci"
+        danger={false}
+        busy={lockBusy}
+        onCancel={() => setConfirmLock(false)}
+        onConfirm={doLock}
+      />
+
+      {/* 🔓 Unlock: tindakan sadar, alasannya wajib & tercatat */}
+      <CenterDialog
+        visible={unlockOpen}
+        onClose={() => {
+          setUnlockOpen(false);
+          setUnlockReason('');
+        }}>
+        <VixText heading="title" additionalStyle={styles.modalTitle}>
+          🔒 Budget bulan ini terkunci
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.modalCategory}>
+          Ini komitmenmu untuk {MONTH_NAMES[month]}. Kalau memang perlu diubah,
+          tulis alasannya dulu; catatannya tersimpan bersama budget.
+        </VixText>
+        <FormInput
+          placeholder="Alasan unlock (mis. ada pengeluaran tak terduga)"
+          value={unlockReason}
+          onChangeText={setUnlockReason}
+          autoFocus
+          editable={!lockBusy}
+        />
+        <FormError message={unlockError} gap="top" />
+        <DualButtons
+          confirmLabel="Unlock"
+          danger
+          busy={lockBusy}
+          onCancel={() => {
+            setUnlockOpen(false);
+            setUnlockReason('');
+          }}
+          onConfirm={doUnlock}
+        />
+      </CenterDialog>
     </View>
   );
 }

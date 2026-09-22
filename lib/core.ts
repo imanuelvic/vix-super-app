@@ -43,7 +43,8 @@ export type CoreLeader = {
   phone: string | null; // digit SETELAH +62 (semua CL orang Indonesia)
   lastFollowupDayId: string | null; // "YYYY-MM-DD" terakhir di follow up
   /** "YYYY-MM-DD" Thanksgiving CORE ini (21 Sep 2026) — diisi di form CL,
-      tampil di baris 🎉 Rekap Visitasi & PDF rekapnya. null = belum diisi. */
+      tampil di baris 📅 Tanggal Rekap Visitasi (tahun apa pun) & PDF
+      rekapnya. null = belum diisi. */
   thanksgivingDayId?: string | null;
   /** Cowok/cewek — dipakai memilih ucapan ulang tahun. null = belum diisi. */
   gender?: Gender | null;
@@ -345,7 +346,7 @@ Dan Tuhan kirimkan orang-orang baik di sekelilingmu, yang mendukung, yang mendoa
 }
 
 /**
- * Ajakan penutup di tiap ucapan. Ulang tahun itu pintu masuk penggembalaan:
+ * Ajakan penutup di tiap ucapan. Ulang Tahun itu pintu masuk penggembalaan:
  * yang berulang tahun sering justru sedang ingin didengar, jadi ucapannya
  * ditutup dengan undangan bercerita — bukan berhenti di selamat saja.
  */
@@ -1348,7 +1349,7 @@ export function followupDue<
 }
 
 /**
- * Ulang tahun HARI INI yang ucapannya belum dikirim — CORE Leader & Main Team
+ * Ulang Tahun HARI INI yang ucapannya belum dikirim — CORE Leader & Main Team
  * sekaligus, karena keduanya sama-sama muncul di sub-tab Follow Up.
  */
 export function birthdayDue(
@@ -1371,7 +1372,7 @@ export function birthdayDue(
  * sub-tab cuma menghitung follow up. Akibatnya tile CORE di Home menyala "1"
  * sementara di dalamnya tidak ada satu pun sub-tab yang bertanda — badge-nya
  * benar, tapi tidak menunjukkan ke mana harus pergi, dan itu justru bikin
- * badge tidak lagi dipercaya. Ulang tahun pun begitu: ia menagih di layar
+ * badge tidak lagi dipercaya. Ulang Tahun pun begitu: ia menagih di layar
  * Follow Up tapi tak pernah ikut terhitung di mana-mana.
  *
  * Sekarang `total` memang benar-benar jumlah bagian-bagiannya, jadi mustahil
@@ -1761,7 +1762,7 @@ export function prayerFollowupLeaders<T extends { id: string }>(
   return weeklyLeaders(withPoints, prayerSessionIndex(now), PRAYER_FOLLOWUP_COUNT);
 }
 
-// ==================== Ulang tahun ====================
+// ==================== Ulang Tahun ====================
 
 // Berlaku untuk CORE Leader maupun Main Team (cukup punya tanggal lahir).
 type HasBirthday = { birthYear: number; birthMonth: number; birthDay: number };

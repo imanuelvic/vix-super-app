@@ -1,12 +1,12 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    ActivityIndicator,
+    Image,
+    ScrollView,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -33,19 +33,19 @@ import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
 import { currentAge, nextBirthday } from '@/lib/core';
 import {
-  childrenOf,
-  countGenerations,
-  deleteFamilyMember,
-  displayName,
-  newFamilyId,
-  parentsOf,
-  partnersOf,
-  pickCompressedPhoto,
-  saveFamilyMember,
-  selfMember,
-  subscribeFamily,
-  type FamilyCircle,
-  type FamilyMember,
+    childrenOf,
+    countGenerations,
+    deleteFamilyMember,
+    displayName,
+    newFamilyId,
+    parentsOf,
+    partnersOf,
+    pickCompressedPhoto,
+    saveFamilyMember,
+    selfMember,
+    subscribeFamily,
+    type FamilyCircle,
+    type FamilyMember,
 } from '@/lib/family';
 import { MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, PHOTO_ERROR } from '@/lib/messages';
@@ -723,7 +723,7 @@ export default function FamilyScreen() {
           />
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Tanggal lahir
+            Tanggal Lahir
           </VixText>
           <View style={styles.formGap}>
             {/* key = id supaya state picker internal reset tiap ganti orang */}

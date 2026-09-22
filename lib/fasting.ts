@@ -25,6 +25,13 @@ import { dayDocId } from './health';
 export type FastingDay = {
   prayer: string; // pokok doa khusus hari itu
   done: boolean; // ✅ dicentang = puasa hari itu berhasil
+  /**
+   * ✗ = puasa hari itu GAGAL, dijawab tegas (22 Sep 2026). Dulu "gagal" cuma
+   * berarti "tidak dicentang", jadi tak bisa dibedakan dari "belum diisi".
+   * Opsional: catatan lama tanpa field ini terbaca sebagai belum dijawab.
+   * `done` & `failed` tak pernah sama-sama true.
+   */
+  failed?: boolean;
   answer: string; // jawaban doa / catatan hari itu
 };
 
@@ -183,7 +190,7 @@ export function fastingCheckDue(
   if (!plan) return null;
   const hari = plan.days?.[todayId];
   const sudahDijawab =
-    !!hari && (hari.done || !!hari.prayer.trim() || !!hari.answer.trim());
+    !!hari && (hari.done || !!hari.failed || !!hari.prayer.trim() || !!hari.answer.trim());
   return sudahDijawab ? null : plan;
 }
 

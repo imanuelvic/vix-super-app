@@ -1,0 +1,504 @@
+import { useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+
+import { CARD_GAP } from '@/assets/style/card';
+import { Color } from '@/assets/style/color';
+import { VixText } from '@/components/common/VixText';
+import { DonutChart } from '@/components/finance/DonutChart';
+import { TypeChips } from '@/components/finance/TypeChips';
+import { totalBudgetOf, type BudgetMap } from '@/lib/budgets';
+import {
+  categoryOf,
+  FINANCE_TYPE_LABEL,
+  type FinanceCategory,
+  type FinanceType,
+} from '@/lib/categories';
+import { pickOfDay } from '@/lib/core';
+import { formatShortRupiah } from '@/lib/format';
+import { dayDocId } from '@/lib/health';
+import { formatRupiah, type Transaction } from '@/lib/transactions';
+
+type CategoryTotal = {
+  key: string;
+  category: FinanceCategory;
+  value: number;
+  color: string;
+};
+
+// Quote harian: kelola uang dengan bijak, jangan cinta uang.
+// Diambil bergiliran (deterministik per hari) dari Alkitab,
+// Psychology of Money, dan Atomic Habits.
+const QUOTES: { text: string; source: string }[] = [
+  {
+    text: 'Akar segala kejahatan adalah CINTA uang, bukan uangnya. Kelola uang, jangan dikuasai uang.',
+    source: '1 Timotius 6:10',
+  },
+  {
+    text: 'Kekayaan sejati adalah uang yang TIDAK kamu belanjakan. Yang kelihatan mewah itu bukan kaya, itu uang yang sudah pergi.',
+    source: 'Psychology of Money · Morgan Housel',
+  },
+  {
+    text: 'Menabung adalah jarak antara ego dan penghasilanmu. Makin kecil gengsi, makin cepat tenang.',
+    source: 'Psychology of Money · Morgan Housel',
+  },
+  {
+    text: 'Kamu tidak naik ke level tujuanmu, kamu turun ke level sistemmu. Bangun sistem keuangan, bukan sekadar niat.',
+    source: 'Atomic Habits · James Clear',
+  },
+  {
+    text: 'Lebih baik 1% lebih baik setiap hari daripada sempurna sekali lalu berhenti. Catat terus transaksimu!',
+    source: 'Atomic Habits · James Clear',
+  },
+  {
+    text: 'Orang bijak menyimpan harta dan minyak di rumahnya, tetapi orang bebal memboroskannya.',
+    source: 'Amsal 21:20',
+  },
+  {
+    text: 'Kebebasan finansial bukan soal banyaknya uang, tapi kendali penuh atas waktumu.',
+    source: 'Psychology of Money · Morgan Housel',
+  },
+  {
+    text: 'Kamu tidak dapat mengabdi kepada Allah dan kepada Mamon. Uang itu alat, bukan tuan.',
+    source: 'Matius 6:24',
+  },
+];
+
+// Tiga jenis yang dibandingkan realisasi vs budget (income tidak dianggarkan).
+const PLAN_TYPES: { key: FinanceType; icon: string; color: string }[] = [
+  { key: 'expense', icon: '💸', color: Color.FINANCE_EXPENSE_DARK },
+  { key: 'saving', icon: '🏦', color: Color.FINANCE_SAVING_DARK },
+  { key: 'investment', icon: '📈', color: Color.FINANCE_INVESTMENT_DARK },
+];
+
+// Rincian bulan ini (22 Sep 2026: pindah dari DashboardTab ke sini, di balik
+// "Lihat detail bulan ini"): budget vs realisasi per jenis, tiga angka utama,
+// laju pengeluaran harian, quote, dan donat per kategori. Isinya sama persis
+// dengan Dashboard lama; yang berubah cuma tempat tinggalnya, supaya Dashboard
+// bisa mendahulukan Safe to Spend & Coach tanpa jadi penuh.
+//
+// Kartu vonis "MENANG/BOROS" yang dulu di atas SENGAJA tidak ikut: kalimat
+// yang menghakimi bertentangan dengan prinsip Financial Awareness (lihat
+// lib/financeInsight.ts). Kondisi cashflow-nya tetap ada, netral, di sini.
+export function MonthDetails({
+  items,
+  budget,
+  year,
+  month,
+}: {
+  items: Transaction[];
+  budget: BudgetMap;
+  year: number;
+  month: number; // 0–11
+}) {
+  const [type, setType] = useState<FinanceType>('expense');
+
+  const now = new Date();
+  const isCurrentMonth =
+    year === now.getFullYear() && month === now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // ===== Ringkasan bulan: pemasukan / pengeluaran / nabung =====
+  // Catatan: `perDay` (grafik Pengeluaran Harian) SENGAJA hanya menghitung
+  // transaksi berjenis Expense — saving & investment tidak ikut.
+  const summary = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    let saved = 0; // saving + investment
+    const perDay = Array.from({ length: daysInMonth }, () => 0);
+    for (const t of items) {
+      if (t.type === 'income') income += t.amount;
+      else if (t.type === 'expense') {
+        expense += t.amount;
+        perDay[t.date.toDate().getDate() - 1] += t.amount;
+      } else saved += t.amount;
+    }
+    // Laju & proyeksi hanya relevan untuk bulan berjalan.
+    const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
+    const dailyAvg = daysElapsed > 0 ? expense / daysElapsed : 0;
+    return {
+      income,
+      expense,
+      saved,
+      net: income - expense - saved, // sisa cashflow
+      spentPct: income > 0 ? (expense / income) * 100 : null,
+      perDay,
+      maxDay: Math.max(...perDay, 1),
+      dailyAvg,
+      projection: dailyAvg * daysInMonth,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, daysInMonth, isCurrentMonth]);
+
+  const hasData = summary.income > 0 || summary.expense > 0;
+
+  // ===== Budget vs realisasi per jenis (expense / saving / investment) =====
+  // Budget diambil dari alokasi yang dibuat di sub-tab Budgeting, lewat rumus
+  // bersama `totalBudgetOf` — dulu di sini dijumlah sendiri dengan menyapu
+  // semua key ber-awalan jenisnya, sehingga key SUB-budget ikut terhitung
+  // padahal nominalnya sudah termasuk di budget kategorinya. Akibatnya angka
+  // Dashboard lebih besar daripada angka di layar Budgeting.
+  const plan = useMemo(() => {
+    const rows = PLAN_TYPES.map((p) => {
+      let actual = 0;
+      for (const t of items) if (t.type === p.key) actual += t.amount;
+      return { ...p, actual, planned: totalBudgetOf(budget, p.key) };
+    });
+    return {
+      rows,
+      actualTotal: rows.reduce((s, r) => s + r.actual, 0),
+      plannedTotal: rows.reduce((s, r) => s + r.planned, 0),
+    };
+  }, [items, budget]);
+
+  // ===== Donat per kategori (jenis terpilih) =====
+  const { data, total } = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of items) {
+      if (item.type === type) {
+        map.set(item.category, (map.get(item.category) ?? 0) + item.amount);
+      }
+    }
+    const data: CategoryTotal[] = [...map.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([key, value], index) => ({
+        key,
+        value,
+        category: categoryOf(type, key),
+        color: Color.CHART_COLORS[index % Color.CHART_COLORS.length],
+      }));
+    const total = data.reduce((sum, d) => sum + d.value, 0);
+    return { data, total };
+  }, [items, type]);
+
+  // Quote hari ini (ganti otomatis tiap hari). Tanpa garam — supaya quote yang
+  // muncul persis sama seperti sebelum dirapikan.
+  const quote = pickOfDay(QUOTES, dayDocId(now));
+
+  return (
+    <View>
+      {/* ===== Cashflow bulan ini: netral, tanpa vonis ===== */}
+      <View style={styles.card}>
+        <VixText heading="title" additionalStyle={styles.cardTitle}>
+          💵 Cashflow Bulan Ini
+        </VixText>
+        <VixText heading="label">
+          {!hasData
+            ? 'Belum ada data bulan ini.'
+            : summary.spentPct !== null
+              ? `Pengeluaran ${summary.spentPct.toFixed(0)}% dari pemasukan · sisa cashflow ${formatShortRupiah(summary.net)}`
+              : 'Belum ada pemasukan tercatat bulan ini.'}
+        </VixText>
+      </View>
+
+      {/* ===== Budget vs realisasi: pembagian expense / saving / investment ===== */}
+      <View style={styles.card}>
+        <VixText heading="title" additionalStyle={styles.cardTitle}>
+          📊 Budget vs Realisasi
+        </VixText>
+
+        {plan.plannedTotal === 0 && plan.actualTotal === 0 ? (
+          <VixText heading="label">
+            Belum ada budget & transaksi bulan ini. Atur alokasinya di sub-tab
+            Budgeting 📝
+          </VixText>
+        ) : (
+          <>
+            <CompositionBar
+              label="Realisasi"
+              total={plan.actualTotal}
+              parts={plan.rows.map((r) => ({
+                key: r.key,
+                value: r.actual,
+                color: r.color,
+              }))}
+            />
+
+            {/* Rincian per jenis: nominal, persentase komposisi & serapan budget */}
+            {plan.rows.map((r) => {
+              const usedPct = r.planned > 0 ? (r.actual / r.planned) * 100 : null;
+              const over = usedPct !== null && usedPct > 100;
+              return (
+                <View key={r.key} style={styles.planRow}>
+                  <View style={[styles.planDot, { backgroundColor: r.color }]} />
+                  <View style={styles.planMain}>
+                    <VixText heading="bold" additionalStyle={styles.planLabel}>
+                      {r.icon} {FINANCE_TYPE_LABEL[r.key]}
+                    </VixText>
+                    <VixText heading="label">
+                      {formatShortRupiah(r.actual)} dari{' '}
+                      {r.planned > 0
+                        ? formatShortRupiah(r.planned)
+                        : 'belum dianggarkan'}
+                    </VixText>
+                  </View>
+                  <VixText
+                    heading="bold"
+                    additionalStyle={
+                      usedPct === null
+                        ? styles.toneWarn
+                        : over
+                          ? styles.toneDanger
+                          : styles.toneOk
+                    }>
+                    {usedPct === null ? '-' : `${usedPct.toFixed(0)}%`}
+                  </VixText>
+                </View>
+              );
+            })}
+
+            <CompositionBar
+              label="Budget"
+              total={plan.plannedTotal}
+              parts={plan.rows.map((r) => ({
+                key: r.key,
+                value: r.planned,
+                color: r.color,
+              }))}
+            />
+          </>
+        )}
+      </View>
+
+      {/* ===== 3 angka utama ===== */}
+      <View style={styles.statRow}>
+        <StatTile label="💰 Income" value={formatShortRupiah(summary.income)} />
+        <StatTile label="💸 Expense" value={formatShortRupiah(summary.expense)} />
+        <StatTile label="🏦 Saving" value={formatShortRupiah(summary.saved)} />
+      </View>
+
+      {/* ===== Laju pengeluaran harian + grafik batang ===== */}
+      <View style={styles.card}>
+        <VixText heading="title" additionalStyle={styles.cardTitle}>
+          📉 Pengeluaran Harian
+        </VixText>
+        <View style={styles.barsRow}>
+          {summary.perDay.map((v, i) => {
+            const isToday = isCurrentMonth && i === now.getDate() - 1;
+            return (
+              <View key={i} style={styles.barSlot}>
+                <View
+                  style={[
+                    styles.dayBar,
+                    { height: Math.max(3, (v / summary.maxDay) * 56) },
+                    isToday && styles.dayBarToday,
+                  ]}
+                />
+              </View>
+            );
+          })}
+        </View>
+        <View style={styles.axisRow}>
+          <VixText heading="label">1</VixText>
+          <VixText heading="label">{Math.round(daysInMonth / 2)}</VixText>
+          <VixText heading="label">{daysInMonth}</VixText>
+        </View>
+        <VixText heading="label">
+          Rata-rata {formatShortRupiah(summary.dailyAvg)}/hari
+          {isCurrentMonth
+            ? ` · proyeksi akhir bulan ±${formatShortRupiah(summary.projection)}`
+            : ''}
+        </VixText>
+      </View>
+
+      {/* ===== Quote pengingat hari ini ===== */}
+      <View style={styles.quoteCard}>
+        <VixText heading="paragraph" additionalStyle={styles.quoteText}>
+          “{quote.text}”
+        </VixText>
+        <VixText heading="label" additionalStyle={styles.quoteSource}>
+          - {quote.source}
+        </VixText>
+      </View>
+
+      {/* ===== Rincian per kategori ===== */}
+      <VixText heading="title" additionalStyle={styles.sectionTitle}>
+        🔍 Rincian per Kategori
+      </VixText>
+      <TypeChips value={type} onChange={setType} />
+
+      <View style={styles.chartWrap}>
+        <DonutChart slices={data}>
+          <VixText heading="label">Total {FINANCE_TYPE_LABEL[type]}</VixText>
+          <VixText heading="bold" additionalStyle={styles.chartTotal}>
+            {formatRupiah(total)}
+          </VixText>
+        </DonutChart>
+      </View>
+
+      {data.length === 0 ? (
+        <VixText heading="label" additionalStyle={styles.empty}>
+          Belum ada transaksi {FINANCE_TYPE_LABEL[type]} bulan ini.
+        </VixText>
+      ) : (
+        data.map((d) => (
+          <View key={d.key} style={styles.row}>
+            <View style={[styles.dot, { backgroundColor: d.color }]} />
+            <VixText
+              heading="paragraph"
+              numberOfLines={1}
+              additionalStyle={styles.rowLabel}>
+              {d.category.icon} {d.category.label}
+            </VixText>
+            <View style={styles.rowRight}>
+              <VixText heading="bold">{formatRupiah(d.value)}</VixText>
+              <VixText heading="label">
+                {((d.value / total) * 100).toFixed(1)}%
+              </VixText>
+            </View>
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
+// Batang bertumpuk: satu baris menunjukkan pembagian persentase antar jenis.
+// Total 0 → batang kosong (abu) supaya tetap terbaca "belum ada isinya".
+function CompositionBar({
+  label,
+  total,
+  parts,
+}: {
+  label: string;
+  total: number;
+  parts: { key: string; value: number; color: string }[];
+}) {
+  return (
+    <View style={styles.compBlock}>
+      <View style={styles.compTop}>
+        <VixText heading="label">{label}</VixText>
+        <VixText heading="label">{formatShortRupiah(total)}</VixText>
+      </View>
+      <View style={styles.barTrack}>
+        {total > 0 &&
+          parts.map((p) =>
+            p.value > 0 ? (
+              <View
+                key={p.key}
+                style={{
+                  width: `${(p.value / total) * 100}%`,
+                  backgroundColor: p.color,
+                }}
+              />
+            ) : null,
+          )}
+      </View>
+      {total > 0 && (
+        <View style={styles.compTop}>
+          {parts.map((p) => (
+            <VixText key={p.key} heading="label" additionalStyle={{ color: p.color }}>
+              {((p.value / total) * 100).toFixed(0)}%
+            </VixText>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// Kotak kecil satu angka utama.
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.statTile}>
+      <VixText heading="bold" additionalStyle={styles.statValue}>
+        {value}
+      </VixText>
+      <VixText heading="label">{label}</VixText>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  statRow: { flexDirection: 'row', gap: 10, marginBottom: CARD_GAP },
+  statTile: {
+    flex: 1,
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingVertical: 12,
+    alignItems: 'center',
+    gap: 2,
+  },
+  statValue: { color: Color.TEXT_TITLE },
+  card: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    padding: 16,
+    gap: 8,
+    marginBottom: CARD_GAP,
+  },
+  cardTitle: { marginBottom: 2 },
+  toneOk: { color: Color.SUCCESS },
+  toneWarn: { color: Color.WARNING },
+  toneDanger: { color: Color.DANGER },
+  barTrack: {
+    flexDirection: 'row',
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    overflow: 'hidden',
+  },
+  // Blok satu batang komposisi (label + batang + persentase).
+  compBlock: { gap: 4 },
+  compTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+  },
+  // Rincian per jenis di bawah batang.
+  planRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  planDot: { width: 10, height: 10, borderRadius: 5 },
+  planMain: { flex: 1, gap: 1 },
+  planLabel: { color: Color.TEXT_TITLE },
+  barsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 60,
+    gap: 2,
+  },
+  barSlot: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
+  dayBar: {
+    width: '100%',
+    borderRadius: 3,
+    backgroundColor: Color.FINANCE_EXPENSE,
+  },
+  dayBarToday: { backgroundColor: Color.DANGER },
+  axisRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -4,
+  },
+  quoteCard: {
+    backgroundColor: Color.ACCENT,
+    borderRadius: 16,
+    padding: 16,
+    gap: 6,
+    marginBottom: 14,
+  },
+  quoteText: { color: Color.ACCENT_DARK, fontStyle: 'italic' },
+  quoteSource: { color: Color.ACCENT_DARK, textAlign: 'right' },
+  sectionTitle: { marginBottom: 10 },
+  chartWrap: { alignItems: 'center', marginVertical: 16 },
+  chartTotal: { color: Color.TEXT_TITLE, marginTop: 2 },
+  empty: { textAlign: 'center', marginTop: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 8,
+    gap: 10,
+  },
+  dot: { width: 12, height: 12, borderRadius: 6 },
+  rowLabel: { flex: 1, color: Color.TEXT_TITLE },
+  rowRight: { alignItems: 'flex-end' },
+});

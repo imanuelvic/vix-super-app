@@ -1,11 +1,17 @@
 import {
+  arrayUnion,
   collection,
   deleteField,
   doc,
+  documentId,
   getDoc,
   getDocs,
+  query,
   setDoc,
+  Timestamp,
   updateDoc,
+  where,
+  type DocumentData,
   type FirestoreError,
 } from 'firebase/firestore';
 
@@ -13,7 +19,7 @@ import { FINANCE_CATEGORIES, type FinanceType } from './categories';
 import { db } from './firebase';
 import { monthId } from './format';
 import { RESIDENCE_LOG_TYPES } from './residence';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 
 /**
  * Budget bulanan disimpan SATU dokumen per bulan:
@@ -127,10 +133,58 @@ export async function purgeRemovedBudgets(uid: string): Promise<number> {
   return terhapus;
 }
 
+// ======================= Monthly Budget Lock =======================
+//
+// Budget yang sudah DIKUNCI = komitmen untuk bulan itu (22 Sep 2026). Selama
+// terkunci, layar Budgeting tidak membuka dialog Set Budget & tombol salin
+// bulan lalu padam; transaksi tetap bertambah dan dibandingkan dengan budget
+// yang dikunci. Membuka kunci butuh tindakan sadar (alasan singkat), dan tiap
+// unlock DICATAT di `unlocks` supaya "pernah di-unlock 2×" terlihat di layar
+// dan bisa disebut Coach. Semua field-nya opsional: dokumen budget lama
+// (tanpa field ini) terbaca sebagai belum dikunci.
+
+/** Satu jejak buka-kunci. */
+export type BudgetUnlock = { at: Timestamp; reason: string };
+
 export type BudgetDoc = {
   allocations: BudgetMap;
   copiedFromPrev: boolean; // pernah disamakan dengan bulan lalu (per bulan)
+  locked: boolean;
+  lockedAt: Timestamp | null;
+  unlocks: BudgetUnlock[];
 };
+
+export const EMPTY_BUDGET: BudgetDoc = {
+  allocations: {},
+  copiedFromPrev: false,
+  locked: false,
+  lockedAt: null,
+  unlocks: [],
+};
+
+/** Bentuk dokumen budget dari isi Firestore (semua field opsional). */
+export function normalizeBudget(data: DocumentData | undefined): BudgetDoc {
+  const rawUnlocks = Array.isArray(data?.unlocks) ? (data.unlocks as unknown[]) : [];
+  const unlocks: BudgetUnlock[] = [];
+  for (const u of rawUnlocks) {
+    const at = (u as { at?: unknown })?.at;
+    const reason = (u as { reason?: unknown })?.reason;
+    if (at && typeof (at as Timestamp).toMillis === 'function') {
+      unlocks.push({ at: at as Timestamp, reason: typeof reason === 'string' ? reason : '' });
+    }
+  }
+  const lockedAt = data?.lockedAt;
+  return {
+    allocations: (data?.allocations as BudgetMap) ?? {},
+    copiedFromPrev: (data?.copiedFromPrev as boolean) ?? false,
+    locked: data?.locked === true,
+    lockedAt:
+      lockedAt && typeof (lockedAt as Timestamp).toMillis === 'function'
+        ? (lockedAt as Timestamp)
+        : null,
+    unlocks,
+  };
+}
 
 /** Dengarkan budget satu bulan secara real-time. */
 export function subscribeBudget(
@@ -141,16 +195,60 @@ export function subscribeBudget(
   onError?: (error: FirestoreError) => void,
 ) {
   const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
-  return liveDoc(
-    ref,
-    (snapshot) => {
-      const data = snapshot.data();
-      onChange({
-        allocations: (data?.allocations as BudgetMap) ?? {},
-        copiedFromPrev: (data?.copiedFromPrev as boolean) ?? false,
-      });
+  return liveDoc(ref, (snapshot) => onChange(normalizeBudget(snapshot.data())), onError);
+}
+
+/**
+ * Dengarkan budget BEBERAPA bulan sekaligus (riwayat untuk analisis 3 bulan):
+ * satu query rentang pada id dokumen "YYYY-MM" (leksikal = kronologis), tanpa
+ * index tambahan. Hasilnya map monthId → BudgetDoc; bulan yang belum pernah
+ * dibuat budget-nya tidak ada di map.
+ */
+export function subscribeBudgetRange(
+  uid: string,
+  fromMonthId: string,
+  toMonthId: string,
+  onChange: (docs: Record<string, BudgetDoc>) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  const q = query(
+    collection(db, 'users', uid, 'budgets'),
+    where(documentId(), '>=', fromMonthId),
+    where(documentId(), '<=', toMonthId),
+  );
+  return liveList<{ id: string; raw: DocumentData }>(
+    q,
+    (rows) => {
+      const out: Record<string, BudgetDoc> = {};
+      for (const r of rows) out[r.id] = normalizeBudget(r.raw);
+      onChange(out);
     },
     onError,
+    (d) => ({ id: d.id, raw: d.data() }),
+  );
+}
+
+/** Kunci budget bulan ini: komitmen. Menimpa kunci lama kalau dikunci ulang. */
+export function lockBudget(uid: string, year: number, month: number) {
+  const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
+  return setDoc(ref, { locked: true, lockedAt: Timestamp.now() }, { merge: true });
+}
+
+/**
+ * Buka kunci dengan alasan (tindakan sadar). Alasannya WAJIB (dipangkas,
+ * ≤ 120 huruf); jejaknya ditambahkan ke `unlocks`, tidak pernah dihapus.
+ */
+export function unlockBudget(uid: string, year: number, month: number, reason: string) {
+  const bersih = reason.trim().slice(0, 120);
+  const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
+  return setDoc(
+    ref,
+    {
+      locked: false,
+      lockedAt: null,
+      unlocks: arrayUnion({ at: Timestamp.now(), reason: bersih }),
+    },
+    { merge: true },
   );
 }
 
@@ -177,8 +275,14 @@ export async function copyBudgetFromPreviousMonth(
   if (Object.keys(allocations).length === 0) return false;
 
   const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
-  // TANPA merge: alokasi bulan ini diganti utuh dengan template bulan lalu.
-  await setDoc(ref, { allocations, copiedFromPrev: true });
+  // Alokasi bulan ini diganti UTUH dengan template bulan lalu (mergeFields
+  // menimpa map `allocations` seutuhnya, bukan key per key seperti merge:true),
+  // tapi jejak kunci bulan ini (locked/lockedAt/unlocks) tidak ikut terhapus.
+  await setDoc(
+    ref,
+    { allocations, copiedFromPrev: true },
+    { mergeFields: ['allocations', 'copiedFromPrev'] },
+  );
   return true;
 }
 

@@ -51,7 +51,7 @@ import {
     type MainTeamMember,
     type StudyWork,
 } from '@/lib/core';
-import { dayId, dayIdToDate, formatTinyDate, MONTH_NAMES } from '@/lib/format';
+import { dayId, dayIdToDate, formatDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { localPhone } from '@/lib/phone';
@@ -746,8 +746,8 @@ export function LeadersTab({
                 />
               </View>
 
-              {/* Thanksgiving CORE ini — tampil "d mmm yy" di tabel Rekap
-                  Visitasi & PDF rekap. Boleh kosong. */}
+              {/* Thanksgiving CORE ini — tampil "d mmm yy" di baris 📅 Tanggal
+                  tabel Rekap Visitasi & di PDF rekap. Boleh kosong. */}
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
                 🎉 Tanggal Thanksgiving
               </VixText>
@@ -1133,11 +1133,11 @@ function PersonView({
           modalnya memang satu. */}
       <View style={styles.viewDivider} />
       <InfoRow
-        label="🎂 Tanggal lahir"
+        label="🎂 Tanggal Lahir"
         value={`${person.birthDay} ${MONTH_NAMES[person.birthMonth]} ${person.birthYear} · ${currentAge(person, today)} th`}
       />
       <InfoRow
-        label="🎈 Ulang tahun"
+        label="🎈 Ulang Tahun"
         value={
           daysUntil === 0
             ? `Hari ini! 🎉 genap ${turningAge} th`
@@ -1156,10 +1156,12 @@ function PersonView({
         />
         {jenis ? <InfoRow label="🚻 Gender" value={jenis} half /> : null}
       </View>
+      {/* Formatnya utuh seperti Tanggal Lahir di atasnya ("8 Januari 2025"),
+          bukan "8 Jan 25" ringkasan tabel. */}
       {'thanksgivingDayId' in person && person.thanksgivingDayId ? (
         <InfoRow
           label="🎉 Thanksgiving CORE"
-          value={formatTinyDate(dayIdToDate(person.thanksgivingDayId))}
+          value={formatDate(dayIdToDate(person.thanksgivingDayId))}
         />
       ) : null}
       {belajar ? <InfoRow label="🎓 Pendidikan" value={belajar.slice(2)} /> : null}

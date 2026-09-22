@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,22 +18,31 @@ import { DashboardTab } from '@/components/finance/DashboardTab';
 import { TransactionsTab } from '@/components/finance/TransactionsTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
-import {
-  purgeRemovedBudgets,
-  subscribeBudget,
-  subscribeSubcategories,
-  type BudgetMap,
-  type SubcategoryMap,
-} from '@/lib/budgets';
 import { useAmountsHidden } from '@/hooks/useAmountsHidden';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useNow } from '@/hooks/useNow';
+import {
+  EMPTY_BUDGET,
+  purgeRemovedBudgets,
+  subscribeBudget,
+  subscribeBudgetRange,
+  subscribeSubcategories,
+  type BudgetDoc,
+  type SubcategoryMap,
+} from '@/lib/budgets';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
-import { MONTH_NAMES } from '@/lib/format';
-import { PRIVACY_PIN } from '@/lib/pin';
+import { subscribeFinanceFocus, type FocusItem } from '@/lib/financeFocus';
+import { historySlices, HISTORY_MONTHS } from '@/lib/financeInsight';
+import { MONTH_NAMES, monthId } from '@/lib/format';
 import { LOAD_ERROR } from '@/lib/messages';
-import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactions';
+import { PRIVACY_PIN } from '@/lib/pin';
+import {
+  subscribeTransactionsByMonth,
+  subscribeTransactionsRange,
+  type Transaction,
+} from '@/lib/transactions';
 
 type FinanceTab = 'dashboard' | 'transactions' | 'budgeting';
 type IconName = ComponentProps<typeof IconSymbol>['name'];
@@ -70,10 +79,28 @@ export default function FinanceScreen() {
   const loading = loaded === null;
   const [error, setError] = useState<string | null>(null);
 
-  // Budget bulan ini — satu langganan dipakai bersama sub-menu Transaksi
-  // (mewarnai pilihan kategori) & Budgeting (bar realisasi).
-  const [budget, setBudget] = useState<BudgetMap>({});
-  const [budgetCopied, setBudgetCopied] = useState(false);
+  // Budget bulan ini (dokumen utuh: alokasi + status kunci) — satu langganan
+  // dipakai bersama sub-menu Transaksi (mewarnai pilihan kategori), Budgeting
+  // (bar realisasi, kunci) & Dashboard (Safe to Spend).
+  const [budgetDoc, setBudgetDoc] = useState<BudgetDoc>(EMPTY_BUDGET);
+  const budget = budgetDoc.allocations;
+
+  // Riwayat HISTORY_MONTHS bulan SEBELUM bulan yang dilihat — transaksi (satu
+  // query rentang tanggal, tanpa index baru) & budget-nya — untuk analisis
+  // pola di Dashboard & Coach. Dikunci ke bulan yang dilihat seperti `items`.
+  const { data: histItems, set: setHistItems } = useKeyedData<string, Transaction[]>(
+    `hist-${year}-${month}`,
+  );
+  const [histBudgets, setHistBudgets] = useState<Record<string, BudgetDoc>>({});
+  const histFrom = new Date(year, month - HISTORY_MONTHS, 1);
+  const histLast = new Date(year, month - 1, 1);
+  const history = useMemo(
+    () => historySlices(histItems ?? [], histBudgets, year, month),
+    [histItems, histBudgets, year, month],
+  );
+
+  // 🎯 Fokus mingguan (batas yang ditetapkan sendiri) — satu dokumen kecil.
+  const [focusItems, setFocusItems] = useState<FocusItem[]>([]);
 
   // Daftar sub-kategori buatan sendiri (mis. Groceries → Telur). Berlaku
   // lintas bulan, jadi langganannya TIDAK ikut berganti saat bulan digeser.
@@ -92,6 +119,23 @@ export default function FinanceScreen() {
     if (!user || !unlocked) return;
     return subscribeDebts(user.uid, setDebts);
   }, [user, unlocked]);
+
+  useLiveAll(
+    (uid) => [
+      subscribeTransactionsRange(uid, histFrom, new Date(year, month, 1), setHistItems, () =>
+        setHistItems([]),
+      ),
+      subscribeBudgetRange(
+        uid,
+        monthId(histFrom.getFullYear(), histFrom.getMonth()),
+        monthId(histLast.getFullYear(), histLast.getMonth()),
+        setHistBudgets,
+        () => {},
+      ),
+      subscribeFinanceFocus(uid, setFocusItems, () => {}),
+    ],
+    { deps: [year, month, setHistItems], when: unlocked },
+  );
 
   // Bersih-bersih SEKALI per buka layar: alokasi budget milik kategori yang
   // sudah dihapus (Electricity, Water, Wifi, Maintenance & dua sub Residence)
@@ -134,17 +178,7 @@ export default function FinanceScreen() {
   // pewarnaan budget hanya pelengkap, tak boleh mengganggu daftar transaksi.
   useEffect(() => {
     if (!user || !unlocked) return;
-    const unsubscribe = subscribeBudget(
-      user.uid,
-      year,
-      month,
-      (next) => {
-        setBudget(next.allocations);
-        setBudgetCopied(next.copiedFromPrev);
-      },
-      () => {},
-    );
-    return unsubscribe;
+    return subscribeBudget(user.uid, year, month, setBudgetDoc, () => {});
   }, [user, year, month, unlocked]);
 
   // Langganan daftar sub-kategori (1 dokumen kecil, tidak per bulan).
@@ -231,9 +265,14 @@ export default function FinanceScreen() {
         ) : tab === 'dashboard' ? (
           <DashboardTab
             items={items}
-            budget={budget}
+            budgetDoc={budgetDoc}
+            history={history}
+            focusItems={focusItems}
+            subcats={subcats}
             year={year}
             month={month}
+            now={liveNow}
+            onShowTab={onTabPress}
           />
         ) : tab === 'transactions' ? (
           <TransactionsTab
@@ -241,14 +280,16 @@ export default function FinanceScreen() {
             budget={budget}
             subcats={subcats}
             amountsHidden={amountsHidden}
+            year={year}
+            month={month}
+            onShowBudget={() => onTabPress('budgeting')}
           />
         ) : (
           <BudgetingTab
             items={items}
             year={year}
             month={month}
-            budget={budget}
-            copied={budgetCopied}
+            budgetDoc={budgetDoc}
             subcats={subcats}
           />
         )}

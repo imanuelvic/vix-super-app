@@ -17,7 +17,6 @@ import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   lastSharedTo,
-  markSharedToLeader,
   subscribeCoreLeaders,
   subscribeShareLog,
   type CoreLeader,
@@ -25,29 +24,24 @@ import {
   type ShareLog,
 } from '@/lib/core';
 import { formatCompactDateTime } from '@/lib/format';
+import { shareDocToLeader, sharePesanPengantar } from '@/lib/shareLeader';
 import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
-// Sheet "Bagikan ke CORE Leader" — dipakai tombol share Rekap Visitasi 📊,
-// Timeline 📍, & Wheel of Life 🎡. Satu daftar CL (hati, nama, nomor HP,
-// kapan dokumen ini terakhir dikirim padanya); click satu CL → PDF-nya dibuat
-// oleh layar pemanggil (`share`), lalu:
+// Sheet "Bagikan ke CORE Leader" — dipakai tombol share Rekap Visitasi 📊
+// (dokumen untuk BANYAK CL, jadi harus memilih). Satu daftar CL (hati, nama,
+// nomor HP, kapan dokumen ini terakhir dikirim padanya); click satu CL →
+// PDF-nya dibuat oleh layar pemanggil (`share`), lalu share sheet → catat →
+// chat WA (urutannya di lib/shareLeader.ts). Tombol 💬 di tiap baris membuka
+// chat itu saja, tanpa PDF (mis. untuk mengingatkan).
 //
-//   1. share sheet iOS terbuka → pilih WhatsApp → pilih chat CL-nya, kirim;
-//   2. begitu share sheet tertutup, tanggalnya dicatat (lib/core.ts, shares);
-//   3. chat WhatsApp ke NOMOR CL itu langsung dibuka dengan pesan pengantar,
-//      jadi PDF yang barusan dikirim tinggal disusul sapaan.
-//
-// iOS tidak mengizinkan sebuah berkas didorong LANGSUNG ke satu chat WhatsApp
-// lewat tautan; yang bisa dituju lewat nomor cuma chat-nya (wa.me). Karena itu
-// PDF-nya tetap lewat share sheet, dan nomornya dipakai di langkah 3. Tombol 💬
-// di tiap baris membuka chat itu saja, tanpa PDF (mis. untuk mengingatkan).
+// Wheel of Life 🎡 & Timeline 📍 milik satu CL TIDAK lewat sini lagi (22 Sep
+// 2026): dokumennya personal, jadi tombol share-nya langsung ke orangnya.
 export function ShareToLeaderSheet({
   visible,
   onClose,
   kind,
   doc,
   share,
-  onSharePlain,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -60,8 +54,6 @@ export function ShareToLeaderSheet({
    * dikirim ke CL itu (untuk dicetak di kop). Melempar error kalau gagal.
    */
   share: (leader: CoreLeader, lastShared: Date | null) => Promise<void>;
-  /** Kalau diisi: ada baris "bagikan biasa" tanpa memilih CL (Timeline & Wheel). */
-  onSharePlain?: () => void;
 }) {
   const { user } = useAuth();
   const theme = useFeatureTheme();
@@ -86,14 +78,10 @@ export function ShareToLeaderSheet({
   // key = id CL yang PDF-nya sedang dibuat → cuma baris itu yang berputar.
   const tugas = useBusyTask<string>();
 
-  function pesanPengantar(l: CoreLeader): string {
-    return `Halo ${l.name} ${l.heart} aku barusan kirim PDF ${doc} ya, dicek yaa 🙏😊`;
-  }
-
   function bukaChat(l: CoreLeader) {
     if (!l.phone) return;
     setError(null);
-    void openWhatsAppChat(l.phone, pesanPengantar(l), () => setError(WHATSAPP_ERROR));
+    void openWhatsAppChat(l.phone, sharePesanPengantar(l, doc), () => setError(WHATSAPP_ERROR));
   }
 
   function kirim(l: CoreLeader) {
@@ -102,18 +90,16 @@ export function ShareToLeaderSheet({
     void tugas.run({
       key: l.id,
       start: () => setError(null),
-      task: async () => {
-        await share(l, lastSharedTo(log, l.id, kind));
-        // Dicatat SESUDAH share sheet ditutup, sama seperti notulen visitasi:
-        // kalau pencatatannya gagal, PDF-nya sudah terlanjur terkirim, jadi
-        // cukup diabaikan, bukan pesan error palsu.
-        markSharedToLeader(uid, l.id, kind, new Date()).catch(() => undefined);
-        if (l.phone) {
-          await openWhatsAppChat(l.phone, pesanPengantar(l), () =>
-            setError(WHATSAPP_ERROR),
-          );
-        }
-      },
+      task: () =>
+        shareDocToLeader({
+          uid,
+          leader: l,
+          kind,
+          doc,
+          log,
+          share,
+          onWaError: () => setError(WHATSAPP_ERROR),
+        }),
       fail: () => setError(`Gagal membuat PDF ${doc}. Coba lagi.`),
     });
   }
@@ -184,19 +170,6 @@ export function ShareToLeaderSheet({
         })
       )}
 
-      {onSharePlain ? (
-        <PressableScale
-          style={styles.plain}
-          onPress={() => {
-            tutup();
-            onSharePlain();
-          }}
-          disabled={tugas.busy !== null}>
-          <VixText heading="label" additionalStyle={styles.plainText}>
-            📤 Bagikan biasa, tanpa memilih CL
-          </VixText>
-        </PressableScale>
-      ) : null}
     </SheetModal>
   );
 }
@@ -216,6 +189,4 @@ const styles = StyleSheet.create({
   name: { color: Color.TEXT_TITLE },
   noPhone: { color: Color.TEXT_PLACEHOLDER },
   shared: { color: Color.TEXT_PLACEHOLDER },
-  plain: { alignItems: 'center', paddingVertical: 12 },
-  plainText: { color: Color.TEXT_LABEL },
 });

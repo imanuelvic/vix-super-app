@@ -127,10 +127,12 @@ export default function CoreRecapScreen() {
                 </View>
 
                 {/* Tanggal Thanksgiving tiap CL ("d mmm yy", dua baris) — dari
-                    data CL-nya; visitasi ber-penanda 🎉 jadi cadangan. */}
+                    data CL-nya (tahun apa pun; tahunnya ikut tercetak), visitasi
+                    ber-penanda 🎉 jadi cadangan. Labelnya 📅, bukan 🎉: baris
+                    jenis Thanksgiving di bawahnya sudah memakai 🎉. */}
                 <View style={styles.row}>
                   <VixText heading="label" additionalStyle={styles.labelCol} numberOfLines={2}>
-                    🎉 Thanksgiving
+                    📅 Tanggal
                   </VixText>
                   {rekap.thanksgiving.map((d, i) => (
                     <VixText

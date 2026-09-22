@@ -81,6 +81,7 @@ const ROUTE_FEATURE: Record<string, string> = {
 
   // Finance 💵
   finance: 'finance',
+  'finance-review': 'finance',
   funds: 'finance',
   fund: 'finance',
   debts: 'finance',
