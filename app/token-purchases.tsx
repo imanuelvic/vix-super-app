@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,11 +13,10 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { TokenPurchaseSheet } from '@/components/residence/TokenPurchaseSheet';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { usePagination } from '@/hooks/usePagination';
 import { useTokenPurchaseForm } from '@/hooks/useTokenPurchaseForm';
 import { formatCompactDate, formatDecimal } from '@/lib/format';
-import { LOAD_ERROR } from '@/lib/messages';
 import {
   ratePerKwh,
   subscribeTokenPurchases,
@@ -39,22 +38,22 @@ import { formatRupiah } from '@/lib/transactions';
 // (lib/liveDoc.ts menghitung pemakainya), jadi membuka halaman ini tidak
 // menambah bacaan Firestore.
 export default function TokenPurchasesScreen() {
-  const { user } = useAuth();
-
   const [purchases, setPurchases] = useState<TokenPurchase[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeTokenPurchases(
-      user.uid,
-      (next) => {
-        setPurchases(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeTokenPurchases(
+        uid,
+        (next) => {
+          setPurchases(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const isi = purchases ?? [];
   const form = useTokenPurchaseForm(isi);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -18,8 +18,9 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { formatFullDate, formatShortDayDate } from '@/lib/format';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
     applyWinner,
     createTournament,
@@ -76,17 +77,19 @@ export function TournamentTab() {
   const [eDate, setEDate] = useState(() => new Date());
   const [editError, setEditError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeTournaments(
-      user.uid,
-      (l) => {
-        setList(l);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeTournaments(
+        uid,
+        (l) => {
+          setList(l);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const selected = selectedId
     ? (list?.find((t) => t.id === selectedId) ?? null)

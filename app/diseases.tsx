@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,6 +17,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { usePagination } from '@/hooks/usePagination';
 import { formatDate } from '@/lib/format';
 import {
@@ -26,7 +27,6 @@ import {
     updateDisease,
     type Disease,
 } from '@/lib/health';
-import { LOAD_ERROR } from '@/lib/messages';
 
 /** Lama sakit dalam hari (minimal 1). Belum sembuh → dihitung sampai hari ini. */
 function sickDays(d: Disease): number {
@@ -52,18 +52,19 @@ export default function DiseasesScreen() {
   const [fRecoverDate, setFRecoverDate] = useState(new Date());
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeDiseases(
-      user.uid,
-      (next) => {
-        setItems(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-    return unsubscribe;
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeDiseases(
+        uid,
+        (next) => {
+          setItems(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const { setPage, currentPage, pageCount, pageItems } = usePagination(
     items ?? [],

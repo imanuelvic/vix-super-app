@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,9 +9,10 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { NewsCard } from '@/components/news/NewsCard';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { formatShortDayDate } from '@/lib/format';
 import { openExternalUrl } from '@/lib/linking';
-import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 import {
   BOOKMARK_MAX,
   removeBookmark,
@@ -33,17 +34,19 @@ export default function NewsSavedScreen() {
   const [items, setItems] = useState<NewsBookmark[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeNewsBookmarks(
-      user.uid,
-      (next) => {
-        setItems(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeNewsBookmarks(
+        uid,
+        (next) => {
+          setItems(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   function handleRemove(link: string) {
     if (!user || items === null) return;

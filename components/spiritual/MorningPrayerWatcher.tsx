@@ -2,6 +2,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   prayerGateDue,
   subscribeLoginStreak,
@@ -43,10 +44,7 @@ export function MorningPrayerWatcher() {
   const [login, setLogin] = useState<LoginStreak | null | undefined>(undefined);
   const [now, setNow] = useState(() => new Date());
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeLoginStreak(user.uid, setLogin);
-  }, [user]);
+  useLiveAll((uid) => [subscribeLoginStreak(uid, setLogin)]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000);

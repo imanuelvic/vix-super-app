@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { LOAD_ERROR } from '@/lib/messages';
 import { EMPTY_FUTSAL, subscribeFutsal, type FutsalData } from '@/lib/futsal';
 
@@ -29,17 +29,15 @@ export function useFutsalData(): {
   error: string | null;
   setError: (value: string | null) => void;
 } {
-  const { user } = useAuth();
   const [data, setData] = useState<FutsalData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeFutsal(user.uid, setData, () => {
+  useLiveAll((uid) => [
+    subscribeFutsal(uid, setData, () => {
       setData(EMPTY_FUTSAL);
       setError(LOAD_ERROR);
-    });
-  }, [user]);
+    }),
+  ]);
 
   return { data, isi: data ?? EMPTY_FUTSAL, error, setError };
 }

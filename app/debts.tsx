@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,6 +32,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { deadlineDue, deadlineLabel } from '@/lib/deadline';
 import {
     addDebtPayment,
@@ -58,7 +59,7 @@ import {
     groupDigits,
     parseAmount,
 } from '@/lib/format';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
 type Tab = DebtDirection;
@@ -104,18 +105,19 @@ export default function DebtsScreen() {
   const [pError, setPError] = useState<string | null>(null);
   const [pBusy, setPBusy] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeDebts(
-      user.uid,
-      (next) => {
-        setDebts(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-    return unsubscribe;
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeDebts(
+        uid,
+        (next) => {
+          setDebts(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const today = new Date();
   const list = (debts ?? [])

@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,6 +17,7 @@ import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   EMPTY_FASTING_DAY as EMPTY_DAY,
   fastingDay,
@@ -30,7 +31,7 @@ import {
 } from '@/lib/fasting';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 
 // Hari per Hari 🍽️ — checklist satu periode puasa, layarnya SENDIRI.
 //
@@ -55,17 +56,19 @@ export default function FastingDaysScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeFastingPlans(
-      user.uid,
-      (next) => {
-        setPlans(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeFastingPlans(
+        uid,
+        (next) => {
+          setPlans(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const plan = plans?.find((p) => p.id === planId) ?? null;
   const now = new Date();

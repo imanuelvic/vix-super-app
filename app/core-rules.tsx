@@ -21,6 +21,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { MEETING_KINDS } from '@/lib/core';
 import {
     deleteCoreRule,
@@ -33,7 +34,7 @@ import {
     type CoreRule,
 } from '@/lib/coreRules';
 import { shareRulePdf } from '@/lib/coreRulesPdf';
-import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 
 // Rules & Suggestions 📜 — panduan resmi tiap jenis acara CORE.
 // Ini dokumen yang kamu kirim ke setiap CORE Leader begitu ada reminder
@@ -58,17 +59,19 @@ export default function CoreRulesScreen() {
   const [fBody, setFBody] = useState('');
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeCoreRules(
-      user.uid,
-      (next) => {
-        setRules(sortCoreRules(next));
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeCoreRules(
+        uid,
+        (next) => {
+          setRules(sortCoreRules(next));
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   // Tulis dokumen bawaan yang belum ada. Hanya menulis yang benar-benar
   // kurang, jadi hasil suntinganmu tidak pernah tertimpa — dan kalau semuanya

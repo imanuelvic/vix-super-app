@@ -39,6 +39,7 @@ import { PriorityTab } from '@/components/tasks/PriorityTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
@@ -202,10 +203,9 @@ export default function TasksScreen() {
     fabSpin.value = withTiming(fabOpen ? 1 : 0, { duration: 200 });
   }, [fabOpen, fabSpin]);
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeTasks(
-      user.uid,
+  useLiveAll((uid) => [
+    subscribeTasks(
+      uid,
       (next) => {
         setTasks(next);
         setError(null);
@@ -215,16 +215,9 @@ export default function TasksScreen() {
         setError(loadErrorOf('task'));
         setLoading(false);
       },
-    );
-    return unsubscribe;
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    return subscribeOtherTasks(user.uid, setOtherTasks, () =>
-      setError(loadErrorOf('catatan')),
-    );
-  }, [user]);
+    ),
+    subscribeOtherTasks(uid, setOtherTasks, () => setError(loadErrorOf('catatan'))),
+  ]);
 
   // Beres-beres harian: task lama yang belum selesai → pindah ke hari ini;
   // yang sudah selesai & tanggalnya lewat → dihapus otomatis.

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,9 +28,10 @@ import { useAuth } from '@/contexts/auth';
 import { useAccordion } from '@/hooks/useAccordion';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useOwnerLeader } from '@/hooks/useOwnerLeader';
 import { formatDayDate, formatDecimal } from '@/lib/format';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 import { PRIVACY_PIN } from '@/lib/pin';
 import {
     MIN_FOCUS,
@@ -156,19 +157,21 @@ export default function WheelScreen() {
   // menjaga sisi atas, jadi ruang aman bawahnya ditambahkan ke footernya.
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    if (!user || !unlocked) return;
-    return subscribeWheel(
-      user.uid,
-      qid,
-      (next) => {
-        setData(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-      owner,
-    );
-  }, [user, qid, owner, unlocked, setData]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeWheel(
+        uid,
+        qid,
+        (next) => {
+          setData(next);
+          setError(null);
+        },
+        fail,
+        owner,
+      ),
+    ],
+    { onError: setError, deps: [qid, owner, setData], when: unlocked },
+  );
 
   function shift(delta: number) {
     const next = shiftQuarter(year, q, delta);

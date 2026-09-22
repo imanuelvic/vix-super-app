@@ -10,6 +10,7 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import {
@@ -68,48 +69,59 @@ export default function GratitudeScreen() {
   // gagal. Tanpa itu, satu kegagalan sekejap (mis. sinyal putus sedetik saat
   // layar dibuka) menempel selamanya: pesan "Gagal memuat data" tetap
   // terpampang di atas daftar syukur yang sebenarnya sudah tampil di bawahnya.
-  useEffect(() => {
-    if (!user) return;
-    return subscribeHabitSchedule(
-      user.uid,
-      (next) => {
-        setHabits(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeHabitSchedule(
+        uid,
+        (next) => {
+          setHabits(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeGratitudeDays(
-      user.uid,
-      (next) => {
-        setArsip(next);
-        setMenarik(false);
-        setError(null);
-      },
-      () => {
-        setMenarik(false);
-        setError(LOAD_ERROR);
-      },
-      jendela,
-    );
-  }, [user, jendela]);
+  useLiveAll(
+    (uid) => [
+      subscribeGratitudeDays(
+        uid,
+        (next) => {
+          setArsip(next);
+          setMenarik(false);
+          setError(null);
+        },
+        () => {
+          setMenarik(false);
+          setError(LOAD_ERROR);
+        },
+        jendela,
+      ),
+    ],
+    { deps: [jendela] },
+  );
 
-  useEffect(() => {
-    if (!user || !gratitudeId) return;
-    return subscribeHabitNotes(
-      user.uid,
-      gratitudeId,
-      (next) => {
-        setNotes(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-      jendela,
-    );
-  }, [user, gratitudeId, jendela]);
+  // Baris kebiasaannya belum ketemu (daftar belum termuat / tak ada) → belum
+  // ada yang bisa didengarkan.
+  useLiveAll(
+    (uid, fail) =>
+      gratitudeId === null
+        ? []
+        : [
+            subscribeHabitNotes(
+              uid,
+              gratitudeId,
+              (next) => {
+                setNotes(next);
+                setError(null);
+              },
+              fail,
+              jendela,
+            ),
+          ],
+    { onError: setError, deps: [gratitudeId, jendela] },
+  );
 
   const baru = arsip ?? [];
   const lama = notes?.days ?? [];

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,9 +21,10 @@ import { ConnectCoreButton } from '@/components/spiritual/ConnectCoreButton';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { purgeNoteLinks } from '@/lib/coreNotes';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
-import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 import {
   deleteSermon,
   saveSermon,
@@ -77,18 +78,20 @@ export default function SermonScreen() {
   const [fNote, setFNote] = useState('');
   const [fReflection, setFReflection] = useState('');
 
-  useEffect(() => {
-    if (!user || !sundayId) return;
-    return subscribeSermon(
-      user.uid,
-      sundayId,
-      (next) => {
-        setLoaded(next ?? 'kosong');
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user, sundayId, setLoaded]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeSermon(
+        uid,
+        sundayId,
+        (next) => {
+          setLoaded(next ?? 'kosong');
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError, deps: [sundayId, setLoaded], when: !!sundayId },
+  );
 
   const now = new Date();
   const bisaDiubah = sundayId ? sermonEditable(sundayId, now) : false;

@@ -28,6 +28,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
 import { openPayApp, payAppForFund } from '@/lib/payapps';
@@ -115,18 +116,20 @@ export default function FundScreen() {
   // begitu dompetnya berganti, `loaded` otomatis null lagi di render yang sama.
   const loading = loaded === null && error === null;
 
-  useEffect(() => {
-    if (!user || !key) return;
-    return subscribeFundEntries(
-      user.uid,
-      key,
-      (next) => {
-        setEntries(next);
-        setError(null);
-      },
-      () => setError(loadErrorOf('mutasi')),
-    );
-  }, [user, key, setEntries]);
+  useLiveAll(
+    (uid) => [
+      subscribeFundEntries(
+        uid,
+        key,
+        (next) => {
+          setEntries(next);
+          setError(null);
+        },
+        () => setError(loadErrorOf('mutasi')),
+      ),
+    ],
+    { deps: [key, setEntries], when: !!key },
+  );
 
   // TOTAL seperti di spreadsheet: debit (masuk), credit (keluar), saldo.
   const totals = useMemo(() => {

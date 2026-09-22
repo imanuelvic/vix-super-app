@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -14,9 +14,10 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { usePagination } from '@/hooks/usePagination';
 import { formatShortDayDateTime } from '@/lib/format';
-import { DELETE_ERROR, LOAD_ERROR } from '@/lib/messages';
+import { DELETE_ERROR } from '@/lib/messages';
 import {
   saveClaimedRewards,
   subscribeClaimedRewards,
@@ -40,17 +41,19 @@ export default function RewardArchiveScreen() {
   const [open, setOpen] = useState<ClaimedReward | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeClaimedRewards(
-      user.uid,
-      (next) => {
-        setList(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeClaimedRewards(
+        uid,
+        (next) => {
+          setList(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const items = list ?? [];
   const total = items.reduce((sum, r) => sum + r.price, 0);

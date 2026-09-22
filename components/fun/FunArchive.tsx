@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -16,6 +16,7 @@ import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { formatDecimal, formatShortDayDate } from '@/lib/format';
 import {
     EMPTY_FUN,
@@ -73,21 +74,23 @@ export function FunArchive({
   const loading = loaded === null;
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeFun(
-      user.uid,
-      (next) => {
-        setData(next);
-        setError(null);
-      },
-      () => {
-        // Gagal memuat → berhenti loading dengan arsip kosong + pesan galat.
-        setData(EMPTY_FUN);
-        setError(LOAD_ERROR);
-      },
-    );
-  }, [user, setData]);
+  useLiveAll(
+    (uid) => [
+      subscribeFun(
+        uid,
+        (next) => {
+          setData(next);
+          setError(null);
+        },
+        () => {
+          // Gagal memuat → berhenti loading dengan arsip kosong + pesan galat.
+          setData(EMPTY_FUN);
+          setError(LOAD_ERROR);
+        },
+      ),
+    ],
+    { deps: [setData] },
+  );
 
   const meta = funCategoryMeta(category);
   // Satu warna untuk tombol, garis tepi kartu, & baris rinciannya.

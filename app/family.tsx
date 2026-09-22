@@ -31,6 +31,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { currentAge, nextBirthday } from '@/lib/core';
 import {
     childrenOf,
@@ -48,7 +49,7 @@ import {
     type FamilyMember,
 } from '@/lib/family';
 import { MONTH_NAMES } from '@/lib/format';
-import { LOAD_ERROR, PHOTO_ERROR } from '@/lib/messages';
+import { PHOTO_ERROR } from '@/lib/messages';
 import { photoUri } from '@/lib/photo';
 
 // ================= Avatar (module-scope, identitas stabil) =================
@@ -285,18 +286,19 @@ export default function FamilyScreen() {
     null,
   );
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribeFamily(
-      user.uid,
-      (next) => {
-        setMembers(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-    return unsubscribe;
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeFamily(
+        uid,
+        (next) => {
+          setMembers(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   // Datang dari reminder ulang tahun Home (param `focus`) → pusatkan pohon ke
   // orang itu & naik ke atas biar pohonnya langsung kelihatan.

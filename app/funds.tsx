@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,7 +10,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { FUNDS, subscribeFundBalances, type FundBalances } from '@/lib/funds';
 import { loadErrorOf } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
@@ -19,24 +19,20 @@ import { formatRupiah } from '@/lib/transactions';
 // Tekan salah satu untuk membuka mutasinya.
 export default function FundsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-
   const [balances, setBalances] = useState<FundBalances>({});
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    // 1 listener untuk saldo semua dompet (dokumen kecil, bukan mutasinya).
-    const unsubscribe = subscribeFundBalances(
-      user.uid,
+  // 1 listener untuk saldo semua dompet (dokumen kecil, bukan mutasinya).
+  useLiveAll((uid) => [
+    subscribeFundBalances(
+      uid,
       (next) => {
         setBalances(next);
         setError(null);
       },
       () => setError(loadErrorOf('saldo')),
-    );
-    return unsubscribe;
-  }, [user]);
+    ),
+  ]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

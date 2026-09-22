@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,7 +8,7 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatWeekLabel } from '@/lib/format';
 import {
@@ -30,13 +30,9 @@ import {
 // BACA saja: mengubah rangkuman tetap di minggunya masing-masing (Learning ›
 // Target), jadi tidak pernah ada dua pintu edit untuk satu tulisan.
 export default function LearningArchiveScreen() {
-  const { user } = useAuth();
   const [notes, setNotes] = useState<LearningNote[] | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeLearningNotes(user.uid, setNotes, () => setNotes([]));
-  }, [user]);
+  useLiveAll((uid) => [subscribeLearningNotes(uid, setNotes, () => setNotes([]))]);
 
   const { currentPage, pageCount, pageItems, setPage } = usePagination(
     notes ?? [],

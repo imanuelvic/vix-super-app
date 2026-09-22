@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useKeyedData } from '@/hooks/useKeyedData';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useOwnerLeader } from '@/hooks/useOwnerLeader';
 import { formatDayDate, MONTH_NAMES } from '@/lib/format';
 import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
@@ -103,19 +104,21 @@ export default function TimelineScreen() {
   const rekapAwal = params.rekap === '1';
   const [rekapOpen, setRekapOpen] = useState(rekapAwal);
 
-  useEffect(() => {
-    if (!user || !unlocked) return;
-    return subscribeTimelineYear(
-      user.uid,
-      year,
-      (next) => {
-        setItems(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-      owner,
-    );
-  }, [user, year, owner, unlocked, setItems]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeTimelineYear(
+        uid,
+        year,
+        (next) => {
+          setItems(next);
+          setError(null);
+        },
+        fail,
+        owner,
+      ),
+    ],
+    { onError: setError, deps: [year, owner, setItems], when: unlocked },
+  );
 
   const age = year - birthYear; // ulang tahun 1 Januari → pas per tahun
   const doneCount = items?.filter((i) => i.done).length ?? 0;

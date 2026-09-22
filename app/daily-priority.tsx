@@ -17,9 +17,10 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { formatGreetingDate } from '@/lib/format';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   EMPTY_PRIORITY,
   PRIORITY_COUNT,
@@ -54,12 +55,10 @@ export default function DailyPriorityScreen() {
   );
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribePriorityDay(user.uid, todayId, setDay, () =>
-      setError(LOAD_ERROR),
-    );
-  }, [user, todayId]);
+  useLiveAll((uid, fail) => [subscribePriorityDay(uid, todayId, setDay, fail)], {
+    onError: setError,
+    deps: [todayId],
+  });
 
   // Isi draft SEKALI per hari: saat datanya pertama datang, dan lagi kalau
   // harinya berganti. Kalau disamakan tiap snapshot, tulisan yang sedang

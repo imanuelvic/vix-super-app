@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import {
     ageAtYear,
@@ -38,7 +39,7 @@ import {
     type HistoryCategoryKey,
     type HistoryItem,
 } from '@/lib/history';
-import { DELETE_ERROR, LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
 // My History 📜 — perjalanan hidup yang sudah dilewati, dikelompokkan per
 // tahun. Pasangan dari My Timeline 📍 (rencana ke depan): yang satu melihat ke
@@ -70,17 +71,19 @@ export default function HistoryScreen() {
   const [fTitle, setFTitle] = useState('');
   const [fDetail, setFDetail] = useState('');
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeHistory(
-      user.uid,
-      (next) => {
-        setItems(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeHistory(
+        uid,
+        (next) => {
+          setItems(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const all = items ?? [];
   const thisYear = new Date().getFullYear();

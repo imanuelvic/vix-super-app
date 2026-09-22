@@ -115,10 +115,7 @@ export default function FinanceScreen() {
   const [debts, setDebts] = useState<Debt[]>([]);
   const { now: liveNow } = useNow();
 
-  useEffect(() => {
-    if (!user || !unlocked) return;
-    return subscribeDebts(user.uid, setDebts);
-  }, [user, unlocked]);
+  useLiveAll((uid) => [subscribeDebts(uid, setDebts)], { when: unlocked });
 
   useLiveAll(
     (uid) => [
@@ -154,38 +151,34 @@ export default function FinanceScreen() {
     purgeRemovedBudgets(user.uid).catch(() => {});
   }, [user, unlocked]);
 
-  useEffect(() => {
-    if (!user || !unlocked) return;
-    // Real-time, hanya untuk bulan yang dipilih.
-    // Urutan dari Firestore: date DESC — tanggal terkini selalu paling atas.
-    return subscribeTransactionsByMonth(
-      user.uid,
-      year,
-      month,
-      (next) => {
-        setItems(next);
-        setError(null);
-      },
-      () => {
-        // Gagal memuat → berhenti loading dengan daftar kosong + pesan galat.
-        setItems([]);
-        setError(LOAD_ERROR);
-      },
-    );
-  }, [user, year, month, unlocked, setItems]);
-
-  // Langganan budget bulan ini (1 dokumen kecil). Error diabaikan diam-diam —
-  // pewarnaan budget hanya pelengkap, tak boleh mengganggu daftar transaksi.
-  useEffect(() => {
-    if (!user || !unlocked) return;
-    return subscribeBudget(user.uid, year, month, setBudgetDoc, () => {});
-  }, [user, year, month, unlocked]);
+  // Transaksi & budget bulan yang dipilih — keduanya berganti bersama bulannya.
+  //   • Transaksi real-time; urutan dari Firestore: date DESC — tanggal terkini
+  //     selalu paling atas. Gagal memuat → berhenti loading dengan daftar
+  //     kosong + pesan galat.
+  //   • Budget (1 dokumen kecil): errornya diabaikan diam-diam — pewarnaan
+  //     budget hanya pelengkap, tak boleh mengganggu daftar transaksi.
+  useLiveAll(
+    (uid) => [
+      subscribeTransactionsByMonth(
+        uid,
+        year,
+        month,
+        (next) => {
+          setItems(next);
+          setError(null);
+        },
+        () => {
+          setItems([]);
+          setError(LOAD_ERROR);
+        },
+      ),
+      subscribeBudget(uid, year, month, setBudgetDoc, () => {}),
+    ],
+    { deps: [year, month, setItems], when: unlocked },
+  );
 
   // Langganan daftar sub-kategori (1 dokumen kecil, tidak per bulan).
-  useEffect(() => {
-    if (!user || !unlocked) return;
-    return subscribeSubcategories(user.uid, setSubcats, () => {});
-  }, [user, unlocked]);
+  useLiveAll((uid) => [subscribeSubcategories(uid, setSubcats, () => {})], { when: unlocked });
 
   // Belum buka PIN → tampilkan keypad, isi Finance belum dirender sama sekali.
   // Batal → kembali ke layar sebelumnya (Finance kini dibuka dari grid Home).

@@ -11,33 +11,33 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SearchBar } from '@/components/common/SearchBar';
 import { VixText } from '@/components/common/VixText';
-import { useAuth } from '@/contexts/auth';
+import { useLiveAll } from '@/hooks/useLiveAll';
 import { usePagination } from '@/hooks/usePagination';
 import { formatFullDate } from '@/lib/format';
-import { LOAD_ERROR } from '@/lib/messages';
 import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
 // Riwayat Revive 📖 — seluruh Revive yang pernah ditulis, dengan pencarian
 // (judul/isi) & pagination 10 per halaman. Click Revive → editor untuk baca/ubah.
 export default function ReviveHistoryScreen() {
   const router = useRouter();
-  const { user } = useAuth();
 
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
-  useEffect(() => {
-    if (!user) return;
-    return subscribeReviveEntries(
-      user.uid,
-      (next) => {
-        setEntries(next);
-        setError(null);
-      },
-      () => setError(LOAD_ERROR),
-    );
-  }, [user]);
+  useLiveAll(
+    (uid, fail) => [
+      subscribeReviveEntries(
+        uid,
+        (next) => {
+          setEntries(next);
+          setError(null);
+        },
+        fail,
+      ),
+    ],
+    { onError: setError },
+  );
 
   const q = query.trim().toLowerCase();
   const filtered = q
