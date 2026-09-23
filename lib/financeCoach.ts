@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Schema } from 'firebase/ai';
 
 import { guardedAiCall } from './aiGuard';
+import { aturanEmoji, GAYA_BAHASA, rapikanEmoji, tanpaEmoji } from './aiStyle';
 import type { BudgetDoc } from './budgets';
 import type { FocusProgress } from './financeFocus';
 import {
@@ -17,7 +18,6 @@ import {
   geminiModel,
   parseJsonAnswer,
   stripEmDash,
-  TANDA_PISAH,
   withModelFallback,
 } from './gemini';
 import { MONTH_NAMES } from './format';
@@ -231,6 +231,12 @@ export function factsHash(facts: CoachFacts): string {
 
 // ---------- Model ----------
 
+/**
+ * Jatah emoji Coach: SATU, dan hanya di ujung headline. Poin DATA /
+ * INTERPRETASI / SARAN tetap bersih supaya angkanya yang terbaca duluan.
+ */
+export const COACH_EMOJI_MAX = 1;
+
 const SYSTEM = `Kamu adalah Vix Financial Coach: teman yang mengenal pola keuangan pemilik aplikasi (satu orang, di Indonesia, mata uang Rupiah) dan membantunya tetap sadar sebelum mengambil keputusan pengeluaran. Kamu BUKAN penasihat keuangan profesional.
 
 Kamu hanya menerima RINGKASAN ANGKA (JSON): budget dan realisasi per kategori bulan ini, safe-to-spend, riwayat beberapa bulan, dan fokus mingguan. Tidak ada transaksi satuan. Jawab HANYA dari angka itu.
@@ -249,11 +255,15 @@ Aturan nada, sangat penting:
 - Keputusan tetap milik pemiliknya; kamu meningkatkan kesadaran, bukan mengontrol.
 
 Bentuk jawaban (JSON):
-- headline: satu kalimat inti (maksimal 25 kata).
-- data: 1 sampai 3 poin angka apa adanya.
-- interpretasi: 1 sampai 2 poin tentatif.
-- saran: 1 sampai 2 poin yang bisa dilakukan; untuk pertanyaan mingguan/bulanan, poin terakhir diawali "Fokus: ".
-Total di bawah 120 kata. Bahasa Indonesia. Tanpa markdown, tanpa emoji, tanpa tanda pisah panjang "${TANDA_PISAH}".`;
+- headline: satu kalimat inti, maksimal 20 kata, boleh diakhiri SATU emoji.
+- data: 1 sampai 3 poin angka apa adanya, tanpa emoji.
+- interpretasi: 1 sampai 2 poin tentatif, tanpa emoji.
+- saran: 1 sampai 2 poin yang bisa dilakukan, tanpa emoji; untuk pertanyaan mingguan/bulanan, poin terakhir diawali "Fokus: ".
+Total di bawah 100 kata. Bahasa Indonesia.
+
+${GAYA_BAHASA}
+
+${aturanEmoji(COACH_EMOJI_MAX)}`;
 
 const SKEMA = Schema.object({
   properties: {
@@ -303,11 +313,13 @@ export function finalizeCoachAnswer(jawaban: unknown): CoachAnswer {
       .replace(/\bimpulsif\b/gi, 'tidak direncanakan')
       .replace(/\bburuk\b/gi, 'perlu diperhatikan');
   const rapikan = (s: string) => (KATA_TERLARANG.test(s) ? halus(s) : s);
+  // Emoji cuma boleh menutup headline; poinnya angka, biar bersih.
+  const poin = (s: string) => tanpaEmoji(rapikan(s));
   return {
-    headline: rapikan(headline),
-    data: daftar(j?.data, 3).map(rapikan),
-    interpretasi: daftar(j?.interpretasi, 2).map(rapikan),
-    saran: daftar(j?.saran, 2).map(rapikan),
+    headline: rapikanEmoji(rapikan(headline), COACH_EMOJI_MAX),
+    data: daftar(j?.data, 3).map(poin),
+    interpretasi: daftar(j?.interpretasi, 2).map(poin),
+    saran: daftar(j?.saran, 2).map(poin),
   };
 }
 

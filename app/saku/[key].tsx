@@ -41,7 +41,7 @@ import {
   updateFundEntry,
   type FundDirection,
   type FundEntry,
-} from '@/lib/funds';
+} from '@/lib/saku';
 import { DELETE_ERROR, loadErrorOf, SAVE_ERROR } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 

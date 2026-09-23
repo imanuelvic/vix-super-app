@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 
 import { ReminderCard } from '@/components/common/ReminderCard';
-import { HOME_FEATURES } from '@/lib/homeGrid';
+import { HOME_FEATURES } from '@/lib/featureGrid';
 
 // Kartu reminder untuk badge yang BELUM punya kartunya sendiri di Dashboard.
 //

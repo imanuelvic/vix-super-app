@@ -322,6 +322,7 @@ export function pointGrowth(
 export type NewsSource =
   | 'christian'
   | 'bloomberg'
+  | 'crypto'
   | 'world'
   | 'indonesia'
   | 'tech'
@@ -338,6 +339,7 @@ export const NEWS_SOURCES: {
   { key: 'indonesia', label: 'Indo', emoji: '🇮🇩', sub: 'Indonesia · dalam negeri' },
   { key: 'world', label: 'Dunia', emoji: '🌏', sub: 'berita umum' },
   { key: 'bloomberg', label: 'Bisnis', emoji: '📈', sub: 'Bloomberg · bisnis & pasar' },
+  { key: 'crypto', label: 'Crypto', emoji: '🪙', sub: 'Bitcoin & kripto · kenapa naik, kenapa turun' },
   { key: 'christian', label: 'Kristen', emoji: '✝️', sub: 'gereja & kekristenan dunia' },
 ];
 
@@ -371,6 +373,21 @@ const NEWS_FEEDS: Record<NewsSource, Feed[]> = {
   bloomberg: [
     {
       url: 'https://news.google.com/rss/search?q=site:bloomberg.com+when:7d&hl=en-US&gl=US&ceid=US:en',
+    },
+  ],
+  // 🪙 Crypto — yang dicari BUKAN sekadar "ada berita kripto", tapi ALASAN
+  // harganya bergerak. Karena itu empat feed dengan tugas berbeda: dua media
+  // kripto yang memang menulis analisis harian, satu pencarian yang memang
+  // berisi judul "kenapa" (bitcoin price / crypto market), dan satu feed
+  // Indonesia supaya kabar regulasi & pajak kripto di sini ikut masuk.
+  crypto: [
+    { url: 'https://www.coindesk.com/arc/outboundfeeds/rss/', source: 'CoinDesk' },
+    { url: 'https://cointelegraph.com/rss', source: 'Cointelegraph' },
+    {
+      url: 'https://news.google.com/rss/search?q=bitcoin+price+OR+crypto+market+when:2d&hl=en-US&gl=US&ceid=US:en',
+    },
+    {
+      url: 'https://news.google.com/rss/search?q=kripto+OR+bitcoin+when:7d&hl=id&gl=ID&ceid=ID:id',
     },
   ],
   world: [

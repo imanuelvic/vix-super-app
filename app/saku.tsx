@@ -11,7 +11,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useLiveAll } from '@/hooks/useLiveAll';
-import { FUNDS, subscribeFundBalances, type FundBalances } from '@/lib/funds';
+import { FUNDS, subscribeFundBalances, type FundBalances } from '@/lib/saku';
 import { loadErrorOf } from '@/lib/messages';
 import { formatRupiah } from '@/lib/transactions';
 
@@ -53,7 +53,7 @@ export default function FundsScreen() {
               style={styles.row}
               onPress={() =>
                 router.push({
-                  pathname: '/fund/[key]',
+                  pathname: '/saku/[key]',
                   params: { key: fund.key },
                 })
               }>

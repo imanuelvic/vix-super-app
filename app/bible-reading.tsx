@@ -184,7 +184,7 @@ export default function BibleReadingScreen() {
       // adalah yang barusan kamu tulis — bukan sesi yang kebetulan sedang
       // berjalan.
       router.replace({
-        pathname: '/spiritual',
+        pathname: '/walk',
         params: { tab: 'bible', session },
       });
     });

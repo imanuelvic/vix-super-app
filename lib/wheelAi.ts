@@ -1,13 +1,13 @@
 import { Schema } from 'firebase/ai';
 
 import { guardedAiCall } from './aiGuard';
+import { GAYA_SETIA, tanpaEmoji, TANPA_EMOJI } from './aiStyle';
 import {
   AiAnswerError,
   geminiErrorMessage,
   geminiModel,
   parseJsonAnswer,
   stripEmDash,
-  TANDA_PISAH,
   withModelFallback,
 } from './gemini';
 import { WHEEL_AREAS, type WheelAreaKey } from './wheel';
@@ -35,8 +35,11 @@ Aturan:
 3. Satu poin = satu hal. Kalimat panjang yang memuat dua hal boleh dipecah jadi dua poin.
 4. Singkatan yang sulit dibaca boleh dilengkapi ("yg" menjadi "yang", "dgn" menjadi "dengan"); singkatan gaul yang jelas dibiarkan.
 5. Catatan yang kosong tetap kosong (kembalikan string kosong).
-6. Jangan memakai tanda pisah panjang "${TANDA_PISAH}" sama sekali. Pakai koma atau titik.
-7. Jangan memakai markdown selain "- " di awal baris, jangan judul, jangan emoji; nama areanya sudah ditulis oleh aplikasi.`;
+6. Jangan memakai markdown selain "- " di awal baris, dan jangan menulis judul; nama areanya sudah ditulis oleh aplikasi.
+
+${GAYA_SETIA}
+
+${TANPA_EMOJI}`;
 
 // Jawaban dipaksa JSON dengan kunci = kedelapan area (structured output).
 const SKEMA = Schema.object({
@@ -102,7 +105,7 @@ export function finalizeWheelAnswer(
       continue;
     }
     if (typeof v !== 'string') throw new AiAnswerError('Jawaban AI tidak lengkap. Coba lagi.');
-    hasil[a.key] = stripEmDash(v)
+    hasil[a.key] = tanpaEmoji(stripEmDash(v))
       .split('\n')
       .map((baris) => baris.trim())
       .filter(Boolean)

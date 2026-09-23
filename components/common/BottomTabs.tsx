@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ComponentProps } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
@@ -53,12 +53,43 @@ export function BottomTabs<T extends string>({
   tabs,
   value,
   onChange,
+  placement = 'bottom',
 }: {
   tabs: BottomTab<T>[];
   value: T;
   onChange: (key: T) => void;
+  /**
+   * 'top' (22 Sep 2026): deretan PIL di bawah pita header — untuk layar yang
+   * sudah menjadi tab utama (Walk · CORE · Work). Dua tab bar bertumpuk di
+   * kaki layar tidak enak dipakai, jadi sub-tabnya naik ke atas. Warna &
+   * badge-nya sama; hanya bentuknya yang jadi pil, bisa digeser kalau lebih
+   * dari muat.
+   */
+  placement?: 'bottom' | 'top';
 }) {
   const theme = useFeatureTheme();
+  // Ruang aman bawah (dipakai mode bawah saja; hook harus dipanggil selalu).
+  const insets = useSafeAreaInsets();
+  if (placement === 'top') {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.topBar}
+        contentContainerStyle={styles.topBarContent}>
+        {tabs.map((t) => (
+          <TopTab
+            key={t.key}
+            tab={t}
+            active={value === t.key}
+            bg={theme.bg}
+            fg={theme.fg}
+            onPress={() => onChange(t.key)}
+          />
+        ))}
+      </ScrollView>
+    );
+  }
   // Pita di BAWAH tab bar (area home indicator iPhone) ikut jadi putih.
   //
   // Dulu pita itu berwarna krem: layar fiturnya memakai SafeAreaView
@@ -72,7 +103,6 @@ export function BottomTabs<T extends string>({
   // isi layar, tombol melayang (mis. FAB Reminder), dan posisi tulisan tab
   // TIDAK bergeser sedikit pun; yang berubah cuma latar putihnya kini
   // menutup sampai ujung bawah layar.
-  const insets = useSafeAreaInsets();
   return (
     <View
       style={[
@@ -176,7 +206,51 @@ function Tab<T extends string>({
   );
 }
 
+// Satu pil sub-tab di ATAS (placement="top"): ikon + label sebaris; yang aktif
+// berlatar pastel fitur, yang lain putih bergaris rambut.
+function TopTab<T extends string>({
+  tab,
+  active,
+  bg,
+  fg,
+  onPress,
+}: {
+  tab: BottomTab<T>;
+  active: boolean;
+  bg: string;
+  fg: string;
+  onPress: () => void;
+}) {
+  return (
+    <PressableScale
+      style={[styles.pill, active && { backgroundColor: bg, borderColor: bg }]}
+      onPress={onPress}>
+      <IconSymbol name={tab.icon} size={16} color={active ? fg : Color.TEXT_LABEL} />
+      <VixText heading="label" additionalStyle={active ? { color: fg } : undefined}>
+        {tab.label}
+      </VixText>
+      <Badge count={tab.badge ?? 0} style={styles.pillBadge} />
+    </PressableScale>
+  );
+}
+
 const styles = StyleSheet.create({
+  // Deretan pil di bawah pita header. Tidak ikut menggulung bersama isi
+  // (berdiri di luar ScrollView layar), jadi selalu terjangkau.
+  topBar: { flexGrow: 0 },
+  topBarContent: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 8, gap: 8 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    backgroundColor: Color.CONTAINER,
+  },
+  pillBadge: { position: 'absolute', top: -6, right: -6 },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: Color.CONTAINER,

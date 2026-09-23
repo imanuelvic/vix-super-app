@@ -300,7 +300,7 @@ export function WaterFloat() {
   // muncul/hilangnya bisa dianimasikan.
   const sembunyi =
     !user ||
-    pathname.startsWith('/morning-prayer') ||
+    pathname.startsWith('/morning-journey') ||
     pathname.startsWith('/login') ||
     featureKeyForRoute(pathname) === 'core' ||
     ((pathname.startsWith('/wheel') || pathname.startsWith('/timeline')) && !!leaderId) ||

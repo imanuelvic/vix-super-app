@@ -164,7 +164,7 @@ export default function ProjectEditScreen() {
         (projects ?? []).filter((p) => p.id !== id),
       );
       // Layar rincian proyek ini ikut hilang — kembali ke daftar Freelance.
-      router.dismissTo('/career');
+      router.dismissTo('/work');
     } catch {
       setError(DELETE_ERROR);
       setBusy(false);

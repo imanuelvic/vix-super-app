@@ -138,9 +138,10 @@ export default function CoreScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Tab utama CORE 👥 (22 Sep 2026): tanpa tombol kembali, sub-tabnya
+          jadi pil di bawah pita — tab bar utama sudah di kaki layar. */}
       <ScreenHeader
-        backLabel="Home"
         title="CORE 🙏"
         subtitle="Gembalakan & muridkan CORE Leader-mu"
         // Tombol kanan atas menyesuaikan tab yang aktif:
@@ -198,6 +199,22 @@ export default function CoreScreen() {
         }
       />
 
+      {/* Badge sub-tab dihitung DARI SUMBER YANG SAMA dengan badge tab CORE
+          di kaki app (coreAttention di lib/core.ts), jadi angka di luar selalu
+          punya tujuan di dalam:
+            Visitation → acara yang panduannya perlu dikirim hari ini
+            Follow Up  → CL fokus yang belum di-follow up HARI INI
+                         + ulang tahun hari ini yang belum diucapkan */}
+      <BottomTabs
+        placement="top"
+        tabs={withBadge(TABS, {
+          visitation: perhatian.visitation,
+          followup: perhatian.followup,
+        })}
+        value={tab}
+        onChange={onTabPress}
+      />
+
       <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
@@ -228,23 +245,6 @@ export default function CoreScreen() {
         )}
       </View>
 
-      {/* Badge sub-tab dihitung DARI SUMBER YANG SAMA dengan badge tile CORE
-          di Home (coreAttention di lib/core.ts), jadi angka di luar selalu
-          punya tujuan di dalam:
-            Visitation → acara yang panduannya perlu dikirim hari ini
-            Follow Up  → CL fokus yang belum di-follow up HARI INI
-                         + ulang tahun hari ini yang belum diucapkan
-          Keduanya memakai syarat yang sama persis dengan tanda merah di
-          kartunya masing-masing di dalam sub-tab — tak ada lagi kartu merah
-          yang badge-nya diam. */}
-      <BottomTabs
-        tabs={withBadge(TABS, {
-          visitation: perhatian.visitation,
-          followup: perhatian.followup,
-        })}
-        value={tab}
-        onChange={onTabPress}
-      />
     </SafeAreaView>
   );
 }

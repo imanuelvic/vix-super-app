@@ -7,6 +7,7 @@ import { ChipRow } from '@/components/common/ChipRow';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
+import { CryptoPulse } from '@/components/news/CryptoPulse';
 import { NewsCard } from '@/components/news/NewsCard';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { openExternalUrl } from '@/lib/linking';
@@ -103,6 +104,9 @@ export function NewsTab({
       <VixText heading="label" additionalStyle={styles.sourceSub}>
         {aktif.emoji} {aktif.sub}
       </VixText>
+      {/* Khusus Crypto: harga Bitcoin hari ini di atas judul-judulnya, supaya
+          "naik atau turun" dan "kenapa" terbaca sebagai satu cerita. */}
+      {source === 'crypto' ? <CryptoPulse /> : null}
 
       {items === null && busy ? (
         <LoadingCenter />

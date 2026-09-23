@@ -22,6 +22,7 @@ import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SelectField, textOptions } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
 import { useTabScroll } from '@/components/common/useTabScroll';
+import { BackRow } from '@/components/common/BackRow';
 import { VixText } from '@/components/common/VixText';
 import { BodyCard } from '@/components/health/BodyCard';
 import { PersonalityTab } from '@/components/profile/PersonalityTab';
@@ -314,6 +315,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <BackRow />
       {/* Judul + subtab: Profile · Personality · Ikigai · SWOT */}
       <View style={styles.headerWrap}>
         <View style={styles.headerRow}>

@@ -8,6 +8,8 @@ import { AffiliateTab } from '@/components/career/AffiliateTab';
 import { BusinessTab } from '@/components/career/BusinessTab';
 import { FreelanceTab } from '@/components/career/FreelanceTab';
 import { FulltimeTab } from '@/components/career/FulltimeTab';
+import { WorkFocusTab } from '@/components/career/WorkFocusTab';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import {
   BottomTabs,
   withBadge,
@@ -32,10 +34,12 @@ import {
   type RoadmapItem,
 } from '@/lib/career';
 
-type CareerTab = 'fulltime' | 'freelance' | 'affiliate' | 'business';
+type CareerTab = 'focus' | 'fulltime' | 'freelance' | 'affiliate' | 'business';
 
-// Tab bar bawah di dalam layar Career.
+// Sub-tab Work (pil di bawah pita). Focus = "apa yang harus kukirim hari
+// ini?": P1, tenggat ≤ 7 hari, task WORK hari ini, & 3 prioritas harian.
 const TABS: BottomTab<CareerTab>[] = [
+  { key: 'focus', label: 'Focus', icon: 'target' },
   { key: 'fulltime', label: 'Fulltime', icon: 'laptopcomputer' },
   { key: 'freelance', label: 'Freelance', icon: 'globe' },
   { key: 'affiliate', label: 'Affiliate', icon: 'megaphone.fill' },
@@ -60,7 +64,7 @@ export default function CareerScreen() {
   }, [editParam, router]);
   // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan, plus buka
   // sub-tab tertentu lewat ?tab=… (reminder Dashboard & deep link).
-  const { tab, scrollKey, onTabPress } = useTabScroll<CareerTab>('fulltime', {
+  const { tab, scrollKey, onTabPress } = useTabScroll<CareerTab>('focus', {
     tabs: TABS,
   });
 
@@ -86,11 +90,35 @@ export default function CareerScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Tab utama Work 💼 (22 Sep 2026): Focus (yang harus dikirim hari ini)
+          + keempat topi Career; Reminder ✅ (task harian & prioritas) dibuka
+          dari tombol pojok kanan. Tanpa tombol kembali, sub-tab jadi pil. */}
       <ScreenHeader
-        backLabel="Home"
-        title="Career 💼"
+        title="Work 💼"
         subtitle="Kerjakan segenap hati, hasilnya menyusul"
+        right={<EmojiButton emoji="✅" onPress={() => router.push('/tasks')} />}
+      />
+
+      {/* Badge = pecahan dari badge tab Work di kaki app: P1 Fulltime yang
+          belum selesai, dan Freelance yang deadline-nya sudah H-7. */}
+      <BottomTabs
+        placement="top"
+        tabs={withBadge(TABS, {
+          fulltime: (roadmap ?? []).filter(
+            (r) =>
+              r.status !== 'done' &&
+              effectiveRoadmap(r, new Date()).priority === 1,
+          ).length,
+          freelance: (freelance ?? []).filter((p) =>
+            freelanceReminderWindow(p, new Date()),
+          ).length,
+          // Ide konten yang belum tayang — sengaja TIDAK ikut ke badge tab
+          // Work: ide yang menunggu itu antrean kreatif, bukan tagihan harian.
+          affiliate: pendingIdeas(ideas ?? []),
+        })}
+        value={tab}
+        onChange={onTabPress}
       />
 
       <ScreenError message={error} />
@@ -98,6 +126,8 @@ export default function CareerScreen() {
       <View style={styles.content} key={scrollKey}>
         {roadmap === null || freelance === null || ideas === null ? (
           <LoadingCenter />
+        ) : tab === 'focus' ? (
+          <WorkFocusTab roadmap={roadmap} freelance={freelance} />
         ) : tab === 'fulltime' ? (
           <FulltimeTab
             items={roadmap}
@@ -116,27 +146,6 @@ export default function CareerScreen() {
           <BusinessTab />
         )}
       </View>
-
-      {/* Badge = pecahan dari badge tile Career di Home: P1 Fulltime yang
-          belum selesai, dan Freelance yang deadline-nya sudah H-7. */}
-      <BottomTabs
-        tabs={withBadge(TABS, {
-          fulltime: (roadmap ?? []).filter(
-            (r) =>
-              r.status !== 'done' &&
-              effectiveRoadmap(r, new Date()).priority === 1,
-          ).length,
-          freelance: (freelance ?? []).filter((p) =>
-            freelanceReminderWindow(p, new Date()),
-          ).length,
-          // Ide konten yang belum tayang — sengaja TIDAK ikut ke badge tile
-          // Career di Home: ide yang menunggu itu antrean kreatif, bukan
-          // tagihan harian, dan tidak boleh ikut membuat Home terlihat penuh.
-          affiliate: pendingIdeas(ideas ?? []),
-        })}
-        value={tab}
-        onChange={onTabPress}
-      />
     </SafeAreaView>
   );
 }

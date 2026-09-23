@@ -16,6 +16,10 @@ import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 // sebuah fitur dibuka, warnanya ikut masuk: bukan cuma judulnya yang berganti,
 // tapi seluruh kepala layarnya. Layar di luar fitur (Achievement, Timeline,
 // Riwayat) memakai pita warna merek, jadi bentuknya tetap seragam.
+//
+// `backLabel` opsional (22 Sep 2026): layar yang menjadi TAB UTAMA (Walk ·
+// CORE · Work) tidak punya "kembali" — tanpa label, baris kembalinya tidak
+// digambar dan judulnya naik mengisi tempatnya.
 export function ScreenHeader({
   backLabel,
   title,
@@ -23,7 +27,7 @@ export function ScreenHeader({
   right,
   children,
 }: {
-  backLabel: string;
+  backLabel?: string;
   title: string;
   subtitle?: string;
   right?: React.ReactNode;
@@ -49,15 +53,19 @@ export function ScreenHeader({
           marginTop: -insets.top,
         },
       ]}>
-      <PressableScale
-        style={styles.backRow}
-        onPress={() => router.back()}
-        hitSlop={8}>
-        <IconSymbol name="chevron.left" size={22} color={theme.fg} />
-        <VixText heading="bold" additionalStyle={{ color: theme.fg }}>
-          {backLabel}
-        </VixText>
-      </PressableScale>
+      {backLabel ? (
+        <PressableScale
+          style={styles.backRow}
+          onPress={() => router.back()}
+          hitSlop={8}>
+          <IconSymbol name="chevron.left" size={22} color={theme.fg} />
+          <VixText heading="bold" additionalStyle={{ color: theme.fg }}>
+            {backLabel}
+          </VixText>
+        </PressableScale>
+      ) : (
+        <View style={styles.noBack} />
+      )}
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.titleBox}>
@@ -123,6 +131,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 6,
   },
+  // Tab utama: sedikit napas di atas judul sebagai ganti baris kembali.
+  noBack: { height: 6 },
   subtitle: { opacity: 0.78 },
   header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 12 },
   titleRow: {

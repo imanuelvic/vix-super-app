@@ -1,81 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { Chip } from '@/components/common/Chip';
+import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
-import {
-  financeNotifyEnabled,
-  NOTIFY_EVENING,
-  NOTIFY_MORNING,
-  notifyAvailable,
-  setFinanceNotifyEnabled,
-  type NotifyStatus,
-} from '@/lib/financeNotify';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { notifyAvailable } from '@/lib/notify';
 
-// 🔔 Sakelar pengingat harian Finance (notifikasi lokal HP, lihat
-// lib/financeNotify.ts). Isinya tanpa nominal. Di build yang belum memuat
-// expo-notifications, kartunya jujur bilang butuh build baru.
+// 🔔 Pintu ke layar Pengingat dari Dashboard Finance.
+//
+// Sakelarnya sendiri sudah pindah ke satu tempat (app/notifications.tsx, 23 Sep
+// 2026): sejak pengingatnya bukan cuma Finance, dua sakelar untuk hal yang sama
+// cuma bikin bingung mana yang menang. Yang tinggal di sini tautannya, plus
+// keterangan jam & janji "tanpa nominal" — itu yang memang khas Finance.
 export function NotifyCard() {
-  const [on, setOn] = useState(false);
-  const [status, setStatus] = useState<NotifyStatus | null>(null);
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
   const tersedia = notifyAvailable();
-
-  useEffect(() => {
-    let hidup = true;
-    financeNotifyEnabled().then((v) => {
-      if (hidup) setOn(v);
-    });
-    return () => {
-      hidup = false;
-    };
-  }, []);
-
-  async function ubah(next: boolean) {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const s = await setFinanceNotifyEnabled(next);
-      setStatus(s);
-      setOn(s === 'ok' ? next : false);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const jam = (t: { hour: number; minute: number }) =>
-    `${String(t.hour).padStart(2, '0')}.${String(t.minute).padStart(2, '0')}`;
-
   return (
-    <View style={styles.card}>
+    <PressableScale style={styles.card} onPress={() => router.push('/notifications')}>
       <View style={styles.main}>
         <VixText heading="bold" additionalStyle={styles.title}>
           🔔 Pengingat harian di HP
         </VixText>
         <VixText heading="label">
-          Pagi {jam(NOTIFY_MORNING)} status jatah hari ini · malam {jam(NOTIFY_EVENING)} catat
-          pengeluaran. Tanpa nominal.
+          Pagi 07.30 status jatah hari ini · malam 20.30 catat pengeluaran. Tanpa nominal.
         </VixText>
         {!tersedia && (
           <VixText heading="label" additionalStyle={styles.warn}>
             Butuh build app baru (expo-notifications belum ada di build ini).
           </VixText>
         )}
-        {status === 'denied' && (
-          <VixText heading="label" additionalStyle={styles.warn}>
-            Izin notifikasi ditolak. Nyalakan di Pengaturan iPhone › vix › Notifikasi.
-          </VixText>
-        )}
       </View>
-      <Chip
-        label={on ? 'Aktif' : 'Nonaktif'}
-        active={on}
-        onPress={() => ubah(!on)}
-        additionalStyle={!tersedia || busy ? styles.off : undefined}
-      />
-    </View>
+      <IconSymbol name="chevron.right" size={18} color={Color.TEXT_PLACEHOLDER} />
+    </PressableScale>
   );
 }
 
@@ -94,5 +52,4 @@ const styles = StyleSheet.create({
   main: { flex: 1, gap: 2 },
   title: { color: Color.TEXT_TITLE },
   warn: { color: Color.WARNING },
-  off: { opacity: 0.45 },
 });

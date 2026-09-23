@@ -1,16 +1,25 @@
 # AI di vix: gratis dulu, gagal-aman terhadap biaya
 
-Dua fitur AI saat ini, keduanya lewat satu pintu `lib/gemini.ts`:
+Empat fitur AI saat ini, semuanya lewat satu pintu `lib/gemini.ts`:
 
 - **✨ Rapihkan dengan AI** di CORE › Monthly › Ubah Notulen (`lib/notulenAi.ts`).
+- **✨ Rapihkan jawaban Wheel of Life** (`lib/wheelAi.ts`): catatan visitasi jadi
+  poin-poin, bahasanya tetap bahasa si CL.
+- **🤖 Vix Financial Coach** di Dashboard Finance (`lib/financeCoach.ts`): hanya
+  menerima ringkasan angka, tidak pernah transaksi satuan.
 - **✨ AI Reflection** di Habits › 📓 Daily Reflection Journal
   (`lib/reflectionAi.ts`, panel `components/habits/ReflectionAiPanel.tsx`):
-  merapikan tulisan refleksi dan menambahkan satu-dua kalimat renungan yang
-  tentatif, tanpa mengubah makna atau mengarang kejadian. Sekali sehari untuk
+  merapikan tulisan refleksi jadi catatan PENDEK yang siap dibaca ulang atau
+  dibagikan, tanpa mengubah makna atau mengarang kejadian. Sekali sehari untuk
   tombol utamanya, Try Again sampai total 3 kali; hasilnya disimpan per hari di
   perangkat sehingga membuka sheet lagi tidak memanggil AI lagi.
 
-Dokumen ini menjelaskan kenapa keduanya gratis, apa yang bisa menagih, dan
+Gaya bahasa & emoji keempatnya ditulis SEKALI di `lib/aiStyle.ts` (kalimat
+pendek ala Gen Z; emoji maksimal 3 dan hanya di ujung baris; notulen & Wheel
+tanpa emoji karena dicetak jadi PDF). Prompt cuma meminta, yang menjaga
+bentuknya penyaring `rapikanEmoji` / `tanpaEmoji` di langkah finalisasi.
+
+Dokumen ini menjelaskan kenapa semuanya gratis, apa yang bisa menagih, dan
 cara memastikannya tetap gratis.
 
 ## Prinsip

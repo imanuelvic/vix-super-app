@@ -1,4 +1,4 @@
-import type { ViewStyle } from 'react-native';
+import { Platform, type ViewStyle } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 
@@ -42,4 +42,61 @@ export const CARD: ViewStyle = {
   borderColor: Color.BORDER,
   paddingHorizontal: 14,
   paddingVertical: 12,
+};
+
+// ═══════════════════════ Bayangan (versi 2.0, 22 Sep 2026) ═══════════════════
+// Dua tingkat saja, supaya tidak semua kartu "mengambang":
+//
+//   SHADOW_SOFT   → kartu BLOK yang berdiri sendiri di layar Today (hero With
+//                   God, bagian CORE/Work/Life, blok refleksi) & kartu
+//                   ringkasan fitur. Halus: terasa sebagai kedalaman, bukan
+//                   tepi hitam.
+//   SHADOW_RAISED → yang benar-benar melayang di atas isi: tab bar utama,
+//                   tombol mengambang (air putih, FAB), tombol utama.
+//
+// Kartu DAFTAR (CARD di atas) tetap garis rambut tanpa bayangan — puluhan
+// baris berbayangan justru bikin layar berat & ramai.
+//
+// iOS memakai shadow*; Android memakai elevation (shadow* diabaikan di sana).
+// Warna bayangannya TEXT_TITLE (hijau-hitam hangat), bukan #000: bayangan
+// hitam murni di atas latar gading terlihat abu-abu kotor.
+export const SHADOW_SOFT: ViewStyle = Platform.select({
+  ios: {
+    shadowColor: Color.TEXT_TITLE,
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  default: { elevation: 2 },
+});
+
+export const SHADOW_RAISED: ViewStyle = Platform.select({
+  ios: {
+    shadowColor: Color.TEXT_TITLE,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  default: { elevation: 6 },
+});
+
+// Bentuk baku KARTU BLOK — kotak besar yang berdiri sendiri di layar Today &
+// Work Focus: bagian CORE/Work/Life, "3 hal terpenting", "Harus dikirim".
+//
+// Bedanya dengan CARD di atas: CARD itu satu BARIS di dalam daftar (garis
+// rambut, sudut 14), yang ini satu BAGIAN dari layar (lebih lega, bersudut
+// 18, dan mengambang halus lewat SHADOW_SOFT alih-alih bergaris).
+//
+// Dipakai dengan disebar, lalu ditambahi yang khas bloknya (gap, warna latar
+// yang memang beda seperti blok Refleksi):
+//
+//   const styles = StyleSheet.create({
+//     card: { ...BLOCK_CARD, gap: 6 },
+//   });
+export const BLOCK_CARD: ViewStyle = {
+  ...SHADOW_SOFT,
+  backgroundColor: Color.CONTAINER,
+  borderRadius: 18,
+  paddingHorizontal: 18,
+  paddingVertical: 14,
 };

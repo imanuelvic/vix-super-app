@@ -10,7 +10,7 @@ import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import {
   markPrayerHandled,
-  prayerGateDue,
+  prayerDoneToday,
   prayerMinutesLeft,
   recordDailyPrayer,
   skipDailyPrayer,
@@ -56,7 +56,7 @@ import { openWhatsAppChat } from '@/lib/whatsapp';
 
 // Morning Journey 🌅 — halaman PENUH di root stack (di luar tab), jadi
 // menutupi seluruh layar termasuk tab bar. Yang mengarahkan ke sini adalah
-// <MorningPrayerWatcher/> di app/_layout.tsx, jadi berlaku dari layar mana pun.
+// <MorningJourneyGate/> di app/_layout.tsx, jadi berlaku dari layar mana pun.
 // Layar ini cuma mengurus DATA (langganan & simpan); tampilannya di
 // components/spiritual/MorningJourney.tsx.
 export default function MorningPrayerScreen() {
@@ -198,12 +198,18 @@ export default function MorningPrayerScreen() {
     router.replace('/');
   }
 
-  // CEK LANGSUNG tiap kali layar ini digambar: kalau pagi ini ternyata sudah
-  // ditutup — di HP ini maupun HP lain — atau jam 09.00 sudah lewat, layar ini
-  // tidak ditampilkan sama sekali. Karena `login` datang dari langganan
-  // Firestore yang hidup, "Mulai Hariku" di HP A menutup layar ini di HP B
-  // dalam hitungan detik, tanpa disentuh.
-  if (!prayerGateDue(login, now)) {
+  /** "Nanti dulu" — tutup undangan tanpa hukuman; Today yang mengingatkan. */
+  function handleLater() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  }
+
+  // Sudah dijalani hari ini (di HP ini atau HP lain) → tidak ada yang perlu
+  // dibuka; riwayatnya ada di Walk. Karena `login` datang dari langganan
+  // Firestore yang hidup, "Mulai Hariku" di HP A menutup layar ini di HP B.
+  // Lewat 09.00 & BELUM dijalani tetap boleh masuk (gerbang lunak, 22 Sep
+  // 2026): yang berubah cuma streaknya, ikut aturan lama.
+  if (prayerDoneToday(login, now)) {
     return <Redirect href="/" />;
   }
 
@@ -223,6 +229,7 @@ export default function MorningPrayerScreen() {
       onPrayLeader={handlePrayLeader}
       onConfirm={handleConfirm}
       onSkip={handleSkip}
+      onLater={handleLater}
     />
   );
 }

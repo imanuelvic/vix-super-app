@@ -42,7 +42,7 @@ export type { ChainLeader } from '@/components/spiritual/journey/JourneySteps';
 
 // Morning Journey 🌅 — layar PENUH pagi hari (di luar tab, tidak bisa
 // di-swipe balik), sekali sehari sampai jam 09.00. Yang mengarahkan ke sini
-// <MorningPrayerWatcher/> di app/_layout.tsx, jadi berlaku dari layar mana pun.
+// <MorningJourneyGate/> di app/_layout.tsx, jadi berlaku dari layar mana pun.
 //
 // Dulu ini "gerbang doa pagi": daftar 4–5 langkah bernomor dengan centang, dan
 // tombol konfirmasi yang baru hidup setelah semuanya dicentang. Sekarang satu
@@ -64,6 +64,7 @@ export function MorningJourney({
   onPrayLeader,
   onConfirm,
   onSkip,
+  onLater,
 }: {
   todayId: string;
   /** Revive hari ini (null = belum ada dokumennya). */
@@ -87,6 +88,8 @@ export function MorningJourney({
   onConfirm: () => Promise<void>;
   /** Lewati pagi ini (streak mulai dari awal), langsung ke Home. */
   onSkip: () => void;
+  /** "Nanti dulu": tutup undangan tanpa hukuman (gerbang lunak, 22 Sep 2026). */
+  onLater: () => void;
 }) {
   const [step, setStep] = useState<JourneyStepKey>('arrive');
   const [busy, setBusy] = useState(false);
@@ -105,8 +108,9 @@ export function MorningJourney({
   const chainIsToday = isChainTopic(topic);
   const showIntercession = !chainIsToday || !chainDue;
 
-  // Lewat jam 09.00 layar ini ditinggalkan sendiri oleh pengawalnya. Satu jam
-  // sebelumnya diberi tahu pelan, tanpa nada peringatan.
+  // Satu jam sebelum 09.00 diberi tahu pelan, tanpa nada peringatan. Lewat
+  // 09.00 journey tetap bisa dijalani (gerbang lunak); yang disebut cuma
+  // kenyataannya: jendela pagi sudah lewat.
   const closingSoon = minutesLeft > 0 && minutesLeft <= 60;
   const stillOpen = minutesLeft > 0;
 
@@ -179,16 +183,27 @@ export function MorningJourney({
             )}
           </View>
 
-          {/* Keterangan waktu yang tenang (bukan kartu peringatan), dan pintu
-              keluar untuk pagi yang memang tidak memungkinkan. Lewat jam 09.00
-              tidak ada lagi yang perlu dilewati. */}
-          {stillOpen && (
-            <View style={styles.footer}>
-              {closingSoon && (
-                <VixText heading="label" additionalStyle={styles.footerText}>
-                  Jendela pagi ini tersisa {minutesLeft} menit.
-                </VixText>
-              )}
+          {/* Keterangan waktu yang tenang (bukan kartu peringatan) + dua pintu
+              keluar: "Nanti dulu" (tanpa hukuman; Today terus mengundang) dan
+              "Lewati untuk hari ini" (menutup tagihannya, streak mulai lagi).
+              Lewat 09.00 yang tersisa cuma "Nanti dulu". */}
+          <View style={styles.footer}>
+            {closingSoon && (
+              <VixText heading="label" additionalStyle={styles.footerText}>
+                Jendela pagi ini tersisa {minutesLeft} menit.
+              </VixText>
+            )}
+            {!stillOpen && (
+              <VixText heading="label" additionalStyle={styles.footerText}>
+                Jendela pagi sudah lewat. Tidak apa-apa, jalani sekarang.
+              </VixText>
+            )}
+            <PressableScale style={styles.skipButton} onPress={onLater}>
+              <VixText heading="label" additionalStyle={styles.laterText}>
+                Nanti dulu
+              </VixText>
+            </PressableScale>
+            {stillOpen && (
               <PressableScale
                 style={styles.skipButton}
                 onPress={() => setSkipConfirm(true)}>
@@ -196,8 +211,8 @@ export function MorningJourney({
                   Pagi ini tidak memungkinkan? Lewati untuk hari ini
                 </VixText>
               </PressableScale>
-            </View>
-          )}
+            )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -226,4 +241,5 @@ const styles = StyleSheet.create({
   footer: { alignItems: 'center', gap: 2, marginTop: ACTION_GAP },
   skipButton: { paddingVertical: 12, paddingHorizontal: 12 },
   footerText: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
+  laterText: { color: Color.TEXT_REVERSE, textAlign: 'center', textDecorationLine: 'underline' },
 });

@@ -19,22 +19,18 @@ export function greetingText(): string {
   return `Selamat malam ${DAYPART.night}`;
 }
 
-// Sapaan personal sesuai jam — teks saja (dipakai di kartu welcome Home yang
-// punya layout khusus). Untuk baris sapaan + tanggal standar, pakai
-// <GreetingHeader/> di bawah.
-export function Greeting({
+// Sapaan personal sesuai jam — teks saja. Dipakai <GreetingHeader/> di bawah
+// (baris sapaan + tanggal standar); dulu juga kartu welcome Home, yang sudah
+// diganti hero With God di layar Today.
+function Greeting({
   heading = 'subheader',
-  color,
   style,
 }: {
   heading?: VixHeading;
-  color?: string;
   style?: StyleProp<TextStyle>;
 }) {
   return (
-    <VixText
-      heading={heading}
-      additionalStyle={[color ? { color } : null, style]}>
+    <VixText heading={heading} additionalStyle={style}>
       {greetingText()}
     </VixText>
   );

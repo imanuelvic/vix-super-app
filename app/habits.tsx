@@ -12,9 +12,11 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CONTENT_COLUMN } from '@/assets/style/layout';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { StreakPill } from '@/components/common/StreakPill';
+import { BackRow } from '@/components/common/BackRow';
 import { VixText } from '@/components/common/VixText';
 import { HabitsTab } from '@/components/habits/HabitsTab';
 import { useAuth } from '@/contexts/auth';
@@ -221,6 +223,7 @@ export default function HabitsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <BackRow />
       <View style={styles.header}>
         <VixText heading="header" additionalStyle={styles.title}>
           Habits 📋
@@ -258,14 +261,12 @@ export default function HabitsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   header: {
+    ...CONTENT_COLUMN,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    width: '100%',
-    maxWidth: 680,
-    alignSelf: 'center',
   },
   title: { color: Color.MAIN },
   content: { flex: 1 },

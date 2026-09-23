@@ -171,10 +171,11 @@ export default function SpiritualScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* Tab utama Walk ✝️ (22 Sep 2026): tanpa tombol kembali, sub-tabnya
+          jadi pil di bawah pita — tab bar utama sudah di kaki layar. */}
       <ScreenHeader
-        backLabel="Home"
-        title="Spiritual ✝️"
+        title="Walk ✝️"
         // Ayat penyembahan hari ini — berganti tiap hari, tapi TETAP sama
         // sepanjang hari itu (diundi dari tanggalnya, lihat lib/spiritual.ts),
         // jadi pindah-pindah sub-tab tidak menggantinya di tengah jalan.
@@ -226,6 +227,16 @@ export default function SpiritualScreen() {
             </>
           ) : undefined
         }
+      />
+
+      {/* Badge Revive = 1 kalau Revive hari ini belum ditulis DAN belum
+          ditandai dilewati — angka yang PERSIS sama dengan badge tab Walk,
+          karena keduanya memanggil fungsi yang sama. */}
+      <BottomTabs
+        placement="top"
+        tabs={withBadge(TABS, { revive: reviveBeres ? 0 : 1 })}
+        value={tab}
+        onChange={onTabPress}
       />
 
       <ScreenError message={error} />
@@ -333,14 +344,6 @@ export default function SpiritualScreen() {
         )}
       </View>
 
-      {/* Badge Revive = 1 kalau Revive hari ini belum ditulis DAN belum
-          ditandai dilewati — angka yang PERSIS sama dengan badge tile
-          Spiritual di Home, karena keduanya memanggil fungsi yang sama. */}
-      <BottomTabs
-        tabs={withBadge(TABS, { revive: reviveBeres ? 0 : 1 })}
-        value={tab}
-        onChange={onTabPress}
-      />
     </SafeAreaView>
   );
 }

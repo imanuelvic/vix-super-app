@@ -17,7 +17,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { WaterFloat } from '@/components/habits/WaterFloat';
-import { MorningPrayerWatcher } from '@/components/spiritual/MorningPrayerWatcher';
+import { MorningJourneyGate } from '@/components/spiritual/MorningJourneyGate';
 import { AuthProvider, useAuth } from '@/contexts/auth';
 import { FutsalGangProvider } from '@/contexts/futsalGang';
 
@@ -71,16 +71,28 @@ function RootNavigator() {
       {/* Hanya bisa diakses kalau sudah login (login cukup SEKALI per perangkat) */}
       <Stack.Protected guard={!!user}>
         {/* Home + tab bar utama */}
+        {/* Lima tab utama: Today · Walk (spiritual) · CORE · Work (career) · Life */}
         <Stack.Screen name="(tabs)" />
 
-        {/* Morning Journey 🌅 pagi hari — full screen, tak bisa di-swipe balik */}
-        <Stack.Screen name="morning-prayer" options={{ gestureEnabled: false }} />
+        {/* Morning Journey 🌅 — layar penuh; sejak versi 2.0 gerbangnya LUNAK
+            (bisa ditutup "Nanti dulu"), jadi gestur kembali dibiarkan hidup. */}
+        <Stack.Screen name="morning-journey" />
 
-        {/* Fitur utama — urut mengikuti grid di Home, dikelompokkan per fitur
-            (fitur induk + sub-halamannya dipisah baris kosong antar grup) */}
+        {/* Layar yang dulu tab utama (22 Sep 2026): Semua Pengingat, Habits,
+            Profile, System. 23 Sep 2026: nama berkas & rutenya disamakan
+            dengan judul layarnya ("/reminders", "/system"). */}
+        <Stack.Screen name="reminders" />
+        {/* 🔔 Pengingat di HP — sakelar semua kelompok notifikasi lokal */}
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="habits" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="system" />
+
+        {/* Fitur — dikelompokkan per fitur (fitur induk + sub-halamannya
+            dipisah baris kosong antar grup). Spiritual, CORE & Career kini
+            hidup di dalam (tabs). */}
         <Stack.Screen name="tasks" />
 
-        <Stack.Screen name="spiritual" />
         <Stack.Screen name="revive" />
         <Stack.Screen name="revive-history" />
         {/* Riwayat Morning Journey (refleksi, respons, doa pagi per hari) */}
@@ -106,7 +118,6 @@ function RootNavigator() {
         <Stack.Screen name="health-info" />
         <Stack.Screen name="donor" />
 
-        <Stack.Screen name="core" />
         {/* Catat/ubah notulen rapat bulanan — dari sub-tab Monthly */}
         <Stack.Screen name="core/monthly/[id]" />
         <Stack.Screen name="visitations" />
@@ -121,8 +132,8 @@ function RootNavigator() {
         <Stack.Screen name="finance" />
         {/* Weekly Money Review & Monthly Review (Financial Awareness) */}
         <Stack.Screen name="finance-review" />
-        <Stack.Screen name="funds" />
-        <Stack.Screen name="fund/[key]" />
+        <Stack.Screen name="saku" />
+        <Stack.Screen name="saku/[key]" />
         <Stack.Screen name="debts" />
 
         <Stack.Screen name="investment" />
@@ -131,7 +142,6 @@ function RootNavigator() {
         {/* Pembelian Token 🧾 — seluruh riwayat beli token listrik Residence */}
         <Stack.Screen name="token-purchases" />
         <Stack.Screen name="wheel" />
-        <Stack.Screen name="career" />
         {/* Freelance: rincian satu proyek (baca-saja) + layar isiannya */}
         <Stack.Screen name="project/[id]" />
         <Stack.Screen name="project/edit/[id]" />
@@ -172,7 +182,7 @@ function RootNavigator() {
 
     {/* Pengawal Morning Journey — tidak menggambar apa pun, hanya mengalihkan ke
         lock screen begitu jam doa tiba, dari layar mana pun. */}
-    {!!user && <MorningPrayerWatcher />}
+    {!!user && <MorningJourneyGate />}
 
     {/* 💧 Gelas air mengambang — di atas SEMUA layar (kecuali gerbang pagi &
         fitur CORE; ia menyembunyikan dirinya sendiri lewat pathname). */}

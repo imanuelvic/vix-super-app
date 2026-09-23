@@ -19,21 +19,26 @@ import { Color } from '@/assets/style/color';
 //   <VixText heading="label" additionalStyle={styles.separatorText}>atau</VixText>
 
 export type VixHeading =
+  | 'display'    // sapaan/undangan di puncak Today — satu-dua baris, paling besar
   | 'header'     // judul layar besar
   | 'subheader'  // judul bagian besar / nama
   | 'title'      // judul seksi
   | 'bold'       // teks biasa tapi tebal (tombol, penekanan)
   | 'paragraph'  // teks isi biasa (default)
-  | 'label';     // keterangan kecil
+  | 'label'      // keterangan kecil
+  | 'eyebrow';   // penanda bagian kecil bercelah lebar (WITH GOD · CORE HARI INI)
 
-// Ukuran & warna tiap jenis teks. lineHeight = fontSize × 1.5.
+// Ukuran & warna tiap jenis teks. lineHeight = fontSize × 1.5 (display &
+// eyebrow lebih rapat: keduanya judul pendek, bukan paragraf).
 const HEADING_STYLE: Record<VixHeading, TextStyle> = {
+  display: { fontSize: 28, lineHeight: 34, fontWeight: '800', letterSpacing: -0.4, color: Color.TEXT_TITLE },
   header: { fontSize: 30, lineHeight: 45, fontWeight: '800', color: Color.TEXT_TITLE },
   subheader: { fontSize: 22, lineHeight: 33, fontWeight: '700', color: Color.TEXT_TITLE },
   title: { fontSize: 17, lineHeight: 25.5, fontWeight: '700', color: Color.TEXT_TITLE },
   bold: { fontSize: 15, lineHeight: 22.5, fontWeight: '700', color: Color.TEXT_TITLE },
   paragraph: { fontSize: 15, lineHeight: 22.5, fontWeight: '400', color: Color.TEXT_PARAGRAPH },
   label: { fontSize: 13, lineHeight: 19.5, fontWeight: '500', color: Color.TEXT_LABEL },
+  eyebrow: { fontSize: 11, lineHeight: 16, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: Color.TEXT_LABEL },
 };
 
 // Tiap ketebalan Inter adalah file font terpisah — dipetakan otomatis.

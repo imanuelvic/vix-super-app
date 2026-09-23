@@ -273,26 +273,6 @@ export function countedHabits(
   return habits.filter((h) => !skipped[h.id]);
 }
 
-/**
- * Kebiasaan yang sesinya sudah tiba tapi belum dicentang hari ini — dipakai
- * badge Health di Home supaya sesi yang belum waktunya tidak ikut dihitung.
- */
-export function pendingHabits(
-  habits: ScheduledHabit[],
-  done: Record<string, boolean>,
-  now: Date,
-): ScheduledHabit[] {
-  const open = openSlots(now);
-  return habits.filter(
-    (h) =>
-      open.includes(h.slot) &&
-      !done[h.id] &&
-      // Olahraga tidak ikut menagih di sini — sudah dipegang fitur Fitness.
-      // Kalau ikut, satu olahraga ditagih dari dua tempat.
-      h.id !== FITNESS_HABIT_ID,
-  );
-}
-
 /** Semua kebiasaan (semua sesi) sudah dicentang hari ini? */
 function allHabitsDone(
   habits: ScheduledHabit[],
@@ -485,7 +465,7 @@ export type HabitLink = {
   route?: {
     pathname:
       | '/fitness'
-      | '/spiritual'
+      | '/walk'
       | '/health'
       | '/bible-reading'
       | '/daily-priority'
@@ -620,7 +600,7 @@ export const HABIT_LINKS: HabitLink[] = [
     match: /revive.*(\bwag?\b|whatsapp|core)/i,
     note: 'Buka Spiritual › Revive',
     color: Color.SPIRITUAL_DARK,
-    route: { pathname: '/spiritual', params: { tab: 'revive' } },
+    route: { pathname: '/walk', params: { tab: 'revive' } },
   },
   // Baris sarapan (protein + fiber + mikronutrien) dulu berpintasan ke
   // Health › Diet. Tabnya sudah dihapus, jadi pintasannya ikut dibuang —

@@ -1312,22 +1312,8 @@ export function focusLeaders<T extends { id: string }>(
 // dijelaskan oleh yang melihatnya.
 //
 // 11 Sep 2026: aturan jamnya dibuang, jadi tanda di dalam & angka di luar
-// berangkat dari syarat yang PERSIS SAMA.
-const FOLLOWUP_FROM_HOUR = 9;
-
-// Kartu "penting" di Home cuma numpang SETENGAH JAM (09.00–09.30). Home itu
-// launcher, jadi tagihan yang menetap sepanjang hari tempatnya di Dashboard;
-// yang di Home cuma tepukan bahu di jam yang paling mungkin dikerjakan.
-//
-// Ini SATU-SATUNYA aturan jam yang tersisa di Follow Up, dan ia bukan penagih:
-// badge-nya tetap menyala sebelum & sesudah jendela ini.
-const FOLLOWUP_CARD_TO_MINUTE = 9 * 60 + 30;
-
-/** Sekarang jam tayang kartu Follow Up di Home? (09.00–09.30) */
-export function followupCardWindow(now: Date): boolean {
-  const menit = now.getHours() * 60 + now.getMinutes();
-  return menit >= FOLLOWUP_FROM_HOUR * 60 && menit < FOLLOWUP_CARD_TO_MINUTE;
-}
+// berangkat dari syarat yang PERSIS SAMA. (22 Sep 2026: jendela kartu Home
+// 09.00–09.30 ikut dibuang — Today Engine menampilkannya sepanjang hari.)
 
 /**
  * CORE Leader fokus minggu ini yang HARI INI belum di-follow up — berlaku

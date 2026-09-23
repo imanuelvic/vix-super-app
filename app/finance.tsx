@@ -213,7 +213,7 @@ export default function FinanceScreen() {
               onPress={() => router.push('/debts')}
             />
             {/* Saku 👛 (dana per tujuan) */}
-            <EmojiButton emoji="👛" onPress={() => router.push('/funds')} />
+            <EmojiButton emoji="👛" onPress={() => router.push('/saku')} />
           </View>
         }
       />

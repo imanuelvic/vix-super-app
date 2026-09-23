@@ -1,13 +1,13 @@
 import { Schema } from 'firebase/ai';
 
 import { guardedAiCall } from './aiGuard';
+import { GAYA_BAHASA, tanpaEmoji, TANPA_EMOJI } from './aiStyle';
 import {
   AiAnswerError,
   geminiErrorMessage,
   geminiModel,
   parseJsonAnswer,
   stripEmDash,
-  TANDA_PISAH,
   withModelFallback,
 } from './gemini';
 
@@ -38,9 +38,11 @@ Aturan:
 3. Rangkaian pertanyaan singkat (mis. "Absen? Peraturan? Gaya hidup?") dilebur jadi bagian dari kalimat yang menyebut hal-hal itu sebagai aspek yang perlu diperhatikan.
 4. Singkatan gaul dirapikan: "hati2" menjadi "hati-hati", "yg" menjadi "yang", "dgn" menjadi "dengan", "pk." menjadi "pukul".
 5. Bagian yang kosong tetap kosong (kembalikan string kosong). Jangan mengisi bagian kosong dengan apa pun.
-6. Jangan memakai tanda pisah panjang "${TANDA_PISAH}" sama sekali. Pakai koma atau titik.
-7. Jangan memakai markdown, judul, atau emoji. Cukup teks poin bernomor; judul tiap bagian sudah ditambahkan oleh aplikasi.
-8. Panjang wajar: satu poin asli biasanya jadi satu atau dua poin rapi. Ini kesimpulan, bukan penjabaran.`;
+6. Panjang wajar: satu poin asli biasanya jadi satu atau dua poin rapi. Ini kesimpulan, bukan penjabaran.
+
+${GAYA_BAHASA}
+
+${TANPA_EMOJI}`;
 
 // Jawaban dipaksa JSON dengan tepat lima kunci string (structured output),
 // jadi tidak ada penguraian teks bebas yang bisa meleset.
@@ -109,7 +111,7 @@ export function finalizeNotulenAnswer(
       continue;
     }
     if (typeof v !== 'string') throw new AiAnswerError('Jawaban AI tidak lengkap. Coba lagi.');
-    hasil[k] = stripEmDash(v);
+    hasil[k] = tanpaEmoji(stripEmDash(v));
   }
   return hasil;
 }

@@ -534,22 +534,6 @@ export function pendingTopicsOfWeek(
   return topicsOfWeek(now).filter((t) => !done[t.key]);
 }
 
-// Jam tayang kartu "Diskusi Dalam Minggu Ini" di HOME (menit sejak 00.00).
-//
-// Home itu launcher — kartunya harus tetap sedikit, jadi yang ini cuma numpang
-// satu jam sehari: 11.30–12.30, tepat menjelang jam makan siang, saat ngobrol
-// memang paling mungkin terjadi. Di luar jam itu Home bersih lagi.
-//
-// Dashboard TIDAK memakai ini: di sana kartunya tetap tampil sepanjang hari
-// seperti reminder lain — itu memang halaman tagihan harian.
-const DISCUSSION_WINDOW: [number, number] = [11 * 60 + 30, 12 * 60 + 30];
-
-/** Sekarang jam tayang kartu diskusi di Home? */
-export function discussionWindowNow(now = new Date()): boolean {
-  const menit = now.getHours() * 60 + now.getMinutes();
-  return menit >= DISCUSSION_WINDOW[0] && menit < DISCUSSION_WINDOW[1];
-}
-
 /**
  * Langkah yang HARINYA SUDAH TIBA tapi belum dikerjakan.
  *

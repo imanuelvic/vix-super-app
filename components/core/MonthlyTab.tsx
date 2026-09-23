@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
@@ -87,15 +87,26 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     });
   }
 
-  function renderCard(m: MonthlyMeeting) {
-    const expanded = openId === m.id;
+  /**
+   * Kepala kartu: judul, tanggal, tempat, dan semua tombolnya.
+   *
+   * Ia anak LANGSUNG ScrollView (bukan dibungkus kartu bersama isinya) supaya
+   * bisa DIPATOK di atas lewat `stickyHeaderIndices` selama notulennya
+   * dibentangkan: notulennya panjang, dan tanpa ini tombol ✏️ / 📤 harus
+   * dikejar dengan menggulung jauh balik ke atas.
+   */
+  function renderHeader(m: MonthlyMeeting, expanded: boolean) {
     return (
-      <View key={m.id} style={styles.card}>
-        {/* Semua tombol ada DI ATAS, sebaris dengan judul — tak perlu
-            menggulung notulen yang panjang dulu untuk bisa mengubah atau
-            mengirimnya. Tombolnya sengaja jadi SAUDARA dari area click, bukan
-            anaknya: Pressable bersarang di iOS bikin click tombolnya ikut
-            membuka/menutup kartu.
+      // Latarnya PEKAT: saat dipatok, notulennya lewat persis di belakangnya.
+      <View key={`kepala-${m.id}`} style={[styles.card, expanded && styles.cardOpen]}>
+        {/* Barisnya dipegang View DI DALAM, bukan style terluar: ScrollView
+            memindahkan style anak sticky-nya ke pembungkus buatannya sendiri
+            lalu memberi anaknya `{ flex: 1 }` polos (ScrollViewStickyHeader:
+            "We transfer the child style to the wrapper"), jadi flexDirection
+            di luar tidak akan sampai ke sini.
+            Semua tombol ada DI ATAS, sebaris dengan judul. Tombolnya sengaja
+            jadi SAUDARA dari area click, bukan anaknya: Pressable bersarang di
+            iOS bikin click tombolnya ikut membuka/menutup kartu.
             Panah buka/tutup tidak dipakai lagi — seluruh blok judul memang
             sudah jadi sakelarnya, jadi panahnya cuma memakan tempat. */}
         <View style={styles.cardHeader}>
@@ -115,12 +126,6 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
                 📍 {m.place}
               </VixText>
             ) : null}
-            {/* Penanda ada dokumentasi walau kartunya masih tertutup */}
-            {m.photos.length > 0 ? (
-              <VixText heading="label" additionalStyle={styles.cardDate}>
-                📸 {m.photos.length} foto dokumentasi
-              </VixText>
-            ) : null}
           </PressableScale>
           <EditButton onPress={() => openEditor(m.id)} />
           {/* Cetak jadi PDF lalu buka share sheet — WhatsApp ada di situ */}
@@ -134,44 +139,75 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
               sambungkan ke rapat ini dari fitur Spiritual. */}
           <LinkedNotesButton links={noteLinks} coreId={m.id} />
         </View>
-
-        {expanded && (
-          // Isi notulennya sendiri jadi sakelar TUTUP. Notulen yang panjang
-          // membuat judulnya (sakelar buka/tutup) tergulung jauh ke atas —
-          // tanpa ini harus scroll balik ke atas dulu cuma untuk menutupnya.
-          // Mengecilnya dibuat samar (0.99): yang ditekan sebidang kartu, bukan
-          // tombol kecil.
-          <PressableScale
-            style={styles.cardBody}
-            scaleTo={0.99}
-            onPress={() => setOpenId(null)}>
-            {/* Dokumentasi rapat — bukti fotonya, sama yang ikut ke PDF */}
-            {m.photos.map((photo, i) => (
-              <Image
-                key={`${i}-${photo.slice(0, 16)}`}
-                source={{ uri: photoUri(photo) }}
-                style={styles.cardPhoto}
-                resizeMode="cover"
-              />
-            ))}
-            {MONTHLY_AGENDA_POINTS.map((p) => {
-              const text = (m.points[p.key] ?? '').trim();
-              return (
-                <View key={p.key} style={styles.pointBlock}>
-                  <VixText heading="title" additionalStyle={styles.pointLabel}>
-                    {p.icon} {p.label}
-                  </VixText>
-                  <VixText
-                    heading="paragraph"
-                    additionalStyle={text ? styles.pointText : styles.pointEmpty}>
-                    {text || '-'}
-                  </VixText>
-                </View>
-              );
-            })}
-          </PressableScale>
-        )}
       </View>
+    );
+  }
+
+  /** Isi notulen: foto dokumentasi + lima poin agenda. */
+  function renderBody(m: MonthlyMeeting) {
+    return (
+      // Isi notulennya sendiri jadi sakelar TUTUP. Kepalanya memang dipatok di
+      // atas, tapi menutup dari mana saja tetap lebih enak daripada harus
+      // membidik judulnya. Mengecilnya dibuat samar (0.99): yang ditekan
+      // sebidang kartu, bukan tombol kecil.
+      <PressableScale
+        key={`isi-${m.id}`}
+        style={styles.cardBody}
+        scaleTo={0.99}
+        onPress={() => setOpenId(null)}>
+        {/* Dokumentasi rapat — bukti fotonya, sama yang ikut ke PDF */}
+        {m.photos.map((photo, i) => (
+          <Image
+            key={`${i}-${photo.slice(0, 16)}`}
+            source={{ uri: photoUri(photo) }}
+            style={styles.cardPhoto}
+            resizeMode="cover"
+          />
+        ))}
+        {MONTHLY_AGENDA_POINTS.map((p) => {
+          const text = (m.points[p.key] ?? '').trim();
+          return (
+            <View key={p.key} style={styles.pointBlock}>
+              <VixText heading="title" additionalStyle={styles.pointLabel}>
+                {p.icon} {p.label}
+              </VixText>
+              <VixText
+                heading="paragraph"
+                additionalStyle={text ? styles.pointText : styles.pointEmpty}>
+                {text || '-'}
+              </VixText>
+            </View>
+          );
+        })}
+      </PressableScale>
+    );
+  }
+
+  // Daftarnya dirangkai jadi ANAK LANGSUNG ScrollView, bukan dibungkus fragment:
+  // `stickyHeaderIndices` menghitung anak langsung, dan satu fragment berisi
+  // sepuluh kartu tetap dihitung SATU anak. Nomor patokannya dikumpulkan di
+  // sini juga supaya tidak pernah meleset saat kartu dibuka atau ditutup.
+  const baris: ReactNode[] = [<FormError key="galat" message={error} />];
+  const dipatok: number[] = [];
+  if (shown.length === 0) {
+    baris.push(
+      <VixText key="kosong" heading="label" additionalStyle={styles.empty}>
+        {words.length > 0
+          ? `Tidak ada notulen yang cocok dengan “${query.trim()}”.`
+          : 'Belum ada notulen. Catat rapat mentoring bulan ini 🗒️'}
+      </VixText>,
+    );
+  } else {
+    for (const m of pageItems) {
+      const expanded = openId === m.id;
+      // Kepala kartu berikutnya yang mendorong kepala yang sedang dipatok,
+      // jadi patokannya tidak menempel selamanya sesudah notulennya lewat.
+      dipatok.push(baris.length);
+      baris.push(renderHeader(m, expanded));
+      if (expanded) baris.push(renderBody(m));
+    }
+    baris.push(
+      <Pagination key="halaman" page={currentPage} pageCount={pageCount} onChange={setPage} />,
     );
   }
 
@@ -204,25 +240,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
       <ScrollView
         key={searchMode ? 'search' : currentPage}
         contentContainerStyle={styles.content}
+        stickyHeaderIndices={dipatok}
         keyboardShouldPersistTaps="handled">
-        <FormError message={error} />
-
-        {shown.length === 0 ? (
-          <VixText heading="label" additionalStyle={styles.empty}>
-            {words.length > 0
-              ? `Tidak ada notulen yang cocok dengan “${query.trim()}”.`
-              : 'Belum ada notulen. Catat rapat mentoring bulan ini 🗒️'}
-          </VixText>
-        ) : (
-          <>
-            {pageItems.map(renderCard)}
-            <Pagination
-              page={currentPage}
-              pageCount={pageCount}
-              onChange={setPage}
-            />
-          </>
-        )}
+        {baris}
       </ScrollView>
 
       {/* FAB mengambang: buka/tutup mode cari 🔍 */}
@@ -252,6 +272,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginBottom: 10,
   },
+  // Kartu yang sedang dibentangkan: kepalanya menyatu dengan isinya di
+  // bawahnya, jadi sudut & jarak bawahnya dilepas dan garis bawahnya yang jadi
+  // pemisah kepala/isi.
+  cardOpen: {
+    marginBottom: 0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
   // Judul (area click buka/tutup) + tombol-tombolnya, semua di baris paling
   // atas. 'flex-start' menahan tombol tetap di KANAN ATAS walau judulnya
   // memanjang jadi beberapa baris.
@@ -263,11 +291,19 @@ const styles = StyleSheet.create({
   cardMain: { flex: 1, gap: 2 },
   cardTitle: { color: Color.TEXT_TITLE },
   cardDate: { color: Color.TEXT_LABEL },
+  // Separuh bawah kartu yang sama: dindingnya diteruskan dari kepalanya (garis
+  // atasnya 0, kepalanya sudah punya garis bawah), sudut bawahnya membulat.
   cardBody: {
-    marginTop: 10,
+    backgroundColor: Color.CONTAINER,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: Color.BORDER,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    paddingHorizontal: 14,
     paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: Color.BORDER,
+    paddingBottom: 12,
+    marginBottom: 10,
     gap: 10,
   },
   pointBlock: { gap: 1 },

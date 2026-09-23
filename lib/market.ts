@@ -114,6 +114,20 @@ function withLiveLast(series: MarketPoint[], current: number): MarketPoint[] {
   return next;
 }
 
+/**
+ * Perubahan titik TERAKHIR terhadap titik sebelumnya, dalam persen.
+ *
+ * Titik terakhir selalu harga live hari ini (withLiveLast), jadi angkanya =
+ * "naik/turun berapa persen hari ini". null kalau deretnya terlalu pendek.
+ */
+export function dailyChangePercent(series: MarketPoint[]): number | null {
+  if (series.length < 2) return null;
+  const sekarang = series[series.length - 1].price;
+  const sebelum = series[series.length - 2].price;
+  if (!sebelum) return null;
+  return ((sekarang - sebelum) / sebelum) * 100;
+}
+
 export type GoldData = {
   series: MarketPoint[]; // Rupiah/gram, harian ~6 bulan (titik terakhir = live)
   current: number; // Rupiah/gram sekarang

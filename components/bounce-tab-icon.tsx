@@ -5,11 +5,11 @@ import Animated from 'react-native-reanimated';
 import { useTabJump } from '@/components/common/BottomTabs';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 
-// Ikon tab utama di kaki app (Dashboard · Habits · Profile · System) yang
+// Ikon kelima tab utama di kaki app (Today · Walk · CORE · Work · Life) yang
 // MELOMPAT kecil saat tab-nya jadi aktif — pantulan yang sama persis dengan
 // sub-tab di dalam fitur (useTabJump di BottomTabs), supaya berpindah tab di
-// mana pun terasa satu bahasa. Tombol Home punya bentuknya sendiri
-// (raised-home-tab.tsx) dan melompat lewat hook yang sama.
+// mana pun terasa satu bahasa. (22 Sep 2026: tombol Home timbul dibuang;
+// Today kini tab pertama yang bentuknya sama dengan yang lain.)
 export function BounceTabIcon({
   name,
   color,

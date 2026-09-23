@@ -245,6 +245,9 @@ konten 💡 → 🎬 → ✅ + produk & link), **Business** (coming soon).
 
 ### 5.11 News 📰
 Judul berita dari RSS publik (isi dibuka di browser penerbit), simpan 🔖;
+tujuh kategori: Tech · Dev · Indo · Dunia · Bisnis · **Crypto** (CoinDesk,
+Cointelegraph & pencarian "kenapa harganya bergerak", dengan baris harga
+Bitcoin hari ini di atasnya) · Kristen;
 **Population**: perkiraan populasi dunia berjalan tiap detik + catatan bulanan
 manual dari worldometers (badge tiap tanggal 1).
 
@@ -317,7 +320,9 @@ arsip klaim.
   rapikan catatan Wheel, Financial Coach (maks 6/hari). Pagar umum
   `lib/aiGuard.ts`: memo per masukan, dedupe permintaan berjalan, cooldown 5
   detik, kunci 60 detik setelah 429, batas 30 permintaan/hari/perangkat.
-  Tidak ada retry otomatis.
+  Tidak ada retry otomatis. Gaya jawabannya satu untuk semua (`lib/aiStyle.ts`):
+  kalimat pendek, emoji maksimal 3 dan cuma di ujung baris, dan tanpa emoji
+  sama sekali untuk yang dicetak jadi PDF (notulen, Wheel).
 - **Catatan rohani ⇄ acara CORE**: bahan Revive/khotbah ditautkan ke visitasi
   atau rapat yang akan datang (hanya penunjuk, tidak menyalin).
 - **Finance sebagai sumber tunggal pengeluaran** untuk Car, Residence, Device.

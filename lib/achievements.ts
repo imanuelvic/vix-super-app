@@ -471,6 +471,45 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'water100', category: 'water', icon: '💎', title: '100 Days Hydrated', desc: 'Total 100 hari cukup 8 gelas', target: 100, of: (s) => s.waterTotal },
 ];
 
+/** Berapa achievement yang sudah terbuka dengan angka sekarang. */
+export function unlockedCount(stats: AchievementStats): number {
+  return ACHIEVEMENTS.filter((a) => a.of(stats) >= a.target).length;
+}
+
+/** Satu pencapaian yang tinggal sedikit lagi, siap ditulis di notifikasi. */
+export type AchievementHint = {
+  id: string;
+  icon: string;
+  title: string;
+  /** Angka sekarang & targetnya, sudah diformat (km pakai koma). */
+  now: string;
+  target: string;
+};
+
+/**
+ * Pencapaian yang PALING DEKAT selesai: yang persentasenya tertinggi tapi
+ * belum terbuka. Dipakai pengingat 🏆 ("tinggal 1 sesi lagi"), yang cuma
+ * menarik kalau angkanya memang sudah jalan.
+ *
+ * Yang masih 0 sengaja dibuang: "0/100 km" bukan godaan, cuma pengumuman.
+ */
+export function nearestAchievements(
+  stats: AchievementStats,
+  max = 2,
+): AchievementHint[] {
+  return ACHIEVEMENTS.map((a) => ({ a, now: a.of(stats) }))
+    .filter((x) => x.now > 0 && x.now < x.a.target)
+    .sort((x, y) => y.now / y.a.target - x.now / x.a.target)
+    .slice(0, max)
+    .map(({ a, now }) => ({
+      id: a.id,
+      icon: a.icon,
+      title: a.title,
+      now: a.fmt ? a.fmt(now) : String(now),
+      target: a.fmt ? a.fmt(a.target) : String(a.target),
+    }));
+}
+
 // ============================ Self-Reward 🏆 ============================
 // Hadiah untuk diri sendiri — dananya dari Saku "Self-Reward".
 //

@@ -1,12 +1,16 @@
-// Palet warna utama vix-super-app — Teal & Krem (mengikuti logo).
-// Semua screen WAJIB ambil warna dari sini, jangan hardcode hex di screen.
+// Palet warna utama vix-super-app — Evergreen & Pasir (versi 2.0, 22 Sep
+// 2026). Semua screen WAJIB ambil warna dari sini, jangan hardcode hex.
 //
-// Palet dasar (dari logo):
-//   #0C5C50  teal paling gelap
-//   #1D8D7A  teal utama
-//   #9FE6D5  mint terang
-//   #FFE8CC  krem
-//   #5B4B3A  cokelat
+// Arahnya: calm, intentional, mature — teal yang lebih dalam & tenang, krem
+// yang jadi pasir hangat, latar gading yang lebih netral. Logo lama (teal &
+// krem) tetap nyambung; yang berubah kepekatannya, bukan keluarganya.
+//
+// Palet dasar:
+//   #0B3D36  evergreen paling gelap   (dulu #0C5C50)
+//   #176B5D  teal utama                (dulu #1D8D7A)
+//   #C9E3DC  mint kabut                (dulu #9FE6D5, terlalu neon)
+//   #E6D3B3  pasir hangat              (dulu #FFE8CC krem)
+//   #6E5030  perunggu                  (dulu #5B4B3A cokelat)
 
 // Beberapa pastel dipakai DUA arti sekaligus: sebagai jenis transaksi Finance
 // (hijau pemasukan, merah pengeluaran, …) dan sebagai warna fitur di grid Home
@@ -22,19 +26,21 @@ const WARM_CREAM = '#FFE8CC';
 
 export const Color = {
   // Brand
-  MAIN: '#1D8D7A',
-  MAIN_DARK: '#0C5C50',
-  MAIN_LIGHT: '#9FE6D5',
-  MAIN_TRANSPARENT: '#1D8D7A1A',
+  MAIN: '#176B5D',
+  MAIN_DARK: '#0B3D36',
+  MAIN_LIGHT: '#C9E3DC',
+  MAIN_TRANSPARENT: '#176B5D1A',
 
-  ACCENT: WARM_CREAM,
-  ACCENT_DARK: '#5B4B3A',
+  // Sekunder: pasir hangat + perunggu (bukan lagi krem #FFE8CC — krem itu
+  // tetap hidup sebagai warna tile Car lewat WARM_CREAM).
+  ACCENT: '#E6D3B3',
+  ACCENT_DARK: '#6E5030',
 
-  // Permukaan (netral hangat, turunan krem #FFE8CC)
-  BACKGROUND: '#FDF6EC',
+  // Permukaan (gading netral, sedikit lebih teduh dari krem lama)
+  BACKGROUND: '#F7F3EC',
   CONTAINER: '#FFFFFF',
-  CONTRAST_CONTAINER: '#F5E7D2',
-  BORDER: '#EBDCC5',
+  CONTRAST_CONTAINER: '#EFE6D8',
+  BORDER: '#E6DDCF',
   OVERLAY: '#00000066', // latar gelap transparan di belakang modal
   // Abu-abu "tidak berlaku" — untuk pilihan yang memang belum punya isi, mis.
   // kategori Finance yang budget-nya belum diatur (0). Sengaja SEGELAP teks
@@ -43,10 +49,10 @@ export const Color = {
   DISABLED_DARK: '#6B6B63',
 
   // Teks
-  TEXT_TITLE: '#10221C',
-  TEXT_PARAGRAPH: '#2E3B35',
-  TEXT_LABEL: '#5C6B63',
-  TEXT_PLACEHOLDER: '#9AA79F',
+  TEXT_TITLE: '#0F1F1A',
+  TEXT_PARAGRAPH: '#2B3833',
+  TEXT_LABEL: '#5A6962',
+  TEXT_PLACEHOLDER: '#98A59D',
   TEXT_REVERSE: '#FFFFFF',
   TEXT_ON_DARK_MUTED: '#CFE0D8',
   // Putih redup NETRAL — keterangan kecil di atas kartu gelap yang warnanya
@@ -72,7 +78,7 @@ export const Color = {
 
   // Warna irisan grafik donat di Dashboard Finance (dipakai bergiliran)
   CHART_COLORS: [
-    '#1D8D7A', '#0C5C50', '#5B4B3A', '#5B95F9', '#E96479', '#8989EB',
+    '#176B5D', '#0B3D36', '#6E5030', '#5B95F9', '#E96479', '#8989EB',
     '#F7CB4D', '#63D297', '#978070', '#26A69A', '#FF8A65', '#7DB9B6',
   ],
 
@@ -98,6 +104,13 @@ export const Color = {
   WATER: '#5FB4E5',
   WATER_DARK: '#1F6FA3',
   WATER_LIGHT: '#D6ECF9',
+
+  // Reminder ✅ (tasks) — mint tersendiri. Dulu menumpang MAIN_LIGHT; sejak
+  // palet 2.0 MAIN_LIGHT jadi mint kabut yang terlalu mirip News, jadi tile
+  // ini dapat pastelnya sendiri (ΔE ≥ 10 dari semua tetangganya).
+  TASKS: '#A8DCCB',
+  TASKS_DARK: '#0B3D36',
+  TASKS_DEEP: '#0B3D36',
 
   // Spiritual ✝️ — ungu, warna keagungan.
   SPIRITUAL: '#E4D7F5',
@@ -222,9 +235,9 @@ export const Color = {
   DUOLINGO: '#437A00',
 
   // Status
-  SUCCESS: '#1D8D7A',
-  WARNING: '#5B4B3A',
-  WARNING_TRANSPARENT: '#5B4B3A1A',
+  SUCCESS: '#176B5D',
+  WARNING: '#6E5030',
+  WARNING_TRANSPARENT: '#6E50301A',
   DANGER: '#C0392B',
   // Merah samar (10%) — latar baris yang ditandai ✕ "dilewati". Pasangan merah
   // dari MAIN_TRANSPARENT yang dipakai baris tercentang.

@@ -2,13 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Schema } from 'firebase/ai';
 
 import { guardedAiCall } from './aiGuard';
+import { aturanEmoji, GAYA_BAHASA, rapikanEmoji } from './aiStyle';
 import {
   AiAnswerError,
   geminiErrorMessage,
   geminiModel,
   parseJsonAnswer,
   stripEmDash,
-  TANDA_PISAH,
   withModelFallback,
 } from './gemini';
 import { habitNoteDone } from './habits';
@@ -16,11 +16,14 @@ import { habitNoteDone } from './habits';
 // ✨ AI Reflection untuk 📓 Daily Reflection Journal (Habits).
 //
 // Tulisan refleksi hari itu dikirim ke Gemini (Firebase AI Logic, kuota
-// gratis; lihat lib/gemini.ts), pulang sebagai SATU teks pendek: tulisan yang
-// sama dirapikan, ditambah satu-dua kalimat renungan yang lahir dari tulisan
-// itu sendiri. AI-nya asisten untuk melihat, bukan pengkhotbah: tidak boleh
-// menambah kejadian/perasaan, tidak boleh mengubah makna, dan tidak boleh
-// memutuskan "Tuhan pasti berkata X".
+// gratis; lihat lib/gemini.ts), pulang sebagai SATU teks PENDEK dengan bentuk
+// yang tetap: satu kalimat inti, baris kosong, lalu dua sampai tiga baris
+// pendek. Bentuknya sengaja seperti catatan yang siap dibagikan, bukan
+// paragraf panjang. Gaya bahasa & emojinya dari lib/aiStyle.ts.
+//
+// AI-nya asisten untuk melihat, bukan pengkhotbah: tidak boleh menambah
+// kejadian/perasaan, tidak boleh mengubah makna, dan tidak boleh memutuskan
+// "Tuhan pasti berkata X".
 //
 // Jatah: SEKALI sehari untuk tombol utamanya, plus "Try Again" sampai total
 // REFLECTION_DAILY_CAP kali. Hasil & hitungannya disimpan per hari di
@@ -36,22 +39,50 @@ export const REFLECTION_MAX_CHARS = 2000;
 /** Total panggilan per hari (1 generate + sisanya "Try Again"). */
 export const REFLECTION_DAILY_CAP = 3;
 
-const SYSTEM = `Kamu membantu seorang penulis jurnal refleksi harian (orang Kristen) merapikan dan merenungkan tulisannya sendiri. Tulisan itu miliknya; kamu asisten yang membantunya melihat, bukan pengkhotbah yang memutuskan.
+/** Panjang jawaban yang diminta; bentuknya catatan pendek, bukan paragraf. */
+export const REFLECTION_MAX_WORDS = 45;
 
-Hasilkan SATU teks pendek dalam bahasa yang sama dengan tulisannya (biasanya Indonesia), terdiri dari:
-1. Tulisan aslinya yang dirapikan: ejaan, singkatan ("yg" menjadi "yang", "hati2" menjadi "hati-hati"), alur kalimat. Tetap dalam sudut pandang dan suara penulisnya. Makna, kejadian, perasaan, nama, dan fakta TIDAK boleh berubah, ditambah, atau dibuang.
-2. Satu sampai dua kalimat renungan yang lahir dari tulisan itu sendiri: insight yang bisa dibawa, atau apa yang MUNGKIN sedang Tuhan ajarkan lewat pengalaman itu.
+/** Jatah emoji untuk seluruh jawaban (dipaksa di finalizeReflection). */
+export const REFLECTION_EMOJI_MAX = 3;
 
-Aturan bahasa renungan:
-- Selalu tentatif dan mengajak, misalnya "Mungkin ini mengingatkan kita bahwa...", "Hal yang bisa direnungkan...", "Salah satu hal yang bisa kamu bawa dalam doa...".
-- JANGAN memakai klaim pasti seperti "Tuhan pasti...", "Tuhan berkata...", "ini tandanya Tuhan...". Jangan menasihati, menghakimi, atau menjanjikan hasil.
+const SYSTEM = `Kamu membantu seorang penulis jurnal refleksi harian (Kristen, Indonesia) merapikan tulisannya sendiri menjadi refleksi PENDEK yang enak dibaca ulang dan enak dibagikan.
+
+Tulisan itu miliknya. Makna, kejadian, perasaan, nama, dan fakta TIDAK boleh berubah, ditambah, atau dibuang. Kamu asisten yang membantunya melihat, bukan pengkhotbah yang memutuskan.
+
+Bentuk jawaban, wajib persis begini:
+1. Baris pertama: inti tulisannya dalam SATU kalimat pendek, maksimal 8 kata. Boleh kalimat ajakan atau pertanyaan.
+2. Satu baris kosong.
+3. Dua sampai tiga baris pendek, satu kalimat per baris, masing-masing maksimal 15 kata, memakai sudut pandang dan suara penulisnya.
+4. TOTAL maksimal ${REFLECTION_MAX_WORDS} kata. Lebih pendek lebih baik.
+
+Isi:
+- Pakai kata-katanya sendiri; yang kamu rapikan ejaan dan singkatannya ("yg" menjadi "yang", "hati2" menjadi "hati-hati") lalu alur kalimatnya.
+- Baris terakhir BOLEH satu kalimat renungan yang lahir dari tulisan itu sendiri, dan harus tentatif: "Mungkin ini mengingatkan kita bahwa...", "Hal yang bisa direnungkan...", "Salah satu hal yang bisa kamu bawa dalam doa...". Kalau tidak ada yang jelas, jangan dipaksa.
+- JANGAN memakai klaim pasti seperti "Tuhan pasti...", "Tuhan berkata...", "ini tandanya Tuhan...".
 - Jangan mengutip ayat kecuali penulisnya sendiri menyebutnya.
-- Hangat, personal, natural, seperti catatan pribadi; bukan bahasa khotbah, bukan bahasa motivasi.
 
-Bentuk:
-- Maksimal 90 kata, satu atau dua paragraf pendek.
-- Tanpa judul, markdown, emoji, tanda kutip pembuka/penutup, dan tanpa tanda pisah panjang "${TANDA_PISAH}".
-- Kembalikan JSON dengan satu kunci: reflection.`;
+${GAYA_BAHASA}
+
+${aturanEmoji(REFLECTION_EMOJI_MAX)}
+
+Contoh 1.
+Tulisan: "Jangan menyerah dengan keadaan dan kondisi kita, tetap fokus pada rencanaNya, tanganNya tak pernah terlambat menolongku, melepaskan kebiasaan buruk dari generasi sebelumnya"
+Jawaban:
+Jangan menyerah pada keadaan. 🙏✨
+
+Tetap fokus pada rencana-Nya.
+Tangan-Nya tak pernah terlambat menolong.
+Bersama-Nya aku bisa memutus kebiasaan buruk dari generasi sebelumnya. 🔥
+
+Contoh 2.
+Tulisan: "aku sadar sering nyari Tuhan cuma pas lagi butuh aja, pas lagi tenang malah lupa"
+Jawaban:
+Apakah aku mencari Tuhan hanya saat membutuhkan? 🙏
+
+Saat tertekan, aku cepat berdoa.
+Saat tenang, aku lupa mencari wajah-Nya. ✨
+
+Kembalikan JSON dengan satu kunci: reflection.`;
 
 const SKEMA = Schema.object({ properties: { reflection: Schema.string() } });
 
@@ -69,16 +100,20 @@ function model(nama: string) {
   });
 }
 
-/** Buang pembungkus yang dilarang prompt tapi kadang tetap lolos. */
+/**
+ * Buang pembungkus yang dilarang prompt tapi kadang tetap lolos, lalu paksa
+ * bentuk emojinya (ujung baris, maksimal REFLECTION_EMOJI_MAX).
+ */
 export function finalizeReflection(jawaban: unknown): string {
   const v = (jawaban as { reflection?: unknown } | null)?.reflection;
   if (typeof v !== 'string' || !v.trim()) {
     throw new AiAnswerError('Jawaban AI tidak terbaca. Coba lagi.');
   }
-  return stripEmDash(v)
+  const bersih = stripEmDash(v)
     .replace(/^["“”']+|["“”']+$/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+  return rapikanEmoji(bersih, REFLECTION_EMOJI_MAX);
 }
 
 /**

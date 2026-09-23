@@ -1,5 +1,5 @@
 import { Color } from '@/assets/style/color';
-import { HOME_FEATURES } from '@/lib/homeGrid';
+import { HOME_FEATURES } from '@/lib/featureGrid';
 
 // Warna yang menempel pada SATU fitur, dari tile-nya di grid Home sampai ke
 // dalam layarnya: pita header, tab bawah yang sedang aktif, & kartu ringkasan.
@@ -41,7 +41,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   'daily-priority': 'tasks',
 
   // Spiritual ✝️ — fitur dengan sub-halaman terbanyak.
-  spiritual: 'spiritual',
+  walk: 'spiritual',
   revive: 'spiritual',
   'revive-history': 'spiritual',
   sermon: 'spiritual',
@@ -51,7 +51,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   fasting: 'spiritual',
   'fasting-days': 'spiritual',
   gratitude: 'spiritual',
-  'morning-prayer': 'spiritual',
+  'morning-journey': 'spiritual',
   'journey-history': 'spiritual',
   'pause-pray': 'spiritual',
   'reflection-feed': 'spiritual',
@@ -82,8 +82,8 @@ const ROUTE_FEATURE: Record<string, string> = {
   // Finance 💵
   finance: 'finance',
   'finance-review': 'finance',
-  funds: 'finance',
-  fund: 'finance',
+  saku: 'finance',
+  'saku/[key]': 'finance',
   debts: 'finance',
 
   // Sisanya: satu fitur, satu layar (plus sub-halaman ber-ruas sama).
@@ -92,7 +92,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   fitness: 'fitness',
   family: 'family',
   investment: 'investment',
-  career: 'career',
+  work: 'career',
   project: 'career',
   fun: 'fun',
   // Gunung di Jawa (app/mountains.tsx) dibuka dari sub-tab Summit → pita Fun.

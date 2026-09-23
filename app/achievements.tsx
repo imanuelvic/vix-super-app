@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,12 +26,16 @@ import { useLiveAll } from '@/hooks/useLiveAll';
 import {
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORIES,
+  nearestAchievements,
   resetAchievements,
   subscribeSelfRewardBalance,
+  unlockedCount,
   type AchievementCategoryKey,
+  type AchievementHint,
 } from '@/lib/achievements';
 import { formatShortRupiah, groupDigits, parseAmount } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { saveAchievementSnapshot } from '@/lib/notify';
 import {
   claimSelfReward,
   newRewardId,
@@ -183,7 +187,20 @@ export default function AchievementsScreen() {
     { onError: setError },
   );
 
-  const unlocked = ACHIEVEMENTS.filter((a) => a.of(stats) >= a.target).length;
+  const unlocked = unlockedCount(stats);
+
+  // 🔔 Titipkan angka pencapaian untuk pengingat malam ("tinggal 1 sesi lagi").
+  // Angkanya cuma hidup di layar ini (9 langganan kecil); menyalakannya lagi di
+  // layar Today demi satu notifikasi jelas rugi. Jadi tiap layar ini dibuka,
+  // keadaannya dititipkan ke penyimpanan HP dan penjadwal harian membacanya.
+  const hampir = JSON.stringify(nearestAchievements(stats));
+  useEffect(() => {
+    saveAchievementSnapshot({
+      hints: JSON.parse(hampir) as AchievementHint[],
+      unlocked,
+      total: ACHIEVEMENTS.length,
+    }).catch(() => {});
+  }, [hampir, unlocked]);
 
   // Ringkasan satu kategori: daftar + berapa yang sudah terbuka.
   function catInfo(key: AchievementCategoryKey) {
@@ -335,7 +352,7 @@ export default function AchievementsScreen() {
         <PrimaryButton
           label="Kelola Saku Self-Reward 🏆"
           onPress={() =>
-            router.push({ pathname: '/fund/[key]', params: { key: 'self-reward' } })
+            router.push({ pathname: '/saku/[key]', params: { key: 'self-reward' } })
           }
           additionalStyle={styles.manageButton}
         />

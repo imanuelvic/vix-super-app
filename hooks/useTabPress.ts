@@ -11,7 +11,7 @@ const SPRING = { damping: 15, stiffness: 320, mass: 0.5, useNativeDriver: true }
 type Sentuhan = BottomTabBarButtonProps['onPressIn'];
 
 /**
- * Rasa sentuh tab utama di kaki app (HapticTab & RaisedHomeTab): mengecil ke
+ * Rasa sentuh kelima tab utama di kaki app (HapticTab): mengecil ke
  * 0,94 + getar halus saat disentuh, memantul balik saat dilepas. Dulu kedua
  * tombol itu menulis pegas, Animated.Value, dan getarannya masing-masing.
  *

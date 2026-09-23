@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { PressableScale } from '@/components/common/PressableScale';
+import { BackRow } from '@/components/common/BackRow';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -82,6 +83,7 @@ export default function VersionScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <BackRow />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         {/* Judul + pintu ke layar Version 📱 (versi terpasang & tarik update).
             Isinya dulu menempel di ujung bawah layar ini, terkubur di bawah
@@ -90,6 +92,14 @@ export default function VersionScreen() {
           <VixText heading="header" additionalStyle={styles.title}>
             System ⚙️
           </VixText>
+          <PressableScale
+            style={styles.appButton}
+            onPress={() => router.push('/notifications')}
+            hitSlop={8}>
+            <VixText heading="bold" additionalStyle={styles.appButtonText}>
+              🔔 Pengingat
+            </VixText>
+          </PressableScale>
           <PressableScale
             style={styles.appButton}
             onPress={() => router.push('/app-version')}

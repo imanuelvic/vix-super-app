@@ -1,11 +1,12 @@
 // ============================================================================
-// LAYAR DASHBOARD (tab "Dashboard"). Isi = SEMUA kartu reminder harian yang
-// dulu ada di Home: kebiasaan sesi, task hari ini, ulang tahun keluarga,
-// pertemuan CORE, pokok doa, pinjaman, health, baca Alkitab, khotbah, Wheel,
-// deadline kerja, produktivitas, dan Fun.
+// SEMUA PENGINGAT (rute /dashboard) — daftar LENGKAP kartu pengingat harian:
+// kebiasaan sesi, task hari ini, ulang tahun keluarga, pertemuan CORE, pokok
+// doa, pinjaman, health, khotbah, Wheel, deadline kerja, produktivitas, Fun.
 //
-// Home (index.tsx) kini fokus jadi launcher: sapaan + grid fitur. Kartu-kartu
-// reminder pindah ke sini supaya Home lebih ringkas.
+// Sejak 22 Sep 2026 (versi 2.0) ini bukan lagi tab utama. Yang penting hari
+// ini disaring Today Engine ke layar Today; layar ini tetap ada sebagai
+// "seluruhnya, tanpa saringan" — dibuka dari baris Later di Today. Tidak ada
+// kartu yang dibuang.
 // ============================================================================
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -13,12 +14,14 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { CONTENT_COLUMN } from '@/assets/style/layout';
+import { BackRow } from '@/components/common/BackRow';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
 import { VixText } from '@/components/common/VixText';
-import { anyBadgeReminder, BadgeReminders } from '@/components/dashboard/BadgeReminders';
-import { FinanceStatusCard } from '@/components/dashboard/FinanceStatusCard';
+import { anyBadgeReminder, BadgeReminders } from '@/components/reminders/BadgeReminders';
+import { FinanceStatusCard } from '@/components/reminders/FinanceStatusCard';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
@@ -731,9 +734,10 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <BackRow label="Today" />
       <View style={styles.header}>
         <VixText heading="header" additionalStyle={styles.headerTitle}>
-          Dashboard 📊
+          Semua Pengingat 📊
         </VixText>
         <VixText heading="label" additionalStyle={styles.headerDate}>
           📆 {formatShortDayDate(new Date())}
@@ -977,7 +981,7 @@ export default function DashboardScreen() {
               fg={Color.SPIRITUAL_DARK}
               title="🙏 Reminder Renungkan Khotbah Minggu"
               onPress={() =>
-                router.push({ pathname: '/spiritual', params: { tab: 'sermon' } })
+                router.push({ pathname: '/walk', params: { tab: 'sermon' } })
               }>
               <VixText heading="label" additionalStyle={styles.onSpiritual}>
                 ⛪ {sundaySermon.title}
@@ -1272,7 +1276,7 @@ export default function DashboardScreen() {
                   key={r.id}
                   onPress={() =>
                     router.push({
-                      pathname: '/career',
+                      pathname: '/work',
                       params: { tab: r.tab, edit: r.docId },
                     })
                   }>
@@ -1414,7 +1418,7 @@ export default function DashboardScreen() {
                 <PressableScale
                   key={p.id}
                   onPress={() =>
-                    router.push({ pathname: '/career', params: { tab: p.tab } })
+                    router.push({ pathname: '/work', params: { tab: p.tab } })
                   }>
                   <VixText heading="label" additionalStyle={styles.productivityText}>
                     {p.text}
@@ -1434,19 +1438,17 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   header: {
+    ...CONTENT_COLUMN,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    width: '100%',
-    maxWidth: 680,
-    alignSelf: 'center',
   },
   headerTitle: { color: Color.MAIN },
   headerDate: { color: Color.TEXT_LABEL },
   content: { paddingBottom: 40, paddingTop: 12, alignItems: 'center' },
-  contentInner: { width: '100%', maxWidth: 680, paddingHorizontal: 20, gap: 20 },
+  contentInner: { ...CONTENT_COLUMN, paddingHorizontal: 20, gap: 20 },
   streakCard: {
     flexDirection: 'row',
     alignItems: 'center',

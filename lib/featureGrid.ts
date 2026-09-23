@@ -41,6 +41,9 @@ export type HomeFeature = {
   /** Wajib kalau `glyph` tidak diisi. */
   icon?:
     | 'checklist'
+    | 'flag.fill'
+    | 'person.crop.circle.fill'
+    | 'gearshape.fill'
     | 'banknote'
     | 'heart.fill'
     | 'person.2.fill'
@@ -77,8 +80,8 @@ export type HomeFeature = {
 };
 
 const FEATURES: HomeFeature[] = [
-  { key: 'tasks', sort: 1, label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK, deep: Color.MAIN_DARK },
-  { key: 'spiritual', sort: 2, label: 'Spiritual', icon: 'bird.fill', route: '/spiritual', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK, deep: Color.SPIRITUAL_DEEP },
+  { key: 'tasks', sort: 1, label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.TASKS, fg: Color.TASKS_DARK, deep: Color.TASKS_DEEP },
+  { key: 'spiritual', sort: 2, label: 'Spiritual', icon: 'bird.fill', route: '/walk', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK, deep: Color.SPIRITUAL_DEEP },
   { key: 'health', sort: 3, label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.HEALTH, fg: Color.HEALTH_DARK, deep: Color.HEALTH_DEEP },
   { key: 'core', sort: 4, label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.CORE, fg: Color.CORE_DARK, deep: Color.CORE_DEEP },
 
@@ -88,7 +91,7 @@ const FEATURES: HomeFeature[] = [
   { key: 'family', sort: 8, label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FAMILY, fg: Color.FAMILY_DARK, deep: Color.FAMILY_DEEP },
 
   { key: 'investment', sort: 9, label: 'Invest', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.INVEST, fg: Color.INVEST_DARK, deep: Color.INVEST_DEEP },
-  { key: 'career', sort: 10, label: 'Career', icon: 'briefcase.fill', route: '/career', bg: Color.CAREER, fg: Color.CAREER_DARK, deep: Color.CAREER_DEEP },
+  { key: 'career', sort: 10, label: 'Career', icon: 'briefcase.fill', route: '/work', bg: Color.CAREER, fg: Color.CAREER_DARK, deep: Color.CAREER_DEEP },
   // 16 Sep 2026: Fun ↔ News & Wheel ↔ Book bertukar tempat (permintaan user):
   // Fun & Wheel turun ke baris Car, News & Book naik ke baris Invest.
   { key: 'fun', sort: 15, label: 'Fun', icon: 'party.popper.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK, deep: Color.FUN_DEEP },
@@ -106,9 +109,31 @@ const FEATURES: HomeFeature[] = [
 ];
 
 /**
- * Grid siap pakai — SUDAH urut nomor. Semua pemakainya (grid Home, kartu
- * Dashboard) cukup memakainya apa adanya.
+ * Grid siap pakai — SUDAH urut nomor. Semua pemakainya (grid Life, Semua
+ * Pengingat, kategori Achievement) cukup memakainya apa adanya.
  */
 export const HOME_FEATURES: HomeFeature[] = [...FEATURES].sort(
   (a, b) => a.sort - b.sort,
 );
+
+// Fitur yang sudah punya TAB UTAMA sendiri (22 Sep 2026, versi 2.0): Walk ✝️,
+// CORE 👥, Work 💼. Tidak digambar lagi sebagai tile di grid Life — mereka
+// ada di kaki layar. Warnanya tetap dipakai pita header masing-masing.
+const PUNYA_TAB = new Set(['spiritual', 'core', 'career']);
+
+// Tile tambahan di grid Life untuk layar yang dulu tab utama (Habits, Profile,
+// System) plus Achievement (label "Awards": "Achievement" tidak muat satu
+// baris di tile iPhone 15). Nomornya lanjutan supaya urutan lama tidak
+// bergeser; warnanya warna merek (bukan fitur mana pun).
+const LIFE_EXTRA: HomeFeature[] = [
+  { key: 'habits', sort: 0.5, label: 'Habits', icon: 'checklist', route: '/habits', bg: Color.ACCENT, fg: Color.ACCENT_DARK, deep: Color.ACCENT_DARK },
+  { key: 'achievements', sort: 20.5, label: 'Awards', icon: 'flag.fill', route: '/achievements', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },
+  { key: 'profile', sort: 21, label: 'Profile', icon: 'person.crop.circle.fill', route: '/profile', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK, deep: Color.MAIN_DARK },
+  { key: 'system', sort: 22, label: 'System', icon: 'gearshape.fill', route: '/system', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
+];
+
+/** Grid tab Life 🌿 — semua area lain, urut nomor, tanpa yang sudah jadi tab. */
+export const LIFE_FEATURES: HomeFeature[] = [
+  ...FEATURES.filter((f) => !PUNYA_TAB.has(f.key)),
+  ...LIFE_EXTRA,
+].sort((a, b) => a.sort - b.sort);

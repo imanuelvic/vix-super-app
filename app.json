@@ -3,7 +3,7 @@
     "name": "vix",
     "slug": "vix-super-app",
     "owner": "imanuelvic",
-    "version": "1.4.3",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "vixsuperapp",
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0C5C50",
+        "backgroundColor": "#0B3D36",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -36,9 +36,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#FDF6EC",
+          "backgroundColor": "#F7F3EC",
           "dark": {
-            "backgroundColor": "#0C5C50"
+            "backgroundColor": "#0B3D36"
           }
         }
       ],
@@ -72,7 +72,7 @@
       [
         "expo-notifications",
         {
-          "color": "#0C5C50"
+          "color": "#0B3D36"
         }
       ]
     ],
