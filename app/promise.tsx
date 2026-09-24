@@ -143,7 +143,7 @@ export default function PromiseScreen() {
           ) : null}
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            🚩 Janji Tuhan apa?
+            🚩 Janji Tuhan Apa?
           </VixText>
           <FormInput
             placeholder="mis. Tuhan menyediakan rumah untuk keluargaku"

@@ -270,7 +270,7 @@ export default function DebtsScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Finance"
-        title="Pinjaman 🤝"
+        title="Lending 🤝"
         subtitle="Pinjam-meminjam, cicilan & jatuh tempo"
       />
 
@@ -437,7 +437,7 @@ export default function DebtsScreen() {
             editable={!busy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Total pinjaman
+            💰 Total Pinjaman
           </VixText>
           <MoneyInput
             style={styles.formGap}
@@ -448,7 +448,7 @@ export default function DebtsScreen() {
           />
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Cara bayar
+            💳 Cara Bayar
           </VixText>
           <View style={styles.chipRow}>
             {PERIODS.map((p) => (
@@ -465,7 +465,7 @@ export default function DebtsScreen() {
           {fPeriod !== 'once' && (
             <>
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                Nominal cicilan {PERIOD_META[fPeriod].short}
+                💰 Nominal Cicilan {PERIOD_META[fPeriod].short}
               </VixText>
               <MoneyInput
                 style={styles.formGap}
@@ -478,7 +478,7 @@ export default function DebtsScreen() {
           )}
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Mulai meminjam
+            📆 Mulai Meminjam
           </VixText>
           <View style={styles.formGap}>
             <DateField
@@ -489,7 +489,7 @@ export default function DebtsScreen() {
           </View>
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            {fPeriod === 'once' ? 'Jatuh tempo' : 'Jatuh tempo cicilan berikutnya'}
+            {fPeriod === 'once' ? '⏰ Jatuh Tempo' : '⏰ Jatuh Tempo Cicilan Berikutnya'}
           </VixText>
           <View style={styles.formGap}>
             <DateField
@@ -502,7 +502,7 @@ export default function DebtsScreen() {
           {fPeriod !== 'once' && (
             <>
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                Target lunas (sampai kapan)
+                🎯 Target Lunas (sampai kapan)
               </VixText>
               <View style={styles.formGap}>
                 <DateField
@@ -545,7 +545,7 @@ export default function DebtsScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Nominal pembayaran
+            💰 Nominal Pembayaran
           </VixText>
           <MoneyInput
             style={styles.formGap}
@@ -555,7 +555,7 @@ export default function DebtsScreen() {
             editable={!pBusy}
           />
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Tanggal bayar
+            📆 Tanggal Bayar
           </VixText>
           {/* Tanggal + tombol ➕ "catat pembayaran" di kanannya — bentuk yang
               sama dengan Nominal + ➕ di tab Transaksi Finance. */}

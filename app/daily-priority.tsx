@@ -229,7 +229,7 @@ export default function DailyPriorityScreen() {
               di Habits sudah ditandai ✗. */}
           {skipped && (
             <SkipNotice
-              title="⏭️ Dilewati hari ini"
+              title="⏭️ Skipped Today"
               detail="❌ Tercatat tak tuntas di Habits"
               additionalStyle={styles.skippedGap}
             />

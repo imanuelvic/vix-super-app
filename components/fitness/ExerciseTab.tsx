@@ -25,7 +25,7 @@ import { DonutChart } from '@/components/finance/DonutChart';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useScrollTop } from '@/hooks/useScrollTop';
-import { type LoginStreak } from '@/lib/achievements';
+import { type LoginStreak } from '@/lib/reward';
 import {
   applyFitPicks,
   breakFitStreak,
@@ -489,7 +489,7 @@ export function ExerciseTab({
           {isToday && !skipped ? (
             <>
               <SectionRow
-                title="🎯 Olahraga hari ini"
+                title="🎯 Today Exercise"
                 right={
                   <MiniButton
                     label={belumPilih ? '+ Pilih' : '+ Ubah'}
@@ -560,7 +560,7 @@ export function ExerciseTab({
 
         {isToday && skipped ? (
           <SkipNotice
-            title="❌ Olahraga hari ini dilewati"
+            title="❌ Exercise Skipped Today"
             detail="Streak kembali ke awal"
           />
         ) : isToday ? (
@@ -729,7 +729,7 @@ export function ExerciseTab({
       {/* ===== Sheet pilih kategori ===== */}
       <SheetModal
         visible={pickerOpen}
-        title="Pilih Olahraga"
+        title="🏃 Pick Exercise"
         subtitle="Boleh lebih dari satu, daftar gerakannya digabung"
         onClose={() => setPickerOpen(false)}
         footer={

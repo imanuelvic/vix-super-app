@@ -73,6 +73,7 @@ function warnaKulit(cp: number): boolean {
 
 function emojiDasar(cp: number): boolean {
   return (
+    (cp >= 0x231a && cp <= 0x23ff) || // jam & pasir (⌚ ⏰ ⏳)
     (cp >= 0x1f000 && cp <= 0x1faff) || // gambar, wajah, bendera, benda
     (cp >= 0x2600 && cp <= 0x27bf) || // simbol & dingbats (☀️ ✨ ❤️)
     (cp >= 0x2b00 && cp <= 0x2bff) // bintang & panah tebal (⭐)

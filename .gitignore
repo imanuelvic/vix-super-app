@@ -46,6 +46,12 @@ GoogleService-Info.plist
 # typescript
 *.tsbuildinfo
 
+# Keluaran suite verifikasi (`npm run cek`). Suite-nya sendiri IKUT ter-commit
+# — yang dibuang cuma hasil kompilasi sementara yang ditulis saat dijalankan.
+cek/keluar-*/
+cek/out-*/
+cek/*.html
+
 app-example
 
 # generated native folders

@@ -89,7 +89,7 @@ export function DiscussionTab({
             catatan di openChatGpt, lib/linking.ts). Sesampainya di sana,
             lambang gelombang suara di pojok kanan bawah tinggal di-click. */}
         <SectionRow
-          title="Diskusi Dalam Minggu Ini"
+          title="💬 Discussion This Week"
           right={<MiniButton label="🎙️ ChatGPT" onPress={openChatGpt} />}
         />
         
@@ -122,7 +122,7 @@ export function DiscussionTab({
         })}
 
         <VixText heading="title" additionalStyle={styles.allTitle}>
-          Semua Bahan Diskusi
+          💬 Semua Bahan Diskusi
         </VixText>
 
         <FilterChips

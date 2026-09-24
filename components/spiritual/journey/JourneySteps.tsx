@@ -96,7 +96,7 @@ export function ReceiveStep({
       <SpiritualIntro reminder={reminder} />
 
       <View>
-        <JourneyFieldLabel>Judul Revive</JourneyFieldLabel>
+        <JourneyFieldLabel>🏷️ Judul Revive</JourneyFieldLabel>
         <FormInput
           style={js.gap}
           placeholder="Judul renungan hari ini"
@@ -319,11 +319,11 @@ export function PrayStep({
 }: {
   entry: ReviveEntry | null;
   ready: boolean;
-  /** Pokok doa syafaat hari ini (Senin Keluarga·Kesehatan, dst). */
+  /** Pokok doa syafaat hari ini (Senin Teman Eben Haezar, dst). */
   topic: IntercessionTopic;
-  /** false di Selasa/Kamis saat Doa Rantai-nya tampil (biar tidak dobel). */
+  /** false saat Doa Rantai-nya tampil: dialah syafaat pagi ini (biar tidak dobel). */
   showIntercession: boolean;
-  /** HARI INI jadwal Doa Rantai (Selasa & Kamis) & ada CL gilirannya. */
+  /** HARI INI jadwal Doa Rantai CL & ada CL gilirannya. */
   chainDue: boolean;
   /** Berapa CORE Leader lagi yang belum didoakan pagi ini. */
   chainLeft: number;
@@ -348,12 +348,13 @@ export function PrayStep({
 
   return (
     <JourneyCard step="pray">
-      {/* Doa Syafaat — pokok doanya berganti tiap hari (jadwal tetap di
-          lib/intercession.ts). Selasa & Kamis diganti Doa Rantai di bawah. */}
+      {/* Doa Syafaat — jadwal mingguan pemiliknya sendiri (lib/intercession.ts),
+          pokok doanya berganti tiap hari. Diganti Doa Rantai di bawah pada hari
+          yang memang giliran CL, jadi langkah ini selalu satu blok syafaat. */}
       {showIntercession && (
         <View>
           <JourneyFieldLabel>
-            Doa Syafaat · {topic.emoji} {topic.label}
+            🙏 Doa Syafaat · {topic.emoji} {topic.label}
           </JourneyFieldLabel>
           <JourneyBox>
             {topic.points.map((p) => (
@@ -367,7 +368,7 @@ export function PrayStep({
 
       {chainDue && (
         <View>
-          <JourneyFieldLabel>🔗 Doa Rantai CORE Leader hari ini</JourneyFieldLabel>
+          <JourneyFieldLabel>🔗 Doa Rantai CORE Leader Hari Ini</JourneyFieldLabel>
           <View style={styles.chainList}>
             {chainLeaders.map((l) => {
               const open = openChain === l.id;

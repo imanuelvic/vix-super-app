@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { AchievementButton } from '@/components/common/AchievementButton';
+import { RewardButton } from '@/components/common/RewardButton';
 import { BottomTabs, type BottomTab } from '@/components/common/BottomTabs';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -29,7 +29,7 @@ import {
 type HealthTab = 'steps' | 'race' | 'checkup';
 
 // Tab bar bawah di dalam layar Health.
-// Kebiasaan harian TIDAK lagi di sini — pindah ke tab besar Habits 📋
+// Kebiasaan harian TIDAK lagi di sini — pindah ke tab besar Habits ✔️
 // (app/(tabs)/habits.tsx). Yang tinggal di sini semuanya soal tubuh:
 // langkah kaki, lomba, dan pemeriksaan.
 //
@@ -101,13 +101,13 @@ export default function HealthScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Tombol kanan atas menyesuaikan sub-tab yang sedang dibuka:
           Steps → rekor langkah · sisanya → info kesehatan.
-          Di sebelahnya 🔥 achievement milik sub-tab itu:
+          Di sebelahnya 🔥 reward milik sub-tab itu:
             Steps → 📅 Target Mingguan (aerobik + strength) — angkanya tak
                     tampil di mana pun selain di modal itu, beda dengan
                     patokan jarak yang sudah ✅/❌ satu per satu di tab ini.
             Race & Check-up belum punya pencapaian → tak ada tombol 🔥.
           💧 Air Putih dulu digantung di sub-tab Diet; sesudah Diet dihapus
-          pencapaiannya tetap utuh & terbuka dari layar Achievement 🏆. */}
+          pencapaiannya tetap utuh & terbuka dari layar Reward 🏆. */}
       <ScreenHeader
         backLabel="Home"
         title="Health 🍎"
@@ -122,7 +122,7 @@ export default function HealthScreen() {
                 onPress={() => router.push('/health-info')}
               />
             )}
-            {tab === 'steps' ? <AchievementButton category="week" /> : null}
+            {tab === 'steps' ? <RewardButton category="week" /> : null}
           </>
         }
       />

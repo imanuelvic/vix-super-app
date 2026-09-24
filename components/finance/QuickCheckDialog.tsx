@@ -35,7 +35,7 @@ export function QuickCheckDialog({
   return (
     <CenterDialog visible onClose={onCancel}>
       <VixText heading="title" additionalStyle={styles.title}>
-        Quick check 👀
+        👀 Quick Check
       </VixText>
       <VixText heading="label" additionalStyle={styles.sub}>
         {c.icon} {c.label} · {formatRupiah(amount)}

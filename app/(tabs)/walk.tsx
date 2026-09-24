@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AchievementButton } from '@/components/common/AchievementButton';
+import { RewardButton } from '@/components/common/RewardButton';
 import { AttentionMark } from '@/components/common/Badge';
 import {
   BottomTabs,
@@ -29,7 +29,7 @@ import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { SermonTab } from '@/components/spiritual/SermonTab';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
-import { BIBLE_CATEGORY } from '@/lib/achievements';
+import { BIBLE_CATEGORY } from '@/lib/reward';
 import { subscribeFastingPlans, type FastingPlan } from '@/lib/fasting';
 import { dayDocId } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -137,7 +137,7 @@ export default function SpiritualScreen() {
   // menulis Revive & menekan Simpan. Penghitung di dokumen streak cuma
   // salinannya, dan salinan itu bisa meleset: penyimpanan yang gagal saat
   // sinyal putus, Revive yang ditulis menyusul untuk tanggal kemarin, atau
-  // tombol reset achievement. Sekali meleset, penghitungnya tak pernah
+  // tombol reset reward. Sekali meleset, penghitungnya tak pernah
   // membetulkan diri — itulah kenapa angkanya bisa berhenti di 3 padahal
   // catatannya sudah 12 hari berturut-turut.
   //
@@ -183,7 +183,7 @@ export default function SpiritualScreen() {
         // Pojok kanan menyesuaikan sub-tab:
         //   Revive  → 📖 riwayat + 🔥 "Doa Pagi" (Revive memang langkah 1
         //             gerbang pagi — kategori "Revive Rohani" sengaja dihapus
-        //             dulu karena pemicunya sama persis, lihat lib/achievements)
+        //             dulu karena pemicunya sama persis, lihat lib/rewards)
         //   Bible   → ⏸️ Pause & Pray + 🔥 sesi yang JENDELANYA sedang berjalan
         //             (di luar jam baca mana pun, jatuh ke pagi 🌅 sebagai
         //             patokan)
@@ -210,7 +210,7 @@ export default function SpiritualScreen() {
                 emoji="🙏"
                 onPress={() => router.push('/gratitude')}
               />
-              <AchievementButton category="login" />
+              <RewardButton category="login" />
             </>
           ) : tab === 'bible' ? (
             <>
@@ -221,7 +221,7 @@ export default function SpiritualScreen() {
                 emoji="⏸️"
                 onPress={() => router.push('/pause-pray')}
               />
-              <AchievementButton
+              <RewardButton
                 category={BIBLE_CATEGORY[bibleSessionNow(now) ?? 'morning']}
               />
             </>
@@ -282,7 +282,7 @@ export default function SpiritualScreen() {
               </PressableScale>
             ) : skippedToday ? (
               <SkipNotice
-                title="⏭️ Revive hari ini dilewati"
+                title="⏭️ Revive Skipped Today"
                 detail={
                   '🔥 Streak tidak bertambah hari ini. Masih bisa '
                 }

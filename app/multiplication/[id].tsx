@@ -250,7 +250,7 @@ export default function MultiplicationDetailScreen() {
   if (list === null) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader backLabel="CORE" title="Multiplikasi 🌱" />
+        <ScreenHeader backLabel="CORE" title="Multiplication 🌱" />
         <LoadingCenter />
       </SafeAreaView>
     );
@@ -259,7 +259,7 @@ export default function MultiplicationDetailScreen() {
   if (!m) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader backLabel="CORE" title="Multiplikasi 🌱" />
+        <ScreenHeader backLabel="CORE" title="Multiplication 🌱" />
         <VixText heading="label" additionalStyle={styles.empty}>
           Multiplikasi ini sudah tidak ada.
         </VixText>
@@ -277,7 +277,7 @@ export default function MultiplicationDetailScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Multiplikasi 🌱"
+        title="Multiplication 🌱"
         subtitle={`${m.fromHeart} CORE ${m.fromName} → ${m.toHeart} CORE ${m.toName}`}
       />
 
@@ -518,7 +518,7 @@ export default function MultiplicationDetailScreen() {
           multiline
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Status
+          🚦 Status
         </VixText>
         <View style={styles.markRow}>
           {STEP_MARKS.map((s) => (
@@ -571,7 +571,7 @@ export default function MultiplicationDetailScreen() {
           multiline
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Masuk kelompok
+          👥 Masuk Kelompok
         </VixText>
         <View style={styles.markRow}>
           {SIDE_META.map((s) => (

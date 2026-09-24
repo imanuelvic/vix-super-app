@@ -105,7 +105,7 @@ export default function CoreCalendarScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Kalender CORE 📆"
+        title="CORE Calendar 📆"
         subtitle="Visitasi & rapat bulanan dalam sebulan"
       />
       <ScreenError message={error} />
@@ -133,9 +133,14 @@ export default function CoreCalendarScreen() {
               </PressableScale>
             </View>
 
+            {/* Sabtu & Minggu berhuruf merah — akhir pekan kebaca sekilas,
+                tanpa perlu menghitung kolom dari kiri. */}
             <View style={styles.week}>
-              {HARI.map((h) => (
-                <VixText key={h} heading="label" additionalStyle={styles.weekDay}>
+              {HARI.map((h, i) => (
+                <VixText
+                  key={h}
+                  heading="label"
+                  additionalStyle={[styles.weekDay, i >= 5 && styles.weekEnd]}>
                   {h}
                 </VixText>
               ))}
@@ -163,6 +168,9 @@ export default function CoreCalendarScreen() {
                           heading={hariIni || dipilih ? 'bold' : 'paragraph'}
                           additionalStyle={[
                             styles.dayText,
+                            // Sabtu (6) & Minggu (0) ikut merah, kecuali hari
+                            // ini (lingkaran pekat, hurufnya putih).
+                            (c.date.getDay() === 0 || c.date.getDay() === 6) && styles.weekEnd,
                             !c.inMonth && styles.dayOutside,
                             hariIni && styles.dayTodayText,
                           ]}>
@@ -295,6 +303,8 @@ const styles = StyleSheet.create({
   monthText: { color: Color.CORE_DARK },
   week: { flexDirection: 'row' },
   weekDay: { flex: 1, textAlign: 'center', paddingVertical: 6 },
+  // Akhir pekan: merah yang sama dengan penanda "lewat tenggat" di app ini.
+  weekEnd: { color: Color.DANGER },
   cell: { flex: 1, alignItems: 'center', paddingVertical: 3 },
   day: {
     width: DAY,

@@ -12,7 +12,7 @@ import {
   resetPrayerStreak,
   subscribeLoginStreak,
   type LoginStreak,
-} from '@/lib/achievements';
+} from '@/lib/reward';
 import { subscribePartStatus, type PartStatusMap } from '@/lib/car';
 import {
   subscribeFreelance,
@@ -90,6 +90,13 @@ import { quarterDocId, quarterOf, subscribeWheel, type WheelData } from '@/lib/w
 // digambar sesudah semuanya tiba (useReadyGate), supaya muncul serentak sebagai
 // satu susunan — bukan menetes satu per satu selama beberapa detik. Menambah
 // sumber baru = tambah di daftar `mark(...)` di bawah DAN naikkan angka ini.
+//
+// ⚠️ Angka ini dipelihara TANGAN, dan salah menuliskannya tidak menimbulkan
+// galat apa pun: kalau kebesaran, `ready` tidak pernah true — daftar Today
+// tinggal berputar selamanya DAN notifikasi tidak pernah dijadwalkan (lihat
+// efek di bawah yang menunggu `ready`). Penjaganya ada di suite cek-cepat.js:
+// ia menghitung sendiri jumlah `mark(` di berkas ini, memastikan kuncinya
+// unik, dan membandingkannya dengan angka ini.
 const SOURCES = 37;
 
 /**
@@ -111,6 +118,12 @@ export function useTodayData(): {
   /** Pokok doa syafaat hari ini (+ kliping berita di Sabtu/Minggu). */
   intercession: IntercessionTopic;
   intercessionDismiss: ReturnType<typeof useDailyDismiss>;
+  /**
+   * Ada langganan yang gagal dimuat. Penting justru saat `ready` masih false:
+   * tanpa ini, gerbang yang menggantung tidak bisa dibedakan dari "sedang
+   * memuat" yang wajar.
+   */
+  loadError: string | null;
 } {
   const { user } = useAuth();
   const { now, todayId } = useNow();
@@ -159,52 +172,60 @@ export function useTodayData(): {
   const [wheel, setWheel] = useState<WheelData | null>(null);
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
 
+  // Galat muat: diisi `useLiveAll` kalau ada langganan yang gagal. Tanpa ini
+  // gerbang `ready` bisa menggantung tanpa penjelasan apa pun di layar.
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const { ready, mark } = useReadyGate(SOURCES);
 
   useLiveAll(
-    (uid) => {
+    (uid, fail) => {
       const q = quarterOf(new Date());
       return [
-        subscribeLoginStreak(uid, mark('login', setLogin)),
-        subscribeBibleReadingToday(uid, todayId, mark('bible', setBibleReading)),
-        subscribeHabitSchedule(uid, mark('habits', setHabits)),
-        subscribeHabitDay(uid, todayId, mark('day', setDay)),
-        subscribeFitDay(uid, todayId, mark('fitDay', setFitDay)),
-        subscribeFastingPlans(uid, mark('fasting', setFastingPlans)),
-        subscribeSermons(uid, mark('sermons', setSermons)),
-        subscribeMyReminders(uid, mark('myReminders', setMyReminders)),
-        subscribePrayerNews(uid, mark('prayerNews', setPrayerNews)),
-        subscribeFeedGenerated(uid, todayId, mark('feed', setFeedGenerated)),
-        subscribePriorityDay(uid, todayId, mark('priorities', setPriorities)),
-        subscribeCoreLeaders(uid, mark('leaders', setLeaders)),
-        subscribeMainTeam(uid, mark('mainTeam', setMainTeam)),
-        subscribeBirthdayGreets(uid, mark('greets', setGreets)),
-        subscribeWeeklyFocus(uid, mark('weeklyFocus', setWeeklyFocus)),
-        subscribeVisitations(uid, mark('visitations', setVisitations)),
-        subscribeMonthlyPrayers(uid, mark('monthlyPrayers', setMonthlyPrayers)),
-        subscribeTasks(uid, mark('tasks', setTasks)),
-        subscribeOtherTasks(uid, mark('otherTasks', setOtherTasks)),
-        subscribeRoadmap(uid, mark('roadmap', setRoadmap)),
-        subscribeFreelance(uid, mark('freelance', setFreelance)),
-        subscribeFamily(uid, mark('family', setFamily)),
-        subscribeDebts(uid, mark('debts', setDebts)),
-        subscribeCheckups(uid, mark('checkups', setCheckups)),
-        subscribeHealthProfile(uid, mark('profile', setProfile)),
-        subscribeDonor(uid, mark('donor', setDonor)),
-        subscribeLearningWeek(uid, weekId, mark('learningWeek', setLearningWeek)),
-        subscribeTopicsDone(uid, mark('topicsDone', setTopicsDone)),
-        subscribeBills(uid, mark('bills', setBills)),
-        subscribeFutsal(uid, mark('futsal', setFutsal)),
-        subscribeDataPlans(uid, mark('dataPlans', setDataPlans)),
-        subscribePopulationLog(uid, mark('population', setPopulation)),
-        subscribePartStatus(uid, mark('carParts', setCarParts)),
-        subscribeChoreStatus(uid, mark('chores', setResidenceChores)),
-        subscribeMeterReadings(uid, mark('readings', setMeterReadings)),
-        subscribeWheel(uid, quarterDocId(q.year, q.q), mark('wheel', setWheel)),
-        subscribeFun(uid, mark('fun', setFun)),
+        subscribeLoginStreak(uid, mark('login', setLogin), fail),
+        subscribeBibleReadingToday(uid, todayId, mark('bible', setBibleReading), fail),
+        subscribeHabitSchedule(uid, mark('habits', setHabits), fail),
+        subscribeHabitDay(uid, todayId, mark('day', setDay), fail),
+        subscribeFitDay(uid, todayId, mark('fitDay', setFitDay), fail),
+        subscribeFastingPlans(uid, mark('fasting', setFastingPlans), fail),
+        subscribeSermons(uid, mark('sermons', setSermons), fail),
+        subscribeMyReminders(uid, mark('myReminders', setMyReminders), fail),
+        subscribePrayerNews(uid, mark('prayerNews', setPrayerNews), fail),
+        subscribeFeedGenerated(uid, todayId, mark('feed', setFeedGenerated), fail),
+        subscribePriorityDay(uid, todayId, mark('priorities', setPriorities), fail),
+        subscribeCoreLeaders(uid, mark('leaders', setLeaders), fail),
+        subscribeMainTeam(uid, mark('mainTeam', setMainTeam), fail),
+        subscribeBirthdayGreets(uid, mark('greets', setGreets), fail),
+        subscribeWeeklyFocus(uid, mark('weeklyFocus', setWeeklyFocus), fail),
+        subscribeVisitations(uid, mark('visitations', setVisitations), fail),
+        subscribeMonthlyPrayers(uid, mark('monthlyPrayers', setMonthlyPrayers), fail),
+        subscribeTasks(uid, mark('tasks', setTasks), fail),
+        subscribeOtherTasks(uid, mark('otherTasks', setOtherTasks), fail),
+        subscribeRoadmap(uid, mark('roadmap', setRoadmap), fail),
+        subscribeFreelance(uid, mark('freelance', setFreelance), fail),
+        subscribeFamily(uid, mark('family', setFamily), fail),
+        subscribeDebts(uid, mark('debts', setDebts), fail),
+        subscribeCheckups(uid, mark('checkups', setCheckups), fail),
+        subscribeHealthProfile(uid, mark('profile', setProfile), fail),
+        subscribeDonor(uid, mark('donor', setDonor), fail),
+        subscribeLearningWeek(uid, weekId, mark('learningWeek', setLearningWeek), fail),
+        subscribeTopicsDone(uid, mark('topicsDone', setTopicsDone), fail),
+        subscribeBills(uid, mark('bills', setBills), fail),
+        subscribeFutsal(uid, mark('futsal', setFutsal), fail),
+        subscribeDataPlans(uid, mark('dataPlans', setDataPlans), fail),
+        subscribePopulationLog(uid, mark('population', setPopulation), fail),
+        subscribePartStatus(uid, mark('carParts', setCarParts), fail),
+        subscribeChoreStatus(uid, mark('chores', setResidenceChores), fail),
+        subscribeMeterReadings(uid, mark('readings', setMeterReadings), fail),
+        subscribeWheel(uid, quarterDocId(q.year, q.q), mark('wheel', setWheel), fail),
+        subscribeFun(uid, mark('fun', setFun), fail),
       ];
     },
-    { deps: [todayId, weekId, mark] },
+    // Sampai 24 Sep 2026 tidak ada `onError` di sini sama sekali, jadi
+    // langganan yang gagal tidak meninggalkan jejak apa pun: layarnya cuma
+    // diam. Sekarang galatnya sampai ke layar Today, dan pemiliknya tahu ini
+    // gangguan muat data, bukan "memang tidak ada yang perlu dikerjakan".
+    { deps: [todayId, weekId, mark], onError: setLoadError },
   );
 
   // "Cron" kliping doa syafaat 📰🙏 — app ini tidak punya server maupun tugas
@@ -291,7 +312,7 @@ export function useTodayData(): {
     ],
   );
 
-  // 🔔 Pengingat di HP ditulis ulang tiap keadaan hari ini berubah — inilah
+  // 📳 Pengingat di HP ditulis ulang tiap keadaan hari ini berubah — inilah
   // penjadwalnya (app ini tidak punya server maupun tugas latar). Menunggu
   // `ready` supaya yang dijadwalkan bukan keadaan setengah termuat.
   useEffect(() => {
@@ -299,5 +320,8 @@ export function useTodayData(): {
     syncNotifications(model, finance, todayId).catch(() => {});
   }, [user, ready, model, finance, todayId]);
 
-  return { now, todayId, model, ready, login, priorities, intercession, intercessionDismiss };
+  return {
+    now, todayId, model, ready, login, priorities, intercession,
+    intercessionDismiss, loadError,
+  };
 }

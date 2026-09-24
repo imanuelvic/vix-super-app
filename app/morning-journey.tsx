@@ -16,7 +16,7 @@ import {
   skipDailyPrayer,
   subscribeLoginStreak,
   type LoginStreak,
-} from '@/lib/achievements';
+} from '@/lib/reward';
 import {
   EMPTY_MONTHLY_PRAYERS,
   isPrayerFollowupDay,

@@ -27,7 +27,7 @@ import { formatRupiah } from '@/lib/transactions';
 
 // Archive Self-Reward 🗄️ — semua hadiah yang PERNAH kamu klaim, terbaru di
 // atas, lengkap dengan tanggal & jamnya. Isinya ditulis sendiri tiap kali
-// tombol Klaim di layar Achievement ditekan.
+// tombol Klaim di layar Reward ditekan.
 //
 // Ini catatan sejarah, bukan daftar tugas: tidak ada centang, tidak ada edit.
 // Yang bisa dilakukan cuma menghapus baris yang salah catat — dan hapusnya
@@ -83,7 +83,7 @@ export default function RewardArchiveScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
-        backLabel="Achievement"
+        backLabel="Reward"
         title="Archive Self-Reward 🗄️"
         subtitle="Semua hadiah yang sudah kamu klaim"
       />

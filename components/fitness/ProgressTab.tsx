@@ -7,7 +7,7 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
-import { type LoginStreak } from '@/lib/achievements';
+import { type LoginStreak } from '@/lib/reward';
 import {
   fetchFitDays,
   fitPace,

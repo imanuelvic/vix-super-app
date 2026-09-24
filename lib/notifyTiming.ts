@@ -39,7 +39,7 @@ export type Jam = { hour: number; minute: number };
 export type Jendela = { bawaan: Jam; dari: Jam; sampai: Jam };
 
 /**
- * Kelompok yang jamnya BELAJAR. Sisanya (bacaan Alkitab, Finance, achievement)
+ * Kelompok yang jamnya BELAJAR. Sisanya (bacaan Alkitab, Finance, reward)
  * sengaja tetap: jamnya terikat jendela fiturnya sendiri, bukan kebiasaan.
  */
 export const JENDELA: Partial<Record<NotifyGroup, Jendela>> = {
@@ -48,6 +48,9 @@ export const JENDELA: Partial<Record<NotifyGroup, Jendela>> = {
   work: { bawaan: { hour: 9, minute: 30 }, dari: { hour: 8, minute: 0 }, sampai: { hour: 12, minute: 0 } },
   life: { bawaan: { hour: 17, minute: 30 }, dari: { hour: 15, minute: 0 }, sampai: { hour: 20, minute: 0 } },
   reflection: { bawaan: { hour: 21, minute: 30 }, dari: { hour: 20, minute: 0 }, sampai: { hour: 23, minute: 0 } },
+  // 🌙 Night Prayer: jam tidurnya yang menentukan, bukan jam app ini. Kalau
+  // biasanya baru berdoa jam 23, pengingat jam 22 cuma jadi kebiasaan diabaikan.
+  'night-prayer': { bawaan: { hour: 22, minute: 0 }, dari: { hour: 20, minute: 0 }, sampai: { hour: 23, minute: 30 } },
 };
 
 // ----------------------------- hitungan murni -----------------------------

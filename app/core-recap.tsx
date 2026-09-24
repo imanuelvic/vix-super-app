@@ -62,7 +62,7 @@ export default function CoreRecapScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Rekap Visitasi 📊"
+        title="Visitation Recap 📊"
         subtitle="Rekap visitasi setiap CORE"
         right={
           leaders && leaders.length > 0 ? (
@@ -132,7 +132,7 @@ export default function CoreRecapScreen() {
                     jenis Thanksgiving di bawahnya sudah memakai 🎉. */}
                 <View style={styles.row}>
                   <VixText heading="label" additionalStyle={styles.labelCol} numberOfLines={2}>
-                    📅 Tanggal
+                    📅 🎉
                   </VixText>
                   {rekap.thanksgiving.map((d, i) => (
                     <VixText
@@ -231,6 +231,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    // gap 6: hati & tanggalnya punya jarak, tidak lagi berdempetan.
+    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderBottomWidth: 1,
@@ -238,9 +240,14 @@ const styles = StyleSheet.create({
   },
   headRow: { backgroundColor: Color.CORE },
   totalRow: { borderBottomWidth: 0, borderTopWidth: 1.5, borderTopColor: Color.CORE_DARK },
-  labelCol: { width: 96, color: Color.TEXT_TITLE },
-  // Tiap CL satu kolom sempit; 8 CL + Σ masih muat di iPhone 15 tanpa geser.
-  cell: { flex: 1, minWidth: 28, textAlign: 'center', color: Color.TEXT_TITLE },
+  // Kolom kiri cuma memuat satu lambang jenis (dan "Jenis" di kepalanya),
+  // jadi lebarnya dipangkas 96 → 46: sisanya diberikan ke kolom CL.
+  labelCol: { width: 46, color: Color.TEXT_TITLE },
+  // Tiap CL satu kolom. minWidth 48 (dari 28) supaya tanggal Thanksgiving
+  // ("15 Nov" di baris atas, "24" di bawahnya) tidak lagi berdesakan dan
+  // hatinya punya ruang. Lebih lebar dari layar = tabelnya digeser mendatar,
+  // dan itu memang sudah disiapkan (ScrollView horizontal di atas).
+  cell: { flex: 1, minWidth: 48, textAlign: 'center', color: Color.TEXT_TITLE },
   sumCol: { color: Color.CORE_DARK },
   // Garis tegak pemisah kolom Σ — setebal & sewarna garis di atas baris Total.
   sumLine: {

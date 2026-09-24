@@ -209,7 +209,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
 
         {/* ===== Riwayat ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Riwayat
+          🕘 Riwayat
         </VixText>
         {checkups.length === 0 && (
           <EmptyText>
@@ -247,11 +247,11 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
       {/* Bottom sheet catat pemeriksaan baru */}
       <SheetModal
         visible={addOpen}
-        title="Catat Pemeriksaan"
+        title="🩺 Add Check-up"
         subtitle="Simpan hasil tekanan / gula darah"
         onClose={() => setAddOpen(false)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Jenis pemeriksaan
+          🧪 Jenis Pemeriksaan
         </VixText>
         <View style={styles.chipRow}>
           {CHECKUP_TYPES.map((meta) => (
@@ -266,7 +266,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Hasil pemeriksaan
+          🩺 Hasil Pemeriksaan
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -277,7 +277,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Catatan (opsional)
+          📝 Catatan (opsional)
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -288,7 +288,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal
+          📆 Tanggal
         </VixText>
         <View style={styles.formGap}>
           <DateField value={date} onChange={setDate} />
@@ -306,7 +306,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
       {/* Bottom sheet edit pemeriksaan */}
       <SheetModal
         visible={!!editing}
-        title="Edit Pemeriksaan"
+        title="✏️ Edit Check-up"
         subtitle={editing ? `${TYPE_META[editing.type].icon} ${TYPE_META[editing.type].label}` : undefined}
         onClose={() => setEditing(null)}>
         <FormInput

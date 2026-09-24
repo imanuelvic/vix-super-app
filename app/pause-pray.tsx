@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
+import { CardPreview } from '@/components/common/CardPreview';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -14,6 +14,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { BibleStoryCard } from '@/components/spiritual/BibleStoryCard';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useCardPng } from '@/hooks/useCardPng';
 import { useNow } from '@/hooks/useNow';
 import {
   layoutStory,
@@ -47,7 +48,6 @@ const KOP = 'PAUSE & PRAY';
 const NAMA_BERKAS = 'Pause & Pray';
 
 export default function PausePrayScreen() {
-  const { width } = useWindowDimensions();
   const { now, todayId } = useNow();
 
   const [prayer, setPrayer] = useState('');
@@ -60,17 +60,9 @@ export default function PausePrayScreen() {
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const svgRef = useRef<Svg>(null);
+  const { svgRef, buatPng } = useCardPng(STORY_W, STORY_H);
   const design = designOf(pickedKey);
   const doa = prayer.trim();
-
-  // Pratinjau selebar layar dikurangi tepi, tapi dibatasi supaya lembar 9:16-nya
-  // tetap muat utuh di layar mana pun — angka & alasannya sama persis dengan
-  // Bagikan Ayat, termasuk kenapa kartunya dirender pada ukuran PENUH lalu
-  // dikecilkan dengan transform (lihat catatan panjang di lib/shareImage.ts).
-  const previewW = Math.min(width - 40, 260);
-  const previewH = (previewW * STORY_H) / STORY_W;
-  const scale = previewW / STORY_W;
 
   // Doa yang terlalu panjang DIPOTONG oleh penata teksnya (lihat layoutText):
   // sesudah ukuran huruf terkecil pun tak cukup, sisa barisnya dibuang. Itu
@@ -78,21 +70,6 @@ export default function PausePrayScreen() {
   // tahu. Jadi dihitung ulang di sini & diberitahukan.
   const muat = layoutStory(doa).lines.join(' ').length;
   const terpotong = doa.length > 0 && muat < doa.replace(/\s+/g, ' ').length;
-
-  /** Gambar kartunya jadi PNG 1080×1920 (base64, tanpa awalan `data:`). */
-  function buatPng(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      const svg = svgRef.current;
-      if (!svg) {
-        reject(new Error('kartu belum siap'));
-        return;
-      }
-      svg.toDataURL((data) => resolve(data), {
-        width: STORY_W,
-        height: STORY_H,
-      });
-    });
-  }
 
   /** Simpan ke Foto — dilewati kalau gambar yang persis sama sudah tersimpan. */
   async function simpanKeFoto(): Promise<void> {
@@ -150,22 +127,17 @@ export default function PausePrayScreen() {
           </VixText>
         )}
 
-        <View style={styles.previewWrap}>
-          <View
-            style={[styles.previewClip, { width: previewW, height: previewH }]}>
-            <View style={[styles.full, { transform: [{ scale }] }]}>
-              <BibleStoryCard
-                ref={svgRef}
-                verse={doa}
-                sessionLabel={KOP}
-                design={design}
-                dateLabel={formatFullDate(now)}
-                archiveLabel={archiveNo(todayId)}
-                width={STORY_W}
-              />
-            </View>
-          </View>
-        </View>
+        <CardPreview width={STORY_W} height={STORY_H} max={260}>
+          <BibleStoryCard
+            ref={svgRef}
+            verse={doa}
+            sessionLabel={KOP}
+            design={design}
+            dateLabel={formatFullDate(now)}
+            archiveLabel={archiveNo(todayId)}
+            width={STORY_W}
+          />
+        </CardPreview>
 
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
           🎨 Style
@@ -216,11 +188,6 @@ const styles = StyleSheet.create({
   sectionTitle: { ...SECTION_SPACE },
   prayerInput: { minHeight: 110, textAlignVertical: 'top' },
   tooLong: { color: Color.DANGER, marginTop: 6 },
-  previewWrap: { alignItems: 'center', paddingVertical: 14 },
-  // Kartunya dirender seukuran aslinya lalu dikecilkan; kotak ini yang
-  // memotongnya jadi sebesar pratinjau.
-  previewClip: { overflow: 'hidden' },
-  full: { width: STORY_W, height: STORY_H, transformOrigin: 'top left' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   disabled: { opacity: 0.45 },
   savedNote: { textAlign: 'center', color: Color.SUCCESS },

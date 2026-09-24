@@ -298,7 +298,7 @@ export function PersonalityTab({ data }: { data: Personality }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          💪 Kekuatan utama
+          💪 Kekuatan Utama
         </VixText>
         <FormInput
           style={styles.textArea}
@@ -310,7 +310,7 @@ export function PersonalityTab({ data }: { data: Personality }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📝 Catatan tentang diriku
+          📝 Catatan Tentang Diriku
         </VixText>
         <FormInput
           style={styles.textArea}

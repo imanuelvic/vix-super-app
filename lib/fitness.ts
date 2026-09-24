@@ -6,7 +6,7 @@ import {
     type FirestoreError,
 } from 'firebase/firestore';
 
-import { type LoginStreak as DayStreak } from './achievements';
+import { type LoginStreak as DayStreak } from './reward';
 import { pickOfDay, weekIndex } from './core';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
@@ -967,7 +967,7 @@ function prevDayId(d: Date): string {
 
 // ---- Tutup buku lewat tengah malam ⏰ ----
 //
-// Streak & achievement TIDAK lagi naik saat gerakan terakhir dicentang.
+// Streak & reward TIDAK lagi naik saat gerakan terakhir dicentang.
 // Alasannya sederhana: sepanjang hari centangnya masih boleh dilepas lagi, jadi
 // "sudah beres" di jam 3 sore belum tentu benar jam 11 malam. Yang dihitung
 // adalah keadaan hari itu SETELAH harinya habis (lewat jam 00.00).
@@ -1045,7 +1045,7 @@ export async function settleFitDays(uid: string, now: Date): Promise<number> {
  *
  * Yang hilang cuma streak berjalannya (`count` → 0). Rekor terbaik & total
  * sesi sengaja DIPERTAHANKAN: itu catatan sejarah yang benar-benar pernah kamu
- * capai, dan achievement "10/50/100 sesi" dihitung dari sana.
+ * capai, dan reward "10/50/100 sesi" dihitung dari sana.
  *
  * `lastDayId` diisi HARI INI (bukan dikosongkan): dengan count = 0, sesi
  * berikutnya tetap dihitung sebagai streak ke-1 — nyambung atau tidak,

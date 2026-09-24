@@ -68,7 +68,7 @@ export default function TokenPurchasesScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Residence"
-        title="Pembelian Token 🧾"
+        title="Token Purchase 🧾"
         subtitle="Semua token listrik yang pernah dibeli, terbaru di atas."
       />
 

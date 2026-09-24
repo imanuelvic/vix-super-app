@@ -7,7 +7,7 @@ import { type GlyphName } from '@/components/ui/icon-glyph';
 //
 // Dipakai dua tempat, dan itulah sebabnya daftar ini pindah ke lib:
 //   • app/(tabs)/index.tsx — menggambar gridnya apa adanya, berurutan.
-//   • lib/achievements.ts  — mengurutkan kategori pencapaian mengikuti grid
+//   • lib/reward.ts  — mengurutkan kategori pencapaian mengikuti grid
 //                            ini, supaya "Alkitab" tidak nyasar di bawah "Gym"
 //                            padahal di Home Spiritual ada jauh di atas Fitness.
 //
@@ -25,23 +25,24 @@ export type HomeFeature = {
    * cuma mengubah nomornya.
    *
    * Nomor yang sama juga mengurutkan kartu reminder Dashboard dari atas ke
-   * bawah & kategori Achievement, jadi ketiganya mustahil berbeda urutan.
+   * bawah & kategori Reward, jadi ketiganya mustahil berbeda urutan.
    */
   sort: number;
   label: string;
   /**
    * Lambang di luar SF Symbols — lihat `components/ui/icon-glyph.tsx`.
    *
-   * Dipakai dua tile: Friends (jabat tangan) & Married (cincin). Keduanya tidak
-   * ada di katalog Apple padahal justru itulah lambang fiturnya, jadi glifnya
-   * diambil dari @expo/vector-icons. Tetap satu warna & seukuran ikon lain —
-   * jadi barisnya rata, tidak seperti emoji yang warnanya diatur sistem.
+   * Dipakai satu tile: Friends (jabat tangan). Lambang itu tidak ada di
+   * katalog Apple padahal justru itulah lambang fiturnya, jadi glifnya diambil
+   * dari @expo/vector-icons. Tetap satu warna & seukuran ikon lain — jadi
+   * barisnya rata, tidak seperti emoji yang warnanya diatur sistem.
    */
   glyph?: GlyphName;
   /** Wajib kalau `glyph` tidak diisi. */
   icon?:
-    | 'checklist'
-    | 'flag.fill'
+    | 'bell.fill'
+    | 'checkmark.circle.fill'
+    | 'gamecontroller.fill'
     | 'person.crop.circle.fill'
     | 'gearshape.fill'
     | 'banknote'
@@ -80,37 +81,36 @@ export type HomeFeature = {
 };
 
 const FEATURES: HomeFeature[] = [
-  { key: 'tasks', sort: 1, label: 'Reminder', icon: 'checklist', route: '/tasks', bg: Color.TASKS, fg: Color.TASKS_DARK, deep: Color.TASKS_DEEP },
+  { key: 'tasks', sort: 0.5, label: 'Reminder', icon: 'bell.fill', route: '/tasks', bg: Color.TASKS, fg: Color.TASKS_DARK, deep: Color.TASKS_DEEP },
   { key: 'spiritual', sort: 2, label: 'Spiritual', icon: 'bird.fill', route: '/walk', bg: Color.SPIRITUAL, fg: Color.SPIRITUAL_DARK, deep: Color.SPIRITUAL_DEEP },
-  { key: 'health', sort: 3, label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.HEALTH, fg: Color.HEALTH_DARK, deep: Color.HEALTH_DEEP },
+  { key: 'health', sort: 1, label: 'Health', icon: 'heart.fill', route: '/health', bg: Color.HEALTH, fg: Color.HEALTH_DARK, deep: Color.HEALTH_DEEP },
   { key: 'core', sort: 4, label: 'CORE', icon: 'person.2.fill', route: '/core', bg: Color.CORE, fg: Color.CORE_DARK, deep: Color.CORE_DEEP },
 
-  { key: 'finance', sort: 5, label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE, fg: Color.FINANCE_DARK, deep: Color.FINANCE_DEEP },
-  { key: 'learning', sort: 6, label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK, deep: Color.LEARNING_DEEP },
-  { key: 'fitness', sort: 7, label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK, deep: Color.FITNESS_DEEP },
+  { key: 'finance', sort: 6, label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE, fg: Color.FINANCE_DARK, deep: Color.FINANCE_DEEP },
+  { key: 'learning', sort: 7, label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK, deep: Color.LEARNING_DEEP },
+  { key: 'fitness', sort: 3, label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK, deep: Color.FITNESS_DEEP },
   { key: 'family', sort: 8, label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FAMILY, fg: Color.FAMILY_DARK, deep: Color.FAMILY_DEEP },
 
   { key: 'investment', sort: 9, label: 'Invest', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.INVEST, fg: Color.INVEST_DARK, deep: Color.INVEST_DEEP },
   { key: 'career', sort: 10, label: 'Career', icon: 'briefcase.fill', route: '/work', bg: Color.CAREER, fg: Color.CAREER_DARK, deep: Color.CAREER_DEEP },
   // 16 Sep 2026: Fun ↔ News & Wheel ↔ Book bertukar tempat (permintaan user):
   // Fun & Wheel turun ke baris Car, News & Book naik ke baris Invest.
-  { key: 'fun', sort: 15, label: 'Fun', icon: 'party.popper.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK, deep: Color.FUN_DEEP },
-  { key: 'wheel', sort: 16, label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK, deep: Color.WHEEL_DEEP },
+  { key: 'fun', sort: 13, label: 'Fun', icon: 'party.popper.fill', route: '/fun', bg: Color.FUN, fg: Color.FUN_DARK, deep: Color.FUN_DEEP },
+  { key: 'wheel', sort: 14, label: 'Wheel', icon: 'target', route: '/wheel', bg: Color.WHEEL, fg: Color.WHEEL_DARK, deep: Color.WHEEL_DEEP },
 
-  { key: 'car', sort: 13, label: 'Car', icon: 'car.fill', route: '/car', bg: Color.CAR, fg: Color.CAR_DARK, deep: Color.CAR_DEEP },
-  { key: 'residence', sort: 14, label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK, deep: Color.HOUSE_DEEP },
+  { key: 'car', sort: 15, label: 'Car', icon: 'car.fill', route: '/car', bg: Color.CAR, fg: Color.CAR_DARK, deep: Color.CAR_DEEP },
+  { key: 'residence', sort: 16, label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK, deep: Color.HOUSE_DEEP },
   { key: 'news', sort: 11, label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK, deep: Color.NEWS_DEEP },
   { key: 'book', sort: 12, label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK, deep: Color.BOOK_DEEP },
 
-  { key: 'device', sort: 17, label: 'Device', icon: 'iphone', route: '/device', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
-  { key: 'games', sort: 18, label: 'Games', icon: 'trophy.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },
-  { key: 'friends', sort: 19, label: 'Friends', glyph: 'handshake', route: '/friends', bg: Color.FRIENDS, fg: Color.FRIENDS_DARK, deep: Color.FRIENDS_DEEP },
-  { key: 'married', sort: 20, label: 'Married', glyph: 'ring', route: '/married', bg: Color.MARRIED, fg: Color.MARRIED_DARK, deep: Color.MARRIED_DEEP },
+  { key: 'device', sort: 19, label: 'Device', icon: 'iphone', route: '/device', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
+  { key: 'games', sort: 18, label: 'Games', icon: 'gamecontroller.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },
+  { key: 'friends', sort: 17, label: 'Friends', glyph: 'handshake', route: '/friends', bg: Color.FRIENDS, fg: Color.FRIENDS_DARK, deep: Color.FRIENDS_DEEP },
 ];
 
 /**
  * Grid siap pakai — SUDAH urut nomor. Semua pemakainya (grid Life, Semua
- * Pengingat, kategori Achievement) cukup memakainya apa adanya.
+ * Pengingat, kategori Reward) cukup memakainya apa adanya.
  */
 export const HOME_FEATURES: HomeFeature[] = [...FEATURES].sort(
   (a, b) => a.sort - b.sort,
@@ -122,15 +122,25 @@ export const HOME_FEATURES: HomeFeature[] = [...FEATURES].sort(
 const PUNYA_TAB = new Set(['spiritual', 'core', 'career']);
 
 // Tile tambahan di grid Life untuk layar yang dulu tab utama (Habits, Profile,
-// System) plus Achievement (label "Awards": "Achievement" tidak muat satu
+// System) plus Reward (labelnya dipendekkan supaya muat satu
 // baris di tile iPhone 15). Nomornya lanjutan supaya urutan lama tidak
 // bergeser; warnanya warna merek (bukan fitur mana pun).
 const LIFE_EXTRA: HomeFeature[] = [
-  { key: 'habits', sort: 0.5, label: 'Habits', icon: 'checklist', route: '/habits', bg: Color.ACCENT, fg: Color.ACCENT_DARK, deep: Color.ACCENT_DARK },
-  { key: 'achievements', sort: 20.5, label: 'Awards', icon: 'flag.fill', route: '/achievements', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },
+  { key: 'habits', sort: 5, label: 'Habits', icon: 'checkmark.circle.fill', route: '/habits', bg: Color.ACCENT, fg: Color.ACCENT_DARK, deep: Color.ACCENT_DARK },
+  { key: 'rewards', sort: 20.5, label: 'Reward', icon: 'trophy.fill', route: '/reward', bg: Color.REWARD, fg: Color.REWARD_DARK, deep: Color.REWARD_DEEP },
   { key: 'profile', sort: 21, label: 'Profile', icon: 'person.crop.circle.fill', route: '/profile', bg: Color.MAIN_LIGHT, fg: Color.MAIN_DARK, deep: Color.MAIN_DARK },
   { key: 'system', sort: 22, label: 'System', icon: 'gearshape.fill', route: '/system', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
 ];
+
+/**
+ * SEMUA fitur yang punya warna: grid Home + tile tambahan Life (Habits,
+ * Reward, Profile, System). Dipakai lib/featureTheme.ts untuk mencari warna
+ * pita dari nama rute — tanpa ini, keempat tile tambahan itu jatuh ke warna
+ * merek dan layarnya tidak sewarna dengan tile yang baru saja di-click.
+ */
+export const ALL_FEATURES: HomeFeature[] = [...FEATURES, ...LIFE_EXTRA].sort(
+  (a, b) => a.sort - b.sort,
+);
 
 /** Grid tab Life 🌿 — semua area lain, urut nomor, tanpa yang sudah jadi tab. */
 export const LIFE_FEATURES: HomeFeature[] = [

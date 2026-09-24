@@ -234,7 +234,7 @@ export function MultiplicationTab() {
         subtitle="Timeline & anggotanya diisi di dalam"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏠 CORE asal
+          🏠 CORE Asal
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -246,7 +246,7 @@ export function MultiplicationTab() {
         <HeartRow value={fFromHeart} onChange={setFFromHeart} />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🌱 CORE baru
+          🌱 CORE Baru
         </VixText>
         <FormInput
           style={styles.formGap}

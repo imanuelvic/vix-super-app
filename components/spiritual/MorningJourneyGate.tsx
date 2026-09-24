@@ -9,7 +9,7 @@ import {
   prayerGateDue,
   subscribeLoginStreak,
   type LoginStreak,
-} from '@/lib/achievements';
+} from '@/lib/reward';
 import { dayDocId } from '@/lib/health';
 
 const GATE_PATH = '/morning-journey';

@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -6,12 +7,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { PressableScale } from '@/components/common/PressableScale';
-import { BackRow } from '@/components/common/BackRow';
+import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { ScreenError } from '@/components/common/ScreenError';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useBusyTask } from '@/hooks/useBusyTask';
 import { useNow } from '@/hooks/useNow';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import {
+  exportAllData,
+  exportFileName,
+  formatBytes,
+  shareExport,
+} from '@/lib/dataExport';
 import { dayIdToDate, formatShortDayDate, monthLabel } from '@/lib/format';
 import {
   aggregateDays,
@@ -75,6 +85,49 @@ export default function VersionScreen() {
   const weekIds = weekDayIds();
   const weekMerged = monthMerged.filter((d) => weekIds.includes(d.dayId));
 
+  // ===== Cadangan data 📦 =====
+  // Satu-satunya tempat di app ini yang membaca SEMUA dokumen sekaligus, jadi
+  // ia cuma jalan saat tombolnya di-click. Tidak ada langganan, tidak ada
+  // pemanggilan otomatis saat layar dibuka.
+  const { busy, run } = useBusyTask<'ekspor'>();
+  const [exportNote, setExportNote] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportStep, setExportStep] = useState<string | null>(null);
+
+  async function onExport() {
+    if (!user) return;
+    await run({
+      key: 'ekspor',
+      start: () => {
+        setExportError(null);
+        setExportNote(null);
+      },
+      task: async () => {
+        const hasil = await exportAllData(
+          user.uid,
+          Constants.expoConfig?.version ?? '-',
+          (p) => setExportStep(`${p.done}/${p.total} · ${p.label}`),
+        );
+        setExportStep(null);
+        await shareExport(hasil.json, exportFileName(todayId));
+        const kurang = hasil.errors.length
+          ? ` · ${hasil.errors.length} koleksi gagal dibaca`
+          : '';
+        setExportNote(
+          `${hasil.docCount} dokumen · ${hasil.filledCount} koleksi · ${formatBytes(hasil.bytes)}${kurang}`,
+        );
+      },
+      fail: (e) => {
+        setExportStep(null);
+        setExportError(
+          e instanceof Error && e.message === 'sharing off'
+            ? 'Berbagi berkas tidak tersedia di perangkat ini.'
+            : 'Gagal mengekspor data. Coba lagi.',
+        );
+      },
+    });
+  }
+
   const todayTop = today ? topFeatures(today, 5) : [];
   const monthTop = topFeatures(aggregateDays(monthMerged), 1)[0] ?? null;
   const monthTotal = monthMerged.reduce((sum, d) => sum + dayTotal(d), 0);
@@ -83,33 +136,36 @@ export default function VersionScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackRow />
+      {/* Pita berwarna tile System di grid Life (grafit). Dua pintunya
+          (🔔 Pengingat & 📱 Version) duduk RATA KANAN di dalam pita: dulu
+          ketiganya bersaing di satu baris 'space-between' dan di iPhone 15
+          pil Version terpotong tepi kanan. */}
+      <ScreenHeader
+        backLabel="Kembali"
+        title="System ⚙️"
+        right={
+          <>
+            <PressableScale
+              style={styles.appButton}
+              onPress={() => router.push('/notifications')}
+              hitSlop={8}>
+              <VixText heading="bold" additionalStyle={styles.appButtonText}>
+                📳 Notif
+              </VixText>
+            </PressableScale>
+            <PressableScale
+              style={styles.appButton}
+              onPress={() => router.push('/app-version')}
+              hitSlop={8}>
+              <IconSymbol name="iphone" size={16} color={Color.DEVICE_DEEP} />
+              <VixText heading="bold" additionalStyle={styles.appButtonText}>
+                Version
+              </VixText>
+            </PressableScale>
+          </>
+        }
+      />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
-        {/* Judul + pintu ke layar Version 📱 (versi terpasang & tarik update).
-            Isinya dulu menempel di ujung bawah layar ini, terkubur di bawah
-            laporan pemakaian — justru saat paling dibutuhkan. */}
-        <View style={styles.titleRow}>
-          <VixText heading="header" additionalStyle={styles.title}>
-            System ⚙️
-          </VixText>
-          <PressableScale
-            style={styles.appButton}
-            onPress={() => router.push('/notifications')}
-            hitSlop={8}>
-            <VixText heading="bold" additionalStyle={styles.appButtonText}>
-              🔔 Pengingat
-            </VixText>
-          </PressableScale>
-          <PressableScale
-            style={styles.appButton}
-            onPress={() => router.push('/app-version')}
-            hitSlop={8}>
-            <IconSymbol name="iphone" size={16} color={Color.MAIN_DARK} />
-            <VixText heading="bold" additionalStyle={styles.appButtonText}>
-              Version
-            </VixText>
-          </PressableScale>
-        </View>
 
         {/* ===== Fitur paling sering: minggu ini (kiri) & bulan ini (kanan) =====
             Sebelahan, bukan bertumpuk — keduanya menjawab pertanyaan yang sama
@@ -151,7 +207,7 @@ export default function VersionScreen() {
 
         {/* Hari ini */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Hari Ini
+          📅 Hari Ini
         </VixText>
         <View style={styles.usageCard}>
           {todayTop.length === 0 ? (
@@ -177,7 +233,7 @@ export default function VersionScreen() {
 
         {/* Per hari (minggu berjalan) — fitur teratas tiap hari */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Per Hari · Minggu Ini
+          📊 Per Hari · Minggu Ini
         </VixText>
         <View style={styles.usageCard}>
           {weekMerged.length === 0 ? (
@@ -203,6 +259,36 @@ export default function VersionScreen() {
           )}
         </View>
 
+        {/* ===== Cadangan data 📦 =====
+            Ditaruh paling bawah dengan sengaja: ini pekerjaan sebulan sekali,
+            bukan yang dilihat tiap hari seperti laporan pemakaian di atas. */}
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          📦 Cadangan Data
+        </VixText>
+        <View style={styles.usageCard}>
+          <VixText heading="paragraph" additionalStyle={styles.backupText}>
+            Salin seluruh datamu jadi satu berkas JSON, lalu simpan ke Files
+            atau iCloud. Semua hapus di app ini permanen, jadi ini satu-satunya
+            jalan pulang kalau ada yang hilang.
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.backupHint}>
+            Membaca semua dokumen sekali jalan, jadi cukup sebulan sekali.
+          </VixText>
+          <PrimaryButton
+            label={exportStep ? `Membaca ${exportStep}` : 'Ekspor semua data'}
+            icon="square.and.arrow.up"
+            busy={busy === 'ekspor'}
+            onPress={onExport}
+            additionalStyle={styles.backupButton}
+          />
+          <ScreenError message={exportError} />
+          {!!exportNote && (
+            <VixText heading="label" additionalStyle={styles.backupNote}>
+              ✅ {exportNote}
+            </VixText>
+          )}
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -211,26 +297,19 @@ export default function VersionScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  title: { color: Color.MAIN, marginBottom: 16 },
-  // Pil "📱 Aplikasi" di pojok kanan judul — pintu ke layar Version.
+  // Pil pintu ke layar 🔔 Pengingat & 📱 Version — duduk di slot kanan
+  // <ScreenHeader/>, jadi warnanya mengikuti pita grafit System.
   appButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: Color.MAIN,
+    borderColor: Color.DEVICE_DEEP,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    marginBottom: 16,
   },
-  appButtonText: { color: Color.MAIN_DARK },
+  appButtonText: { color: Color.DEVICE_DEEP },
   sectionTitle: { ...SECTION_SPACE },
   // Laporan pemakaian 📊
   // Dua kartu sebelahan; `alignItems: 'stretch'` (bawaan) menyamakan tingginya
@@ -271,4 +350,10 @@ const styles = StyleSheet.create({
   usageName: { color: Color.TEXT_TITLE, flex: 1 },
   usageCount: { color: Color.MAIN_DARK },
   usageEmpty: { color: Color.TEXT_PLACEHOLDER, flex: 1, paddingVertical: 4 },
+  // Cadangan data 📦 — menumpang kartu yang sama dengan laporan pemakaian,
+  // jadi tidak ada bentuk kartu baru yang perlu dijaga.
+  backupText: { color: Color.TEXT_PARAGRAPH, paddingTop: 10 },
+  backupHint: { color: Color.TEXT_LABEL, paddingTop: 6 },
+  backupButton: { marginTop: 12, marginBottom: 10 },
+  backupNote: { color: Color.MAIN_DARK, paddingBottom: 10 },
 });

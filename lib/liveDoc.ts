@@ -62,16 +62,24 @@ const MAX_CACHED = 200;
 
 const TS_KEY = '__ts__';
 
-function encode(value: unknown): unknown {
+/**
+ * Dokumen Firestore → bentuk yang aman ditulis jadi JSON.
+ *
+ * Diekspor karena Ekspor Data (lib/dataExport.ts) harus menyandikan Timestamp
+ * dengan cara yang SAMA PERSIS dengan cache disk di sini. Kalau keduanya punya
+ * penyandian sendiri, dua berkas JSON yang isinya data sama bisa berbeda
+ * bentuk, dan yang membacanya nanti harus tahu asalnya dari mana.
+ */
+export function encodeTimestamps(value: unknown): unknown {
   if (value instanceof Timestamp) {
     return { [TS_KEY]: [value.seconds, value.nanoseconds] };
   }
-  if (Array.isArray(value)) return value.map(encode);
+  if (Array.isArray(value)) return value.map(encodeTimestamps);
   if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>).map(([k, v]) => [
         k,
-        encode(v),
+        encodeTimestamps(v),
       ]),
     );
   }
@@ -143,7 +151,7 @@ async function readCache(path: string): Promise<{ data: DocData } | null> {
 function writeCache(path: string, data: DocData) {
   const payload = JSON.stringify({
     x: data !== undefined,
-    d: data === undefined ? null : encode(data),
+    d: data === undefined ? null : encodeTimestamps(data),
   });
   AsyncStorage.setItem(CACHE_PREFIX + path, payload)
     .then(() => touchIndex(path))

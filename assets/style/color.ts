@@ -171,8 +171,8 @@ export const Color = {
   FUN_DARK: '#922566',
   FUN_DEEP: '#7A1D55',
 
-  // Wheel 🎡 — anggrek/plum. Dulu merah muda, satu rumpun dengan Married &
-  // Health; dipindah ke ungu-magenta yang berdiri sendiri.
+  // Wheel 🎡 — anggrek/plum. Dulu merah muda, satu rumpun dengan Health;
+  // dipindah ke ungu-magenta yang berdiri sendiri.
   WHEEL: '#E3BDF0',
   WHEEL_DARK: '#7B2E96',
   WHEEL_DEEP: '#59206E',
@@ -203,21 +203,25 @@ export const Color = {
   DEVICE_DARK: '#3D4855',
   DEVICE_DEEP: '#2A323C',
 
-  // Games 🏆 (Tournament) — emas, sengaja paling pekat di antara tile lain
-  // biar langsung terbaca sebagai "piala".
+  // Games 🎮 (Tournament, Snake, Tetris) — kuning arcade, sengaja paling pekat
+  // di antara tile lain biar langsung terbaca sebagai "main".
   TOURNAMENT: '#FFD24C',
   TOURNAMENT_DARK: '#7A5300',
   TOURNAMENT_DEEP: '#573C00',
+
+  // Reward 🏆 — madu emas. Dulu memakai warna Games persis (dua tile kembar
+  // bersebelahan), lalu sempat perunggu #D9A441 yang ternyata terlalu gelap
+  // untuk pita header. Yang sekarang tetap keluarga medali, lebih terang, dan
+  // masih berjarak ΔE 16 dari Fitness & 20 dari kuning Games
+  // (scratchpad/warna-reward2.js).
+  REWARD: '#F0C36B',
+  REWARD_DARK: '#4A3205',
+  REWARD_DEEP: '#3A2704',
 
   // Social 🥂 — persik hangat, suasana kumpul-kumpul.
   FRIENDS: '#FFCBB0',
   FRIENDS_DARK: '#8F4218',
   FRIENDS_DEEP: '#7A3913',
-
-  // Married 💍 — mawar lembut.
-  MARRIED: '#F3BDCC',
-  MARRIED_DARK: '#85354F',
-  MARRIED_DEEP: '#68283E',
 
   // Hijau lembut serba-guna — BUKAN warna fitur. Dulu ini warna tile Fun;
   // saat Fun pindah ke fuchsia, hijaunya tetap dibutuhkan sebagai "cukup /
@@ -244,4 +248,29 @@ export const Color = {
   DANGER_TRANSPARENT: '#C0392B1A',
   // Kuning peringatan pemakaian budget (bar & latar pilihan saat ≥75%).
   BUDGET_WARN: '#EAB308',
+
+  // ===================== Kaki layar (24 Sep 2026) =====================
+  //
+  // Tab bar utama & baris sub-tab tiap fitur: BAR EMERALD GELAP dengan pil
+  // lebih terang di belakang ikon yang sedang aktif.
+  //
+  // Sengaja punya nama sendiri walau nilainya sama dengan MAIN_DARK & MAIN.
+  // Alasannya sama dengan pastel Finance di atas: artinya dua. Kalau suatu
+  // saat warna kaki layar mau digeser sendiri, cukup ubah di sini tanpa
+  // menyeret seluruh warna merek app ikut berubah.
+  TABBAR_BG: '#0B3D36',
+  /** Garis tipis pemisah bar dari isi layar. */
+  TABBAR_LINE: '#176B5D',
+  /** Pil di belakang ikon yang aktif. */
+  TABBAR_PILL: '#176B5D',
+  /** Ikon aktif di atas pil (mint, 4,5:1 di atas pil). */
+  TABBAR_ACTIVE: '#C9E3DC',
+  /**
+   * Ikon & tulisan tab yang TIDAK aktif.
+   *
+   * Sengaja bukan TEXT_ON_DARK_MUTED (#CFE0D8): warna itu hampir seterang
+   * ikon aktif, jadi tab yang tidak aktif ikut terlihat menyala dan bedanya
+   * hilang. Yang ini 5,4:1 di atas bar — terbaca jelas, tapi jelas sekunder.
+   */
+  TABBAR_INACTIVE: '#8FB3AA',
 } as const;

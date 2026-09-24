@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { AchievementButton } from '@/components/common/AchievementButton';
+import { RewardButton } from '@/components/common/RewardButton';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -14,7 +14,7 @@ import { useLive } from '@/hooks/useLive';
 import { dayIdToDate, formatShortDayDate, groupDigits } from '@/lib/format';
 import {
   recordStepDays,
-  stepAchievements,
+  stepRecords,
   STEP_TIERS,
   stepTierOf,
   subscribeStepDays,
@@ -61,17 +61,17 @@ export default function StepsScreen() {
     })();
   }, [hkStatus, user]);
 
-  const ach = stepAchievements(stepDays);
+  const ach = stepRecords(stepDays);
   const todayTier = hk?.steps != null ? stepTierOf(hk.steps) : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Health"
-        title="Langkah Kaki👣"
+        title="Daily Steps 👣"
         subtitle="Pencapaian langkah harianmu"
         // Daftar tier di layar ini persis isi kategori "👣 Daily Steps".
-        right={<AchievementButton category="steps" />}
+        right={<RewardButton category="steps" />}
       />
 
       <ScrollView contentContainerStyle={styles.content}>

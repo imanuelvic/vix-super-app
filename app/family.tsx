@@ -725,7 +725,7 @@ export default function FamilyScreen() {
           />
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Tanggal Lahir
+            🎂 Tanggal Lahir
           </VixText>
           <View style={styles.formGap}>
             {/* key = id supaya state picker internal reset tiap ganti orang */}
@@ -738,7 +738,7 @@ export default function FamilyScreen() {
 
           {/* Lingkar keluarga: inti (dapat reminder ultah) vs saudara */}
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Termasuk keluarga apa?
+            👨‍👩‍👧 Termasuk Keluarga Apa?
           </VixText>
           <View style={styles.circleRow}>
             <Chip

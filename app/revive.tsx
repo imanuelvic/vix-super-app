@@ -27,7 +27,7 @@ import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
 import { useDraft } from '@/hooks/useDraft';
 import { useLiveAll } from '@/hooks/useLiveAll';
-import { type LoginStreak as DayStreak } from '@/lib/achievements';
+import { type LoginStreak as DayStreak } from '@/lib/reward';
 import { purgeNoteLinks } from '@/lib/coreNotes';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';

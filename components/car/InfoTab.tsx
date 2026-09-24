@@ -60,7 +60,7 @@ export function InfoTab() {
 
       {/* Tips perawatan */}
       <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        Tips Sayang Mobil 🔧❤️
+        🔧 Tips Sayang Mobil
       </VixText>
       <View style={styles.tipsCard}>
         {TIPS.map((tip) => (

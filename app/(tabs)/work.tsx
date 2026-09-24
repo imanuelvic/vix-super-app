@@ -92,12 +92,12 @@ export default function CareerScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Tab utama Work 💼 (22 Sep 2026): Focus (yang harus dikirim hari ini)
-          + keempat topi Career; Reminder ✅ (task harian & prioritas) dibuka
+          + keempat topi Career; Reminder 🔔 (task harian & prioritas) dibuka
           dari tombol pojok kanan. Tanpa tombol kembali, sub-tab jadi pil. */}
       <ScreenHeader
         title="Work 💼"
         subtitle="Kerjakan segenap hati, hasilnya menyusul"
-        right={<EmojiButton emoji="✅" onPress={() => router.push('/tasks')} />}
+        right={<EmojiButton emoji="🔔" onPress={() => router.push('/tasks')} />}
       />
 
       {/* Badge = pecahan dari badge tab Work di kaki app: P1 Fulltime yang

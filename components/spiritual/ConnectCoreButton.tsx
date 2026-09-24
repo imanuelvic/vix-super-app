@@ -133,7 +133,7 @@ export function ConnectCoreButton({
 
       <SheetModal
         visible={open}
-        title="🔗 Connect ke CORE"
+        title="🔗 Connect to CORE"
         subtitle="Pilih acara yang akan memakai bahan ini"
         onClose={() => setOpen(false)}>
         <FormError message={error} />

@@ -384,7 +384,7 @@ export default function BillScreen() {
 
         {/* ===== Orang ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          👥 Siapa saja
+          👥 Siapa Saja
         </VixText>
         <View style={styles.chipWrap}>
           {b.people.map((p) => (
@@ -453,7 +453,7 @@ export default function BillScreen() {
 
         {/* ===== Siapa bayar berapa ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          💰 Siapa bayar berapa
+          💰 Siapa Bayar Berapa
         </VixText>
         {shares.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.hint}>
@@ -511,7 +511,7 @@ export default function BillScreen() {
       {/* ===== Sheet keterangan bill ===== */}
       <SheetModal
         visible={infoOpen}
-        title="Keterangan Bill"
+        title="🧾 Bill Detail"
         onClose={() => setInfoOpen(false)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🏷️ Acara / Kegiatan
@@ -555,7 +555,7 @@ export default function BillScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🛎️ Service charge (%), biasanya 5–10
+          🛎️ Service Charge (%), biasanya 5–10
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -604,7 +604,7 @@ export default function BillScreen() {
         subtitle="Centang siapa saja yang ikut makan item ini"
         onClose={() => setItemEdit(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🍽️ Nama item
+          🍽️ Nama Item
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -627,7 +627,7 @@ export default function BillScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          💰 Harga total baris ini (bukan harga satuan)
+          💰 Harga Total Baris Ini (bukan harga satuan)
         </VixText>
         <MoneyInput
           style={styles.formGap}
@@ -638,7 +638,7 @@ export default function BillScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          👥 Siapa yang makan
+          👥 Siapa yang Makan
         </VixText>
         {b.people.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.hint}>
@@ -699,7 +699,7 @@ export default function BillScreen() {
       {/* ===== Sheet tambah orang ===== */}
       <SheetModal
         visible={personOpen}
-        title="Tambah Orang"
+        title="➕ Add Person"
         onClose={() => setPersonOpen(false)}>
         <FormInput
           style={styles.formGap}

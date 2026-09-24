@@ -8,7 +8,7 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { notifyAvailable } from '@/lib/notify';
 
-// 🔔 Pintu ke layar Pengingat dari Dashboard Finance.
+// 📳 Pintu ke layar Pengingat dari Dashboard Finance.
 //
 // Sakelarnya sendiri sudah pindah ke satu tempat (app/notifications.tsx, 23 Sep
 // 2026): sejak pengingatnya bukan cuma Finance, dua sakelar untuk hal yang sama
@@ -21,7 +21,7 @@ export function NotifyCard() {
     <PressableScale style={styles.card} onPress={() => router.push('/notifications')}>
       <View style={styles.main}>
         <VixText heading="bold" additionalStyle={styles.title}>
-          🔔 Pengingat harian di HP
+          📳 Pengingat harian di HP
         </VixText>
         <VixText heading="label">
           Pagi 07.30 status jatah hari ini · malam 20.30 catat pengeluaran. Tanpa nominal.

@@ -40,13 +40,13 @@ export default function HealthInfoScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Health"
-        title="Info Kesehatan 💪🏻"
+        title="Health Info 💪🏻"
         subtitle="Pengingat cepat: tubuh lagi butuh apa?"
       />
 
       <ScrollView contentContainerStyle={styles.content}>
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Nilai Normal Pemeriksaan 🩺
+          🩺 Nilai Normal Pemeriksaan
         </VixText>
         <VixText heading="label" additionalStyle={styles.profileNote}>
           Patokan untuk pria dewasa sehat sepertimu (±28 th · 169 cm · 71 kg →
@@ -73,7 +73,7 @@ export default function HealthInfoScreen() {
         })}
 
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Kalau tubuhmu begini…
+          🤒 Kalau Tubuhmu Begini…
         </VixText>
         {QNA.map((item) => (
           <View key={item.q} style={styles.qnaCard}>
@@ -87,7 +87,7 @@ export default function HealthInfoScreen() {
         ))}
 
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Tips tetap sehat
+          💡 Tips Tetap Sehat
         </VixText>
         <View style={styles.tipsCard}>
           {TIPS.map((tip) => (

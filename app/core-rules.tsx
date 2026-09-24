@@ -34,7 +34,7 @@ import {
     type CoreRule,
 } from '@/lib/coreRules';
 import { shareRulePdf } from '@/lib/coreRulesPdf';
-import { DELETE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, pdfErrorOf } from '@/lib/messages';
 
 // Rules & Suggestions 📜 — panduan resmi tiap jenis acara CORE.
 // Ini dokumen yang kamu kirim ke setiap CORE Leader begitu ada reminder
@@ -117,7 +117,7 @@ export default function CoreRulesScreen() {
       key: r.kind,
       start: () => setError(null),
       task: () => shareRulePdf(r),
-      fail: () => setError('Gagal membuat PDF panduan. Coba lagi.'),
+      fail: () => setError(pdfErrorOf('panduan')),
     });
   }
 
@@ -290,7 +290,7 @@ export default function CoreRulesScreen() {
         subtitle="Dokumen yang dikirim ke CORE Leader saat acaranya dijadwalkan"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Topik panduan
+          🏷️ Topik Panduan
         </VixText>
         <View style={styles.formGap}>
           <SelectField
@@ -303,7 +303,7 @@ export default function CoreRulesScreen() {
 
         {/* Ikon & judul sebaris: ikonnya sempit, judulnya melebar. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏷️ Ikon & judul panduan
+          🏷️ Ikon & Judul Panduan
         </VixText>
         <View style={[styles.titleRow, styles.formGap]}>
           <FormInput
@@ -346,7 +346,7 @@ export default function CoreRulesScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📅 Terakhir diperbarui
+          📅 Terakhir Diperbarui
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -357,7 +357,7 @@ export default function CoreRulesScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📜 Isi panduan
+          📜 Isi Panduan
         </VixText>
         <VixText heading="label" additionalStyle={styles.hint}>
           Catatan: Baris berawalan * atau - jadi poin, ⚠️ jadi kotak

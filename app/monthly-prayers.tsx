@@ -127,7 +127,7 @@ export default function MonthlyPrayersScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Pokok Doa Bulanan 🙏"
+        title="Monthly Prayer 🙏"
         subtitle={monthTitle}
       />
 

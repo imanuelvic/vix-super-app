@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { AchievementButton } from '@/components/common/AchievementButton';
+import { RewardButton } from '@/components/common/RewardButton';
 import {
   BottomTabs,
   withBadge,
@@ -19,7 +19,7 @@ import { ProgressTab } from '@/components/fitness/ProgressTab';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
-import { type LoginStreak } from '@/lib/achievements';
+import { type LoginStreak } from '@/lib/reward';
 import { subscribeFitNotes, type FitNote } from '@/lib/fitNotes';
 import {
   EMPTY_FIT_DAY,
@@ -91,7 +91,7 @@ export default function FitnessScreen() {
     { onError: setError, deps: [dayId] },
   );
 
-  // Tutup buku hari-hari yang sudah lewat 🔥 — streak & achievement baru
+  // Tutup buku hari-hari yang sudah lewat 🔥 — streak & reward baru
   // dihitung SETELAH harinya habis (jam 00.00), bukan saat gerakan terakhir
   // dicentang: sepanjang hari centangnya masih bisa dilepas lagi.
   //
@@ -114,7 +114,7 @@ export default function FitnessScreen() {
         subtitle="Pilih sendiri olahraganya tiap hari · pagi atau sore"
         // Sesi latihan di layar inilah yang menghidupkan kategori
         // "🏋️ Fitness Konsisten" — jadi pintunya ditaruh di sini juga.
-        right={<AchievementButton category="fitness" />}
+        right={<RewardButton category="fitness" />}
       />
 
       <ScreenError message={error} />

@@ -15,20 +15,21 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { NotifyRouter } from '@/components/common/NotifyRouter';
+import { VixSplash } from '@/components/common/VixSplash';
 import { WaterFloat } from '@/components/habits/WaterFloat';
 import { MorningJourneyGate } from '@/components/spiritual/MorningJourneyGate';
 import { AuthProvider, useAuth } from '@/contexts/auth';
 import { FutsalGangProvider } from '@/contexts/futsalGang';
 
+// Layar BOOT: selama font dimuat & sesi tersimpan dicek. Sejak 23 Sep 2026
+// isinya animasi pembuka vix, bukan spinner kecil di layar krem — dan latarnya
+// warna yang sama dengan splash bawaan (app.json), jadi tidak ada kilas.
 function LoadingView() {
-  return <LoadingCenter size="large" style={styles.boot} />;
+  return <VixSplash />;
 }
 
 const styles = StyleSheet.create({
-  // Latar diberi warna app: layar ini muncul sebelum apa pun tergambar, jadi
-  // tanpa ini kilas putih bawaan sistem sempat terlihat.
-  boot: { backgroundColor: Color.BACKGROUND },
   root: { flex: 1 },
 });
 
@@ -78,11 +79,15 @@ function RootNavigator() {
             (bisa ditutup "Nanti dulu"), jadi gestur kembali dibiarkan hidup. */}
         <Stack.Screen name="morning-journey" />
 
+        {/* Night Prayer 🌙 — pasangan malamnya: syukur, pengakuan, permohonan
+            & syafaat, dibawa sepotong-sepotong tiap malam. */}
+        <Stack.Screen name="night-prayer" />
+
         {/* Layar yang dulu tab utama (22 Sep 2026): Semua Pengingat, Habits,
             Profile, System. 23 Sep 2026: nama berkas & rutenya disamakan
             dengan judul layarnya ("/reminders", "/system"). */}
         <Stack.Screen name="reminders" />
-        {/* 🔔 Pengingat di HP — sakelar semua kelompok notifikasi lokal */}
+        {/* 📳 Pengingat di HP — sakelar semua kelompok notifikasi lokal */}
         <Stack.Screen name="notifications" />
         <Stack.Screen name="habits" />
         <Stack.Screen name="profile" />
@@ -159,7 +164,7 @@ function RootNavigator() {
         {/* Sepasang: masa lalu & masa depan — dibuka dari tab Profile */}
         <Stack.Screen name="history" />
         <Stack.Screen name="timeline" />
-        <Stack.Screen name="achievements" />
+        <Stack.Screen name="reward" />
 
         {/* Version 📱 — versi terpasang & tarik update, dari pojok kanan System */}
         <Stack.Screen name="app-version" />
@@ -183,6 +188,10 @@ function RootNavigator() {
     {/* Pengawal Morning Journey — tidak menggambar apa pun, hanya mengalihkan ke
         lock screen begitu jam doa tiba, dari layar mana pun. */}
     {!!user && <MorningJourneyGate />}
+
+    {/* 📳 Notifikasi yang di-click membuka layar yang dibicarakannya (mis.
+        pengingat Life membuka All Reminder). Juga tidak menggambar apa pun. */}
+    {!!user && <NotifyRouter />}
 
     {/* 💧 Gelas air mengambang — di atas SEMUA layar (kecuali gerbang pagi &
         fitur CORE; ia menyembunyikan dirinya sendiri lewat pathname). */}

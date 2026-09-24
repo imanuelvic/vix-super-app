@@ -56,7 +56,7 @@ export function TokenPurchaseSheet({ form }: { form: TokenPurchaseForm }) {
       ) : null}
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        Platform
+        🏪 Platform
       </VixText>
       <View style={styles.chipWrap}>
         {TOKEN_PLATFORMS.map((p) => (

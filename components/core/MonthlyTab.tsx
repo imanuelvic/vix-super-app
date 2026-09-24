@@ -18,6 +18,7 @@ import { useBusyTask } from '@/hooks/useBusyTask';
 import { useLive } from '@/hooks/useLive';
 import { usePagination } from '@/hooks/usePagination';
 import { useSearchMode } from '@/hooks/useSearchMode';
+import { pdfErrorOf } from '@/lib/messages';
 import { MONTHLY_AGENDA_POINTS, type MonthlyMeeting } from '@/lib/core';
 import {
     EMPTY_CORE_NOTE_LINKS,
@@ -83,7 +84,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
       key: m.id,
       start: () => setError(null),
       task: () => shareMonthlyPdf(m),
-      fail: () => setError('Gagal membuat PDF notulen. Coba lagi.'),
+      fail: () => setError(pdfErrorOf('notulen')),
     });
   }
 

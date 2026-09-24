@@ -117,7 +117,7 @@ export default function JourneyHistoryScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
-        title="Morning Journey 🌤️"
+        title="Morning Journey 🌅"
         subtitle="Pagi-pagi bersama Tuhan sebelumnya"
       />
       <ScreenError message={error} />

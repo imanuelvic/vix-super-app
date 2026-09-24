@@ -3,13 +3,10 @@ import { type OpaqueColorValue, type StyleProp, type TextStyle } from 'react-nat
 
 // Ikon untuk lambang yang MEMANG TIDAK ADA di SF Symbols.
 //
-// Dua tile Home butuh lambang yang katalog Apple tidak punya, dan sudah dicek
-// satu per satu di `sf-symbols-typescript`:
+// Satu tile Home butuh lambang yang katalog Apple tidak punya, dan sudah
+// dicek satu per satu di `sf-symbols-typescript`:
 //   • jabat tangan (Friends) — yang ada cuma tangan melambai, bertepuk, dan
 //     terangkat; tidak satu pun dua tangan berjabat.
-//   • cincin kawin (Married) — semua nama berakhiran `.ring` di sana itu
-//     lingkaran di SEKELILING lambang mata uang (`dollarsign.ring`), bukan
-//     cincin.
 //
 // Jalan keluar sebelumnya emoji 🤝, dan justru itu masalahnya: emoji digambar
 // sistem dengan warnanya sendiri yang warna-warni, jadi satu tile itu menonjol
@@ -17,10 +14,10 @@ import { type OpaqueColorValue, type StyleProp, type TextStyle } from 'react-nat
 // bentuk polos yang diwarnai `fg` tile-nya, persis seperti IconSymbol.
 //
 // Fontnya ikut @expo/vector-icons yang SUDAH terpasang (dipakai fallback
-// Android di icon-symbol.tsx) → tidak ada dependensi baru. Sisa 18 tile lain
+// Android di icon-symbol.tsx) → tidak ada dependensi baru. Tile lain
 // tetap memakai IconSymbol/SF Symbols seperti biasa; berkas ini khusus untuk
 // yang tak punya padanannya.
-export type GlyphName = 'handshake' | 'ring';
+export type GlyphName = 'handshake';
 
 export function IconGlyph({
   name,

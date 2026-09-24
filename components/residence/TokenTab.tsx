@@ -436,7 +436,7 @@ export function TokenTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🔋 Sisa kWh di meteran
+          🔋 Sisa kWh di Meteran
         </VixText>
         <FormInput
           style={styles.formGap}

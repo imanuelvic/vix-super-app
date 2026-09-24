@@ -420,7 +420,7 @@ export function BudgetingTab({
       {/* Modal kecil: set budget kategori */}
       <CenterDialog visible={!!editing} onClose={() => setEditing(null)}>
         <VixText heading="title" additionalStyle={styles.modalTitle}>
-          Set Budget
+          🎯 Set Budget
         </VixText>
         {editing && (
           <VixText heading="label" additionalStyle={styles.modalCategory}>
@@ -573,7 +573,7 @@ export function BudgetingTab({
           setUnlockReason('');
         }}>
         <VixText heading="title" additionalStyle={styles.modalTitle}>
-          🔒 Budget bulan ini terkunci
+          🔒 Budget Bulan Ini Terkunci
         </VixText>
         <VixText heading="label" additionalStyle={styles.modalCategory}>
           Ini komitmenmu untuk {MONTH_NAMES[month]}. Kalau memang perlu diubah,

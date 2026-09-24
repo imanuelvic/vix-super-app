@@ -39,7 +39,7 @@ export function VisitationFormFields({
       {/* Picker: daftar pilihan baru muncul saat baris ini ditekan, jadi
           modal tidak langsung penuh oleh semua jenis & nama CORE. */}
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        Jenis visitasi
+        🏷️ Jenis Visitasi
       </VixText>
       <View style={styles.formGap}>
         <SelectField
@@ -68,7 +68,7 @@ export function VisitationFormFields({
       )}
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        {form.multiLeader ? 'CORE Gabungan' : 'CORE'}
+        {form.multiLeader ? '👥 CORE Gabungan' : '👥 CORE'}
       </VixText>
       {form.multiLeader ? (
         // Acara gabungan → centang sebanyak-banyaknya.
@@ -97,7 +97,7 @@ export function VisitationFormFields({
       )}
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        Tanggal Visitasi
+        📆 Tanggal Visitasi
       </VixText>
       <View style={styles.formGap}>
         <DateField key={dateKey} value={form.date} onChange={form.setDate} />

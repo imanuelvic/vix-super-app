@@ -83,7 +83,7 @@ warna splash/icon berubah), bukan cuma `eas update`.
 
 ## 7b. Lanjutan 23 Sep 2026
 
-- 🔔 `lib/notify.ts`: satu mesin pengingat lokal untuk SEMUA kelompok
+- 📳 `lib/notify.ts`: satu mesin pengingat lokal untuk SEMUA kelompok
   (journey 06.00 · bacaan 07.00/12.30/21.15 · CORE 08.30 · Work 09.30 ·
   Life 17.30 · Finance 07.30 & 20.30 · refleksi 21.30). Isinya dari
   TodayModel, dijadwalkan dari hooks/useTodayData; kelompok tanpa isi tidak
@@ -115,13 +115,84 @@ warna splash/icon berubah), bukan cuma `eas update`.
   Google News) + baris harga Bitcoin hari ini di atas daftarnya
   (`components/news/CryptoPulse.tsx`, memakai `loadBtc` yang sama dengan
   Investment, jadi tanpa permintaan baru).
-- 🔔 Pengingat ala Duolingo: `lib/notifyCopy.ts` (kalimat berganti tiap hari,
+- 📳 Pengingat ala Duolingo: `lib/notifyCopy.ts` (kalimat berganti tiap hari,
   dipilih dari tanggalnya), `lib/notifyTiming.ts` (jam ikut kebiasaan: median
   jam kamu menyelesaikannya, dikurangi 30 menit, dipatok di jendela tiap
   kelompok, semuanya di AsyncStorage), penyelamat streak 20.45, dan kelompok
-  🏆 pencapaian jam 19.00 yang angkanya DITITIPKAN layar Achievement
-  (`saveAchievementSnapshot`) supaya Today tidak menambah langganan.
+  🏆 pencapaian jam 19.00 yang angkanya DITITIPKAN layar Reward
+  (`saveRewardSnapshot`) supaya Today tidak menambah langganan.
   Suite: cek-notify-duo.js.
+- 🌊 Layar Masuk 2.0: sapaan jam besar (`greetingText`, sama dengan seluruh
+  app) + kartu mengambang + sakelar pil Masuk/Daftar yang bergeser
+  (`components/auth/AuthToggle.tsx`) + ombak MAIN tiga lapis di kaki layar
+  (`components/auth/WelcomeWaves.tsx`, Reanimated di utas UI, berulang mulus
+  karena digambar 2× lebar layar dengan periode 1× lebar layar). Logika
+  signIn/signUp TIDAK disentuh. Suite: cek-masuk.js.
+
+## 7d. Enam permintaan 23 Sep 2026 (sore)
+
+- 🎬 Animasi vix dipakai: `components/common/VixSplash.tsx` (layar boot) &
+  `LoadingCenter` (dipotong bulat). GIF diputar `<Image>` bawaan, tanpa pustaka
+  animasi; app.json splash ikut #0B3D36 supaya tidak ada kilas.
+- 🏆 Achievement/Awards → **Reward** di SELURUH project (berkas, rute, kode,
+  kalimat). Jalur Firestore tidak disentuh. Kartu saldo Self-Reward jadi
+  pintunya sendiri (garis tepi + chevron) menuju mutasi Saku.
+- 💍 Fitur **Married dihapus** total → grid Home tinggal 19 fitur; warna
+  MARRIED & glif ring ikut dibuang.
+- 🔔 Badge sub-tab tidak lagi terpotong pita header (topBarContent paddingTop
+  2 → 10); tombol pojok Work jadi 🔔 (lambang yang sama dengan Reminder 🔔).
+- ⚖️ Tombol Berhasil & Gagal di catatan puasa seukuran (CheckCircle 42).
+- ✔️ Lambang judul Habits: 📋 → ✔️, seragam sampai indeks pencarian.
+- Suite: cek-reward-rupa.js; ~30 suite lama diarahkan ke nama baru.
+
+## 7e. Bahasa judul 23 Sep 2026 (malam)
+
+- "Semua Pengingat" jadi **All Reminder 📊**; judulnya mengalah (flexShrink 1 +
+  adjustsFontSizeToFit) dan tanggalnya tidak lagi terpotong.
+- **Semua judul layar & sheet berbahasa Inggris** (70 judul), ISINYA tetap
+  bahasa Indonesia. Judul layar tetap berlambang di BELAKANG ("Work 💼"),
+  judul sheet/bagian berlambang di DEPAN ("📝 Donor Note").
+- Pertanyaan konfirmasi ("Hapus janji ini?") SENGAJA tetap Indonesia: itu
+  kalimat yang berbicara ke pemakainya, bukan judul.
+- Sub-tab memang sudah Inggris semua (54 label) sejak awal.
+- **Label kolom & judul bagian**: Huruf Besar Tiap Kata + lambang di depan
+  (123 label). Kelonggaran yang disengaja: kata sambung di tengah (di, ke,
+  yang, per), keterangan dalam kurung, dan satuan (kWh) tetap huruf kecil.
+- Suite: cek-judul-inggris.js; ~50 suite lama diarahkan ke judul barunya.
+
+- 💳 **PayApps dihapus**: lib/payapps.ts + tombol lompat ke Bank JAGO / GoPay /
+  Bibit / dst di Finance › Transactions & layar Saku. Tidak dipakai pemiliknya;
+  lib/linking.ts (openExternalUrl) tetap dipakai WhatsApp, ChatGPT, NDC, dll.
+
+## 7f. Tiga permintaan 23 Sep 2026 (malam)
+
+- 🟩 Tab utama di kaki app: tab AKTIF dapat PIL MAIN_LIGHT di belakang
+  ikonnya (components/bounce-tab-icon.tsx), bahasa yang sama dengan pil
+  sub-tab. Posisinya mutlak, jadi tinggi tab bar tidak bergeser.
+- 🔀 Delapan tile grid Life bertukar: Finance→Learning→Fitness→Health→
+  Reminder→Finance (putaran lima), Car↔Fun, Residence↔Wheel, Device↔Friends.
+  Yang diubah cuma nomor -nya.
+- 📝 Notulen AI mengikuti BENTUK notulen pemiliknya: "• N - ⛪Judul" lalu
+  🗓️ tanggal · 🕙 jam · 📍 tempat di barisnya sendiri, rincian "- ".
+  Lambang kini BAGIAN dari bentuknya, jadi penyaring tanpaEmoji() dilepas dari
+  finalisasi notulen (Wheel tetap tanpa lambang). maxOutputTokens 4096 → 8192.
+- Suite: cek-pil-grid-notulen.js.
+
+## 7g. Empat permintaan 23 Sep 2026 (malam, lanjutan)
+
+- 📊 Tabel Rekap Visitasi: kolom CL minWidth 28 → 48, kolom label 96 → 46,
+  gap 6 antar kolom. Melebihi layar = digeser mendatar (sudah disiapkan).
+- 📆 Kalender CORE: kepala kolom & angka tanggal Sabtu/Minggu berhuruf merah
+  (Color.DANGER). Hari ini tetap menang (lingkaran pekat, huruf putih).
+- ⚙️ Kepala System pindah ke ScreenHeader; dua pilnya (📳 Notif & 📱 Version)
+  duduk di slot `right` pita, jadi tidak lagi terpotong tepi kanan.
+- 🎨 Tiap layar berpita warna TILE-nya: featureTheme kini mencari di
+  `ALL_FEATURES` (grid Home + tile tambahan Life), dan Habits/Profile/System
+  memakai ScreenHeader seperti layar fitur lain. Yang tersisa berwarna merek
+  cuma layar Masuk.
+- Warna Reward #D9A441 → **#F0C36B** (madu emas, lebih terang; ΔE 16 dari
+  Fitness, 20 dari Games, kontras teks 5,3).
+- Suite: cek-pita-grid.js.
 
 ## 8. Yang sengaja TIDAK dikerjakan
 

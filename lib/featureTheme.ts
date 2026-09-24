@@ -1,5 +1,5 @@
 import { Color } from '@/assets/style/color';
-import { HOME_FEATURES } from '@/lib/featureGrid';
+import { ALL_FEATURES } from '@/lib/featureGrid';
 
 // Warna yang menempel pada SATU fitur, dari tile-nya di grid Home sampai ke
 // dalam layarnya: pita header, tab bawah yang sedang aktif, & kartu ringkasan.
@@ -20,7 +20,7 @@ export type FeatureTheme = {
   deep: string;
 };
 
-// Layar yang bukan milik fitur mana pun (Achievement, Timeline, Riwayat,
+// Layar yang bukan milik fitur mana pun (Reward, Timeline, Riwayat,
 // Login) memakai warna merek. Bentuknya tetap sama dengan layar fitur, jadi
 // tidak ada layar yang tampak "belum jadi".
 export const BRAND_THEME: FeatureTheme = {
@@ -30,12 +30,26 @@ export const BRAND_THEME: FeatureTheme = {
   deep: Color.MAIN_DARK,
 };
 
-// Nama rute (ruas PERTAMA-nya) → kunci fitur di HOME_FEATURES.
+// Nama rute (ruas PERTAMA-nya) → kunci fitur di ALL_FEATURES.
 //
 // Cukup ruas pertama, jadi 'fund/[key]', 'project/edit/[id]', 'book/[key]',
 // dan kawan-kawannya ikut tanpa perlu didaftarkan lagi. Yang TIDAK ada di
 // sini sengaja jatuh ke warna merek.
 const ROUTE_FEATURE: Record<string, string> = {
+  // Layar yang tile-nya ada di grid Life tapi dulu jatuh ke warna merek
+  // (23 Sep 2026): sekarang ikut warna tile-nya masing-masing, jadi begitu
+  // dibuka dari grid, warnanya menjawab "ini yang tadi kamu click".
+  reward: 'rewards',
+  'reward-category': 'rewards',
+  'reward-archive': 'rewards',
+  profile: 'profile',
+  history: 'profile',
+  timeline: 'profile',
+  system: 'system',
+  'app-version': 'system',
+  notifications: 'system',
+  habits: 'habits',
+
   // Reminder ✅
   tasks: 'tasks',
   'daily-priority': 'tasks',
@@ -52,6 +66,7 @@ const ROUTE_FEATURE: Record<string, string> = {
   'fasting-days': 'spiritual',
   gratitude: 'spiritual',
   'morning-journey': 'spiritual',
+  'night-prayer': 'spiritual',
   'journey-history': 'spiritual',
   'pause-pray': 'spiritual',
   'reflection-feed': 'spiritual',
@@ -112,7 +127,6 @@ const ROUTE_FEATURE: Record<string, string> = {
   'futsal-cash': 'friends',
   'futsal-schedule': 'friends',
   'futsal-board': 'friends',
-  married: 'married',
 };
 
 /**
@@ -130,7 +144,7 @@ export function featureKeyForRoute(routeName: string): string | null {
 export function featureThemeForRoute(routeName: string): FeatureTheme {
   const key = featureKeyForRoute(routeName);
   if (key === null) return BRAND_THEME;
-  const f = HOME_FEATURES.find((x) => x.key === key);
+  const f = ALL_FEATURES.find((x) => x.key === key);
   // Kunci yang ditulis di tabel tapi tak ada di grid = salah ketik; jangan
   // sampai layarnya jadi tanpa warna, kembalikan warna merek saja.
   if (!f) return BRAND_THEME;

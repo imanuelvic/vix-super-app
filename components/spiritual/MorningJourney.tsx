@@ -25,7 +25,7 @@ import {
   type ChainLeader,
   type SaveJourney,
 } from '@/components/spiritual/journey/JourneySteps';
-import { isChainTopic, type IntercessionTopic } from '@/lib/intercession';
+import { type IntercessionTopic } from '@/lib/intercession';
 import {
   nextJourneyStep,
   reflectPromptOfDay,
@@ -102,17 +102,18 @@ export function MorningJourney({
   const [passage] = useState(() => worshipPassageOfDay(todayId));
   const [reminder] = useState(() => dailyReminder(todayId));
 
-  // Selasa & Kamis syafaatnya MEMANG Doa Rantai → tidak ditampilkan dua kali,
-  // kecuali kalau Doa Rantai-nya tidak muncul (belum ada CL yang punya pokok
-  // doa bulan ini) supaya syafaat hari itu tidak hilang sama sekali.
-  const chainIsToday = isChainTopic(topic);
-  const showIntercession = !chainIsToday || !chainDue;
-
   // Satu jam sebelum 09.00 diberi tahu pelan, tanpa nada peringatan. Lewat
   // 09.00 journey tetap bisa dijalani (gerbang lunak); yang disebut cuma
   // kenyataannya: jendela pagi sudah lewat.
   const closingSoon = minutesLeft > 0 && minutesLeft <= 60;
   const stillOpen = minutesLeft > 0;
+
+  // Langkah 🙏 Pray tetap SATU blok syafaat, hari apa pun: saat Doa Rantai CL
+  // memang giliran hari ini, dialah syafaat paginya, jadi topik mingguan tidak
+  // ikut digambar (topik itu tetap didoakan malamnya di Night Prayer).
+  // Dulu penentunya jadwal topik mingguan; sekarang cukup Doa Rantainya
+  // sendiri, jadi jadwal syafaat bebas berubah tanpa mengubah bentuk gerbang.
+  const showIntercession = !chainDue;
 
   function next() {
     const n = nextJourneyStep(step);

@@ -22,7 +22,7 @@ import { subscribeTransactionsByMonth, type Transaction } from '@/lib/transactio
  * fokus + sub-kategori), jadi lewat ref-count lib/liveDoc tidak ada listener
  * ganda. null = datanya belum termuat.
  *
- * Teks 🔔 notifikasinya TIDAK lagi dijadwalkan di sini: sejak 23 Sep 2026
+ * Teks 📳 notifikasinya TIDAK lagi dijadwalkan di sini: sejak 23 Sep 2026
  * seluruh pengingat (rohani, CORE, Work, Life, Finance) dijadwalkan sekali
  * dari hooks/useTodayData lewat lib/notify.ts.
  */

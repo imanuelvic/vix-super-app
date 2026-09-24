@@ -822,7 +822,7 @@ export function HabitsTab({
                 {habit.note && !skipped && (
                   <NoteField
                     key={`${habit.id}-${dayId}`}
-                    title="📓 Catatan Hari Ini"
+                    title="📓 Today Note"
                     placeholder={habit.notePrompt ?? 'Tulis singkat saja…'}
                     value={day.notes[habit.id] ?? ''}
                     // "🙏 Bersyukur 3 Hal" minta TIGA poin, bukan satu
@@ -926,7 +926,7 @@ export function HabitsTab({
             </PressableScale>
 
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Area hidup
+              🎡 Area Hidup
             </VixText>
             <View style={styles.pickRow}>
               {HABIT_AREAS.map((a) => (
@@ -1005,7 +1005,7 @@ export function HabitsTab({
       {/* Modal pasang/ubah target berat */}
       <CenterDialog visible={targetOpen} onClose={() => setTargetOpen(false)}>
         <VixText heading="title" additionalStyle={styles.modalTitle}>
-          Target Berat
+          ⚖️ Target Berat
         </VixText>
         {/* Keterangan sekaligus PINTU. Rentang sehat ini dihitung dari TINGGI
             BADAN-mu, dan tinggi badan cuma bisa diubah di satu tempat: Profile

@@ -52,14 +52,14 @@ export function FutsalSessionSheet({
 
       <View style={styles.formGap}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🕗 Dari jam
+          🕗 Dari Jam
         </VixText>
         <TimeField value={form.jam} onChange={form.setJam} />
       </View>
 
       <View style={styles.formGap}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🕙 Sampai jam
+          🕙 Sampai Jam
         </VixText>
         {/* Rodanya tidak bisa diputar ke bawah jam mulai — jadi jam selesai
             yang lebih awal tidak pernah sempat terpilih. */}

@@ -12,6 +12,7 @@ import Animated, {
 import { Color } from '@/assets/style/color';
 import { Badge } from '@/components/common/Badge';
 import { PressableScale } from '@/components/common/PressableScale';
+import { BAND_GAP } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useFeatureTheme } from '@/hooks/useFeatureTheme';
@@ -49,6 +50,13 @@ export function withBadge<T extends string>(
 // Sub-menu yang sedang dibuka memakai WARNA FITURNYA (pil pastel + ikon &
 // tulisan gelap senada) — pasangan warna yang sama dengan pita header di atas
 // layar, jadi fiturnya terbingkai warna itu dari kepala sampai kaki.
+//
+// 24 Sep 2026: BAR-nya sendiri jadi emerald gelap (Color.TABBAR_BG) dengan
+// garis pemisah, sama seperti kaki app. Pil aktifnya TETAP pastel fitur, dan
+// itu disengaja: pastel di atas gelap justru makin menyala, jadi sistem warna
+// fitur yang jadi tulang punggung app ini tidak hilang. Yang berubah cuma
+// latarnya, dan tab yang TIDAK aktif kini memakai mint redup
+// (Color.TABBAR_INACTIVE) karena abu-abu lama tenggelam di latar gelap.
 export function BottomTabs<T extends string>({
   tabs,
   value,
@@ -90,7 +98,9 @@ export function BottomTabs<T extends string>({
       </ScrollView>
     );
   }
-  // Pita di BAWAH tab bar (area home indicator iPhone) ikut jadi putih.
+  // Pita di BAWAH tab bar (area home indicator iPhone) ikut jadi segelap
+  // barnya. Sejak 24 Sep 2026 warnanya emerald gelap, bukan putih; caranya
+  // persis sama, yang berubah cuma warnanya.
   //
   // Dulu pita itu berwarna krem: layar fiturnya memakai SafeAreaView
   // edges={['top','bottom']}, jadi ruang aman bawah tergambar sebagai
@@ -185,7 +195,7 @@ function Tab<T extends string>({
           <IconSymbol
             name={tab.icon}
             size={24}
-            color={active ? fg : Color.TEXT_LABEL}
+            color={active ? fg : Color.TABBAR_INACTIVE}
           />
         </Animated.View>
         {/* Bentuk & aturan angkanya milik <Badge> — sama persis dengan badge
@@ -194,12 +204,22 @@ function Tab<T extends string>({
       </View>
       {/* Label panjang (mis. "Multiplication" di layar CORE yang punya 5 tab)
           mengecil sendiri agar tetap satu baris — tanpa ini ia terpotong dan
-          tinggi tab jadi tidak rata. Label pendek tak terpengaruh. */}
+          tinggi tab jadi tidak rata. Label pendek tak terpengaruh.
+
+          Warna aktifnya PASTEL fitur (bg), bukan warna gelapnya (fg), dan itu
+          bukan selera: labelnya duduk DI LUAR pil, langsung di atas bar
+          emerald gelap. Warna gelap fitur di sana tak terbaca sama sekali —
+          `TASKS_DARK` bahkan persis #0B3D36, warna barnya sendiri, jadi label
+          "Daily" di layar Reminder benar-benar hilang (kontras 1,00:1).
+          Pastelnya aman untuk SEMUA fitur: yang terendah pun 6,03:1, jauh di
+          atas syarat 4,5:1 (dijaga cek-pil-grid-notulen.js).
+
+          Ikonnya tetap `fg` karena ia ada DI DALAM pil pastel itu. */}
       <VixText
         heading="label"
         numberOfLines={1}
         adjustsFontSizeToFit
-        additionalStyle={active ? { color: fg } : undefined}>
+        additionalStyle={{ color: active ? bg : Color.TABBAR_INACTIVE }}>
         {tab.label}
       </VixText>
     </PressableScale>
@@ -225,8 +245,10 @@ function TopTab<T extends string>({
     <PressableScale
       style={[styles.pill, active && { backgroundColor: bg, borderColor: bg }]}
       onPress={onPress}>
-      <IconSymbol name={tab.icon} size={16} color={active ? fg : Color.TEXT_LABEL} />
-      <VixText heading="label" additionalStyle={active ? { color: fg } : undefined}>
+      <IconSymbol name={tab.icon} size={16} color={active ? fg : Color.TABBAR_INACTIVE} />
+      <VixText
+        heading="label"
+        additionalStyle={{ color: active ? fg : Color.TABBAR_INACTIVE }}>
         {tab.label}
       </VixText>
       <Badge count={tab.badge ?? 0} style={styles.pillBadge} />
@@ -237,8 +259,35 @@ function TopTab<T extends string>({
 const styles = StyleSheet.create({
   // Deretan pil di bawah pita header. Tidak ikut menggulung bersama isi
   // (berdiri di luar ScrollView layar), jadi selalu terjangkau.
-  topBar: { flexGrow: 0 },
-  topBarContent: { paddingHorizontal: 20, paddingTop: 2, paddingBottom: 8, gap: 8 },
+  //
+  // Latar emerald gelap: barisnya jadi satu keping utuh, bukan pil-pil yang
+  // mengambang di atas krem.
+  //
+  // `marginTop: -BAND_GAP` MENIADAKAN napas di bawah pita ScreenHeader, jadi
+  // bar ini benar-benar menempel ke pita berwarna fitur di atasnya. Keduanya
+  // lalu terbaca sebagai SATU kepala layar dua warna: pastel fitur di atas,
+  // emerald gelap di bawah. Dengan napas 6pt itu masih ada, di antara keduanya
+  // tersisa sepotong krem dan sambungannya terlihat terputus.
+  //
+  // Lengkungan kepala layar sekarang dipegang di SINI (sudut bawah 24), bukan
+  // di pitanya — pitanya sudah rata keempat sudutnya.
+  topBar: {
+    flexGrow: 0,
+    marginTop: -BAND_GAP,
+    backgroundColor: Color.TABBAR_BG,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: Color.TABBAR_LINE,
+  },
+  // paddingTop 10, bukan 2: badge pil menggantung 6pt DI ATAS pilnya, dan
+  // ScrollView memotong apa pun yang keluar dari kotaknya. Dengan 2, angka
+  // "5" & "2" di sub-tab Work terpotong separuh oleh pita header. Sekarang
+  // ruangnya cukup, jadi badge-nya utuh di paling atas.
+  topBarContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 8, gap: 8 },
+  // Pil yang TIDAK aktif: tembus pandang bergaris tipis, bukan putih. Putih di
+  // atas bar gelap terbaca seperti tombol yang menyala, jadi semua sub-tab
+  // tampak aktif sekaligus dan yang benar-benar aktif kehilangan artinya.
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,15 +296,19 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
+    borderColor: Color.TABBAR_LINE,
+    backgroundColor: 'transparent',
   },
   pillBadge: { position: 'absolute', top: -6, right: -6 },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: Color.CONTAINER,
+    backgroundColor: Color.TABBAR_BG,
+    // Sudut ATAS membulat, isi layar terlihat di belakangnya — bar-nya jadi
+    // terasa menumpang di atas layar, bukan memotongnya.
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderTopWidth: 1,
-    borderTopColor: Color.BORDER,
+    borderTopColor: Color.TABBAR_LINE,
     // paddingBottom ditimpa di komponennya (8 + ruang aman bawah).
     paddingTop: 8,
     paddingBottom: 8,

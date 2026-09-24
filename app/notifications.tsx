@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD, CARD_GAP } from '@/assets/style/card';
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CONTENT_COLUMN } from '@/assets/style/layout';
-import { BackRow } from '@/components/common/BackRow';
 import { Chip } from '@/components/common/Chip';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import {
   groupEnabled,
@@ -20,7 +20,7 @@ import {
 } from '@/lib/notify';
 import { jamPengingat, sudahBelajar, type Jam } from '@/lib/notifyTiming';
 
-// 🔔 Pengingat di HP — satu layar untuk SELURUH notifikasi lokal app ini.
+// 📳 Pengingat di HP — satu layar untuk SELURUH notifikasi lokal app ini.
 //
 // Isinya bukan pengaturan baru: tiap kelompok memakai perhitungan yang sudah
 // dipakai layar Today (lib/today.ts), jadi yang berbunyi di lock screen persis
@@ -83,17 +83,15 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackRow />
+      {/* Pita berwarna tile System di grid Life (grafit), sama dengan layar
+          yang membukanya. */}
+      <ScreenHeader
+        backLabel="Kembali"
+        title="Notification 📳"
+        subtitle="Satu tempat untuk semua pengingat di HP"
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.inner}>
-          <VixText heading="header" additionalStyle={styles.title}>
-            Pengingat 🔔
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.sub}>
-            Notifikasi dijadwalkan di HP ini, tanpa server. Isinya diambil dari layar Today, dan
-            diperbarui tiap kali app dibuka, jadi yang berbunyi = keadaan terakhir yang app tahu.
-          </VixText>
-
           <View style={styles.masterCard}>
             <View style={styles.masterMain}>
               <VixText heading="bold" additionalStyle={styles.masterTitle}>
@@ -127,6 +125,10 @@ export default function NotificationsScreen() {
                 <VixText heading="label">
                   {jam[g.key] ? `Jam ${jam[g.key]}, mengikuti kebiasaanmu` : g.when}
                 </VixText>
+                {/* Ke mana notifikasinya mendarat kalau di-click. */}
+                <VixText heading="label" additionalStyle={styles.opens}>
+                  Click → {g.opens}
+                </VixText>
               </View>
               <Chip
                 label={groups[g.key] === false ? 'Mati' : 'Nyala'}
@@ -142,6 +144,10 @@ export default function NotificationsScreen() {
             app mengikuti jumlah baris hari ini di Today. Kalimatnya berganti tiap hari, dan
             jamnya ikut menyesuaikan jam kamu biasa menyelesaikannya.
           </VixText>
+          <VixText heading="label" additionalStyle={styles.note}>
+            Notifikasi yang menyebut SATU hal membuka layar hal itu persis, lengkap dengan sub-tab
+            dan isian yang menunggu. Yang menyebut beberapa hal sekaligus membuka layar induknya.
+          </VixText>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -152,14 +158,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { paddingBottom: 32, alignItems: 'center' },
   inner: { ...CONTENT_COLUMN, paddingHorizontal: 20, gap: 8 },
-  title: { color: Color.MAIN },
-  sub: { marginBottom: CARD_GAP },
   masterCard: { ...CARD, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
   masterMain: { flex: 1, gap: 2 },
   masterTitle: { color: Color.MAIN_DARK },
   row: { ...CARD, flexDirection: 'row', alignItems: 'center', gap: 10 },
   rowMain: { flex: 1, gap: 2 },
   rowTitle: { color: Color.TEXT_TITLE },
+  opens: { color: Color.DEVICE_DEEP },
   warn: { color: Color.WARNING },
   off: { opacity: 0.45 },
   note: { marginTop: 4 },

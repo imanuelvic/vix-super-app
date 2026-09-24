@@ -1,5 +1,5 @@
 // ============================================================================
-// TAB HABITS 📋 — menggantikan tab Tournament (yang kini jadi tile di grid Home).
+// TAB HABITS ✔️ — menggantikan tab Tournament (yang kini jadi tile di grid Home).
 // Isinya kebiasaan harian Pagi/Siang/Malam, pindahan dari fitur Health.
 //
 // Diet 🥗 sudah dihapus seluruhnya (2 Sep 2026) — alasannya ditulis di
@@ -12,12 +12,10 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { CONTENT_COLUMN } from '@/assets/style/layout';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { StreakPill } from '@/components/common/StreakPill';
-import { BackRow } from '@/components/common/BackRow';
-import { VixText } from '@/components/common/VixText';
 import { HabitsTab } from '@/components/habits/HabitsTab';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
@@ -223,18 +221,19 @@ export default function HabitsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackRow />
-      <View style={styles.header}>
-        <VixText heading="header" additionalStyle={styles.title}>
-          Habits 📋
-        </VixText>
-        {/* Angka di pil ini = streak kebiasaan, jadi yang dibuka pun kategori
-            "🍎 Good Habit" — bukan daftar semua kategori. */}
-        <StreakPill
-          streak={activeStreak(streak ?? null, dayId)}
-          category="health"
-        />
-      </View>
+      {/* Pita berwarna tile Habits di grid Life (pasir), sama seperti layar
+          fitur lain. Angka di pil = streak kebiasaan, jadi yang dibuka pun
+          kategori "🍎 Good Habit", bukan daftar semua kategori. */}
+      <ScreenHeader
+        backLabel="Kembali"
+        title="Habits ✔️"
+        right={
+          <StreakPill
+            streak={activeStreak(streak ?? null, dayId)}
+            category="health"
+          />
+        }
+      />
 
       <ScreenError message={error} />
 
@@ -260,14 +259,5 @@ export default function HabitsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  header: {
-    ...CONTENT_COLUMN,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  title: { color: Color.MAIN },
   content: { flex: 1 },
 });

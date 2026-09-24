@@ -357,7 +357,7 @@ export function PlanTab({
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Mulai berlaku
+          📆 Mulai Berlaku
         </VixText>
         <View style={styles.formGap}>
           <DateField
@@ -367,7 +367,7 @@ export function PlanTab({
           />
         </View>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Habis tanggal
+          📆 Habis Tanggal
         </VixText>
         <View style={styles.formGap}>
           <DateField

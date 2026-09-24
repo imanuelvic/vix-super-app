@@ -7,7 +7,7 @@ import {
     type FirestoreError,
 } from 'firebase/firestore';
 
-import { type LoginStreak as WeekStreak } from './achievements';
+import { type LoginStreak as WeekStreak } from './reward';
 import { hashString } from './core';
 import { db } from './firebase';
 import { dayIdToDate, mondayIndex } from './format';
@@ -16,7 +16,7 @@ import { liveDoc } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 import { weekStart } from './usage';
 
-export type { LoginStreak as WeekStreak } from './achievements';
+export type { LoginStreak as WeekStreak } from './reward';
 
 export type SkillArea = {
   key: string;

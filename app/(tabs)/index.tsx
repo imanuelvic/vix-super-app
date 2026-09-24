@@ -28,6 +28,7 @@ import { Color } from '@/assets/style/color';
 import { CONTENT_COLUMN } from '@/assets/style/layout';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ScreenError } from '@/components/common/ScreenError';
 import { VixText } from '@/components/common/VixText';
 import { FoldedList } from '@/components/today/FoldedList';
 import { GodHero } from '@/components/today/GodHero';
@@ -46,8 +47,10 @@ const NICK = OWNER_NAME.split(' ')[0] ?? OWNER_NAME;
 export default function TodayScreen() {
   const router = useRouter();
   const { ref: scrollRef } = useScrollTop();
-  const { now, todayId, model, ready, login, priorities, intercession, intercessionDismiss } =
-    useTodayData();
+  const {
+    now, todayId, model, ready, login, priorities, intercession,
+    intercessionDismiss, loadError,
+  } = useTodayData();
   // Kalimat penyegar yang barusan di-click "sudah dibaca" → sembunyikan
   // sampai giliran berikutnya (kalimatnya beda, cukup bandingkan teksnya).
   const [nudgeSeen, setNudgeSeen] = useState<string | null>(null);
@@ -83,6 +86,10 @@ export default function TodayScreen() {
           <IconSymbol name="person.crop.circle.fill" size={30} color={Color.MAIN_DARK} />
         </PressableScale>
       </View>
+
+      {/* Galat muat. Ditaruh di luar ScrollView (punya padding sendiri) supaya
+          tetap terlihat walau isinya belum sempat digambar sama sekali. */}
+      <ScreenError message={loadError} />
 
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
@@ -147,7 +154,10 @@ export default function TodayScreen() {
                 />
               </View>
             </Animated.View>
-          ) : (
+          ) : loadError ? null : (
+            /* Ada galat muat → gerbangnya memang tidak akan pernah lengkap,
+               jadi jangan memutar pemuat selamanya. Pesannya sudah terpasang
+               di atas; lebih jujur berhenti di situ. */
             <View style={styles.loadingRows}>
               <LoadingCenter />
             </View>

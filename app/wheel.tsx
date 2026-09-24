@@ -31,7 +31,7 @@ import { useKeyedData } from '@/hooks/useKeyedData';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useOwnerLeader } from '@/hooks/useOwnerLeader';
 import { formatDayDate, formatDecimal } from '@/lib/format';
-import { SAVE_ERROR } from '@/lib/messages';
+import { pdfErrorOf, SAVE_ERROR } from '@/lib/messages';
 import { PRIVACY_PIN } from '@/lib/pin';
 import {
     MIN_FOCUS,
@@ -360,7 +360,7 @@ export default function WheelScreen() {
               onWaError: () => setError(WHATSAPP_ERROR),
             })
           : shareWheelPdf(data, year, q, pemilik),
-      fail: () => setError('Gagal membuat PDF Wheel of Life. Coba lagi.'),
+      fail: () => setError(pdfErrorOf('Wheel of Life')),
     });
   }
 
@@ -748,7 +748,7 @@ export default function WheelScreen() {
           {/* 1 — DIPATOK */}
           {hasScores ? (
             <SectionToggle
-              title="🎯 Fokus Kuartal"
+              title="🎯 Quarter Focus"
               sub={
                 data.focus.length > 0
                   ? `${data.focus.length} area · ${

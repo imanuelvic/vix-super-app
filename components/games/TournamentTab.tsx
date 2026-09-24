@@ -342,7 +342,7 @@ export function TournamentTab() {
       {/* ============ Modal buat turnamen ============ */}
       <SheetModal
         visible={createOpen}
-        title="Buat Turnamen"
+        title="🏆 New Tournament"
         subtitle="Undian babak pertama diacak otomatis 🎲"
         onClose={() => setCreateOpen(false)}>
         <FormInput
@@ -354,7 +354,7 @@ export function TournamentTab() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📆 Tanggal turnamen
+          📆 Tanggal Turnamen
         </VixText>
         <View style={styles.formGap}>
           {/* key = sesi buka modal → picker kembali ke tanggal awal tiap kali
@@ -367,7 +367,7 @@ export function TournamentTab() {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Jumlah peserta
+          👥 Jumlah Peserta
         </VixText>
         <View style={styles.sizeRow}>
           {SIZES.map((s) => (
@@ -382,7 +382,7 @@ export function TournamentTab() {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Nama peserta ({cSize})
+          👥 Nama Peserta ({cSize})
         </VixText>
         {cNames.map((n, i) => (
           <View key={i} style={styles.seedRow}>
@@ -418,7 +418,7 @@ export function TournamentTab() {
           bergeser diam-diam dari sini. */}
       <SheetModal
         visible={editOpen}
-        title="Ubah Turnamen"
+        title="✏️ Edit Tournament"
         subtitle="Bracket & hasil laganya tidak berubah 🏆"
         onClose={() => setEditOpen(false)}>
         <FormInput
@@ -430,7 +430,7 @@ export function TournamentTab() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          📆 Tanggal turnamen
+          📆 Tanggal Turnamen
         </VixText>
         <View style={styles.formGap}>
           {/* key = sesi buka modal → picker selalu mulai dari tanggal yang

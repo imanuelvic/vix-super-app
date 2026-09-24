@@ -1,12 +1,12 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
+import { CardPreview } from '@/components/common/CardPreview';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -15,6 +15,7 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { BibleStoryCard } from '@/components/spiritual/BibleStoryCard';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useCardPng } from '@/hooks/useCardPng';
 import { useNow } from '@/hooks/useNow';
 import {
   storyFileName,
@@ -62,7 +63,6 @@ export default function BibleStoryScreen() {
     (typeof versionParam === 'string' ? versionParam.trim() : '') ||
     BIBLE_VERSION_DEFAULT;
 
-  const { width } = useWindowDimensions();
   const { now, todayId } = useNow();
 
   // Acuan yang sedang dipilih. Nilai awalnya yang pertama — parameternya sudah
@@ -86,7 +86,7 @@ export default function BibleStoryScreen() {
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const svgRef = useRef<Svg>(null);
+  const { svgRef, buatPng } = useCardPng(STORY_W, STORY_H);
   const design = designOf(pickedKey);
   // Acuan yang dipakai: yang dipilih, atau yang pertama kalau pilihannya
   // sempat kosong (mis. parameternya cuma satu).
@@ -99,32 +99,6 @@ export default function BibleStoryScreen() {
   const dasar = parseBibleRef(dipilih);
   const reference =
     bibleRefText(dasar.book, dasar.chapter, ayatDari, ayatSampai) || dipilih;
-
-  // Pratinjau selebar layar dikurangi tepi, tapi dibatasi supaya lembar 9:16-nya
-  // tetap muat utuh di layar mana pun (termasuk iPhone 15 yang tingginya pas).
-  const previewW = Math.min(width - 40, 260);
-  const previewH = (previewW * STORY_H) / STORY_W;
-  // Kartunya SELALU dirender pada ukuran asli 1080×1920, lalu dikecilkan
-  // dengan transform. Lihat catatan panjang di lib/shareImage.ts: yang
-  // tertangkap toDataURL itu ukuran TATA LETAK view-nya, bukan kanvas yang
-  // kita minta — dirender sebesar pratinjau, hasilnya kartu kecil di pojok
-  // kiri-atas dengan sisanya hitam.
-  const scale = previewW / STORY_W;
-
-  /** Gambar kartunya jadi PNG 1080×1920 (base64, tanpa awalan `data:`). */
-  function buatPng(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      const svg = svgRef.current;
-      if (!svg) {
-        reject(new Error('kartu belum siap'));
-        return;
-      }
-      svg.toDataURL((data) => resolve(data), {
-        width: STORY_W,
-        height: STORY_H,
-      });
-    });
-  }
 
   /** Simpan ke Foto — dilewati kalau gambar yang persis sama sudah tersimpan. */
   async function simpanKeFoto(): Promise<void> {
@@ -157,7 +131,7 @@ export default function BibleStoryScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel={meta.title}
-        title="Bagikan Ayat 📖"
+        title="Share Verse 📖"
         subtitle="Instastory"
       />
 
@@ -175,7 +149,7 @@ export default function BibleStoryScreen() {
           {refs.length > 1 && (
             <>
               <VixText heading="title" additionalStyle={styles.sectionTitle}>
-                📖 Pilih bacaannya
+                📖 Pilih Bacaannya
               </VixText>
               <View style={styles.chipWrap}>
                 {refs.map((r) => (
@@ -239,24 +213,19 @@ export default function BibleStoryScreen() {
             editable={kerja.busy === null}
           />
 
-          <View style={styles.previewWrap}>
-            <View
-              style={[styles.previewClip, { width: previewW, height: previewH }]}>
-              <View style={[styles.full, { transform: [{ scale }] }]}>
-                <BibleStoryCard
-                  ref={svgRef}
-                  verse={verse}
-                  reference={reference}
-                  version={version}
-                  sessionLabel={meta.title.toUpperCase()}
-                  design={design}
-                  dateLabel={formatFullDate(now)}
-                  archiveLabel={archiveNo(todayId)}
-                  width={STORY_W}
-                />
-              </View>
-            </View>
-          </View>
+          <CardPreview width={STORY_W} height={STORY_H} max={260}>
+            <BibleStoryCard
+              ref={svgRef}
+              verse={verse}
+              reference={reference}
+              version={version}
+              sessionLabel={meta.title.toUpperCase()}
+              design={design}
+              dateLabel={formatFullDate(now)}
+              archiveLabel={archiveNo(todayId)}
+              width={STORY_W}
+            />
+          </CardPreview>
 
           <VixText heading="title" additionalStyle={styles.sectionTitle}>
             🎨 Style
@@ -310,11 +279,6 @@ const styles = StyleSheet.create({
   ayatRow: { flexDirection: 'row', gap: 8 },
   ayatBox: { flex: 1, gap: 4 },
   ayatLabel: { marginLeft: 2 },
-  previewWrap: { alignItems: 'center', paddingVertical: 14 },
-  // Kartunya dirender seukuran aslinya lalu dikecilkan; kotak ini yang
-  // memotongnya jadi sebesar pratinjau.
-  previewClip: { overflow: 'hidden' },
-  full: { width: STORY_W, height: STORY_H, transformOrigin: 'top left' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   savedNote: { textAlign: 'center', color: Color.SUCCESS },
 });

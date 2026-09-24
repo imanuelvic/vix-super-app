@@ -12,6 +12,8 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 
+import { setupAppCheck } from './appCheck';
+
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -32,6 +34,11 @@ export const isFirebaseConfigured = Boolean(
 // initializeApp hanya boleh sekali. Saat hot-reload modul dievaluasi ulang,
 // jadi pakai app yang sudah ada bila tersedia.
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+// App Check 🛡️ — dinyalakan sedini mungkin, sebelum ada yang memanggil AI
+// Logic atau Firestore, karena tokennya harus sudah siap saat permintaan
+// PERTAMA berangkat. Tanpa token di .env ia diam saja (lihat lib/appCheck.ts).
+if (isFirebaseConfigured) setupAppCheck(app);
 
 // Auth dengan penyimpanan lokal (AsyncStorage) supaya login tetap tersimpan
 // setelah aplikasi ditutup. initializeAuth juga hanya boleh sekali.

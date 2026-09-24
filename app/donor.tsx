@@ -237,7 +237,7 @@ export default function DonorScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Health"
-        title="Donor Darah 🩸"
+        title="Blood Donor 🩸"
         subtitle="Jadwal, tempat & kelayakan donor"
       />
 
@@ -366,7 +366,7 @@ export default function DonorScreen() {
         title={editing === 'new' ? 'Tambah Jadwal Donor' : 'Edit Jadwal'}
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tempat donor
+          📍 Tempat Donor
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -376,7 +376,7 @@ export default function DonorScreen() {
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal
+          📆 Tanggal
         </VixText>
         <View style={styles.formGap}>
           <DateField
@@ -414,7 +414,7 @@ export default function DonorScreen() {
       {/* Dialog set donor terakhir */}
       <CenterDialog visible={lastOpen} onClose={() => setLastOpen(false)}>
         <VixText heading="title" additionalStyle={styles.modalTitle}>
-          Donor Terakhir
+          🩸 Donor Terakhir
         </VixText>
         <VixText heading="label" additionalStyle={styles.modalHint}>
           Dipakai menghitung kapan kamu boleh donor lagi (jeda 3 bulan).
@@ -432,7 +432,7 @@ export default function DonorScreen() {
       {/* Sheet editor catatan */}
       <SheetModal
         visible={notesOpen}
-        title="Catatan Donor"
+        title="📝 Donor Note"
         onClose={() => setNotesOpen(false)}>
         <FormInput
           style={styles.notesInput}

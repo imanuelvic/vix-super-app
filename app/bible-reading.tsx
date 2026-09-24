@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { AchievementButton } from '@/components/common/AchievementButton';
+import { RewardButton } from '@/components/common/RewardButton';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -20,7 +20,7 @@ import { useDraft } from '@/hooks/useDraft';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
-import { BIBLE_CATEGORY } from '@/lib/achievements';
+import { BIBLE_CATEGORY } from '@/lib/reward';
 import {
   dayIdToDate,
   formatFullDate,
@@ -219,7 +219,7 @@ export default function BibleReadingScreen() {
         subtitle="Merenungkan firman-Nya pagi, siang & malam"
         // Layar ini SATU sesi saja, jadi modal yang dibuka pun sesi itu:
         // pagi 🌅 / siang 🌤️ / malam 🌙 — bukan daftar semua kategori.
-        right={<AchievementButton category={BIBLE_CATEGORY[session]} />}>
+        right={<RewardButton category={BIBLE_CATEGORY[session]} />}>
         {/* Tanggalnya, sama seperti layar rohani lain (Tulis Revive, Catatan
             Khotbah): catatan bacaan itu melekat pada HARI tertentu, jadi
             harinya harus kelihatan tanpa perlu diingat-ingat. */}
@@ -300,7 +300,7 @@ export default function BibleReadingScreen() {
         {/* Sedang berstatus dilewati → beri tahu, dan tombolnya jadi pembatal */}
         {skipped && (
           <SkipNotice
-            title="⏭️ Dilewati hari ini"
+            title="⏭️ Skipped Today"
             detail={
               '🔥 Streak tidak bertambah'
             }

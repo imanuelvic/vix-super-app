@@ -124,7 +124,7 @@ export default function FutsalBoardScreen() {
           )}
 
           {/* ===== Paling rajin datang ===== */}
-          <SectionRow title="🔥 Kehadiran Anggota" />
+          <SectionRow title="🔥 Member Attendance" />
           {sesiLewat === 0 ? (
             <EmptyText>
               Belum ada sesi {meta.label} yang sudah lewat.

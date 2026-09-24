@@ -374,7 +374,7 @@ export function FulltimeTab({
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Deskripsi / catatan (opsional)
+          📝 Deskripsi / Catatan (opsional)
         </VixText>
         <FormInput
           style={styles.noteInput}
@@ -385,7 +385,7 @@ export function FulltimeTab({
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Prioritas (P1 = paling penting)
+          🚩 Prioritas (P1 = paling penting)
         </VixText>
         <View style={styles.chipRow}>
           {([1, 2, 3] as const).map((p) => (
@@ -403,7 +403,7 @@ export function FulltimeTab({
           ))}
         </View>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Status
+          🚦 Status
         </VixText>
         <View style={styles.chipRow}>
           {ROADMAP_STATUS.map((s) => {
@@ -426,7 +426,7 @@ export function FulltimeTab({
         {!isDone && (
           <>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Deadline
+              ⏰ Deadline
             </VixText>
             <View style={styles.chipRow}>
               <Chip

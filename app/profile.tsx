@@ -20,9 +20,9 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SelectField, textOptions } from '@/components/common/SelectField';
+import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
 import { useTabScroll } from '@/components/common/useTabScroll';
-import { BackRow } from '@/components/common/BackRow';
 import { VixText } from '@/components/common/VixText';
 import { BodyCard } from '@/components/health/BodyCard';
 import { PersonalityTab } from '@/components/profile/PersonalityTab';
@@ -95,19 +95,19 @@ const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
   {
     title: '🙋 Data Diri',
     fields: [
-      { key: 'fullName', label: 'Nama lengkap' },
-      { key: 'nickname', label: 'Nama panggilan' },
-      { key: 'birthPlace', label: 'Tempat lahir' },
-      { key: 'birthDate', label: 'Tanggal Lahir', date: true },
-      { key: 'gender', label: 'Jenis kelamin', options: GENDERS },
-      { key: 'religion', label: 'Agama', options: RELIGIONS },
-      { key: 'bloodType', label: 'Golongan darah', options: BLOOD_TYPES },
+      { key: 'fullName', label: '🙋 Nama Lengkap' },
+      { key: 'nickname', label: '😊 Nama Panggilan' },
+      { key: 'birthPlace', label: '📍 Tempat Lahir' },
+      { key: 'birthDate', label: '🎂 Tanggal Lahir', date: true },
+      { key: 'gender', label: '🚻 Jenis Kelamin', options: GENDERS },
+      { key: 'religion', label: '🙏 Agama', options: RELIGIONS },
+      { key: 'bloodType', label: '🩸 Golongan Darah', options: BLOOD_TYPES },
       {
         key: 'maritalStatus',
-        label: 'Status perkawinan',
+        label: '💍 Status Perkawinan',
         options: MARITAL_STATUSES,
       },
-      { key: 'nationality', label: 'Kewarganegaraan' },
+      { key: 'nationality', label: '🌏 Kewarganegaraan' },
     ],
   },
   {
@@ -117,18 +117,18 @@ const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
       // ikut dipatok — salah ketik kelebihan digit ketahuan saat diketik,
       // bukan saat formulirnya ditolak. NPWP sengaja TIDAK dibatasi: sedang
       // masa peralihan 15 → 16 digit (mengikuti NIK).
-      { key: 'nik', label: 'NIK (KTP)', keyboard: 'number-pad', maxLength: 16 },
+      { key: 'nik', label: '🪪 NIK (KTP)', keyboard: 'number-pad', maxLength: 16 },
       {
         key: 'kk',
-        label: 'No. Kartu Keluarga',
+        label: '📄 No. Kartu Keluarga',
         keyboard: 'number-pad',
         maxLength: 16,
       },
-      { key: 'npwp', label: 'NPWP', keyboard: 'number-pad' },
-      { key: 'passport', label: 'No. Paspor' },
+      { key: 'npwp', label: '🧾 NPWP', keyboard: 'number-pad' },
+      { key: 'passport', label: '🛂 No. Paspor' },
       {
         key: 'bpjs',
-        label: 'No. BPJS Kesehatan',
+        label: '🏥 No. BPJS Kesehatan',
         keyboard: 'number-pad',
         maxLength: 13,
       },
@@ -137,9 +137,9 @@ const SECTIONS: { title: string; fields: FieldSpec[] }[] = [
   {
     title: '📞 Kontak',
     fields: [
-      { key: 'address', label: 'Alamat', multiline: true },
-      { key: 'phone', label: 'No. HP', keyboard: 'phone-pad', phone: true },
-      { key: 'email', label: 'Email', keyboard: 'email-address', lowercase: true },
+      { key: 'address', label: '🏠 Alamat', multiline: true },
+      { key: 'phone', label: '📱 No. HP', keyboard: 'phone-pad', phone: true },
+      { key: 'email', label: '✉️ Email', keyboard: 'email-address', lowercase: true },
     ],
   },
   {
@@ -315,21 +315,22 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <BackRow />
-      {/* Judul + subtab: Profile · Personality · Ikigai · SWOT */}
-      <View style={styles.headerWrap}>
-        <View style={styles.headerRow}>
-          <VixText heading="header" additionalStyle={styles.title}>
-            Profile 👤
-          </VixText>
-          {tab === 'profile' && (
+      {/* Pita berwarna tile Profile di grid Life (mint merek). Subtab &
+          nama tab tetap di bawah pitanya. */}
+      <ScreenHeader
+        backLabel="Kembali"
+        title="Profile 👤"
+        right={
+          tab === 'profile' ? (
             <PressableScale onPress={openEdit} hitSlop={10}>
               <VixText heading="bold" additionalStyle={styles.editText}>
                 ✏️ Ubah
               </VixText>
             </PressableScale>
-          )}
-        </View>
+          ) : undefined
+        }
+      />
+      <View style={styles.headerWrap}>
         <SegmentTabs tabs={TABS} value={tab} onChange={onTabPress} />
         {/* Nama tab yang sedang dibuka — pengganti label di dalam chip */}
         <VixText heading="label" additionalStyle={styles.tabTitle}>
@@ -484,7 +485,7 @@ export default function ProfileScreen() {
       {/* Modal edit profil (semua field + foto) */}
       <SheetModal
         visible={editOpen}
-        title="Ubah Profil"
+        title="👤 Edit Profile"
         subtitle="Data hanya tersimpan di akunmu 🔒"
         onClose={() => setEditOpen(false)}>
         <PressableScale
@@ -586,13 +587,6 @@ const styles = StyleSheet.create({
   error: { paddingHorizontal: 20, marginTop: 12 },
   // Di dalam ScrollView yang sudah punya padding sendiri → tak perlu ditambah.
   contentError: { marginBottom: 12 },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  title: { color: Color.MAIN },
   editText: { color: Color.MAIN },
   tabTitle: { color: Color.TEXT_LABEL, marginTop: -6, marginBottom: 8 },
   hero: {

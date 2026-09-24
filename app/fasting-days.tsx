@@ -146,7 +146,7 @@ export default function FastingDaysScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
-        title="Hari per Hari 🍽️"
+        title="Day by Day 🍽️"
         subtitle={plan?.title}
       />
 
@@ -253,7 +253,10 @@ export default function FastingDaysScreen() {
             style={styles.doneChoice}
             disabled={terkunci}
             onPress={() => setDraft({ done: !draft.done, failed: false })}>
-            <CheckCircle checked={draft.done} size={26} />
+            {/* 42 = ukuran CrossMark di sebelahnya. Dulu 26, jadi dua pilihan
+                yang setara terlihat tidak sederajat: yang "Gagal" jauh lebih
+                besar daripada yang "Berhasil". */}
+            <CheckCircle checked={draft.done} size={42} />
             <VixText heading="bold" additionalStyle={styles.doneText}>
               Berhasil
             </VixText>
@@ -273,7 +276,7 @@ export default function FastingDaysScreen() {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🙏 Pokok doa hari ini
+          🙏 Pokok Doa Hari Ini
         </VixText>
         <FormInput
           placeholder="Yang khusus didoakan hari ini"
@@ -285,7 +288,7 @@ export default function FastingDaysScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          ✨ Jawaban doa hari ini
+          ✨ Jawaban Doa Hari Ini
         </VixText>
         <FormInput
           placeholder="Apa yang terjadi / Tuhan jawab hari ini?"

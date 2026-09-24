@@ -281,7 +281,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
         subtitle="Ide, produk affiliate, & catatannya jadi satu"
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          💡 Judul ide
+          💡 Judul Ide
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -320,7 +320,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🛍️ Produk affiliate (kosongkan kalau bukan jualan)
+          🛍️ Produk Affiliate (kosongkan kalau bukan jualan)
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -331,7 +331,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🔗 Link affiliate
+          🔗 Link Affiliate
         </VixText>
         <FormInput
           style={styles.formGap}

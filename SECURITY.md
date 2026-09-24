@@ -110,15 +110,57 @@ tidak beres — bukan setelah tagihannya membengkak.
 
 ---
 
-## Opsional: Firebase App Check
+## Firebase App Check — TERPASANG (sementara), tenggat 2 November 2026
 
-App Check membuat Firestore **menolak permintaan yang bukan berasal dari
-aplikasi aslimu** (diverifikasi lewat Apple App Attest). Ini lapisan terkuat
-yang tersisa: walaupun ada yang punya email & password-mu, permintaan dari
-skrip/Postman tetap ditolak.
+### Kenapa ini yang paling mendesak
 
-⚠️ **Butuh modul native → wajib `eas build` baru, tidak cukup `eas update`.**
-Bilang saja kalau mau dipasang.
+`firestore.rules` menjaga Firestore dengan benar, tapi **Firebase AI Logic
+adalah layanan terpisah yang tidak disentuh Security Rules sama sekali.**
+Config Firebase yang terbaca publik di repo ini sudah cukup untuk memanggil
+proxy AI Logic-mu langsung. Artinya semua pagar di `lib/aiGuard.ts` (memo,
+dedupe, cooldown, kunci 429, batas 30/hari) berjalan di sisi klien dan bisa
+dilewati. Karena proyeknya Spark, akibatnya **bukan tagihan** melainkan kuota
+Gemini gratismu habis dipakai orang.
+
+Dan ada tenggat keras dari Google: **mulai 2 November 2026 App Check
+ditegakkan otomatis untuk AI Logic dan tidak bisa dimatikan lagi.** Lewat
+tanggal itu, tanpa App Check, keempat fitur AI berhenti bekerja.
+
+### Yang sudah terpasang: debug token (`lib/appCheck.ts`)
+
+Ini keputusan sadar, bukan jalan pintas. Token App Check terikat ke satu App
+ID, dan `@firebase/ai` mengirim `X-Firebase-Appid` berisi appId **Web**
+(`1:…:web:…`). Jadi:
+
+| Jalur | Bisa? |
+|---|---|
+| reCAPTCHA v3 / Enterprise (jalur resmi aplikasi Web) | ❌ butuh `document`, tidak ada di React Native |
+| App Attest lewat `@react-native-firebase/app-check` | ❌ tokennya dicetak untuk appId **iOS**, ditolak karena headernya bilang **Web** |
+| **Debug token aplikasi Web** | ✅ jalur exchange-nya tidak menyentuh `document`, dan appId-nya cocok |
+
+**Cara memasangnya (sekali):** Firebase Console › Build › App Check › Apps ›
+pilih aplikasi **Web** › menu ⋮ › Manage debug tokens › Add debug token ›
+salin nilainya ke `.env` sebagai `EXPO_PUBLIC_APP_CHECK_DEBUG_TOKEN`.
+
+⚠️ **Jangan nyalakan enforcement sebelum app yang memuat token ini sudah
+terpasang di HP dan AI-nya terbukti jalan.** Menyalakannya lebih dulu
+mematikan AI seketika.
+
+**Batasnya, jujur:** token ini rahasia statis yang ikut ter-bundle ke dalam
+IPA, jadi orang yang membongkar IPA bisa memakainya. Dibanding keadaan
+sebelumnya (tanpa pagar sama sekali, cukup membaca repo publik) palangnya naik
+jauh, tapi ini **bukan** perlindungan sekelas attestation.
+
+### Rencana sebelum 2 November 2026: App Attest sungguhan
+
+Pindahkan pemanggilan AI dari `firebase/ai` (JS SDK, aplikasi Web) ke
+**`@react-native-firebase/ai` + `@react-native-firebase/app-check`** (aplikasi
+iOS, App Attest asli, tanpa rahasia di bundle). Auth & Firestore tetap di JS
+SDK. Butuh `GoogleService-Info.plist`, kapabilitas App Attest di Apple
+Developer, dan `eas build` baru. Setelah itu `lib/appCheck.ts` dibuang.
+
+Yang menahan: AI-nya terisolasi rapi di `lib/gemini.ts`, jadi prompt, skema,
+dan seluruh pagar `aiGuard` tidak perlu berubah.
 
 ---
 

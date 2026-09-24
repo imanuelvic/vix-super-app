@@ -61,7 +61,7 @@ export function InfoTab() {
 
       {/* Tips */}
       <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        Tips Rumah 🏠✨
+        🏠 Tips Rumah
       </VixText>
       <View style={styles.tipsCard}>
         {TIPS.map((tip) => (

@@ -61,7 +61,7 @@ export default function FutsalScheduleScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Friends"
-        title="Jadwal Main 📅"
+        title="Match Schedule 📅"
         subtitle="Semua pertandingan, yang akan datang & riwayatnya."
       />
 

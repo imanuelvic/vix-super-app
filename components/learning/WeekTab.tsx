@@ -111,7 +111,7 @@ export function WeekTab({
     if (nowComplete !== wasComplete) {
       await setSkillDone(user.uid, skill.key, nowComplete ? weekId : null);
     }
-    // Streak mingguan 🔥 naik saat minggu ini TUNTAS — dasar achievement
+    // Streak mingguan 🔥 naik saat minggu ini TUNTAS — dasar reward
     // Learning. Sengaja tidak diturunkan lagi kalau centangnya dilepas:
     // minggu itu memang pernah kamu tuntaskan. Naiknya juga maksimal sekali
     // per minggu (dijaga `bumpLearningStreak`).
@@ -183,7 +183,7 @@ export function WeekTab({
             </VixText>
             <View style={styles.heroRight}>
               {/* Streak minggu tuntas berturut-turut — angka yang sama
-                  dipakai achievement 🎓 Learning. Disembunyikan saat masih 0
+                  dipakai reward 🎓 Learning. Disembunyikan saat masih 0
                   supaya tidak jadi pengingat kegagalan. */}
               {runningStreak > 0 && (
                 <VixText heading="bold" additionalStyle={styles.heroStreak}>
@@ -256,7 +256,7 @@ export function WeekTab({
 
         {/* ===== 4 langkah ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          Target Minggu Ini
+          🎯 Target Minggu Ini
         </VixText>
 
         {LEARNING_STEPS.map((s) => {
@@ -332,7 +332,7 @@ export function WeekTab({
               {s.key === 'summarize' && (
                 <NoteField
                   key={weekId}
-                  title="✍️ Rangkuman Minggu Ini"
+                  title="✍️ This Week Recap"
                   // Topiknya ikut dibawa masuk: begitu sheet terbuka, kartu
                   // langkah di belakangnya tertutup — padahal "ini rangkuman
                   // soal apa" justru yang paling dibutuhkan saat menulis.

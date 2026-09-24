@@ -9,6 +9,7 @@ import { InfoRow } from '@/components/common/InfoRow';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { pdfErrorOf } from '@/lib/messages';
 import { hasLeaderBody, type CoreLeader } from '@/lib/core';
 import { dayIdToDate, formatDecimal, formatFullDate } from '@/lib/format';
 import { bodySummary } from '@/lib/health';
@@ -63,7 +64,7 @@ export function LeaderBodyDialog({
       key: 'pdf',
       start: () => setError(null),
       task: () => shareLeaderBodyPdf(leader),
-      fail: () => setError('Gagal membuat PDF Data Tubuh. Coba lagi.'),
+      fail: () => setError(pdfErrorOf('Data Tubuh')),
     });
   }
   // Pesan gagal milik sesi dialog ini saja: CL berikutnya mulai bersih.

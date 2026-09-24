@@ -137,7 +137,7 @@ export default function VisitationsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Riwayat Visitasi 🕘"
+        title="Visitation History 🕘"
         subtitle={`${sorted.length} riwayat`}
       />
 
@@ -202,7 +202,7 @@ export default function VisitationsScreen() {
       {/* Bottom sheet edit visitasi */}
       <SheetModal
         visible={!!editing}
-        title="Edit Visitasi"
+        title="✏️ Edit Visitation"
         onClose={() => setEditing(null)}>
         <VisitationFormFields
           form={form}

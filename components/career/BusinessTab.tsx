@@ -11,7 +11,7 @@ export function BusinessTab() {
       <View style={styles.card}>
         <VixText additionalStyle={styles.emoji}>🍧🐟</VixText>
         <VixText heading="title" additionalStyle={styles.title}>
-          Coming Soon 🚧
+          🚧 Coming Soon
         </VixText>
         <VixText heading="paragraph" additionalStyle={styles.text}>
           Rencana bisnis: <VixText heading="bold">Es Cendol</VixText> &{' '}

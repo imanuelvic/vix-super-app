@@ -59,7 +59,6 @@ import {
     parseDecimal,
 } from '@/lib/format';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
-import { openPayApp, payAppForCategory } from '@/lib/payapps';
 import {
     deleteResidenceLog,
     syncResidenceLog,
@@ -513,8 +512,6 @@ export function TransactionsTab({
   }
 
   function renderHeader() {
-    // App tujuan (deeplink) sesuai kategori terpilih — muncul di bawah nominal.
-    const payApp = category ? payAppForCategory(category) : null;
     return (
       // key beda dengan header mode cari → React benar-benar melepas/memasang
       // ulang isinya saat mode berganti (bukan sekadar menambal), jadi
@@ -688,23 +685,6 @@ export function TransactionsTab({
               <AddButton busy={saving} onPress={handleAdd} />
             </View>
           </>
-        )}
-
-        {/* Tombol deeplink ke app tujuan (warna brand) — hanya kalau kategori
-            terpilih punya app terkait. Buka vix → isi data → lompat ke app. */}
-        {payApp && (
-          <PressableScale
-            style={[
-              styles.payButton,
-              styles.inputGap,
-              { backgroundColor: payApp.color },
-            ]}
-            onPress={() => openPayApp(payApp)}>
-            <VixText heading="bold" additionalStyle={{ color: payApp.fg }}>
-              💳 Buka {payApp.label}
-            </VixText>
-            <IconSymbol name="chevron.right" size={18} color={payApp.fg} />
-          </PressableScale>
         )}
 
         {isFuel && (
@@ -889,7 +869,7 @@ export function TransactionsTab({
       {/* Bottom sheet: edit transaksi */}
       <SheetModal
         visible={!!editing}
-        title="Edit Transaksi"
+        title="✏️ Edit Transaction"
         subtitle={
           editing && editingCategory
             ? `${editingCategory.icon} ${editingCategory.label} · ${FINANCE_TYPE_LABEL[editing.type]}`
@@ -1074,15 +1054,6 @@ const styles = StyleSheet.create({
   // Kolom Liter di samping Nominal (hanya saat mencatat bensin).
   literInput: { width: 84 },
   fuelHint: { color: Color.TEXT_LABEL, marginTop: 8 },
-  // Tombol deeplink ke app tujuan — warna latar diisi warna brand app-nya.
-  payButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 12,
-    paddingVertical: 12,
-  },
   listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 88 },
   row: {
     flexDirection: 'row',

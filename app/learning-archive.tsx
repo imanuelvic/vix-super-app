@@ -42,7 +42,7 @@ export default function LearningArchiveScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Learning"
-        title="Arsip Rangkuman 📔"
+        title="Recap Archive 📔"
         subtitle="Semua rangkuman Jumat yang pernah kamu tulis"
       />
 

@@ -232,7 +232,7 @@ export function StepsTab({
 
       {/* ===== Minggu ini (Senin–Minggu) ===== */}
       <MileageCard
-        title="📅 Minggu Ini"
+        title="📅 This Week"
         reset={RESET_MINGGUAN}
         km={weekKm}
         steps={weekTotal}
@@ -383,7 +383,7 @@ function ManualStepsModal({
   return (
     <SheetModal
       visible={visible}
-      title="✍️ Catat Manual Steps"
+      title="✍️ Manual Steps"
       subtitle="Untuk jalan yang tidak terbawa HP"
       onClose={onClose}>
       <FormInput

@@ -12,14 +12,14 @@ import Animated, {
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
-import type { AchievementCategoryKey } from '@/lib/achievements';
+import type { RewardCategoryKey } from '@/lib/reward';
 
-// Pil streak 🔥 → buka halaman Achievements (streak & pencapaian).
+// Pil streak 🔥 → buka halaman Rewards (streak & pencapaian).
 // Dipakai di baris sapaan (<GreetingHeader/>) dan di pojok kanan atas
 // header layar (mis. tab Habits). Satu tampilan, satu tempat ubah.
 //
 // `category` = kategori pencapaian yang diwakili angka di pil ini. Kalau
-// dioper, modal kategori itu LANGSUNG terbuka di layar Achievement — pilnya
+// dioper, modal kategori itu LANGSUNG terbuka di layar Reward — pilnya
 // menunjuk satu streak tertentu, jadi tidak masuk akal kalau yang dibuka cuma
 // daftar semua kategori lalu harus dicari lagi. Tanpa `category` (mis. pil
 // umum 🏆 di Home yang tidak mewakili satu kategori), layarnya terbuka biasa.
@@ -31,7 +31,7 @@ export function StreakPill({
   category,
 }: {
   streak: string | number;
-  category?: AchievementCategoryKey;
+  category?: RewardCategoryKey;
 }) {
   const router = useRouter();
 
@@ -62,8 +62,8 @@ export function StreakPill({
         onPress={() =>
           router.push(
             category
-              ? { pathname: '/achievement-category', params: { cat: category } }
-              : '/achievements',
+              ? { pathname: '/reward-category', params: { cat: category } }
+              : '/reward',
           )
         }
         hitSlop={8}>

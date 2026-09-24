@@ -5,12 +5,12 @@ import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 
-// Satu petak LENCANA dalam grid tiga kolom — bentuk papan Awards ala Duolingo.
+// Satu petak LENCANA dalam grid tiga kolom — bentuk papan Reward ala Duolingo.
 //
 // Dipakai dua layar dengan arti yang berbeda tapi bentuk yang sama persis:
-//   • Achievement 🏆   → satu petak = satu KATEGORI (angkanya "3/9").
+//   • Reward 🏆   → satu petak = satu KATEGORI (angkanya "3/9").
 //   • Rincian kategori → satu petak = satu LENCANA (angkanya target tingkatnya).
-// Karena itu ia tidak tahu apa-apa soal achievement; ia cuma tahu lambang,
+// Karena itu ia tidak tahu apa-apa soal reward; ia cuma tahu lambang,
 // angka kecil di kaki lencana, judul, dan sudah-terbuka atau belum.
 //
 // Yang BELUM terbuka tetap digambar, cuma dipudarkan — tidak disembunyikan.

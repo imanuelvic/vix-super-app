@@ -1,4 +1,4 @@
-import { prayerDeadlinePassed, prayerDoneToday, type LoginStreak } from './achievements';
+import { prayerDeadlinePassed, prayerDoneToday, type LoginStreak } from './reward';
 import { carAttentionList, type PartStatusMap } from './car';
 import {
   deadlineDaysUntil,
@@ -74,7 +74,13 @@ import {
   type HabitDay,
   type HealthProfile,
 } from './health';
-import { intercessionNightWindow, isChainTopic, type IntercessionTopic } from './intercession';
+import { type IntercessionTopic } from './intercession';
+import {
+  nightAllDone,
+  nightPlan,
+  nightSummary,
+  nightWindow,
+} from './nightPrayer';
 import {
   dueStep,
   pendingTopicsOfWeek,
@@ -197,6 +203,15 @@ export type TodayModel = {
   /** Sisanya — cukup dihitung; isinya di layar Semua Pengingat. */
   later: TodayItem[];
   reflection: TodayReflection;
+  /** 🌙 Night Prayer malam ini — dipakai kartu Today & pengingat 22.00. */
+  night: TodayNight;
+};
+
+export type TodayNight = {
+  /** "3 syukur · 2 pengakuan · 4 permohonan · 🇮🇩 Bangsa dan Negara Indonesia" */
+  summary: string;
+  /** Keempat bagiannya sudah didoakan malam ini? */
+  done: boolean;
 };
 
 /** Batas baris tingkat "today" di seluruh layar (bukan per bagian). */
@@ -314,25 +329,39 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     });
   }
 
-  // 🙏 Doa Syafaat — pokok doa tetap hari ini; malam jadi ajakan sekali lagi.
-  const chain = isChainTopic(input.intercession);
-  godLines.push({
-    id: 'intercession',
-    section: 'god',
-    tier: 'today',
-    rank: 1,
-    emoji: '🙏',
-    title: `Syafaat: ${input.intercession.emoji} ${input.intercession.label}`,
-    detail: chain
-      ? 'Doakan & follow up pokok doa CORE Leader giliran hari ini'
-      : intercessionNightWindow(now)
-        ? 'Doakan sekali lagi sebelum tidur'
-        : `${input.intercession.points.length} pokok doa`,
-    done: input.intercessionDismissed,
-    href: chain
-      ? { pathname: '/core', params: { tab: 'followup' } }
-      : { pathname: '/walk', params: { tab: 'revive' } },
-  });
+  // 🌙 Night Prayer & 🙏 Doa Syafaat — satu baris, bukan dua.
+  //
+  // Siang: baris syafaat seperti biasa, pokok doanya bisa dibuka di tempat.
+  // Malam (mulai 19.00): syafaat sudah jadi bagian keempat Night Prayer, jadi
+  // barisnya DIGANTI undangan berdoa sebelum tidur. Dua baris yang isinya
+  // saling menumpuk cuma bikin blok With God terasa penuh padahal pekerjaannya
+  // satu.
+  const malam = nightPlan(todayId, now);
+  if (nightWindow(now)) {
+    godLines.push({
+      id: 'night-prayer',
+      section: 'god',
+      tier: 'today',
+      rank: 1,
+      emoji: '🌙',
+      title: 'Night Prayer',
+      detail: nightSummary(malam),
+      done: nightAllDone(input.day),
+      href: { pathname: '/night-prayer' },
+    });
+  } else {
+    godLines.push({
+      id: 'intercession',
+      section: 'god',
+      tier: 'today',
+      rank: 1,
+      emoji: '🙏',
+      title: `Syafaat: ${input.intercession.emoji} ${input.intercession.label}`,
+      detail: `${input.intercession.points.length} pokok doa, didoakan di Night Prayer`,
+      done: input.intercessionDismissed,
+      href: { pathname: '/night-prayer' },
+    });
+  }
 
   // 🍽️ Puasa — sepanjang hari sebagai keterangan; malam jadi centang.
   const plans = input.fastingPlans ?? [];
@@ -939,6 +968,11 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     upNext,
     later,
     reflection,
+    // Dihitung SEPANJANG HARI, bukan cuma di jendela malamnya: penjadwal
+    // pengingat (lib/notify.ts) menulis ulang jadwal kapan saja layar Today
+    // digambar, dan pengingat 22.00 harus tetap benar walau app-nya cuma
+    // dibuka pagi hari.
+    night: { summary: nightSummary(malam), done: nightAllDone(input.day) },
   };
 }
 

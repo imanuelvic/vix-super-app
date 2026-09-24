@@ -830,13 +830,13 @@ export default function TasksScreen() {
               />
             </View>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Mulai dari
+              📆 Mulai Dari
             </VixText>
             <View style={styles.formGap}>
               <DateField key="r-start" value={rStart} onChange={setRStart} />
             </View>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Sampai
+              📆 Sampai
             </VixText>
             <View style={styles.formGap}>
               <DateField key="r-end" value={rEnd} onChange={setREnd} />
@@ -875,7 +875,7 @@ export default function TasksScreen() {
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal
+          📆 Tanggal
         </VixText>
         <View style={styles.formGap}>
           {/* key = id supaya state picker internal reset tiap ubah task */}

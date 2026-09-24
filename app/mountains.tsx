@@ -58,7 +58,7 @@ export default function MountainsScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Fun"
-        title="Gunung di Jawa 🏔️"
+        title="Mountains in Java 🏔️"
         subtitle="Jawa Barat · Jawa Tengah · Jawa Timur"
       />
       <ScreenError message={error} />

@@ -46,7 +46,7 @@ Target platform iOS (Apple HealthKit, share sheet iOS, haptic Taptic Engine).
 - **Reminder yang menagih, bukan fitur yang dicari.** Home menampilkan badge
   angka per tile; Dashboard memuat semua kartu pengingat hari ini; aturannya
   "tiap badge merah harus punya kartunya di Dashboard".
-- **Streak & achievement ala Duolingo** sebagai motivasi: doa pagi, Revive,
+- **Streak & reward ala Duolingo** sebagai motivasi: doa pagi, Revive,
   baca Alkitab (3 sesi), kebiasaan, air putih, langkah, gym, belajar.
 - **Privasi berlapis di dalam app:** PIN untuk Finance dan untuk Wheel/Timeline
   milik CORE Leader; tombol sembunyikan nominal; kartu Finance di Home hanya
@@ -69,7 +69,7 @@ Target platform iOS (Apple HealthKit, share sheet iOS, haptic Taptic Engine).
 | Sumber data luar | Yahoo Finance chart endpoint (emas, BTC, IHSG, kurs; tanpa API key), RSS publik berita, feed RSS kanal YouTube. Tidak ada API berbayar |
 | AI | Gemini lewat Firebase AI Logic (Gemini Developer API, kuota gratis Spark); model utama `gemini-3.8-flash`, cadangan `gemini-3.5-flash-lite`; kunci API tidak pernah ada di app |
 | Distribusi | EAS Build (preview/dev client) + EAS Update untuk perubahan JS; modul native yang belum ada di build dimuat lazy supaya JS baru tidak membuat build lama crash |
-| Pengujian | `tsc --noEmit`, ESLint, dan ~170 suite verifikasi `cek-*.js` (di luar repo) yang menjalankan modul `lib/` murni dengan data fixture dan memeriksa bentuk layar |
+| Pengujian | `tsc --noEmit`, ESLint, dan 182 suite verifikasi di `cek/` (`npm run cek`) yang menjalankan modul `lib/` murni dengan data fixture dan memeriksa bentuk layar. Sampai 24 Sep 2026 suite ini tinggal di folder sementara di luar repo; sejak dipindahkan ke dalam, ia ikut ter-commit dan tidak bisa hilang bersama `%TEMP%` |
 
 Semua jalur Firestore berawalan `users/{uid}/…`. Rules menolak apa pun di
 luar itu.
@@ -187,7 +187,7 @@ Sub-tab: Visitation, Monthly, Follow Up, Leaders, Multiplication.
 Sub-tab: Dashboard, Transactions, Budgeting. Ditambah Saku dan Pinjaman.
 - **Transactions**: log Income / Saving / Investment / Expense dengan kategori
   (dari spreadsheet lama) dan sub-kategori buatan sendiri; ringkasan bulan;
-  edit/hapus; deeplink ke app bank/dompet per kategori; **Quick check 👀**:
+  edit/hapus; **Quick check 👀**:
   jeda sadar sebelum expense disimpan bila sisa jadi minus, sisa < 15%, atau
   nominal jauh di atas jatah harian ([Tetap Tambahkan] [Batal] [Lihat Budget],
   tidak ditanya lagi untuk kategori yang sama di hari yang sama).
@@ -299,7 +299,7 @@ coba / sudah pernah).
 ### 5.20 Married 💍
 Coming soon; tile sudah ada supaya tempatnya jelas.
 
-### 5.21 Achievement 🏆 & Self-Reward
+### 5.21 Reward 🏆 & Self-Reward
 Kategori bertingkat ala Duolingo: Morning Prayer, Morning/Midday/Night
 Reading, Good Habit, Daily Steps, Distance (patokan 5K dst), Weekly Steps,
 Weekly Strength, Water, Learning, Fitness. Dihitung dari data yang sudah ada.
@@ -329,6 +329,11 @@ arsip klaim.
 - **Streak** memakai satu rumus murni (`lib/streak.ts`) untuk semua fitur.
 - **Warna fitur** ikut dari tile Home ke pita header dan tab dalam layar
   (dipetakan dari nama rute).
+- **Kaki layar emerald gelap** (24 Sep 2026): tab bar utama DAN baris sub-tab
+  tiap fitur memakai bar `#0B3D36` bersudut membulat, dengan pil di belakang
+  ikon yang aktif. Di kaki app pilnya emerald (`#176B5D`) dengan ikon mint dan
+  tulisan putih tebal; di sub-tab fitur pilnya tetap **pastel warna fiturnya**,
+  jadi sistem warna fitur tidak hilang, malah makin menyala di atas gelap.
 
 ## 7. Keamanan & privasi
 
@@ -340,6 +345,11 @@ arsip klaim.
   tidak pernah ke log/analytics; AI hanya menerima agregat.
 - PIN di app adalah kunci dari orang iseng yang memegang HP, bukan pengaman
   data (disebut jujur di kode).
+- **Ekspor Data 📦** (System ⚙️, 24 Sep 2026): satu tombol menyalin seluruh
+  `users/{uid}/…` (46 koleksi + 4 subkoleksi) jadi satu JSON lalu menyerahkannya
+  ke share sheet iOS. Ini satu-satunya operasi yang sengaja membaca semua
+  dokumen sekaligus, jadi ia hanya jalan saat di-click. Sebelum ini tidak ada
+  jalan keluar sama sekali untuk data pemilik, padahal semua hapus permanen.
 - Yang masih perlu di Console (didokumentasikan di SECURITY.md): matikan
   sign-up, email enumeration protection, batasi API key ke bundle id, App
   Check, alarm anggaran.

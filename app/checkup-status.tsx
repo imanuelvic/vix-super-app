@@ -41,7 +41,7 @@ export default function CheckupStatusScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Health"
-        title="Hasil Pemeriksaan 🩺"
+        title="Check-up Result 🩺"
         // Dipendekkan: yang panjang butuh 399pt, sedangkan satu baris di
         // iPhone 15 cuma muat 353pt — ia akan pecah dua baris & menaikkan
         // tinggi headernya. Jenis pemeriksaannya toh sudah tertulis di

@@ -371,7 +371,7 @@ export function FunEntryScreen({
                     ikut karena pace di bawah butuh detik; "1j 25m" saja
                     meleset sampai setengah menit per km. */}
                 <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                  ⏱️ Waktu tempuh
+                  ⏱️ Waktu Tempuh
                 </VixText>
                 <View style={styles.timeRow}>
                   {(
@@ -406,7 +406,7 @@ export function FunEntryScreen({
               <>
                 <View style={styles.inputGap}>
                   <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                    Rincian anggaran pendakian (Rp)
+                    💰 Rincian Anggaran Pendakian (Rp)
                   </VixText>
                 </View>
                 <MoneyInput
@@ -469,7 +469,7 @@ export function FunEntryScreen({
             {category === 'race' && (
               <View style={styles.inputGap}>
                 <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                  Foto medali (opsional)
+                  📸 Foto Medali (opsional)
                 </VixText>
                 <PressableScale
                   style={styles.medalPicker}

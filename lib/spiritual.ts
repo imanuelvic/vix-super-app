@@ -12,7 +12,7 @@ import {
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 
-import { type LoginStreak as DayStreak } from './achievements';
+import { type LoginStreak as DayStreak } from './reward';
 import {
   isLastChapter,
   nextChapterRef,
@@ -247,7 +247,7 @@ export function setReviveSkipped(
  * itu disimpan. Penghitung seperti itu gampang meleset dan tidak pernah
  * membetulkan dirinya — satu penyimpanan yang gagal saat sinyal putus, satu
  * Revive yang ditulis menyusul untuk tanggal kemarin (streaknya tak pernah
- * naik untuk hari itu), atau tombol reset achievement, dan angkanya berbeda
+ * naik untuk hari itu), atau tombol reset reward, dan angkanya berbeda
  * dari kenyataan SELAMANYA.
  *
  * Karena itu sumber kebenarannya dibalik: catatan Revive-lah yang menentukan,
@@ -360,7 +360,7 @@ export function bibleSessionOf(raw: string | undefined): BibleSession {
 
 /**
  * Sisa MENIT sampai jendela sesi ini tutup. ≤ 0 = jendelanya sudah lewat.
- * Bentuknya sama dengan `prayerMinutesLeft` (lib/achievements.ts) — sama-sama
+ * Bentuknya sama dengan `prayerMinutesLeft` (lib/reward.ts) — sama-sama
  * hitung mundur "sampai jam berapa ini masih dianggap tepat waktu".
  */
 export function bibleMinutesLeft(session: BibleSession, now: Date): number {

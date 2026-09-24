@@ -27,7 +27,7 @@ import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { useScrollTop } from '@/hooks/useScrollTop';
-import { type LoginStreak } from '@/lib/achievements';
+import { type LoginStreak } from '@/lib/reward';
 import {
     carAttentionList,
     subscribePartStatus,
@@ -242,7 +242,7 @@ export default function DashboardScreen() {
   const [profile, setProfile] = useState<HealthProfile | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [revive, setRevive] = useState<LoginStreak | null | undefined>(undefined);
-  // Streak kebiasaan harian ✅ — ditampilkan di kartu Achievement atas.
+  // Streak kebiasaan harian ✅ — ditampilkan di kartu Reward atas.
   const [habitStreak, setHabitStreak] = useState<Streak | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [donor, setDonor] = useState<DonorData>(EMPTY_DONOR);
@@ -736,8 +736,13 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <BackRow label="Today" />
       <View style={styles.header}>
-        <VixText heading="header" additionalStyle={styles.headerTitle}>
-          Semua Pengingat 📊
+        <VixText
+          heading="header"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          additionalStyle={styles.headerTitle}>
+          All Reminder 📊
         </VixText>
         <VixText heading="label" additionalStyle={styles.headerDate}>
           📆 {formatShortDayDate(new Date())}
@@ -747,14 +752,14 @@ export default function DashboardScreen() {
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
         <View style={styles.contentInner}>
           {/* Dua kolom, dua tujuan. Dulu satu kartu = satu tombol ke daftar
-              Achievement; sekarang tiap kolom membuka kategorinya sendiri.
+              Reward; sekarang tiap kolom membuka kategorinya sendiri.
               Keduanya SAUDARA di dalam kartu (bukan Pressable bersarang —
               di iOS itu tidak andal). Revive belum punya kategori sendiri di
-              Achievement, jadi kolomnya tetap membuka daftarnya. */}
+              Reward, jadi kolomnya tetap membuka daftarnya. */}
           <View style={styles.streakCard}>
             <PressableScale
               style={styles.streakItem}
-              onPress={() => router.push('/achievements')}>
+              onPress={() => router.push('/reward')}>
               <VixText additionalStyle={styles.streakIcon}>📖</VixText>
               <VixText heading="header" additionalStyle={styles.streakNum}>
                 {revive?.count ?? 0}
@@ -769,7 +774,7 @@ export default function DashboardScreen() {
               style={styles.streakItem}
               onPress={() =>
                 router.push({
-                  pathname: '/achievements',
+                  pathname: '/reward',
                   params: { cat: 'health' },
                 })
               }>
@@ -979,7 +984,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.SPIRITUAL}
               fg={Color.SPIRITUAL_DARK}
-              title="🙏 Reminder Renungkan Khotbah Minggu"
+              title="🙏 Sunday Sermon Reminder"
               onPress={() =>
                 router.push({ pathname: '/walk', params: { tab: 'sermon' } })
               }>
@@ -1108,7 +1113,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FINANCE_INVESTMENT}
               fg={Color.FINANCE_INVESTMENT_DARK}
-              title="🎯 Reminder Follow Up Mingguan"
+              title="🎯 Weekly Follow Up Reminder"
               texts={followupPending.map((l) => ({
                 id: l.id,
                 text: `${l.heart} ${l.name}`,
@@ -1125,7 +1130,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FINANCE_INVESTMENT}
               fg={Color.FINANCE_INVESTMENT_DARK}
-              title="🔗 Reminder Doa Rantai"
+              title="🔗 Prayer Chain Reminder"
               onPress={() =>
                 router.push({ pathname: '/core', params: { tab: 'followup' } })
               }>
@@ -1144,7 +1149,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FINANCE_EXPENSE}
               fg={Color.FINANCE_EXPENSE_DARK}
-              title="🤝 Reminder Pinjaman"
+              title="🤝 Lending Reminder"
               texts={debtReminders}
               onItemPress={(id) =>
                 router.push({
@@ -1186,7 +1191,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.LEARNING}
               fg={Color.LEARNING_DARK}
-              title="💬 Reminder Diskusi Dalam Minggu Ini"
+              title="💬 Discussion Reminder"
               texts={learningTopics.map((t) => ({
                 id: t.key,
                 text: `${topicGroupMeta(t.group).emoji} ${t.label}`,
@@ -1209,7 +1214,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FITNESS}
               fg={Color.FITNESS_DARK}
-              title="🤔 Reminder Olahraga Hari Ini"
+              title="🤔 Exercise Reminder"
               texts={[
                 `${fitWindowLabel(now)} · belum pilih olahraga apa pun hari ini`,
                 `💡 Program menyarankan ${fitSaran.emoji} ${fitSaran.title}, atau pilih sendiri`,
@@ -1256,7 +1261,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FINANCE_SAVING}
               fg={Color.ACCENT_DARK}
-              title="🎂 Reminder Family Birthday"
+              title="🎂 Family Birthday Reminder"
               texts={famBirthdays}
               // Click satu nama → buka Family & pusatkan pohon ke orang itu.
               onItemPress={(id) =>
@@ -1293,7 +1298,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.FUN}
               fg={Color.FUN_DARK}
-              title="🎉 Reminder Fun"
+              title="🎉 Fun Reminder"
               onPress={() => router.push('/fun')}>
               <VixText heading="label" additionalStyle={styles.funSub}>
                 {funGap === null
@@ -1350,7 +1355,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.ACCENT}
               fg={Color.ACCENT_DARK}
-              title="🚗 Reminder Car"
+              title="🚗 Car Reminder"
               texts={carReminders}
               // Sub-tab 🔧 Parts — sumber baris-baris ini. Kebetulan sama
               // dengan bawaan layarnya, tapi ditulis tegas: bawaan boleh
@@ -1367,7 +1372,7 @@ export default function DashboardScreen() {
             <ReminderCard
               bg={Color.HOUSE}
               fg={Color.HOUSE_DARK}
-              title="🏠 Reminder Residence"
+              title="🏠 Residence Reminder"
               texts={residenceReminders}
               // Mendarat di sub-tab 🔧 Maintenance — di situlah baris-baris ini
               // berada. Bawaan layar Residence adalah Token ⚡ (yang paling
@@ -1445,8 +1450,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  headerTitle: { color: Color.MAIN },
-  headerDate: { color: Color.TEXT_LABEL },
+  // flexShrink 1 + satu baris: judul sepanjang apa pun tidak pernah mendorong
+  // tanggalnya keluar layar (dulu "Semua Pengingat 📊" memotong tanggalnya).
+  headerTitle: { color: Color.MAIN, flexShrink: 1 },
+  headerDate: { color: Color.TEXT_LABEL, flexShrink: 0, marginLeft: 8 },
   content: { paddingBottom: 40, paddingTop: 12, alignItems: 'center' },
   contentInner: { ...CONTENT_COLUMN, paddingHorizontal: 20, gap: 20 },
   streakCard: {

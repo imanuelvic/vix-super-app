@@ -336,7 +336,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Prioritas (P1 = paling penting)
+          🚩 Prioritas (P1 = paling penting)
         </VixText>
         <View style={styles.chipRow}>
           {([1, 2, 3] as const).map((p) => (

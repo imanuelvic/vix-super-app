@@ -3,7 +3,7 @@
 //
 // Inilah tempat fitur-fitur tinggal, bukan berebut perhatian: Finance, Health,
 // Habits, Fitness, Family, Learning, Invest, News, Book, Car, Residence, Fun,
-// Wheel, Friends, Device, Games, Achievement, Profile, System, Married. Yang
+// Wheel, Friends, Device, Games, Reward, Profile, System. Yang
 // perlu perhatian HARI INI sudah disebut di Today; di sini tinggal gridnya.
 //
 // Di atas grid ada pencarian — pintu darurat dari penyederhanaan Today:
@@ -44,13 +44,13 @@ export default function LifeScreen() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <VixText heading="header" additionalStyle={styles.title}>
-            Life
+            Life 🌿
           </VixText>
           <PressableScale onPress={logout} hitSlop={10}>
             <IconSymbol name="rectangle.portrait.and.arrow.right" size={22} color={Color.MAIN} />
           </PressableScale>
         </View>
-        <SearchBar value={query} onChangeText={setQuery} placeholder="Cari fitur… (STNK, budget, CL)" />
+        <SearchBar value={query} onChangeText={setQuery} placeholder="Cari fitur…" />
       </View>
 
       <ScrollView

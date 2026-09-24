@@ -31,7 +31,6 @@ import { useKeyedData } from '@/hooks/useKeyedData';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
-import { openPayApp, payAppForFund } from '@/lib/payapps';
 import {
   addFundEntry,
   deleteFundEntry,
@@ -56,9 +55,6 @@ export default function FundScreen() {
   const { user } = useAuth();
   const { key } = useLocalSearchParams<{ key: string }>();
   const fund = fundOf(key ?? '');
-  // Bank saku ini (kalau ada) — untuk tombol pintasan di kartu saldo.
-  const bank = payAppForFund(fund.key);
-
   // Mutasi dompet ini. null = belum termuat → kosong sendiri tiap ganti dompet
   // (lihat hooks/useKeyedData), jadi mutasi dompet lama tidak sempat terlihat
   // di bawah judul dompet baru.
@@ -262,19 +258,6 @@ export default function FundScreen() {
               </VixText>
             </View>
           </View>
-
-          {/* Pintasan ke app bank saku ini — banknya diambil dari peta
-              kategori Finance, jadi tidak didaftar dua kali. Tidak muncul
-              kalau saku ini belum punya bank. */}
-          {bank && (
-            <PressableScale
-              style={[styles.bankButton, { backgroundColor: bank.color }]}
-              onPress={() => openPayApp(bank)}>
-              <VixText heading="label" additionalStyle={{ color: bank.fg }}>
-                💳 {bank.label}
-              </VixText>
-            </PressableScale>
-          )}
         </View>
 
         {/* Pilih arah mutasi */}
@@ -472,7 +455,7 @@ export default function FundScreen() {
       {/* Bottom sheet: edit mutasi */}
       <SheetModal
         visible={!!editing}
-        title="Edit Mutasi"
+        title="✏️ Edit Entry"
         subtitle={
           editing
             ? `${fund.icon} ${fund.label} · ${editing.direction === 'debit' ? 'Masuk' : 'Keluar'}`
@@ -542,15 +525,6 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row' },
   summaryItem: { flex: 1 },
   summaryValue: { color: Color.TEXT_REVERSE },
-  // Tombol kecil ke app bank saku ini — menempel di kanan atas kartu saldo.
-  bankButton: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
   directionRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   directionChip: {
     flex: 1,

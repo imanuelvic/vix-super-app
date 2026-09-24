@@ -206,7 +206,7 @@ export default function MonthlyMeetingEditScreen() {
         <>
           <KeyboardAwareScrollView contentContainerStyle={styles.content}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              🏷️ Judul rapat
+              🏷️ Judul Rapat
             </VixText>
             <FormInput
               style={styles.formGap}
@@ -217,7 +217,7 @@ export default function MonthlyMeetingEditScreen() {
             />
 
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              📆 Tanggal rapat
+              📆 Tanggal Rapat
             </VixText>
             <View style={styles.formGap}>
               <DateField value={fDate} onChange={setFDate} />
@@ -226,7 +226,7 @@ export default function MonthlyMeetingEditScreen() {
             {/* Jam mulai — menempel di objek Date yang sama dengan tanggal di
                 atas, jadi keduanya tersimpan sebagai SATU field. */}
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              🕒 Jam mulai
+              🕒 Jam Mulai
             </VixText>
             <View style={styles.formGap}>
               <TimeField value={fDate} onChange={setFDate} />
@@ -264,7 +264,7 @@ export default function MonthlyMeetingEditScreen() {
             {/* Dokumentasi rapat — ikut tercetak di PDF sebagai bukti foto.
                 Dibatasi {MAX_MEETING_PHOTOS} biar dokumen notulennya tetap ringan. */}
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              📸 Dokumentasi rapat (opsional), {fPhotos.length}/
+              📸 Dokumentasi Rapat (opsional), {fPhotos.length}/
               {MAX_MEETING_PHOTOS}
             </VixText>
             <View style={styles.photoWrap}>

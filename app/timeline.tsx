@@ -29,7 +29,7 @@ import { useKeyedData } from '@/hooks/useKeyedData';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useOwnerLeader } from '@/hooks/useOwnerLeader';
 import { formatDayDate, MONTH_NAMES } from '@/lib/format';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { LOAD_ERROR, pdfErrorOf, SAVE_ERROR } from '@/lib/messages';
 import { PRIVACY_PIN } from '@/lib/pin';
 import {
   BIRTH_YEAR,
@@ -252,7 +252,7 @@ export default function TimelineScreen() {
               onWaError: () => setError(WHATSAPP_ERROR),
             })
           : shareTimelinePdf(await muatSemua(), pemilik),
-      fail: () => setError('Gagal membuat PDF Timeline. Coba lagi.'),
+      fail: () => setError(pdfErrorOf('Timeline')),
     });
   }
 
@@ -540,7 +540,7 @@ export default function TimelineScreen() {
             chip membuat modalnya penuh duluan sebelum kolom judulnya sempat
             terbaca; dropdown menyisakan pilihan yang panjang di dalam laci. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Kategori
+          📚 Kategori
         </VixText>
         <View style={styles.formGap}>
           <SelectField
@@ -555,7 +555,7 @@ export default function TimelineScreen() {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Waktu
+          🕒 Waktu
         </VixText>
         <View style={styles.formGap}>
           {/* "Tahunan" disimpan sebagai `month: null`, jadi di dropdown ia
@@ -591,7 +591,7 @@ export default function TimelineScreen() {
       {/* Rekap semua tahun — daftar cepat "apa saja yang sudah kutulis". */}
       <SheetModal
         visible={rekapOpen}
-        title="📋 Rekap Semua Wishlist"
+        title="📋 All Wishlist Recap"
         subtitle={
           owner ? `${params.heart ?? '📍'} ${orang}` : 'Semua tahun yang pernah kamu isi'
         }

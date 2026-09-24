@@ -90,6 +90,15 @@ export const KOLAM_FINANCE_MALAM: Kalimat[] = [
   { title: '📝 Sebelum lupa', body: 'Pengeluaran hari ini dicatat dulu, baru istirahat.' },
 ];
 
+/** 🌙 Night Prayer — bodynya porsi doa malam ini, jadi judulnya saja. */
+export const KOLAM_DOA_MALAM: string[] = [
+  '🌙 Sebelum tidur, ngobrol dulu sama Dia',
+  '🙏 Night Prayer menunggu',
+  '🌙 Tutup harinya dengan doa',
+  '🙌 Masih ada yang mau disyukuri hari ini',
+  '🤲 Lima menit terakhir hari ini buat Dia',
+];
+
 export const KOLAM_REFLEKSI: Kalimat[] = [
   { title: '📝 Refleksi hari ini', body: 'Apa yang terjadi, apa yang Tuhan ajarkan, apa yang kubawa ke besok?' },
   { title: '🌙 Sebelum hari ini ditutup', body: 'Tulis satu paragraf jujur. Tiga menit saja.' },
@@ -97,7 +106,7 @@ export const KOLAM_REFLEKSI: Kalimat[] = [
 ];
 
 /** 🏆 Pencapaian yang tinggal sedikit lagi. `{sisa}` diisi mesinnya. */
-export const KOLAM_ACHIEVEMENT: string[] = [
+export const KOLAM_REWARD: string[] = [
   '🏆 Tinggal sedikit lagi',
   '🏅 Hampir kebuka',
   '🏆 Satu langkah lagi',

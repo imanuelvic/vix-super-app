@@ -683,7 +683,7 @@ export function LeadersTab({
           {archiving && editing !== 'new' && editing !== null ? (
             <>
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                Alasan sudah tidak dipegang
+                📝 Alasan Sudah Tidak Dipegang
               </VixText>
               <FormInput
                 style={styles.archiveInput}
@@ -707,7 +707,7 @@ export function LeadersTab({
               />
 
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                Warna CORE
+                🎨 Warna CORE
               </VixText>
               <View style={styles.heartWrap}>
                 {HEARTS.map((h) => (
@@ -721,7 +721,7 @@ export function LeadersTab({
               </View>
 
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                Tanggal Lahir
+                🎂 Tanggal Lahir
               </VixText>
               <View style={styles.formGap}>
                 {/* key = id supaya state picker internal reset tiap ganti CL */}
@@ -733,7 +733,7 @@ export function LeadersTab({
               </View>
 
               <VixText heading="label" additionalStyle={styles.fieldLabel}>
-                No. HP
+                📱 No. HP
               </VixText>
               <View style={styles.phoneRow}>
                 <FormInput
@@ -854,7 +854,7 @@ export function LeadersTab({
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Membantu CORE Leader
+          🤝 Membantu CORE Leader
         </VixText>
         <View style={styles.leaderWrap}>
           {leaders.map((l) => (
@@ -868,7 +868,7 @@ export function LeadersTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal Lahir
+          🎂 Tanggal Lahir
         </VixText>
         <View style={styles.formGap}>
           {/* key = id supaya state picker internal reset tiap ganti orang */}
@@ -880,7 +880,7 @@ export function LeadersTab({
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          No. HP
+          📱 No. HP
         </VixText>
         <View style={styles.phoneRow}>
           <FormInput
@@ -1079,7 +1079,7 @@ function StudyWorkFields({
       />
 
       <VixText heading="label" additionalStyle={styles.fieldLabel}>
-        💼 Pekerjaan sekarang
+        💼 Pekerjaan Sekarang
       </VixText>
       <FormInput
         style={styles.formGap}

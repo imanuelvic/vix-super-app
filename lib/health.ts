@@ -15,7 +15,7 @@ import {
     type FirestoreError,
 } from 'firebase/firestore';
 
-import { type LoginStreak as DayStreak } from './achievements';
+import { type LoginStreak as DayStreak } from './reward';
 import { db } from './firebase';
 import { dayId, daysBetween } from './format';
 import { liveDoc, liveList } from './liveDoc';
@@ -906,7 +906,7 @@ export type StepTierStat = {
  * Rekap pencapaian langkah: per tier berapa kali + tanggal-tanggalnya, plus
  * rekor terbaik. Tiap hari dihitung SEKALI di tier tertingginya.
  */
-export function stepAchievements(days: StepDaysMap): {
+export function stepRecords(days: StepDaysMap): {
   tiers: StepTierStat[];
   best: { dayId: string; steps: number } | null;
   totalDays: number;
@@ -932,7 +932,7 @@ export function stepAchievements(days: StepDaysMap): {
 /**
  * Untuk tiap tier: tanggal TERAKHIR (dayId) yang langkahnya ≥ tier (mencakup
  * hari yang menembus tier lebih tinggi). null kalau tier itu belum pernah
- * tercapai. Dipakai di Achievement untuk "terakhir tercapai kapan".
+ * tercapai. Dipakai di Reward untuk "terakhir tercapai kapan".
  */
 export function stepTierLastDates(
   days: StepDaysMap,
@@ -1040,7 +1040,7 @@ export function stepsInDays(days: StepDaysMap, ids: string[]): number {
 
 /**
  * Rekor jarak: hari / minggu / bulan terbaik sepanjang data tersimpan (km).
- * Dipakai fitur Achievement supaya patokan lari ikut terhitung di sana.
+ * Dipakai fitur Reward supaya patokan lari ikut terhitung di sana.
  */
 export function runRecords(
   days: StepDaysMap,
@@ -1135,7 +1135,7 @@ export function bumpWeekGym(uid: string, d: Date) {
 }
 
 /**
- * Rekap pencapaian mingguan untuk fitur Achievement:
+ * Rekap pencapaian mingguan untuk fitur Reward:
  * - stepHits  : berapa minggu langkahnya ≥ WEEK_STEP_GOAL
  * - gymHits   : berapa minggu strength training ≥ WEEK_GYM_GOAL
  * - bothHits  : berapa minggu KEDUANYA tercapai (minggu sempurna)

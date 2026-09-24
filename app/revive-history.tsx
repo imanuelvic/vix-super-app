@@ -57,7 +57,7 @@ export default function ReviveHistoryScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
-        title="Riwayat Revive 📖"
+        title="Revive History 📖"
         subtitle={
           entries ? `${entries.length} Revive, satu rhema sehari 🌱` : undefined
         }

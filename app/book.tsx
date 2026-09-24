@@ -174,7 +174,7 @@ export default function BookScreen() {
       {/* Sheet filter & urutan — bentuknya sama dengan 🎚️ Filter Jadwal di CORE */}
       <SheetModal
         visible={filterOpen}
-        title="🎚️ Filter & Urutan"
+        title="🎚️ Filter & Sort"
         subtitle="Saring kategori atau urutkan menurut tahun rilis"
         onClose={() => setFilterOpen(false)}
         footer={

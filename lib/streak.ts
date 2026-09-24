@@ -1,4 +1,4 @@
-import { type LoginStreak as DayStreak } from './achievements';
+import { type LoginStreak as DayStreak } from './reward';
 
 // Streak harian 🔥 — aturannya SAMA untuk semua fitur yang punya streak
 // (doa pagi, Revive, baca Alkitab pagi/malam, sesi gym):

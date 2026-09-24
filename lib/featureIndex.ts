@@ -68,7 +68,7 @@ export const FEATURE_INDEX: FeatureEntry[] = [
   e('💡', 'Daily Priority', 'Today', { pathname: '/daily-priority' }, '3 hal', 'top 3', 'prioritas hari ini'),
 
   // 🌿 Life
-  e('📋', 'Habits', 'Life › Habits', { pathname: '/habits' }, 'habits', 'kebiasaan', 'pagi siang malam', 'jurnal', 'refleksi', 'air', 'target berat'),
+  e('✔️', 'Habits', 'Life › Habits', { pathname: '/habits' }, 'habits', 'kebiasaan', 'pagi siang malam', 'jurnal', 'refleksi', 'air', 'target berat'),
   e('💰', 'Finance Dashboard', 'Life › Finance', { pathname: '/finance', params: { tab: 'dashboard' } }, 'finance', 'keuangan', 'safe to spend', 'coach', 'uang'),
   e('🧾', 'Transaksi', 'Life › Finance › Transactions', { pathname: '/finance', params: { tab: 'transactions' } }, 'transaksi', 'catat pengeluaran', 'income', 'expense', 'pemasukan'),
   e('📊', 'Budgeting', 'Life › Finance › Budgeting', { pathname: '/finance', params: { tab: 'budgeting' } }, 'budget', 'anggaran', 'alokasi', 'lock budget', 'planning'),
@@ -124,9 +124,9 @@ export const FEATURE_INDEX: FeatureEntry[] = [
   e('🏆', 'Tournament', 'Life › Games › Tournament', { pathname: '/games', params: { tab: 'tournament' } }, 'turnamen', 'bracket', 'badminton'),
   e('🐍', 'Snake', 'Life › Games', { pathname: '/games', params: { tab: 'snake' } }, 'snake', 'ular', 'game'),
   e('🧱', 'Tetris', 'Life › Games', { pathname: '/games', params: { tab: 'tetris' } }, 'tetris', 'game'),
-  e('🏆', 'Achievement', 'Life › Achievement', { pathname: '/achievements' }, 'achievement', 'pencapaian', 'streak', 'lencana', 'badge'),
-  e('🎁', 'Self-Reward', 'Life › Achievement', { pathname: '/achievements' }, 'reward', 'hadiah', 'self reward'),
-  e('🗄️', 'Archive Self-Reward', 'Life › Achievement', { pathname: '/reward-archive' }, 'arsip hadiah', 'klaim'),
+  e('🏆', 'Reward', 'Life › Reward', { pathname: '/reward' }, 'reward', 'pencapaian', 'streak', 'lencana', 'badge'),
+  e('🎁', 'Self-Reward', 'Life › Reward', { pathname: '/reward' }, 'reward', 'hadiah', 'self reward'),
+  e('🗄️', 'Archive Self-Reward', 'Life › Reward', { pathname: '/reward-archive' }, 'arsip hadiah', 'klaim'),
   e('🪪', 'Profil & Dokumen', 'Life › Profile', { pathname: '/profile', params: { tab: 'profile' } }, 'profil', 'profile', 'nik', 'ktp', 'npwp', 'kk', 'paspor', 'bpjs', 'dokumen'),
   e('🧍', 'Data Tubuh', 'Life › Profile › Body', { pathname: '/profile', params: { tab: 'body' } }, 'berat', 'tinggi', 'bmi', 'lingkar perut', 'data tubuh', 'timbang'),
   e('🧠', 'Personality', 'Life › Profile › Personality', { pathname: '/profile', params: { tab: 'personality' } }, 'mbti', 'disc', 'love language', 'enneagram', 'kepribadian'),
@@ -135,7 +135,6 @@ export const FEATURE_INDEX: FeatureEntry[] = [
   e('⚙️', 'System & Pemakaian', 'Life › System', { pathname: '/system' }, 'system', 'pemakaian', 'usage', 'statistik fitur'),
   e('📱', 'Versi Aplikasi & Update', 'Life › System', { pathname: '/app-version' }, 'versi', 'update', 'ota', 'app version'),
   e('📊', 'Semua Pengingat', 'Today', { pathname: '/reminders' }, 'dashboard', 'semua pengingat', 'reminder lengkap'),
-  e('💍', 'Married', 'Life › Married', { pathname: '/married' }, 'married', 'menikah', 'pernikahan'),
 ];
 
 function norm(s: string): string {

@@ -22,7 +22,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
-import { type LoginStreak } from '@/lib/achievements';
+import { type LoginStreak } from '@/lib/reward';
 import { featureKeyForRoute } from '@/lib/featureTheme';
 import { haptic } from '@/lib/haptics';
 import {

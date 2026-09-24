@@ -245,7 +245,7 @@ export function BodyCard({ profile }: { profile: HealthProfile }) {
       {/* Modal ubah data tubuh */}
       <SheetModal
         visible={editOpen}
-        title="Ubah Data Tubuh 🧍"
+        title="🧍 Edit Body Data"
         subtitle="Kosongkan yang belum diukur, tidak wajib semua"
         onClose={() => setEditOpen(false)}
         footer={

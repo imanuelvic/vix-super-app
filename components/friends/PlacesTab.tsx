@@ -222,7 +222,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
         title={editing === 'new' ? 'Tambah Tempat' : 'Ubah Tempat'}
         onClose={() => setEditing(null)}>
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🏷️ Nama tempat
+          🏷️ Nama Tempat
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -233,7 +233,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Jenis
+          🏷️ Jenis
         </VixText>
         <View style={styles.chipWrap}>
           {PLACE_KINDS.map((k) => (
@@ -258,7 +258,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          💰 Perkiraan habis per orang
+          💰 Perkiraan Habis per Orang
         </VixText>
         <MoneyInput
           style={styles.formGap}
@@ -269,7 +269,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Sudah pernah ke sini?
+          📍 Sudah Pernah ke Sini?
         </VixText>
         <View style={styles.chipWrap}>
           <Chip
@@ -289,7 +289,7 @@ export function PlacesTab({ places }: { places: Place[] }) {
         {fVisited && (
           <>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              ⭐ Seberapa suka?
+              ⭐ Seberapa Suka?
             </VixText>
             <View style={styles.chipWrap}>
               {[1, 2, 3, 4, 5].map((n) => (

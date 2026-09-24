@@ -262,6 +262,20 @@ export function dayIdToDate(dayId: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/**
+ * Nomor hari: bilangan bulat yang naik satu tiap ganti tanggal. Dipakai untuk
+ * MEMUTAR daftar (potongan doa malam, pokok doa dunia tiap pekan) tanpa acak,
+ * jadi tanggal yang sama selalu memberi potongan yang sama.
+ *
+ * Dihitung dari tanggal LOKAL-nya lewat Date.UTC, jadi ia tidak bergeser satu
+ * hari untuk siapa pun di timur Greenwich, termasuk WIB.
+ */
+export function dayNumber(d: Date): number {
+  return Math.floor(
+    Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000,
+  );
+}
+
 /** Posisi hari dalam minggu Senin-dulu: Sen=0, Sel=1, …, Min=6. */
 export function mondayIndex(d: Date): number {
   return (d.getDay() + 6) % 7;

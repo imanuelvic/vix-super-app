@@ -37,3 +37,11 @@ export function saveErrorOf(apa: string): string {
 export function deleteErrorOf(apa: string): string {
   return `Gagal menghapus ${apa}. Coba lagi.`;
 }
+
+/**
+ * "Gagal membuat PDF notulen. Coba lagi." — enam layar mencetak PDF lewat
+ * `useBusyTask`, dan keenamnya dulu merangkai kalimat ini sendiri.
+ */
+export function pdfErrorOf(apa: string): string {
+  return `Gagal membuat PDF ${apa}. Coba lagi.`;
+}

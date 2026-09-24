@@ -113,7 +113,7 @@ export function ShareToLeaderSheet({
   return (
     <SheetModal
       visible={visible}
-      title="Bagikan ke CORE Leader"
+      title="📤 Share to CORE Leader"
       subtitle={doc}
       onClose={tutup}>
       <VixText heading="label" additionalStyle={styles.hint}>

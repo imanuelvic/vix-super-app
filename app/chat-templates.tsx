@@ -132,7 +132,7 @@ export default function ChatTemplatesScreen() {
       {fields.includes('nama') && (
         <StickyTop>
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            🙋 Nama yang dituju
+            🙋 Nama yang Dituju
           </VixText>
           {/* Dulu di sini ada kolom ketik + sepuluh chip nama CL yang memakan
               setengah layar. Sekarang satu dropdown: daftarnya baru terbuka

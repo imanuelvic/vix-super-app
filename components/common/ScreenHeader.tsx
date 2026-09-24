@@ -14,7 +14,7 @@ import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 // Seluruh header duduk di atas PITA berwarna fitur — warna yang sama persis
 // dengan tile-nya di grid Home (lihat hooks/useFeatureTheme). Jadi begitu
 // sebuah fitur dibuka, warnanya ikut masuk: bukan cuma judulnya yang berganti,
-// tapi seluruh kepala layarnya. Layar di luar fitur (Achievement, Timeline,
+// tapi seluruh kepala layarnya. Layar di luar fitur (Reward, Timeline,
 // Riwayat) memakai pita warna merek, jadi bentuknya tetap seragam.
 //
 // `backLabel` opsional (22 Sep 2026): layar yang menjadi TAB UTAMA (Walk ·
@@ -113,17 +113,35 @@ export function ScreenHeader({
 // di tempat. Berlaku untuk SEMUA layar yang memakai header ini.
 const TITLE_ROW_HEIGHT = 46;
 
+/**
+ * Napas antara pita header dan isi layar di bawahnya.
+ *
+ * Diekspor supaya baris sub-tab (`BottomTabs` placement="top") bisa
+ * MENIADAKANNYA dengan margin negatif sebesar angka yang sama. Tanpa satu
+ * sumber angka, keduanya harus diubah bersamaan setiap kali dan cepat
+ * melenceng: sisa 1pt krem di antara dua warna gelap langsung terlihat.
+ */
+export const BAND_GAP = 6;
+
 const styles = StyleSheet.create({
-  // Pita berwarna fitur. Sudut BAWAH-nya saja yang dibulatkan — atasnya rata
-  // karena memang menempel ke ujung layar (menembus jalur status bar).
+  // Pita berwarna fitur. RATA di keempat sudutnya (24 Sep 2026, permintaan
+  // pemiliknya) — sebelumnya sudut bawahnya membulat 24.
+  //
+  // Sudut membulat itu bermasalah justru di layar yang punya baris sub-tab:
+  // di bawah pita ada bar emerald gelap, dan dua sudut membulat di atas bar
+  // gelap menyisakan takik krem yang terbaca seperti salah gambar. Dengan
+  // sudut rata, pita berwarna fitur dan bar emerald menyatu jadi SATU kepala
+  // layar dua warna. Lengkungannya sekarang dipegang ujung bawah bar
+  // emerald itu (lihat topBar di components/common/BottomTabs.tsx).
   band: {
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    // Sedikit napas sebelum isi layar, menggantikan garis pemisah yang dulu
-    // tak pernah ada: batas pita sekarang yang memisahkan kepala dari isi.
+    // Napas sebelum isi layar, menggantikan garis pemisah yang dulu tak pernah
+    // ada: batas pita sekarang yang memisahkan kepala dari isi.
     // 6 + paddingTop 4 milik isi layar = CARD_GAP (10), jarak yang sama
     // dengan antar-kartu di bawahnya (lihat assets/style/card.ts).
-    marginBottom: 6,
+    //
+    // Layar yang punya baris sub-tab MENIADAKAN napas ini (BottomTabs menarik
+    // dirinya naik sebesar BAND_GAP), supaya barnya benar-benar menempel.
+    marginBottom: BAND_GAP,
   },
   backRow: {
     flexDirection: 'row',
@@ -146,6 +164,6 @@ const styles = StyleSheet.create({
   },
   titleBox: { flex: 1 },
   // Baris, bukan tumpukan: sebagian layar punya DUA tombol di pojok kanan
-  // (mis. Spiritual 📖 riwayat + 🔥 achievement).
+  // (mis. Spiritual 📖 riwayat + 🔥 reward).
   rightBox: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 });

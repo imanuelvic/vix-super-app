@@ -228,7 +228,7 @@ export default function DiseasesScreen() {
           editable={!busy}
         />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Tanggal mulai sakit
+          📆 Tanggal Mulai Sakit
         </VixText>
         <View style={styles.formGap}>
           <DateField value={fStart} onChange={setFStart} />

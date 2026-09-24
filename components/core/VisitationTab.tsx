@@ -448,7 +448,7 @@ export function VisitationTab({
       {/* Bottom sheet tambah/edit jadwal */}
       <SheetModal
         visible={!!editing}
-        title={editing === 'new' ? 'Jadwalkan Visitasi' : 'Edit Visitasi'}
+        title={editing === 'new' ? '📅 Schedule Visitation' : '✏️ Edit Visitation'}
         onClose={() => setEditing(null)}>
         <VisitationFormFields
           form={form}
@@ -472,7 +472,7 @@ export function VisitationTab({
       {/* Modal tips visitasi */}
       <SheetModal
         visible={tipsModal}
-        title="💡 Tips Visitasi"
+        title="💡 Visitation Tips"
         subtitle="Biar visitasimu makin berdampak"
         onClose={() => setTipsModal(false)}>
         {VISIT_TIPS.map((tip) => (
@@ -485,7 +485,7 @@ export function VisitationTab({
       {/* Modal filter jadwal — per CORE Leader dan/atau jenis visitasi */}
       <SheetModal
         visible={filterModal}
-        title="🎚️ Filter Jadwal"
+        title="🎚️ Schedule Filter"
         subtitle="Tampilkan hanya yang cocok"
         onClose={() => setFilterModal(false)}
         footer={

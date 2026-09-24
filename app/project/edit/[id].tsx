@@ -188,7 +188,7 @@ export default function ProjectEditScreen() {
         <>
           <KeyboardAwareScrollView contentContainerStyle={styles.content}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Nama proyek
+              🏷️ Nama Proyek
             </VixText>
             <FormInput
               style={styles.formGap}
@@ -198,7 +198,7 @@ export default function ProjectEditScreen() {
               editable={!busy}
             />
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Client
+              🏢 Client
             </VixText>
             <FormInput
               style={styles.formGap}
@@ -208,7 +208,7 @@ export default function ProjectEditScreen() {
               editable={!busy}
             />
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Requirement
+              📋 Requirement
             </VixText>
             <FormInput
               style={styles.reqInput}
@@ -219,7 +219,7 @@ export default function ProjectEditScreen() {
               editable={!busy}
             />
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Fee (opsional)
+              💰 Fee (opsional)
             </VixText>
             <MoneyInput
               style={styles.formGap}
@@ -229,7 +229,7 @@ export default function ProjectEditScreen() {
               editable={!busy}
             />
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Deadline
+              ⏰ Deadline
             </VixText>
             <View style={styles.formGap}>
               <DateField value={fDeadline} onChange={setFDeadline} />

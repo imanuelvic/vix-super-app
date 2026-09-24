@@ -2,26 +2,38 @@
 // seminggu. Tidak disimpan di Firestore: jadwalnya sengaja dikunci di kode
 // supaya ritmenya konsisten & tidak bisa "digeser" sendiri saat malas.
 //
-//   Senin  Keluarga · Kesehatan      Jumat  Keluarga · Kesatuan
-//   Selasa Doa Rantai CL             Sabtu  Gereja
-//   Rabu   Keluarga · Ekonomi        Minggu Negara
-//   Kamis  Doa Rantai CL
+// ── Sumbernya (23 Sep 2026) ───────────────────────────────────────────────
+// Jadwal ini BUKAN karangan app: ini daftar syafaat pemiliknya sendiri, yang
+// sudah bertahun-tahun didoakan bergantian tiap malam (catatan "Prayer List
+// 🙏 · every night"). Dulu app memakai jadwal buatan sendiri (Keluarga ·
+// Kesehatan, Doa Rantai CL, dst) yang tidak pernah ia tulis. Sekarang satu
+// sumber saja, dan sumbernya punya dia:
 //
-// Dipakai DUA kali sehari:
-//   • Pagi  → langkah 🙏 Pray di Morning Journey (app/morning-prayer.tsx)
-//   • Malam → kartu pengingat di Home, biar didoakan sekali lagi sebelum tidur
+//   Minggu Keluarga & Saudara       Kamis  Bangsa dan Negara Indonesia
+//   Senin  Teman Eben Haezar        Jumat  Teman CORE & Gereja
+//   Selasa Teman PO & BASIC         Sabtu  Dunia
+//   Rabu   Teman GAT & Kawanua
 //
-// Hari "Doa Rantai CL" tidak punya pokok doa karangan sendiri — sumbernya
-// pokok doa bulanan tiap CORE Leader (lib/core.ts), jadi kartunya mengarah ke
-// CORE → Follow Up.
+// Dipakai TIGA kali:
+//   • Pagi   → langkah 🙏 Pray di Morning Journey (app/morning-journey.tsx)
+//   • Siang  → kartu Doa Syafaat di layar Today
+//   • Malam  → bagian ke-4 Night Prayer (app/night-prayer.tsx)
+//
+// Hari Sabtu isinya paling panjang (9 pokok sedunia), jadi yang ditampilkan
+// BERPUTAR tiga pokok tiap pekan. Bobot tiap malam jadi setara, dan dalam tiga
+// pekan seluruhnya kebagian.
 
+import { dayNumber } from './format';
+
+/** Kunci topik. `nation` & `church` punya lapisan berita (lib/prayerNews.ts). */
 type IntercessionKey =
-  | 'family-health'
-  | 'family-economy'
-  | 'family-unity'
-  | 'chain'
+  | 'family'
+  | 'eben'
+  | 'po-basic'
+  | 'gat-kawanua'
+  | 'nation'
   | 'church'
-  | 'nation';
+  | 'world';
 
 export type IntercessionTopic = {
   key: IntercessionKey;
@@ -30,99 +42,118 @@ export type IntercessionTopic = {
   points: string[];
 };
 
-// Selasa & Kamis memakai objek yang SAMA (satu sumber, tidak digandakan).
-const CHAIN: IntercessionTopic = {
-  key: 'chain',
-  emoji: '🔗',
-  label: 'Doa Rantai CL',
-  points: [
-    'Doakan pokok doa tiap CORE Leader yang giliran hari ini',
-    'Tanyakan perkembangan pergumulannya, jangan cuma didoakan, di-follow up',
-  ],
-};
+/**
+ * Sabtu: 9 pokok doa sedunia, ditampilkan tiga-tiga per pekan.
+ * Urutannya persis daftar aslinya, jadi yang ke-6 tetap membawa empat
+ * turunannya sekaligus.
+ */
+const DUNIA: string[] = [
+  'Dunia, damai & lepas dari peperangan',
+  'Gereja di seluruh bumi, satu tubuh & tidak takut',
+  'Rumah sakit: yang sakit, keluarganya & yang merawat',
+  'Penjara: yang di dalam bertobat & dipulihkan',
+  'ISIS, antikris & teroris, kuasanya dipatahkan',
+  'Pergeseran dunia: percepatan teknologi, gerakan anti agama, manusia menjadi dewa, pergeseran nilai generasi',
+  'Korban bencana: perlindungan, pertolongan & pemulihan',
+  'Yatim piatu & panti jompo, ada yang menemani',
+  'Orang yang tidak punya rumah, dicukupkan & ditolong',
+];
+
+/** Berapa pokok dunia yang didoakan tiap Sabtu. */
+export const DUNIA_PER_PEKAN = 3;
 
 /** Index = hasil `Date.getDay()`: 0 Minggu … 6 Sabtu. */
 const INTERCESSION_WEEK: IntercessionTopic[] = [
   // 0 — Minggu
   {
-    key: 'nation',
-    emoji: '🇮🇩',
-    label: 'Negara',
+    key: 'family',
+    emoji: '👨‍👩‍👧',
+    label: 'Keluarga & Saudara',
     points: [
-      'Presiden & para pemimpin bangsa, hikmat, hati takut Tuhan, bersih dari korupsi',
-      'Damai sejahtera, keadilan & kerukunan antarumat beragama',
-      'Ekonomi bangsa, lapangan kerja & harga kebutuhan pokok',
-      'Kebangunan rohani atas Indonesia, gereja jadi terang di tengah bangsa',
+      'Papa, mama & saudara, sebut namanya satu per satu',
+      'Kesehatan, ekonomi & kesatuan hati seisi rumah',
+      'Keluarga jadi mezbah doa, bukan sekadar tempat tinggal',
     ],
   },
   // 1 — Senin
   {
-    key: 'family-health',
-    emoji: '🩺',
-    label: 'Keluarga · Kesehatan',
+    key: 'eben',
+    emoji: '🎓',
+    label: 'Teman Eben Haezar',
     points: [
-      'Kesehatan papa & mama, kekuatan, umur panjang & pemulihan',
-      'Perlindungan seisi rumah dari penyakit & kecelakaan',
-      'Pola makan, istirahat & olahraga tiap anggota keluarga',
-      'Kesehatan calon pasangan, kedewasaan, fisik, roh & jiwa',
+      'Teman-teman Eben Haezar, sebut yang terlintas malam ini',
+      'Yang sedang bergumul: studi, kerja & keluarganya',
+      'Yang belum mengenal Tuhan, dibukakan hatinya',
     ],
   },
   // 2 — Selasa
-  CHAIN,
+  {
+    key: 'po-basic',
+    emoji: '📖',
+    label: 'Teman PO & BASIC',
+    points: [
+      'Teman-teman PO & BASIC, sebut namanya',
+      'Pertumbuhan rohani & kesetiaan ikut persekutuan',
+      'Pengurus & pembina yang melayani mereka',
+    ],
+  },
   // 3 — Rabu
   {
-    key: 'family-economy',
-    emoji: '💰',
-    label: 'Keluarga · Ekonomi',
+    key: 'gat-kawanua',
+    emoji: '🤝',
+    label: 'Teman GAT & Kawanua',
     points: [
-      'Kecukupan & hikmat mengelola keuangan keluarga',
-      'Pekerjaan/usaha papa, mama & saudara, dibukakan pintu & diberkati',
-      'Lepas dari hutang, sampai ada kelebihan untuk memberi',
-      'Persiapan ekonomi menuju pernikahan bersama pasangan',
+      'Teman-teman GAT & Kawanua, sebut namanya',
+      'Pekerjaan, studi & keluarga mereka',
+      'Kesempatan jadi berkat buat mereka',
     ],
   },
   // 4 — Kamis
-  CHAIN,
-  // 5 — Jumat
   {
-    key: 'family-unity',
-    emoji: '🤝',
-    label: 'Keluarga · Kesatuan',
+    key: 'nation',
+    emoji: '🇮🇩',
+    label: 'Bangsa dan Negara Indonesia',
     points: [
-      'Kesatuan hati papa, mama & saudara, satu rumah, satu arah',
-      'Pengampunan & pemulihan relasi yang sempat renggang',
-      'Keluarga jadi mezbah doa, bukan sekadar tempat tinggal',
-      'Kesatuan visi & hati dengan pasangan',
+      'Presiden & para pemimpin bangsa, hikmat & hati takut Tuhan',
+      'Damai sejahtera, keadilan & kerukunan antarumat beragama',
+      'Ekonomi bangsa, lapangan kerja & harga kebutuhan pokok',
+      'Kebangunan rohani atas Indonesia',
     ],
   },
-  // 6 — Sabtu
+  // 5 — Jumat
   {
     key: 'church',
     emoji: '⛪',
-    label: 'Gereja',
+    label: 'Teman CORE & Gereja',
     points: [
-      'Gembala & para pemimpin gereja, hikmat, kekuatan & kemurnian hati',
-      'Ibadah besok: hadirat Tuhan turun & jiwa-jiwa baru dimenangkan',
-      'CORE & Main Team bertumbuh, tiap anggota dipulihkan',
-      'Kesatuan tubuh Kristus, tidak ada perpecahan di antara pelayan',
+      'Teman CORE & jemaat, sebut namanya satu per satu',
+      'Pendeta & para pemimpin gereja, hikmat & kemurnian hati',
+      'Murid-murid Tuhan yang sedang dibangun, tetap setia',
+      'Album & lagu Kristen yang sedang dikerjakan, jadi berkat',
     ],
+  },
+  // 6 — Sabtu (pokoknya diisi `intercessionToday`, berputar tiap pekan)
+  {
+    key: 'world',
+    emoji: '🌏',
+    label: 'Dunia',
+    points: [],
   },
 ];
 
+/** Tiga pokok dunia untuk pekan ini (berurutan, memutar, tidak acak). */
+export function duniaPekanIni(now: Date): string[] {
+  const pekan = Math.floor(dayNumber(now) / 7);
+  const mulai = (pekan * DUNIA_PER_PEKAN) % DUNIA.length;
+  return Array.from(
+    { length: DUNIA_PER_PEKAN },
+    (_, i) => DUNIA[(mulai + i) % DUNIA.length],
+  );
+}
+
 /** Pokok doa syafaat untuk hari ini. */
 export function intercessionToday(now: Date): IntercessionTopic {
-  return INTERCESSION_WEEK[now.getDay()];
-}
-
-/** Syafaat hari ini = Doa Rantai CORE Leader? (kartunya bisa ditekan) */
-export function isChainTopic(topic: IntercessionTopic): boolean {
-  return topic.key === 'chain';
-}
-
-// Jendela pengingat malam: mulai jam 18.00 sampai ganti hari. Di dalam jendela
-// ini kartu Home berubah jadi ajakan mendoakan sekali lagi sebelum tidur.
-const NIGHT_FROM_HOUR = 18;
-
-export function intercessionNightWindow(now: Date): boolean {
-  return now.getHours() >= NIGHT_FROM_HOUR;
+  const topik = INTERCESSION_WEEK[now.getDay()];
+  if (topik.key !== 'world') return topik;
+  return { ...topik, points: duniaPekanIni(now) };
 }

@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import type Svg from 'react-native-svg';
 
 import { Color } from '@/assets/style/color';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
+import { CardPreview } from '@/components/common/CardPreview';
 import { Chip } from '@/components/common/Chip';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -15,6 +15,7 @@ import { VixText } from '@/components/common/VixText';
 import { ReflectionFeedCard } from '@/components/spiritual/ReflectionFeedCard';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useCardPng } from '@/hooks/useCardPng';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { formatFullDate } from '@/lib/format';
@@ -45,7 +46,6 @@ import {
 // dibawa ke Instagram.
 export default function ReflectionFeedScreen() {
   const { user } = useAuth();
-  const { width } = useWindowDimensions();
   const { now, todayId } = useNow();
 
   const [habits, setHabits] = useState<ScheduledHabit[] | null>(null);
@@ -61,7 +61,7 @@ export default function ReflectionFeedScreen() {
 
   const [pickedKey, setPickedKey] = useState<string>(FEED_DESIGNS[0].key);
 
-  const svgRef = useRef<Svg>(null);
+  const { svgRef, buatPng } = useCardPng(FEED_W, FEED_H);
 
   useLiveAll(
     (uid, fail) => [
@@ -75,29 +75,6 @@ export default function ReflectionFeedScreen() {
   const text = reflectionHabit ? (day?.notes[reflectionHabit.id] ?? '') : '';
   const ada = habitNoteDone(text);
   const design = designOf(pickedKey);
-
-  // Pratinjau selebar layar dikurangi tepi, tapi dibatasi supaya lembar 4:5-nya
-  // tetap muat utuh di layar mana pun.
-  const previewW = Math.min(width - 40, 320);
-  const previewH = (previewW * FEED_H) / FEED_W;
-  // Kartunya SELALU dirender pada ukuran asli 1080×1350, lalu dikecilkan
-  // dengan transform. Lihat catatan panjang di lib/shareImage.ts: yang
-  // tertangkap toDataURL itu ukuran TATA LETAK view-nya, bukan kanvas yang
-  // kita minta — dirender sebesar pratinjau, hasilnya kartu kecil di pojok
-  // kiri-atas dengan sisanya hitam.
-  const scale = previewW / FEED_W;
-
-  /** Gambar kartunya jadi PNG 1080×1350 (base64, tanpa awalan `data:`). */
-  function buatPng(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      const svg = svgRef.current;
-      if (!svg) {
-        reject(new Error('kartu belum siap'));
-        return;
-      }
-      svg.toDataURL((data) => resolve(data), { width: FEED_W, height: FEED_H });
-    });
-  }
 
   /** Simpan ke Foto — dilewati kalau gambar yang persis sama sudah tersimpan. */
   async function simpanKeFoto(): Promise<void> {
@@ -152,21 +129,16 @@ export default function ReflectionFeedScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.previewWrap}>
-            <View
-              style={[styles.previewClip, { width: previewW, height: previewH }]}>
-              <View style={[styles.full, { transform: [{ scale }] }]}>
-                <ReflectionFeedCard
-                  ref={svgRef}
-                  text={text}
-                  design={design}
-                  dateLabel={formatFullDate(now)}
-                  archiveLabel={archiveNo(todayId)}
-                  width={FEED_W}
-                />
-              </View>
-            </View>
-          </View>
+          <CardPreview width={FEED_W} height={FEED_H} pad={8}>
+            <ReflectionFeedCard
+              ref={svgRef}
+              text={text}
+              design={design}
+              dateLabel={formatFullDate(now)}
+              archiveLabel={archiveNo(todayId)}
+              width={FEED_W}
+            />
+          </CardPreview>
 
           <VixText heading="title" additionalStyle={styles.sectionTitle}>
             🎨 Style
@@ -213,11 +185,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
   emptyWrap: { paddingHorizontal: 20, paddingTop: 20 },
   empty: { textAlign: 'center' },
-  previewWrap: { alignItems: 'center', paddingVertical: 8 },
-  // Kartunya dirender seukuran aslinya lalu dikecilkan; kotak ini yang
-  // memotongnya jadi sebesar pratinjau.
-  previewClip: { overflow: 'hidden' },
-  full: { width: FEED_W, height: FEED_H, transformOrigin: 'top left' },
   sectionTitle: { ...SECTION_SPACE },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   savedNote: { textAlign: 'center', color: Color.SUCCESS },

@@ -165,7 +165,7 @@ export default function SermonScreen() {
         /* ===================== ISI / UBAH ===================== */
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Judul khotbah
+            🏷️ Judul Khotbah
           </VixText>
           <FormInput
             style={styles.formGap}
@@ -177,7 +177,7 @@ export default function SermonScreen() {
           />
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Pastor / Pembicara
+            🎤 Pastor / Pembicara
           </VixText>
           <FormInput
             style={styles.formGap}
@@ -188,7 +188,7 @@ export default function SermonScreen() {
           />
 
           <VixText heading="label" additionalStyle={styles.fieldLabel}>
-            Ibadah jam
+            🕒 Ibadah Jam
           </VixText>
           <FormInput
             style={styles.formGap}

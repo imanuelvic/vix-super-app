@@ -123,7 +123,7 @@ export default function BookDetailScreen() {
 
         {/* Daftar bab — centang yang sudah dibaca */}
         <VixText heading="title" additionalStyle={styles.chaptersTitle}>
-          Daftar Bab
+          📚 Daftar Bab
         </VixText>
         {book.chapters.map((title, i) => {
           const done = !!readMap[i];

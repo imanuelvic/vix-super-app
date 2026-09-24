@@ -63,6 +63,7 @@ const MAPPING = {
   'banknote': 'account-balance-wallet',
   'plus': 'add',
   'checkmark': 'check',
+  'checkmark.circle.fill': 'check-circle',
   'xmark': 'close',
   'arrow.up.circle.fill': 'arrow-circle-up',
   'arrow.down.circle.fill': 'arrow-circle-down',
@@ -98,9 +99,9 @@ const MAPPING = {
   'note.text': 'sticky-note-2',
   // Sub-tab Token ⚡ di Residence — listrik prabayar.
   'bolt.circle.fill': 'offline-bolt',
-  // Fitur Friends 🤝 — sub-tab Split Bill & Places. (Tile Home-nya sendiri —
-  // dan tile Married — tidak lewat sini sama sekali: SF Symbols tak punya
-  // jabat tangan maupun cincin, jadi keduanya dilayani IconGlyph.)
+  // Fitur Friends 🤝 — sub-tab Split Bill & Places. (Tile Home-nya sendiri
+  // tidak lewat sini sama sekali: SF Symbols tak punya jabat tangan, jadi ia
+  // dilayani IconGlyph.)
   'receipt.fill': 'receipt-long',
   'cup.and.saucer.fill': 'local-cafe',
   // Fitur Device 📱 — tile Home + kedua sub-tab perangkatnya.

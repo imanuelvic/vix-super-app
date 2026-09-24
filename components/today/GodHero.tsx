@@ -52,7 +52,7 @@ export function GodHero({
       : god.state === 'late'
         ? 'Belum sempat pagi ini? Luangkan waktu sekarang.'
         : god.state === 'done'
-          ? 'Morning Journey sudah dijalani. Jalani harinya dari sini.'
+          ? 'Morning Journey sudah dijalani.'
           : '';
 
   return (

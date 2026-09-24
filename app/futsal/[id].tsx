@@ -397,7 +397,7 @@ export default function FutsalSessionScreen() {
             beberapa layar judulnya sudah lama hilang — dan bersamanya tombol
             tutupnya. Dipatok, ia tetap terjangkau di mana pun kamu berhenti. */}
         <SectionToggle
-          title="👥 Squad & Setoran"
+          title="👥 Squad & Payment"
           sub={ringkasSquad}
           open={squadOpen}
           onToggle={() => toggleSeksi('squad')}
@@ -550,7 +550,7 @@ export default function FutsalSessionScreen() {
 
         {/* 5 — judul Catatan, DIPATOK. */}
         <SectionToggle
-          title="📝 Catatan"
+          title="📝 Note"
           sub={sesi.note ? 'Sudah ditulis' : 'Belum ditulis'}
           open={notesOpen}
           onToggle={() => toggleSeksi('notes')}
@@ -593,7 +593,7 @@ export default function FutsalSessionScreen() {
         <View style={styles.timRow}>
           <View style={styles.timKolom}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Tim kiri
+              👥 Tim Kiri
             </VixText>
             <FormInput value={fTimA} onChangeText={setFTimA} editable={!busy} />
             <FormInput
@@ -606,7 +606,7 @@ export default function FutsalSessionScreen() {
           </View>
           <View style={styles.timKolom}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Tim kanan
+              👥 Tim Kanan
             </VixText>
             <FormInput value={fTimB} onChangeText={setFTimB} editable={!busy} />
             <FormInput
@@ -658,7 +658,7 @@ export default function FutsalSessionScreen() {
       {/* ===== Sheet catatan ===== */}
       <SheetModal
         visible={catatanOpen}
-        title="Catatan"
+        title="📝 Note"
         onClose={() => setCatatanOpen(false)}
         footer={
           <DualButtons

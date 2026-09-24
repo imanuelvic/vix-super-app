@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { AchievementButton } from '@/components/common/AchievementButton';
+import { RewardButton } from '@/components/common/RewardButton';
 import { BottomTabs, withBadge, type BottomTab } from '@/components/common/BottomTabs';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -56,7 +56,7 @@ export default function LearningScreen() {
   // null = belum termuat. Badge ikut menunggunya (lihat `pending` di bawah)
   // supaya angkanya tidak sempat salah sekejap saat layar dibuka.
   const [topicsDone, setTopicsDone] = useState<TopicsDone | null>(null);
-  // Streak minggu tuntas berturut-turut 🔥 — dasar achievement 🎓 Learning.
+  // Streak minggu tuntas berturut-turut 🔥 — dasar reward 🎓 Learning.
   const [streak, setStreak] = useState<WeekStreak>(EMPTY_WEEK_STREAK);
 
   useLiveAll(
@@ -86,7 +86,7 @@ export default function LearningScreen() {
         backLabel="Home"
         title="Learning 🎓"
         subtitle="Satu ilmu baru tiap minggu"
-        right={<AchievementButton category="learning" />}
+        right={<RewardButton category="learning" />}
       />
 
       <View style={styles.content} key={scrollKey}>

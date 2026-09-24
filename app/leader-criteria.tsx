@@ -18,6 +18,7 @@ import {
   type CriteriaSection,
   type CriteriaSheet,
 } from '@/lib/leaderCriteria';
+import { pdfErrorOf } from '@/lib/messages';
 import { shareCriteriaPdf } from '@/lib/leaderCriteriaPdf';
 
 // Pedoman CORE Leader 📄 — dibuka dari tombol pojok kanan atas di
@@ -55,7 +56,7 @@ export default function LeaderCriteriaScreen() {
       key: sheet,
       start: () => setError(null),
       task: () => shareCriteriaPdf(sheet),
-      fail: () => setError('Gagal membuat PDF pedomannya. Coba lagi.'),
+      fail: () => setError(pdfErrorOf('pedomannya')),
     });
   }
 
@@ -63,7 +64,7 @@ export default function LeaderCriteriaScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="CORE"
-        title="Pedoman CL 📄"
+        title="CL Guidelines 📄"
         subtitle={
           sheet === 'calon'
             ? `${count} poin sebelum mengajukan calon`

@@ -155,7 +155,7 @@ export default function FutsalCashScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Friends"
-        title="Kas Tim 💰"
+        title="Team Cash 💰"
         subtitle="Uang bersama tiap tim"
       />
 

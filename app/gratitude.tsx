@@ -166,7 +166,7 @@ export default function GratitudeScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScreenHeader
         backLabel="Spiritual"
-        title="Riwayat Syukur 🙏"
+        title="Gratitude History 🙏"
         subtitle={
           memuat
             ? undefined

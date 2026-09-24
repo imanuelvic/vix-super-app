@@ -358,7 +358,7 @@ export default function HistoryScreen() {
         <View style={styles.yearRow}>
           <View style={styles.yearField}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Tahun mulai
+              📆 Tahun Mulai
             </VixText>
             <FormInput
               placeholder="2026"
@@ -370,7 +370,7 @@ export default function HistoryScreen() {
           </View>
           <View style={styles.yearField}>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
-              Sampai (opsional)
+              📆 Sampai (opsional)
             </VixText>
             <FormInput
               placeholder="-"
@@ -386,7 +386,7 @@ export default function HistoryScreen() {
             kategori sebagai chip memakan separuh modal sebelum kolom
             "Kejadiannya" sempat terlihat. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Kategori
+          📚 Kategori
         </VixText>
         <View style={styles.formGap}>
           <SelectField
@@ -401,7 +401,7 @@ export default function HistoryScreen() {
         </View>
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Kejadiannya
+          📖 Kejadiannya
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -412,7 +412,7 @@ export default function HistoryScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Bagian hidup (opsional)
+          🧩 Bagian Hidup (opsional)
         </VixText>
         <FormInput
           style={styles.formGap}
@@ -423,7 +423,7 @@ export default function HistoryScreen() {
         />
 
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          Keterangan (opsional)
+          📝 Keterangan (opsional)
         </VixText>
         <FormInput
           style={styles.formGap}
