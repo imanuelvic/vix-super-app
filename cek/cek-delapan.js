@@ -197,8 +197,12 @@ console.log('\n=== 2. Catatan Revive jadi arsip + 🔗 Connect to CORE ===');
   // 31 Agu 2026: kalimat penjelas "Catatan ini sudah jadi arsip…" dibuang
   // sendiri oleh pemiliknya (di Revive & Catatan Khotbah sekaligus). Yang
   // dijaga di sini penanda 🔒-nya + sifat baca-sajanya, bukan kalimatnya.
-  c('ada penanda 🔒 Arsip, seperti Catatan Khotbah',
-    /🔒 Arsip/.test(rev) && /🔒 Arsip/.test(baca('app/sermon.tsx')));
+  // 26 Sep 2026: kata "Arsip" diganti "Terkunci" (permintaan pemiliknya).
+  // "Arsip" terbaca seperti tempat penyimpanan; yang dimaksud sebenarnya
+  // keadaan catatannya: sudah tidak bisa diubah lagi.
+  c('ada penanda 🔒 Terkunci, seperti Catatan Khotbah',
+    /🔒 Terkunci/.test(rev) && /🔒 Terkunci/.test(baca('app/sermon.tsx')) &&
+    !/🔒 Arsip/.test(baca('app/sermon.tsx')));
   // Tombol WA-nya kini komponen bersama <ShareWhatsAppButton/> (bunyinya
   // dijaga di cek-jarak-tombol.js), jadi yang dicari di layar ini pemakaiannya.
   // 31 Agu 2026: <BacaBlok> jadi banyak baris karena dapat tombol 📌

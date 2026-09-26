@@ -12,6 +12,7 @@ import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useDraft } from '@/hooks/useDraft';
 import { useFormSave } from '@/hooks/useFormSave';
 import { type IntercessionTopic } from '@/lib/intercession';
+import { openExternalUrl } from '@/lib/linking';
 import {
   BAPA_KAMI,
   JOURNEY_CLOSING,
@@ -357,11 +358,28 @@ export function PrayStep({
             🙏 Doa Syafaat · {topic.emoji} {topic.label}
           </JourneyFieldLabel>
           <JourneyBox>
-            {topic.points.map((p) => (
-              <VixText key={p} heading="paragraph" additionalStyle={js.pointText}>
-                • {p}
-              </VixText>
-            ))}
+            {/* Baris kliping berita 📰 bisa di-click ke artikel aslinya, dan
+                digarisbawahi supaya kelihatan memang bisa. Pokok doa tetap
+                tidak punya tautan, jadi ia digambar persis seperti sebelumnya. */}
+            {topic.points.map((p) => {
+              const url = topic.links?.[p];
+              if (!url) {
+                return (
+                  <VixText key={p} heading="paragraph" additionalStyle={js.pointText}>
+                    • {p}
+                  </VixText>
+                );
+              }
+              return (
+                <PressableScale key={p} onPress={() => openExternalUrl(url)} hitSlop={4}>
+                  <VixText
+                    heading="paragraph"
+                    additionalStyle={[js.pointText, styles.pointLink]}>
+                    • {p}
+                  </VixText>
+                </PressableScale>
+              );
+            })}
           </JourneyBox>
         </View>
       )}
@@ -494,6 +512,10 @@ export function CloseStep({
 
 const styles = StyleSheet.create({
   greeting: { color: Color.SPIRITUAL_DARK, marginTop: -4 },
+  // Baris kliping berita yang bisa di-click. Garis bawahnya yang memberi tahu
+  // bahwa ia bisa di-click; warnanya tetap warna teks pokok doa, supaya
+  // blok syafaatnya tidak berubah jadi daftar tautan.
+  pointLink: { textDecorationLine: 'underline' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   // Kartu lagu: nada besar di kiri, judul & penyanyi di kanan.
   song: {

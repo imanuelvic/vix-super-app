@@ -15,6 +15,7 @@ import {
   KOLAM_FINANCE_MALAM,
   KOLAM_JOURNEY,
   KOLAM_LIFE,
+  KOLAM_OLAHRAGA,
   KOLAM_REFLEKSI,
   KOLAM_RESCUE,
   KOLAM_WORK,
@@ -112,6 +113,7 @@ export type NotifyGroup =
   | 'finance'
   | 'reflection'
   | 'reward'
+  | 'fitness'
   | 'night-prayer';
 
 export type NotifyGroupMeta = {
@@ -132,6 +134,7 @@ export const NOTIFY_GROUPS: NotifyGroupMeta[] = [
   { key: 'life', emoji: '🌿', label: 'Life hari ini', when: 'Tiap sore 17.30, kalau ada yang belum', opens: 'All Reminder 🔔, atau layar barisnya' },
   { key: 'finance', emoji: '💰', label: 'Finance', when: 'Pagi 07.30 status · malam 20.30 catat pengeluaran', opens: 'Finance 💰' },
   { key: 'reward', emoji: '🏆', label: 'Pencapaian', when: 'Tiap malam 19.00, kalau ada yang hampir kebuka', opens: 'Reward 🏆' },
+  { key: 'fitness', emoji: '💪', label: 'Olahraga hari ini', when: 'Tiap malam 21.00, kalau belum dicatat & tidak dilewati', opens: 'Fitness 💪, sub-tab Exercise' },
   { key: 'reflection', emoji: '📝', label: 'Refleksi malam', when: 'Tiap malam 21.30', opens: 'Today 🏠' },
   { key: 'night-prayer', emoji: '🌙', label: 'Night Prayer', when: 'Tiap malam 22.00, kalau belum didoakan', opens: 'Night Prayer 🌙' },
 ];
@@ -232,6 +235,9 @@ const RUTE_LIFE: TodayHref = { pathname: '/reminders' };
 const RUTE_FINANCE: TodayHref = { pathname: '/finance' };
 const RUTE_REWARD: TodayHref = { pathname: '/reward' };
 const RUTE_DOA_MALAM: TodayHref = { pathname: '/night-prayer' };
+// Langsung ke sub-tab Exercise, bukan ke Program: yang diminta pengingat ini
+// adalah MENCATAT, dan mencatatnya di situ.
+const RUTE_OLAHRAGA: TodayHref = { pathname: '/fitness', params: { tab: 'exercise' } };
 // Refleksi ditulis di blok Refleksi layar Today, bukan layar tersendiri.
 const RUTE_REFLEKSI: TodayHref = { pathname: '/' };
 /** Bacaan Alkitab dicatat di Habits, di kartu sesi jam itu. */
@@ -436,6 +442,24 @@ export function buildSlots(
               .join(' · ')
           : null,
       route: RUTE_REWARD,
+    },
+    {
+      // 💪 Jendela sore Fitness (16.00–20.59) sudah tutup di jam ini, jadi
+      // badge & kartu Dashboard sama-sama sudah diam. Justru itu sebabnya
+      // pengingat ini ada: kalau hari itu memang tidak sempat olahraga, jam
+      // 21.00 masih cukup untuk mencatatnya (atau menandai ✗ dilewati)
+      // sebelum harinya tutup. Sudah dicatat ATAU sudah dilewati → diam.
+      id: 'fitness',
+      group: 'fitness',
+      hour: 21,
+      minute: 0,
+      title: pilihKalimat(KOLAM_OLAHRAGA, dayId, 'olahraga'),
+      body: model.fitness.unanswered
+        ? model.fitness.picked
+          ? `${model.fitness.picked} belum beres. Catat atau tandai dilewati.`
+          : 'Belum pilih olahraga hari ini. Catat atau tandai dilewati.'
+        : null,
+      route: RUTE_OLAHRAGA,
     },
     {
       id: 'reflection',

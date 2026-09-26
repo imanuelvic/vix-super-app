@@ -61,7 +61,7 @@ console.log('\n=== 2. Ekstraksinya tuntas — tak ada salinan tersisa ===');
     ['app/futsal/[id].tsx', String.raw`useAccordion<Bagian>\('squad'\)`],
     ['components/core/LeadersTab.tsx', String.raw`useAccordion<'cl' \| 'mt'>\(\)`],
     ['app/wheel.tsx', String.raw`useAccordion<'focus' \| 'score'>\(\)`],
-    ['app/monthly-prayers.tsx', String.raw`useAccordion<string>\(\)`],
+    ['components/core/PrayerPointsTab.tsx', String.raw`useAccordion<string>\(\)`],
     ['app/steps.tsx', String.raw`useAccordion<number>\(\)`],
   ];
 
@@ -140,7 +140,7 @@ console.log('\n=== 3. Perilaku di layar tidak bergeser ===');
 
   // Doa bulanan punya aturan TAMBAHAN yang tidak boleh hilang: kartu tanpa
   // poin SELALU terbuka, biar gampang langsung diisi.
-  const doa = baca('app/monthly-prayers.tsx');
+  const doa = baca('components/core/PrayerPointsTab.tsx');
   c('Doa bulanan: kartu kosong tetap selalu terbuka',
     /const open = hasPoints \? kartuTerbuka\(l\.id\) : true;/.test(doa));
 

@@ -99,6 +99,22 @@ export const KOLAM_DOA_MALAM: string[] = [
   '🤲 Lima menit terakhir hari ini buat Dia',
 ];
 
+/**
+ * 💪 Pengingat olahraga jam 21.00 (26 Sep 2026).
+ *
+ * Nadanya sengaja MENANYA, bukan memarahi: yang ditagih bukan "kamu malas",
+ * tapi "harinya belum dijawab". Hari yang memang sengaja dilewati (✗) tidak
+ * pernah sampai ke sini, jadi kalimat-kalimat ini tak perlu menyediakan
+ * pembelaan.
+ */
+export const KOLAM_OLAHRAGA: string[] = [
+  '💪 Olahraga hari ini belum dicatat',
+  '🏋️ Hari ini sempat gerak?',
+  '💪 Badanmu menunggu dicatat hari ini',
+  '🏃 Belum ada olahraga yang tercatat hari ini',
+  '💪 Catat dulu olahraga hari ini sebelum harinya tutup',
+];
+
 export const KOLAM_REFLEKSI: Kalimat[] = [
   { title: '📝 Refleksi hari ini', body: 'Apa yang terjadi, apa yang Tuhan ajarkan, apa yang kubawa ke besok?' },
   { title: '🌙 Sebelum hari ini ditutup', body: 'Tulis satu paragraf jujur. Tiga menit saja.' },

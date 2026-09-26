@@ -98,8 +98,19 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
    */
   function renderHeader(m: MonthlyMeeting, expanded: boolean) {
     return (
-      // Latarnya PEKAT: saat dipatok, notulennya lewat persis di belakangnya.
-      <View key={`kepala-${m.id}`} style={[styles.card, expanded && styles.cardOpen]}>
+      // Alas KREM selebar layar di belakang kartunya (26 Sep 2026).
+      //
+      // Kartunya bersudut membulat 16, jadi keempat sudutnya tembus pandang.
+      // Saat dipatok, notulen yang tergulung lewat PERSIS di belakangnya dan
+      // mengintip keluar lewat dua sudut atas itu — terbaca seperti garis
+      // kecil yang muncul-hilang di kiri & kanan. Dengan alas ini, yang
+      // terlihat di sudutnya krem latar layar, bukan isi yang sedang lewat.
+      //
+      // Harus jadi pembungkus TERLUAR: ScrollView memindahkan style anak
+      // sticky-nya ke pembungkus buatannya sendiri, jadi yang ikut terpatok
+      // adalah style paling luar inilah.
+      <View key={`kepala-${m.id}`} style={styles.stickyWrap}>
+        <View style={[styles.card, expanded && styles.cardOpen]}>
         {/* Barisnya dipegang View DI DALAM, bukan style terluar: ScrollView
             memindahkan style anak sticky-nya ke pembungkus buatannya sendiri
             lalu memberi anaknya `{ flex: 1 }` polos (ScrollViewStickyHeader:
@@ -139,6 +150,7 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           {/* 🔗 muncul HANYA kalau ada Catatan Revive / Khotbah yang kamu
               sambungkan ke rapat ini dari fitur Spiritual. */}
           <LinkedNotesButton links={noteLinks} coreId={m.id} />
+        </View>
         </View>
       </View>
     );
@@ -264,6 +276,8 @@ const styles = StyleSheet.create({
   // paddingBottom lega supaya kartu terakhir tidak tertutup FAB.
   content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 90 },
   empty: { textAlign: 'center', marginTop: 10 },
+  // Alas kartu yang dipatok — lihat alasannya di renderHeader.
+  stickyWrap: { backgroundColor: Color.BACKGROUND },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

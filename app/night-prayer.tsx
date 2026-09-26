@@ -21,6 +21,7 @@ import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
 import {
   nightAllDone,
   nightDoneCount,
+  nightDoneId,
   nightPlan,
   nightPoints,
   nightSectionDone,
@@ -65,9 +66,23 @@ export default function NightPrayerScreen() {
 
   async function ubah(key: NightKey) {
     if (!user || busy) return;
+    const jadi = !nightSectionDone(day, key);
+    const sebelum = day;
+
+    // OPTIMISTIS: centangnya berubah SEKARANG, tidak menunggu Firestore
+    // menjawab. Sebelum ini centangnya hanya digambar dari snapshot yang
+    // datang, jadi di sinyal pelan jari terasa seperti tidak kena sama sekali
+    // dan gampang di-click dua kali. Pola yang sama dengan app/book/[key].tsx:
+    // tampilan duluan, snapshot yang mengoreksi.
+    setDay((lama) => ({
+      done: { ...(lama?.done ?? {}), [nightDoneId(key)]: jadi },
+      skipped: lama?.skipped ?? {},
+      water: lama?.water ?? 0,
+      notes: lama?.notes ?? {},
+    }));
+
     setBusy(key);
     try {
-      const jadi = !nightSectionDone(day, key);
       await setNightSectionDone(user.uid, todayId, key, jadi);
       // Bagian KEEMPAT baru saja dicentang → malam ini dihitung.
       if (jadi && selesai + 1 === NIGHT_SECTIONS.length) {
@@ -75,6 +90,9 @@ export default function NightPrayerScreen() {
       }
       setError(null);
     } catch {
+      // Gagal menulis → kembalikan tampilannya, jangan biarkan centang palsu
+      // menetap dan membuatmu mengira malam ini sudah didoakan.
+      setDay(sebelum);
       setError(SAVE_ERROR);
     } finally {
       setBusy(null);
@@ -144,12 +162,6 @@ export default function NightPrayerScreen() {
                 </View>
               );
             })}
-
-            <VixText heading="label" additionalStyle={styles.note}>
-              Daftar lengkapnya tetap utuh: 12 pokok syukur, 7 pengakuan & 16 permohonan.
-              Tiap malam dibawa sepotong bergantian supaya muat sebelum tidur, dan dalam
-              empat sampai tujuh malam semuanya kebagian.
-            </VixText>
           </View>
         </ScrollView>
       )}
@@ -170,7 +182,5 @@ const styles = StyleSheet.create({
   cardTitle: { color: Color.TEXT_TITLE },
   points: { gap: 4 },
   point: { color: Color.TEXT_PARAGRAPH },
-  // Sudah didoakan → barisnya diredupkan, bukan dicoret: ini doa, bukan tugas.
   pointDone: { opacity: 0.5 },
-  note: { marginTop: 2 },
 });

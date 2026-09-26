@@ -17,6 +17,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { FollowupTab } from '@/components/core/FollowupTab';
 import { LeadersTab } from '@/components/core/LeadersTab';
 import { MonthlyTab } from '@/components/core/MonthlyTab';
+import { PrayerPointsTab } from '@/components/core/PrayerPointsTab';
 import { MultiplicationTab } from '@/components/core/MultiplicationTab';
 import { VisitationTab } from '@/components/core/VisitationTab';
 import {
@@ -48,14 +49,20 @@ type CoreTab =
   | 'followup'
   | 'monthly'
   | 'leaders'
+  | 'prayer'
   | 'multiplication';
 
 // Tab bar bawah di dalam layar CORE.
+// 26 Sep 2026: Follow Up pindah ke PALING KIRI. Ia memang sub-tab yang
+// terbuka sendiri tiap layar CORE dibuka (lihat useTabScroll di bawah), tapi
+// letaknya dulu di tengah — jadi tiap kali masuk, pil yang menyala ada di
+// tengah deretan dan matanya harus mencari dulu. Yang default duduk di depan.
 const TABS: BottomTab<CoreTab>[] = [
+  { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
   { key: 'visitation', label: 'Visitation', icon: 'calendar' },
   { key: 'monthly', label: 'Monthly', icon: 'list.bullet' },
-  { key: 'followup', label: 'Follow Up', icon: 'bubble.left.fill' },
   { key: 'leaders', label: 'Leaders', icon: 'person.2.fill' },
+  { key: 'prayer', label: 'Prayer Points', icon: 'hands.sparkles.fill' },
   { key: 'multiplication', label: 'Multiplication', icon: 'arrow.triangle.branch' },
 ];
 
@@ -240,6 +247,8 @@ export default function CoreScreen() {
           <MonthlyTab meetings={meetings} />
         ) : tab === 'leaders' ? (
           <LeadersTab leaders={leaders} mainTeam={mainTeam} />
+        ) : tab === 'prayer' ? (
+          <PrayerPointsTab />
         ) : (
           <MultiplicationTab />
         )}

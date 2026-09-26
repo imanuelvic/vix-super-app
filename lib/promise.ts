@@ -41,6 +41,18 @@ export type Promise = {
   story: string;
   /** Ada doa khusus perihal janji ini? */
   prayed: boolean;
+  /**
+   * Dikunci 🔒 (26 Sep 2026) — janjinya sudah "jadi", tidak diutak-atik lagi.
+   *
+   * Kenapa perlu: janji yang dipegang bertahun-tahun gampang pelan-pelan
+   * berubah bunyinya mengikuti keadaan, dan begitu berubah ia berhenti jadi
+   * janji dan berubah jadi harapan hari ini. Dikunci = kalimatnya tetap
+   * seperti saat kamu menerimanya.
+   *
+   * SATU hal tetap boleh diubah walau terkunci: kapan doanya terjawab. Itu
+   * justru penggenapannya, dan biasanya datang jauh sesudah janjinya ditulis.
+   */
+  locked: boolean;
   /** Kapan doanya terjawab (dayId). Kosong = belum, atau memang tak didoakan. */
   answeredId: string;
   /** Kapan ditulis pertama kali (dayId). */
@@ -108,6 +120,9 @@ export function subscribePromises(
       struggle: (data.struggle as string) ?? '',
       story: (data.story as string) ?? '',
       prayed: data.prayed === true,
+      // Janji lama belum punya kolom ini → dianggap TIDAK terkunci, jadi tak
+      // ada satu pun catatan lama yang mendadak tidak bisa diubah.
+      locked: data.locked === true,
       answeredId: (data.answeredId as string) ?? '',
       createdId: (data.createdId as string) ?? '',
       updatedId: (data.updatedId as string) ?? '',

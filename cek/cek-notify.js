@@ -81,8 +81,10 @@ console.log('\n=== 1. Kelompok & jam ===');
 {
   const s = slotsOf(KOSONG());
   const id = s.map((x) => x.id);
-  ok('tiga belas pengingat: journey + penyelamat streak · 3 bacaan · CORE · Work · Life · 2 Finance · 🏆 · refleksi · 🌙 doa malam',
-    id.join(',') === 'journey,journey-rescue,bible-morning,bible-daytime,bible-night,core,work,life,finance-morning,finance-evening,reward,reflection,night-prayer', id.join(','));
+  // 26 Sep 2026: + 💪 olahraga 21.00. Jendela sore Fitness tutup jam 21.00
+  // tepat, jadi tanpa pengingat ini hari yang belum dicatat lewat begitu saja.
+  ok('empat belas pengingat: journey + penyelamat streak · 3 bacaan · CORE · Work · Life · 2 Finance · 🏆 · 💪 olahraga · refleksi · 🌙 doa malam',
+    id.join(',') === 'journey,journey-rescue,bible-morning,bible-daytime,bible-night,core,work,life,finance-morning,finance-evening,reward,fitness,reflection,night-prayer', id.join(','));
   const jam = (x) => `${x.hour}.${String(x.minute).padStart(2, '0')}`;
   ok('jamnya sesuai jendela fiturnya (journey 6.00 · bacaan 7/12.30/21.15 · Finance 7.30 & 20.30 · refleksi 21.30)',
     jam(cari(s, 'journey')) === '6.00' && jam(cari(s, 'bible-morning')) === '7.00' &&
@@ -90,9 +92,9 @@ console.log('\n=== 1. Kelompok & jam ===');
     jam(cari(s, 'finance-morning')) === '7.30' && jam(cari(s, 'finance-evening')) === '20.30' &&
     jam(cari(s, 'reflection')) === '21.30' && jam(cari(s, 'night-prayer')) === '22.00');
   ok('tiap kelompok punya keterangan jam di layar pengaturan',
-    N.NOTIFY_GROUPS.length === 9 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
+    N.NOTIFY_GROUPS.length === 10 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
   ok('kelompoknya sama dengan yang dipakai slot',
-    new Set(s.map((x) => x.group)).size === 9);
+    new Set(s.map((x) => x.group)).size === 10);
 }
 
 console.log('\n=== 2. Hari tenang = tidak berisik ===');
@@ -229,6 +231,66 @@ console.log('\n=== 7. Nama berkas = nama fitur (23 Sep 2026) ===');
     }
     return sisa.length === 0;
   })());
+}
+
+// ===================== 💪 Pengingat olahraga 21.00 =====================
+//
+// 26 Sep 2026, permintaan pemiliknya: "kalau belum dicentang sampai jam 21.00,
+// ingatkan untuk segera diisi, kecuali sudah dicentang atau di-skip".
+//
+// Yang bikin ini TIDAK bisa menumpang baris 💪 di daftar Today: baris itu ikut
+// jendela pengingat Fitness (05–09 & 16–21), dan jendela sore tutup jam 21.00
+// TEPAT. Jadi pada jam pengingat ini berbunyi, `fitPendingToday` sudah 0 dan
+// barisnya sudah hilang. Karena itu ada `fitUnanswered` yang tidak melihat jam.
+console.log('\n=== 5. 💪 Pengingat olahraga 21.00 ===');
+{
+  const hari = (over) => ({
+    ...KOSONG(),
+    fitDay: { done: {}, skipped: false, picks: [], runs: {}, ...over },
+  });
+  const slotOlahraga = (over, now = PAGI) => cari(slotsOf(hari(over), null, now), 'fitness');
+
+  const belum = slotOlahraga({});
+  ok('berbunyi jam 21.00', belum.hour === 21 && belum.minute === 0);
+  ok('belum memilih apa pun → ditagih memilih',
+    belum.body === 'Belum pilih olahraga hari ini. Catat atau tandai dilewati.',
+    String(belum.body));
+  ok('di-click → Fitness sub-tab Exercise, tempat mencatatnya',
+    belum.route.pathname === '/fitness' && belum.route.params.tab === 'exercise');
+
+  // Sudah memilih paket tapi gerakannya belum dicentang semua.
+  const pilihRenang = slotOlahraga({ picks: ['swim'] });
+  ok('sudah memilih tapi belum beres → paketnya disebut namanya',
+    pilihRenang.body === 'Berenang belum beres. Catat atau tandai dilewati.',
+    String(pilihRenang.body));
+
+  // Dua jalan keluar yang SAMA-SAMA membuatnya diam.
+  const semuaBeres = slotOlahraga({
+    picks: ['swim'],
+    done: { swimwarmup: true, swimmain: true, swimcooldown: true },
+  });
+  ok('sudah dicatat semua → diam, tidak menagih', semuaBeres.body === null);
+  ok('sengaja dilewati (✗) → diam juga, bukan dimarahi',
+    slotOlahraga({ skipped: true }).body === null);
+
+  // Jam berapa pun layar Today digambar, jadwal 21.00-nya harus sudah benar —
+  // app-nya mungkin cuma dibuka pagi tadi.
+  ok('dihitung sepanjang hari, bukan cuma di jendela sore',
+    slotOlahraga({}, new Date(2026, 8, 26, 10, 0)).body !== null &&
+    slotOlahraga({ skipped: true }, new Date(2026, 8, 26, 10, 0)).body === null);
+
+  ok('judulnya berganti tiap hari (kolam kalimat, seperti pengingat lain)',
+    (() => {
+      const judul = new Set(
+        ['2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29'].map(
+          (d) =>
+            N.buildSlots(T.buildToday(hari({}), PAGI, d), null, { dayId: d }).find(
+              (s) => s.id === 'fitness',
+            ).title,
+        ),
+      );
+      return judul.size > 1;
+    })());
 }
 
 console.log(gagal === 0 ? '\n✅ LULUS — pengingat HP & nama berkas beres.' : `\n❌ ${gagal} cek gagal.`);

@@ -211,7 +211,11 @@ ok('🎵 Worship: satu lagu + "Mulai Worship" + "Skip untuk sekarang", tanpa cen
   /<JourneyNext label="Mulai Worship" onPress=\{mulai\} \/>/.test(steps) &&
   /<JourneyLink label="Skip untuk sekarang" onPress=\{onNext\} \/>/.test(steps));
 ok('🙏 Pray: Doa Syafaat hari ini TETAP (topik + poin), Doa Rantai CL tetap (WA + ✅ dari data), + doa pribadi → "Berdoa"',
-  /Doa Syafaat · \{topic\.emoji\} \{topic\.label\}/.test(steps) && /\{topic\.points\.map\(\(p\) => \(/.test(steps) &&
+  // 26 Sep 2026: barisnya bercabang — kliping berita 📰 jadi bisa di-click ke
+  // artikelnya (bergaris bawah), pokok doa tetap digambar seperti sebelumnya.
+  /Doa Syafaat · \{topic\.emoji\} \{topic\.label\}/.test(steps) && /\{topic\.points\.map\(\(p\) => \{/.test(steps) &&
+  /const url = topic\.links\?\.\[p\];/.test(steps) &&
+  /pointLink: \{ textDecorationLine: 'underline' \}/.test(steps) &&
   /💬 Doakan lewat WhatsApp/.test(steps) && /\{l\.done \? '✅ ' : ''\}/.test(steps) &&
   /Hal apa yang ingin kamu serahkan kepada Tuhan pagi ini\?/.test(steps) &&
   /onSave\(\{ prayer: prayer\.trim\(\) \}\)/.test(steps) && /<JourneyNext label="Berdoa"/.test(steps));

@@ -30,10 +30,24 @@ import { fetchRss } from './news';
 /** Topik syafaat yang punya lapisan berita (sama kuncinya dgn lib/intercession). */
 export type PrayerNewsTopic = 'church' | 'nation';
 
+/** Satu kliping: judulnya + tautan ke beritanya. */
+export type PrayerNewsItem = { title: string; url: string };
+
 export type PrayerNews = {
   /** Tanggal Senin minggu catatan ini diambil ("YYYY-MM-DD"). */
   weekId: string;
+  /**
+   * Judul saja. Bentuk LAMA, tetap dibaca supaya dokumen yang sudah ada di
+   * Firestore tidak jadi kosong (judulnya muncul, cuma belum bisa di-click).
+   */
   points: Record<PrayerNewsTopic, string[]>;
+  /**
+   * Bentuk BARU (26 Sep 2026): judul + tautannya, supaya baris beritanya bisa
+   * di-click langsung ke artikel aslinya. Belum ada di dokumen lama, dan itu
+   * sebabnya dokumen tanpa `items` dianggap basi (lihat `prayerNewsFresh`) —
+   * sekali ambil ulang, tautannya langsung ada tanpa menunggu Senin.
+   */
+  items?: Record<PrayerNewsTopic, PrayerNewsItem[]>;
 };
 
 /** Berapa judul yang disimpan per topik — cukup untuk didoakan, tidak melelahkan. */
@@ -65,6 +79,19 @@ function readPoints(raw: unknown): PrayerNews['points'] {
   return { church: list(data.church), nation: list(data.nation) };
 }
 
+function readItems(raw: unknown): PrayerNews['items'] | undefined {
+  const data = raw as Partial<Record<PrayerNewsTopic, unknown>> | undefined;
+  if (!data) return undefined;
+  const list = (v: unknown): PrayerNewsItem[] =>
+    Array.isArray(v)
+      ? v
+          .filter((x): x is Record<string, unknown> => !!x && typeof x === 'object')
+          .map((x) => ({ title: String(x.title ?? ''), url: String(x.url ?? '') }))
+          .filter((x) => x.title.length > 0)
+      : [];
+  return { church: list(data.church), nation: list(data.nation) };
+}
+
 export function subscribePrayerNews(
   uid: string,
   onChange: (news: PrayerNews | null) => void,
@@ -76,7 +103,11 @@ export function subscribePrayerNews(
       const data = snapshot.data();
       onChange(
         data?.weekId
-          ? { weekId: String(data.weekId), points: readPoints(data.points) }
+          ? {
+              weekId: String(data.weekId),
+              points: readPoints(data.points),
+              items: readItems(data.items),
+            }
           : null,
       );
     },
@@ -84,9 +115,17 @@ export function subscribePrayerNews(
   );
 }
 
-/** Catatan minggu ini sudah ada? (kalau ya, jangan ambil ulang) */
+/**
+ * Catatan minggu ini sudah ada? (kalau ya, jangan ambil ulang)
+ *
+ * Dokumen minggu ini yang BELUM punya `items` tetap dianggap basi: itu catatan
+ * bentuk lama yang cuma menyimpan judul, jadi baris beritanya belum bisa
+ * di-click. Sekali ambil ulang, tautannya langsung ada — tanpa menunggu Senin
+ * berikutnya.
+ */
 export function prayerNewsFresh(news: PrayerNews | null, now: Date): boolean {
-  return news?.weekId === weekDocId(now);
+  if (news?.weekId !== weekDocId(now)) return false;
+  return !!news.items;
 }
 
 /**
@@ -107,36 +146,49 @@ export async function refreshPrayerNews(
 ): Promise<boolean> {
   if (prayerNewsFresh(news, now)) return false;
 
-  const titles = async (topic: PrayerNewsTopic) => {
+  const kliping = async (topic: PrayerNewsTopic): Promise<PrayerNewsItem[]> => {
     try {
       const items = await fetchRss(FEEDS[topic], `doa-${topic}`);
-      return items.slice(0, PER_TOPIC).map((n) => n.title);
+      return items
+        .slice(0, PER_TOPIC)
+        .map((n) => ({ title: n.title, url: n.link }));
     } catch {
       // Satu topik gagal tidak boleh menjatuhkan yang lain.
       return [];
     }
   };
   const [church, nation] = await Promise.all([
-    titles('church'),
-    titles('nation'),
+    kliping('church'),
+    kliping('nation'),
   ]);
   if (church.length === 0 && nation.length === 0) return false;
 
+  // `points` ikut ditulis walau `items` sudah memuat judulnya: kalau suatu saat
+  // ada versi app lama yang masih membaca bentuk lama, ia tetap mendapat
+  // judulnya, bukan kartu kosong.
   await setDoc(doc(db, 'users', uid, 'world', 'prayerNews'), {
     weekId: weekDocId(now),
-    points: { church, nation },
+    points: { church: church.map((n) => n.title), nation: nation.map((n) => n.title) },
+    items: { church, nation },
   });
   return true;
 }
 
-/** Kliping topik ini — kosong kalau topiknya bukan Gereja/Negara. */
+/**
+ * Kliping topik ini — kosong kalau topiknya bukan Gereja/Negara.
+ *
+ * Dokumen bentuk lama (judul saja) tetap terbaca: judulnya keluar dengan
+ * `url` kosong, jadi barisnya muncul apa adanya dan cuma tidak bisa di-click.
+ */
 export function prayerNewsFor(
   news: PrayerNews | null,
   topic: IntercessionTopic,
-): string[] {
+): PrayerNewsItem[] {
   if (!news) return [];
   if (topic.key !== 'church' && topic.key !== 'nation') return [];
-  return (news.points ?? EMPTY)[topic.key];
+  const baru = news.items?.[topic.key];
+  if (baru && baru.length > 0) return baru;
+  return (news.points ?? EMPTY)[topic.key].map((title) => ({ title, url: '' }));
 }
 
 /**
@@ -152,9 +204,18 @@ export function withWeeklyNews(
 ): IntercessionTopic {
   const extra = prayerNewsFor(news, topic);
   if (extra.length === 0) return topic;
+  // 📰 = penanda "ini kejadian nyata minggu ini", beda dari pokok doa tetap.
+  const baris = extra.map((n) => `📰 ${n.title}`);
+  // Tautannya dititipkan di `links`, dikunci TEKS BARISNYA sendiri. Dengan
+  // begitu penggambar yang tidak peduli tautan tetap cukup membaca `points`
+  // seperti biasa, dan yang peduli tinggal mencarinya di sini.
+  const links: Record<string, string> = {};
+  extra.forEach((n, i) => {
+    if (n.url) links[baris[i]] = n.url;
+  });
   return {
     ...topic,
-    // 📰 = penanda "ini kejadian nyata minggu ini", beda dari pokok doa tetap.
-    points: [...topic.points, ...extra.map((t) => `📰 ${t}`)],
+    points: [...topic.points, ...baris],
+    links: Object.keys(links).length > 0 ? links : undefined,
   };
 }

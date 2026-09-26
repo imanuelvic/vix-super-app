@@ -76,7 +76,7 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
                 {s.serviceTime ? (
                   <InfoChip label={`🕙 ${s.serviceTime}`} />
                 ) : null}
-                {cardLocked ? <InfoChip label="🔒 Arsip" tone="muted" /> : null}
+                {cardLocked ? <InfoChip label="🔒 Terkunci" tone="muted" /> : null}
               </View>
               {/* Kutipannya saja. Catatan & aplikasinya SENGAJA tidak
                   mengintip di sini: keduanya berbaris-baris, dan cuplikan dua

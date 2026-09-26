@@ -77,7 +77,11 @@ console.log('\n  — yang memang terbuka, cek tempatnya saja —');
 const BOLEH = {
   // AI-GRATIS.md (ter-commit 14 Sep 2026) menyebut nama proyek seperti README.
   // RINGKASAN-APLIKASI.md (22 Sep 2026) & rencana .claude/plans menyebut nama app = nama proyek.
-  EXPO_PUBLIC_FIREBASE_PROJECT_ID: /^(README\.md|SECURITY\.md|AI-GRATIS\.md|PEDOMAN-VERSI\.md|RELEASE\.md|RINGKASAN-APLIKASI\.md|\.claude\/|app\.json|package\.json|firestore\.rules|storage\.rules|eas\.json|yarn\.lock|assets\/|components\/|lib\/|app\/)/,
+  // `cek/` masuk daftar sejak 24 Sep 2026, saat seluruh suite verifikasi
+  // pindah dari folder sementara ke dalam repo. Suite memang menyebut nama
+  // app-nya (mis. memastikan berkas cadangan menulis `app: 'vix-super-app'`),
+  // dan nama itu = PROJECT_ID = nama repo ini sendiri: terbuka, bukan rahasia.
+  EXPO_PUBLIC_FIREBASE_PROJECT_ID: /^(README\.md|SECURITY\.md|AI-GRATIS\.md|PEDOMAN-VERSI\.md|RELEASE\.md|RINGKASAN-APLIKASI\.md|\.claude\/|cek\/|app\.json|package\.json|firestore\.rules|storage\.rules|eas\.json|yarn\.lock|assets\/|components\/|lib\/|app\/)/,
   EXPO_PUBLIC_OWNER_EMAIL: /^(firestore\.rules|storage\.rules|SECURITY\.md)$/,
 };
 for (const k of TERBUKA) {

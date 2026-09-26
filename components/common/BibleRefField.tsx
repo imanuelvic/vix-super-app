@@ -7,6 +7,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SearchBar } from '@/components/common/SearchBar';
 import { VixText } from '@/components/common/VixText';
+import { openYouVersion } from '@/lib/spiritual';
 import {
   BIBLE_BOOKS,
   bibleBook,
@@ -228,11 +229,16 @@ export function BibleRefField({
         </View>
       )}
 
-      {/* Pratinjau hasil */}
+      {/* Pratinjau hasil — sekaligus PINTU ke YouVersion (26 Sep 2026).
+          Acuan yang barusan kamu susun ada tepat di sini, jadi di sinilah
+          tempat paling masuk akal untuk membukanya dan benar-benar membacanya.
+          Garis bawahnya yang memberi tahu ia bisa di-click. */}
       {value ? (
-        <VixText heading="label" additionalStyle={styles.preview}>
-          ✍️ {value}
-        </VixText>
+        <PressableScale onPress={() => void openYouVersion(value)} hitSlop={6}>
+          <VixText heading="label" additionalStyle={[styles.preview, styles.previewLink]}>
+            ✍️ {value}
+          </VixText>
+        </PressableScale>
       ) : null}
 
       {/* Daftar 66 kitab — bisa dicari */}
@@ -294,6 +300,7 @@ const styles = StyleSheet.create({
   numberBox: { flex: 1, gap: 4 },
   numberLabel: { marginLeft: 2 },
   preview: { color: Color.MAIN_DARK },
+  previewLink: { textDecorationLine: 'underline' },
   modalTitle: { color: Color.TEXT_TITLE, marginBottom: 10 },
   list: { maxHeight: 380, marginTop: 8 },
   groupTitle: { color: Color.MAIN_DARK, marginTop: 8, marginBottom: 4 },

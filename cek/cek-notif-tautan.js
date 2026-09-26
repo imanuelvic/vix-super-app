@@ -69,6 +69,8 @@ const model = (over = {}) => ({
   reflection: { available: true, text: '', written: false, showGenerate: false, emphasis: false },
   // 🌙 Night Prayer: dihitung sepanjang hari, jadi ia selalu ada di modelnya.
   night: over.night || { summary: '3 syukur · 2 pengakuan · 4 permohonan · 🌏 Dunia', done: false },
+  // 26 Sep 2026: pengingat olahraga 21.00 ikut membaca model ini.
+  fitness: over.fitness || { unanswered: false, picked: '' },
 });
 const item = (section, id, href) => ({
   id, section, tier: 'today', rank: 3, emoji: '🔔', title: id, href,
@@ -245,8 +247,8 @@ console.log('\n=== 8. Layar Notification 📳 ===');
   ok('tiap kelompok menyebut ke mana notifikasinya mendarat', /Click → \{g\.opens\}/.test(s));
   ok('istilahnya "Click", bukan tekan/ketuk/tap',
     !/\b(tekan|ditekan|menekan|ketuk|diketuk|tap)\b/i.test(s.replace(/^\s*\/\/.*$/gm, '')));
-  ok('sembilan kelompok punya keterangan tujuannya',
-    N.NOTIFY_GROUPS.length === 9 && N.NOTIFY_GROUPS.every((g) => typeof g.opens === 'string' && g.opens.length > 0));
+  ok('kesepuluh kelompok punya keterangan tujuannya',
+    N.NOTIFY_GROUPS.length === 10 && N.NOTIFY_GROUPS.every((g) => typeof g.opens === 'string' && g.opens.length > 0));
   const teks = N.NOTIFY_GROUPS.map((g) => `${g.label} ${g.when} ${g.opens}`);
   ok('tanpa em dash di teks yang terbaca',
     teks.every((t) => !t.includes(String.fromCharCode(0x2014))) &&

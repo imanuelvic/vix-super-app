@@ -4,7 +4,7 @@ import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 
-// Chip keterangan kecil — "🎤 Ps. Michael", "🕙 Ibadah 3", "🔒 Arsip",
+// Chip keterangan kecil — "🎤 Ps. Michael", "🕙 Ibadah 3", "🔒 Terkunci",
 // "📖 Yeremia 29:11", "🕗 18.00–20.00".
 //
 // BUKAN tombol: ia tidak bisa di-click dan tidak menandakan pilihan. Tugasnya
@@ -24,7 +24,7 @@ import { useFeatureTheme } from '@/hooks/useFeatureTheme';
  * `feature` — ikut fitur tempat ia berdiri (useFeatureTheme), sama seperti
  *   <MiniButton/> & <SummaryCard/>: ungu di Spiritual, cokelat di Friends.
  * `muted`   — krem netral untuk keadaan yang BUKAN kabar, cuma penanda
- *   (mis. "🔒 Arsip"): ia tidak boleh menyaingi keterangan aslinya.
+ *   (mis. "🔒 Terkunci"): ia tidak boleh menyaingi keterangan aslinya.
  * `onDark`  — putih redup, untuk chip yang berdiri DI ATAS kartu gelap
  *   (<SummaryCard/>), tempat warna fitur justru menghilang ke latarnya.
  */

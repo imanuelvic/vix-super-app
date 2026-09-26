@@ -275,7 +275,7 @@ export default function SermonScreen() {
                 {note.serviceTime ? (
                   <InfoChip label={`🕙 ${note.serviceTime}`} />
                 ) : null}
-                {!bisaDiubah ? <InfoChip label="🔒 Arsip" tone="muted" /> : null}
+                {!bisaDiubah ? <InfoChip label="🔒 Terkunci" tone="muted" /> : null}
               </View>
             ) : null}
 
@@ -323,7 +323,7 @@ export default function SermonScreen() {
               </PressableScale>
             ) : (
               <VixText heading="label" additionalStyle={styles.lockNote}>
-                🔒 Arsip
+                🔒 Terkunci
               </VixText>
             )}
           </ActionStack>

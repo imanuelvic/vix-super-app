@@ -92,8 +92,12 @@ ok('gridnya tidak menimpa alignItems (stretch bawaan yang merentang petak)',
 ok('batang kategori masih selebar petak & jadi anak BadgeTile',
   /catBar: \{\s*\n\s*width: '100%',/.test(layar) &&
   /<BadgeTile[\s\S]{0,400}<View style=\{styles\.catBar\}>/.test(layar));
+// 26 Sep 2026: tulisan "✅ terbuka" pindah ke rewardDateLabel() — lencana yang
+// tanggalnya tercatat menampilkan tanggalnya, yang terbuka sebelum pencatatan
+// dimulai tetap "✅ terbuka". Bentuk petaknya sendiri tidak berubah.
 ok('halaman kategori memakai petak yang sama (teks angkanya ikut sejajar)',
-  /<BadgeTile[\s\S]{0,300}<VixText[\s\S]{0,200}✅ terbuka/.test(laman));
+  /<BadgeTile[\s\S]{0,400}<VixText[\s\S]{0,200}rewardDateLabel\(dates, a\.id\)/.test(laman) &&
+  /return '✅ terbuka';/.test(baca('lib/reward.ts')));
 ok('judul tetap maksimal dua baris', /numberOfLines=\{2\}/.test(petak));
 
 console.log(gagal === 0 ? '\n✅ LULUS — papan sejajar & urutannya sesuai permintaan.'

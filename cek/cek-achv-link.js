@@ -71,9 +71,16 @@ const layar = baca('app/reward-category.tsx');
 ok('kategori dibaca dari parameter tautan',
   /const \{ cat \} = useLocalSearchParams<\{ cat\?: string \}>\(\);/.test(layar) &&
   /const key = rewardCategoryOf\(cat\);/.test(layar));
+// 26 Sep 2026: layar ini sekarang PUNYA useEffect, tapi bukan untuk membaca
+// paramnya — itu untuk MENULIS tanggal terbukanya lencana. Jadi yang dijaga
+// diperjelas: kategorinya tetap diturunkan saat render (tidak ada keadaan
+// perantara yang bikin halaman kosong sekejap), dan tidak ada satu pun efek
+// yang menyetel kategori itu.
 ok('dibaca saat render, bukan lewat efek — isinya ada sejak render pertama ' +
    '(tak ada kedipan halaman kosong dulu)',
-  !/useEffect/.test(layar));
+  /const key = rewardCategoryOf\(cat\);/.test(layar) &&
+  !/setKey\(/.test(layar) &&
+  !/useState[^\n]*key/i.test(layar));
 ok('kategori tak dikenal → halaman jujur, bukan layar rusak',
   /const meta = REWARD_CATEGORIES\.find\(\(c\) => c\.key === key\);/.test(layar) &&
   /if \(!meta\) \{/.test(layar));

@@ -266,14 +266,6 @@ export default function VersionScreen() {
           📦 Cadangan Data
         </VixText>
         <View style={styles.usageCard}>
-          <VixText heading="paragraph" additionalStyle={styles.backupText}>
-            Salin seluruh datamu jadi satu berkas JSON, lalu simpan ke Files
-            atau iCloud. Semua hapus di app ini permanen, jadi ini satu-satunya
-            jalan pulang kalau ada yang hilang.
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.backupHint}>
-            Membaca semua dokumen sekali jalan, jadi cukup sebulan sekali.
-          </VixText>
           <PrimaryButton
             label={exportStep ? `Membaca ${exportStep}` : 'Ekspor semua data'}
             icon="square.and.arrow.up"
@@ -350,10 +342,6 @@ const styles = StyleSheet.create({
   usageName: { color: Color.TEXT_TITLE, flex: 1 },
   usageCount: { color: Color.MAIN_DARK },
   usageEmpty: { color: Color.TEXT_PLACEHOLDER, flex: 1, paddingVertical: 4 },
-  // Cadangan data 📦 — menumpang kartu yang sama dengan laporan pemakaian,
-  // jadi tidak ada bentuk kartu baru yang perlu dijaga.
-  backupText: { color: Color.TEXT_PARAGRAPH, paddingTop: 10 },
-  backupHint: { color: Color.TEXT_LABEL, paddingTop: 6 },
   backupButton: { marginTop: 12, marginBottom: 10 },
   backupNote: { color: Color.MAIN_DARK, paddingBottom: 10 },
 });

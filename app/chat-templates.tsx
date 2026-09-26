@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -57,7 +57,14 @@ export default function ChatTemplatesScreen() {
   // Yang disimpan cuma PILIHAN di dropdown (+ nama ketikan kalau "nama lain").
   // Nama jadinya diturunkan dari situ, bukan disalin ke state kedua — kalau
   // disalin, mengganti nama CL di layar CORE tidak akan ikut terbarui di sini.
-  const [pilihan, setPilihan] = useState<string>(GRUP);
+  // ?leader=<id> — dioper saat layar ini dibuka dari dialog Follow Up seseorang
+  // (26 Sep 2026). Tanpa ini, datang dari dialog David lalu menemukan dropdown
+  // berisi "Grup CORE" terasa seperti app-nya lupa siapa yang barusan dibuka.
+  //
+  // Dipakai sebagai nilai AWAL saja, bukan dikunci: begitu di layar, dropdownnya
+  // tetap bebas diganti ke Grup CORE atau CL lain.
+  const { leader: leaderParam } = useLocalSearchParams<{ leader?: string }>();
+  const [pilihan, setPilihan] = useState<string>(leaderParam || GRUP);
   const [namaLain, setNamaLain] = useState('');
   const [gelar, setGelar] = useState('');
 

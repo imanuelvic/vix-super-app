@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -23,7 +24,9 @@ import {
     BIBLE_VERSION_DEFAULT,
     bibleHasOther,
     bibleSessionMeta,
+    bibleSessionNow,
     bibleSessionOfClock,
+    bibleSuggestion,
     deleteBibleReading,
     isBibleSkipped,
     openYouVersion,
@@ -50,6 +53,7 @@ export function BibleReadingTab({
   openSession?: BibleSession;
 }) {
   const { user } = useAuth();
+  const router = useRouter();
 
   // Default: sesi yang dituju; kalau tidak ada, sesi yang JAM SEKARANG
   // termasuk di dalamnya (lihat bibleSessionOfClock — pagi dari jam 1, siang
@@ -75,6 +79,16 @@ export function BibleReadingTab({
   const list = days.filter((d) => !!d[session] && !isBibleSkipped(d[session]));
   const meta = bibleSessionMeta(session);
   const todayId = dayDocId(new Date());
+
+  // Jendela jam sesi ini sedang berjalan? (pagi 05-10, siang 12-14, malam 21-24)
+  // `bibleSessionNow` mengembalikan null di luar ketiga jendela itu, jadi di
+  // jam kerja kartunya memang tidak muncul di sesi mana pun.
+  const sedangJam = bibleSessionNow(new Date()) === session;
+  // Sudah dicatat hari ini? Hari yang sengaja DILEWATI ikut terhitung sudah
+  // diurus — kartunya berhenti menagih, sama seperti badge & kartu Home.
+  const hariIni = days.find((d) => d.id === todayId);
+  const sudahHariIni = !!hariIni?.[session];
+  const saran = bibleSuggestion(days, session);
 
   // 10 kartu per halaman — arsip ini menumpuk terus tiap hari, jadi tanpa
   // paginasi daftarnya jadi gulungan tanpa ujung. `key={currentPage}` di
@@ -144,6 +158,40 @@ export function BibleReadingTab({
           value={session}
           onChange={setSession}
         />
+
+        {/* 📖 Kartu "waktunya baca" (26 Sep 2026).
+            Muncul HANYA saat jendela jam sesi ini sedang berjalan DAN hari ini
+            belum dicatat. Dulu tab ini murni arsip: kalau jamnya tiba, satu-
+            satunya jalan adalah mengingat sendiri untuk membuka kartu di Home.
+
+            Pasal lanjutannya dihitung dari `days` yang MEMANG SUDAH ADA di
+            layar ini (bibleSuggestion itu fungsi murni), jadi kartu ini tidak
+            menambah satu pun pembacaan Firestore. */}
+        {sedangJam && !sudahHariIni && (
+          <View style={styles.nowCard}>
+            <VixText heading="bold" additionalStyle={styles.nowTitle}>
+              {meta.emoji} Waktunya baca {meta.label}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.nowSub}>
+              {saran
+                ? saran.finished
+                  ? `${saran.last} sudah tamat. Pilih kitab berikutnya 📖`
+                  : `Lanjut dari ${saran.last} → ${saran.next}`
+                : 'Belum ada riwayat sesi ini. Mulai dari kitab mana pun 📖'}
+            </VixText>
+            <DualButtons
+              cancelLabel="📖 Baca"
+              confirmLabel="✅ Sudah baca"
+              // Kitab yang sudah tamat tidak punya pasal berikutnya (`next`
+              // null) → YouVersion dibuka apa adanya, biar kitab barunya
+              // dipilih sendiri di sana.
+              onCancel={() => void openYouVersion(saran?.next ?? undefined, saran?.version)}
+              onConfirm={() =>
+                router.push({ pathname: '/bible-reading', params: { session } })
+              }
+            />
+          </View>
+        )}
 
         {list.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
@@ -259,6 +307,19 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   empty: { textAlign: 'center', marginTop: 20 },
+  // Kartu "waktunya baca": pastel Spiritual supaya ia menonjol di atas arsip
+  // yang putih, tapi tetap satu keluarga warna dengan fiturnya.
+  nowCard: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Color.SPIRITUAL_DARK,
+    padding: 14,
+    gap: 8,
+    marginBottom: 12,
+  },
+  nowTitle: { color: Color.SPIRITUAL_DEEP },
+  nowSub: { color: Color.SPIRITUAL_DARK },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

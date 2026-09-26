@@ -54,7 +54,7 @@ export type FitBlock = 'A' | 'B' | 'C';
  * - `walk`             = pemulihan. Boleh dicentang (bonus), tapi tidak pernah
  *                        menaikkan maupun memutus streak.
  */
-export type FitKind = 'strength' | 'run' | 'walk';
+export type FitKind = 'strength' | 'run' | 'walk' | 'swim';
 
 export type Exercise = {
   id: string; // stabil — kunci untuk beban tersimpan & centang harian
@@ -119,6 +119,31 @@ const WALK_SUN: FitSession = {
   exercises: [
     { id: 'morningwalk', emoji: '🚶', name: 'Jalan pagi santai', sets: 1, reps: '30 menit', weight: null, cardio: true },
     { id: 'mobility', emoji: '🧘', name: 'Mobility bahu & pinggul', sets: 1, reps: '10 menit', weight: null, cardio: true },
+  ],
+};
+
+// ===================== Berenang 🏊 (26 Sep 2026) =====================
+//
+// TIDAK ada di program mingguan mana pun, dan itu disengaja: ini pilihan
+// bebas yang kamu ambil sendiri saat memang ke kolam. Karena itu `weekday`-nya
+// tidak berarti apa-apa di sini — program dibaca dari FIT_PROGRAM, bukan dari
+// daftar pilihan ini.
+//
+// Dihitung sebagai latihan penuh (bukan pemulihan seperti jalan pagi), jadi
+// hari berenang tetap terbaca sebagai hari olahraga di Today & streak.
+
+const SWIM: FitSession = {
+  id: 'swim',
+  weekday: 6,
+  kind: 'swim',
+  emoji: '🏊',
+  title: 'Berenang',
+  focus: 'Seluruh badan, tanpa beban di lutut & punggung',
+  minutes: 50,
+  exercises: [
+    { id: 'swimwarmup', emoji: '🧘', name: 'Peregangan di tepi kolam', sets: 1, reps: '5 menit', weight: null, cardio: true },
+    { id: 'swimmain', emoji: '🏊', name: 'Berenang santai, boleh ganti gaya', sets: 1, reps: '40 menit', weight: null, cardio: true },
+    { id: 'swimcooldown', emoji: '🏊', name: 'Renang pelan pendinginan', sets: 1, reps: '5 menit', weight: null, cardio: true },
   ],
 };
 
@@ -466,6 +491,7 @@ export const FIT_MENU: FitSession[] = [
   ...BLOCK_C.filter((s) => s.kind !== 'walk'),
   WALK_WED,
   WALK_SUN,
+  SWIM,
 ];
 
 /**
@@ -478,10 +504,11 @@ export function fitMenuById(id: string): FitSession | undefined {
   return FIT_MENU.find((s) => s.id === id);
 }
 
-/** Kelompok daftar pilihan: beban dulu, lalu lari, jalan terakhir. */
+/** Kelompok daftar pilihan: beban dulu, lalu lari, renang, jalan terakhir. */
 export const FIT_MENU_GROUPS: { kind: FitKind; emoji: string; label: string }[] = [
   { kind: 'strength', emoji: '💪', label: 'Angkat Beban' },
   { kind: 'run', emoji: '🏃', label: 'Lari' },
+  { kind: 'swim', emoji: '🏊', label: 'Renang' },
   { kind: 'walk', emoji: '🚶', label: 'Jalan' },
 ];
 
@@ -853,6 +880,20 @@ export function fitMirrorState(
   now: Date,
 ): { done: boolean; skipped: boolean } {
   return { done: fitDayComplete(day, now), skipped: day.skipped };
+}
+
+/**
+ * Olahraga hari ini BELUM DIJAWAB: belum beres, dan tidak sengaja dilewati.
+ * Hari yang belum dipilih paketnya pun terhitung belum dijawab.
+ *
+ * Bedanya dengan `fitPendingToday`: yang itu ikut jendela jam (05–09 & 16–21)
+ * supaya badge & kartu Dashboard tidak menagih sepanjang jam kerja, jadi lewat
+ * jam 21 ia selalu 0. Yang ini TIDAK melihat jam sama sekali — dipakai
+ * pengingat malam, yang justru berbunyi tepat saat jendela itu sudah tutup.
+ */
+export function fitUnanswered(day: FitDay, now: Date): boolean {
+  const { done, skipped } = fitMirrorState(day, now);
+  return !done && !skipped;
 }
 
 /**

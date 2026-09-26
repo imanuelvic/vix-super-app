@@ -60,63 +60,49 @@ export const CHAT_CATEGORIES: ChatCategory[] = [
         text: `Pagiiiii Semangat kerja di minggu baru, tetapp kuattt dan teguhhh!!! Bisa yokkk
 
 📖 Yosua 1:9
-Bukankah telah Kuperintahkan kepadamu: kuatkan dan teguhkanlah hatimu? Janganlah kecut dan tawar hati, sebab TUHAN, Allahmu, menyertai engkau, ke mana pun engkau pergi.
-
-➡️ Apapun yang kamu hadapi minggu ini, ingat: Tuhan jalan bareng kamu. Be strong, let's go! 💪`,
+Bukankah telah Kuperintahkan kepadamu: kuatkan dan teguhkanlah hatimu? Janganlah kecut dan tawar hati, sebab TUHAN, Allahmu, menyertai engkau, ke mana pun engkau pergi.`,
       },
       {
         key: 'Selasa',
         text: `Pagi <nama>! 🌱 Hal kecil yang dirimu lakukan hari ini bisa berdampak besar ke depan. Sooo.. semangatttttt mengerjakan hal2 yg terlihat kecilll
 
 📖 Lukas 16:10
-Barangsiapa setia dalam perkara-perkara kecil, ia setia juga dalam perkara-perkara besar. Dan barangsiapa tidak benar dalam perkara-perkara kecil, ia tidak benar juga dalam perkara-perkara besar.
-
-➡️ Tuhan lihat kesetiaanmu, bahkan yang tidak dilihat orang. Tetap lakukan dengan hati yang benar 🙌`,
+Barangsiapa setia dalam perkara-perkara kecil, ia setia juga dalam perkara-perkara besar. Dan barangsiapa tidak benar dalam perkara-perkara kecil, ia tidak benar juga dalam perkara-perkara besar.`,
       },
       {
         key: 'Rabu',
         text: `Selamat pagi <nama>! 🔥 Midweek biasanya mulai capek, tapi justru di sini kita dilatih untuk tetap konsisten. menyalaaaa Burn and Blaze!🔥
 
 📖 Mazmur 28:7
-TUHAN adalah kekuatanku dan perisaiku; kepada-Nya hatiku percaya. Aku tertolong sebab itu beria-ria hatiku, dan dengan nyanyianku aku bersyukur kepada-Nya.
-
-➡️ Kamu bukan orang yang lemah. Ada kuasa Tuhan dalam dirimu. Stay strong & keep going!`,
+TUHAN adalah kekuatanku dan perisaiku; kepada-Nya hatiku percaya. Aku tertolong sebab itu beria-ria hatiku, dan dengan nyanyianku aku bersyukur kepada-Nya.`,
       },
       {
         key: 'Kamis',
         text: `Pagiii!! Hari ini jangan cuma jalanin sbg rutinitas, tapi jalani dengan purpose!!
 
 📖 Kolose 3:23
-Apapun juga yang kamu perbuat, perbuatlah dengan segenap hatimu seperti untuk Tuhan dan bukan untuk manusia.
-
-➡️ Apa yang kamu lakukan hari ini, lakukan untuk Tuhan. Itu yang membuat hidupmu berbeda ✨`,
+Apapun juga yang kamu perbuat, perbuatlah dengan segenap hatimu seperti untuk Tuhan dan bukan untuk manusia.`,
       },
       {
         key: 'Jumat',
         text: `Selamat pagi! ☀️ uda mo akhir minggu, mangatsss finish strong!
 
 📖 Ibrani 12:11
-Memang tiap-tiap ganjaran pada waktu ia diberikan tidak mendatangkan sukacita, tetapi dukacita. Tetapi kemudian ia menghasilkan buah kebenaran yang memberikan damai kepada mereka yang dilatih olehnya.
-
-➡️ Proses mungkin gak enak, tapi hasilnya pasti indah. Jangan berhenti di tengah jalan 🙏`,
+Memang tiap-tiap ganjaran pada waktu ia diberikan tidak mendatangkan sukacita, tetapi dukacita. Tetapi kemudian ia menghasilkan buah kebenaran yang memberikan damai kepada mereka yang dilatih olehnya.`,
       },
       {
         key: 'Sabtu',
         text: `Pagi yang tenang 🌿 Ambil waktu untuk recharge, bukan cuma fisik tapi juga roh.
 
 📖 Mazmur 62:2
-Hanya dekat Allah saja aku tenang, dari pada-Nyalah keselamatanku.
-
-➡️ Di tengah kesibukan, balik lagi ke Tuhan. Di situ kamu dipulihkan 🕊️`,
+Hanya dekat Allah saja aku tenang, dari pada-Nyalah keselamatanku.`,
       },
       {
         key: 'Minggu',
         text: `Selamat hari Minggu! 🙏 Hari untuk kembali diingatkan siapa sumber hidup kita. Semangatt meng Restoring Energy🔋⚡
 
 📖 Matius 11:28
-Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi kelegaan kepadamu.
-
-➡️ Datang ke Tuhan hari ini, bawa semua bebanmu. Dia siap memulihkan dan menguatkanmu kembali 🤍`,
+Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi kelegaan kepadamu.`,
       },
     ],
   },

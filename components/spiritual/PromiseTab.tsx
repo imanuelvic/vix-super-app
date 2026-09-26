@@ -76,6 +76,10 @@ export function PromiseTab({ list }: { list: HisPromise[] }) {
               }>
               <View style={styles.metaRow}>
                 {p.verse ? <InfoChip label={`📖 ${p.verse}`} /> : null}
+                {/* 🔒 Penanda terkunci — bentuk & kata yang SAMA dengan
+                    Catatan Khotbah & Revive, jadi artinya tidak perlu
+                    dipelajari lagi di tiap fitur. */}
+                {p.locked ? <InfoChip label="🔒 Terkunci" tone="muted" /> : null}
                 <VixText
                   heading="label"
                   additionalStyle={genap ? styles.doneChip : styles.waitChip}>

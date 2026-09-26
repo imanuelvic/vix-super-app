@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,12 +9,20 @@ import { EmptyText } from '@/components/common/EmptyText';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
+import { useAuth } from '@/contexts/auth';
+import { useLive } from '@/hooks/useLive';
+import { useNow } from '@/hooks/useNow';
 import { useRewardStats } from '@/hooks/useRewardStats';
 import {
+  EMPTY_REWARD_DATES,
   rewardCategoryOf,
+  rewardDateLabel,
   REWARDS,
   REWARD_CATEGORIES,
   categoryNow,
+  subscribeRewardDates,
+  syncRewardDates,
+  type RewardDates,
 } from '@/lib/reward';
 
 // Rincian SATU kategori pencapaian — grid lencana ala papan Reward Duolingo.
@@ -29,9 +37,22 @@ import {
 export default function RewardCategoryScreen() {
   const { cat } = useLocalSearchParams<{ cat?: string }>();
   const { stats, error } = useRewardStats();
+  const { user } = useAuth();
+  const { todayId } = useNow();
 
   // Lencana yang sedang di-click (null = belum ada yang dipilih).
   const [pickedId, setPickedId] = useState<string | null>(null);
+
+  // 📅 Tanggal terbukanya lencana. Satu dokumen kecil, dilanggan di sini dan
+  // disusulkan saat ada yang baru terbuka — lihat lib/reward.ts untuk kenapa
+  // yang lama sengaja tanpa tanggal.
+  const [dates] = useLive<RewardDates>(subscribeRewardDates, {
+    initial: EMPTY_REWARD_DATES,
+  });
+  useEffect(() => {
+    if (!user) return;
+    syncRewardDates(user.uid, dates, stats, todayId).catch(() => {});
+  }, [user, dates, stats, todayId]);
 
   // Nama kategorinya datang dari URL, jadi ia disaring — bukan dipercaya.
   const key = rewardCategoryOf(cat);
@@ -100,7 +121,7 @@ export default function RewardCategoryScreen() {
                   heading="label"
                   additionalStyle={done ? styles.doneText : styles.lockText}>
                   {done
-                    ? '✅ terbuka'
+                    ? rewardDateLabel(dates, a.id)
                     : a.fmt
                       ? `${a.fmt(Math.min(value, a.target))}/${a.fmt(a.target)}`
                       : `${Math.min(value, a.target)}/${a.target}`}

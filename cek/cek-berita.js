@@ -250,7 +250,14 @@ async function main() {
     /Sudah kirim Motivational Word \{todayName\(\)\} ke grup CORE\?/.test(fu));
   c('menyebut HARI ini, bukan kalimat umum', /todayName\(\)/.test(fu) &&
     /from '@\/lib\/chatTemplates'/.test(fu));
-  c('click-nya membuka Template Chat', /router\.push\('\/chat-templates'\)/.test(fu));
+  // 26 Sep 2026: nama CL yang sedang dibuka ikut dibawa, jadi dropdown "Nama
+  // yang Dituju" di Template Chat sudah terisi orangnya — bukan "Grup CORE"
+  // yang terasa seperti app-nya lupa siapa yang barusan dibuka.
+  c('click-nya membuka Template Chat, membawa nama CL yang sedang dibuka',
+    /pathname: '\/chat-templates',\s*\n\s*params: \{ leader: l\.id \}/.test(fu) &&
+    /const \{ leader: leaderParam \} = useLocalSearchParams/.test(
+      baca('app/chat-templates.tsx')) &&
+    /useState<string>\(leaderParam \|\| GRUP\)/.test(baca('app/chat-templates.tsx')));
   // Tombol Chat WA yang sama dipakai DUA modal (Doa Rantai & Follow Up), jadi
   // yang dibandingkan harus yang di modal Follow Up — yaitu yang TERAKHIR.
   c('letaknya PERSIS di atas tombol Chat WA modal Follow Up', (() => {

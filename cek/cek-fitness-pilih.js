@@ -77,8 +77,21 @@ const kosong = { done: {}, skipped: false, picks: [], runs: {} };
 console.log('=== 1. Katalog paket — 18, idnya tetap & unik ===');
 // ============================================================
 c('hari itu memang Senin (dasar cek saran program di bawah)', SENIN.getDay() === 1);
-c('katalognya 18 paket', F.FIT_MENU.length === 18, String(F.FIT_MENU.length));
-c('tiap id unik', new Set(F.FIT_MENU.map((s) => s.id)).size === 18);
+// 26 Sep 2026: + 🏊 Berenang 50 menit (permintaan pemiliknya). Pilihan BEBAS,
+// tidak masuk program mingguan mana pun.
+c('katalognya 19 paket', F.FIT_MENU.length === 19, String(F.FIT_MENU.length));
+c('tiap id unik', new Set(F.FIT_MENU.map((s) => s.id)).size === 19);
+{
+  const renang = F.FIT_MENU.find((s) => s.kind === 'swim');
+  c('🏊 Berenang ada, 50 menit, dan gerakannya menjumlah 50 menit juga',
+    !!renang && renang.title === 'Berenang' && renang.minutes === 50 &&
+      renang.exercises.reduce((n, e) => n + Number(String(e.reps).replace(/\D/g, '')), 0) === 50,
+    renang ? String(renang.minutes) : 'tidak ada');
+  // Renang BUKAN hari pemulihan seperti jalan pagi: hari berenang harus tetap
+  // terbaca sebagai hari olahraga penuh di Today & streak.
+  c('renang tidak dianggap hari pemulihan (bukan kind walk)',
+    !!renang && renang.kind !== 'walk');
+}
 c('tiap paket punya isi yang lengkap',
   F.FIT_MENU.every(
     (s) => s.id && s.emoji && s.title && s.focus && s.minutes > 0 && s.exercises.length > 0,
@@ -87,8 +100,8 @@ c('tiap paket punya isi yang lengkap',
 // di daftar pilihan sebagai tiga paket berbeda yang isinya sama persis.
 c('paket jalan tidak tersalin per blok',
   F.FIT_MENU.filter((s) => s.kind === 'walk').length === 2);
-c('ketiga kelompoknya terwakili',
-  F.FIT_MENU_GROUPS.map((g) => g.kind).join() === 'strength,run,walk' &&
+c('keempat kelompoknya terwakili (beban · lari · renang · jalan)',
+  F.FIT_MENU_GROUPS.map((g) => g.kind).join() === 'strength,run,swim,walk' &&
     F.FIT_MENU_GROUPS.every((g) => F.FIT_MENU.some((s) => s.kind === g.kind)));
 // Paket berjudul sama di blok A & B cuma beda gerakannya — tanpa penanda
 // variasi keduanya terbaca sebagai satu paket yang muncul dua kali.

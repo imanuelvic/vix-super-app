@@ -163,7 +163,7 @@ export function WorkFocusTab({
 
       <View style={styles.card}>
         <VixText heading="eyebrow" additionalStyle={styles.eyebrow}>
-          Harus dikirim
+          Harus Diselesaikan
         </VixText>
         {mendesak.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.quiet}>

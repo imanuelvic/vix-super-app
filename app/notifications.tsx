@@ -138,16 +138,6 @@ export default function NotificationsScreen() {
               />
             </View>
           ))}
-
-          <VixText heading="label" additionalStyle={styles.note}>
-            Kelompok yang hari itu tidak punya isi tidak dibunyikan sama sekali, dan angka di ikon
-            app mengikuti jumlah baris hari ini di Today. Kalimatnya berganti tiap hari, dan
-            jamnya ikut menyesuaikan jam kamu biasa menyelesaikannya.
-          </VixText>
-          <VixText heading="label" additionalStyle={styles.note}>
-            Notifikasi yang menyebut SATU hal membuka layar hal itu persis, lengkap dengan sub-tab
-            dan isian yang menunggu. Yang menyebut beberapa hal sekaligus membuka layar induknya.
-          </VixText>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -167,5 +157,4 @@ const styles = StyleSheet.create({
   opens: { color: Color.DEVICE_DEEP },
   warn: { color: Color.WARNING },
   off: { opacity: 0.45 },
-  note: { marginTop: 4 },
 });

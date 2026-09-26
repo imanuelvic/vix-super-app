@@ -236,6 +236,10 @@ console.log('\n=== 8. Pengingat 🌙 22.00 ===');
     today: [], upNext: [], later: [],
     reflection: { available: true, text: '', written: false, showGenerate: false, emphasis: false },
     night,
+    // 26 Sep 2026: pengingat olahraga 21.00 ikut membaca model ini. Yang diuji
+    // di blok ini cuma slot 🌙, jadi olahraganya dibuat sudah beres supaya
+    // tidak ikut mempengaruhi apa pun.
+    fitness: { unanswered: false, picked: '' },
   });
   const slot = (night) =>
     N.buildSlots(model(night), null, { dayId: HARI }).find((s) => s.id === 'night-prayer');
@@ -271,8 +275,14 @@ console.log('\n=== 9. Layarnya ===');
   ok('tanpa em dash & tanpa kata menyentuh layar',
     !bersih.includes(String.fromCharCode(0x2014)) &&
     !/\b(tekan|ditekan|menekan|ketuk|diketuk|tap|klik)\b/i.test(bersih));
-  ok('jujur bilang daftarnya tetap utuh, cuma dibawa sepotong',
-    /Daftar lengkapnya tetap utuh/.test(s));
+  // 26 Sep 2026: paragraf penutup "Daftar lengkapnya tetap utuh…" DIHAPUS
+  // pemiliknya dari layar. Yang dijaga digeser ke tempat yang memang tidak
+  // pernah dibaca orang lain tapi menentukan perilakunya: porsi per malam
+  // tetap sepotong (bukan seluruh daftar), dan seluruh daftarnya tetap utuh
+  // di lib — jadi jaminannya tetap terjaga walau kalimatnya sudah tidak ada.
+  ok('porsinya tetap sepotong per malam, daftar lengkapnya tetap utuh di lib',
+    /PER_MALAM: Record<'syukur' \| 'dosa' \| 'permohonan', number> = \{/.test(
+      baca('lib/nightPrayer.ts')));
 }
 
 console.log(gagal === 0 ? '\n✅ LULUS — doa malamnya rapih, berputar, & diingatkan.' : `\n❌ ${gagal} cek gagal.`);

@@ -40,6 +40,15 @@ export type IntercessionTopic = {
   emoji: string;
   label: string;
   points: string[];
+  /**
+   * Tautan untuk baris tertentu, dikunci teks barisnya sendiri (26 Sep 2026).
+   *
+   * Diisi kliping berita mingguan (lib/prayerNews.ts) supaya baris 📰 bisa
+   * di-click ke artikel aslinya. Sengaja opsional dan terpisah dari `points`:
+   * penggambar yang tidak peduli tautan tetap cukup membaca `points` seperti
+   * biasa, tanpa satu baris pun berubah.
+   */
+  links?: Record<string, string>;
 };
 
 /**

@@ -95,7 +95,7 @@ console.log('\n=== 2. Judul layar & sheet: Inggris ===');
     /title="Day by Day 🍽️"/.test(baca('app/fasting-days.tsx')) &&
     /title="Blood Donor 🩸"/.test(baca('app/donor.tsx')) &&
     /title="Visitation Recap 📊"/.test(baca('app/core-recap.tsx')) &&
-    /title="Monthly Prayer 🙏"/.test(baca('app/monthly-prayers.tsx')));
+    /title="Prayer Points 🙏"/.test(baca('app/monthly-prayers.tsx')));
   ok('pertanyaan konfirmasi SENGAJA tetap Indonesia (itu kalimat, bukan judul)',
     /title="Hapus janji ini\?"/.test(baca('app/promise.tsx')));
 }

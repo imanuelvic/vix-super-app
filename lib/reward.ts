@@ -551,3 +551,110 @@ export function resetRewards(uid: string) {
   }
   return batch.commit();
 }
+
+// ===================== 📅 Tanggal terbukanya lencana =====================
+//
+// Lencana di app ini DIHITUNG, bukan disimpan: `REWARDS` cuma membandingkan
+// angka sekarang dengan targetnya. Enak karena tidak pernah bisa basi, tapi
+// akibatnya tidak ada satu pun catatan KAPAN sebuah lencana terbuka.
+//
+// Pencatatan ini menambalnya ke depan, dan sengaja TIDAK mengarang ke
+// belakang: lencana yang sudah terbuka sebelum pencatatan dimulai ditandai
+// kosong, dan layarnya menulis "sudah terbuka" tanpa tanggal. Menaruh tanggal
+// hari ini di situ jauh lebih buruk daripada tidak punya tanggal sama sekali,
+// karena ia terbaca seolah-olah itu memang hari terbukanya.
+//
+// ⚠️ Tanggal yang tercatat adalah hari app INI PERTAMA KALI MELIHATNYA
+// terbuka, dan itu memang batasnya: tanpa server, tidak ada yang menghitung
+// saat app tertutup. Jadi ia tepat kalau layar Reward dibuka di hari yang
+// sama, dan bisa mundur beberapa hari kalau lama tidak dibuka.
+
+export type RewardDates = {
+  /** Hari pencatatan ini dimulai (dayId) — sebelum ini tidak ada catatan. */
+  since: string;
+  /**
+   * id lencana → dayId terbukanya.
+   * String KOSONG = sudah terbuka sebelum pencatatan dimulai (tanpa tanggal).
+   */
+  at: Record<string, string>;
+};
+
+export const EMPTY_REWARD_DATES: RewardDates = { since: '', at: {} };
+
+export function subscribeRewardDates(
+  uid: string,
+  onChange: (dates: RewardDates) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    doc(db, 'users', uid, 'app', 'rewardDates'),
+    (snapshot) => {
+      const d = snapshot.data();
+      // Dokumen belum ada → EMPTY (since kosong), bukan null. Dengan begitu
+      // pemanggilnya tidak pernah perlu membedakan null dari "belum pernah
+      // dicatat": `since` yang kosong sudah mengatakannya.
+      onChange(
+        d
+          ? { since: String(d.since ?? ''), at: (d.at ?? {}) as Record<string, string> }
+          : EMPTY_REWARD_DATES,
+      );
+    },
+    onError,
+  );
+}
+
+/**
+ * Apa yang perlu DITULIS supaya catatan tanggalnya menyusul keadaan sekarang.
+ * Murni: tidak menyentuh Firestore, jadi bisa diuji apa adanya.
+ *
+ * `null` = tidak ada yang perlu ditulis (keadaan paling sering, dan itulah
+ * sebabnya pencatatan ini praktis nol tulis).
+ */
+export function pendingRewardDates(
+  dates: RewardDates,
+  stats: RewardStats,
+  todayId: string,
+): RewardDates | null {
+  const terbuka = REWARDS.filter((a) => a.of(stats) >= a.target).map((a) => a.id);
+
+  // Pertama kali: seluruh yang SUDAH terbuka ditandai kosong (tanpa tanggal),
+  // karena hari terbukanya memang tidak pernah tercatat di mana pun.
+  if (!dates.since) {
+    const at: Record<string, string> = {};
+    for (const id of terbuka) at[id] = '';
+    return { since: todayId, at };
+  }
+
+  const baru = terbuka.filter((id) => dates.at[id] === undefined);
+  if (baru.length === 0) return null;
+
+  const at = { ...dates.at };
+  for (const id of baru) at[id] = todayId;
+  return { since: dates.since, at };
+}
+
+/** Tulis catatan tanggal kalau memang ada yang baru. Aman dipanggil berulang. */
+export async function syncRewardDates(
+  uid: string,
+  dates: RewardDates,
+  stats: RewardStats,
+  todayId: string,
+): Promise<boolean> {
+  const perlu = pendingRewardDates(dates, stats, todayId);
+  if (!perlu) return false;
+  await setDoc(doc(db, 'users', uid, 'app', 'rewardDates'), perlu);
+  return true;
+}
+
+/**
+ * Keterangan di bawah lencana yang sudah terbuka.
+ * "✅ Sab, 26 Sep 26" kalau tanggalnya tercatat, "✅ terbuka" kalau tidak.
+ */
+export function rewardDateLabel(
+  dates: RewardDates,
+  id: string,
+): string {
+  const at = dates.at[id];
+  if (!at) return '✅ terbuka';
+  return `✅ ${formatShortDayDate(dayIdToDate(at))}`;
+}

@@ -248,7 +248,7 @@ export default function ReviveEditorScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.arsipTop}>
             <VixText heading="label" additionalStyle={styles.lockChip}>
-              🔒 Arsip
+              🔒 Terkunci
             </VixText>
             {entry.passage ? (
               <VixText heading="label" additionalStyle={styles.arsipPassage}>

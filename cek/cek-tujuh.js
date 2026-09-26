@@ -191,9 +191,14 @@ ok('dua topik yang memang ada di jadwal syafaat: Gereja & Negara',
 ok('kata kuncinya Indonesia + gereja / pemerintahan',
   /gereja OR "umat kristen"/.test(doa) && /presiden OR pemerintah/.test(doa));
 ok('rentangnya sepekan terakhir (when:7d)', /\$\{query\} when:7d/.test(doa));
+// 26 Sep 2026: "segar" kini menuntut DUA hal — minggunya benar DAN catatannya
+// sudah bentuk baru (`items`, berisi tautan). Dokumen bentuk lama sengaja
+// dianggap basi supaya tautan beritanya langsung ada tanpa menunggu Senin.
 ok('SEKALI SEMINGGU: berhenti kalau minggu ini sudah tercatat',
   /if \(prayerNewsFresh\(news, now\)\) return false;/.test(doa) &&
-  /return news\?\.weekId === weekDocId\(now\);/.test(doa));
+  /if \(news\?\.weekId !== weekDocId\(now\)\) return false;/.test(doa));
+ok('catatan bentuk LAMA (tanpa tautan) dianggap basi, jadi diambil ulang sekali',
+  /return !!news\.items;/.test(doa));
 ok('batas mingguannya ikut Senin (weekDocId bersama, bukan hitungan baru)',
   /from '\.\/learning'/.test(doa));
 ok('gagal ambil → TIDAK menulis catatan kosong (biar dicoba lagi)',
@@ -203,9 +208,16 @@ ok('disimpan SATU dokumen kecil', /'users', uid, 'world', 'prayerNews'/.test(doa
 ok('cuma 4 judul per topik', /const PER_TOPIC = 4;/.test(doa));
 
 console.log('\n   …dan masuk ke doa syafaatnya');
+// Tautannya dititipkan di `links` yang TERPISAH dari `points`, jadi penggambar
+// yang tidak peduli tautan tetap cukup membaca `points` seperti sebelumnya —
+// itu yang dijaga di sini, bukan sekadar "ada fungsinya".
 ok('penggabungnya fungsi murni (pemakainya tetap cuma menggambar points)',
   /export function withWeeklyNews\(/.test(doa) &&
-  /points: \[\.\.\.topic\.points, \.\.\.extra\.map\(\(t\) => `📰 \$\{t\}`\)\]/.test(doa));
+  /const baris = extra\.map\(\(n\) => `📰 \$\{n\.title\}`\);/.test(doa) &&
+  /points: \[\.\.\.topic\.points, \.\.\.baris\]/.test(doa));
+ok('tautan berita terpisah di `links`, dikunci teks barisnya sendiri',
+  /links\[baris\[i\]\] = n\.url;/.test(doa) &&
+  /links\?: Record<string, string>;/.test(baca('lib/intercession.ts')));
 ok('hari SELAIN Gereja & Negara tidak berubah sama sekali',
   /if \(topic\.key !== 'church' && topic\.key !== 'nation'\) return \[\];/.test(doa) &&
   /if \(extra\.length === 0\) return topic;/.test(doa));

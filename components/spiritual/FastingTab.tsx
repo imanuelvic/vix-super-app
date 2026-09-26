@@ -78,6 +78,11 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
           </PressableScale>
         )}
 
+        {/* Garis pemisah: di atasnya yang SEDANG berjalan, di bawahnya
+            tombol tambah & arsip. Cuma digambar kalau memang ada yang sedang
+            berjalan — kalau tidak, tidak ada yang perlu dipisahkan. */}
+        {active && <View style={styles.pemisah} />}
+
         <PrimaryButton
           label="Tambah Puasa Baru"
           icon="plus"
@@ -144,18 +149,30 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  // 26 Sep 2026: puasa yang SEDANG berjalan digambar PEKAT (ungu tergelap,
+  // tulisan putih), bukan pastel seperti sebelumnya. Dulu kartu aktif dan
+  // kartu arsip di bawahnya sama-sama terang, jadi harus dibaca dulu untuk
+  // tahu mana yang sedang jalan. Sekarang bedanya terbaca sekali pandang,
+  // pola yang sama dengan kartu ringkasan gelap di fitur lain.
   activeCard: {
-    backgroundColor: Color.SPIRITUAL,
+    backgroundColor: Color.SPIRITUAL_DEEP,
     borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: Color.SPIRITUAL_DARK,
     padding: 18,
     gap: 6,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  activeLabel: { color: Color.SPIRITUAL_DARK },
-  activeTitle: { color: Color.TEXT_TITLE },
-  activeText: { color: Color.SPIRITUAL_DARK },
+  activeLabel: { color: Color.TEXT_ON_DARK_MUTED },
+  activeTitle: { color: Color.TEXT_REVERSE },
+  activeText: { color: Color.TEXT_ON_DARK_MUTED },
+  // Pemisah antara blok puasa yang sedang berjalan dan segala sesuatu di
+  // bawahnya (tombol tambah + arsip). Tanpa ini ketiganya terbaca sebagai satu
+  // tumpukan, dan yang sedang berjalan kehilangan kedudukannya.
+  pemisah: {
+    height: 1,
+    backgroundColor: Color.BORDER,
+    marginTop: 6,
+    marginBottom: 14,
+  },
   addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {

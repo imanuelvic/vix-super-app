@@ -117,8 +117,16 @@ ok('tombol ubah & kirim ikut terpatok (ada di dalam kepala kartu)',
   /icon="square\.and\.arrow\.up"/.test(kepala));
 ok('judul, tanggal & tempat ikut terlihat saat dipatok',
   /\{m\.title\}/.test(kepala) && /formatCompactDateTime\(m\.date\.toDate\(\)\)/.test(kepala) && /\{m\.place\}/.test(kepala));
+// 26 Sep 2026: kartunya kini dibungkus alas KREM selebar layar. Kartunya
+// bersudut membulat 16, jadi saat dipatok, notulen yang tergulung mengintip
+// keluar lewat dua sudut atasnya. Alas ini yang menutupnya. Ia HARUS jadi
+// pembungkus terluar, karena style anak sticky itulah yang dipindahkan RN ke
+// pembungkus buatannya sendiri.
+ok('kartunya beralas krem selebar layar (sudut membulatnya tidak bocor saat dipatok)',
+  /<View key=\{`kepala-\$\{m\.id\}`\} style=\{styles\.stickyWrap\}>/.test(kepala) &&
+  /stickyWrap: \{ backgroundColor: Color\.BACKGROUND \}/.test(monthly));
 ok('barisnya dipegang View DI DALAM (style anak sticky pindah ke pembungkus RN)',
-  /<View key=\{`kepala-\$\{m\.id\}`\} style=\{\[styles\.card, expanded && styles\.cardOpen\]\}>\s*\{\/\*[\s\S]{0,900}?<View style=\{styles\.cardHeader\}>/.test(kepala));
+  /style=\{\[styles\.card, expanded && styles\.cardOpen\]\}>\s*\{\/\*[\s\S]{0,900}?<View style=\{styles\.cardHeader\}>/.test(kepala));
 ok('latar kepala PEKAT (Color.CONTAINER) supaya isinya lewat di belakangnya',
   /card:\s*{\s*\n\s*backgroundColor:\s*Color\.CONTAINER/.test(monthly));
 ok('kartu terbentang tetap satu kesatuan: sudut bawah kepala dilepas, isinya melanjutkan dindingnya',

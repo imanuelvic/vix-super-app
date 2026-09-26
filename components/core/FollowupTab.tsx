@@ -687,8 +687,16 @@ export function FollowupTab({
           <PressableScale
             style={styles.motivasiRow}
             onPress={() => {
+              const l = followupModal.leader;
               setFollowupModal(null);
-              router.push('/chat-templates');
+              // Nama yang dituju dibawa serta (26 Sep 2026): kamu baru saja
+              // membuka dialog orang ini, jadi layar berikutnya sudah tahu
+              // siapa yang dimaksud. Tetap bisa diganti ke Grup CORE di sana
+              // dengan satu click kalau memang mau kirim Motivational Word.
+              router.push({
+                pathname: '/chat-templates',
+                params: { leader: l.id },
+              });
             }}>
             <VixText heading="label" additionalStyle={styles.motivasiText}>
               🔥 Sudah kirim Motivational Word {todayName()} ke grup CORE?

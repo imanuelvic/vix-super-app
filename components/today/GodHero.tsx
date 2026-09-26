@@ -11,6 +11,7 @@ import { VixText } from '@/components/common/VixText';
 import { todayHref } from '@/components/today/todayLink';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import type { IntercessionTopic } from '@/lib/intercession';
+import { openExternalUrl } from '@/lib/linking';
 import type { TodayModel } from '@/lib/today';
 
 // 🌅 WITH GOD — puncak layar Today. Bukan checklist rohani: satu undangan
@@ -130,11 +131,28 @@ export function GodHero({
                 </PressableScale>
                 {terbuka && (
                   <View style={styles.prayerBox}>
-                    {intercession.points.map((p, i) => (
-                      <VixText key={i} heading="paragraph" additionalStyle={styles.prayerPoint}>
-                        • {p}
-                      </VixText>
-                    ))}
+                    {/* Baris kliping berita 📰 bisa di-click ke artikelnya,
+                        sama seperti di Morning Journey. Pokok doa tetap tidak
+                        punya tautan, jadi ia digambar seperti sebelumnya. */}
+                    {intercession.points.map((p, i) => {
+                      const url = intercession.links?.[p];
+                      if (!url) {
+                        return (
+                          <VixText key={i} heading="paragraph" additionalStyle={styles.prayerPoint}>
+                            • {p}
+                          </VixText>
+                        );
+                      }
+                      return (
+                        <PressableScale key={i} onPress={() => openExternalUrl(url)} hitSlop={4}>
+                          <VixText
+                            heading="paragraph"
+                            additionalStyle={[styles.prayerPoint, styles.prayerLink]}>
+                            • {p}
+                          </VixText>
+                        </PressableScale>
+                      );
+                    })}
                     {!l.done && (
                       <PressableScale
                         style={styles.prayedButton}
@@ -223,6 +241,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   prayerPoint: { color: Color.SPIRITUAL_DEEP },
+  // Garis bawah = penanda baris ini bisa di-click ke beritanya. Warnanya
+  // sengaja tetap sama dengan pokok doa lain, supaya blok syafaatnya tidak
+  // berubah jadi daftar tautan.
+  prayerLink: { textDecorationLine: 'underline' },
   prayedButton: { alignSelf: 'flex-start', marginTop: 6 },
   prayedText: { color: Color.SPIRITUAL_DARK, textDecorationLine: 'underline' },
   nudge: {

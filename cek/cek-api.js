@@ -54,8 +54,13 @@ c('kategorinya bertipe RewardCategoryKey (salah tulis ditangkap tsc)',
 
 console.log('\n=== Kategorinya langsung terbuka, bukan daftar dulu ===');
 const layarKat = baca('app/reward-category.tsx');
+// 26 Sep 2026: useEffect di layar ini ada, tapi khusus MENULIS tanggal
+// terbukanya lencana — bukan menyetel kategorinya. Yang dijaga tetap sama:
+// kategorinya diturunkan saat render, tidak lewat state yang diisi efek.
 c('parameter cat dibaca saat render (bukan lewat useEffect)',
-  /const key = rewardCategoryOf\(cat\);/.test(layarKat) && !/useEffect/.test(layarKat));
+  /const key = rewardCategoryOf\(cat\);/.test(layarKat) &&
+  !/setKey\(/.test(layarKat) &&
+  /syncRewardDates\(/.test(layarKat));
 c('kategori tak dikenal jatuh ke null → halamannya jujur, tidak error',
   /CATEGORIES\.some\(\(c\) => c\.key === key\)\s*\?\s*\(key as RewardCategoryKey\)\s*:\s*null/
     .test(ach) && /if \(!meta\) \{/.test(layarKat));

@@ -152,6 +152,14 @@ let tabGagal = 0;
 const laporTab = [];
 for (const f of tabScreens) {
   const src = baca(f);
+  // 26 Sep 2026: hitungan "lebar layar ÷ jumlah tab" cuma berlaku untuk tab
+  // bar BAWAH, yang memang membagi lebarnya rata. Layar yang memakai
+  // `placement="top"` (Walk · CORE · Work) menggambar PIL di dalam ScrollView
+  // mendatar: tiap pil selebar tulisannya sendiri dan barisnya bisa digeser,
+  // jadi tulisannya tidak pernah dipaksa menyusut sama sekali. Memakai rumus
+  // kolom di situ menghasilkan kegagalan palsu — dan makin palsu tiap kali
+  // ada sub-tab baru, karena "kolom"-nya ikut mengecil padahal tidak ada.
+  if (/placement="top"/.test(src)) continue;
   const arr = src.match(/BottomTab<[^>]*>\[\] = \[([\s\S]*?)\n\];/);
   if (!arr) continue;
   const labels = [...arr[1].matchAll(/label: '([^']*)'/g)].map((m) => m[1]);

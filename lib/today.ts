@@ -49,6 +49,7 @@ import {
 import { type PaceStatus } from './financeInsight';
 import {
   fitPendingToday,
+  fitUnanswered,
   fitSessionFor,
   fitSessionsOf,
   fitWindowLabel,
@@ -205,6 +206,8 @@ export type TodayModel = {
   reflection: TodayReflection;
   /** 🌙 Night Prayer malam ini — dipakai kartu Today & pengingat 22.00. */
   night: TodayNight;
+  /** Olahraga hari ini — dipakai pengingat malam, bukan digambar di layar. */
+  fitness: TodayFitness;
 };
 
 export type TodayNight = {
@@ -212,6 +215,20 @@ export type TodayNight = {
   summary: string;
   /** Keempat bagiannya sudah didoakan malam ini? */
   done: boolean;
+};
+
+/**
+ * Olahraga hari ini, untuk pengingat malam 21.00 (26 Sep 2026).
+ *
+ * Dihitung TANPA melihat jam, beda dengan baris 💪 di daftar Today yang ikut
+ * jendela pagi/sore. Jendela sore tutup jam 21.00 tepat, jadi kalau pengingat
+ * ini ikut jendela itu ia tidak akan pernah berbunyi.
+ */
+export type TodayFitness = {
+  /** Belum beres DAN tidak dilewati → masih perlu ditagih. */
+  unanswered: boolean;
+  /** Paket yang sudah dipilih, mis. "Berenang". Kosong = belum memilih. */
+  picked: string;
 };
 
 /** Batas baris tingkat "today" di seluruh layar (bukan per bagian). */
@@ -973,6 +990,14 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     // digambar, dan pengingat 22.00 harus tetap benar walau app-nya cuma
     // dibuka pagi hari.
     night: { summary: nightSummary(malam), done: nightAllDone(input.day) },
+    // Alasannya sama dengan `night` di atas: dihitung sepanjang hari supaya
+    // pengingat 21.00 tetap benar walau app-nya terakhir dibuka pagi tadi.
+    fitness: {
+      unanswered: fitUnanswered(input.fitDay, now),
+      picked: fitSessionsOf(input.fitDay, now)
+        .map((s) => s.title)
+        .join(' · '),
+    },
   };
 }
 

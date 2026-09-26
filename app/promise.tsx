@@ -72,8 +72,14 @@ export default function PromiseScreen() {
   const [fAnswered, setFAnswered] = useDraft<Date | null>(
     janji?.answeredId ? dayIdToDate(janji.answeredId) : null,
   );
+  const [fLocked, setFLocked] = useDraft(janji?.locked ?? false);
 
   const menunggu = janji ? promiseWaitDays(janji) : null;
+
+  // 🔒 Terkunci: seluruh isian dimatikan KECUALI tanggal terjawabnya. Janji
+  // BARU tidak pernah terkunci — menguncinya dilakukan sesudah ditulis, saat
+  // kalimatnya sudah benar-benar jadi.
+  const terkunci = !!editId && fLocked;
 
   async function simpan() {
     if (!user || busy) return;
@@ -91,6 +97,7 @@ export default function PromiseScreen() {
           struggle: fStruggle.trim(),
           story: fStory.trim(),
           prayed: fPrayed,
+          locked: fLocked,
           answeredId: fAnswered ? dayDocId(fAnswered) : '',
         },
         { baru: !editId },
@@ -149,7 +156,7 @@ export default function PromiseScreen() {
             placeholder="mis. Tuhan menyediakan rumah untuk keluargaku"
             value={fPromise}
             onChangeText={setFPromise}
-            editable={!busy}
+            editable={!busy && !terkunci}
             multiline
             style={styles.promiseInput}
           />
@@ -160,7 +167,7 @@ export default function PromiseScreen() {
           {/* Ayatnya PERSIS, bukan cuma pasalnya: sebuah janji berdiri di satu
               kalimat tertentu, dan kalimat itulah yang mau kamu buka lagi
               bertahun-tahun kemudian. */}
-          <BibleRefField value={fVerse} onChange={setFVerse} editable={!busy} />
+          <BibleRefField value={fVerse} onChange={setFVerse} editable={!busy && !terkunci} />
 
           <VixText heading="label" additionalStyle={[styles.fieldLabel, styles.gap]}>
             💭 Pergumulan yang relate (opsional)
@@ -169,7 +176,7 @@ export default function PromiseScreen() {
             placeholder="Apa yang sedang kamu hadapi waktu janji ini datang?"
             value={fStruggle}
             onChangeText={setFStruggle}
-            editable={!busy}
+            editable={!busy && !terkunci}
             multiline
             style={styles.noteInput}
           />
@@ -181,7 +188,7 @@ export default function PromiseScreen() {
             placeholder="Bagaimana janji ini kamu terima, dan apa yang Tuhan kerjakan sejak itu?"
             value={fStory}
             onChangeText={setFStory}
-            editable={!busy}
+            editable={!busy && !terkunci}
             multiline
             style={styles.storyInput}
           />
@@ -192,8 +199,12 @@ export default function PromiseScreen() {
               pernah didoakan cuma kolom yang tak punya jawaban. */}
           <PressableScale
             style={[styles.prayRow, styles.gap]}
+            // SENGAJA tetap hidup walau terkunci: centang ini gerbang menuju
+            // "doanya terjawab kapan", dan justru itu yang memang masih boleh
+            // diisi. Menguncinya berarti janji yang sudah dikunci sebelum
+            // sempat ditandai berdoa tidak akan pernah bisa dicatat jawabannya.
             onPress={() => !busy && setFPrayed(!fPrayed)}
-            disabled={busy}
+            disabled={busy || terkunci}
             haptic={fPrayed ? 'light' : 'success'}>
             <CheckCircle checked={fPrayed} />
             <View style={styles.prayMain}>
@@ -221,6 +232,26 @@ export default function PromiseScreen() {
               />
             </>
           )}
+
+          {/* 🔒 Kunci janji — hanya untuk janji yang SUDAH tersimpan. Janji
+              baru belum punya apa pun untuk dikunci, dan menawarkannya di situ
+              cuma bikin bingung. */}
+          {editId ? (
+            <PressableScale
+              style={[styles.lockRow, styles.gap, terkunci && styles.lockRowOn]}
+              onPress={() => !busy && setFLocked(!fLocked)}
+              disabled={busy}
+              haptic={terkunci ? 'light' : 'success'}>
+              <VixText heading="bold" additionalStyle={styles.lockTitle}>
+                {terkunci ? '🔒 Terkunci' : '🔓 Belum dikunci'}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.lockSub}>
+                {terkunci
+                  ? 'Kalimatnya tidak bisa diubah lagi. Kapan doanya terjawab tetap boleh diisi.'
+                  : 'Kunci kalau kalimatnya sudah benar-benar jadi, biar tidak pelan-pelan berubah mengikuti keadaan.'}
+              </VixText>
+            </PressableScale>
+          ) : null}
 
           <FormError message={formError} gap="top" />
 
@@ -286,5 +317,14 @@ const styles = StyleSheet.create({
   },
   prayMain: { flex: 1, minWidth: 0, gap: 2 },
   prayTitle: { color: Color.TEXT_TITLE },
+  // Tombol kunci: kartu biasa saat belum dikunci, pastel Spiritual saat sudah,
+  // jadi keadaannya terbaca sebelum tulisannya dibaca.
+  lockRow: { ...CARD, gap: 2 },
+  lockRowOn: {
+    backgroundColor: Color.SPIRITUAL,
+    borderColor: Color.SPIRITUAL_DARK,
+  },
+  lockTitle: { color: Color.TEXT_TITLE },
+  lockSub: { color: Color.TEXT_LABEL },
   footer: { marginTop: 18 },
 });
