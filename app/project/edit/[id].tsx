@@ -85,6 +85,9 @@ export default function ProjectEditScreen() {
     project ? project.deadline.toDate() : today,
   );
   const [fDone, setFDone] = useDraft(project?.done ?? false);
+  // ⏸️ Ditahan client — proyeknya ada tapi belum bisa jalan. Tenggatnya
+  // berhenti berlaku, jadi ia tidak pernah menagih di mana pun.
+  const [fHold, setFHold] = useDraft(project?.onHold ?? false);
   const [fItems, setFItems] = useDraft<ItemDraft[]>(
     (project?.invoiceItems ?? []).map(toDraft),
   );
@@ -141,6 +144,7 @@ export default function ProjectEditScreen() {
       fee: parseAmount(fFee),
       deadline: Timestamp.fromDate(fDeadline),
       done: fDone,
+      onHold: fHold,
       invoiceItems: toInvoiceItems(),
     };
     try {
@@ -231,9 +235,25 @@ export default function ProjectEditScreen() {
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
               ⏰ Deadline
             </VixText>
+            {/* Ditahan client → pemilih tanggalnya dimatikan, bukan dihapus:
+                tanggal yang dulu disepakati tetap tersimpan, jadi begitu
+                penahanannya dilepas ia kembali seperti semula. */}
             <View style={styles.formGap}>
-              <DateField value={fDeadline} onChange={setFDeadline} />
+              <DateField
+                value={fDeadline}
+                onChange={setFDeadline}
+                disabled={busy || fHold}
+              />
             </View>
+
+            <PressableScale
+              style={styles.doneRow}
+              onPress={() => setFHold((h) => !h)}>
+              <CheckCircle checked={fHold} />
+              <VixText heading="paragraph" additionalStyle={styles.doneText}>
+                Ditahan client ⏸️
+              </VixText>
+            </PressableScale>
 
             <PressableScale
               style={styles.doneRow}

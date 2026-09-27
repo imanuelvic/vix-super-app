@@ -142,7 +142,7 @@ export function FulltimeTab({
   // Buka sub-tab ini → papan yang sedang terbuka langsung datang ke kartu P1
   // pertama yang belum selesai, yaitu isi badge merahnya. Kalau P1-nya ada di
   // kolom lain, kolom ini memang tidak punya yang perlu dilompati.
-  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+  const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
     column.find((i) => i.status !== 'done' && i.priority === 1)?.id ?? null,
   );
 
@@ -221,6 +221,7 @@ export function FulltimeTab({
       <ScrollView
         ref={listRef}
         onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
         contentContainerStyle={styles.content}>
         {/* Ringkasan roadmap */}
         <SummaryCard>

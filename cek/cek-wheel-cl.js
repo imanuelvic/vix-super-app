@@ -167,13 +167,22 @@ ok('modal baca-saja tak punya satu pun kolom isian',
   !modalLihat.includes('FormInput') &&
   !modalLihat.includes('onChangeText') &&
   !modalLihat.includes('DualButtons'));
+// 27 Sep 2026: isinya pindah ke components/core/PersonInfo.tsx supaya Rekap
+// Visitasi 📊 bisa memakai tampilan yang SAMA saat hati CL-nya di-click.
+// Yang dijaga tidak berkurang, malah bertambah satu: tampilan itu harus
+// dipakai bersama, bukan disalin ke layar kedua.
+const personInfo = baca('components/core/PersonInfo.tsx');
 ok('isinya data lengkap orangnya, dipakai bersama CL & Main Team',
-  /function PersonView\(\{/.test(leadersTab) &&
-  /person: CoreLeader \| MainTeamMember;/.test(leadersTab) &&
-  (leadersTab.match(/<PersonView person=/g) || []).length === 1);
+  /export function PersonInfo\(\{/.test(personInfo) &&
+  /person: CoreLeader \| MainTeamMember;/.test(personInfo) &&
+  (leadersTab.match(/<PersonInfo person=/g) || []).length === 1);
+ok('komponennya SATU, dipakai juga oleh Rekap Visitasi (bukan disalin)',
+  /<PersonInfo person=\{leaderInfo\} today=/.test(baca('app/core-recap.tsx')) &&
+  /import \{ PersonInfo \} from '@\/components\/core\/PersonInfo';/.test(leadersTab) &&
+  !/function PersonView\(/.test(leadersTab));
 ok('baris yang datanya masih kosong tidak ditampilkan (bukan deretan "—")',
   // (15 Sep 2026: judulnya "Gender", berdampingan dengan 📱 No. HP.)
-  /\{jenis \? <InfoRow label="🚻 Gender" value=\{jenis\} half \/> : null\}/.test(leadersTab));
+  /\{jenis \? <InfoRow label="🚻 Gender" value=\{jenis\} half \/> : null\}/.test(personInfo));
 
 // Tombolnya SAUDARA area ketuk — kalau anaknya, ketukan ✏️ ikut membuka
 // modal lihat di iOS.

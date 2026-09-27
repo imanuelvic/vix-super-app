@@ -9,11 +9,11 @@ import { VixText } from '@/components/common/VixText';
 import { HapticTab } from '@/components/haptic-tab';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
+import { subscribeAffiliateIdeas, type ContentIdea } from '@/lib/affiliate';
 import {
-  effectiveRoadmap,
-  freelanceReminderWindow,
   subscribeFreelance,
   subscribeRoadmap,
+  workAttention,
   type FreelanceProject,
   type RoadmapItem,
 } from '@/lib/career';
@@ -92,6 +92,11 @@ export default function TabLayout() {
   const [focus, setFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
+  // Ide konten Affiliate ikut dilanggan di sini (28 Sep 2026): ia punya badge
+  // sub-tab sendiri di layar Work, jadi ia harus ikut ke badge tab Work juga.
+  // Dokumennya sama dengan yang dilanggan layar Work, dan liveDoc memakai
+  // listener bersama → nol pembacaan tambahan.
+  const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useLiveAll((uid) => [
@@ -102,15 +107,17 @@ export default function TabLayout() {
     subscribeWeeklyFocus(uid, setFocus),
     subscribeRoadmap(uid, setRoadmap),
     subscribeFreelance(uid, setFreelance),
+    subscribeAffiliateIdeas(uid, setIdeas),
     subscribeTasks(uid, setTasks),
   ]);
 
   const coreBadge = coreAttention({ leaders, mainTeam, visitations, greets, focus, now, todayId })
     .total;
-  const workBadge =
-    roadmap.filter((r) => r.status !== 'done' && effectiveRoadmap(r, now).priority === 1).length +
-    freelance.filter((p) => freelanceReminderWindow(p, now)).length +
-    tasks.filter((t) => !t.done && t.dayId === todayId && t.category === 'work').length;
+  // 28 Sep 2026: angkanya tidak lagi dihitung di sini. `workAttention` di
+  // lib/career.ts yang menghitungnya SEKALI, dan layar Work memakai fungsi
+  // yang sama untuk badge tiap sub-tabnya — jadi "Fulltime 1 · Freelance 1"
+  // di atas dan "Work 2" di bawah mustahil berbeda lagi.
+  const workBadge = workAttention({ roadmap, freelance, ideas, tasks, now, todayId }).total;
 
   return (
     <Tabs

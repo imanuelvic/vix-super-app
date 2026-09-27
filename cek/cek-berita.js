@@ -246,37 +246,47 @@ async function main() {
   console.log('\n=== 6. Pengingat Motivational Word 🔥 di modal Follow Up ===');
   // ===================================================================
   const fu = baca('components/core/FollowupTab.tsx');
-  c('pengingatnya ada di modal follow up',
-    /Sudah kirim Motivational Word \{todayName\(\)\} ke grup CORE\?/.test(fu));
-  c('menyebut HARI ini, bukan kalimat umum', /todayName\(\)/.test(fu) &&
-    /from '@\/lib\/chatTemplates'/.test(fu));
+  // 28 Sep 2026: kalimat panjang "🔥 Sudah kirim Motivational Word Jumat ke
+  // grup CORE? / Buka Template Chat ›" diganti DUA tombol pendek atas
+  // permintaan pemilik app ("tidak perlu ada hint atau semacam text
+  // deskripsi"). Pintunya tidak hilang, malah bertambah satu (🪞 Minta
+  // Masukan), dan keduanya kini membuka kategorinya langsung.
+  c('dua pintu ke Template Chat ada di modal follow up',
+    /🔥 Motivational Word/.test(fu) && /🪞 Minta Masukan/.test(fu));
+  c('kalimat panjang lamanya benar-benar dibuang',
+    !/Sudah kirim Motivational Word/.test(fu) && !/motivasiRow/.test(fu));
   // 26 Sep 2026: nama CL yang sedang dibuka ikut dibawa, jadi dropdown "Nama
   // yang Dituju" di Template Chat sudah terisi orangnya — bukan "Grup CORE"
   // yang terasa seperti app-nya lupa siapa yang barusan dibuka.
-  c('click-nya membuka Template Chat, membawa nama CL yang sedang dibuka',
-    /pathname: '\/chat-templates',\s*\n\s*params: \{ leader: l\.id \}/.test(fu) &&
-    /const \{ leader: leaderParam \} = useLocalSearchParams/.test(
+  // 28 Sep 2026: kategorinya ikut dibawa (?cat=…), jadi tak perlu dicari lagi.
+  c('click-nya membuka Template Chat, membawa nama CL & kategorinya',
+    /router\.push\(\{ pathname: '\/chat-templates', params: \{ leader: leaderId, cat \} \}\)/.test(fu) &&
+    /bukaTemplate\(followupModal\.leader\.id, 'motivational'\)/.test(fu) &&
+    /bukaTemplate\(followupModal\.leader\.id, 'feedback'\)/.test(fu) &&
+    /const \{ leader: leaderParam, cat: catParam \} = useLocalSearchParams/.test(
       baca('app/chat-templates.tsx')) &&
     /useState<string>\(leaderParam \|\| GRUP\)/.test(baca('app/chat-templates.tsx')));
   // Tombol Chat WA yang sama dipakai DUA modal (Doa Rantai & Follow Up), jadi
   // yang dibandingkan harus yang di modal Follow Up — yaitu yang TERAKHIR.
   c('letaknya PERSIS di atas tombol Chat WA modal Follow Up', (() => {
-    const a = fu.indexOf('styles.motivasiRow');
+    const a = fu.indexOf('styles.pintuRow');
     const b = fu.lastIndexOf('styles.modalWaButton');
     if (a < 0 || b < a) return false;
     const antara = fu.slice(a, b);
     // Di antara keduanya tak boleh ada elemen isi lain — cuma penutup baris
-    // pengingatnya lalu percabangan "punya nomor HP atau tidak".
+    // pintunya lalu percabangan "punya nomor HP atau tidak".
     return /followupModal\.phone \? \(/.test(antara) && !/ScrollView|CardActionButton/.test(antara);
   })());
   c('rupanya lebih tenang dari tombol Chat WA (bukan tombol hijau kedua)',
-    /motivasiRow: \{[\s\S]*?backgroundColor: Color\.MAIN_TRANSPARENT/.test(fu));
-  // 31 Agu 2026: Template Chat sekarang membuka dengan SEMUA kategori
-  // tertutup, jadi pengingat ini mendarat di daftarnya — tinggal satu click
-  // membuka Motivational Words, yang tetap ada di paling atas daftar.
-  c('Template Chat membuka dengan semua kategori tertutup',
-    /useState<string \| null>\(null\)/.test(baca('app/chat-templates.tsx')) &&
-    /key: 'motivational'/.test(baca('lib/chatTemplates.ts')));
+    /pintuButton: \{[\s\S]*?backgroundColor: Color\.MAIN_TRANSPARENT/.test(fu));
+  // 31 Agu 2026: Template Chat membuka dengan SEMUA kategori tertutup.
+  // 28 Sep 2026: kecuali kalau dituju lewat ?cat=… — paramnya DISARING, jadi
+  // yang tidak dikenali tetap jatuh ke null (semua tertutup).
+  c('Template Chat membuka dengan semua kategori tertutup, kecuali yang dituju',
+    /CHAT_CATEGORIES\.find\(\(c\) => c\.key === catParam\)\?\.key \?\? null/.test(
+      baca('app/chat-templates.tsx')) &&
+    /key: 'motivational'/.test(baca('lib/chatTemplates.ts')) &&
+    /key: 'feedback'/.test(baca('lib/chatTemplates.ts')));
 
   console.log('\n' + (ok ? 'LULUS' : 'GAGAL'));
   process.exit(ok ? 0 : 1);

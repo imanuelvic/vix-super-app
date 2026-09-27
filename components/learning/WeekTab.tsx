@@ -83,7 +83,7 @@ export function WeekTab({
   // Buka sub-tab ini → daftarnya langsung datang ke langkah tertagih pertama,
   // yaitu isi badge merahnya. Kartu ringkasan di atasnya tetap bisa digulung
   // balik ke atas seperti biasa.
-  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+  const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
     terlambat[0]?.key ?? null,
   );
   // Ganti topik SENIN saja — lihat alasannya di canChangeWeekSkill.
@@ -174,6 +174,7 @@ export function WeekTab({
       <KeyboardAwareScrollView
         ref={listRef}
         onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
         contentContainerStyle={styles.content}>
         {/* ===== Topik minggu ini ===== */}
         <View style={styles.hero}>

@@ -166,9 +166,18 @@ console.log('\n=== 5. Centangnya menumpang, tanpa read Firestore baru ===');
     M.nightDoneCount(null) === 0 && M.nightDoneCount(tiga) === 3 && M.nightDoneCount(penuh) === 4);
   ok('lengkap cuma kalau keempat bagiannya dicentang',
     M.nightAllDone(tiga) === false && M.nightAllDone(penuh) === true);
+  // 27 Sep 2026: dulu baris ini ikut memaku angka `SOURCES = 37` di
+  // useTodayData. Itu penjaga yang salah alamat — angkanya naik tiap kali
+  // FITUR LAIN menambah langganan (cadangan data 📦 menaikkannya jadi 38),
+  // jadi ia merah karena hal yang sama sekali bukan urusan Night Prayer.
+  // Angka itu sendiri sudah dijaga cek-cepat.js, yang menghitung `mark(`
+  // sendiri. Yang dijaga di sini jaminan aslinya, dan ia lebih ketat:
+  // centang doa malam menumpang dokumen kebiasaan harian yang MEMANG sudah
+  // dilanggan, jadi tak ada satu pun langganan tambahan untuk fitur ini.
   ok('layar Today TIDAK menambah langganan baru untuk ini',
     !/nightPrayer|subscribeNightStreak/.test(baca('hooks/useTodayData.ts')) &&
-    /const SOURCES = 37;/.test(baca('hooks/useTodayData.ts')));
+    /subscribeHabitDay\(uid, todayId, mark\('day', setDay\), fail\)/.test(baca('hooks/useTodayData.ts')) &&
+    /setHabitDone\(uid, dayId, nightDoneId\(key\), done\)/.test(nf));
   ok('yang punya dokumen sendiri cuma streaknya, di tempat yang sama dengan streak lain',
     /doc\(db, 'users', uid, 'app', 'nightPrayer'\)/.test(nf));
 }
@@ -197,7 +206,7 @@ console.log('\n=== 7. Di layar Today ===');
     fastingPlans: [], sermons: [], myReminders: [],
     intercession: I.intercessionToday(SIANG),
     intercessionDismissed: false, feedGenerated: false,
-    leaders: [], mainTeam: [], greets: {}, weeklyFocus: CORE.EMPTY_WEEKLY_FOCUS,
+    leaders: [], mainTeam: [], weeklyFocus: CORE.EMPTY_WEEKLY_FOCUS,
     visitations: [], monthlyPrayers: CORE.EMPTY_MONTHLY_PRAYERS,
     tasks: [], otherTasks: [], roadmap: [], freelance: [],
     family: [], debts: [], checkups: [], profile: null,
@@ -205,7 +214,10 @@ console.log('\n=== 7. Di layar Today ===');
     learningWeek: { skillKey: null, steps: {}, note: '' }, topicsDone: {},
     bills: [], futsal: { members: [], sessions: [], cash: [] },
     dataPlans: [], population: {}, carParts: {}, residenceChores: {},
-    meterReadings: [], wheel: null, fun: { entries: [] }, finance: null,
+    meterReadings: [], wheel: null, fun: { entries: [] },
+    // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
+    // belum pernah diekspor, dan itu memang keadaan wajar di fixture.
+    backup: { lastDayId: '', docCount: 0 }, finance: null,
   });
   const garis = (now, day = null) =>
     T.buildToday({ ...KOSONG(), day }, now, HARI).god.lines;
@@ -240,6 +252,9 @@ console.log('\n=== 8. Pengingat 🌙 22.00 ===');
     // di blok ini cuma slot 🌙, jadi olahraganya dibuat sudah beres supaya
     // tidak ikut mempengaruhi apa pun.
     fitness: { unanswered: false, picked: '' },
+    // 27 Sep 2026: pengingat 🎓 target Learning ikut membaca model ini juga.
+    // Sama alasannya: yang diuji di blok ini cuma slot 🌙.
+    learning: { done: {}, skill: 'Public Speaking' },
   });
   const slot = (night) =>
     N.buildSlots(model(night), null, { dayId: HARI }).find((s) => s.id === 'night-prayer');

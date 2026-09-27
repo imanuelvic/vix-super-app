@@ -20,13 +20,13 @@ import {
   prayerFollowupLeaders,
   visitDaysUntil,
   visitReminderWindow,
-  type BirthdayGreets,
   type CoreLeader,
   type MainTeamMember,
   type MonthlyPrayers,
   type Visitation,
   type WeeklyFocus,
 } from './core';
+import { backupDue, backupDueLine, type BackupInfo } from './backup';
 import { debtDaysUntil, debtRemaining, debtReminderWindow, type Debt } from './debts';
 import { devicesNeedingTopUp, type DataPlan } from './device';
 import {
@@ -43,6 +43,8 @@ import {
   fastingCheckDue,
   fastingDay,
   fastingDayNumber,
+  fastingMonthlyDue,
+  fastingMonthlyLabel,
   fastingProgress,
   type FastingPlan,
 } from './fasting';
@@ -75,6 +77,7 @@ import {
   type HabitDay,
   type HealthProfile,
 } from './health';
+import { identityLine } from './identity';
 import { type IntercessionTopic } from './intercession';
 import {
   nightAllDone,
@@ -196,6 +199,14 @@ export type TodayModel = {
     streak: number;
     /** Kalimat penyegar 🕊️ giliran jam ini (kalau ada & belum dibaca). */
     nudge: Nudge | null;
+    /**
+     * 🪞 Kalimat identitas hari ini — "Kamu Gembala 10 CORE".
+     *
+     * Berganti tiap hari, dihitung dari tanggalnya (lihat lib/identity.ts).
+     * Satu-satunya baris di seluruh layar Today yang bicara soal SIAPA kamu,
+     * bukan soal apa yang harus dikerjakan.
+     */
+    identity: string;
   };
   /** ≤ TODAY_MAX baris, urut bagian lalu prioritas. */
   today: TodayItem[];
@@ -208,6 +219,32 @@ export type TodayModel = {
   night: TodayNight;
   /** Olahraga hari ini — dipakai pengingat malam, bukan digambar di layar. */
   fitness: TodayFitness;
+  /** Target Learning minggu ini — dipakai pengingat Sen/Rab/Jum/Min. */
+  learning: TodayLearning;
+  /**
+   * 🗓️ Saatnya mengambil puasa bulan ini (Senin terakhir & Minggu sebelumnya,
+   * dan bulan ini memang belum ada puasanya).
+   *
+   * Dipisah jadi kolomnya sendiri, bukan dibaca dari `god.lines`, supaya
+   * pengingatnya tidak perlu mencocokkan id baris — baris bisa dipangkas atau
+   * berganti nama, syaratnya tidak.
+   */
+  fastingMonthly: boolean;
+};
+
+/**
+ * Target Learning minggu ini, untuk pengingat berhari-tetap (27 Sep 2026).
+ *
+ * Dipisah dari baris 🎓 di daftar Today, dan itu disengaja: baris itu cuma
+ * menagih langkah yang HARINYA SUDAH TIBA, sedangkan pengingatnya dijadwalkan
+ * untuk keempat harinya sekaligus (Sen · Rab · Jum · Min), termasuk hari yang
+ * belum datang.
+ */
+export type TodayLearning = {
+  /** Langkah minggu ini yang sudah beres, per kunci langkah. */
+  done: Record<string, boolean>;
+  /** Nama skill minggu ini — disebut di kalimat pengingatnya. */
+  skill: string;
 };
 
 export type TodayNight = {
@@ -266,7 +303,11 @@ export type TodayInput = {
 
   leaders: CoreLeader[];
   mainTeam: MainTeamMember[];
-  greets: BirthdayGreets;
+  // Catatan ucapan ulang tahun (`greets`) SENGAJA tidak ada di sini, walau
+  // sempat ada sampai 27 Sep 2026: tak satu pun baris Today membacanya, jadi
+  // ia cuma bikin seluruh model dibangun ulang & notifikasi dijadwalkan ulang
+  // tiap satu ucapan ditulis. Badge CORE yang memang memerlukannya memanggil
+  // `coreAttention` di lib/core.ts, bukan mesin ini.
   weeklyFocus: WeeklyFocus;
   visitations: Visitation[];
   monthlyPrayers: MonthlyPrayers;
@@ -292,6 +333,8 @@ export type TodayInput = {
   meterReadings: MeterReading[];
   wheel: WheelData | null;
   fun: FunData;
+  /** Kapan data ini terakhir dicadangkan — penagih 📦 sebulan sekali. */
+  backup: BackupInfo;
   /** null = data Finance belum termuat (kartunya belum bisa bicara). */
   finance: FinanceStatusInput | null;
 };
@@ -399,6 +442,24 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
       href: { pathname: '/fasting-days', params: { id: fastingNow.id, day: todayId } },
     });
   }
+  // 🗓️ Senin terakhir bulan ini (& Minggu sebelumnya) → saatnya mengambil
+  // puasa bulan ini, kalau bulan ini memang belum ada.
+  //
+  // Ditaruh di bagian 🙏 With God, bukan di daftar Life: ini urusan rohani,
+  // dan kalau ia berdesakan dengan "isi ulang kuota" ia akan diperlakukan
+  // seperti tugas administrasi juga.
+  if (fastingMonthlyDue(plans, now)) {
+    godLines.push({
+      id: 'fasting-monthly',
+      section: 'god',
+      tier: 'today',
+      rank: 1,
+      emoji: '🗓️',
+      title: 'Ambil puasa bulan ini',
+      detail: fastingMonthlyLabel(now),
+      href: { pathname: '/fasting' },
+    });
+  }
 
   // ⛪ Khotbah Minggu — Rabu/Jumat siang renungkan; Kamis siang kirim.
   const sermonRenung = sermonReminderActive(now)
@@ -413,7 +474,12 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
       emoji: '⛪',
       title: `Renungkan khotbah: ${sermonRenung.title}`,
       detail: sermonRenung.quote || undefined,
-      href: { pathname: '/walk', params: { tab: 'sermon' } },
+      // 28 Sep 2026: langsung ke CATATANNYA, bukan ke daftar khotbah.
+      // Barisnya menyebut satu judul ("Renungkan khotbah: Doa Bapa Kami"), jadi
+      // mendarat di daftar berarti judul yang barusan disebut harus dicari
+      // sendiri lagi. Bentuknya sama dengan baris "Kirim catatan khotbah" di
+      // bawah, yang memang sudah membuka catatannya.
+      href: { pathname: '/sermon', params: { id: sermonRenung.id } },
     });
   }
   const sermonKirim = sermonShareDue(input.sermons, now);
@@ -780,9 +846,13 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
   // 🎓 Learning — langkah minggu ini yang harinya sudah tiba; topik diskusi
   // berlaku sepanjang minggu (up next).
   const step = dueStep(input.learningWeek.steps, now);
+  // Skill minggu ini dihitung di LUAR `if (step)`: pengingat keempat harinya
+  // menyebut namanya juga, termasuk pada hari yang belum ada tagihannya.
+  const skillMinggu =
+    (input.learningWeek.skillKey ? skillOf(input.learningWeek.skillKey) : null) ??
+    skillOfWeek(now);
   if (step) {
-    const skill =
-      (input.learningWeek.skillKey ? skillOf(input.learningWeek.skillKey) : null) ?? skillOfWeek(now);
+    const skill = skillMinggu;
     push({
       id: 'learning-step',
       section: 'life',
@@ -944,6 +1014,25 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     });
   }
 
+  // 📦 Cadangan data sudah lewat sebulan (atau belum pernah sama sekali).
+  //
+  // Sengaja `next`, bukan `today`: ini bukan pekerjaan yang harus beres hari
+  // ini juga, dan menaruhnya di daftar hari ini akan menyingkirkan hal lain
+  // yang memang bertenggat. Tapi ia tetap masuk daftar, jadi pengingat 🌿 Life
+  // sore hari ikut menyebutnya tanpa perlu kelompok notifikasi sendiri.
+  if (backupDue(input.backup, todayId)) {
+    push({
+      id: 'backup',
+      section: 'life',
+      tier: 'next',
+      rank: 6,
+      emoji: '📦',
+      title: 'Ekspor cadangan data',
+      detail: backupDueLine(input.backup, todayId),
+      href: { pathname: '/system' },
+    });
+  }
+
   // ============================ Pangkas & urutkan ============================
   const byPriority = (a: TodayItem, b: TodayItem) =>
     a.rank - b.rank || SECTION_ORDER[a.section] - SECTION_ORDER[b.section];
@@ -980,6 +1069,10 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
       lines: godLines,
       streak: login?.count ?? 0,
       nudge: activeNudge(now, todayId, input.myReminders),
+      identity: identityLine(
+        { leaders: input.leaders.length, streak: login?.count ?? 0 },
+        todayId,
+      ),
     },
     today,
     upNext,
@@ -998,6 +1091,10 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
         .map((s) => s.title)
         .join(' · '),
     },
+    // Keempat langkah Learning minggu ini apa adanya — pengingatnya yang
+    // memutuskan mana yang perlu berbunyi hari apa.
+    learning: { done: input.learningWeek.steps, skill: skillMinggu.title },
+    fastingMonthly: fastingMonthlyDue(plans, now),
   };
 }
 

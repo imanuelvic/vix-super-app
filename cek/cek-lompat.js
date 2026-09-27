@@ -110,7 +110,7 @@ const MERAH_PERTAMA = BARIS.find((b) => b.merah).key;
  * Jalankan satu kali "mount" lalu perankan kejadian layout-nya.
  * urutan 'baris-dulu' | 'isi-dulu'
  */
-function jalankan(hook, { dueKey = MERAH_PERTAMA, enabled, urutan }) {
+function jalankan(hook, { dueKey = MERAH_PERTAMA, enabled, urutan, tinggi = 700 }) {
   slot = [];
   i = 0;
   // `enabled` hanya dioper ke versi LAMA — versi sekarang tidak punya
@@ -121,10 +121,16 @@ function jalankan(hook, { dueKey = MERAH_PERTAMA, enabled, urutan }) {
     scrollTo: (arg) => dipanggil.push(arg),
   };
   const ukurBaris = () => BARIS.forEach((b) => h.setRowY(b.key, b.y));
+  // 28 Sep 2026: tinggi JENDELA ScrollView-nya ikut diperankan. Versi lama
+  // tidak punya onLayout sama sekali, jadi ia dilewati.
+  const ukurJendela = () =>
+    h.onLayout?.({ nativeEvent: { layout: { height: tinggi } } });
   if (urutan === 'baris-dulu') {
     ukurBaris();
+    ukurJendela();
     h.onContentSizeChange();
   } else {
+    ukurJendela();
     h.onContentSizeChange();
     ukurBaris();
   }
@@ -156,6 +162,46 @@ for (const urutan of ['baris-dulu', 'isi-dulu']) {
   ok(`urutan "${urutan}" → beranimasi`, dipanggil[0]?.animated === true);
 }
 
+// ========== 2b. Baris yang SUDAH kelihatan tidak dilompati (28 Sep 2026) ==========
+// Inilah keluhan dari layar: di sub-tab Fulltime kartu P1 ADA di urutan
+// pertama, tapi di atasnya masih ada pemilih papan. "Lompat ke kartu P1"
+// menggeser pemilih papan itu masuk ke balik bar sub-tab, dan puncak daftarnya
+// hilang — tanpa ada satu pun baris yang benar-benar dibawa ke layar.
+for (const urutan of ['baris-dulu', 'isi-dulu']) {
+  const { dipanggil } = jalankan(useDueJump, { dueKey: 'sisir', urutan });
+  ok(
+    `urutan "${urutan}" → baris paling atas (y 120, jendela 700) TIDAK dilompati`,
+    dipanggil.length === 0,
+    JSON.stringify(dipanggil[0]),
+  );
+}
+{
+  // Jendela yang PENDEK membuat baris yang sama jadi di luar layar → dilompati
+  // lagi. Jadi yang menentukan memang "kelihatan atau tidak", bukan "baris
+  // pertama atau bukan".
+  const { dipanggil } = jalankan(useDueJump, {
+    dueKey: 'sisir',
+    urutan: 'baris-dulu',
+    tinggi: 150,
+  });
+  ok('jendela pendek (150) → baris y 120 di luar layar, tetap dilompati',
+    dipanggil.length === 1 && dipanggil[0]?.y === 112,
+    JSON.stringify(dipanggil[0]));
+}
+{
+  // Jendelanya belum pernah terukur → JANGAN melompat. Melompat dengan
+  // tinggi 0 berarti menebak, dan tebakan itu persis bug yang baru dibuang.
+  slot = [];
+  i = 0;
+  const h = useDueJump(MERAH_PERTAMA);
+  const dipanggil = [];
+  h.ref.current = { scrollTo: (arg) => dipanggil.push(arg) };
+  BARIS.forEach((b) => h.setRowY(b.key, b.y));
+  h.onContentSizeChange();
+  ok('tanpa onLayout (jendela belum terukur) → diam, tidak menebak',
+    dipanggil.length === 0);
+}
+
 // ================= 3. Yang TIDAK boleh berubah =================
 {
   // Sekarang justru sebaliknya: SEKALI dibuka sudah melompat. Tidak ada lagi
@@ -176,6 +222,7 @@ for (const urutan of ['baris-dulu', 'isi-dulu']) {
   luar.current = { scrollTo: (arg) => dipanggil.push(arg) };
   ok('ref dari luar dipakai apa adanya', h.ref === luar);
   h.setRowY(MERAH_PERTAMA, 660);
+  h.onLayout({ nativeEvent: { layout: { height: 700 } } });
   h.onContentSizeChange();
   ok('…dan lompatannya lewat ref itu', dipanggil.length === 1);
 }
@@ -206,6 +253,10 @@ for (const urutan of ['baris-dulu', 'isi-dulu']) {
   const h = useDueJump('atas');
   const dipanggil = [];
   h.ref.current = { scrollTo: (arg) => dipanggil.push(arg) };
+  // Jendelanya sengaja sangat pendek (40) supaya baris y 3 pun tetap terhitung
+  // di luar layar — yang diuji di sini penjepitan angkanya, bukan syarat
+  // "sudah kelihatan".
+  h.onLayout({ nativeEvent: { layout: { height: 40 } } });
   h.onContentSizeChange();
   h.setRowY('atas', 3);
   ok('y tidak pernah negatif', dipanggil[0]?.y === 0, JSON.stringify(dipanggil[0]));
@@ -217,6 +268,7 @@ for (const urutan of ['baris-dulu', 'isi-dulu']) {
   const h = useDueJump(MERAH_PERTAMA);
   const dipanggil = [];
   h.ref.current = { scrollTo: (arg) => dipanggil.push(arg) };
+  h.onLayout({ nativeEvent: { layout: { height: 700 } } });
   h.onContentSizeChange();
   h.setRowY('sisir', 120);
   h.setRowY('handuk', 300);

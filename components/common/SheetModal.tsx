@@ -20,6 +20,7 @@ import {
     GestureDetector,
     GestureHandlerRootView,
 } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
     runOnJS,
     useAnimatedStyle,
@@ -38,6 +39,11 @@ import { VixText } from '@/components/common/VixText';
 // Celah minimal dari atas layar → backdrop SELALU terlihat & bisa ditekan untuk
 // menutup; sheet tidak pernah menutupi layar penuh.
 const TOP_GAP = 72;
+
+// Napas di kaki sheet KALAU layarnya tidak punya batang beranda (iPhone
+// berkancing). Di iPhone 15 & sejenisnya angka ini kalah dari tinggi batang
+// beranda itu sendiri — lihat `bottomPad` di bawah.
+const BOTTOM_GAP = 30;
 
 // Bottom sheet standar: overlay gelap + panel dari bawah + judul.
 // - Tinggi dibatasi MAKSIMAL 3/4 layar (dan tak melebihi ruang di atas keyboard),
@@ -69,6 +75,15 @@ export function SheetModal({
   headerRight?: ReactNode;
 }) {
   const { height } = useWindowDimensions();
+  // Tinggi batang beranda iPhone (0 di perangkat berkancing). Modal punya
+  // hierarki view sendiri, tapi nilainya datang lewat context React yang
+  // memang menembus Modal — angkanya sama dengan yang dipakai layar biasa.
+  const insets = useSafeAreaInsets();
+  // Kaki sheet: yang mana pun yang lebih besar antara napas biasa dan tinggi
+  // batang beranda + sedikit jarak. Tanpa ini, baris terakhir daftar (mis.
+  // nama CL paling bawah di sheet Share) duduk TEPAT di belakang batang
+  // beranda iPhone 15 dan setengah terpotong.
+  const bottomPad = Math.max(BOTTOM_GAP, insets.bottom + 14);
   // `rendered` menjaga Modal tetap terpasang selama animasi keluar berjalan.
   const [rendered, setRendered] = useState(visible);
   const translateY = useSharedValue(height);
@@ -196,7 +211,11 @@ export function SheetModal({
           </Animated.View>
 
           <Animated.View
-            style={[styles.sheet, { maxHeight: maxSheetHeight }, sheetStyle]}>
+            style={[
+              styles.sheet,
+              { maxHeight: maxSheetHeight, paddingBottom: bottomPad },
+              sheetStyle,
+            ]}>
             {/* Zona seret: gagang + judul (tidak menghalangi form di bawah) */}
             <GestureDetector gesture={pan}>
               <View style={styles.grabZone}>
@@ -236,13 +255,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     backgroundColor: Color.OVERLAY,
   },
+  // paddingBottom-nya TIDAK di sini: ia ikut tinggi batang beranda perangkat
+  // (lihat `bottomPad`), jadi dipasang saat render.
   sheet: {
     backgroundColor: Color.BACKGROUND,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 30,
   },
   grabZone: { paddingBottom: 4 },
   handle: {

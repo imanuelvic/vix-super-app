@@ -91,8 +91,12 @@ console.log('\n=== 4. Badge sub-tab & tombol pojok Work ===');
   ok('baris pil punya ruang di atas untuk badge (paddingTop 10 > gantungan 6)',
     /paddingTop: 10/.test(tabs) && /pillBadge: \{ position: 'absolute', top: -6/.test(tabs));
   ok('badge-nya tetap di pojok kanan atas pil', /pillBadge: \{[^}]*right: -6/.test(tabs));
-  ok('tombol pojok Work jadi 🔔, menuju Reminder 🔔',
-    /emoji="🔔" onPress=\{\(\) => router\.push\('\/tasks'\)\}/.test(work) &&
+  // 28 Sep 2026: tombolnya sekarang berbadge (task WORK hari ini), jadi
+  // propsnya ditulis bertingkat. Yang dijaga tetap sama, PLUS badge-nya:
+  // tanpa badge itu, angka tab Work di kaki app tidak bisa dijumlah dari
+  // rincian yang kelihatan di layar ini (lihat workAttention di lib/career).
+  ok('tombol pojok Work jadi 🔔, menuju Reminder 🔔, & berbadge task hari ini',
+    /<EmojiButton\s*\n\s*emoji="🔔"\s*\n\s*badge=\{perhatian\.tasks\}\s*\n\s*onPress=\{\(\) => router\.push\('\/tasks'\)\}/.test(work) &&
     /Reminder 🔔/.test(baca('app/tasks.tsx')));
   ok('bukan lagi centang (yang di app ini berarti "selesai")', !/emoji="✅"/.test(work));
 }

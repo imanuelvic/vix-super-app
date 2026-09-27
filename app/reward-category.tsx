@@ -17,6 +17,7 @@ import {
   EMPTY_REWARD_DATES,
   rewardCategoryOf,
   rewardDateLabel,
+  rewardGroups,
   REWARDS,
   REWARD_CATEGORIES,
   categoryNow,
@@ -58,6 +59,10 @@ export default function RewardCategoryScreen() {
   const key = rewardCategoryOf(cat);
   const meta = REWARD_CATEGORIES.find((c) => c.key === key);
   const daftar = key ? REWARDS.filter((a) => a.category === key) : [];
+  // Lencananya dikelompokkan per periode yang diukur (sehari · sepekan ·
+  // sebulan · 3 bulan · setahun). Kategori berperiode tunggal tetap satu
+  // kelompok tanpa kepala — lihat rewardGroups di lib/reward.
+  const kelompok = key ? rewardGroups(key) : [];
   const sekarang = key ? categoryNow(key, stats) : null;
   const picked = daftar.find((a) => a.id === pickedId) ?? null;
 
@@ -104,32 +109,41 @@ export default function RewardCategoryScreen() {
 
             Rinciannya (keterangan + tanggal + batang kemajuan) tidak hilang: ia
             pindah ke kartu di bawah grid, muncul saat lencananya di-click. */}
-        <View style={badgeGrid.grid}>
-          {daftar.map((a) => {
-            const value = a.of(stats);
-            const done = value >= a.target;
-            const dipilih = pickedId === a.id;
-            return (
-              <BadgeTile
-                key={a.id}
-                icon={a.icon}
-                tag={String(a.fmt ? a.fmt(a.target) : a.target)}
-                title={a.title}
-                unlocked={done}
-                onPress={() => setPickedId(dipilih ? null : a.id)}>
-                <VixText
-                  heading="label"
-                  additionalStyle={done ? styles.doneText : styles.lockText}>
-                  {done
-                    ? rewardDateLabel(dates, a.id)
-                    : a.fmt
-                      ? `${a.fmt(Math.min(value, a.target))}/${a.fmt(a.target)}`
-                      : `${Math.min(value, a.target)}/${a.target}`}
-                </VixText>
-              </BadgeTile>
-            );
-          })}
-        </View>
+        {kelompok.map((g, gi) => (
+          <View key={g.label ?? `lain-${gi}`}>
+            {g.label ? (
+              <VixText heading="label" additionalStyle={styles.groupTitle}>
+                {g.label}
+              </VixText>
+            ) : null}
+            <View style={badgeGrid.grid}>
+              {g.items.map((a) => {
+                const value = a.of(stats);
+                const done = value >= a.target;
+                const dipilih = pickedId === a.id;
+                return (
+                  <BadgeTile
+                    key={a.id}
+                    icon={a.icon}
+                    tag={String(a.fmt ? a.fmt(a.target) : a.target)}
+                    title={a.title}
+                    unlocked={done}
+                    onPress={() => setPickedId(dipilih ? null : a.id)}>
+                    <VixText
+                      heading="label"
+                      additionalStyle={done ? styles.doneText : styles.lockText}>
+                      {done
+                        ? rewardDateLabel(dates, a.id)
+                        : a.fmt
+                          ? `${a.fmt(Math.min(value, a.target))}/${a.fmt(a.target)}`
+                          : `${Math.min(value, a.target)}/${a.target}`}
+                    </VixText>
+                  </BadgeTile>
+                );
+              })}
+            </View>
+          </View>
+        ))}
 
         {/* Rincian lencana yang sedang di-click. Satu kartu, bukan satu per
             lencana: yang dicari saat meng-click memang cuma satu. */}
@@ -189,6 +203,10 @@ const styles = StyleSheet.create({
   nowUnit: { color: Color.TEXT_LABEL },
 
   gridHint: { textAlign: 'center', marginTop: 16, color: Color.TEXT_PLACEHOLDER },
+
+  // Kepala kelompok periode — sengaja kecil & sewarna keterangan: ia pemisah,
+  // bukan judul baru yang bersaing dengan nama kategorinya di pita header.
+  groupTitle: { color: Color.TEXT_LABEL, marginTop: 14, marginBottom: 6 },
 
   // ===== Kartu rincian lencana terpilih =====
   pickedCard: {

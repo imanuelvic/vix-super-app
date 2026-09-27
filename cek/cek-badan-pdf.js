@@ -47,18 +47,23 @@ ok('tampilan barisnya tidak berubah (Tinggi/Berat/Berat ideal/BMI/Lingkar perut/
     .every((t) => dialog.includes(t)));
 
 console.log('\n=== Modal baca CL / Main Team: lebih pendek ===');
+// 27 Sep 2026: isi modalnya pindah ke components/core/PersonInfo.tsx supaya
+// Rekap Visitasi 📊 memakai tampilan yang SAMA. Formulir isiannya tetap di
+// LeadersTab, jadi "Gender" sekarang muncul sekali di tiap berkas.
+const personInfo = baca('components/core/PersonInfo.tsx');
 ok('"Cowok / Cewek" jadi "Gender" (form & modal baca)',
-  !/Cowok \/ Cewek/.test(leaders) && (leaders.match(/🚻 Gender/g) || []).length === 2);
+  !/Cowok \/ Cewek/.test(leaders) && !/Cowok \/ Cewek/.test(personInfo) &&
+  (leaders.match(/🚻 Gender/g) || []).length === 1 &&
+  (personInfo.match(/🚻 Gender/g) || []).length === 1);
 ok('📱 No. HP & Gender berdampingan',
-  /<View style=\{styles\.viewPair\}>\s*\n\s*<InfoRow\s*\n\s*label="📱 No\. HP"[\s\S]{0,120}half\s*\n\s*\/>\s*\n\s*\{jenis \? <InfoRow label="🚻 Gender" value=\{jenis\} half \/> : null\}\s*\n\s*<\/View>/.test(leaders));
+  /<View style=\{styles\.viewPair\}>\s*\n\s*<InfoRow\s*\n\s*label="📱 No\. HP"[\s\S]{0,120}half\s*\n\s*\/>\s*\n\s*\{jenis \? <InfoRow label="🚻 Gender" value=\{jenis\} half \/> : null\}\s*\n\s*<\/View>/.test(personInfo));
 ok('MBTI & Love Language berdampingan (barisnya tidak dibuat kalau dua-duanya kosong)',
-  /\{person\.mbti \|\| love \? \(\s*\n\s*<View style=\{styles\.viewPair\}>\s*\n\s*\{person\.mbti \? <InfoRow label="🧩 MBTI" value=\{person\.mbti\} half \/> : null\}\s*\n\s*\{love \? <InfoRow label="💞 Love Language" value=\{love\} half \/> : null\}/.test(leaders));
+  /\{person\.mbti \|\| love \? \(\s*\n\s*<View style=\{styles\.viewPair\}>\s*\n\s*\{person\.mbti \? <InfoRow label="🧩 MBTI" value=\{person\.mbti\} half \/> : null\}\s*\n\s*\{love \? <InfoRow label="💞 Love Language" value=\{love\} half \/> : null\}/.test(personInfo));
 ok('tiap paruh membagi lebar sama rata',
-  /viewPair: \{ flexDirection: 'row', gap: 12 \}/.test(leaders) && /viewHalf: \{ flex: 1 \}/.test(leaders) &&
-  /style=\{\[styles\.viewRow, half && styles\.viewHalf\]\}/.test(leaders));
-// Dilihat di badan PersonView saja: label yang sama juga dipakai formulir
-// isiannya lebih atas di berkas ini.
-const modalBaca = leaders.slice(leaders.indexOf('function PersonView('), leaders.indexOf('function InfoRow('));
+  /viewPair: \{ flexDirection: 'row', gap: 12 \}/.test(personInfo) && /viewHalf: \{ flex: 1 \}/.test(personInfo) &&
+  /style=\{\[styles\.viewRow, half && styles\.viewHalf\]\}/.test(personInfo));
+// Dilihat di badan PersonInfo saja, bukan sampai ke InfoRow di bawahnya.
+const modalBaca = personInfo.slice(personInfo.indexOf('export function PersonInfo('), personInfo.indexOf('function InfoRow('));
 ok('urutan sisanya tetap: lahir → ulang tahun → HP+Gender → pendidikan → pekerjaan → DISC → MBTI+Love',
   // 22 Sep 2026: "🎂 Tanggal Lahir" / "Ulang Tahun" dikapitalkan sendiri oleh pemilik app.
   ['🎂 Tanggal Lahir', '🎈 Ulang Tahun', '📱 No. HP', '🚻 Gender" value={jenis}', '🎓 Pendidikan', '💼 Pekerjaan', '🎨 DISC', '🧩 MBTI', '💞 Love Language" value={love}']

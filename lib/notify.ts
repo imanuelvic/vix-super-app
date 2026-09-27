@@ -14,12 +14,15 @@ import {
   KOLAM_DOA_MALAM,
   KOLAM_FINANCE_MALAM,
   KOLAM_JOURNEY,
+  KOLAM_LEARNING,
   KOLAM_LIFE,
   KOLAM_OLAHRAGA,
+  KOLAM_PUASA,
   KOLAM_REFLEKSI,
   KOLAM_RESCUE,
   KOLAM_WORK,
 } from './notifyCopy';
+import { LEARNING_STEPS, learningWeekday } from './learning';
 import { catatKebiasaan, semuaJamPengingat, type Jam } from './notifyTiming';
 import type { FinanceStatusInput, TodayHref, TodayItem, TodayModel } from './today';
 
@@ -114,6 +117,8 @@ export type NotifyGroup =
   | 'reflection'
   | 'reward'
   | 'fitness'
+  | 'learning'
+  | 'fasting'
   | 'night-prayer';
 
 export type NotifyGroupMeta = {
@@ -135,6 +140,8 @@ export const NOTIFY_GROUPS: NotifyGroupMeta[] = [
   { key: 'finance', emoji: '💰', label: 'Finance', when: 'Pagi 07.30 status · malam 20.30 catat pengeluaran', opens: 'Finance 💰' },
   { key: 'reward', emoji: '🏆', label: 'Pencapaian', when: 'Tiap malam 19.00, kalau ada yang hampir kebuka', opens: 'Reward 🏆' },
   { key: 'fitness', emoji: '💪', label: 'Olahraga hari ini', when: 'Tiap malam 21.00, kalau belum dicatat & tidak dilewati', opens: 'Fitness 💪, sub-tab Exercise' },
+  { key: 'learning', emoji: '🎓', label: 'Target Learning', when: 'Sen · Rab · Jum pagi 08.00 & malam 20.00, Minggu sore 17.00', opens: 'Learning 🎓, sub-tab Target' },
+  { key: 'fasting', emoji: '🗓️', label: 'Puasa bulanan', when: 'Senin terakhir tiap bulan 09.00 (plus Minggu sebelumnya)', opens: 'Puasa Baru 🍽️' },
   { key: 'reflection', emoji: '📝', label: 'Refleksi malam', when: 'Tiap malam 21.30', opens: 'Today 🏠' },
   { key: 'night-prayer', emoji: '🌙', label: 'Night Prayer', when: 'Tiap malam 22.00, kalau belum didoakan', opens: 'Night Prayer 🌙' },
 ];
@@ -168,7 +175,7 @@ export async function groupEnabled(group: NotifyGroup): Promise<boolean> {
 
 export async function setGroupEnabled(group: NotifyGroup, on: boolean): Promise<void> {
   await AsyncStorage.setItem(GROUP_KEY(group), on ? '1' : '0').catch(() => {});
-  terakhir = ''; // paksa jadwal ditulis ulang di sinkron berikutnya
+  lupakanJadwal(); // paksa jadwal ditulis ulang di sinkron berikutnya
 }
 
 /**
@@ -183,6 +190,7 @@ export async function setNotifyEnabled(on: boolean): Promise<NotifyStatus> {
     await batalkanJadwal(mod);
     await mod.setBadgeCountAsync(0).catch(() => false);
     await AsyncStorage.setItem(MASTER_KEY, '0').catch(() => {});
+    lupakanJadwal();
     return 'ok';
   }
   let izin = await mod.getPermissionsAsync();
@@ -193,7 +201,7 @@ export async function setNotifyEnabled(on: boolean): Promise<NotifyStatus> {
   }
   if (!izin.granted) return 'denied';
   await AsyncStorage.setItem(MASTER_KEY, '1').catch(() => {});
-  terakhir = '';
+  lupakanJadwal();
   return 'ok';
 }
 
@@ -223,6 +231,15 @@ export type NotifySlot = {
   body: string | null;
   /** Tujuan click notifikasinya: layar yang memang sedang dibicarakan. */
   route: TodayHref;
+  /**
+   * Berbunyi HANYA di satu hari tiap pekan (1 = Minggu … 7 = Sabtu).
+   * Kosong = tiap hari, seperti semua pengingat lain.
+   *
+   * Dipakai target Learning 🎓, yang harinya memang tetap (Sen · Rab · Jum ·
+   * Min). Kalau ia dijadwalkan harian seperti yang lain, "🎯 Kenali" akan
+   * berbunyi juga hari Selasa — dan itu menagih hal yang belum jadi giliran.
+   */
+  weekday?: number;
 };
 
 /** Layar induk tiap kelompok. Bentuknya polos, sama dengan href baris Today. */
@@ -238,6 +255,10 @@ const RUTE_DOA_MALAM: TodayHref = { pathname: '/night-prayer' };
 // Langsung ke sub-tab Exercise, bukan ke Program: yang diminta pengingat ini
 // adalah MENCATAT, dan mencatatnya di situ.
 const RUTE_OLAHRAGA: TodayHref = { pathname: '/fitness', params: { tab: 'exercise' } };
+// Langsung ke sub-tab Target, tempat keempat langkah minggu ini dicentang.
+const RUTE_LEARNING: TodayHref = { pathname: '/learning', params: { tab: 'week' } };
+// Layar Puasa Baru — tanpa ?id=, jadi ia membuka perjalanan 3 langkahnya.
+const RUTE_PUASA: TodayHref = { pathname: '/fasting' };
 // Refleksi ditulis di blok Refleksi layar Today, bukan layar tersendiri.
 const RUTE_REFLEKSI: TodayHref = { pathname: '/' };
 /** Bacaan Alkitab dicatat di Habits, di kartu sesi jam itu. */
@@ -462,6 +483,21 @@ export function buildSlots(
       route: RUTE_OLAHRAGA,
     },
     {
+      // 🗓️ Puasa bulanan — Senin terakhir tiap bulan, plus Minggu sebelumnya
+      // (alasan dua harinya ada di fastingMonthlyDue, lib/fasting.ts).
+      // Jam 09.00: sesudah Morning Journey, bacaan pagi & Finance selesai,
+      // sebelum jam kerja benar-benar mulai.
+      id: 'fasting-monthly',
+      group: 'fasting',
+      hour: 9,
+      minute: 0,
+      title: pilihKalimat(KOLAM_PUASA, dayId, 'puasa'),
+      body: model.fastingMonthly
+        ? 'Tentukan fokusnya dulu, baru tanggalnya. Jangan sampai jadi rutinitas.'
+        : null,
+      route: RUTE_PUASA,
+    },
+    {
       id: 'reflection',
       group: 'reflection',
       ...jam('reflection', 21, 30),
@@ -481,6 +517,40 @@ export function buildSlots(
       route: RUTE_DOA_MALAM,
     },
   ];
+
+  // 🎓 Target Learning — satu slot per JAM PENGINGAT tiap langkah, dan
+  // masing-masing cuma berbunyi di harinya sendiri (weekday).
+  //
+  // Aturan diamnya sengaja sempit: sebuah langkah didiamkan HANYA kalau
+  // harinya adalah HARI INI dan langkahnya memang sudah beres. Langkah yang
+  // harinya belum datang tetap dijadwalkan, karena keadaan minggu depan belum
+  // bisa diketahui sekarang — pekan berganti tiap Senin dan centangnya ikut
+  // kosong lagi. Kalau ia ikut didiamkan sekarang, Senin depan tidak ada yang
+  // berbunyi sama sekali.
+  // Hari keberapa dalam pekan (Sen=0 … Min=6), dihitung dari `dayId` yang
+  // dioper — BUKAN dari jam sistem. buildSlots ini fungsi murni, dan suite
+  // menjalankannya dengan tanggal buatan.
+  const [thn, bln, tgl] = dayId.split('-').map(Number);
+  const jsHari = new Date(thn, bln - 1, tgl).getDay();
+  const hariKe = jsHari === 0 ? 6 : jsHari - 1;
+  for (const langkah of LEARNING_STEPS) {
+    const beres = !!model.learning.done[langkah.key];
+    const diam = langkah.pos === hariKe && beres;
+    for (const jam of langkah.remindAt) {
+      slots.push({
+        id: `learning-${langkah.key}-${jam}`,
+        group: 'learning',
+        weekday: learningWeekday(langkah.pos),
+        hour: jam,
+        minute: 0,
+        title: pilihKalimat(KOLAM_LEARNING, dayId, `learn${langkah.key}`),
+        body: diam
+          ? null
+          : `${langkah.emoji} ${langkah.day} ${langkah.label}: ${model.learning.skill}. ${langkah.how}`,
+        route: RUTE_LEARNING,
+      });
+    }
+  }
 
   // Bacaan yang jendelanya sedang terbuka & belum diisi disebut lebih tegas,
   // dan tujuan click-nya memakai href baris Todaynya sendiri.
@@ -571,7 +641,7 @@ const ACHV_KEY = 'notify:reward';
 
 export async function saveRewardSnapshot(snap: RewardSnapshot): Promise<void> {
   await AsyncStorage.setItem(ACHV_KEY, JSON.stringify(snap)).catch(() => {});
-  terakhir = ''; // isinya berubah → jadwal ditulis ulang di sinkron berikutnya
+  lupakanJadwal(); // isinya berubah → jadwal ditulis ulang di sinkron berikutnya
 }
 
 export async function loadRewardSnapshot(): Promise<RewardSnapshot | null> {
@@ -592,6 +662,29 @@ export async function loadRewardSnapshot(): Promise<RewardSnapshot | null> {
 
 let terakhir = '';
 
+// Sidik BAHAN MURNInya: model Today + status Finance + tanggalnya. Semua yang
+// dibaca `syncNotifications` cuma dua macam — bahan murni ini, dan keadaan di
+// AsyncStorage (sakelar, sakelar tiap kelompok, jam kebiasaan, cuplikan
+// Reward). Bahan murni sama + keadaan AsyncStorage tak disentuh = hasilnya
+// mustahil berbeda, jadi seluruh pembacaan disknya boleh dilewati.
+//
+// Kenapa ini perlu: `syncNotifications` dipanggil tiap `useNow` berdetak, yaitu
+// TIAP 60 DETIK selama layar Today terbuka. Penjaga `terakhir` di bawah memang
+// sudah mencegah penulisan jadwal yang sama, tapi ia diperiksa PALING AKHIR —
+// jadi ~22 pembacaan + 1 penulisan AsyncStorage tetap jalan tiap menit hanya
+// untuk sampai ke kesimpulan "tidak ada yang berubah".
+//
+// Dikosongkan dari satu tempat (`lupakanJadwal`) bersama `terakhir`, dan setiap
+// penulis keadaan AsyncStorage di atas memanggilnya. Itu syarat kebenarannya:
+// kalau ada penulis yang lupa, jadwalnya jadi basi tanpa gejala.
+let murniTerakhir = '';
+
+/** Lupakan sidik jadwal → sinkron berikutnya menghitung & menulis ulang. */
+function lupakanJadwal(): void {
+  terakhir = '';
+  murniTerakhir = '';
+}
+
 /**
  * Tulis ulang seluruh jadwal dengan keadaan terbaru. Tidak melakukan apa-apa
  * kalau sakelarnya mati, modulnya tak ada, atau isinya sama dengan yang
@@ -606,6 +699,16 @@ export async function syncNotifications(
 ): Promise<void> {
   const mod = getModule();
   if (!mod) return;
+
+  // Seluruh model dijadikan sidik, bukan daftar bagian yang dipakai
+  // `buildSlots`: daftar tulis tangan seperti itu bisa ketinggalan diam-diam
+  // saat ada slot baru menengok bagian model yang lain, dan gejalanya
+  // "notifikasi tidak ikut berubah" — jenis bug yang paling lama tak terlihat.
+  // Biayanya cuma CPU, dan itu jauh lebih murah dari 22 pembacaan disk.
+  const murni = `${todayId}|${JSON.stringify(model)}|${JSON.stringify(finance)}`;
+  if (murni === murniTerakhir) return;
+  murniTerakhir = murni;
+
   if (!(await notifyEnabled())) return;
 
   // Kelompok yang hari ini masih punya isi → bahan belajar jam kebiasaan.
@@ -633,7 +736,10 @@ export async function syncNotifications(
   }
   const jumlahHariIni = model.today.length;
   const sidik = `${jumlahHariIni}|${slots
-    .map((s) => `${s.id}@${s.hour}:${s.minute}|${s.title}|${s.body}|${tujuanTeks(s.route)}`)
+    .map(
+      (s) =>
+        `${s.id}@${s.weekday ?? '*'}/${s.hour}:${s.minute}|${s.title}|${s.body}|${tujuanTeks(s.route)}`,
+    )
     .join('\n')}`;
   if (sidik === terakhir) return;
   terakhir = sidik;
@@ -641,6 +747,12 @@ export async function syncNotifications(
   try {
     await batalkanJadwal(mod);
     const DAILY = mod.SchedulableTriggerInputTypes.DAILY;
+    // Pemicu MINGGUAN untuk slot yang punya hari tetap (target Learning 🎓).
+    // Tanpa ini ia harus dijadwalkan harian lalu didiamkan sendiri tiap hari
+    // yang bukan gilirannya — dan itu cuma benar selama app-nya dibuka tiap
+    // hari. iOS yang mengurus harinya, jadi ia tetap tepat walau app-nya
+    // seminggu tidak dibuka.
+    const WEEKLY = mod.SchedulableTriggerInputTypes.WEEKLY;
     const ids: string[] = [];
     for (const s of slots) {
       ids.push(
@@ -657,13 +769,18 @@ export async function syncNotifications(
               group: s.group,
             },
           },
-          trigger: { type: DAILY, hour: s.hour, minute: s.minute },
+          trigger:
+            s.weekday === undefined
+              ? { type: DAILY, hour: s.hour, minute: s.minute }
+              : { type: WEEKLY, weekday: s.weekday, hour: s.hour, minute: s.minute },
         }),
       );
     }
     await AsyncStorage.setItem(IDS_KEY, JSON.stringify(ids));
     await mod.setBadgeCountAsync(jumlahHariIni).catch(() => false);
   } catch {
-    terakhir = '';
+    // Gagal di tengah jalan → kedua sidiknya dilupakan, jadi sinkron
+    // berikutnya benar-benar mencoba lagi (bukan disangka "sudah sama").
+    lupakanJadwal();
   }
 }

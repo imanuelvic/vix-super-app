@@ -98,7 +98,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
   // Buka sub-tab ini → daftarnya langsung datang ke P1 pertama yang belum
   // selesai, yaitu isi badge merahnya. ScrollView-nya sudah punya ref sendiri
   // (useScrollTop), jadi ref itu yang dioper — bukan dipasang ref kedua.
-  const { setRowY, onContentSizeChange } = useDueJump(
+  const { setRowY, onContentSizeChange, onLayout } = useDueJump(
     sorted.find((i) => !i.done && i.priority === 1)?.id ?? null,
     scrollRef,
   );
@@ -174,6 +174,7 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
       <ScrollView
         ref={scrollRef}
         onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
         contentContainerStyle={styles.content}>
         <SummaryCard style={styles.heroCard}>
           <VixText heading="label" additionalStyle={summaryText.label}>

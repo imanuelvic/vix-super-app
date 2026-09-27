@@ -40,10 +40,16 @@ c('ajakannya jadi penutup, bukan nyempil di tengah',
   SEMUA.every(([, t]) => t.trimEnd().endsWith('silakan yaa 🤗')));
 
 console.log('\n=== Yang lama TIDAK hilang ===');
-c('ucapan grup tetap apa adanya',
-  SEMUA[0][1].startsWith('Selamatt ulang tahun Riky 🔥💪'));
+// 28 Sep 2026: kalimat pembukanya disegarkan (permintaan user: "lebih fresh,
+// anak muda, tidak terlalu kaku"). Yang dijaga bukan lagi kata per katanya,
+// melainkan tiga hal yang memang tidak boleh hilang: ucapan grup menyebut
+// namanya, sapaan cowok tetap khas, dan versi cewek tetap menyebut syukur
+// karena mengenal orangnya.
+c('ucapan grup menyebut namanya & tetap terasa perayaan',
+  SEMUA[0][1].startsWith('HAPPY BIRTHDAY Riky!!') && SEMUA[0][1].includes('🎂'));
 c('sapaan cowok "ma bro" tetap', SEMUA[1][1].includes('happy bday ma bro!'));
-c('sapaan cewek tetap', SEMUA[2][1].includes('bersyukur bisa kenal Sarah'));
+c('versi cewek tetap menyebut syukur bisa mengenal orangnya',
+  SEMUA[2][1].includes('bisa kenal Sarah'));
 c('yang belum diisi gendernya tetap memakai versi netral (sama dengan cewek)',
   SEMUA[3][1] === SEMUA[2][1]);
 c('4 baris doa lama masih lengkap', SEMUA.every(([, t]) =>

@@ -1,3 +1,4 @@
+import { dayId, dayIdToDate } from './format';
 import { type LoginStreak as DayStreak } from './reward';
 
 // Streak harian 🔥 — aturannya SAMA untuk semua fitur yang punya streak
@@ -23,6 +24,44 @@ export function alreadyCounted(
   todayId: string,
 ): boolean {
   return current?.lastDayId === todayId;
+}
+
+/**
+ * dayId sehari SEBELUM `id`. Murni: tidak melihat jam sistem sama sekali.
+ *
+ * Merangkainya lewat `dayId()` milik lib/format, bukan menyusun "YYYY-MM-DD"
+ * sendiri: cuma satu tempat di seluruh app yang boleh tahu bentuk id harian,
+ * dan itu bukan di sini (lihat cek-id-kunci.js).
+ */
+export function prevDayId(id: string): string {
+  const hari = dayIdToDate(id);
+  hari.setDate(hari.getDate() - 1);
+  return dayId(hari);
+}
+
+/**
+ * Streak yang MASIH hidup hari ini — 0 kalau hari terakhirnya bukan hari ini
+ * atau kemarin.
+ *
+ * Kenapa ini perlu ada sendiri: `count` di Firestore itu angka TERAKHIR KALI
+ * dicatat, dan ia tidak turun sendiri. Bolos tiga hari lalu buka app, angkanya
+ * masih memamerkan "3 hari streak" sampai kamu membaca lagi — baru saat itu ia
+ * diam-diam jatuh ke 1. Jadi yang boleh ditampilkan bukan `count` mentah,
+ * melainkan angka ini.
+ *
+ * Bentuknya sengaja sama persis dengan `activeStreak` milik kebiasaan Health
+ * (lib/health.ts), cuma yang ini murni: hari kemarinnya dihitung dari
+ * `todayId` yang dioper, bukan dari jam sistem.
+ */
+export function activeDayStreak(
+  current: DayStreak | null,
+  todayId: string,
+): number {
+  if (!current) return 0;
+  if (current.lastDayId === todayId || current.lastDayId === prevDayId(todayId)) {
+    return current.count;
+  }
+  return 0;
 }
 
 /**

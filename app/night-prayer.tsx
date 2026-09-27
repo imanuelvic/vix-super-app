@@ -105,7 +105,7 @@ export default function NightPrayerScreen() {
         backLabel="Kembali"
         title="Night Prayer 🌙"
         subtitle={formatFullDate(now)}
-        right={<StreakPill streak={nightStreakAlive(streak ?? null, todayId)} />}
+        right={<StreakPill streak={nightStreakAlive(streak ?? null, todayId)} onBand />}
       />
       {streak === undefined ? (
         <LoadingCenter />

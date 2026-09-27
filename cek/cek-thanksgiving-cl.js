@@ -113,11 +113,15 @@ ok('DateField "🎉 Tanggal Thanksgiving" boleh kosong (placeholder), sesudah �
   lt.indexOf('🎉 Tanggal Thanksgiving') > lt.indexOf('📱 No. HP\n') && lt.indexOf('🎉 Tanggal Thanksgiving') < lt.indexOf('<GenderField'));
 ok('disimpan sebagai dayId "YYYY-MM-DD" (null kalau kosong)',
   /thanksgivingDayId: fThanksgiving \? dayId\(fThanksgiving\) : null,/.test(lt));
+// 27 Sep 2026: isi modal baca-saja pindah ke components/core/PersonInfo.tsx,
+// supaya Rekap Visitasi 📊 memakai tampilan yang SAMA saat hati CL-nya
+// di-click. Yang dijaga tetap sama, cuma berkasnya yang berganti.
+const pi = baca('components/core/PersonInfo.tsx');
 ok('modal baca-saja: baris 🎉 Thanksgiving CORE format utuh seperti tanggal lahir (formatDate), hanya untuk CL yang mengisinya',
-  /'thanksgivingDayId' in person && person\.thanksgivingDayId \? \(\s*<InfoRow\s+label="🎉 Thanksgiving CORE"\s+value=\{formatDate\(dayIdToDate\(person\.thanksgivingDayId\)\)\}/.test(lt) &&
-  !/formatTinyDate/.test(lt) && F.formatDate(new Date(2025, 0, 8)) === '8 Januari 2025');
+  /'thanksgivingDayId' in person && person\.thanksgivingDayId \? \(\s*<InfoRow\s+label="🎉 Thanksgiving CORE"\s+value=\{formatDate\(dayIdToDate\(person\.thanksgivingDayId\)\)\}/.test(pi) &&
+  !/formatTinyDate/.test(pi) && F.formatDate(new Date(2025, 0, 8)) === '8 Januari 2025');
 ok('tanggal lahir di modal memang format yang sama: "d Bulan yyyy · n th"',
-  /value=\{`\$\{person\.birthDay\} \$\{MONTH_NAMES\[person\.birthMonth\]\} \$\{person\.birthYear\} · \$\{currentAge\(person, today\)\} th`\}/.test(lt));
+  /value=\{`\$\{person\.birthDay\} \$\{MONTH_NAMES\[person\.birthMonth\]\} \$\{person\.birthYear\} · \$\{currentAge\(person, today\)\} th`\}/.test(pi));
 ok('tipe CoreLeader punya thanksgivingDayId?: string | null', /thanksgivingDayId\?: string \| null;/.test(baca('lib/core.ts')));
 
 console.log('\n=== Tabel Rekap Visitasi ===');
@@ -136,8 +140,23 @@ ok('PDF rekap: baris "📅 Tanggal Thanksgiving"; 1× hanya kalau tanggalnya tah
   /value: r\.thanksgiving \? tanggalSyukur\(r\.thanksgiving, year\) : '',/.test(baca('lib/recapPdf.ts')));
 ok('sel Thanksgiving: "7 Agu" di atas, "26" di bawah (formatTinyDate)',
   /formatTinyDate\(d\)\.replace\(\/ \(\\d\+\)\$\/, '\\n\$1'\)/.test(rk) && !/monthShort/.test(rk));
-ok('kolom tanggal minWidth 40 supaya "17 Agu" tidak pecah tiga baris',
-  /cellDate: \{ fontSize: 11, lineHeight: 14, minWidth: 40 \}/.test(rk));
+// 27 Sep 2026: `minWidth: 40` DIBUANG dari cellDate, dan penjaganya dibalik.
+// Dulu baris tanggal boleh lebih sempit (40) daripada baris lain (48), dan
+// akibatnya baru kelihatan di iPhone 15: kolom baris itu menyusut sendiri,
+// jadi garis tegak Σ di ujung kanan meleset ke kiri — tabelnya bertangga,
+// bukan satu garis lurus dari atas ke bawah. Yang dijaga sekarang lebih
+// ketat: cellDate hanya boleh mengubah UKURAN HURUF, tidak lebarnya, dan
+// tidak boleh ada minWidth kedua di berkas ini selain milik kolom bersama.
+// Komentarnya ikut disaring dulu: berkas itu MENJELASKAN kenapa minWidth 40
+// dibuang, dan penjelasan itu tidak boleh terbaca sebagai gaya yang berlaku.
+const rkKode = rk.replace(/^\s*\/\/.*$/gm, '');
+ok('kolom tanggal tidak menimpa lebar kolom (garis Σ tetap lurus ke bawah)',
+  /cellDate: \{ fontSize: 11, lineHeight: 14 \}/.test(rkKode) &&
+  !/cellDate: \{[^}]*minWidth/.test(rkKode) &&
+  // Dua kolom CL (teks & tombol hati) sama-sama 48, dan tak ada minWidth
+  // lain kecuali lebar tabelnya sendiri.
+  (rkKode.match(/minWidth: 48/g) ?? []).length === 2 &&
+  (rkKode.match(/minWidth:/g) ?? []).length === 3);
 ok('garis tegak <SumLine /> tepat sebelum SETIAP sel Σ (kepala, Thanksgiving, tiap jenis, Total)',
   (rk.match(/<SumLine \/>\s*\n\s*<VixText[\s\S]{0,200}?styles\.sumCol/g) ?? []).length === 4 &&
   (rk.match(/<SumLine \/>/g) ?? []).length === 4 &&

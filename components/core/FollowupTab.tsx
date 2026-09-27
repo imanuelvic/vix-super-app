@@ -13,7 +13,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useLive } from '@/hooks/useLive';
-import { todayName } from '@/lib/chatTemplates';
+import { isFeedbackDay } from '@/lib/chatTemplates';
 import {
     birthdayGroupText,
     birthdayPersonalText,
@@ -152,12 +152,14 @@ export function FollowupTab({
   // apa pun.
   const bisaUndi =
     canDrawWeeklyFocus(new Date()) && leaders.length > WEEKLY_FOCUS_COUNT;
+  // Hari Sabtu → tombol 🪞 Minta Masukan di modal follow up menyala.
+  const hariMasukan = isFeedbackDay(new Date());
   const [drawing, setDrawing] = useState(false);
 
   // Buka sub-tab ini → langsung ke penyebab badge merahnya. Ulang Tahun
   // didahulukan karena ia hangus hari itu juga; follow up masih bisa dikejar
   // sampai akhir minggu.
-  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+  const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
     birthdays.today.find((b) => greets[b.key] !== dayId)?.key ??
       weekLeaders.find((l) => l.lastFollowupDayId !== dayId)?.id ??
       null,
@@ -230,6 +232,19 @@ export function FollowupTab({
   // Buka chat WhatsApp dengan pesan yang sudah terisi — tinggal kirim.
   function openWhatsApp(phone: string, text: string) {
     openWhatsAppChat(phone, text, () => setError('Gagal membuka WhatsApp.'));
+  }
+
+  /**
+   * Tutup modal follow up lalu buka Template Chat pada kategori tertentu,
+   * dengan nama CL-nya sudah terpilih.
+   *
+   * Modalnya ditutup DULU: layar yang didorong akan tersembunyi di balik
+   * Modal kalau tidak (alasan yang sama dengan dua tombol 🎡 & 📋 di kepala
+   * modal ini).
+   */
+  function bukaTemplate(leaderId: string, cat: string) {
+    setFollowupModal(null);
+    router.push({ pathname: '/chat-templates', params: { leader: leaderId, cat } });
   }
 
   /** Tandai sudah diucapkan hari ini → kartunya hilang dari daftar. */
@@ -358,6 +373,7 @@ export function FollowupTab({
     <ScrollView
       ref={listRef}
       onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
       contentContainerStyle={styles.content}>
       <GreetingHeader />
 
@@ -653,58 +669,58 @@ export function FollowupTab({
                 🔀 Ganti pertanyaan
               </VixText>
             </PressableScale>
-            {/* Ide pendekatan sesuai kepribadian */}
-            {fmTips.length > 0 && (
-              <>
-                <VixText
-                  heading="label"
-                  additionalStyle={styles.modalTipsLabel}>
-                  💡 Ide Pendekatan
+            {/* Ide pendekatan sesuai kepribadian. Label "💡 Ide Pendekatan"
+                dibuang 28 Sep 2026 — dua pil DISC/MBTI di sebelah kirinya
+                sudah menjelaskan sendiri kalimat itu datang dari mana. */}
+            {fmTips.map((t) => (
+              <View key={t.label} style={styles.tipRow}>
+                <View style={styles.tipBadge}>
+                  <VixText heading="label" additionalStyle={styles.tipBadgeText}>
+                    {t.label}
+                  </VixText>
+                </View>
+                <VixText heading="paragraph" additionalStyle={styles.tipText}>
+                  {t.text}
                 </VixText>
-                {fmTips.map((t) => (
-                  <View key={t.label} style={styles.tipRow}>
-                    <View style={styles.tipBadge}>
-                      <VixText
-                        heading="label"
-                        additionalStyle={styles.tipBadgeText}>
-                        {t.label}
-                      </VixText>
-                    </View>
-                    <VixText heading="paragraph" additionalStyle={styles.tipText}>
-                      {t.text}
-                    </VixText>
-                  </View>
-                ))}
-              </>
-            )}
+              </View>
+            ))}
           </ScrollView>
-          {/* Pengingat Motivational Word 🔥 — ditaruh persis di atas tombol
-              Chat WA, karena di sinilah WhatsApp dibuka. Follow up itu urusan
-              satu orang; Motivational Word urusan GRUP dan gampang terlewat
-              justru pada pagi yang sibuk mengejar follow up. Click-nya
-              membawa ke Template Chat, yang memang sudah membuka kategori
-              Motivational Words dengan pilihan hari ini tersorot. */}
-          <PressableScale
-            style={styles.motivasiRow}
-            onPress={() => {
-              const l = followupModal.leader;
-              setFollowupModal(null);
-              // Nama yang dituju dibawa serta (26 Sep 2026): kamu baru saja
-              // membuka dialog orang ini, jadi layar berikutnya sudah tahu
-              // siapa yang dimaksud. Tetap bisa diganti ke Grup CORE di sana
-              // dengan satu click kalau memang mau kirim Motivational Word.
-              router.push({
-                pathname: '/chat-templates',
-                params: { leader: l.id },
-              });
-            }}>
-            <VixText heading="label" additionalStyle={styles.motivasiText}>
-              🔥 Sudah kirim Motivational Word {todayName()} ke grup CORE?
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.motivasiLink}>
-              Buka Template Chat ›
-            </VixText>
-          </PressableScale>
+          {/* Dua pintu ke Template Chat, ditaruh persis di atas tombol Chat WA
+              karena di sinilah WhatsApp dibuka (28 Sep 2026).
+              Dulu di sini ada SATU kalimat panjang: "🔥 Sudah kirim
+              Motivational Word Jumat ke grup CORE? Buka Template Chat ›".
+              Kalimat itu benar, tapi ia dibaca sekali lalu selamanya cuma jadi
+              dinding teks di modal yang dibuka tiap hari. Sekarang jadi dua
+              tombol pendek, dan yang kedua menjawab hal yang dulu belum ada
+              tempatnya sama sekali:
+
+                🔥 Motivational Word → urusan GRUP, gampang terlewat justru di
+                   pagi yang sibuk mengejar follow up.
+                🪞 Minta Masukan     → arahnya MASUK: sepuluh CL inilah
+                   satu-satunya orang yang melihat caramu memimpin dari dekat,
+                   dan masukan itu tidak akan datang sendiri kalau tidak
+                   diminta. Disorot hari Sabtu (lihat FEEDBACK_DAY).
+
+              Keduanya membawa nama CL-nya serta, dan langsung membuka
+              kategorinya (?cat=…) supaya tak perlu dicari lagi di sana. */}
+          <View style={styles.pintuRow}>
+            <PressableScale
+              style={styles.pintuButton}
+              onPress={() => bukaTemplate(followupModal.leader.id, 'motivational')}>
+              <VixText heading="label" additionalStyle={styles.pintuText}>
+                🔥 Motivational Word
+              </VixText>
+            </PressableScale>
+            <PressableScale
+              style={[styles.pintuButton, hariMasukan && styles.pintuButtonOn]}
+              onPress={() => bukaTemplate(followupModal.leader.id, 'feedback')}>
+              <VixText
+                heading="label"
+                additionalStyle={hariMasukan ? styles.pintuTextOn : styles.pintuText}>
+                🪞 Minta Masukan
+              </VixText>
+            </PressableScale>
+          </View>
           {followupModal.phone ? (
             <PressableScale
               style={styles.modalWaButton}
@@ -910,7 +926,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   modalShuffleText: { color: Color.TEXT_LABEL },
-  modalTipsLabel: { color: Color.TEXT_LABEL, marginTop: 8, marginBottom: 6 },
   // Modal tengah (pokok doa & ide pendekatan)
   // Kepala modal follow up: judul + topik di kiri, 🎡 📋 di kanan.
   modalHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
@@ -929,18 +944,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalPointText: { color: Color.TEXT_TITLE },
-  // Pengingat Motivational Word 🔥 — sengaja TIDAK sekuat tombol Chat WA:
-  // ia mengingatkan, bukan menggantikan yang sedang dikerjakan.
-  motivasiRow: {
+  // Dua pintu ke Template Chat — sengaja TIDAK sekuat tombol Chat WA di
+  // bawahnya: keduanya pintu samping, bukan yang sedang dikerjakan. Lebarnya
+  // dibagi rata supaya barisnya tetap rapi walau tulisannya beda panjang.
+  pintuRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  pintuButton: {
+    flex: 1,
+    alignItems: 'center',
     backgroundColor: Color.MAIN_TRANSPARENT,
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 10,
-    marginBottom: 10,
-    gap: 2,
   },
-  motivasiText: { color: Color.MAIN_DARK },
-  motivasiLink: { color: Color.MAIN },
+  pintuText: { color: Color.MAIN_DARK },
+  // Hari Sabtu tombol Minta Masukan-lah yang menyala — tanpa kalimat pengingat
+  // tambahan, cukup warnanya yang berganti.
+  pintuButtonOn: { backgroundColor: Color.MAIN_DARK },
+  pintuTextOn: { color: Color.TEXT_REVERSE },
   modalWaButton: {
     alignItems: 'center',
     paddingVertical: 12,

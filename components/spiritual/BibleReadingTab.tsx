@@ -26,6 +26,8 @@ import {
     bibleSessionMeta,
     bibleSessionNow,
     bibleSessionOfClock,
+    bibleStreakBest,
+    bibleStreakNow,
     bibleSuggestion,
     deleteBibleReading,
     isBibleSkipped,
@@ -33,6 +35,7 @@ import {
     saveBibleReading,
     type BibleReadingDay,
     type BibleSession,
+    type BibleStreaks,
 } from '@/lib/spiritual';
 
 // Tab Bible Reading 📖 — riwayat bacaan Alkitab harian yang dicatat dari Home.
@@ -41,9 +44,12 @@ import {
 // Catatan HARI INI masih bisa dibetulkan/dihapus; hari lalu jadi arsip.
 export function BibleReadingTab({
   days,
+  streaks,
   openSession,
 }: {
   days: BibleReadingDay[];
+  /** Streak ketiga sesi — yang ditampilkan angka yang MASIH hidup hari ini. */
+  streaks: BibleStreaks;
   /**
    * Sesi yang harus terbuka duluan. Dioper layar Baca Alkitab sesudah menekan
    * "✅ Sudah baca": yang harus terlihat adalah sesi yang BARUSAN dicatat, dan
@@ -89,6 +95,11 @@ export function BibleReadingTab({
   const hariIni = days.find((d) => d.id === todayId);
   const sudahHariIni = !!hariIni?.[session];
   const saran = bibleSuggestion(days, session);
+  // Streak sesi ini. Yang dipakai angka yang MASIH hidup: sehari terlewat di
+  // jam sesi ini = rantainya putus, dan itu harus terlihat di sini, bukan
+  // diam-diam ketahuan baru saat kamu membaca lagi.
+  const streak = bibleStreakNow(streaks, session, todayId);
+  const rekor = bibleStreakBest(streaks, session);
 
   // 10 kartu per halaman — arsip ini menumpuk terus tiap hari, jadi tanpa
   // paginasi daftarnya jadi gulungan tanpa ujung. `key={currentPage}` di
@@ -158,6 +169,24 @@ export function BibleReadingTab({
           value={session}
           onChange={setSession}
         />
+
+        {/* 🔥 Streak sesi ini (27 Sep 2026).
+            Rantainya putus kalau sehari saja sesi ini tidak dibaca, dan sejak
+            sekarang putusnya kelihatan di sini juga, bukan cuma di Reward.
+            Rekor pribadinya tetap disebut supaya yang putus tidak terasa
+            seperti semuanya hilang. */}
+        <View style={styles.streakRow}>
+          <VixText heading="bold" additionalStyle={streak > 0 ? styles.streakOn : styles.streakOff}>
+            {streak > 0
+              ? `🔥 ${streak} hari streak ${meta.label.toLowerCase()}`
+              : `💤 Streak ${meta.label.toLowerCase()} lagi kosong`}
+          </VixText>
+          {rekor > 0 ? (
+            <VixText heading="label" additionalStyle={styles.streakBest}>
+              🏆 rekor {rekor}
+            </VixText>
+          ) : null}
+        </View>
 
         {/* 📖 Kartu "waktunya baca" (26 Sep 2026).
             Muncul HANYA saat jendela jam sesi ini sedang berjalan DAN hari ini
@@ -307,6 +336,19 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
   empty: { textAlign: 'center', marginTop: 20 },
+  // Baris streak: angka berjalan di kiri, rekor di kanan.
+  streakRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  streakOn: { color: Color.SPIRITUAL_DEEP },
+  streakOff: { color: Color.TEXT_PLACEHOLDER },
+  streakBest: { color: Color.TEXT_LABEL },
   // Kartu "waktunya baca": pastel Spiritual supaya ia menonjol di atas arsip
   // yang putih, tapi tetap satu keluarga warna dengan fiturnya.
   nowCard: {

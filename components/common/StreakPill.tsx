@@ -12,6 +12,7 @@ import Animated, {
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { useFeatureTheme } from '@/hooks/useFeatureTheme';
 import type { RewardCategoryKey } from '@/lib/reward';
 
 // Pil streak 🔥 → buka halaman Rewards (streak & pencapaian).
@@ -29,11 +30,24 @@ import type { RewardCategoryKey } from '@/lib/reward';
 export function StreakPill({
   streak,
   category,
+  onBand = false,
 }: {
   streak: string | number;
   category?: RewardCategoryKey;
+  /**
+   * Pil ini duduk DI DALAM pita header berwarna fitur (28 Sep 2026).
+   *
+   * Bawaannya pil memakai `Color.ACCENT`, dan itu benar selama latarnya krem
+   * (baris sapaan). Tapi di pita header layar Habits, warna fiturnya JUGA
+   * `Color.ACCENT` — pil dan pita jadi satu warna persis, dan tombolnya
+   * praktis menghilang. Di atas pita, pil memakai warna PALING GELAP fitur itu
+   * dengan tulisan terang: tetap sewarna keluarga fiturnya, tapi mustahil
+   * menyatu dengan latarnya sendiri.
+   */
+  onBand?: boolean;
 }) {
   const router = useRouter();
+  const theme = useFeatureTheme();
 
   const count = Number(streak);
   const previous = useRef(count);
@@ -58,7 +72,7 @@ export function StreakPill({
   return (
     <Animated.View style={popStyle}>
       <PressableScale
-        style={styles.pill}
+        style={[styles.pill, onBand && { backgroundColor: theme.deep }]}
         onPress={() =>
           router.push(
             category
@@ -67,7 +81,9 @@ export function StreakPill({
           )
         }
         hitSlop={8}>
-        <VixText heading="bold" additionalStyle={styles.text}>
+        <VixText
+          heading="bold"
+          additionalStyle={onBand ? styles.textOnBand : styles.text}>
           🔥 {streak}
         </VixText>
       </PressableScale>
@@ -83,4 +99,5 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   text: { color: Color.ACCENT_DARK },
+  textOnBand: { color: Color.TEXT_REVERSE },
 });

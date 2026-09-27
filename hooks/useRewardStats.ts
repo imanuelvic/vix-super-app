@@ -27,6 +27,7 @@ import {
 } from '@/lib/health';
 import { subscribeLearningStreak, type WeekStreak } from '@/lib/learning';
 import {
+  bibleStreakNow,
   EMPTY_BIBLE_STREAKS,
   subscribeBibleStreaks,
   type BibleStreaks,
@@ -94,13 +95,17 @@ export function useRewardStats(): {
   const stepAch = stepRecords(stepDays);
   const runs = runRecords(stepDays, body?.heightCm ?? 170);
   const wk = weekGoalStats(weeks);
+  const hariIni = dayDocId(new Date());
   const stats: RewardStats = {
     loginCount: login?.count ?? 0,
     loginBest: login?.best ?? 0,
-    habitStreak: activeStreak(habit, dayDocId(new Date())),
+    habitStreak: activeStreak(habit, hariIni),
     bibleMorningBest: bible.morning.best,
     bibleDaytimeBest: bible.daytime.best,
     bibleNightBest: bible.night.best,
+    bibleMorningNow: bibleStreakNow(bible, 'morning', hariIni),
+    bibleDaytimeNow: bibleStreakNow(bible, 'daytime', hariIni),
+    bibleNightNow: bibleStreakNow(bible, 'night', hariIni),
     learningWeekBest: learning.best,
     fitTotal: fit?.total ?? 0,
     fitBest: fit?.best ?? 0,
@@ -112,6 +117,8 @@ export function useRewardStats(): {
     bestDayKm: runs.bestDayKm,
     bestWeekKm: runs.bestWeekKm,
     bestMonthKm: runs.bestMonthKm,
+    bestQuarterKm: runs.bestQuarterKm,
+    bestYearKm: runs.bestYearKm,
     waterCount: water?.count ?? 0,
     waterBest: water?.best ?? 0,
     waterTotal: water?.total ?? 0,

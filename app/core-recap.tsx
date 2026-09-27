@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { CenterDialog } from '@/components/common/CenterDialog';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -11,6 +12,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
+import { PersonInfo } from '@/components/core/PersonInfo';
 import { ShareToLeaderSheet } from '@/components/core/ShareToLeaderSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useLiveAll } from '@/hooks/useLiveAll';
@@ -27,6 +29,17 @@ import { shareRecapPdf } from '@/lib/recapPdf';
 
 const MIN_YEAR = 2026;
 
+/** Isi dialog "lambang ini artinya apa" — jenis acara maupun baris 📅. */
+type KindInfo = { icon: string; label: string; desc: string };
+
+// Baris 📅 di kepala tabel bukan jenis acara, jadi keterangannya ditulis di
+// sini, bukan di MEETING_KINDS.
+const INFO_THANKSGIVING: KindInfo = {
+  icon: '📅 🎉',
+  label: 'Tanggal Thanksgiving',
+  desc: 'Ulang tahun tiap CORE, diisi di data CORE Leader. Tahunnya ikut tercetak, jadi umur CORE-nya kelihatan. Titik berarti tanggalnya belum diisi.',
+};
+
 // Garis tegak di depan kolom Σ — jumlah per jenis terlihat terpisah dari
 // angka per CL, seperti baris Total yang dipisah garis mendatar. Menembus
 // padding barisnya (margin negatif) supaya garisnya bersambung antar-baris.
@@ -41,6 +54,12 @@ export default function CoreRecapScreen() {
   // Sheet "Bagikan ke CORE Leader": PDF rekap tahun ini untuk SATU CORE
   // (warna hatinya), dikirim ke CL-nya lewat WhatsApp.
   const [shareOpen, setShareOpen] = useState(false);
+  // Dua dialog tengah layar (27 Sep 2026) — tabel ini seluruhnya lambang, dan
+  // lambang tanpa nama cuma terbaca kalau sudah hafal:
+  //   • kolom kiri (🔥 👥 1️⃣ …) → jenis acaranya apa,
+  //   • kepala kolom (💛 💜 💚 …) → hati itu CORE-nya siapa.
+  const [kindInfo, setKindInfo] = useState<KindInfo | null>(null);
+  const [leaderInfo, setLeaderInfo] = useState<CoreLeader | null>(null);
 
   useLiveAll(
     (uid, fail) => [
@@ -112,13 +131,20 @@ export default function CoreRecapScreen() {
               contentContainerStyle={styles.tableScroll}>
               <View style={styles.table}>
                 <View style={[styles.row, styles.headRow]}>
-                  <VixText heading="label" additionalStyle={styles.labelCol}>
+                  <VixText heading="label" additionalStyle={[styles.labelCol, styles.labelText]}>
                     Jenis
                   </VixText>
                   {leaders.map((l) => (
-                    <VixText key={l.id} heading="bold" additionalStyle={styles.cell}>
-                      {l.heart}
-                    </VixText>
+                    // Hati CORE-nya bisa di-click → data umum CL-nya (nama,
+                    // umur, ulang tahun, nomor, pendidikan & pekerjaan).
+                    <PressableScale
+                      key={l.id}
+                      style={styles.cellTap}
+                      onPress={() => setLeaderInfo(l)}>
+                      <VixText heading="bold" additionalStyle={styles.cellText}>
+                        {l.heart}
+                      </VixText>
+                    </PressableScale>
                   ))}
                   <SumLine />
                   <VixText heading="bold" additionalStyle={[styles.cell, styles.sumCol]}>
@@ -131,9 +157,16 @@ export default function CoreRecapScreen() {
                     ber-penanda 🎉 jadi cadangan. Labelnya 📅, bukan 🎉: baris
                     jenis Thanksgiving di bawahnya sudah memakai 🎉. */}
                 <View style={styles.row}>
-                  <VixText heading="label" additionalStyle={styles.labelCol} numberOfLines={2}>
-                    📅 🎉
-                  </VixText>
+                  <PressableScale
+                    style={styles.labelCol}
+                    onPress={() => setKindInfo(INFO_THANKSGIVING)}>
+                    <VixText
+                      heading="label"
+                      additionalStyle={styles.labelText}
+                      numberOfLines={2}>
+                      📅 🎉
+                    </VixText>
+                  </PressableScale>
                   {rekap.thanksgiving.map((d, i) => (
                     <VixText
                       key={leaders[i].id}
@@ -152,9 +185,24 @@ export default function CoreRecapScreen() {
                   const meta = meetingKindMeta(r.kind);
                   return (
                     <View key={r.kind} style={styles.row}>
-                      <VixText heading="label" additionalStyle={styles.labelCol} numberOfLines={2}>
-                        {meta.icon}
-                      </VixText>
+                      {/* Lambang jenisnya bisa di-click → nama & penjelasan
+                          acaranya (lihat `desc` di MEETING_KINDS). */}
+                      <PressableScale
+                        style={styles.labelCol}
+                        onPress={() =>
+                          setKindInfo({
+                            icon: meta.icon,
+                            label: meta.label,
+                            desc: meta.desc,
+                          })
+                        }>
+                        <VixText
+                          heading="label"
+                          additionalStyle={styles.labelText}
+                          numberOfLines={2}>
+                          {meta.icon}
+                        </VixText>
+                      </PressableScale>
                       {r.counts.map((n, i) => (
                         <VixText
                           key={leaders[i].id}
@@ -174,7 +222,7 @@ export default function CoreRecapScreen() {
                 })}
 
                 <View style={[styles.row, styles.totalRow]}>
-                  <VixText heading="bold" additionalStyle={styles.labelCol}>
+                  <VixText heading="bold" additionalStyle={[styles.labelCol, styles.labelText]}>
                     Total
                   </VixText>
                   {rekap.totals.map((n, i) => (
@@ -202,6 +250,44 @@ export default function CoreRecapScreen() {
           shareRecapPdf(l, visitations ?? [], year, lastShared)
         }
       />
+
+      {/* Lambang jenis acara → artinya apa */}
+      <CenterDialog visible={kindInfo !== null} onClose={() => setKindInfo(null)}>
+        {kindInfo && (
+          <>
+            <VixText heading="title" additionalStyle={styles.dialogTitle}>
+              {kindInfo.icon} {kindInfo.label}
+            </VixText>
+            <VixText heading="paragraph" additionalStyle={styles.dialogBody}>
+              {kindInfo.desc}
+            </VixText>
+            <PressableScale style={styles.dialogClose} onPress={() => setKindInfo(null)}>
+              <VixText heading="label" additionalStyle={styles.dialogCloseText}>
+                Tutup
+              </VixText>
+            </PressableScale>
+          </>
+        )}
+      </CenterDialog>
+
+      {/* Hati CORE → CL-nya siapa, beserta data umumnya. Isinya komponen yang
+          SAMA dengan modal baca-saja di tab CORE Leader, jadi tak ada dua
+          daftar kolom yang bisa berbeda pendapat. */}
+      <CenterDialog visible={leaderInfo !== null} onClose={() => setLeaderInfo(null)}>
+        {leaderInfo && (
+          <>
+            <VixText heading="title" additionalStyle={styles.dialogTitle}>
+              {leaderInfo.heart} {leaderInfo.name}
+            </VixText>
+            <PersonInfo person={leaderInfo} today={new Date()} />
+            <PressableScale style={styles.dialogClose} onPress={() => setLeaderInfo(null)}>
+              <VixText heading="label" additionalStyle={styles.dialogCloseText}>
+                Tutup
+              </VixText>
+            </PressableScale>
+          </>
+        )}
+      </CenterDialog>
     </SafeAreaView>
   );
 }
@@ -242,12 +328,22 @@ const styles = StyleSheet.create({
   totalRow: { borderBottomWidth: 0, borderTopWidth: 1.5, borderTopColor: Color.CORE_DARK },
   // Kolom kiri cuma memuat satu lambang jenis (dan "Jenis" di kepalanya),
   // jadi lebarnya dipangkas 96 → 46: sisanya diberikan ke kolom CL.
-  labelCol: { width: 46, color: Color.TEXT_TITLE },
+  // Lebarnya saja di sini, warnanya di `labelText`: kolom ini sekarang bisa
+  // berupa tulisan (Jenis · Total) MAUPUN tombol, dan `color` bukan gaya View.
+  labelCol: { width: 46 },
+  labelText: { color: Color.TEXT_TITLE },
   // Tiap CL satu kolom. minWidth 48 (dari 28) supaya tanggal Thanksgiving
   // ("15 Nov" di baris atas, "24" di bawahnya) tidak lagi berdesakan dan
   // hatinya punya ruang. Lebih lebar dari layar = tabelnya digeser mendatar,
   // dan itu memang sudah disiapkan (ScrollView horizontal di atas).
+  //
+  // ⚠️ SEMUA baris wajib memakai minWidth yang SAMA. Kalau satu baris saja
+  // boleh lebih sempit, kolomnya berhenti sejajar dan garis tegak Σ di ujung
+  // kanan jadi bertangga, bukan satu garis lurus dari atas ke bawah.
   cell: { flex: 1, minWidth: 48, textAlign: 'center', color: Color.TEXT_TITLE },
+  // Bentuk kolom yang SAMA, tapi sebagai tombol (hati CL di kepala tabel).
+  cellTap: { flex: 1, minWidth: 48, alignItems: 'center' },
+  cellText: { textAlign: 'center', color: Color.TEXT_TITLE },
   sumCol: { color: Color.CORE_DARK },
   // Garis tegak pemisah kolom Σ — setebal & sewarna garis di atas baris Total.
   sumLine: {
@@ -258,8 +354,16 @@ const styles = StyleSheet.create({
     backgroundColor: Color.CORE_DARK,
   },
   cellZero: { color: Color.TEXT_PLACEHOLDER },
-  // "7 Agu" di atas, "26" di bawah — kolomnya dilebarkan sedikit supaya
-  // "17 Agu" tidak pecah jadi tiga baris (kolom lain ikut melebar, tetap rata).
-  cellDate: { fontSize: 11, lineHeight: 14, minWidth: 40 },
+  // "7 Agu" di atas, "26" di bawah. Cuma ukuran hurufnya yang dikecilkan —
+  // lebarnya SENGAJA tidak ditimpa (dulu minWidth 40, dan itulah yang membuat
+  // baris tanggal lebih sempit daripada baris lain di iPhone 15, sehingga
+  // garis Σ-nya meleset ke kiri sendiri).
+  cellDate: { fontSize: 11, lineHeight: 14 },
   totalText: { color: Color.CORE_DARK },
+  // Dialog tengah: judul, isi, lalu tombol tutup — sebentuk dengan dialog
+  // Data Tubuh CL 🧍.
+  dialogTitle: { color: Color.TEXT_TITLE, marginBottom: 8 },
+  dialogBody: { color: Color.TEXT_PARAGRAPH },
+  dialogClose: { alignItems: 'center', paddingVertical: 10, marginTop: 6 },
+  dialogCloseText: { color: Color.TEXT_LABEL },
 });

@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  limit,
   orderBy,
   query,
   setDoc,
@@ -67,7 +68,11 @@ export function subscribeFamily(
   onError?: (error: FirestoreError) => void,
 ) {
   // Urut dari yang paling tua — enak untuk memilih akar pohon.
-  const q = query(membersCollection(uid), orderBy('birthYear', 'asc'));
+  // Batas 200 anggota (27 Sep 2026): pohon keluarga inti + lingkaran luar pun
+  // puluhan orang, jadi ini langit-langit biaya, bukan pemotong silsilah.
+  // Catatan kalau suatu hari benar-benar penuh: karena urutannya dari yang
+  // TERTUA, yang ke-201 dan seterusnya adalah anggota TERMUDA.
+  const q = query(membersCollection(uid), orderBy('birthYear', 'asc'), limit(200));
   return liveList<FamilyMember>(q, onChange, onError, (d) => {
     const data = d.data() as Omit<FamilyMember, 'id'>;
     return {

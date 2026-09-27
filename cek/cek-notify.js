@@ -58,7 +58,7 @@ const KOSONG = () => ({
   fastingPlans: [], sermons: [], myReminders: [],
   intercession: { key: 'family', emoji: '👨‍👩‍👧', label: 'Keluarga', points: [] },
   intercessionDismissed: false, feedGenerated: false,
-  leaders: [], mainTeam: [], greets: {}, weeklyFocus: CORE.EMPTY_WEEKLY_FOCUS,
+  leaders: [], mainTeam: [], weeklyFocus: CORE.EMPTY_WEEKLY_FOCUS,
   visitations: [], monthlyPrayers: CORE.EMPTY_MONTHLY_PRAYERS,
   tasks: [], otherTasks: [], roadmap: [], freelance: [],
   family: [], debts: [], checkups: [], profile: null,
@@ -66,7 +66,10 @@ const KOSONG = () => ({
   learningWeek: { skillKey: null, steps: {}, note: '' }, topicsDone: {},
   bills: [], futsal: { members: [], sessions: [], cash: [] },
   dataPlans: [], population: {}, carParts: {}, residenceChores: {},
-  meterReadings: [], wheel: null, fun: { entries: [] }, finance: null,
+  meterReadings: [], wheel: null, fun: { entries: [] },
+    // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
+    // belum pernah diekspor, dan itu memang keadaan wajar di fixture.
+    backup: { lastDayId: '', docCount: 0 }, finance: null,
 });
 
 // 23 Sep 2026: buildSlots menerima opsi (tanggal penentu kalimat, jam hasil
@@ -83,8 +86,12 @@ console.log('\n=== 1. Kelompok & jam ===');
   const id = s.map((x) => x.id);
   // 26 Sep 2026: + 💪 olahraga 21.00. Jendela sore Fitness tutup jam 21.00
   // tepat, jadi tanpa pengingat ini hari yang belum dicatat lewat begitu saja.
-  ok('empat belas pengingat: journey + penyelamat streak · 3 bacaan · CORE · Work · Life · 2 Finance · 🏆 · 💪 olahraga · refleksi · 🌙 doa malam',
-    id.join(',') === 'journey,journey-rescue,bible-morning,bible-daytime,bible-night,core,work,life,finance-morning,finance-evening,reward,fitness,reflection,night-prayer', id.join(','));
+  // 27 Sep 2026: + 🎓 target Learning. Tujuh slot sekaligus, karena harinya
+  // TETAP (Sen · Rab · Jum · Min) dan tiga hari pertama punya DUA jendela jam
+  // (pagi 08.00 & malam 20.00). Lihat bagian 8 di bawah.
+  // 28 Sep 2026: + 🗓️ puasa bulanan (Senin terakhir tiap bulan, 09.00).
+  ok('dua puluh dua pengingat: 15 harian + 7 target Learning',
+    id.join(',') === 'journey,journey-rescue,bible-morning,bible-daytime,bible-night,core,work,life,finance-morning,finance-evening,reward,fitness,fasting-monthly,reflection,night-prayer,learning-discover-8,learning-discover-20,learning-dig-8,learning-dig-20,learning-summarize-8,learning-summarize-20,learning-share-17', id.join(','));
   const jam = (x) => `${x.hour}.${String(x.minute).padStart(2, '0')}`;
   ok('jamnya sesuai jendela fiturnya (journey 6.00 · bacaan 7/12.30/21.15 · Finance 7.30 & 20.30 · refleksi 21.30)',
     jam(cari(s, 'journey')) === '6.00' && jam(cari(s, 'bible-morning')) === '7.00' &&
@@ -92,9 +99,58 @@ console.log('\n=== 1. Kelompok & jam ===');
     jam(cari(s, 'finance-morning')) === '7.30' && jam(cari(s, 'finance-evening')) === '20.30' &&
     jam(cari(s, 'reflection')) === '21.30' && jam(cari(s, 'night-prayer')) === '22.00');
   ok('tiap kelompok punya keterangan jam di layar pengaturan',
-    N.NOTIFY_GROUPS.length === 10 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
+    N.NOTIFY_GROUPS.length === 12 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
   ok('kelompoknya sama dengan yang dipakai slot',
-    new Set(s.map((x) => x.group)).size === 10);
+    new Set(s.map((x) => x.group)).size === 12);
+}
+
+console.log('\n=== 8. 🎓 Target Learning: harinya TETAP, bukan tiap hari ===');
+{
+  const s = slotsOf(KOSONG());
+  const belajar = s.filter((x) => x.group === 'learning');
+  ok('tujuh slot, semuanya berkelompok "learning"', belajar.length === 7);
+  // Ini penjagaan yang paling penting di bagian ini: slot TANPA `weekday`
+  // dijadwalkan HARIAN (lihat syncNotifications). Kalau satu saja lupa
+  // menyebut harinya, "🎯 Senin Kenali" ikut berbunyi hari Selasa.
+  ok('semuanya menyebut harinya sendiri (weekday), jadi tak ada yang jatuh ke harian',
+    belajar.every((x) => typeof x.weekday === 'number' && x.weekday >= 1 && x.weekday <= 7),
+    belajar.map((x) => `${x.id}=${x.weekday}`).join(', '));
+  // 1 = Minggu … 7 = Sabtu (penomoran expo-notifications).
+  const hari = Object.fromEntries(belajar.map((x) => [x.id, x.weekday]));
+  ok('Senin=2 · Rabu=4 · Jumat=6 · Minggu=1 (penomoran iOS, bukan Senin-dulu)',
+    hari['learning-discover-8'] === 2 && hari['learning-discover-20'] === 2 &&
+    hari['learning-dig-8'] === 4 && hari['learning-summarize-8'] === 6 &&
+    hari['learning-share-17'] === 1,
+    JSON.stringify(hari));
+  ok('Sen/Rab/Jum dua jendela (08.00 & 20.00); Minggu sekali sore 17.00',
+    belajar.filter((x) => x.hour === 8).length === 3 &&
+    belajar.filter((x) => x.hour === 20).length === 3 &&
+    belajar.filter((x) => x.hour === 17).length === 1 &&
+    belajar.every((x) => x.minute === 0));
+  ok('semuanya mendarat di sub-tab Target, bukan cuma layar Learning',
+    belajar.every((x) => N.tujuanTeks(x.route) === '/learning?tab=week'));
+  ok('isinya menyebut hari, langkah & skill-nya, jadi bisa dikerjakan tanpa buka app dulu',
+    /Senin Kenali: .+\./.test(cari(s, 'learning-discover-8').body) &&
+    /Minggu Ceritakan: /.test(cari(s, 'learning-share-17').body));
+
+  // Yang sudah beres DI HARINYA → diam. HARI UJI = Selasa, jadi yang bisa
+  // didiamkan cuma langkah Selasa — dan memang tidak ada. Itu disengaja:
+  // pekan berganti tiap Senin, jadi langkah yang harinya BELUM datang tak
+  // boleh ikut didiamkan sekarang (kalau tidak, Senin depan sunyi total).
+  const beresSemua = { ...KOSONG(), learningWeek: { skillKey: null, steps: { discover: true, dig: true, summarize: true, share: true }, note: '' } };
+  ok('Selasa: langkah hari lain tetap dijadwalkan walau minggu ini sudah beres',
+    slotsOf(beresSemua).filter((x) => x.group === 'learning' && x.body !== null).length === 7);
+  // Senin 21 Sep 2026 — hari langkah "Kenali".
+  const SENIN = new Date(2026, 8, 21, 7, 30);
+  const sSenin = N.buildSlots(T.buildToday(beresSemua, SENIN, '2026-09-21'), null, { dayId: '2026-09-21' });
+  ok('Senin & "Kenali" sudah beres → dua slot Senin diam, sisanya tetap',
+    sSenin.filter((x) => x.group === 'learning' && x.body === null).map((x) => x.id).join(',') ===
+      'learning-discover-8,learning-discover-20',
+    sSenin.filter((x) => x.group === 'learning' && x.body === null).map((x) => x.id).join(','));
+  const belumSenin = { ...KOSONG(), learningWeek: { skillKey: null, steps: {}, note: '' } };
+  const sSenin2 = N.buildSlots(T.buildToday(belumSenin, SENIN, '2026-09-21'), null, { dayId: '2026-09-21' });
+  ok('Senin & belum dikerjakan → dua slot Senin tetap berbunyi',
+    sSenin2.filter((x) => x.id.startsWith('learning-discover')).every((x) => x.body !== null));
 }
 
 console.log('\n=== 2. Hari tenang = tidak berisik ===');

@@ -13,6 +13,7 @@ import { useNow } from '@/hooks/useNow';
 import {
   deadlineDaysUntil,
   effectiveRoadmap,
+  freelanceOnHold,
   roadmapDaysUntil,
   type FreelanceProject,
   type RoadmapItem,
@@ -98,8 +99,10 @@ export function WorkFocusTab({
     .filter((r) => r.status !== 'done' && r.deadline)
     .map((r) => ({ r, days: roadmapDaysUntil(r.deadline!, now) }))
     .sort((a, b) => a.days - b.days);
+  // Yang DITAHAN client tidak ikut: tenggatnya tidak berlaku, jadi ia tak
+  // pernah jadi "yang harus dikirim hari ini" (lihat freelanceOnHold).
   const freelanceAktif = freelance
-    .filter((p) => !p.done)
+    .filter((p) => !p.done && !freelanceOnHold(p))
     .map((p) => ({ p, days: deadlineDaysUntil(p, now) }))
     .sort((a, b) => a.days - b.days);
   for (const { r, days } of roadmapAktif.filter((x) => x.days <= 7)) {

@@ -17,7 +17,7 @@ import {
 
 import { type LoginStreak as DayStreak } from './reward';
 import { db } from './firebase';
-import { dayId, daysBetween } from './format';
+import { dayId, daysBetween, monthId } from './format';
 import { liveDoc, liveList } from './liveDoc';
 import { alreadyCounted, nextStreak } from './streak';
 
@@ -993,6 +993,27 @@ export const RUN_MONTH_MILESTONES: { km: number; emoji: string; label: string }[
     { km: 300, emoji: '💎', label: '300K Bulanan' },
   ];
 
+/**
+ * Patokan AKUMULASI 3 BULAN & SETAHUN (27 Sep 2026).
+ *
+ * Angkanya kelipatan patokan bulanan, bukan angka baru yang dikarang: 3 bulan
+ * = 3× bulanan, setahun = 12× bulanan. Jadi "300K Kuartal" berarti rata-rata
+ * 100 km sebulan, dan itu bisa dibaca tanpa menghitung apa pun.
+ */
+export const RUN_QUARTER_MILESTONES: { km: number; emoji: string; label: string }[] =
+  [
+    { km: 300, emoji: '🎽', label: '300K Kuartal' },
+    { km: 600, emoji: '🏆', label: '600K Kuartal' },
+    { km: 900, emoji: '💎', label: '900K Kuartal' },
+  ];
+
+export const RUN_YEAR_MILESTONES: { km: number; emoji: string; label: string }[] =
+  [
+    { km: 1200, emoji: '🎽', label: '1200K Setahun' },
+    { km: 2400, emoji: '🏆', label: '2400K Setahun' },
+    { km: 3600, emoji: '💎', label: '3600K Setahun' },
+  ];
+
 /** Patokan tertinggi yang sudah dilewati `km` (null kalau belum ada). */
 export function runMilestoneOf(
   km: number,
@@ -1038,6 +1059,44 @@ export function stepsInDays(days: StepDaysMap, ids: string[]): number {
   return ids.reduce((sum, id) => sum + (days[id] ?? 0), 0);
 }
 
+// ============ Periode panjang: 3 bulan & setahun (27 Sep 2026) ============
+// Minggu & bulan dijumlah lewat DAFTAR dayId-nya (7 dan ±30 buah, masih
+// murah). Kuartal 91 hari dan setahun 365 hari, jadi keduanya dijumlah lewat
+// AWALAN dayId ("2026-07", "2026") — satu kali jalan atas isi petanya sendiri,
+// tanpa membuat daftar tanggal yang panjang tiap kali layarnya digambar.
+
+/**
+ * Tiga awalan "YYYY-MM" untuk kuartal yang memuat `d`.
+ *
+ * Bentuk idnya dirangkai `monthId()` milik lib/format, bukan disusun di sini:
+ * cuma satu berkas di app ini yang boleh tahu bentuk kunci bulanan.
+ */
+export function quarterMonthIds(d: Date): string[] {
+  const mulai = Math.floor(d.getMonth() / 3) * 3;
+  return [0, 1, 2].map((i) => monthId(d.getFullYear(), mulai + i));
+}
+
+/** "Q3 2026" — nama kuartal yang memuat `d`. */
+export function quarterOfDate(d: Date): { year: number; q: number } {
+  return { year: d.getFullYear(), q: Math.floor(d.getMonth() / 3) + 1 };
+}
+
+/**
+ * Total langkah pada semua hari yang dayId-nya diawali salah satu `prefixes`.
+ * Dipakai peta langkah Apple Health MAUPUN peta langkah yang dicatat sendiri —
+ * bentuk keduanya sama (dayId → angka).
+ */
+export function stepsInPrefixes(
+  days: Record<string, number>,
+  prefixes: string[],
+): number {
+  let total = 0;
+  for (const [dayId, steps] of Object.entries(days)) {
+    if (prefixes.some((p) => dayId.startsWith(p))) total += steps;
+  }
+  return total;
+}
+
 /**
  * Rekor jarak: hari / minggu / bulan terbaik sepanjang data tersimpan (km).
  * Dipakai fitur Reward supaya patokan lari ikut terhitung di sana.
@@ -1045,9 +1104,17 @@ export function stepsInDays(days: StepDaysMap, ids: string[]): number {
 export function runRecords(
   days: StepDaysMap,
   heightCm: number,
-): { bestDayKm: number; bestWeekKm: number; bestMonthKm: number } {
+): {
+  bestDayKm: number;
+  bestWeekKm: number;
+  bestMonthKm: number;
+  bestQuarterKm: number;
+  bestYearKm: number;
+} {
   const weeks = new Map<string, number>();
   const months = new Map<string, number>();
+  const quarters = new Map<string, number>();
+  const years = new Map<string, number>();
   let bestDay = 0;
   for (const [dayId, steps] of Object.entries(days)) {
     const km = stepsToKm(steps, heightCm);
@@ -1056,11 +1123,20 @@ export function runRecords(
     weeks.set(wk, (weeks.get(wk) ?? 0) + km);
     const mo = dayId.slice(0, 7); // "YYYY-MM"
     months.set(mo, (months.get(mo) ?? 0) + km);
+    const th = dayId.slice(0, 4); // "YYYY"
+    years.set(th, (years.get(th) ?? 0) + km);
+    // Kuartal kalender, bukan 90 hari berjalan: satu keluarga dengan Wheel of
+    // Life yang juga memakai Q1–Q4 kalender.
+    const q = Math.floor((Number(dayId.slice(5, 7)) - 1) / 3) + 1;
+    const qk = `${th}-Q${q}`;
+    quarters.set(qk, (quarters.get(qk) ?? 0) + km);
   }
   return {
     bestDayKm: bestDay,
     bestWeekKm: Math.max(0, ...weeks.values()),
     bestMonthKm: Math.max(0, ...months.values()),
+    bestQuarterKm: Math.max(0, ...quarters.values()),
+    bestYearKm: Math.max(0, ...years.values()),
   };
 }
 

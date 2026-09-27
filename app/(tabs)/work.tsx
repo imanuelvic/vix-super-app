@@ -20,19 +20,16 @@ import { ScreenError } from '@/components/common/ScreenError';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useLiveAll } from '@/hooks/useLiveAll';
+import { useNow } from '@/hooks/useNow';
+import { subscribeAffiliateIdeas, type ContentIdea } from '@/lib/affiliate';
 import {
-  pendingIdeas,
-  subscribeAffiliateIdeas,
-  type ContentIdea,
-} from '@/lib/affiliate';
-import {
-  effectiveRoadmap,
-  freelanceReminderWindow,
   subscribeFreelance,
   subscribeRoadmap,
+  workAttention,
   type FreelanceProject,
   type RoadmapItem,
 } from '@/lib/career';
+import { subscribeTasks, type Task } from '@/lib/tasks';
 
 type CareerTab = 'focus' | 'fulltime' | 'freelance' | 'affiliate' | 'business';
 
@@ -71,7 +68,11 @@ export default function CareerScreen() {
   const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
   const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);
   const [ideas, setIdeas] = useState<ContentIdea[] | null>(null);
+  // Task harian kategori WORK — bukan untuk digambar di sini, tapi untuk badge
+  // tombol 🔔 supaya pecahan badge tab Work terlihat lengkap.
+  const [tasks, setTasks] = useState<Task[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { now, todayId } = useNow();
 
   useLiveAll(
     (uid, fail) => [
@@ -85,9 +86,21 @@ export default function CareerScreen() {
       ),
       subscribeFreelance(uid, setFreelance, fail),
       subscribeAffiliateIdeas(uid, setIdeas, fail),
+      subscribeTasks(uid, setTasks, fail),
     ],
     { onError: setError },
   );
+
+  // Semua angka badge layar ini (dan badge tab Work di kaki app) datang dari
+  // SATU fungsi — lihat komentarnya di lib/career.ts.
+  const perhatian = workAttention({
+    roadmap: roadmap ?? [],
+    freelance: freelance ?? [],
+    ideas: ideas ?? [],
+    tasks: tasks ?? [],
+    now,
+    todayId,
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -97,25 +110,28 @@ export default function CareerScreen() {
       <ScreenHeader
         title="Work 💼"
         subtitle="Kerjakan segenap hati, hasilnya menyusul"
-        right={<EmojiButton emoji="🔔" onPress={() => router.push('/tasks')} />}
+        right={
+          <EmojiButton
+            emoji="🔔"
+            badge={perhatian.tasks}
+            onPress={() => router.push('/tasks')}
+          />
+        }
       />
 
-      {/* Badge = pecahan dari badge tab Work di kaki app: P1 Fulltime yang
-          belum selesai, dan Freelance yang deadline-nya sudah H-7. */}
+      {/* Badge sub-tab = PECAHAN dari badge tab Work di kaki app, dan sejak
+          28 Sep 2026 keduanya benar-benar dijumlah dari angka yang sama
+          (workAttention di lib/career.ts). Aturannya satu: angka di kaki app =
+          jumlah semua angka yang kelihatan rinciannya di layar ini. Task WORK
+          hari ini tidak punya sub-tab, jadi ia memakai badge tombol 🔔 di
+          pojok kanan — dengan begitu keempat pecahannya benar-benar terlihat
+          dan bisa dijumlah sendiri. */}
       <BottomTabs
         placement="top"
         tabs={withBadge(TABS, {
-          fulltime: (roadmap ?? []).filter(
-            (r) =>
-              r.status !== 'done' &&
-              effectiveRoadmap(r, new Date()).priority === 1,
-          ).length,
-          freelance: (freelance ?? []).filter((p) =>
-            freelanceReminderWindow(p, new Date()),
-          ).length,
-          // Ide konten yang belum tayang — sengaja TIDAK ikut ke badge tab
-          // Work: ide yang menunggu itu antrean kreatif, bukan tagihan harian.
-          affiliate: pendingIdeas(ideas ?? []),
+          fulltime: perhatian.fulltime,
+          freelance: perhatian.freelance,
+          affiliate: perhatian.affiliate,
         })}
         value={tab}
         onChange={onTabPress}

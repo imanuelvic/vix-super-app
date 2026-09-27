@@ -2,7 +2,10 @@ import {
     collection,
     deleteField,
     doc,
-    onSnapshot,
+    documentId,
+    limit,
+    orderBy,
+    query,
     setDoc,
     type FirestoreError,
 } from 'firebase/firestore';
@@ -12,7 +15,7 @@ import { hashString } from './core';
 import { db } from './firebase';
 import { dayIdToDate, mondayIndex } from './format';
 import { dayDocId } from './health';
-import { liveDoc } from './liveDoc';
+import { liveDoc, liveList } from './liveDoc';
 import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 import { weekStart } from './usage';
 
@@ -400,6 +403,16 @@ export type LearningStep = 'discover' | 'dig' | 'summarize' | 'share';
 /** Jendela belajar Senin/Rabu/Jumat — ditulis sekali, dipakai ketiganya. */
 export const LEARNING_TIME_LABEL = '🕗 08.00–09.00 pagi atau 20.00–22.00 malam';
 
+/**
+ * Jam pengingatnya di HP (27 Sep 2026) — SATU angka per jendela.
+ *
+ * Senin/Rabu/Jumat punya dua jendela yang sah (pagi & malam), jadi keduanya
+ * diingatkan: 08.00 saat jendela pagi baru buka, 20.00 saat jendela malam baru
+ * buka. Yang sudah dikerjakan pagi tidak berbunyi lagi malamnya — pengingat
+ * yang sudah beres memang tidak dijadwalkan (lihat lib/notify.ts).
+ */
+const JAM_DUA_JENDELA = [8, 20];
+
 export const LEARNING_STEPS: {
   key: LearningStep;
   /** Posisi hari dalam minggu Senin-dulu: Sen=0 … Min=6. */
@@ -410,6 +423,8 @@ export const LEARNING_STEPS: {
   how: string;
   /** Jendela jam mengerjakannya. Kosong = tidak dipatok jam. */
   time: string;
+  /** Jam-jam pengingatnya di HP (angka jam, menitnya selalu 00). */
+  remindAt: number[];
 }[] = [
   {
     key: 'discover',
@@ -419,6 +434,7 @@ export const LEARNING_STEPS: {
     label: 'Kenali',
     how: 'Pelajari "ini apa, dan kenapa penting buatku?"',
     time: LEARNING_TIME_LABEL,
+    remindAt: JAM_DUA_JENDELA,
   },
   {
     key: 'dig',
@@ -428,6 +444,7 @@ export const LEARNING_STEPS: {
     label: 'Gali',
     how: 'Cari buku yang berkaitan dengan skill tersebut',
     time: LEARNING_TIME_LABEL,
+    remindAt: JAM_DUA_JENDELA,
   },
   {
     key: 'summarize',
@@ -437,6 +454,7 @@ export const LEARNING_STEPS: {
     label: 'Rangkum',
     how: 'Tulis 3 poin rangkuman darimu.',
     time: LEARNING_TIME_LABEL,
+    remindAt: JAM_DUA_JENDELA,
   },
   {
     key: 'share',
@@ -446,8 +464,23 @@ export const LEARNING_STEPS: {
     label: 'Ceritakan',
     how: 'Ceritakan ke 1 orang.',
     time: '',
+    // "Ceritakan" tidak punya jendela jam: ia menempel pada kapan kamu
+    // kebetulan bertemu orangnya. Jadi pengingatnya CUMA sekali, sore Minggu
+    // sesudah gereja, saat masih ada sisa hari untuk benar-benar ngobrol.
+    remindAt: [17],
   },
 ];
+
+/**
+ * Hari langkah ini dalam penomoran expo-notifications: 1 = Minggu … 7 = Sabtu.
+ *
+ * `pos` di atas memakai minggu Senin-dulu (Sen=0 … Min=6), sedangkan pemicu
+ * WEEKLY iOS memakai Minggu-dulu dan mulai dari 1. Satu-satunya tempat
+ * terjemahannya ditulis, supaya tidak ada dua versi yang bisa berbeda.
+ */
+export function learningWeekday(pos: number): number {
+  return ((pos + 1) % 7) + 1;
+}
 
 /** id minggu = dayId hari Senin minggu itu, mis. "2026-08-10". */
 export function weekDocId(now = new Date()): string {
@@ -692,27 +725,45 @@ export type LearningNote = {
  * Koleksi `learning` juga memuat dokumen `skills` & `topics` yang BUKAN
  * minggu; keduanya disaring lewat bentuk id-nya ("YYYY-MM-DD"), bukan lewat
  * daftar nama yang harus diingat kalau nanti ada dokumen lain.
+ *
+ * Batasnya (27 Sep 2026): dulu langganan ini membaca SELURUH koleksi `learning`
+ * tanpa urutan & tanpa batas, lalu menyaringnya di HP — dan koleksi itu
+ * bertambah satu dokumen tiap minggu, selamanya. Sekarang diurutkan dari
+ * id terbesar (= minggu terbaru) dan dipatok ARSIP_MAKS.
  */
+// 200 dokumen ≈ 3,8 tahun rangkuman mingguan, ditambah dua dokumen `skills` &
+// `topics` yang ikut terbawa karena id hurufnya berdiri sesudah angka. Kalau
+// suatu hari benar-benar penuh, yang hilang cuma arsip TERTUA (layar Archive),
+// bukan data di Firestore — naikkan angkanya saja.
+const ARSIP_MAKS = 200;
+
 export function subscribeLearningNotes(
   uid: string,
   onChange: (notes: LearningNote[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  const q = query(
     collection(db, 'users', uid, 'learning'),
-    (snapshot) => {
-      const list = snapshot.docs
-        .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.id))
-        .map((d) => ({
-          weekId: d.id,
-          skillKey: (d.data().skillKey as string) ?? null,
-          note: ((d.data().note as string) ?? '').trim(),
-        }))
-        .filter((n) => n.note.length > 0)
-        .sort((a, b) => b.weekId.localeCompare(a.weekId));
-      onChange(list);
-    },
+    orderBy(documentId(), 'desc'),
+    limit(ARSIP_MAKS),
+  );
+  return liveList<LearningNote>(
+    q,
+    // Penyaringnya tetap di sini: bentuk id ("YYYY-MM-DD") yang memisahkan
+    // minggu dari dokumen pengaturan, dan rangkuman kosong tidak jadi lembar
+    // arsip. Urutannya dipastikan ulang supaya benar walau kuerinya diubah.
+    (rows) =>
+      onChange(
+        rows
+          .filter((n) => /^\d{4}-\d{2}-\d{2}$/.test(n.weekId) && n.note.length > 0)
+          .sort((a, b) => b.weekId.localeCompare(a.weekId)),
+      ),
     onError,
+    (d) => ({
+      weekId: d.id,
+      skillKey: (d.data().skillKey as string) ?? null,
+      note: ((d.data().note as string) ?? '').trim(),
+    }),
   );
 }
 

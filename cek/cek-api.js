@@ -142,9 +142,17 @@ c('Health tetap punya 💪🏻 info kesehatan di tab lain',
   /emoji="💪🏻"/.test(health) && /router\.push\('\/health-info'\)/.test(health));
 c('Reward tetap punya 🗄️ arsip klaim',
   /emoji="🗄️"/.test(layarAch));
+// 28 Sep 2026: + `onBand`. Pilnya berdiri DI DALAM pita header, dan warna
+// fitur Habits kebetulan sama persis dengan warna bawaan pil (Color.ACCENT) —
+// jadi tombolnya praktis menghilang. `onBand` membuatnya memakai warna paling
+// gelap fiturnya. Yang dijaga bertambah, bukan berkurang.
 c('Habits tetap memakai pil 🔥 berangka (streak-nya nyata), bukan tombol polos',
-  /<StreakPill\s+streak=\{activeStreak\(streak \?\? null, dayId\)\}\s+category="health"\s*\/>/
+  /<StreakPill\s+streak=\{activeStreak\(streak \?\? null, dayId\)\}\s+category="health"\s+onBand\s*\/>/
     .test(baca('app/habits.tsx')));
+c('pil di pita header tidak boleh sewarna pitanya',
+  /onBand && \{ backgroundColor: theme\.deep \}/.test(baca('components/common/StreakPill.tsx')) &&
+  /textOnBand: \{ color: Color\.TEXT_REVERSE \}/.test(baca('components/common/StreakPill.tsx')) &&
+  /onBand \/>/.test(baca('app/night-prayer.tsx')));
 c('pintu umum Reward tanpa kategori = tile di tab Life (22 Sep 2026)',
   /route: '\/reward'/.test(BACA_TODAY('lib/featureGrid.ts')));
 

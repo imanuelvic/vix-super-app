@@ -58,7 +58,9 @@ const kartuBlok = [
   ['components/finance/TransactionsTab.tsx', 'summaryCard'], ['components/games/TournamentTab.tsx', 'hero'],
   ['components/investment/MarketTab.tsx', 'hero'], ['components/news/PopulationTab.tsx', 'hero'],
   ['components/profile/PersonalityTab.tsx', 'hero'], ['components/learning/WeekTab.tsx', 'hero'],
-  ['app/book/[key].tsx', 'progressCard'], ['app/family.tsx', 'infoCard'], ['components/core/PrayerPointsTab.tsx', 'introCard'],
+  ['app/book/[key].tsx', 'progressCard'], ['app/family.tsx', 'infoCard'],
+  // (28 Sep 2026: `introCard` Prayer Points dibuang — kartu pembukanya sendiri
+  // yang dihapus atas permintaan pemilik app, bukan jaraknya yang dilonggarkan.)
   ['components/core/PrayerPointsTab.tsx', 'staleCard'], ['app/multiplication/[id].tsx', 'nextCard'],
   ['app/bible-reading.tsx', 'summaryCard'], ['app/reward.tsx', 'heroCard'], ['app/fasting.tsx', 'hero'],
   ['app/history.tsx', 'heroCard'], ['app/timeline.tsx', 'progressCard'], ['components/health/StepsTab.tsx', 'heroCard'],

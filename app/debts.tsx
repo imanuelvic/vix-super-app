@@ -133,7 +133,7 @@ export default function DebtsScreen() {
   // ditekan untuk kedua kali (isi badge merahnya).
   const firstDue =
     list.find((d) => !d.done && deadlineDue(debtTone(d, today))) ?? null;
-  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+  const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
     firstDue?.id ?? null,
   );
 
@@ -284,7 +284,8 @@ export default function DebtsScreen() {
           key={scrollKey}
           ref={listRef}
           contentContainerStyle={styles.content}
-          onContentSizeChange={onContentSizeChange}>
+          onContentSizeChange={onContentSizeChange}
+          onLayout={onLayout}>
           {/* Ringkasan total sisa arah ini */}
           <SummaryCard
             label={isMine ? '💸 Total pinjaman saya' : '💰 Total ditagih ke orang'}

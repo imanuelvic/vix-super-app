@@ -204,8 +204,14 @@ const dash = baca('app/reminders.tsx');
   // Langganan yang dibuang harus benar-benar berkurang satu — bukan sekadar
   // namanya diganti. (Satu langganan = satu pembacaan Firestore terus-menerus.)
   const langgananCareer = (layarCareer.match(/\bsubscribe[A-Z]\w*\(/g) ?? []);
-  c('layar Career tinggal tiga langganan (roadmap, freelance, ide affiliate)',
-    langgananCareer.length === 3, langgananCareer.join(' · '));
+  // 28 Sep 2026: + subscribeTasks. Bukan untuk digambar di layar ini,
+  // melainkan untuk badge tombol 🔔 — tanpa angka itu, badge tab Work di kaki
+  // app tidak bisa dijumlah dari rincian yang kelihatan di sini (lihat
+  // workAttention di lib/career.ts). Dokumennya SAMA dengan yang sudah
+  // dilanggan Today & kaki app, dan liveDoc memakai listener bersama, jadi
+  // tidak ada pembacaan Firestore tambahan.
+  c('layar Career tinggal empat langganan (roadmap, freelance, ide affiliate, task)',
+    langgananCareer.length === 4, langgananCareer.join(' · '));
 
   // =================================================================
   console.log('\n== 4. Tak ada pintu yang menuju tab yang sudah tiada ==');

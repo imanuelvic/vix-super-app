@@ -437,6 +437,23 @@ export type HabitMirror =
   | 'bible-night';
 
 /**
+ * Cermin ini baris baca Alkitab sesi mana? (null = bukan baris baca Alkitab)
+ *
+ * Kembaliannya sengaja ditulis sebagai literal, bukan `BibleSession` dari
+ * lib/spiritual: berkas ini tidak mengimpor lib/spiritual sama sekali, dan
+ * bentuknya memang persis sama. Kalau suatu saat nama sesinya berubah di sana,
+ * tsc yang menangkapnya di tempat pemakaian.
+ */
+export function bibleSessionOfMirror(
+  mirror: HabitMirror | undefined,
+): 'morning' | 'daytime' | 'night' | null {
+  if (mirror === 'bible-morning') return 'morning';
+  if (mirror === 'bible-daytime') return 'daytime';
+  if (mirror === 'bible-night') return 'night';
+  return null;
+}
+
+/**
  * Baris yang dituju saat layar Habits dibuka DARI kartu di Home (`?focus=…`):
  * sesinya dibuka, lalu daftarnya digulung tepat ke baris itu.
  *

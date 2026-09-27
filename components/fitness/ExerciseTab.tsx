@@ -189,7 +189,7 @@ export function ExerciseTab({
   // Buka sub-tab ini → daftar gerakan langsung datang ke gerakan HARI INI yang
   // belum dicentang, yaitu isi badge merahnya. Hari lain tidak pernah punya
   // tujuan lompatan: ia memang tidak ikut ke badge-nya.
-  const { setRowY, onContentSizeChange } = useDueJump(
+  const { setRowY, onContentSizeChange, onLayout } = useDueJump(
     isToday && !daySkipped
       ? (latihan.find((e) => !done[e.id])?.id ?? null)
       : null,
@@ -445,6 +445,7 @@ export function ExerciseTab({
       <ScrollView
         ref={scrollRef}
         onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
         contentContainerStyle={styles.content}>
         {/* Hero — apa yang kamu kerjakan hari ini, bukan apa kata jadwal */}
         <View style={styles.hero}>

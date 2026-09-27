@@ -193,7 +193,13 @@ export const Color = {
   NEWS_DEEP: '#14514D',
 
   // Book 📚 — ungu-nila pastel.
-  BOOK: '#CFC7F2',
+  // 27 Sep 2026: dari #CFC7F2 ke ungu yang sedikit lebih pekat. Bukan selera:
+  // sesudah Book pindah ke sebelah Learning, kedua pastelnya cuma berjarak
+  // ΔE9 — di bawah ambang ΔE10 yang dipakai cek-warna-fitur untuk tile yang
+  // BERSEBELAHAN, alias dua kotak yang terbaca sewarna sekilas pandang.
+  // Sekarang jaraknya ΔE13,8 dari Learning dan ΔE9,4 dari Wheel (tidak
+  // bersebelahan), dan kontras ikonnya tetap di atas 4,5.
+  BOOK: '#C6B3EE',
   BOOK_DARK: '#4B3F8F',
   BOOK_DEEP: '#352B69',
 

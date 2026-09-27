@@ -15,6 +15,7 @@ import { useDueJump } from '@/hooks/useDueJump';
 import { useEditParam } from '@/hooks/useEditParam';
 import {
     deadlineDaysUntil,
+    freelanceOnHold,
     freelanceReminderWindow,
     invoiceTotal,
     type FreelanceProject,
@@ -55,9 +56,14 @@ export function FreelanceTab({
   useEditParam(projects, openDetail, editId, onEditConsumed);
 
   const today = new Date();
-  // Aktif urut deadline terdekat; yang selesai di bawah.
+  // Tiga lapis: yang jalan (urut tenggat terdekat), lalu yang DITAHAN client,
+  // lalu yang selesai. Yang ditahan tidak punya tenggat yang berlaku, jadi
+  // menaruhnya di antrean tenggat cuma bikin urutannya berbohong.
   const sorted = [...projects].sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
+    const ta = freelanceOnHold(a);
+    const tb = freelanceOnHold(b);
+    if (ta !== tb) return ta ? 1 : -1;
     return a.deadline.toMillis() - b.deadline.toMillis();
   });
   const active = projects.filter((p) => !p.done);
@@ -65,7 +71,7 @@ export function FreelanceTab({
 
   // Buka sub-tab ini → daftarnya langsung datang ke proyek yang menyalakan
   // badge merahnya (belum selesai & sudah H-7).
-  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+  const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
     sorted.find((p) => freelanceReminderWindow(p, today))?.id ?? null,
   );
 
@@ -74,6 +80,7 @@ export function FreelanceTab({
       <ScrollView
         ref={listRef}
         onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
         contentContainerStyle={styles.content}>
         {/* Ringkasan usaha freelance */}
         <SummaryCard>
@@ -105,8 +112,11 @@ export function FreelanceTab({
 
         {sorted.map((p) => {
           const days = deadlineDaysUntil(p, today);
+          const ditahan = freelanceOnHold(p);
           // Warna & label dari aturan bersama (lihat lib/deadline.ts).
-          const tone = p.done ? 'unknown' : deadlineTone(days);
+          // Yang DITAHAN client tidak punya tenggat yang berlaku, jadi ia tidak
+          // pernah diwarnai merah/kuning: warnanya netral seperti yang selesai.
+          const tone = p.done || ditahan ? 'unknown' : deadlineTone(days);
           const items = p.invoiceItems ?? [];
           // Nilai yang ditampilkan: fee yang disepakati, kalau belum ada ya
           // jumlah rinciannya — kartu tidak pernah menampilkan Rp 0 padahal
@@ -140,7 +150,10 @@ export function FreelanceTab({
                   {p.name}
                 </VixText>
                 <VixText heading="label" numberOfLines={1}>
-                  👤 {p.client} · 📆 {formatDate(p.deadline.toDate())}
+                  👤 {p.client} ·{' '}
+                  {ditahan
+                    ? '⏸️ Ditahan client (tanpa tenggat)'
+                    : `📆 ${formatDate(p.deadline.toDate())}`}
                 </VixText>
                 {p.requirement ? (
                   <VixText
@@ -155,6 +168,10 @@ export function FreelanceTab({
                   {p.done ? (
                     <VixText heading="label" additionalStyle={styles.statusDone}>
                       ✅ Selesai
+                    </VixText>
+                  ) : ditahan ? (
+                    <VixText heading="label" additionalStyle={styles.statusHold}>
+                      ⏸️ Ditahan client
                     </VixText>
                   ) : (
                     <DeadlineTag tone={tone} label={deadlineLabel(days)} />
@@ -217,4 +234,7 @@ const styles = StyleSheet.create({
   cardRight: { alignItems: 'flex-end', gap: 6 },
   feeText: { color: Color.MAIN_DARK },
   statusDone: { color: Color.SUCCESS },
+  // Netral, bukan merah/kuning: ditahan client itu keadaan yang sah, bukan
+  // keterlambatan.
+  statusHold: { color: Color.TEXT_PLACEHOLDER },
 });

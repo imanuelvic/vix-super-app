@@ -60,6 +60,15 @@ Module._load = ((asli) => function (req, parent, isMain) {
       deleteField: () => '__delete__',
       limit: () => ({}),
       orderBy: () => ({}),
+      // 27 Sep 2026: arsip rangkuman tidak lagi membaca SELURUH koleksi
+      // `learning` — kuerinya diurutkan dari id terbesar & dipatok, dan
+      // langganannya lewat `liveList`. Dua yang dipakainya ikut dipalsukan
+      // di sini: `documentId` (urutannya) & `queryEqual` (dipakai liveList
+      // untuk mengenali kueri yang sama). Jalur `liveList`-nya sendiri
+      // SUNGGUHAN, bukan dipalsukan — itu yang membuat uji ini masih menguji
+      // penyaring & urutan arsipnya apa adanya.
+      documentId: () => ({}),
+      queryEqual: (a, b) => a === b,
       query: () => ({}),
       arrayUnion: () => ({}),
       writeBatch: () => ({}),

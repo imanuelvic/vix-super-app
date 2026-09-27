@@ -2,7 +2,7 @@ import {
   collection,
   deleteDoc,
   doc,
-  onSnapshot,
+  limit,
   orderBy,
   query,
   setDoc,
@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 
 // Tournament 🏆 — turnamen badminton sistem GUGUR (single-elimination).
 // Peserta diisi bebas (1 nama per peserta: bisa orang, pasangan, atau tim),
@@ -226,31 +227,25 @@ export function subscribeTournaments(
   onChange: (list: Tournament[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const q = query(tournamentsCollection(uid), orderBy('createdAt', 'desc'));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onChange(
-        snap.docs.map((d) => {
-          const data = d.data() as Omit<Tournament, 'id'>;
-          return {
-            id: d.id,
-            name: data.name ?? 'Turnamen',
-            size: data.size ?? 8,
-            // Turnamen lama belum punya tanggal → null, nanti jatuh balik ke
-            // createdAt lewat `tournamentDate()`.
-            date: data.date ?? null,
-            participants: data.participants ?? [],
-            matches: data.matches ?? [],
-            champion: data.champion ?? null,
-            createdAt: data.createdAt ?? 0,
-            updatedAt: data.updatedAt ?? 0,
-          };
-        }),
-      );
-    },
-    onError,
-  );
+  // Batas 60 turnamen terbaru — badminton beberapa kali setahun, jadi ini
+  // penahan biaya kalau ada yang salah, bukan pemotong riwayat.
+  const q = query(tournamentsCollection(uid), orderBy('createdAt', 'desc'), limit(60));
+  return liveList<Tournament>(q, onChange, onError, (d) => {
+    const data = d.data() as Omit<Tournament, 'id'>;
+    return {
+      id: d.id,
+      name: data.name ?? 'Turnamen',
+      size: data.size ?? 8,
+      // Turnamen lama belum punya tanggal → null, nanti jatuh balik ke
+      // createdAt lewat `tournamentDate()`.
+      date: data.date ?? null,
+      participants: data.participants ?? [],
+      matches: data.matches ?? [],
+      champion: data.champion ?? null,
+      createdAt: data.createdAt ?? 0,
+      updatedAt: data.updatedAt ?? 0,
+    };
+  });
 }
 
 /** Simpan/timpa satu turnamen (dipakai saat buat & tiap update bracket). */

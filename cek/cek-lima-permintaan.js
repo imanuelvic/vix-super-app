@@ -134,7 +134,11 @@ c('layar Spiritual membaca ?session=…',
   /useLocalSearchParams<\{ session\?: string \}>/.test(spiritual));
 c('param yang tidak sah diabaikan (bukan jadi sesi ngawur)',
   /BIBLE_SESSIONS\.some\(\(s\) => s\.key === sessionParam\)/.test(spiritual));
-c('dioper ke tab arsipnya', /<BibleReadingTab days=\{bibleDays\} openSession=\{sesiDituju\} \/>/.test(spiritual));
+// 27 Sep 2026: tab itu sekarang juga menerima `streaks` (streak pagi/siang/
+// malam yang MASIH hidup), jadi prop-nya ditulis bertingkat. Yang dijaga
+// tetap sama: sesi yang dituju dioper apa adanya, bukan dihitung ulang.
+c('dioper ke tab arsipnya',
+  /<BibleReadingTab\s*\n\s*days=\{bibleDays\}\s*\n\s*streaks=\{bibleStreaks\}\s*\n\s*openSession=\{sesiDituju\}\s*\n\s*\/>/.test(spiritual));
 // Cadangannya bukan lagi "jendela yang sedang berjalan, kalau tidak ada → Pagi"
 // melainkan sesi yang JAM SEKARANG termasuk di dalamnya (bibleSessionOfClock).
 // Yang dijaga di sini tetap sama: sesi yang DITUJU harus menang.

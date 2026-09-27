@@ -51,7 +51,7 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
   // menyalakan badge merahnya. Halaman lain tidak ditarik: kalau semua yang
   // belum lunas ada di halaman berikutnya, tidak ada yang perlu dilompati di
   // halaman ini.
-  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+  const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
     pageItems.find(billUnsettled)?.id ?? null,
   );
 
@@ -71,6 +71,7 @@ export function SplitBillTab({ bills }: { bills: Bill[] }) {
         key={currentPage}
         ref={listRef}
         onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
         contentContainerStyle={styles.content}>
         <SummaryCard
           label={

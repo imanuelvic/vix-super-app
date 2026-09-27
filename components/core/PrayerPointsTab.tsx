@@ -9,7 +9,6 @@ import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
-import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useAccordion } from '@/hooks/useAccordion';
@@ -18,7 +17,7 @@ import {
   EMPTY_MONTHLY_PRAYERS,
   isCurrentMonthPrayers,
   monthDocId,
-  MONTHLY_PRAYER_QUESTION,
+  MONTHLY_PRAYER_ASK,
   saveMonthlyPrayers,
   subscribeCoreLeaders,
   subscribeMonthlyPrayers,
@@ -28,6 +27,7 @@ import {
 import { dayIdToDate, formatShortDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { SAVE_ERROR } from '@/lib/messages';
+import { openWhatsAppChat, WHATSAPP_ERROR } from '@/lib/whatsapp';
 
 // Prayer Points 🙏 — kumpulkan pergumulan tiap CORE Leader untuk bulan ini.
 // Pokok doa inilah yang menentukan follow up berkala (Selasa & Kamis). Poin TIDAK
@@ -142,20 +142,13 @@ export function PrayerPointsTab() {
         <LoadingCenter />
       ) : (
         <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-          {/* Intro: pertanyaan pembuka + info reset + progres pengisian */}
-          <SummaryCard style={styles.introCard}>
-            {/* Kutipannya sengaja mint miring, bukan warna label biasa. */}
-            <VixText heading="label" additionalStyle={styles.introQuote}>
-              “{MONTHLY_PRAYER_QUESTION}”
-            </VixText>
-            <VixText heading="bold" additionalStyle={summaryText.value}>
-              {filledCount}
-              <VixText heading="label" additionalStyle={summaryText.label}>
-                {' '}
-                dari {leaders.length} CORE Leader sudah terisi
-              </VixText>
-            </VixText>
-          </SummaryCard>
+          {/* 28 Sep 2026: kartu pembuka (pertanyaan + "9 dari 10 sudah
+              terisi") DIBUANG atas permintaan pemilik app. Pertanyaannya tidak
+              hilang, ia justru pindah ke tempat yang berguna: tombol 💬 di
+              tiap kartu CL, yang langsung membuka chat WA berisi kalimat itu
+              (MONTHLY_PRAYER_ASK). Angka "sudah terisi" pun sudah terbaca
+              sendiri dari daftarnya, dan kartu setinggi itu cuma memundurkan
+              CL pertama sejauh satu layar. */}
 
           {/* Bulan baru: poin masih dari bulan lalu → ajak tinjau/perbarui */}
           {stale && (
@@ -270,6 +263,24 @@ export function PrayerPointsTab() {
                           ＋
                         </VixText>
                       </PressableScale>
+                      {/* 💬 Tanya langsung ke orangnya (28 Sep 2026).
+                          Pokok doa ini isinya jawaban CL, bukan tebakanmu —
+                          jadi pintu paling penting di kartu ini justru
+                          MENANYAKANNYA, dan sebelumnya pintu itu tidak ada
+                          sama sekali. Kalimatnya sudah terisi
+                          (MONTHLY_PRAYER_ASK), tinggal kirim. */}
+                      <PressableScale
+                        style={[styles.waButton, !l.phone && styles.waButtonOff]}
+                        disabled={!l.phone}
+                        onPress={() => {
+                          if (!l.phone) return;
+                          setError(null);
+                          void openWhatsAppChat(l.phone, MONTHLY_PRAYER_ASK, () =>
+                            setError(WHATSAPP_ERROR),
+                          );
+                        }}>
+                        <VixText additionalStyle={styles.waButtonText}>💬</VixText>
+                      </PressableScale>
                     </View>
                   </>
                 )}
@@ -302,9 +313,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   monthLine: { color: Color.CORE_DARK, paddingHorizontal: 20, paddingBottom: 4 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
-  introCard: { gap: 6, marginBottom: CARD_GAP },
-  introQuote: { color: Color.MAIN_LIGHT, fontStyle: 'italic' },
   staleCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,
@@ -368,4 +376,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addButtonText: { color: Color.TEXT_REVERSE, fontSize: 20, lineHeight: 24 },
+  // 💬 WhatsApp — sebentuk & sebesar tombol ＋ di sebelahnya, tapi hijau WA
+  // supaya jelas ia keluar dari app, bukan menambah poin.
+  waButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: Color.WHATSAPP,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // CL yang belum ada nomornya: tombolnya tetap di tempatnya (barisnya tidak
+  // berubah bentuk dari kartu ke kartu), cuma diredupkan & tidak bisa ditekan.
+  waButtonOff: { backgroundColor: Color.BORDER },
+  waButtonText: { fontSize: 20, lineHeight: 24 },
 });

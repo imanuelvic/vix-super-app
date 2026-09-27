@@ -294,18 +294,23 @@ console.log('\n=== 4. Urut/saring DAFTAR dikerjakan di onChange ===');
 }
 
 // =====================================================================
-console.log('\n=== 5. Kelima belas berkas lib memakainya ===');
+console.log('\n=== 5. Semua berkas lib memakainya ===');
 // =====================================================================
 {
+  // 27 Sep 2026: learning · multiplication · tournament ikut masuk. Ketiganya
+  // dulu memakai `onSnapshot` mentah, jadi ketiganya kehilangan ref-count,
+  // hasil hangat antar-layar, dan terutama pemasangan ulang listener yang mati
+  // (`pulihkan`) — langganan yang tumbang di situ diam SELAMANYA.
   const F = [
     'lib/car.ts', 'lib/core.ts', 'lib/coreRules.ts', 'lib/debts.ts',
     'lib/device.ts', 'lib/family.ts', 'lib/fasting.ts', 'lib/saku.ts',
     'lib/health.ts', 'lib/residence.ts', 'lib/sermon.ts', 'lib/friends.ts',
     'lib/spiritual.ts', 'lib/tasks.ts', 'lib/transactions.ts',
+    'lib/learning.ts', 'lib/multiplication.ts', 'lib/tournament.ts',
   ];
   const pakai = F.filter((f) => /liveList[<(]/.test(baca(f)));
-  c('15 berkas memanggil liveList', pakai.length === 15,
-    `${pakai.length}/15 — kurang: ${F.filter((f) => !pakai.includes(f)).join(', ')}`);
+  c(`${F.length} berkas memanggil liveList`, pakai.length === F.length,
+    `${pakai.length}/${F.length} — kurang: ${F.filter((f) => !pakai.includes(f)).join(', ')}`);
   const imporSalah = F.filter(
     (f) => !/import \{[^}]*liveList[^}]*\} from '\.\/liveDoc';/.test(baca(f)),
   );
@@ -338,15 +343,23 @@ console.log('\n=== 5. Kelima belas berkas lib memakainya ===');
   });
   c('impor onSnapshot yang nganggur ikut dibuang', nganggur.length === 0,
     nganggur.join(', '));
-  // Yang MASIH memakainya (funds & learning membangun bentuk lain, bukan
-  // array baris) tidak boleh ikut kehilangan impornya.
-  c('yang masih memakai onSnapshot tetap mengimpornya', (() => {
-    for (const f of ['lib/saku.ts', 'lib/learning.ts']) {
-      const s = baca(f);
-      if (/\bonSnapshot\(/.test(s) && !/onSnapshot,/.test(s)) return false;
-    }
-    return true;
-  })());
+
+  // 27 Sep 2026 — penjagaan DIKETATKAN, bukan dilonggarkan. Dulu di sini ada
+  // pengecualian: `saku` & `learning` boleh tetap memakai `onSnapshot` mentah
+  // "karena membangun bentuk lain, bukan array baris". Alasan itu ternyata
+  // keliru: bentuk akhirnya memang beda, tapi `liveList` sudah menyediakan
+  // pemeta baris (`row`) + pembungkus `onChange`, jadi peta saldo & arsip
+  // rangkuman pun bisa lewat situ. Yang hilang gara-gara pengecualian itu
+  // bukan kerapian, tapi pemasangan ulang listener yang mati.
+  //
+  // Sekarang aturannya tanpa kecuali: SATU-SATUNYA pemanggil `onSnapshot` di
+  // seluruh lib/ adalah lib/liveDoc.ts sendiri.
+  const semuaLib = fs
+    .readdirSync(R + 'lib')
+    .filter((f) => f.endsWith('.ts') && f !== 'liveDoc.ts');
+  const mentah = semuaLib.filter((f) => /\bonSnapshot\(/.test(baca('lib/' + f)));
+  c('tak ada lagi onSnapshot mentah di lib/ (cuma lib/liveDoc.ts)',
+    mentah.length === 0, mentah.join(', ') || `${semuaLib.length} modul disisir`);
 }
 
 // =====================================================================
@@ -378,9 +391,18 @@ console.log('\n=== 6. Yang SENGAJA tidak diubah ===');
   c('unsubscribeAll tidak disentuh',
     /export function unsubscribeAll\(unsubs: \(\(\) => void\)\[\]\): \(\) => void \{\s*\n\s*return \(\) => unsubs\.forEach\(\(unsub\) => unsub\(\)\);/.test(src));
 
-  // Yang bentuknya BUKAN array baris tidak dipaksa ikut.
-  c('funds (membangun Record saldo) tidak dipaksa memakai liveList',
-    /for \(const d of snapshot\.docs\) \{/.test(baca('lib/saku.ts')));
+  // Bentuk yang BUKAN array baris (peta saldo Saku) tetap lewat liveList:
+  // pemeta barisnya menghasilkan pasangan [key, saldo], lalu `onChange`-nya
+  // dibungkus jadi Record. Dan sengaja TANPA limit — jumlah dompetnya dipatok
+  // daftar FUNDS, jadi ia tidak bisa tumbuh sendiri.
+  {
+    const saku = baca('lib/saku.ts');
+    const blok = /export function subscribeFundBalances[\s\S]*?\n\}/.exec(saku)?.[0] ?? '';
+    c('peta saldo Saku dibangun dari liveList, bukan onSnapshot sendiri',
+      /liveList<\[string, number\]>/.test(blok) && /Object\.fromEntries\(rows\)/.test(blok));
+    c('langganan saldo Saku sengaja tanpa limit (dipatok daftar FUNDS)',
+      !/limit\(/.test(blok) && /FUNDS/.test(blok));
+  }
 }
 
 // =====================================================================
@@ -400,6 +422,9 @@ console.log('\n=== 7. Mapper ASLI tiap berkas ikut dijalankan ===');
         R + 'node_modules/typescript/bin/tsc', '--ignoreConfig',
         R + 'lib/tasks.ts', R + 'lib/family.ts', R + 'lib/car.ts',
         R + 'lib/coreRules.ts',
+        // 27 Sep 2026: tiga pindahan terbaru ikut DIJALANKAN, bukan cuma
+        // dibaca bentuk tulisannya.
+        R + 'lib/saku.ts', R + 'lib/tournament.ts', R + 'lib/multiplication.ts',
         '--outDir', OUT2,
         '--module', 'commonjs', '--target', 'es2020',
         '--skipLibCheck', '--esModuleInterop', '--moduleResolution', 'bundler',
@@ -502,6 +527,43 @@ console.log('\n=== 7. Mapper ASLI tiap berkas ikut dijalankan ===');
   c('subscribeCoreRules: dokumen tanpa ikon dapat ikon jenis acaranya',
     typeof panduan?.[0].icon === 'string' && panduan[0].icon.length > 0,
     panduan?.[0].icon);
+
+  // ---- Tiga pindahan 27 Sep 2026 ----
+  // Saku paling berbeda: hasilnya PETA saldo, jadi yang diperiksa bukan cuma
+  // nilainya tapi bentuknya — kalau ia diam-diam jadi array, daftar dompet
+  // menampilkan saldo kosong tanpa satu pun galat.
+  const saku = require(M2('saku'));
+  const saldo = jalankan(saku, 'subscribeFundBalances', ['u1'], [
+    { id: 'vacation', data: { balance: 250_000 } },
+    { id: 'giving', data: {} },
+  ]);
+  c('subscribeFundBalances: hasilnya peta { key: saldo }, bukan array',
+    !!saldo && !Array.isArray(saldo) && saldo.vacation === 250_000,
+    JSON.stringify(saldo));
+  c('subscribeFundBalances: dompet tanpa kolom balance jadi 0',
+    saldo?.giving === 0, String(saldo?.giving));
+
+  const turnamen = require(M2('tournament'));
+  const juara = jalankan(turnamen, 'subscribeTournaments', ['u1'], [
+    { id: 't1', data: { name: 'Badminton Agustus', size: 16, createdAt: 5 } },
+    { id: 't2', data: {} },
+  ]);
+  c('subscribeTournaments: turnamen lama tanpa tanggal tetap date null',
+    juara?.[0].date === null, String(juara?.[0].date));
+  c('subscribeTournaments: dokumen kosong dapat nilai bawaan yang aman',
+    juara?.[1].name === 'Turnamen' && juara?.[1].size === 8 &&
+      Array.isArray(juara?.[1].participants) && Array.isArray(juara?.[1].matches) &&
+      juara?.[1].champion === null,
+    JSON.stringify(juara?.[1]));
+
+  const multi = require(M2('multiplication'));
+  const mult = jalankan(multi, 'subscribeMultiplications', ['u1'], [
+    { id: 'm1', data: { fromName: 'CORE Lama', createdAt: 9 } },
+  ]);
+  c('subscribeMultiplications: nama & daftar langkahnya tidak jadi undefined',
+    mult?.[0].fromName === 'CORE Lama' && mult?.[0].toName === '' &&
+      Array.isArray(mult?.[0].steps) && Array.isArray(mult?.[0].members),
+    JSON.stringify(mult?.[0]));
 
   Module._load = asliLoad;
 }

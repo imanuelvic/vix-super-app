@@ -147,10 +147,13 @@ console.log('\n=== 2. Delapan tile bertukar posisi ===');
   Module._load = asli;
 
   const life = G.LIFE_FEATURES.map((f) => f.label);
+  // 27 Sep 2026 (permintaan user): Family ↔ News ↔ Book berputar satu
+  // lingkaran. Family turun ke tempat News, News geser ke tempat Book, Book
+  // naik ke tempat Family. Barisnya sendiri tidak berubah jumlahnya.
   const HARUS = [
     'Reminder', 'Health', 'Fitness', 'Habits',
-    'Finance', 'Learning', 'Family', 'Invest',
-    'News', 'Book', 'Fun', 'Wheel',
+    'Finance', 'Learning', 'Book', 'Invest',
+    'Family', 'News', 'Fun', 'Wheel',
     'Car', 'Residence', 'Friends', 'Games',
     'Device', 'Reward', 'Profile', 'System',
   ];

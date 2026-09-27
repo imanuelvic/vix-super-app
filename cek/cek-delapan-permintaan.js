@@ -303,8 +303,13 @@ c('kotak kosongnya menyebut sub yang dicari',
 // ===================================================================
 console.log('\n=== 7. Template Chat tertutup semua ===');
 const chat = baca('app/chat-templates.tsx');
-c('tak ada kategori yang terbuka duluan',
-  /const \[openKey, setOpenKey\] = useState<string \| null>\(null\);/.test(chat));
+// 28 Sep 2026: masih tertutup semua, KECUALI kalau layarnya dituju lewat
+// ?cat=… (dua tombol di modal follow up: 🔥 Motivational Word & 🪞 Minta
+// Masukan). Yang dijaga sekarang dua hal sekaligus, jadi lebih ketat daripada
+// sebelumnya: tanpa param hasilnya tetap null, DAN paramnya disaring lewat
+// daftar kategori yang sah (bukan dipercaya mentah dari URL).
+c('tak ada kategori yang terbuka duluan (kecuali yang memang dituju)',
+  /const \[openKey, setOpenKey\] = useState<string \| null>\(\s*\n\s*\(\) => CHAT_CATEGORIES\.find\(\(c\) => c\.key === catParam\)\?\.key \?\? null,\s*\n\s*\);/.test(chat));
 c('membuka satu tetap menutup yang lain (tetap satu-satu)',
   /setOpenKey\(openKey === cat\.key \? null : cat\.key\)/.test(chat));
 c('penanda "hari ini" tidak ikut hilang',

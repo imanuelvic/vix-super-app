@@ -274,13 +274,16 @@ async function jalan() {
   const leaders = baca('components/core/LeadersTab.tsx');
   ok('jarak bawah chip Cowok/Cewek disamakan dengan kolom lain (10)',
     /genderRow: \{ flexDirection: 'row', gap: 8, marginBottom: 10 \}/.test(leaders));
+  // 27 Sep 2026: isi modal baca-saja pindah ke components/core/PersonInfo.tsx
+  // (dipakai bersama Rekap Visitasi 📊), jadi garisnya ikut pindah ke sana.
+  const personInfo = baca('components/core/PersonInfo.tsx');
   ok('modal baca-saja punya garis pemisah di bawah judulnya',
-    /<View style=\{styles\.viewDivider\} \/>/.test(leaders) &&
-    /viewDivider: \{\s*\n\s*height: 1,/.test(leaders));
+    /<View style=\{styles\.viewDivider\} \/>/.test(personInfo) &&
+    /viewDivider: \{\s*\n\s*height: 1,/.test(personInfo));
   ok('garisnya membentang penuh, tidak mengambang di tengah',
-    /marginHorizontal: -20,/.test(leaders.slice(leaders.indexOf('viewDivider'))));
+    /marginHorizontal: -20,/.test(personInfo.slice(personInfo.indexOf('viewDivider'))));
   ok('dipakai CL maupun Main Team (modalnya memang satu)',
-    (leaders.match(/<PersonView person=/g) || []).length === 1);
+    (leaders.match(/<PersonInfo person=/g) || []).length === 1);
 
   console.log(gagal === 0
     ? '\n✅ LULUS — PDF Wheel lengkap, cap waktu, keamanan, & tampilan.'

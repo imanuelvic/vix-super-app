@@ -178,10 +178,11 @@ const gridLib = baca('lib/featureGrid.ts');
 const G = pasang(tsc(gridLib), () => new Proxy({}, { get: () => () => undefined }));
 // 23 Sep 2026: pemiliknya menukar delapan tile (Finance↔Learning↔Fitness↔
 // Health↔Reminder berputar, Car↔Fun, Residence↔Wheel, Device↔Friends).
+// 27 Sep 2026: Family ↔ News ↔ Book berputar satu lingkaran (permintaan user).
 const HARUS = [
   'tasks', 'health', 'spiritual', 'fitness',
-  'core', 'finance', 'learning', 'family',
-  'investment', 'career', 'news', 'book',
+  'core', 'finance', 'learning', 'book',
+  'investment', 'career', 'family', 'news',
   'fun', 'wheel', 'car', 'residence',
   'friends', 'games', 'device',
 ];

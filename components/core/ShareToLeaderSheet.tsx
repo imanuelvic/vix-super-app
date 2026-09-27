@@ -116,10 +116,11 @@ export function ShareToLeaderSheet({
       title="📤 Share to CORE Leader"
       subtitle={doc}
       onClose={tutup}>
-      <VixText heading="label" additionalStyle={styles.hint}>
-        Click nama CL: PDF-nya dibagikan lewat share sheet (pilih WhatsApp),
-        lalu chat WA ke nomornya langsung terbuka. 💬 = buka chat-nya saja.
-      </VixText>
+      {/* 27 Sep 2026: paragraf "Click nama CL: PDF-nya dibagikan lewat share
+          sheet…" dibuang. Keterangannya benar, tapi ia dibaca sekali lalu cuma
+          menyita ruang tiap kali sheet ini dibuka, dan tiap barisnya sendiri
+          sudah memperlihatkan pilihannya (ikon share di kanan nama, 💬 di
+          sebelahnya). */}
       <FormError message={error} />
 
       {leaders === null ? (
@@ -175,7 +176,6 @@ export function ShareToLeaderSheet({
 }
 
 const styles = StyleSheet.create({
-  hint: { color: Color.TEXT_LABEL, marginBottom: 12 },
   row: {
     ...CARD,
     flexDirection: 'row',

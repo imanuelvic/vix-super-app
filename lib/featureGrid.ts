@@ -89,7 +89,10 @@ const FEATURES: HomeFeature[] = [
   { key: 'finance', sort: 6, label: 'Finance', icon: 'banknote', route: '/finance', bg: Color.FINANCE, fg: Color.FINANCE_DARK, deep: Color.FINANCE_DEEP },
   { key: 'learning', sort: 7, label: 'Learning', icon: 'graduationcap.fill', route: '/learning', bg: Color.LEARNING, fg: Color.LEARNING_DARK, deep: Color.LEARNING_DEEP },
   { key: 'fitness', sort: 3, label: 'Fitness', icon: 'dumbbell.fill', route: '/fitness', bg: Color.FITNESS, fg: Color.FITNESS_DARK, deep: Color.FITNESS_DEEP },
-  { key: 'family', sort: 8, label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FAMILY, fg: Color.FAMILY_DARK, deep: Color.FAMILY_DEEP },
+  // 27 Sep 2026: Family ↔ News ↔ Book berputar satu lingkaran (permintaan
+  // user). Family turun ke tempat News, News geser ke tempat Book, Book naik
+  // ke tempat Family. Yang berubah cuma `sort`; kunci, warna & rutenya tetap.
+  { key: 'family', sort: 11, label: 'Family', icon: 'person.3.fill', route: '/family', bg: Color.FAMILY, fg: Color.FAMILY_DARK, deep: Color.FAMILY_DEEP },
 
   { key: 'investment', sort: 9, label: 'Invest', icon: 'chart.line.uptrend.xyaxis', route: '/investment', bg: Color.INVEST, fg: Color.INVEST_DARK, deep: Color.INVEST_DEEP },
   { key: 'career', sort: 10, label: 'Career', icon: 'briefcase.fill', route: '/work', bg: Color.CAREER, fg: Color.CAREER_DARK, deep: Color.CAREER_DEEP },
@@ -100,8 +103,8 @@ const FEATURES: HomeFeature[] = [
 
   { key: 'car', sort: 15, label: 'Car', icon: 'car.fill', route: '/car', bg: Color.CAR, fg: Color.CAR_DARK, deep: Color.CAR_DEEP },
   { key: 'residence', sort: 16, label: 'Residence', icon: 'house.fill', route: '/residence', bg: Color.HOUSE, fg: Color.HOUSE_DARK, deep: Color.HOUSE_DEEP },
-  { key: 'news', sort: 11, label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK, deep: Color.NEWS_DEEP },
-  { key: 'book', sort: 12, label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK, deep: Color.BOOK_DEEP },
+  { key: 'news', sort: 12, label: 'News', icon: 'newspaper.fill', route: '/news', bg: Color.NEWS, fg: Color.NEWS_DARK, deep: Color.NEWS_DEEP },
+  { key: 'book', sort: 8, label: 'Book', icon: 'books.vertical.fill', route: '/book', bg: Color.BOOK, fg: Color.BOOK_DARK, deep: Color.BOOK_DEEP },
 
   { key: 'device', sort: 19, label: 'Device', icon: 'iphone', route: '/device', bg: Color.DEVICE, fg: Color.DEVICE_DARK, deep: Color.DEVICE_DEEP },
   { key: 'games', sort: 18, label: 'Games', icon: 'gamecontroller.fill', route: '/games', bg: Color.TOURNAMENT, fg: Color.TOURNAMENT_DARK, deep: Color.TOURNAMENT_DEEP },

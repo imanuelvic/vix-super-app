@@ -6,9 +6,16 @@
 // sekali. Di sini kata-katanya sudah siap, tinggal pilih A/B/C yang paling
 // pas dengan orangnya, lalu langsung dibuka di WhatsApp.
 //
-// TIDAK ada ucapan ulang tahun di sini — itu sudah punya tempatnya sendiri
-// (kartu ulang tahun di sub-tab Follow Up, lengkap dengan doa & undangannya).
-// Menyalinnya ke sini justru bikin dua versi yang gampang jadi beda.
+// ── Ucapan ulang tahun: DUA tempat, dan itu disengaja (28 Sep 2026) ───────
+// Dulu di sini sengaja TIDAK ada ucapan ulang tahun, karena CORE Leader &
+// Main Team sudah punya kartu ulang tahunnya sendiri di sub-tab Follow Up
+// (lengkap dengan doa & undangan bercerita, lihat lib/core.ts).
+//
+// Yang tidak terpikir waktu itu: yang ulang tahun bukan cuma CL. Teman kuliah,
+// teman kerja, teman seangkatan di gereja — untuk mereka tidak ada apa-apa,
+// dan justru ke merekalah ucapan bergaya pelayanan terasa kaku. Jadi kategori
+// 🎂 di bawah memang untuk SIAPA SAJA, nadanya jauh lebih santai, dan ia tidak
+// menggantikan kartu ulang tahun CL — keduanya punya pembaca yang berbeda.
 //
 // Semua teks tersimpan di kode, bukan di Firestore: isinya tidak berubah-ubah
 // dan tidak perlu disinkronkan antar-perangkat — jadi nol pembacaan.
@@ -35,6 +42,27 @@ export type ChatCategory = {
   byDay?: boolean;
   variants: ChatVariant[];
 };
+
+/**
+ * 🪞 Hari meminta masukan ke CORE Leader (28 Sep 2026) — SABTU.
+ *
+ * Kenapa Sabtu, dan bukan hari lain:
+ *   • Senin–Jumat mereka sedang di tengah kerja/kuliah; pertanyaan reflektif di
+ *     sela itu dijawab seadanya ("baik kok kak"), dan jawaban seadanya justru
+ *     lebih buruk daripada tidak bertanya.
+ *   • Minggu penuh ibadah & pelayanan.
+ *   • Sabtu satu-satunya hari yang di app ini sendiri sudah ditandai sebagai
+ *     hari tenang (lihat Motivational Words hari Sabtu: "Ambil waktu untuk
+ *     recharge"). Jawaban yang jujur butuh orang yang sedang tidak buru-buru.
+ *
+ * Angkanya mengikuti `Date.getDay()` (0 = Minggu), jadi 6 = Sabtu.
+ */
+export const FEEDBACK_DAY = 6;
+
+/** Hari ini hari meminta masukan? */
+export function isFeedbackDay(now = new Date()): boolean {
+  return now.getDay() === FEEDBACK_DAY;
+}
 
 /** Nama hari, urut sesuai `Date.getDay()` (0 = Minggu). */
 export const DAY_NAMES = [
@@ -283,6 +311,76 @@ Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi ke
       {
         key: 'C',
         text: 'Thank you <nama>! 🤍 Kehadiranmu bikin CORE makin hidup. Semangat terus yaa, jangan capek berbuat baik 🙏',
+      },
+    ],
+  },
+  {
+    // 🪞 Minta masukan — SATU-SATUNYA kategori yang arahnya masuk, bukan
+    // keluar: semua kategori lain kamu yang menguatkan orang lain, yang ini
+    // kamu yang minta dikoreksi.
+    //
+    // Kenapa ini ada: kamu menggembalakan sepuluh CORE Leader, dan merekalah
+    // satu-satunya orang yang benar-benar melihat cara kamu memimpin dari
+    // dekat. Kalau tidak pernah diminta, masukan itu tidak akan datang sendiri
+    // — bukan karena tidak ada, tapi karena sungkan.
+    //
+    // Nadanya sengaja membuka pintu selebar-lebarnya (menyebut "jujur aja",
+    // "gak bakal baper", memberi contoh hal konkret yang boleh dikritik).
+    // Pertanyaan "ada masukan?" yang polos hampir selalu dijawab "aman kok".
+    key: 'feedback',
+    title: '🪞 Minta Masukan',
+    hint: 'Minta koreksi dari CORE Leader soal caramu memimpin & menggembalakan',
+    fields: ['nama'],
+    variants: [
+      {
+        key: 'A',
+        text: '<nama>, boleh minta tolong satu hal? 🙏 Aku mau minta masukan soal caraku menggembalakan kalian. Apa yang menurutmu udah oke, dan apa yang sebaiknya aku perbaiki? Jujur aja, aku gak bakal baper, justru aku butuh banget 🤍',
+      },
+      {
+        key: 'B',
+        text: 'Halo <nama>! 😄 Aku lagi evaluasi diri nih sebagai leader. Menurut kamu, aku kurangnya di mana ya? Entah cara chat, cara bawa CORE, atau pas follow up. Sekecil apa pun bantu banget buat aku bertumbuh 🌱',
+      },
+      {
+        key: 'C',
+        text: '<nama>, aku boleh nanya serius? 🤔 Kalau kamu jadi aku, apa satu hal yang kamu ubah dari cara aku mimpin CORE? Aku beneran mau denger, bukan basa-basi. Makasih yaa udah mau jujur 🙌',
+      },
+      {
+        key: 'D',
+        text: 'Hai <nama> 👋 Aku manusia biasa dan pasti banyak salahnya. Kalau ada sikap atau ucapanku yang pernah bikin kamu gak nyaman, tolong kasih tau yaa. Aku mau memperbaiki, bukan membela diri 🙏',
+      },
+    ],
+  },
+  {
+    // 🎂 Ulang tahun UMUM — untuk teman, bukan khusus CL/Main Team.
+    //
+    // Gaya bahasanya sengaja jauh lebih santai daripada ucapan di kartu Follow
+    // Up: tidak ada doa panjang, tidak ada "semakin dewasa rohani". Yang dikirim
+    // ke teman seangkatan harus terdengar seperti dirimu waktu ngobrol, bukan
+    // seperti sambutan.
+    //
+    // Empat pilihan supaya tidak semua orang menerima kalimat yang sama persis
+    // — dan itu penting: ucapan yang jelas hasil salin-tempel terasa lebih
+    // dingin daripada tidak mengucapkan sama sekali.
+    key: 'ulangtahun',
+    title: '🎂 Happy Birthday',
+    hint: 'Untuk siapa saja, bukan cuma CL atau Main Team',
+    fields: ['nama'],
+    variants: [
+      {
+        key: 'A',
+        text: 'HAPPY BIRTHDAY <nama>!! 🎉🎂 Wishing you all the best yaa, sehat terus, rezekinya ngalir, dan semua yang lagi diusahain jadi kenyataan. Tuhan Yesus berkati selaluu 🤍',
+      },
+      {
+        key: 'B',
+        text: 'Hbd <nama>! 🥳 Semoga tahun ini lebih banyak hal baik daripada hal yang bikin pusing wkwk. Sukses terus yaa, jangan lupa istirahat, dan tetap jadi orang baik 🙌✨',
+      },
+      {
+        key: 'C',
+        text: '<nama> ulang tahunnn 🎈 Selamat yaa! Makin bertambah umur, makin bertambah juga hikmat & damai sejahteranya. Semoga apa yang kamu doain diam-diam, Tuhan jawab tahun ini 🙏🎂',
+      },
+      {
+        key: 'D',
+        text: 'Happy birthday <nama>! 🎊 Thankyou udah jadi orang yang enak buat diajak cerita. Semoga tahun ini kamu dapet banyak kejutan yang bikin senyum. Gbu alwaysss 💛',
       },
     ],
   },

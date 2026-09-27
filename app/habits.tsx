@@ -57,9 +57,12 @@ import {
 } from '@/lib/priority';
 import {
   bibleMirrorState,
+  EMPTY_BIBLE_STREAKS,
   subscribeBibleReadingToday,
+  subscribeBibleStreaks,
   type BibleReadingSessions,
   type BibleSession,
+  type BibleStreaks,
 } from '@/lib/spiritual';
 
 // Baris cermin Baca Alkitab → sesi mana yang jadi acuannya.
@@ -129,6 +132,9 @@ export default function HabitsScreen() {
   // listener bersama, jadi tidak menambah pembacaan Firestore.
   const [priorities, setPriorities] = useState<PriorityDay | null>(null);
   const [bible, setBible] = useState<BibleReadingSessions | null>(null);
+  // Streak ketiga sesi baca Alkitab — ini yang ditampilkan di baris cerminnya,
+  // supaya rantai yang putus kelihatan di tempat ia dicentang tiap hari.
+  const [bibleStreaks, setBibleStreaks] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   const [error, setError] = useState<string | null>(null);
 
   // Lewat tengah malam id harinya ikut berganti sendiri — ceklis kembali
@@ -157,6 +163,7 @@ export default function HabitsScreen() {
       subscribeFitDay(uid, dayId, setFitDay),
       subscribePriorityDay(uid, dayId, setPriorities),
       subscribeBibleReadingToday(uid, dayId, setBible),
+      subscribeBibleStreaks(uid, setBibleStreaks, fail),
     ],
     { onError: setError, deps: [dayId] },
   );
@@ -231,6 +238,7 @@ export default function HabitsScreen() {
           <StreakPill
             streak={activeStreak(streak ?? null, dayId)}
             category="health"
+            onBand
           />
         }
       />
@@ -248,6 +256,7 @@ export default function HabitsScreen() {
             profile={profile}
             target={target ?? null}
             streak={streak ?? null}
+            bibleStreaks={bibleStreaks}
             focus={focusOf(focus)}
             onFocusDone={clearFocus}
           />

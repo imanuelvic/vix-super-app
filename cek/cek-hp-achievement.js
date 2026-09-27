@@ -124,9 +124,14 @@ const achv = pasang(tsc(lib), (nama) => {
 const stats = {
   loginCount: 5, loginBest: 9, habitStreak: 3,
   bibleMorningBest: 3, bibleDaytimeBest: 0, bibleNightBest: 2,
+  // 27 Sep 2026: angka di pojok kanan atas halaman kategori baca Alkitab kini
+  // memakai streak yang MASIH hidup, bukan rekor terbaiknya. Lencananya tetap
+  // memakai rekor di atas — yang sudah terbuka tidak boleh dicabut lagi.
+  bibleMorningNow: 3, bibleDaytimeNow: 0, bibleNightNow: 0,
   learningWeekBest: 1, fitTotal: 12, fitBest: 4, bestSteps: 21000,
   stepTierLastDate: {}, weekStepHits: 2, weekGymHits: 1, weekBothHits: 0,
   bestDayKm: 10.5, bestWeekKm: 30, bestMonthKm: 90,
+  bestQuarterKm: 250, bestYearKm: 800,
   waterCount: 4, waterBest: 7, waterTotal: 20,
 };
 c('Alkitab Pagi melaporkan streaknya', (() => {

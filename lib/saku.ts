@@ -3,7 +3,6 @@ import {
   doc,
   getDoc,
   increment,
-  onSnapshot,
   orderBy,
   query,
   setDoc,
@@ -91,16 +90,19 @@ export function subscribeFundBalances(
   onChange: (balances: FundBalances) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return onSnapshot(
+  // Lewat `liveList` seperti langganan lain, walau bentuk akhirnya peta
+  // (bukan daftar baris): yang penting justru bagian yang tidak kelihatan di
+  // sini — satu listener walau dibuka beberapa layar, dan listener yang mati
+  // dipasang ulang (`pulihkan`). Dulu memakai `onSnapshot` mentah, jadi ia
+  // satu-satunya langganan yang diam selamanya begitu listenernya tumbang.
+  //
+  // Tanpa limit dengan sengaja: jumlah dokumennya dipatok daftar FUNDS di atas
+  // (sembilan), jadi ia tidak bisa tumbuh sendiri.
+  return liveList<[string, number]>(
     collection(db, 'users', uid, 'funds'),
-    (snapshot) => {
-      const balances: FundBalances = {};
-      for (const d of snapshot.docs) {
-        balances[d.id] = (d.data().balance as number) ?? 0;
-      }
-      onChange(balances);
-    },
+    (rows) => onChange(Object.fromEntries(rows) as FundBalances),
     onError,
+    (d) => [d.id, (d.data().balance as number) ?? 0],
   );
 }
 

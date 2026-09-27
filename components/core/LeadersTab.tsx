@@ -18,6 +18,7 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { LeaderBodyDialog } from '@/components/core/LeaderBodyDialog';
+import { PersonInfo } from '@/components/core/PersonInfo';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useAccordion } from '@/hooks/useAccordion';
@@ -41,17 +42,15 @@ import {
     normalizePhone,
     saveCoreLeaders,
     saveMainTeam,
-    studyLine,
     studyWorkOf,
     studyWorkPayload,
-    workLine,
     type CoreLeader,
     type Gender,
     type LeaderBody,
     type MainTeamMember,
     type StudyWork,
 } from '@/lib/core';
-import { dayId, dayIdToDate, formatDate, MONTH_NAMES } from '@/lib/format';
+import { dayId, dayIdToDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 import { localPhone } from '@/lib/phone';
@@ -641,7 +640,7 @@ export function LeadersTab({
             </VixText>
           </PressableScale>
         }>
-        {viewing ? <PersonView person={viewing.person} today={today} /> : null}
+        {viewing ? <PersonInfo person={viewing.person} today={today} /> : null}
       </SheetModal>
 
       {/* Bottom sheet tambah/edit CL */}
@@ -1099,105 +1098,6 @@ function StudyWorkFields({
   );
 }
 
-/**
- * Isi modal baca-saja: seluruh data satu orang, tanpa satu pun kolom isian.
- *
- * Dipakai CL maupun Main Team — kolomnya memang sama persis (lihat CoreLeader &
- * MainTeamMember di lib/core), jadi tidak ada gunanya dua tampilan berbeda.
- * Baris yang datanya belum diisi sengaja TIDAK ditampilkan: lebih baik pendek
- * daripada penuh baris "—".
- */
-function PersonView({
-  person,
-  today,
-}: {
-  person: CoreLeader | MainTeamMember;
-  today: Date;
-}) {
-  const { daysUntil, turningAge } = nextBirthday(person, today);
-  const belajar = studyLine(person);
-  const kerja = workLine(person);
-  const jenis = GENDER_OPTIONS.find((g) => g.key === person.gender)?.label;
-  const disc = person.disc
-    ? person.disc
-        .split('')
-        .map((k) => DISC_OPTIONS.find((d) => d.key === k)?.label ?? k)
-        .join(' · ')
-    : null;
-  const love = loveLangLabel(person.loveLanguage);
-
-  return (
-    <View style={styles.viewList}>
-      {/* Garis pemisah judul & isi — memisahkan "siapa"-nya (nama + peran di
-          kepala modal) dari "datanya". Dipakai CL maupun Main Team, karena
-          modalnya memang satu. */}
-      <View style={styles.viewDivider} />
-      <InfoRow
-        label="🎂 Tanggal Lahir"
-        value={`${person.birthDay} ${MONTH_NAMES[person.birthMonth]} ${person.birthYear} · ${currentAge(person, today)} th`}
-      />
-      <InfoRow
-        label="🎈 Ulang Tahun"
-        value={
-          daysUntil === 0
-            ? `Hari ini! 🎉 genap ${turningAge} th`
-            : `${daysUntil} hari lagi · genap ${turningAge} th`
-        }
-      />
-      {/* Dua isian pendek BERDAMPINGAN (No. HP + Gender, MBTI + Love
-          Language): modalnya jadi lebih pendek, tidak perlu digulung untuk
-          data yang cuma satu-dua kata. Kalau pasangannya kosong, yang ada
-          melebar sendiri memenuhi barisnya. */}
-      <View style={styles.viewPair}>
-        <InfoRow
-          label="📱 No. HP"
-          value={person.phone ? `+62${person.phone}` : 'Belum ada nomor'}
-          half
-        />
-        {jenis ? <InfoRow label="🚻 Gender" value={jenis} half /> : null}
-      </View>
-      {/* Formatnya utuh seperti Tanggal Lahir di atasnya ("8 Januari 2025"),
-          bukan "8 Jan 25" ringkasan tabel. */}
-      {'thanksgivingDayId' in person && person.thanksgivingDayId ? (
-        <InfoRow
-          label="🎉 Thanksgiving CORE"
-          value={formatDate(dayIdToDate(person.thanksgivingDayId))}
-        />
-      ) : null}
-      {belajar ? <InfoRow label="🎓 Pendidikan" value={belajar.slice(2)} /> : null}
-      {kerja ? <InfoRow label="💼 Pekerjaan" value={kerja.slice(2)} /> : null}
-      {disc ? <InfoRow label="🎨 DISC" value={disc} /> : null}
-      {person.mbti || love ? (
-        <View style={styles.viewPair}>
-          {person.mbti ? <InfoRow label="🧩 MBTI" value={person.mbti} half /> : null}
-          {love ? <InfoRow label="💞 Love Language" value={love} half /> : null}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-// Satu baris data di modal baca-saja: keterangan kecil di atas, isinya di bawah.
-// `half` = berbagi baris dengan pasangannya (lihat viewPair).
-function InfoRow({
-  label,
-  value,
-  half = false,
-}: {
-  label: string;
-  value: string;
-  half?: boolean;
-}) {
-  return (
-    <View style={[styles.viewRow, half && styles.viewHalf]}>
-      <VixText heading="label">{label}</VixText>
-      <VixText heading="paragraph" additionalStyle={styles.viewValue}>
-        {value}
-      </VixText>
-    </View>
-  );
-}
-
 // Badge kecil kepribadian di kartu daftar & follow up.
 function PersonalityBadges({
   person,
@@ -1326,22 +1226,7 @@ const styles = StyleSheet.create({
   followupLine: { color: Color.TEXT_PLACEHOLDER },
   cardRight: { alignItems: 'flex-end', gap: 6 },
   cardActions: { flexDirection: 'row', gap: 8 },
-  // Modal baca-saja
-  viewList: { gap: 12, paddingBottom: 4 },
-  // Garis rambut pemisah kepala modal dari daftar datanya. Lebarnya ditarik
-  // keluar padding sheet (-20 kiri-kanan) supaya membentang penuh seperti
-  // garis footer modal, bukan mengambang di tengah.
-  viewDivider: {
-    height: 1,
-    backgroundColor: Color.BORDER,
-    marginHorizontal: -20,
-    marginBottom: 2,
-  },
-  viewRow: { gap: 2 },
-  // Dua baris pendek berdampingan; tiap paruh membagi lebar sama rata.
-  viewPair: { flexDirection: 'row', gap: 12 },
-  viewHalf: { flex: 1 },
-  viewValue: { color: Color.TEXT_TITLE },
+  // (Gaya isi modal baca-saja ikut pindah ke components/core/PersonInfo.tsx.)
   closeButton: {
     marginTop: 16,
     marginBottom: 4,

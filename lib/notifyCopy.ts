@@ -115,6 +115,37 @@ export const KOLAM_OLAHRAGA: string[] = [
   '💪 Catat dulu olahraga hari ini sebelum harinya tutup',
 ];
 
+/**
+ * 🎓 Pengingat target Learning (27 Sep 2026).
+ *
+ * Judulnya saja yang dari kolam ini; ISI barisnya menyebut hari, langkah, dan
+ * skill minggu itu sendiri (lihat lib/notify.ts), karena itulah yang membuat
+ * notifikasinya bisa dikerjakan tanpa membuka app dulu.
+ */
+export const KOLAM_LEARNING: string[] = [
+  '🎓 Giliran belajar minggu ini',
+  '📚 Satu langkah kecil buat skill baru',
+  '🎓 Jatah belajarmu hari ini',
+  '🧠 Ilmu baru menunggu 30 menit darimu',
+  '🎓 Sedikit hari ini, jauh setahun lagi',
+];
+
+/**
+ * 🗓️ Pengingat puasa bulanan (28 Sep 2026).
+ *
+ * Nadanya MENGUNDANG, bukan menjadwalkan. Kalimat seperti "waktunya puasa
+ * bulan ini" membuatnya terdengar seperti tagihan listrik — dan justru itu
+ * yang mau dihindari: puasa yang dijalani karena tertagih akan berhenti jadi
+ * puasa, tinggal jadwalnya saja.
+ */
+export const KOLAM_PUASA: string[] = [
+  '🗓️ Senin terakhir bulan ini',
+  '🍽️ Mau ambil puasa bulan ini?',
+  '🙏 Ada yang mau kamu bawa serius ke Tuhan bulan ini?',
+  '🗓️ Pekan baru, kesempatan baru buat puasa',
+  '🍽️ Bulan ini mau fokus ke apa?',
+];
+
 export const KOLAM_REFLEKSI: Kalimat[] = [
   { title: '📝 Refleksi hari ini', body: 'Apa yang terjadi, apa yang Tuhan ajarkan, apa yang kubawa ke besok?' },
   { title: '🌙 Sebelum hari ini ditutup', body: 'Tulis satu paragraf jujur. Tiga menit saja.' },

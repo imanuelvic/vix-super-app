@@ -70,7 +70,7 @@ export function PlanTab({
 
   // Buka sub-tab ini → daftarnya langsung datang ke paket yang menyalakan
   // badge merahnya (aktif & sudah H-1). Ambangnya sama dengan penandanya.
-  const { ref: listRef, setRowY, onContentSizeChange } = useDueJump(
+  const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
     milik.find(
       (p) => isActivePlan(p, now) && daysLeft(p, now) <= PLAN_ALERT_DAYS,
     )?.id ?? null,
@@ -205,6 +205,7 @@ export function PlanTab({
       <ScrollView
         ref={listRef}
         onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
         contentContainerStyle={styles.content}>
         <SummaryCard>
           <VixText heading="label" additionalStyle={summaryText.label}>

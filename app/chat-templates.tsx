@@ -63,7 +63,10 @@ export default function ChatTemplatesScreen() {
   //
   // Dipakai sebagai nilai AWAL saja, bukan dikunci: begitu di layar, dropdownnya
   // tetap bebas diganti ke Grup CORE atau CL lain.
-  const { leader: leaderParam } = useLocalSearchParams<{ leader?: string }>();
+  const { leader: leaderParam, cat: catParam } = useLocalSearchParams<{
+    leader?: string;
+    cat?: string;
+  }>();
   const [pilihan, setPilihan] = useState<string>(leaderParam || GRUP);
   const [namaLain, setNamaLain] = useState('');
   const [gelar, setGelar] = useState('');
@@ -72,7 +75,15 @@ export default function ChatTemplatesScreen() {
   // awalnya: satu kategori yang terbuka sendiri mendorong kategori lain jauh ke
   // bawah layar, jadi yang lain seolah tidak ada. Tertutup semua = seluruh
   // daftarnya kelihatan sekali pandang, tinggal pilih.
-  const [openKey, setOpenKey] = useState<string | null>(null);
+  //
+  // KECUALI kalau layar ini dibuka dengan ?cat=… (28 Sep 2026): dua tombol di
+  // modal follow up menuju kategori tertentu — 🔥 Motivational Words & 🪞 Minta
+  // Masukan — dan mendarat di daftar tertutup berarti kategori yang barusan
+  // di-click harus dicari lagi. Paramnya DISARING: yang tidak dikenali
+  // diperlakukan seperti tidak ada.
+  const [openKey, setOpenKey] = useState<string | null>(
+    () => CHAT_CATEGORIES.find((c) => c.key === catParam)?.key ?? null,
+  );
 
   const hariIni = todayName();
 

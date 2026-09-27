@@ -5,6 +5,7 @@ import {
     type FirestoreError,
 } from 'firebase/firestore';
 
+import { pendingIdeas, type ContentIdea } from './affiliate';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
@@ -117,7 +118,25 @@ export type FreelanceProject = {
   deadline: Timestamp;
   done: boolean;
   invoiceItems?: InvoiceItem[]; // rincian biaya untuk invoice (opsional)
+  /**
+   * ⏸️ Ditahan client (28 Sep 2026) — proyeknya ada, tapi belum bisa jalan:
+   * menunggu bahan, menunggu keputusan, menunggu pembayaran.
+   *
+   * Sama artinya dengan "Backlog (tanpa deadline)" di roadmap Fulltime:
+   * tenggatnya tidak berlaku, jadi TIDAK pernah menagih — tidak di badge, tidak
+   * di daftar Today, tidak di notifikasi. Tanggalnya sendiri sengaja tetap
+   * disimpan apa adanya, jadi begitu penahanannya dilepas, tenggat yang dulu
+   * disepakati kembali seperti semula tanpa perlu diketik ulang.
+   *
+   * Opsional: proyek lama tidak punya kolom ini (dibaca undefined = jalan).
+   */
+  onHold?: boolean;
 };
+
+/** Proyek ini sedang ditahan client (tanpa tenggat yang berlaku)? */
+export function freelanceOnHold(p: FreelanceProject): boolean {
+  return p.onHold === true;
+}
 
 /** Total invoice = jumlah (qty × harga satuan) semua item. */
 export function invoiceTotal(items: InvoiceItem[]): number {
@@ -156,5 +175,74 @@ export function freelanceReminderWindow(
   p: FreelanceProject,
   today: Date,
 ): boolean {
+  // Ditahan client = tidak punya tenggat sama sekali → tidak pernah menagih.
+  if (freelanceOnHold(p)) return false;
   return !p.done && deadlineDaysUntil(p, today) <= CAREER_REMINDER_DAYS;
+}
+
+// ==================== Angka badge Work 💼 (28 Sep 2026) ====================
+//
+// Dulu angkanya dihitung DUA KALI: sekali di app/(tabs)/_layout.tsx untuk
+// badge tab Work di kaki app, sekali lagi di app/(tabs)/work.tsx untuk badge
+// tiap sub-tab. Dua hitungan dari dua daftar bahan yang tidak sama persis,
+// jadi hasilnya memang berbeda: kaki app menghitung task WORK hari ini tapi
+// TIDAK menghitung ide Affiliate; sub-tabnya justru kebalikannya. Di layar,
+// "Fulltime 1 · Freelance 1" duduk tepat di atas "Work 3", dan tidak ada cara
+// membaca selisihnya.
+//
+// Sekarang satu fungsi, satu jawaban. Aturannya: **angka di kaki app = jumlah
+// angka yang kelihatan rinciannya di layar Work**, tanpa kecuali. Task WORK
+// hari ini tidak punya sub-tab (layarnya dibuka lewat tombol 🔔 di pojok
+// kanan), jadi tombol itulah yang memakai badge `tasks` — dengan begitu
+// keempat pecahannya benar-benar terlihat dan bisa dijumlah sendiri.
+
+export type WorkAttention = {
+  /** P1 roadmap yang belum selesai. */
+  fulltime: number;
+  /** Proyek freelance yang tenggatnya ≤ H-7 (yang ditahan client tidak ikut). */
+  freelance: number;
+  /** Ide konten yang belum tayang. */
+  affiliate: number;
+  /** Task kategori WORK hari ini yang belum dicentang (tombol 🔔). */
+  tasks: number;
+  /** Jumlah keempatnya — inilah badge tab Work di kaki app. */
+  total: number;
+};
+
+export function workAttention({
+  roadmap,
+  freelance,
+  ideas,
+  tasks,
+  now,
+  todayId,
+}: {
+  roadmap: RoadmapItem[];
+  freelance: FreelanceProject[];
+  /** Ide konten Affiliate — aturan "belum tayang" milik lib/affiliate. */
+  ideas: ContentIdea[];
+  /** Task harian — cukup ketiga kolom ini, jadi lib ini tak perlu impor. */
+  tasks: { done: boolean; dayId: string; category: string }[];
+  now: Date;
+  todayId: string;
+}): WorkAttention {
+  const fulltime = roadmap.filter(
+    (r) => r.status !== 'done' && effectiveRoadmap(r, now).priority === 1,
+  ).length;
+  const freelanceCount = freelance.filter((p) =>
+    freelanceReminderWindow(p, now),
+  ).length;
+  // Aturannya dipanggil dari lib/affiliate, bukan disalin ke sini: kalau
+  // "belum tayang" suatu saat berubah artinya, ia harus berubah di SATU tempat.
+  const affiliate = pendingIdeas(ideas);
+  const tasksCount = tasks.filter(
+    (t) => !t.done && t.dayId === todayId && t.category === 'work',
+  ).length;
+  return {
+    fulltime,
+    freelance: freelanceCount,
+    affiliate,
+    tasks: tasksCount,
+    total: fulltime + freelanceCount + affiliate + tasksCount,
+  };
 }

@@ -14,8 +14,18 @@ import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useBusyTask } from '@/hooks/useBusyTask';
+import { useLive } from '@/hooks/useLive';
 import { useNow } from '@/hooks/useNow';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import {
+  backupDue,
+  backupDueLine,
+  backupLine,
+  EMPTY_BACKUP,
+  recordBackup,
+  subscribeBackupInfo,
+  type BackupInfo,
+} from '@/lib/backup';
 import {
   exportAllData,
   exportFileName,
@@ -94,6 +104,13 @@ export default function VersionScreen() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportStep, setExportStep] = useState<string | null>(null);
 
+  // Kapan terakhir dicadangkan — satu dokumen kecil, dilanggan supaya
+  // tanggalnya ikut berubah begitu ekspornya beres, tanpa muat ulang layar.
+  const [backup] = useLive<BackupInfo>(subscribeBackupInfo, {
+    initial: EMPTY_BACKUP,
+  });
+  const perluCadangan = backupDue(backup, todayId);
+
   async function onExport() {
     if (!user) return;
     await run({
@@ -110,6 +127,9 @@ export default function VersionScreen() {
         );
         setExportStep(null);
         await shareExport(hasil.json, exportFileName(todayId));
+        // Dicatat SESUDAH share sheet-nya selesai, bukan sesudah dibaca:
+        // berkas yang belum sempat disimpan ke Files bukan cadangan.
+        await recordBackup(user.uid, todayId, hasil.docCount).catch(() => {});
         const kurang = hasil.errors.length
           ? ` · ${hasil.errors.length} koleksi gagal dibaca`
           : '';
@@ -266,6 +286,19 @@ export default function VersionScreen() {
           📦 Cadangan Data
         </VixText>
         <View style={styles.usageCard}>
+          {/* Kapan terakhir dicadangkan. Kalau sudah lewat sebulan (atau belum
+              pernah sama sekali), barisnya berganti jadi ajakan berwarna —
+              tanggal saja tidak menagih apa pun. */}
+          <VixText
+            heading="label"
+            additionalStyle={perluCadangan ? styles.backupDue : styles.backupLast}>
+            {backupLine(backup, todayId)}
+          </VixText>
+          {perluCadangan && (
+            <VixText heading="label" additionalStyle={styles.backupDue}>
+              ⏰ {backupDueLine(backup, todayId)}
+            </VixText>
+          )}
           <PrimaryButton
             label={exportStep ? `Membaca ${exportStep}` : 'Ekspor semua data'}
             icon="square.and.arrow.up"
@@ -344,4 +377,6 @@ const styles = StyleSheet.create({
   usageEmpty: { color: Color.TEXT_PLACEHOLDER, flex: 1, paddingVertical: 4 },
   backupButton: { marginTop: 12, marginBottom: 10 },
   backupNote: { color: Color.MAIN_DARK, paddingBottom: 10 },
+  backupLast: { color: Color.TEXT_LABEL, paddingTop: 10 },
+  backupDue: { color: Color.WARNING, paddingTop: 10 },
 });

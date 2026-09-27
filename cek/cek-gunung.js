@@ -147,8 +147,11 @@ const urut = [...G.HOME_FEATURES].sort((a, b) => a.sort - b.sort).map((f) => f.k
 // Dua pergeseran yang sekarang ikut terkunci:
 //   • 19 tile, bukan 20 — Married dihapus permanen.
 //   • Baris 4 = Fun · Wheel · Car · Residence, bukan Car · Residence · Fun · Wheel.
-ok('baris 3: Invest · Career · News · Book; baris 4: Fun · Wheel · Car · Residence',
-  urut.slice(8, 12).join(',') === 'investment,career,news,book' && urut.slice(12, 16).join(',') === 'fun,wheel,car,residence',
+// 27 Sep 2026: Family ↔ News ↔ Book berputar satu lingkaran (permintaan user),
+// jadi Book naik ke slot 8 dan urutan tengah grid Home ikut bergeser.
+ok('slot 6-11: Finance · Learning · Book · Invest · Career · Family; lalu News · Fun · Wheel',
+  urut.slice(5, 11).join(',') === 'finance,learning,book,investment,career,family' &&
+  urut.slice(11, 14).join(',') === 'news,fun,wheel',
   urut.join(','));
 ok('19 tile, nomor urut unik (tidak ada yang bentrok sesudah ditukar)',
   urut.length === 19 && new Set(G.HOME_FEATURES.map((f) => f.sort)).size === 19);

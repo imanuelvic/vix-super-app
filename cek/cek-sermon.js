@@ -180,12 +180,15 @@ ok('isian diisi lewat tombol Ubah, bukan lewat efek yang jalan tiap snapshot',
 
 // ===================================================================
 console.log('\n=== 5. Garis pemisah modal baca-saja ===');
+// 27 Sep 2026: isi modal baca-saja pindah ke components/core/PersonInfo.tsx
+// supaya Rekap Visitasi 📊 memakai tampilan yang SAMA. Garisnya ikut pindah.
 const leaders = baca('components/core/LeadersTab.tsx');
-ok('garisnya ada di PersonView', /<View style=\{styles\.viewDivider\} \/>/.test(leaders));
+const personInfo = baca('components/core/PersonInfo.tsx');
+ok('garisnya ada di PersonInfo', /<View style=\{styles\.viewDivider\} \/>/.test(personInfo));
 ok('membentang penuh sampai tepi sheet',
-  /viewDivider: \{[\s\S]{0,160}marginHorizontal: -20,/.test(leaders));
+  /viewDivider: \{[\s\S]{0,200}marginHorizontal: -20,/.test(personInfo));
 ok('dipakai CL maupun Main Team (modalnya satu komponen)',
-  (leaders.match(/<PersonView person=/g) || []).length === 1);
+  (leaders.match(/<PersonInfo person=/g) || []).length === 1);
 
 console.log(gagal === 0
   ? '\n✅ LULUS — kelima permintaan terbukti.'

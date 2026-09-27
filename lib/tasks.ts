@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  limit,
   orderBy,
   query,
   serverTimestamp,
@@ -56,6 +57,17 @@ function tasksCollection(uid: string) {
   return collection(db, 'users', uid, 'tasks');
 }
 
+// Batas baca daftar task (27 Sep 2026). Koleksi ini SUDAH membersihkan dirinya
+// sendiri: tiap kali layar Task dibuka, task hari lewat yang belum selesai
+// dipindah ke hari ini dan yang sudah selesai DIHAPUS permanen (rolloverTasks),
+// dan hari yang sudah lewat tidak digambar sama sekali. Jadi isinya cuma hari
+// ini + hari depan, puluhan dokumen. 500 = jauh di atas itu, termasuk kalau
+// pengingat berulang dibuat untuk setahun ke depan sekaligus. Gunanya bukan
+// memotong riwayat (tak ada riwayat di sini), tapi supaya biaya bacanya punya
+// langit-langit — `liveList` tidak punya cache disk, jadi daftar ini dibaca
+// ulang dari server tiap app dibuka dari mati.
+const TASK_MAKS = 500;
+
 /**
  * Dengarkan perubahan task secara real-time. Setiap kali data berubah
  * (dari HP ini atau HP lain), callback dipanggil dengan daftar terbaru.
@@ -68,7 +80,7 @@ export function subscribeTasks(
   onChange: (tasks: Task[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const q = query(tasksCollection(uid), orderBy('createdAt', 'desc'));
+  const q = query(tasksCollection(uid), orderBy('createdAt', 'desc'), limit(TASK_MAKS));
   const today = dayDocId(new Date());
   return liveList<Task>(q, onChange, onError, (d) => {
     const data = d.data() as Omit<Task, 'id'>;
@@ -268,7 +280,10 @@ export function subscribeOtherTasks(
   onChange: (items: OtherTask[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const q = query(otherTasksCollection(uid), orderBy('createdAt', 'desc'));
+  // 200 catatan terbaru. Catatan lain (`otherTasks`) tidak punya pembersih
+  // harian seperti task, tapi isinya hitungan per bulan — angka ini penahan
+  // biaya, sama seperti Promise & Car yang juga dipatok 200.
+  const q = query(otherTasksCollection(uid), orderBy('createdAt', 'desc'), limit(200));
   return liveList<OtherTask>(q, onChange, onError, (d) => {
     const data = d.data() as Omit<OtherTask, 'id'>;
     return {

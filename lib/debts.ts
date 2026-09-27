@@ -2,6 +2,8 @@ import {
   collection,
   deleteDoc,
   doc,
+  limit,
+  query,
   setDoc,
   Timestamp,
   type FirestoreError,
@@ -60,13 +62,19 @@ function debtsCollection(uid: string) {
   return collection(db, 'users', uid, 'debts');
 }
 
-/** Dengarkan SEMUA pinjaman milik user (dua arah). */
+/**
+ * Dengarkan SEMUA pinjaman milik user (dua arah).
+ *
+ * Batas 200 (27 Sep 2026): pinjaman itu hitungan jari, dan yang lunas pun
+ * disimpan sebagai catatan — jadi angka ini tidak akan tersentuh. Ia ada supaya
+ * daftar ini punya langit-langit seperti daftar lain, bukan untuk memotong.
+ */
 export function subscribeDebts(
   uid: string,
   onChange: (debts: Debt[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  return liveList<Debt>(debtsCollection(uid), onChange, onError);
+  return liveList<Debt>(query(debtsCollection(uid), limit(200)), onChange, onError);
 }
 
 /** Tambah / ubah pinjaman (dokumen ditulis penuh, termasuk daftar cicilan). */

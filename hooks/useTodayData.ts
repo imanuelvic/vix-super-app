@@ -13,6 +13,7 @@ import {
   subscribeLoginStreak,
   type LoginStreak,
 } from '@/lib/reward';
+import { EMPTY_BACKUP, subscribeBackupInfo, type BackupInfo } from '@/lib/backup';
 import { subscribePartStatus, type PartStatusMap } from '@/lib/car';
 import {
   subscribeFreelance,
@@ -23,13 +24,11 @@ import {
 import {
   EMPTY_MONTHLY_PRAYERS,
   EMPTY_WEEKLY_FOCUS,
-  subscribeBirthdayGreets,
   subscribeCoreLeaders,
   subscribeMainTeam,
   subscribeMonthlyPrayers,
   subscribeVisitations,
   subscribeWeeklyFocus,
-  type BirthdayGreets,
   type CoreLeader,
   type MainTeamMember,
   type MonthlyPrayers,
@@ -145,7 +144,6 @@ export function useTodayData(): {
 
   const [leaders, setLeaders] = useState<CoreLeader[]>([]);
   const [mainTeam, setMainTeam] = useState<MainTeamMember[]>([]);
-  const [greets, setGreets] = useState<BirthdayGreets>({});
   const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [visitations, setVisitations] = useState<Visitation[]>([]);
   const [monthlyPrayers, setMonthlyPrayers] = useState<MonthlyPrayers>(EMPTY_MONTHLY_PRAYERS);
@@ -171,6 +169,7 @@ export function useTodayData(): {
   const [meterReadings, setMeterReadings] = useState<MeterReading[]>([]);
   const [wheel, setWheel] = useState<WheelData | null>(null);
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
+  const [backup, setBackup] = useState<BackupInfo>(EMPTY_BACKUP);
 
   // Galat muat: diisi `useLiveAll` kalau ada langganan yang gagal. Tanpa ini
   // gerbang `ready` bisa menggantung tanpa penjelasan apa pun di layar.
@@ -195,7 +194,6 @@ export function useTodayData(): {
         subscribePriorityDay(uid, todayId, mark('priorities', setPriorities), fail),
         subscribeCoreLeaders(uid, mark('leaders', setLeaders), fail),
         subscribeMainTeam(uid, mark('mainTeam', setMainTeam), fail),
-        subscribeBirthdayGreets(uid, mark('greets', setGreets), fail),
         subscribeWeeklyFocus(uid, mark('weeklyFocus', setWeeklyFocus), fail),
         subscribeVisitations(uid, mark('visitations', setVisitations), fail),
         subscribeMonthlyPrayers(uid, mark('monthlyPrayers', setMonthlyPrayers), fail),
@@ -219,6 +217,7 @@ export function useTodayData(): {
         subscribeMeterReadings(uid, mark('readings', setMeterReadings), fail),
         subscribeWheel(uid, quarterDocId(q.year, q.q), mark('wheel', setWheel), fail),
         subscribeFun(uid, mark('fun', setFun), fail),
+        subscribeBackupInfo(uid, mark('backup', setBackup), fail),
       ];
     },
     // Sampai 24 Sep 2026 tidak ada `onError` di sini sama sekali, jadi
@@ -274,7 +273,6 @@ export function useTodayData(): {
           feedGenerated,
           leaders,
           mainTeam,
-          greets,
           weeklyFocus,
           visitations,
           monthlyPrayers,
@@ -298,6 +296,7 @@ export function useTodayData(): {
           meterReadings,
           wheel,
           fun,
+          backup,
           finance,
         },
         now,
@@ -305,10 +304,11 @@ export function useTodayData(): {
       ),
     [
       login, bibleReading, habits, day, fitDay, fastingPlans, sermons, myReminders,
-      intercession, dismissed, feedGenerated, leaders, mainTeam, greets, weeklyFocus,
+      intercession, dismissed, feedGenerated, leaders, mainTeam, weeklyFocus,
       visitations, monthlyPrayers, tasks, otherTasks, roadmap, freelance, family, debts,
       checkups, profile, donor, learningWeek, topicsDone, bills, futsal, dataPlans,
-      population, carParts, residenceChores, meterReadings, wheel, fun, finance, now, todayId,
+      population, carParts, residenceChores, meterReadings, wheel, fun, backup,
+      finance, now, todayId,
     ],
   );
 

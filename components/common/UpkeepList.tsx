@@ -79,7 +79,7 @@ export function UpkeepList({
   // yang dihitung badge tab (🔴 sekarang / 🟡 besok).
   const firstDue =
     groups.flatMap((g) => g.rows).find((r) => deadlineDue(r.tone)) ?? null;
-  const { ref, setRowY, onContentSizeChange } = useDueJump(firstDue?.key ?? null);
+  const { ref, setRowY, onContentSizeChange, onLayout } = useDueJump(firstDue?.key ?? null);
 
   function openEdit(row: UpkeepRow) {
     setEditing(row);
@@ -110,7 +110,8 @@ export function UpkeepList({
       <ScrollView
         ref={ref}
         contentContainerStyle={styles.content}
-        onContentSizeChange={onContentSizeChange}>
+        onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}>
         <SummaryCard
           label={summary.label}
           value={summary.value}

@@ -358,7 +358,7 @@ const BIRTHDAY_INVITE =
  * menanyakan mau dikirim ke chat/grup yang mana.
  */
 export function birthdayGroupText(name: string): string {
-  return `Selamatt ulang tahun ${name} 🔥💪 semakin dewasa rohani dan karakter, makin bijak, makin jadi berkat buat keluarga & teman2. Enjoy your special dayy! God bless you alwaysss 💛💜💚🤍💙🧡🩵🖤
+  return `HAPPY BIRTHDAY ${name}!! 🎉🎂 Selamat bertambah umur yaa, semoga makin dewasa rohani & karakternya, makin bijak, dan makin jadi berkat buat keluarga & teman2. Enjoy your dayy, jangan lupa ditraktir 😆 God bless you alwaysss 💛💜💚🤍💙🧡🩵🖤
 
 ${birthdayPrayer(name)}
 
@@ -379,8 +379,8 @@ export function birthdayPersonalText(
 ): string {
   const body =
     gender === 'm'
-      ? `${name}, happy bday ma bro! 🎂🎉 tetap humble, sehat selalu, usaha & mimpi2 lancar jayaa, maju terus! Tuhan berkati habisss. Semoga makin kuat di dalam Tuhan 💪🙏`
-      : `${name}, Happy birthdayy! bersyukur bisa kenal ${name}, gk kebetulan kita bisa bertemu di CORE ini, ada tujuan dari Tuhan✨ Senang bisa melayani bareng, semoga umur baru ini bawa banyak kemajuan di kerjaan, pelayanan, dan kehidupan pribadi! Tuhan sertaii selalu 🙏💛💜💚🤍💙🧡🩵🖤`;
+      ? `${name}, happy bday ma bro! 🎂🎉 Sehat terus, usaha & mimpi2 lancar jayaa, dan makin kuat di dalam Tuhan. Tetap humble yaa, maju terusss 💪🙏`
+      : `${name}, HAPPY BIRTHDAYY! 🎂✨ Bersyukur banget bisa kenal ${name}, kita ketemu di CORE ini bukan kebetulan, ada tujuan Tuhan di situ. Senang bisa melayani bareng! Semoga umur baru ini bawa banyak kemajuan di kerjaan, pelayanan, dan hidup pribadimu. Tuhan sertai selaluu 🙏💛💜💚🤍💙🧡🩵🖤`;
   return `${body}
 
 ${birthdayPrayer(name)}
@@ -652,24 +652,34 @@ export const MEETING_KINDS: {
   key: MeetingKind;
   label: string;
   icon: string;
+  /**
+   * Apa sebenarnya acara ini (27 Sep 2026).
+   *
+   * Di tabel Rekap Visitasi satu jenis cuma tampil sebagai LAMBANG — 🔥, 🫂,
+   * 1️⃣ — supaya kolom CL-nya kebagian lebar. Lambang tanpa nama itu cepat
+   * dibaca kalau kamu sudah hafal, dan buta total kalau belum. Kalimat ini
+   * yang muncul saat lambangnya di-click, jadi tabelnya tetap ringkas tapi
+   * tidak lagi menyimpan artinya sendiri.
+   */
+  desc: string;
   /** Acara gabungan → boleh mencentang LEBIH DARI SATU CORE Leader. */
   multiLeader?: boolean;
   /** Acara besar → panduannya perlu dikirim jauh-jauh hari (lihat
       PDF_REMINDER_DAYS_BIG), bukan cuma H-3 seperti pertemuan biasa. */
   bigEvent?: boolean;
 }[] = [
-  { key: 'visitasi', label: 'Visitasi CORE', icon: '🔥' },
-  { key: 'fellowship', label: 'Fellowship CORE', icon: '👥' },
-  { key: 'oneOnOne', label: 'One-on-One', icon: '1️⃣' },
-  { key: 'mentoringMclClMt', label: 'Mentoring MCL CL MT', icon: '✨' },
-  { key: 'gathering', label: 'Gathering CORE', icon: '🏡', bigEvent: true },
-  { key: 'charity', label: 'Charity CORE', icon: '💌', bigEvent: true },
-  { key: 'thanksgiving', label: 'Thanksgiving', icon: '🎉', bigEvent: true },
-  { key: 'christmas', label: 'Christmas CORE', icon: '🎄', bigEvent: true },
-  { key: 'coreGabungan', label: 'CORE Gabungan', icon: '⛪', multiLeader: true },
+  { key: 'visitasi', label: 'Visitasi CORE', icon: '🔥', desc: 'Berkunjung ke CORE-nya. Ketemu langsung, dengar keadaan mereka, lalu doakan di tempat.' },
+  { key: 'fellowship', label: 'Fellowship CORE', icon: '👥', desc: 'Kumpul santai satu CORE. Bukan ibadah, bukan rapat: yang dibangun kedekatannya.' },
+  { key: 'oneOnOne', label: 'One-on-One', icon: '1️⃣', desc: 'Ngobrol berdua saja dengan satu orang. Tempatnya hal yang tidak akan dia ceritakan di depan banyak orang.' },
+  { key: 'mentoringMclClMt', label: 'Mentoring MCL CL MT', icon: '✨', desc: 'Pembekalan berjenjang: MCL ke CL, CL ke Main Team. Yang dibahas cara menggembalakan, bukan kabar pribadi.' },
+  { key: 'gathering', label: 'Gathering CORE', icon: '🏡', desc: 'Acara besar satu CORE, biasanya seharian atau menginap. Panduannya dikirim mulai H-14.', bigEvent: true },
+  { key: 'charity', label: 'Charity CORE', icon: '💌', desc: 'Aksi sosial bareng CORE. Berbagi keluar, supaya imannya tidak berhenti di dalam ruangan.', bigEvent: true },
+  { key: 'thanksgiving', label: 'Thanksgiving', icon: '🎉', desc: 'Perayaan ulang tahun CORE-nya. Tanggalnya tetap tiap tahun dan ikut tercetak di baris 📅 tabel ini.', bigEvent: true },
+  { key: 'christmas', label: 'Christmas CORE', icon: '🎄', desc: 'Natal bersama satu CORE. Acara besar, jadi panduannya juga dikirim mulai H-14.', bigEvent: true },
+  { key: 'coreGabungan', label: 'CORE Gabungan', icon: '⛪', desc: 'Beberapa CORE disatukan dalam satu ibadah. Boleh mencentang lebih dari satu CORE Leader.', multiLeader: true },
   // 🫂, bukan 👥 lagi (21 Sep 2026): di tabel Rekap Visitasi jenisnya cuma
   // tampil sebagai lambang, dan dua baris 👥 tak bisa dibedakan.
-  { key: 'fellowshipGabungan', label: 'Fellowship CORE Gabungan', icon: '🫂', multiLeader: true, },
+  { key: 'fellowshipGabungan', label: 'Fellowship CORE Gabungan', icon: '🫂', desc: 'Kumpul santai lintas CORE. Sama seperti Fellowship, tapi beberapa CORE sekaligus.', multiLeader: true, },
 ];
 
 /** Meta satu jenis pertemuan — fallback ke Visitasi kalau tak dikenal. */
@@ -1545,6 +1555,17 @@ export const EMPTY_MONTHLY_PRAYERS: MonthlyPrayers = {
 // Pertanyaan pembuka untuk mengumpulkan pokok doa bulanan tiap CL.
 export const MONTHLY_PRAYER_QUESTION =
   'Apa yang bisa aku doakan buat kamu bulan ini? 🙏';
+
+/**
+ * Kalimat yang benar-benar DIKIRIM ke CL lewat WhatsApp (28 Sep 2026).
+ *
+ * Beda dari MONTHLY_PRAYER_QUESTION di atas: yang itu pertanyaan untuk dibaca
+ * sendiri, yang ini sapaan untuk orang lain — jadi ia dibuka dengan salam dan
+ * ditutup dengan izin untuk menyebut hal yang spesifik. Menyuruh CL "sebutkan
+ * pokok doamu" tanpa itu biasanya dijawab "doain semuanya aja kak".
+ */
+export const MONTHLY_PRAYER_ASK =
+  'Shalom, ada yang bisa aku doakan buat kamu di bulan baru ini? Boleh juga pokok doa spesifik yes 🙏';
 
 /** "2026-08" — id bulan berjalan (dasar dokumen pokok doa bulanan). */
 export function monthDocId(d: Date): string {

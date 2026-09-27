@@ -26,7 +26,7 @@ import { dayIdToDate } from './format';
 import { dayDocId, yesterdayId } from './health';
 import { openExternalUrl } from './linking';
 import { liveDoc, liveList } from './liveDoc';
-import { alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
+import { activeDayStreak, alreadyCounted, EMPTY_DAY_STREAK, nextStreak } from './streak';
 
 // Spiritual ✝️ — Revive harian (judul, bacaan, ayat hafalan, rhema, refleksi)
 // + reminder acak + streak. "Doing for God without being with God": fitur ini
@@ -738,6 +738,34 @@ export function subscribeBibleStreaks(
     },
     onError,
   );
+}
+
+/**
+ * Streak sesi ini yang MASIH hidup hari ini (27 Sep 2026).
+ *
+ * Ini yang boleh ditampilkan di layar, bukan `streaks[session].count` mentah.
+ * Angka di Firestore cuma diperbarui saat ada yang DICATAT, jadi sesudah bolos
+ * sehari ia masih memamerkan angka lama sampai kamu membaca lagi. Sesi yang
+ * hari ini & kemarin sama-sama kosong berarti rantainya memang sudah putus,
+ * dan layarnya harus bilang begitu.
+ *
+ * Yang dilewati (✗) sengaja tidak menyelamatkan apa pun: penandanya memang
+ * tidak pernah menaikkan streak (lihat BIBLE_SKIPPED).
+ */
+export function bibleStreakNow(
+  streaks: BibleStreaks,
+  session: BibleSession,
+  todayId: string,
+): number {
+  return activeDayStreak(streaks[session], todayId);
+}
+
+/** Rekor terbaik sesi ini — beda dari yang berjalan, dan tidak pernah turun. */
+export function bibleStreakBest(
+  streaks: BibleStreaks,
+  session: BibleSession,
+): number {
+  return streaks[session].best;
 }
 
 /** Naikkan satu streak — maks 1×/hari, putus kalau kemarin bolong. */

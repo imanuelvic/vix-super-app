@@ -33,6 +33,7 @@ import { saveGratitude } from '@/lib/gratitude';
 import {
     areaMeta,
     areaProgress,
+    bibleSessionOfMirror,
     coreDone,
     countedHabits,
     dailyScore,
@@ -76,6 +77,7 @@ import {
 } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
 import { deleteErrorOf, SAVE_ERROR, saveErrorOf } from '@/lib/messages';
+import { bibleStreakNow, type BibleStreaks } from '@/lib/spiritual';
 
 export function HabitsTab({
   habits,
@@ -84,6 +86,7 @@ export function HabitsTab({
   profile,
   target,
   streak,
+  bibleStreaks,
   focus = null,
   onFocusDone,
 }: {
@@ -93,6 +96,15 @@ export function HabitsTab({
   profile: HealthProfile;
   target: WeightTarget | null;
   streak: Streak | null;
+  /**
+   * Streak ketiga sesi baca Alkitab (27 Sep 2026).
+   *
+   * Tiga baris cermin Bible Reading di daftar ini mencerminkan pekerjaan yang
+   * dicatat di layar lain, dan streak-nya pun hidup di layar lain. Tanpa
+   * angkanya di sini, satu-satunya tanda rantainya putus adalah membuka
+   * Reward — padahal di sinilah pagi/siang/malamnya dicentang tiap hari.
+   */
+  bibleStreaks: BibleStreaks;
   /**
    * Baris yang dituju saat layar ini dibuka DARI kartu di Home: buka sesi
    * tempat barisnya berada lalu gulung tepat ke barisnya, supaya tak perlu
@@ -734,6 +746,14 @@ export function HabitsTab({
             // centangnya datang dari layar tempat pekerjaannya benar-benar
             // dilakukan, jadi di sini ia cuma penunjuk keadaan + pintasan.
             const mirrored = link?.mirrorOf !== undefined;
+            // Streak sesi bacanya — cuma untuk tiga baris cermin Bible
+            // Reading. Yang dipakai angka yang MASIH hidup hari ini, jadi
+            // begitu sehari terlewat barisnya langsung bilang rantainya
+            // kosong, bukan memamerkan angka kemarin.
+            const sesiBaca = bibleSessionOfMirror(link?.mirrorOf);
+            const bacaStreak = sesiBaca
+              ? bibleStreakNow(bibleStreaks, sesiBaca, dayId)
+              : null;
             // Baris bercatatan (Rhema): centangnya ditentukan tulisannya, jadi
             // lingkarannya dikunci — mencentang tanpa menulis itu bohong.
             const fromNote = isNoteDrivenHabit(habit);
@@ -798,6 +818,11 @@ export function HabitsTab({
                         heading="label"
                         additionalStyle={[styles.linkHint, { color: link.color }]}>
                         {link.note}
+                        {bacaStreak !== null
+                          ? bacaStreak > 0
+                            ? `  ·  🔥 ${bacaStreak} hari streak`
+                            : '  ·  💤 streak kosong'
+                          : ''}
                       </VixText>
                     )}
                   </PressableScale>

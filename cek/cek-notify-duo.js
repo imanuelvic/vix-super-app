@@ -67,7 +67,7 @@ const KOSONG = () => ({
   fastingPlans: [], sermons: [], myReminders: [],
   intercession: { key: 'family', emoji: '👨‍👩‍👧', label: 'Keluarga', points: [] },
   intercessionDismissed: false, feedGenerated: false,
-  leaders: [], mainTeam: [], greets: {}, weeklyFocus: CORE.EMPTY_WEEKLY_FOCUS,
+  leaders: [], mainTeam: [], weeklyFocus: CORE.EMPTY_WEEKLY_FOCUS,
   visitations: [], monthlyPrayers: CORE.EMPTY_MONTHLY_PRAYERS,
   tasks: [], otherTasks: [], roadmap: [], freelance: [],
   family: [], debts: [], checkups: [], profile: null,
@@ -75,7 +75,10 @@ const KOSONG = () => ({
   learningWeek: { skillKey: null, steps: {}, note: '' }, topicsDone: {},
   bills: [], futsal: { members: [], sessions: [], cash: [] },
   dataPlans: [], population: {}, carParts: {}, residenceChores: {},
-  meterReadings: [], wheel: null, fun: { entries: [] }, finance: null,
+  meterReadings: [], wheel: null, fun: { entries: [] },
+    // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
+    // belum pernah diekspor, dan itu memang keadaan wajar di fixture.
+    backup: { lastDayId: '', docCount: 0 }, finance: null,
 });
 const slotsOf = (input, opts = {}, finance = null, now = PAGI) =>
   N.buildSlots(T.buildToday(input, now, HARI), finance, { dayId: HARI, ...opts });

@@ -72,7 +72,6 @@ const KOSONG = () => ({
   feedGenerated: false,
   leaders: [],
   mainTeam: [],
-  greets: {},
   weeklyFocus: CORE.EMPTY_WEEKLY_FOCUS,
   visitations: [],
   monthlyPrayers: CORE.EMPTY_MONTHLY_PRAYERS,
@@ -96,6 +95,9 @@ const KOSONG = () => ({
   meterReadings: [],
   wheel: null,
   fun: { entries: [] },
+  // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
+  // belum pernah diekspor, jadi baris 📦-nya memang muncul di up next.
+  backup: { lastDayId: '', docCount: 0 },
   finance: null,
 });
 
@@ -263,7 +265,9 @@ console.log('\n=== 9. Bentuk layar & navigasi baru ===');
     !fs.existsSync(path.join(ROOT, 'app/spiritual.tsx')) && !fs.existsSync(path.join(ROOT, 'app/core.tsx')) && !fs.existsSync(path.join(ROOT, 'app/career.tsx')));
   // 23 Sep 2026: tombolnya jadi 🔔 — lambang yang sama dengan judul layar
 // tujuannya (Reminder 🔔), bukan centang yang tertukar arti dengan "selesai".
-  ok('Work: sub-tab Focus (WorkFocusTab) + tombol 🔔 Reminder', /<WorkFocusTab roadmap=\{roadmap\} freelance=\{freelance\} \/>/.test(baca('app/(tabs)/work.tsx')) && /emoji="🔔" onPress=\{\(\) => router\.push\('\/tasks'\)\}/.test(baca('app/(tabs)/work.tsx')));
+  // 28 Sep 2026: tombol 🔔 sekarang berbadge (task WORK hari ini), jadi
+  // propsnya ditulis bertingkat. Bentuk lengkapnya dijaga cek-reward-rupa.js.
+  ok('Work: sub-tab Focus (WorkFocusTab) + tombol 🔔 Reminder', /<WorkFocusTab roadmap=\{roadmap\} freelance=\{freelance\} \/>/.test(baca('app/(tabs)/work.tsx')) && /emoji="🔔"/.test(baca('app/(tabs)/work.tsx')) && /badge=\{perhatian\.tasks\}/.test(baca('app/(tabs)/work.tsx')));
   ok('Life: pencarian + grid LIFE_FEATURES (tanpa Walk/CORE/Work, plus Habits/Reward/Profile/System)',
     /searchFeatures\(query\)/.test(baca('app/(tabs)/life.tsx')) && /LIFE_FEATURES/.test(baca('app/(tabs)/life.tsx')) &&
     /PUNYA_TAB = new Set\(\['spiritual', 'core', 'career'\]\)/.test(baca('lib/featureGrid.ts')));

@@ -20,6 +20,7 @@ export function PrimaryButton({
   onPress,
   icon,
   busy = false,
+  disabled = false,
   background = Color.MAIN,
   textColor = Color.TEXT_REVERSE,
   additionalStyle,
@@ -28,6 +29,15 @@ export function PrimaryButton({
   onPress: () => void;
   icon?: IconName;
   busy?: boolean;
+  /**
+   * Belum boleh ditekan — syaratnya belum terpenuhi (28 Sep 2026).
+   *
+   * Beda dari `busy`: `busy` berarti "sedang dikerjakan, tunggu", `disabled`
+   * berarti "masih ada yang harus kamu isi/pilih dulu". Rupanya sama-sama
+   * diredupkan, tapi tanpa spinner — dan itu benar: tidak ada yang sedang
+   * berjalan, jadi memutar lingkaran cuma membohongi.
+   */
+  disabled?: boolean;
   background?: string;
   textColor?: string;
   additionalStyle?: StyleProp<ViewStyle>;
@@ -37,11 +47,11 @@ export function PrimaryButton({
       style={[
         styles.button,
         { backgroundColor: background },
-        busy && styles.busy,
+        (busy || disabled) && styles.busy,
         additionalStyle,
       ]}
       onPress={onPress}
-      disabled={busy}
+      disabled={busy || disabled}
       // Aksi utama terasa lebih "berbobot" daripada click kartu biasa.
       haptic="medium">
       {busy ? (

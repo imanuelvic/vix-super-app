@@ -169,6 +169,13 @@ export type RewardStats = {
   bibleMorningBest: number; // streak terbaik baca pagi 🌅
   bibleDaytimeBest: number; // streak terbaik baca siang 🌤️
   bibleNightBest: number; // streak terbaik baca malam 🌙
+  // Streak yang SEDANG berjalan — 0 begitu sehari terlewat. Lencananya tetap
+  // memakai rekor di atas (yang sudah terbuka tidak boleh dicabut lagi); angka
+  // di pojok kanan atas halaman kategorinya yang memakai ketiga ini, supaya
+  // "3 hari streak" tidak lagi tertulis di sesi yang sebenarnya sudah putus.
+  bibleMorningNow: number;
+  bibleDaytimeNow: number;
+  bibleNightNow: number;
   learningWeekBest: number; // rekor MINGGU streak target Learning tuntas 🎓
   fitTotal: number; // total sesi gym selesai
   fitBest: number; // rekor sesi gym streak (5 sesi = 1 minggu penuh)
@@ -180,6 +187,8 @@ export type RewardStats = {
   bestDayKm: number; // rekor jarak dalam SEHARI (km)
   bestWeekKm: number; // rekor jarak satu MINGGU (Senin–Minggu)
   bestMonthKm: number; // rekor jarak satu BULAN
+  bestQuarterKm: number; // rekor jarak satu KUARTAL (Q1–Q4 kalender)
+  bestYearKm: number; // rekor jarak satu TAHUN
   waterCount: number; // streak air putih 💧 yang sedang berjalan
   waterBest: number; // rekor hari streak cukup 8 gelas
   waterTotal: number; // total hari pernah cukup 8 gelas
@@ -230,12 +239,12 @@ const CATEGORIES: {
   fmt?: (n: number) => string;
 }[] = [
   { key: 'login', icon: '🙏', label: 'Morning Prayer', desc: 'Streak Morning Journey, "Mulai Hariku" tiap pagi', now: (s) => s.loginCount, unit: 'hari streak' },
-  { key: 'bibleMorning', icon: DAYPART.morning, label: 'Morning Reading', desc: 'Streak baca Alkitab pagi', now: (s) => s.bibleMorningBest, unit: 'hari streak' },
-  { key: 'bibleDaytime', icon: DAYPART.daytime, label: 'Midday Reading', desc: 'Streak baca Alkitab siang', now: (s) => s.bibleDaytimeBest, unit: 'hari streak' },
-  { key: 'bibleNight', icon: DAYPART.night, label: 'Night Reading', desc: 'Streak baca Alkitab malam', now: (s) => s.bibleNightBest, unit: 'hari streak' },
+  { key: 'bibleMorning', icon: DAYPART.morning, label: 'Morning Reading', desc: 'Streak baca Alkitab pagi', now: (s) => s.bibleMorningNow, unit: 'hari streak' },
+  { key: 'bibleDaytime', icon: DAYPART.daytime, label: 'Midday Reading', desc: 'Streak baca Alkitab siang', now: (s) => s.bibleDaytimeNow, unit: 'hari streak' },
+  { key: 'bibleNight', icon: DAYPART.night, label: 'Night Reading', desc: 'Streak baca Alkitab malam', now: (s) => s.bibleNightNow, unit: 'hari streak' },
   { key: 'health', icon: '🍎', label: 'Good Habit', desc: 'Streak habit setiap hari', now: (s) => s.habitStreak, unit: 'hari streak' },
   { key: 'steps', icon: '👣', label: 'Daily Steps', desc: 'Rekor jumlah langkah dalam sehari', now: (s) => s.bestSteps, unit: 'langkah (rekor sehari)' },
-  { key: 'run', icon: '🏃', label: 'Distance', desc: 'Patokan pelari, harian, mingguan & bulanan', now: (s) => s.bestDayKm, unit: 'km (rekor sehari)', fmt: km },
+  { key: 'run', icon: '🏃', label: 'Distance', desc: 'Patokan pelari, sehari sampai setahun', now: (s) => s.bestDayKm, unit: 'km (rekor sehari)', fmt: km },
   // Dulu SATU kategori "Target Mingguan" berisi langkah & angkat beban
   // sekaligus — dan itu membuat daftarnya sulit dibaca: dua ladder yang
   // kemajuannya sama sekali tidak berhubungan berselang-seling di satu kolom.
@@ -340,6 +349,29 @@ function stepDetail(s: RewardStats, tier: number): string | null {
   return d ? `📅 Terakhir tercapai ${formatShortDayDate(dayIdToDate(d))}` : null;
 }
 
+/**
+ * Periode yang diukur satu lencana (27 Sep 2026).
+ *
+ * Kategori Distance 🏃 memuat lima ukuran sekaligus: 42,2 km SEHARI dan 100 km
+ * SEBULAN sama-sama "Full Marathon"-nya masing-masing, tapi jaraknya jauh
+ * berbeda artinya. Sebagai satu grid tiga kolom tanpa pemisah, keduanya
+ * terbaca seolah satu tangga yang sama, dan "kok 42,2 lebih susah daripada
+ * 100?" jadi pertanyaan yang wajar.
+ *
+ * Kategori yang seluruh lencananya satu periode (tangga streak harian, misal)
+ * tidak ikut dipisah — lihat `rewardGroups`.
+ */
+export type RewardPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year';
+
+/** Nama kelompok periode di halaman kategori, urut dari yang terpendek. */
+export const REWARD_PERIODS: { key: RewardPeriod; label: string }[] = [
+  { key: 'day', label: '⏱️ Sehari' },
+  { key: 'week', label: '📅 Sepekan' },
+  { key: 'month', label: '🗓️ Sebulan' },
+  { key: 'quarter', label: '📊 3 Bulan' },
+  { key: 'year', label: '🏁 Setahun' },
+];
+
 type Reward = {
   id: string;
   category: RewardCategoryKey;
@@ -350,6 +382,8 @@ type Reward = {
   of: (s: RewardStats) => number; // nilai saat ini untuk progress
   detail?: (s: RewardStats) => string | null; // baris ekstra (mis. tanggal)
   fmt?: (n: number) => string; // tampilan angka (mis. km pakai 1 desimal)
+  /** Periode yang diukurnya. Kosong = tidak dikelompokkan per periode. */
+  period?: RewardPeriod;
 };
 
 // Tangga level streak harian — dipakai bersama oleh doa pagi 🙏, Alkitab
@@ -433,36 +467,52 @@ export const REWARDS: Reward[] = [
   { id: 'fitMonth', category: 'fitness', icon: '👑', title: '20 in a Row', desc: '20 sesi streak tanpa bolos', target: 20, of: (s) => s.fitBest },
   { id: 'fit50', category: 'fitness', icon: '🏅', title: '50 Sessions', desc: 'Total 50 sesi gym selesai', target: 50, of: (s) => s.fitTotal },
   { id: 'fit100', category: 'fitness', icon: '💎', title: '100 Sessions', desc: 'Total 100 sesi gym selesai', target: 100, of: (s) => s.fitTotal },
-  { id: 'steps20k', category: 'steps', icon: '👟', title: '20K Steps', desc: 'Pernah jalan ≥ 20.000 langkah dalam sehari', target: 20000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 20000) },
-  { id: 'steps30k', category: 'steps', icon: '🎖️', title: '30K Steps', desc: 'Pernah jalan ≥ 30.000 langkah dalam sehari', target: 30000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 30000) },
-  { id: 'steps40k', category: 'steps', icon: '🏅', title: '40K Steps', desc: 'Pernah jalan ≥ 40.000 langkah dalam sehari', target: 40000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 40000) },
-  { id: 'steps50k', category: 'steps', icon: '🥇', title: '50K Steps', desc: 'Pernah jalan ≥ 50.000 langkah dalam sehari', target: 50000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 50000) },
+  { id: 'steps20k', category: 'steps', icon: '👟', title: '20K Steps', desc: 'Pernah jalan ≥ 20.000 langkah dalam sehari', target: 20000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 20000), period: 'day' },
+  { id: 'steps30k', category: 'steps', icon: '🎖️', title: '30K Steps', desc: 'Pernah jalan ≥ 30.000 langkah dalam sehari', target: 30000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 30000), period: 'day' },
+  { id: 'steps40k', category: 'steps', icon: '🏅', title: '40K Steps', desc: 'Pernah jalan ≥ 40.000 langkah dalam sehari', target: 40000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 40000), period: 'day' },
+  { id: 'steps50k', category: 'steps', icon: '🥇', title: '50K Steps', desc: 'Pernah jalan ≥ 50.000 langkah dalam sehari', target: 50000, of: (s) => s.bestSteps, detail: (s) => stepDetail(s, 50000), period: 'day' },
   // Jarak tempuh 🏃 — istilah yang dipakai pelari, dihitung dari langkah
   // Apple Health × panjang langkah (lihat lib/health → RUN_*_MILESTONES).
-  { id: 'runShakeout', category: 'run', icon: '🚶', title: 'Shakeout', desc: 'Tempuh 3 km dalam sehari', target: 3, of: (s) => s.bestDayKm, fmt: km },
-  { id: 'run5k', category: 'run', icon: '🏃', title: 'Easy Run · 5K', desc: 'Tempuh 5 km dalam sehari', target: 5, of: (s) => s.bestDayKm, fmt: km },
-  { id: 'run10k', category: 'run', icon: '⚡', title: 'Tempo Run · 10K', desc: 'Tempuh 10 km dalam sehari', target: 10, of: (s) => s.bestDayKm, fmt: km },
-  { id: 'run15k', category: 'run', icon: '🔥', title: 'Long Run · 15K', desc: 'Tempuh 15 km dalam sehari', target: 15, of: (s) => s.bestDayKm, fmt: km },
-  { id: 'runHalf', category: 'run', icon: '🏅', title: 'Half Marathon', desc: 'Tempuh 21,1 km dalam sehari', target: 21.1, of: (s) => s.bestDayKm, fmt: km },
-  { id: 'runFull', category: 'run', icon: '👑', title: 'Full Marathon', desc: 'Tempuh 42,2 km dalam sehari', target: 42.2, of: (s) => s.bestDayKm, fmt: km },
-  { id: 'runWeekBase', category: 'run', icon: '✨', title: 'Base Week', desc: 'Total 21,1 km dalam sepekan (Sen–Min)', target: 21.1, of: (s) => s.bestWeekKm, fmt: km },
-  { id: 'runWeekMarathon', category: 'run', icon: '🔥', title: 'Marathon Week', desc: 'Total 42,2 km dalam sepekan', target: 42.2, of: (s) => s.bestWeekKm, fmt: km },
-  { id: 'runWeekPeak', category: 'run', icon: '🏅', title: 'Peak Week', desc: 'Total 70 km dalam sepekan', target: 70, of: (s) => s.bestWeekKm, fmt: km },
-  { id: 'runWeek100', category: 'run', icon: '👑', title: 'Century Week', desc: 'Total 100 km dalam sepekan', target: 100, of: (s) => s.bestWeekKm, fmt: km },
-  { id: 'runMonth100', category: 'run', icon: '🎽', title: '100K Month', desc: 'Total 100 km dalam sebulan', target: 100, of: (s) => s.bestMonthKm, fmt: km },
-  { id: 'runMonth200', category: 'run', icon: '🏆', title: '200K Month', desc: 'Total 200 km dalam sebulan', target: 200, of: (s) => s.bestMonthKm, fmt: km },
-  { id: 'runMonth300', category: 'run', icon: '💎', title: '300K Month', desc: 'Total 300 km dalam sebulan', target: 300, of: (s) => s.bestMonthKm, fmt: km },
+  //
+  // `period` di tiap baris BUKAN hiasan: kategori ini satu-satunya yang
+  // mencampur lima periode sekaligus, dan tanpa pemisah 42,2 km sehari
+  // berdempetan dengan 100 km sebulan seolah satu tangga yang sama.
+  { id: 'runShakeout', category: 'run', icon: '🚶', title: 'Shakeout', desc: 'Tempuh 3 km dalam sehari', target: 3, of: (s) => s.bestDayKm, fmt: km, period: 'day' },
+  { id: 'run5k', category: 'run', icon: '🏃', title: 'Easy Run · 5K', desc: 'Tempuh 5 km dalam sehari', target: 5, of: (s) => s.bestDayKm, fmt: km, period: 'day' },
+  { id: 'run10k', category: 'run', icon: '⚡', title: 'Tempo Run · 10K', desc: 'Tempuh 10 km dalam sehari', target: 10, of: (s) => s.bestDayKm, fmt: km, period: 'day' },
+  { id: 'run15k', category: 'run', icon: '🔥', title: 'Long Run · 15K', desc: 'Tempuh 15 km dalam sehari', target: 15, of: (s) => s.bestDayKm, fmt: km, period: 'day' },
+  { id: 'runHalf', category: 'run', icon: '🏅', title: 'Half Marathon', desc: 'Tempuh 21,1 km dalam sehari', target: 21.1, of: (s) => s.bestDayKm, fmt: km, period: 'day' },
+  { id: 'runFull', category: 'run', icon: '👑', title: 'Full Marathon', desc: 'Tempuh 42,2 km dalam sehari', target: 42.2, of: (s) => s.bestDayKm, fmt: km, period: 'day' },
+  { id: 'runWeekBase', category: 'run', icon: '✨', title: 'Base Week', desc: 'Total 21,1 km dalam sepekan (Sen–Min)', target: 21.1, of: (s) => s.bestWeekKm, fmt: km, period: 'week' },
+  { id: 'runWeekMarathon', category: 'run', icon: '🔥', title: 'Marathon Week', desc: 'Total 42,2 km dalam sepekan', target: 42.2, of: (s) => s.bestWeekKm, fmt: km, period: 'week' },
+  { id: 'runWeekPeak', category: 'run', icon: '🏅', title: 'Peak Week', desc: 'Total 70 km dalam sepekan', target: 70, of: (s) => s.bestWeekKm, fmt: km, period: 'week' },
+  { id: 'runWeek100', category: 'run', icon: '👑', title: 'Century Week', desc: 'Total 100 km dalam sepekan', target: 100, of: (s) => s.bestWeekKm, fmt: km, period: 'week' },
+  { id: 'runMonth100', category: 'run', icon: '🎽', title: '100K Month', desc: 'Total 100 km dalam sebulan', target: 100, of: (s) => s.bestMonthKm, fmt: km, period: 'month' },
+  { id: 'runMonth200', category: 'run', icon: '🏆', title: '200K Month', desc: 'Total 200 km dalam sebulan', target: 200, of: (s) => s.bestMonthKm, fmt: km, period: 'month' },
+  { id: 'runMonth300', category: 'run', icon: '💎', title: '300K Month', desc: 'Total 300 km dalam sebulan', target: 300, of: (s) => s.bestMonthKm, fmt: km, period: 'month' },
+  // 27 Sep 2026: dua periode panjang menyusul, mengikuti kartu baru di tab
+  // Steps. Angkanya kelipatan patokan bulanan (3× dan 12×), jadi "300K
+  // Kuartal" = rata-rata 100 km sebulan tanpa perlu dihitung.
+  { id: 'runQuarter300', category: 'run', icon: '🎽', title: '300K Quarter', desc: 'Total 300 km dalam 3 bulan (kuartal kalender)', target: 300, of: (s) => s.bestQuarterKm, fmt: km, period: 'quarter' },
+  { id: 'runQuarter600', category: 'run', icon: '🏆', title: '600K Quarter', desc: 'Total 600 km dalam 3 bulan', target: 600, of: (s) => s.bestQuarterKm, fmt: km, period: 'quarter' },
+  { id: 'runQuarter900', category: 'run', icon: '💎', title: '900K Quarter', desc: 'Total 900 km dalam 3 bulan', target: 900, of: (s) => s.bestQuarterKm, fmt: km, period: 'quarter' },
+  { id: 'runYear1200', category: 'run', icon: '🎽', title: '1200K Year', desc: 'Total 1.200 km dalam setahun', target: 1200, of: (s) => s.bestYearKm, fmt: km, period: 'year' },
+  { id: 'runYear2400', category: 'run', icon: '🏆', title: '2400K Year', desc: 'Total 2.400 km dalam setahun', target: 2400, of: (s) => s.bestYearKm, fmt: km, period: 'year' },
+  { id: 'runYear3600', category: 'run', icon: '💎', title: '3600K Year', desc: 'Total 3.600 km dalam setahun', target: 3600, of: (s) => s.bestYearKm, fmt: km, period: 'year' },
   // Target mingguan 📅 — mengikuti anjuran kesehatan dewasa: ±150 menit
   // aerobik sedang (≈70.000 langkah) + strength training minimal 2 hari.
-  { id: 'weekStep1', category: 'week', icon: '🚶', title: 'Active Week', desc: 'Tembus target langkah dalam sepekan', target: 1, of: (s) => s.weekStepHits },
-  { id: 'weekStep4', category: 'week', icon: '✨', title: 'Active Month', desc: '4 minggu tembus target langkah', target: 4, of: (s) => s.weekStepHits },
-  { id: 'weekStep12', category: 'week', icon: '🏅', title: 'Active Quarter', desc: '12 minggu tembus target langkah', target: 12, of: (s) => s.weekStepHits },
-  { id: 'weekGym1', category: 'strength', icon: '🏋️', title: 'Strength 2×', desc: 'Strength training 2 hari dalam sepekan', target: 1, of: (s) => s.weekGymHits },
-  { id: 'weekGym4', category: 'strength', icon: '💪', title: 'Strong Month', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits },
-  { id: 'weekGym12', category: 'strength', icon: '🔥', title: 'Strong Quarter', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits },
-  { id: 'weekBoth1', category: 'week', icon: '⭐', title: 'Perfect Week', desc: 'Aerobik & strength tercapai dalam sepekan', target: 1, of: (s) => s.weekBothHits },
-  { id: 'weekBoth4', category: 'week', icon: '👑', title: 'Perfect Month', desc: '4 minggu sempurna', target: 4, of: (s) => s.weekBothHits },
-  { id: 'weekBoth12', category: 'week', icon: '💎', title: 'Perfect Quarter', desc: '12 minggu sempurna', target: 12, of: (s) => s.weekBothHits },
+  //
+  // Periodenya = RENTANG yang diliput, bukan satuan hitungnya: "4 minggu
+  // tembus target" itu sebulan, "12 minggu" itu 3 bulan.
+  { id: 'weekStep1', category: 'week', icon: '🚶', title: 'Active Week', desc: 'Tembus target langkah dalam sepekan', target: 1, of: (s) => s.weekStepHits, period: 'week' },
+  { id: 'weekStep4', category: 'week', icon: '✨', title: 'Active Month', desc: '4 minggu tembus target langkah', target: 4, of: (s) => s.weekStepHits, period: 'month' },
+  { id: 'weekStep12', category: 'week', icon: '🏅', title: 'Active Quarter', desc: '12 minggu tembus target langkah', target: 12, of: (s) => s.weekStepHits, period: 'quarter' },
+  { id: 'weekGym1', category: 'strength', icon: '🏋️', title: 'Strength 2×', desc: 'Strength training 2 hari dalam sepekan', target: 1, of: (s) => s.weekGymHits, period: 'week' },
+  { id: 'weekGym4', category: 'strength', icon: '💪', title: 'Strong Month', desc: '4 minggu strength training 2 hari', target: 4, of: (s) => s.weekGymHits, period: 'month' },
+  { id: 'weekGym12', category: 'strength', icon: '🔥', title: 'Strong Quarter', desc: '12 minggu strength training 2 hari', target: 12, of: (s) => s.weekGymHits, period: 'quarter' },
+  { id: 'weekBoth1', category: 'week', icon: '⭐', title: 'Perfect Week', desc: 'Aerobik & strength tercapai dalam sepekan', target: 1, of: (s) => s.weekBothHits, period: 'week' },
+  { id: 'weekBoth4', category: 'week', icon: '👑', title: 'Perfect Month', desc: '4 minggu sempurna', target: 4, of: (s) => s.weekBothHits, period: 'month' },
+  { id: 'weekBoth12', category: 'week', icon: '💎', title: 'Perfect Quarter', desc: '12 minggu sempurna', target: 12, of: (s) => s.weekBothHits, period: 'quarter' },
   { id: 'water1', category: 'water', icon: '💧', title: 'First 8 Glasses', desc: 'Cukup 8 gelas air dalam sehari', target: 1, of: (s) => s.waterTotal },
   { id: 'water3', category: 'water', icon: '✨', title: '3 Days Hydrated', desc: 'Cukup 8 gelas 3 hari streak', target: 3, of: (s) => s.waterBest },
   { id: 'water7', category: 'water', icon: '🌊', title: 'One Week Hydrated', desc: 'Cukup 8 gelas 7 hari streak', target: 7, of: (s) => s.waterBest },
@@ -470,6 +520,35 @@ export const REWARDS: Reward[] = [
   { id: 'water30', category: 'water', icon: '👑', title: 'One Month Hydrated', desc: 'Cukup 8 gelas 30 hari streak', target: 30, of: (s) => s.waterBest },
   { id: 'water100', category: 'water', icon: '💎', title: '100 Days Hydrated', desc: 'Total 100 hari cukup 8 gelas', target: 100, of: (s) => s.waterTotal },
 ];
+
+/**
+ * Lencana satu kategori, DIKELOMPOKKAN per periode.
+ *
+ * Aturannya satu: kalau kategori itu cuma punya SATU periode (atau tak satu
+ * pun lencananya berperiode), hasilnya satu kelompok tanpa nama — tampilannya
+ * persis seperti sebelum ada pengelompokan. Jadi tangga streak harian tidak
+ * mendadak kebagian kepala "⏱️ Sehari" yang tidak memberi tahu apa-apa.
+ *
+ * Urutan kelompoknya mengikuti REWARD_PERIODS (terpendek dulu), dan lencana
+ * tanpa periode jatuh ke kelompok terakhir tanpa nama — bukan hilang.
+ */
+export function rewardGroups(
+  key: RewardCategoryKey,
+): { label: string | null; items: Reward[] }[] {
+  const daftar = REWARDS.filter((a) => a.category === key);
+  const periode = REWARD_PERIODS.filter((p) =>
+    daftar.some((a) => a.period === p.key),
+  );
+  const tanpa = daftar.filter((a) => !a.period);
+  if (periode.length < 2) return [{ label: null, items: daftar }];
+  return [
+    ...periode.map((p) => ({
+      label: p.label,
+      items: daftar.filter((a) => a.period === p.key),
+    })),
+    ...(tanpa.length > 0 ? [{ label: null, items: tanpa }] : []),
+  ];
+}
 
 /** Berapa reward yang sudah terbuka dengan angka sekarang. */
 export function unlockedCount(stats: RewardStats): number {

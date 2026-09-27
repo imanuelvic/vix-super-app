@@ -22,6 +22,7 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
+import { FastingIntro } from '@/components/spiritual/FastingIntro';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useDraft } from '@/hooks/useDraft';
@@ -37,7 +38,8 @@ import {
   subscribeFastingPlans,
   type FastingPlan,
 } from '@/lib/fasting';
-import { dayIdToDate, formatShortDayDate } from '@/lib/format';
+import { fastingTitleOf } from '@/lib/fastingWhy';
+import { dayIdToDate, formatShortDayDate, monthLabel } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
 
@@ -75,6 +77,11 @@ export default function FastingScreen() {
   const [endDate, setEndDate] = useDraft(
     plan?.endId ? dayIdToDate(plan.endId) : today,
   );
+
+  // Perjalanan tiga langkah sudah dilewati? Hanya berlaku untuk puasa BARU;
+  // membuka puasa lama (?id=…) langsung ke formulirnya.
+  const [introSelesai, setIntroSelesai] = useState(false);
+  const introTampil = !planId && !introSelesai;
 
   const progress = plan ? fastingProgress(plan) : { done: 0, total: 0 };
   // Lewat masa tenggang → catatannya baca-saja SELAMANYA (lihat lib/fasting.ts).
@@ -172,6 +179,27 @@ export default function FastingScreen() {
         }
       />
 
+      {/* ===== Puasa BARU: perjalanan tiga langkah dulu (28 Sep 2026) =====
+          Formulirnya baru terbuka sesudah tiga pertanyaan dijawab — kenapa
+          puasa, fokusnya apa, apa yang dilepas. Alasan lengkapnya ada di
+          lib/fastingWhy.ts; singkatnya, puasa yang diisi dalam 30 detik
+          gampang jadi rutinitas kosong, dan itu kekhawatiran pemiliknya
+          sendiri. Puasa LAMA (`planId` terisi) tidak lewat sini: ia sudah
+          punya jawabannya. */}
+      {introTampil ? (
+        <FastingIntro
+          onCancel={() => router.back()}
+          onDone={({ focus, rule }) => {
+            // Jawabannya langsung mengisi formulirnya, jadi tidak ada
+            // pekerjaan yang terbuang — tiga langkah tadi justru memotong
+            // waktu mengetik.
+            setTitle(fastingTitleOf(focus, monthLabel()));
+            setPrayer(focus.prayer);
+            setRules(rule.text);
+            setIntroSelesai(true);
+          }}
+        />
+      ) : (
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -362,6 +390,7 @@ export default function FastingScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 }

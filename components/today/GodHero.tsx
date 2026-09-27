@@ -39,9 +39,18 @@ export function GodHero({
   const router = useRouter();
   const [openPrayer, setOpenPrayer] = useState(false);
   const pagi = new Date().getHours() < 11;
+  // 28 Sep 2026: sesudah Morning Journey dijalani, judulnya bukan lagi sapaan
+  // ("Hari ini bersama Yesus, Imanuel") melainkan KALIMAT IDENTITAS hari ini
+  // ("Kamu Gembala 10 CORE"). Alasannya ditulis lengkap di lib/identity.ts;
+  // singkatnya: seluruh layar ini bicara tentang apa yang harus dikerjakan,
+  // dan satu-satunya tempat yang pantas bicara tentang SIAPA yang
+  // mengerjakannya adalah baris paling atas, sebelum daftarnya mulai.
+  //
+  // Sebelum journey dijalani ia tetap sapaan biasa: di situ yang dibutuhkan
+  // undangan, bukan penegasan.
   const sapaan =
     god.state === 'done'
-      ? `Hari ini bersama Yesus, ${name}`
+      ? god.identity
       : god.state === 'late'
         ? `Hai ${name}`
         : pagi

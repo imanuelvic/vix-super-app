@@ -113,6 +113,67 @@ export function fastingDayNumber(plan: FastingPlan, dayId: string): number {
   return fastingDayIds(plan.startId, plan.endId).indexOf(dayId) + 1;
 }
 
+// ============ Puasa bulanan: Senin terakhir tiap bulan 🗓️ ============
+//
+// Ritmenya: setiap Senin di AKHIR bulan, ambil puasa baru. 28 Sep 2026,
+// 26 Okt 2026, 30 Nov 2026, dan seterusnya — tanggalnya tidak dihafal, ia
+// dihitung.
+//
+// Kenapa Senin terakhir dan bukan tanggal tetap (mis. tiap tanggal 25):
+// tanggal tetap jatuh di hari yang berbeda-beda, dan puasa yang dimulai hari
+// Kamis atau Sabtu langsung bertabrakan dengan acara akhir pekan. Senin selalu
+// awal pekan, dan pekan yang baru mulai itu yang paling mungkin dijalani utuh.
+//
+// ⚠️ Yang TIDAK dilakukan di sini: membuatkan puasanya otomatis. Puasa yang
+// dibuatkan mesin persis yang paling cepat jadi rutinitas kosong — dan itu
+// kekhawatiran pemilik app sendiri. Yang ada cuma pengingat; keputusannya
+// tetap harus lewat perjalanan 3 langkah di layar Puasa Baru.
+
+/** dayId Senin TERAKHIR pada bulan yang memuat `d`. */
+export function lastMondayId(d: Date): string {
+  // Mulai dari tanggal terakhir bulan itu, lalu mundur sampai ketemu Senin.
+  const akhir = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  akhir.setDate(akhir.getDate() - ((akhir.getDay() + 6) % 7));
+  return dayDocId(akhir);
+}
+
+/** Ada puasa yang mulainya di bulan yang sama dengan `d`? */
+export function hasFastingThisMonth(plans: FastingPlan[], d: Date): boolean {
+  const bulan = dayDocId(d).slice(0, 7); // "YYYY-MM"
+  return plans.some((p) => p.startId.slice(0, 7) === bulan);
+}
+
+/**
+ * Hari ini saatnya mengambil puasa bulan ini?
+ *
+ * Jendelanya DUA hari: Senin terakhirnya sendiri, DAN hari Minggu sebelumnya.
+ * Yang kedua bukan kemewahan — pengingat di app ini isinya dibekukan saat app
+ * terakhir dibuka (lihat lib/notify.ts). Kalau jendelanya cuma satu hari dan
+ * app kebetulan tidak dibuka hari Minggu, pengingat Senin paginya tidak pernah
+ * terjadwal sama sekali, dan urusan sebulan sekali hilang begitu saja.
+ * Bonusnya: diberi tahu sehari sebelumnya justru lebih enak dipersiapkan.
+ *
+ * Sudah ada puasa yang dimulai bulan ini → diam. Yang sudah dikerjakan tidak
+ * perlu ditagih lagi.
+ */
+export function fastingMonthlyDue(plans: FastingPlan[], now: Date): boolean {
+  if (hasFastingThisMonth(plans, now)) return false;
+  const senin = lastMondayId(now);
+  const hariIni = dayDocId(now);
+  if (hariIni === senin) return true;
+  const mingguSebelum = dayIdToDate(senin);
+  mingguSebelum.setDate(mingguSebelum.getDate() - 1);
+  return hariIni === dayDocId(mingguSebelum);
+}
+
+/** Keterangan singkat kapan Senin terakhirnya — untuk baris pengingatnya. */
+export function fastingMonthlyLabel(now: Date): string {
+  const senin = lastMondayId(now);
+  return dayDocId(now) === senin
+    ? 'Hari ini Senin terakhir bulan ini'
+    : 'Besok Senin terakhir bulan ini';
+}
+
 // ===================== Kunci sesudah selesai 🔒 =====================
 // Catatan puasa itu KESAKSIAN, bukan daftar tugas. Kalau bisa diubah kapan
 // saja, hari yang dulu gagal bisa dicentang berhasil berbulan-bulan kemudian —

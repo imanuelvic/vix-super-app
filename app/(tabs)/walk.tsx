@@ -24,6 +24,7 @@ import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { BibleReadingTab } from '@/components/spiritual/BibleReadingTab';
 import { FastingTab } from '@/components/spiritual/FastingTab';
+import { GospelStoryTab } from '@/components/spiritual/GospelStoryTab';
 import { PromiseTab } from '@/components/spiritual/PromiseTab';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { SermonTab } from '@/components/spiritual/SermonTab';
@@ -38,22 +39,25 @@ import { subscribeSermons, type SermonNote } from '@/lib/sermon';
 import {
   BIBLE_SESSIONS,
   bibleSessionNow,
+  EMPTY_BIBLE_STREAKS,
   repairedReviveStreak,
   saveReviveStreak,
   reviveHandledToday,
   reviveWritten,
   setReviveSkipped,
   subscribeBibleReadingDays,
+  subscribeBibleStreaks,
   subscribeReviveEntries,
   subscribeReviveStreak,
   worshipVerseOfDay,
   type BibleReadingDay,
   type BibleSession,
+  type BibleStreaks,
   type ReviveEntry,
   type ReviveStreak,
 } from '@/lib/spiritual';
 
-type Tab = 'revive' | 'sermon' | 'bible' | 'promise' | 'fasting';
+type Tab = 'revive' | 'sermon' | 'bible' | 'promise' | 'fasting' | 'story';
 
 // 🚩 Panji, bukan hati atau tangan: "TUHAN panji-panjiku" (Keluaran 17:15) —
 // janji yang ditancapkan dan tetap berdiri sampai digenapi.
@@ -63,6 +67,10 @@ const TABS: BottomTab<Tab>[] = [
   { key: 'bible', label: 'Bible Reading', icon: 'books.vertical.fill' },
   { key: 'promise', label: 'Promise', icon: 'flag.fill' },
   { key: 'fasting', label: 'Fasting', icon: 'figure.mind.and.body' },
+  // 28 Sep 2026: cerita besar Alkitab & babak yang sedang dijalani. Ditaruh
+  // PALING KANAN dengan sengaja — ia bukan yang dibuka tiap hari, melainkan
+  // yang dibuka saat perlu diingatkan hari ini bagian dari apa.
+  { key: 'story', label: "God's Story", icon: 'map.fill' },
 ];
 
 export default function SpiritualScreen() {
@@ -84,6 +92,9 @@ export default function SpiritualScreen() {
   const [entries, setEntries] = useState<ReviveEntry[] | null>(null);
   const [sermons, setSermons] = useState<SermonNote[]>([]);
   const [bibleDays, setBibleDays] = useState<BibleReadingDay[]>([]);
+  // Streak ketiga sesi baca Alkitab — satu dokumen kecil, dokumen yang SAMA
+  // dengan yang dibaca layar Reward, jadi liveDoc menggabungkannya.
+  const [bibleStreaks, setBibleStreaks] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   const [fastingPlans, setFastingPlans] = useState<FastingPlan[]>([]);
   const [promises, setPromises] = useState<HisPromise[]>([]);
   // Streak Revive — dibaca di sini bukan untuk angkanya, tapi untuk tanda
@@ -104,6 +115,7 @@ export default function SpiritualScreen() {
       ),
       subscribeSermons(uid, setSermons, fail),
       subscribeBibleReadingDays(uid, setBibleDays, fail),
+      subscribeBibleStreaks(uid, setBibleStreaks, fail),
       subscribeFastingPlans(uid, setFastingPlans, fail),
       subscribePromises(uid, setPromises, fail),
       subscribeReviveStreak(uid, setReviveStreak, fail),
@@ -336,9 +348,15 @@ export default function SpiritualScreen() {
         ) : tab === 'sermon' ? (
           <SermonTab sermons={sermons} />
         ) : tab === 'bible' ? (
-          <BibleReadingTab days={bibleDays} openSession={sesiDituju} />
+          <BibleReadingTab
+            days={bibleDays}
+            streaks={bibleStreaks}
+            openSession={sesiDituju}
+          />
         ) : tab === 'promise' ? (
           <PromiseTab list={promises} />
+        ) : tab === 'story' ? (
+          <GospelStoryTab />
         ) : (
           <FastingTab plans={fastingPlans} />
         )}

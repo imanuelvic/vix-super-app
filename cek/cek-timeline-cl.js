@@ -84,13 +84,17 @@ c('komponennya ikut dibuang (tak ada yang memakainya lagi)',
   !/StudyWorkLines/.test(leaders));
 
 // Datanya TIDAK hilang — cuma pindah satu click ke dalam.
+// 27 Sep 2026: isi modalnya pindah lagi, ke components/core/PersonInfo.tsx,
+// supaya Rekap Visitasi 📊 memakai tampilan yang sama.
+const personInfo = baca('components/core/PersonInfo.tsx');
 c('masih terlihat di modal baca-saja saat kartunya di-click',
-  /<InfoRow label="🎓 Pendidikan"/.test(leaders) &&
-  /<InfoRow label="💼 Pekerjaan"/.test(leaders));
+  /<InfoRow label="🎓 Pendidikan"/.test(personInfo) &&
+  /<InfoRow label="💼 Pekerjaan"/.test(personInfo) &&
+  /<PersonInfo person=/.test(leaders));
 c('studyLine & workLine tetap ada di lib (dipakai modal itu)',
   /export function studyLine/.test(baca('lib/core.ts')) &&
   /export function workLine/.test(baca('lib/core.ts')) &&
-  /studyLine\(/.test(leaders) && /workLine\(/.test(leaders));
+  /studyLine\(/.test(personInfo) && /workLine\(/.test(personInfo));
 c('nomor HP & ulang tahun TIDAK ikut dibuang', /📱 \{l\.phone/.test(leaders));
 
 console.log('\n== 2. Timeline per CORE Leader ==');

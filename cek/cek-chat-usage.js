@@ -92,10 +92,26 @@ ok('ditambah kategori lain yang masuk akal (kerja, bayi, lagi berat, apresiasi, 
     .every((k) => T.CHAT_CATEGORIES.some((c) => c.key === k)));
 
 const abc = T.CHAT_CATEGORIES.filter((c) => !c.byDay);
-ok('tiap kategori biasa punya TEPAT 3 pilihan A, B, C',
+// 28 Sep 2026 — MODEL SUITE-NYA YANG DIBETULKAN, dan ini perlu disebut terus
+// terang. Dulu di sini tertulis "TEPAT 3 pilihan A, B, C". Aturan itu memang
+// benar selama semua kategori sejenis, tapi dua kategori baru (🪞 Minta
+// Masukan & 🎂 Happy Birthday) sengaja punya EMPAT: yang pertama karena minta
+// dikoreksi butuh beberapa sudut yang berbeda, yang kedua karena ucapan ulang
+// tahun dikirim ke banyak orang dan yang jelas hasil salin-tempel terasa lebih
+// dingin daripada tidak mengucapkan sama sekali.
+//
+// Yang dijaga sekarang tiga hal, bukan satu: minimal tiga pilihan (tetap),
+// kuncinya huruf berurutan mulai A (tetap, dan sekarang diperiksa untuk
+// panjang berapa pun), DAN tak boleh ada dua teks kembar di satu kategori —
+// penjagaan yang dulu sama sekali tidak ada.
+const HURUF = 'ABCDEFGH';
+ok('tiap kategori biasa punya ≥ 3 pilihan, kuncinya huruf berurutan dari A',
   abc.length > 0 && abc.every((c) =>
-    c.variants.length === 3 &&
-    c.variants.map((v) => v.key).join('') === 'ABC'));
+    c.variants.length >= 3 &&
+    c.variants.map((v) => v.key).join('') === HURUF.slice(0, c.variants.length)),
+  abc.map((c) => `${c.key}=${c.variants.map((v) => v.key).join('')}`).join(' · '));
+ok('tidak ada dua pilihan berteks kembar di satu kategori',
+  abc.every((c) => new Set(c.variants.map((v) => v.text)).size === c.variants.length));
 
 const moti = T.CHAT_CATEGORIES.find((c) => c.key === 'motivational');
 ok('Motivational Words: 7 hari lengkap, urut Senin→Minggu',

@@ -2,7 +2,7 @@ import {
     collection,
     deleteDoc,
     doc,
-    onSnapshot,
+    limit,
     orderBy,
     query,
     setDoc,
@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 
 import { db } from './firebase';
+import { liveList } from './liveDoc';
 import { MONTH_NAMES, monthIdOf } from './format';
 
 // Multiplikasi CORE 🌱 — satu CORE dibelah jadi dua.
@@ -246,32 +247,26 @@ export function subscribeMultiplications(
   onError?: (error: FirestoreError) => void,
 ) {
   // Terbaru di atas — multiplikasi yang sedang berjalan yang paling dicari.
-  const q = query(multiCollection(uid), orderBy('createdAt', 'desc'));
-  return onSnapshot(
-    q,
-    (snap) => {
-      onChange(
-        snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            fromName: String(data.fromName ?? ''),
-            fromHeart: String(data.fromHeart ?? ''),
-            toName: String(data.toName ?? ''),
-            toHeart: String(data.toHeart ?? ''),
-            meetingDate: readDate(data.meetingDate),
-            firstCoreDate: readDate(data.firstCoreDate),
-            day: String(data.day ?? ''),
-            place: String(data.place ?? ''),
-            steps: readSteps(data.steps),
-            members: readMembers(data.members),
-            createdAt: Number(data.createdAt ?? 0),
-          };
-        }),
-      );
-    },
-    onError,
-  );
+  // Batas 60: multiplikasi terjadi hitungan kali per tahun, jadi angka ini
+  // tidak akan pernah tersentuh — ia cuma menahan biaya baca kalau salah.
+  const q = query(multiCollection(uid), orderBy('createdAt', 'desc'), limit(60));
+  return liveList<Multiplication>(q, onChange, onError, (d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      fromName: String(data.fromName ?? ''),
+      fromHeart: String(data.fromHeart ?? ''),
+      toName: String(data.toName ?? ''),
+      toHeart: String(data.toHeart ?? ''),
+      meetingDate: readDate(data.meetingDate),
+      firstCoreDate: readDate(data.firstCoreDate),
+      day: String(data.day ?? ''),
+      place: String(data.place ?? ''),
+      steps: readSteps(data.steps),
+      members: readMembers(data.members),
+      createdAt: Number(data.createdAt ?? 0),
+    };
+  });
 }
 
 /** Simpan/timpa satu multiplikasi (dipakai saat buat & tiap perubahan). */
