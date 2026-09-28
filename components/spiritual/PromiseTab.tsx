@@ -1,22 +1,20 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { InfoChip } from '@/components/common/InfoChip';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { ProgressBar } from '@/components/common/ProgressBar';
-import { SummaryCard } from '@/components/common/SummaryCard';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import {
   promiseAnswered,
-  promiseProgress,
   promiseWaitDays,
   type Promise as HisPromise,
 } from '@/lib/promise';
@@ -29,36 +27,28 @@ import {
 export function PromiseTab({ list }: { list: HisPromise[] }) {
   const router = useRouter();
 
-  const { done, total } = promiseProgress(list);
   // 10 per halaman — daftar ini tak pernah menyusut, cuma bertambah.
   const { currentPage, pageCount, pageItems, setPage } = usePagination(list);
 
   return (
     <View style={styles.flex}>
-      {/* key = halaman → balik ke atas tiap ganti halaman. */}
-      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
-        <SummaryCard
-          label="Sudah digenapi"
-          value={`${done}/${total} janji 🙌`}
-          sub={
-            total === 0
-              ? 'Tulis janji Tuhan yang sedang kamu pegang.'
-              : done === total
-                ? 'Semua yang kamu catat sudah Dia genapi.'
-                : `${total - done} janji masih ditunggu.`
-          }
-        />
-        <View style={styles.barWrap}>
-          <ProgressBar value={done} total={total} color={Color.SPIRITUAL_DARK} />
-        </View>
-
+      {/* Dipatok di atas seperti Jadwalkan Visitasi & Buat Rapat Bulanan:
+          tombolnya tetap terjangkau walau daftar janjinya sudah panjang.
+          Kartu ringkasan "x/y janji" beserta bilah kemajuannya DIHAPUS
+          (28 Sep 2026): tiap kartu di bawahnya sudah memakai penanda
+          🙌 Digenapi / 🙏 Didoakan / ⏳ Dipegang sendiri, jadi angkanya cuma
+          mengulang yang sudah terbaca — dan bilahnya tanpa kartu itu tinggal
+          garis tanpa keterangan. */}
+      <StickyTop>
         <PrimaryButton
           label="Tulis Janji Tuhan"
           icon="plus"
           onPress={() => router.push('/promise')}
-          additionalStyle={styles.addButton}
         />
+      </StickyTop>
 
+      {/* key = halaman → balik ke atas tiap ganti halaman. */}
+      <ScrollView key={currentPage} contentContainerStyle={styles.content}>
         {list.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
             Belum ada janji yang dicatat.
@@ -129,9 +119,7 @@ export function PromiseTab({ list }: { list: HisPromise[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
-  barWrap: { marginTop: -4, marginBottom: 10 },
-  addButton: { marginBottom: CARD_GAP },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   empty: { textAlign: 'center', marginTop: 8 },
   // Bentuknya sengaja sekeluarga dengan kartu Catatan Khotbah: garis tepi kiri
   // tebal berwarna Spiritual, isinya bertingkat dari acuan → judul → cerita.

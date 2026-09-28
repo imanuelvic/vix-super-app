@@ -2,9 +2,9 @@ import { Timestamp } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -16,7 +16,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SheetModal } from '@/components/common/SheetModal';
-import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useDueJump } from '@/hooks/useDueJump';
@@ -79,7 +79,8 @@ export function FulltimeTab({
   const [pickPriority, setFPriority] = useState<1 | 2 | 3>(2);
   const [pickStatus, setFStatus] = useState<RoadmapStatus>('todo');
   const [fDeadline, setFDeadline] = useState(defaultDeadline());
-  // menekan dengan tenggat).
+  // Backlog = kartu yang belum punya tanggal pasti, jadi tenggatnya tidak
+  // ikut menagih di papan dan di badge H-7.
   const [fBacklog, setFBacklog] = useState(false);
 
   // ===== Aturan H-7 (mendesak) =====
@@ -126,7 +127,6 @@ export function FulltimeTab({
       }
       return a.priority - b.priority;
     });
-  const doneCount = items.filter((i) => i.status === 'done').length;
 
   // Isi tiap kolom papan + berapa kartu yang sudah mendesak (H-7 / lewat).
   const columnOf = (status: RoadmapStatus) =>
@@ -219,31 +219,20 @@ export function FulltimeTab({
 
   return (
     <View style={styles.flex}>
+      {/* Dipatok di atas seperti tombol di CORE: papannya panjang, dan tombol
+          yang ikut tergulung berarti harus naik dulu sebelum bisa menambah.
+          Kartu ringkasan "x dari y prioritas selesai" DIHAPUS (28 Sep 2026):
+          angkanya sudah tertulis di tiap kolom papan di bawahnya
+          ("n kartu" per kolom Rencana · Dikerjakan · Selesai). */}
+      <StickyTop>
+        <PrimaryButton label="Tambah Kartu" icon="plus" onPress={openAdd} />
+      </StickyTop>
+
       <ScrollView
         ref={listRef}
         onContentSizeChange={onContentSizeChange}
         onLayout={onLayout}
         contentContainerStyle={styles.content}>
-        {/* Ringkasan roadmap */}
-        <SummaryCard>
-          <VixText heading="label" additionalStyle={summaryText.label}>
-            💻 Software Engineer · Mobile Developer NDC
-          </VixText>
-          <VixText heading="subheader" additionalStyle={summaryText.value}>
-            {doneCount}{' '}
-            <VixText heading="label" additionalStyle={summaryText.label}>
-              dari {items.length} prioritas selesai
-            </VixText>
-          </VixText>
-        </SummaryCard>
-
-        <PrimaryButton
-          label="Tambah Kartu"
-          icon="plus"
-          onPress={openAdd}
-          additionalStyle={styles.addButton}
-        />
-
         <FormError message={error} />
 
         {/* Papan ala Trello: Rencana · Dikerjakan · Selesai. Angka kecil =
@@ -295,7 +284,7 @@ export function FulltimeTab({
             dl !== null &&
             dl <= CAREER_REMINDER_DAYS;
           return (
-            // Seluruh kartu ditekan → buka modal edit (di sana status, prioritas
+            // Seluruh kartu di-click → buka modal edit (di sana status, prioritas
             // & deadline-nya diubah). Tidak ada lagi tombol pindah kolom cepat.
             <PressableScale
               key={item.id}
@@ -395,7 +384,7 @@ export function FulltimeTab({
               key={p}
               label={`P${p}`}
               active={fPriority === p}
-              // H-7 → terkunci di P1, pilihan lain tidak bisa ditekan.
+              // H-7 → terkunci di P1, pilihan lain tidak bisa di-click.
               onPress={urgent ? () => {} : () => setFPriority(p)}
               additionalStyle={[
                 styles.chipFlex,
@@ -477,8 +466,7 @@ export function FulltimeTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
-  addButton: { marginBottom: CARD_GAP },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     ...PANEL,
@@ -516,6 +504,6 @@ const styles = StyleSheet.create({
   backlogHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   chipFlex: { flex: 1 },
-  // Pilihan yang dikunci saat H-7 — diredupkan biar jelas tak bisa ditekan.
+  // Pilihan yang dikunci saat H-7 — diredupkan biar jelas tak bisa di-click.
   chipLocked: { opacity: 0.4 },
 });

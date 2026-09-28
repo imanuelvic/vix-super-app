@@ -59,3 +59,28 @@ export const SCREEN_CONTENT: ViewStyle = {
   paddingHorizontal: 20,
   paddingTop: 4,
 };
+
+/**
+ * Napas isi layar untuk daftar yang tombolnya DIPATOK di atas (`<StickyTop>`).
+ *
+ * Bedanya cuma satu: `paddingTop` 0. Jarak atasnya sudah dipegang StickyTop
+ * (paddingTop 4 + paddingBottom CARD_GAP), jadi kalau ScrollView di bawahnya
+ * masih menambah 4 lagi, kartu pertama berdiri 4 piksel lebih rendah daripada
+ * di layar yang tombolnya ikut tergulung — beda kecil yang langsung terasa
+ * begitu dua sub-tab dibandingkan berdampingan.
+ *
+ * Dipakai dengan disebar, sama seperti SCREEN_CONTENT:
+ *
+ *   const styles = StyleSheet.create({
+ *     content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
+ *   });
+ *
+ * 28 Sep 2026: dibuat saat tombol tambah di sembilan sub-tab (CORE, Walk,
+ * Work) disamakan jadi dipatok. Sebelumnya tiga di antaranya menulis sendiri
+ * `paddingHorizontal: 20, paddingTop: 0`, dan yang lain belum dipatok sama
+ * sekali.
+ */
+export const SCREEN_CONTENT_PINNED: ViewStyle = {
+  ...SCREEN_CONTENT,
+  paddingTop: 0,
+};

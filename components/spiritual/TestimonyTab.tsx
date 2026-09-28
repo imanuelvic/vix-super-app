@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD, CARD_GAP } from '@/assets/style/card';
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -17,7 +17,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SoftPill } from '@/components/common/SoftPill';
-import { SummaryCard } from '@/components/common/SummaryCard';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
@@ -30,7 +30,6 @@ import {
   saveTestimony,
   seedTestimonies,
   subscribeTestimonies,
-  testimonyCountLine,
   testimonyKindMeta,
   testimonyYears,
   TESTIMONY_KINDS,
@@ -134,20 +133,20 @@ export function TestimonyTab() {
 
   return (
     <View style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <SummaryCard
-          label="🪨 Batu peringatan"
-          value={list.length === 0 ? 'Belum ada' : `${list.length} tanggal dicatat`}
-          sub={list.length === 0 ? AYAT : testimonyCountLine(list)}
-        />
-
+      {/* Dipatok di atas seperti Jadwalkan Visitasi & Buat Rapat Bulanan:
+          tombolnya tetap terjangkau walau arsipnya sudah bertahun-tahun.
+          Kartu ringkasan "x tanggal dicatat" DIHAPUS (28 Sep 2026): angkanya
+          toh terbaca sendiri dari daftar per tahun di bawahnya, dan
+          menyingkirkannya membuat catatan pertama muncul lebih awal. */}
+      <StickyTop>
         <PrimaryButton
           label="Catat Tanggal Penting"
           icon="plus"
           onPress={() => buka('new')}
-          additionalStyle={styles.addButton}
         />
+      </StickyTop>
 
+      <ScrollView contentContainerStyle={styles.content}>
         {error ? <FormError message={error} /> : null}
 
         {list.length === 0 ? (
@@ -274,8 +273,7 @@ export function TestimonyTab() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 32 },
-  addButton: { marginBottom: CARD_GAP },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 32 },
   emptyWrap: { alignItems: 'center' },
   seedPill: { marginTop: 4 },
   yearTitle: { ...SECTION_SPACE, color: Color.SPIRITUAL_DARK },

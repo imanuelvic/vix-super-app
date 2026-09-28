@@ -112,19 +112,25 @@ const buat = (dayId, kind = 'mark', title = 'x') => ({ id: dayId, dayId, kind, t
 }
 
 // =====================================================================
-console.log('\n=== 3. Hitungan per jenis (dijalankan) ===');
+console.log('\n=== 3. Kartu ringkasan & hitungannya sudah dibuang ===');
 // =====================================================================
+// 28 Sep 2026: kartu ringkasan "x tanggal dicatat · 🙌 1 · 💪 2" dihapus dari
+// atas daftar, dan kedua helper penghitungnya ikut dihapus karena kartu itu
+// satu-satunya pemakainya. Ceknya DIBALIK, bukan dihapus: dulu ia menguji
+// hitungannya, sekarang ia menuntut keduanya benar-benar tidak ada lagi — jadi
+// tidak bisa diam-diam kembali sebagai ekspor yang tak terpakai.
 {
-  const isi = [buat('2026-01-01', 'miracle'), buat('2026-02-01', 'fullday'), buat('2026-03-01', 'fullday')];
-  const n = T.testimonyCounts(isi);
-  ok('dihitung per jenis', n.miracle === 1 && n.fullday === 2 && n.cool === 0 && n.mark === 0,
-    JSON.stringify(n));
-  ok('jenis yang nol tidak ikut disebut di barisnya',
-    T.testimonyCountLine(isi) === '🙌 1 · 💪 2', T.testimonyCountLine(isi));
-  ok('daftar kosong → barisnya kosong, bukan "0 · 0 · 0"',
-    T.testimonyCountLine([]) === '');
-  ok('jenis asing ikut terhitung di penampungnya',
-    T.testimonyCounts([buat('2026-01-01', 'zzz')]).mark === 1);
+  const bersih = (s) => s.replace(/\/\/[^\n]*/g, '');
+  ok('helper hitung per jenis sudah dibuang',
+    T.testimonyCounts === undefined && !/testimonyCounts/.test(bersih(lib)));
+  ok('helper baris "🙌 2 · 💪 4" sudah dibuang',
+    T.testimonyCountLine === undefined && !/testimonyCountLine/.test(bersih(lib)));
+  ok('kartu ringkasannya hilang dari layarnya',
+    !/SummaryCard/.test(tab));
+  // Jenis tiap catatan TETAP harus terbaca — itu yang menggantikan hitungannya.
+  ok('jenis tiap catatan tetap tertulis di kartunya',
+    /testimonyKindMeta\(t\.kind\)/.test(tab) &&
+    /\{meta\.emoji\} \{meta\.label\}/.test(tab));
 }
 
 // =====================================================================
@@ -206,7 +212,20 @@ ok('memakai komponen bersama, bukan salinan sendiri',
   /from '@\/components\/common\/DateField'/.test(tab) &&
   /from '@\/components\/common\/DualButtons'/.test(tab) &&
   /from '@\/hooks\/useFormSave'/.test(tab) &&
-  /\.\.\.CARD,/.test(tab) && /\.\.\.SCREEN_CONTENT,/.test(tab));
+  /\.\.\.CARD,/.test(tab) && /\.\.\.SCREEN_CONTENT_PINNED,/.test(tab));
+// 28 Sep 2026: tombolnya DIPATOK di atas, sama seperti Jadwalkan Visitasi &
+// Buat Rapat Bulanan. Dua cek, bukan satu: yang pertama menuntut tombolnya
+// benar-benar di dalam bar patok (bukan cuma StickyTop diimpor lalu dipakai
+// untuk hal lain), yang kedua menuntut jarak atas daftarnya benar-benar 0 —
+// diperiksa DARI TOKEN-nya sendiri, jadi mengubah token ikut ketahuan.
+ok('tombolnya dipatok di atas (tidak ikut tenggelam saat digulung)', (() => {
+  const blok = /<StickyTop>([\s\S]*?)<\/StickyTop>/.exec(tab)?.[1] ?? '';
+  return /label="Catat Tanggal Penting"/.test(blok);
+})());
+ok('jarak atas daftarnya 0 — sudah dipegang bar patoknya',
+  /SCREEN_CONTENT_PINNED: ViewStyle = \{\s*\n\s*\.\.\.SCREEN_CONTENT,\s*\n\s*paddingTop: 0,/.test(
+    baca('assets/style/layout.ts'),
+  ));
 
 // =====================================================================
 console.log('\n=== 7. Aturan tetap proyek ===');

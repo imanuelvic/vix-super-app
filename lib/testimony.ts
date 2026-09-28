@@ -173,20 +173,9 @@ export function testimonyYears(list: Testimony[]): TestimonyYear[] {
     .sort((a, b) => b.year - a.year);
 }
 
-/** Berapa catatan per jenis — untuk kartu ringkasannya. */
-export function testimonyCounts(list: Testimony[]): Record<TestimonyKind, number> {
-  const hasil = { miracle: 0, fullday: 0, cool: 0, mark: 0 };
-  for (const t of list) hasil[testimonyKindMeta(t.kind).key] += 1;
-  return hasil;
-}
-
-/** "🙌 2 · 💪 4" — jenis yang jumlahnya nol tidak ikut disebut. */
-export function testimonyCountLine(list: Testimony[]): string {
-  const n = testimonyCounts(list);
-  return TESTIMONY_KINDS.filter((k) => n[k.key] > 0)
-    .map((k) => `${k.emoji} ${n[k.key]}`)
-    .join(' · ');
-}
+// `testimonyCounts` & `testimonyCountLine` ("🙌 2 · 💪 4") DIHAPUS 28 Sep 2026
+// bersama kartu ringkasan di atas daftar. Keduanya cuma dipakai kartu itu, dan
+// jenis tiap catatan sudah tertulis di kartunya masing-masing.
 
 // ===================== Empat catatan pertama =====================
 //

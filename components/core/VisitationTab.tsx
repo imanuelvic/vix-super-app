@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
@@ -372,7 +372,7 @@ export function VisitationTab({
               dipakai Riwayat Visitasi & daftar panjang lainnya). */}
           <ScrollView
             key={currentPage}
-            contentContainerStyle={[styles.content, styles.contentPinned]}>
+            contentContainerStyle={styles.contentPinned}>
             <FormError message={error} />
 
             {/* ===== Jadwal visitasi ===== */}
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   content: { ...SCREEN_CONTENT, paddingBottom: 90 },
   // Daftar jadwal: jarak atasnya sudah dipegang StickyTop (tombol Jadwalkan).
   // Mode cari 🔍 tidak pakai ini — di sana kolom carinya yang butuh jarak atas.
-  contentPinned: { paddingTop: 0 },
+  contentPinned: { ...SCREEN_CONTENT_PINNED, paddingBottom: 90 },
   // Mode cari 🔍
   searchWrap: { marginBottom: 10 },
   searchCount: { color: Color.TEXT_LABEL, marginBottom: 8 },

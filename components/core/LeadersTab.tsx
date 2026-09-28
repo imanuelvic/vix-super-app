@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -1173,7 +1174,7 @@ const styles = StyleSheet.create({
   },
   pBadgeText: { color: Color.MAIN_DARK },
   // paddingTop 0 — jarak atasnya sudah dipegang StickyTop (tombol tambah).
-  content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   addRow: { flexDirection: 'row', gap: 10 },
   addFlex: { flex: 1 },
   // Judul ini dipatok (sticky) di ScrollView. PENTING: ScrollView memindahkan

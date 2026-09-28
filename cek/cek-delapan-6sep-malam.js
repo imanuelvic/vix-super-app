@@ -107,10 +107,13 @@ c('lama menunggu dihitung dari ditulis → terjawab',
   String(P.promiseWaitDays({ createdId: '2026-01-01', answeredId: '2026-01-31' })));
 c('belum terjawab → tak ada angka menunggu',
   P.promiseWaitDays({ createdId: '2026-01-01', answeredId: '' }) === null);
-c('kemajuannya: berapa digenapi dari berapa',
-  JSON.stringify(
-    P.promiseProgress([{ answeredId: 'x' }, { answeredId: '' }, { answeredId: 'y' }]),
-  ) === JSON.stringify({ done: 2, total: 3 }));
+// 28 Sep 2026: kartu ringkasan "x/y janji" + bilah kemajuannya dihapus dari
+// atas daftar, dan `promiseProgress` ikut dihapus karena kartu itu satu-satunya
+// pemakainya. Ceknya DIBALIK jadi lebih ketat daripada sebelumnya: dulu cuma
+// menguji hitungannya, sekarang menuntut helper-nya benar-benar TIDAK ADA lagi
+// — jadi ia tidak bisa diam-diam kembali sebagai ekspor yang tak terpakai.
+c('helper hitung kemajuan sudah dibuang bersama kartu ringkasannya',
+  P.promiseProgress === undefined && !/promiseProgress/.test(promiseLib.replace(/\/\/[^\n]*/g, '')));
 // Urutannya harus tetap: menyunting janji lama tidak boleh melemparnya ke puncak.
 c('diurutkan dari kapan DITULIS, bukan kapan disunting',
   /orderBy\('createdId', 'desc'\)/.test(promiseLib));

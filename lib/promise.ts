@@ -84,13 +84,10 @@ export function promiseWaitDays(p: Promise): number | null {
   return Math.max(0, Math.round((sampai - dari) / 86_400_000));
 }
 
-/** Berapa janji yang sudah digenapi, dari totalnya. */
-export function promiseProgress(list: Promise[]): {
-  done: number;
-  total: number;
-} {
-  return { done: list.filter(promiseAnswered).length, total: list.length };
-}
+// `promiseProgress` (berapa digenapi dari berapa) DIHAPUS 28 Sep 2026 bersama
+// kartu ringkasan & bilah kemajuan di atas daftar His Promise. Satu-satunya
+// pemakainya kartu itu; tiap kartu janji sudah memakai penanda 🙌/🙏/⏳
+// sendiri, jadi angkanya cuma mengulang yang sudah terbaca.
 
 function promisesRef(uid: string) {
   return collection(db, 'users', uid, 'promises');

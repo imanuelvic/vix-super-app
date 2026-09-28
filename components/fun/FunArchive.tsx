@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { FormError } from '@/components/common/FormError';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', paddingTop: 40 },
   emptyText: { textAlign: 'center', paddingHorizontal: 20 },
   // paddingTop 0: jarak dari tombol yang dipatok sudah milik StickyTop.
-  listContent: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 },
+  listContent: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditButton } from '@/components/common/EditButton';
@@ -326,7 +327,7 @@ function HeartRow({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   // paddingTop 0 — jarak atasnya sudah dipegang StickyTop di atas daftar ini.
-  content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 40 },
   empty: { textAlign: 'center', marginTop: 10 },
   card: {
     backgroundColor: Color.CONTAINER,

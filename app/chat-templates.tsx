@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -35,7 +35,7 @@ import {
 // Template Chat 💬 — kata-kata siap kirim untuk CORE Leader & grup CORE.
 //
 // Alurnya sengaja sependek mungkin: isi nama (atau click chip CL-nya) → buka
-// kategorinya → baca ketiga pilihannya → tekan "Kirim". WhatsApp terbuka dengan
+// kategorinya → click kartu kalimatnya. WhatsApp terbuka dengan
 // teksnya sudah terisi, tinggal pilih mau ke chat siapa atau ke grup.
 //
 // Teksnya sendiri ada di lib/chatTemplates.ts — layar ini cuma menampilkan &
@@ -156,7 +156,7 @@ export default function ChatTemplatesScreen() {
           </VixText>
           {/* Dulu di sini ada kolom ketik + sepuluh chip nama CL yang memakan
               setengah layar. Sekarang satu dropdown: daftarnya baru terbuka
-              saat ditekan, jadi kata-kata templatnya langsung kelihatan. */}
+              saat di-click, jadi kata-kata templatnya langsung kelihatan. */}
           <SelectField
             value={pilihan}
             options={pilihanNama}
@@ -173,7 +173,7 @@ export default function ChatTemplatesScreen() {
               autoFocus
             />
           )}
-          {/* Ke mana tombol "Kirim" akan bermuara — ditulis SEBELUM ditekan.
+          {/* Ke mana kartu kalimatnya akan bermuara — ditulis SEBELUM di-click.
               Tanpa ini, dua perilaku yang berbeda (langsung ke chat orangnya
               vs. memilih chat sendiri) cuma bisa diketahui dengan mencobanya,
               dan yang nomornya belum diisi terasa seperti fitur yang rusak. */}
@@ -196,7 +196,13 @@ export default function ChatTemplatesScreen() {
         </StickyTop>
       )}
 
-      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
+      {/* Jarak atas isi: 0 kalau kolom nama sedang dipatok (jaraknya sudah
+          milik StickyTop), 4 kalau tidak — kategori 📣 Ajakan Datang CORE
+          tidak butuh nama, jadi di sana tidak ada yang dipatok. */}
+      <KeyboardAwareScrollView
+        contentContainerStyle={
+          fields.includes('nama') ? styles.contentPinned : styles.content
+        }>
         {fields.includes('gelar') && (
           <>
             <VixText heading="label" additionalStyle={styles.fieldLabel}>
@@ -269,42 +275,58 @@ function CategoryCard({
             // supaya tiap pagi tak perlu mencari sendiri.
             const isToday = category.byDay === true && v.key === today;
             return (
-              <View
+              /* KARTUNYA SENDIRI yang di-click untuk mengirim (28 Sep 2026).
+                 Dulu ada tombol "Kirim 💬" kecil di pojok tiap pilihan —
+                 sasaran sempit di antara tiga sampai empat kartu yang mirip,
+                 dan meleset sedikit berarti mengirim kalimat tetangganya.
+                 Sekarang seluruh kartunya jadi sasarannya. */
+              <PressableScale
                 key={v.key}
-                style={[styles.variant, isToday && styles.variantToday]}>
-                <View style={styles.variantTop}>
-                  <View style={[styles.keyPill, isToday && styles.keyPillToday]}>
-                    <VixText
-                      heading="label"
-                      additionalStyle={
-                        isToday ? styles.keyPillTodayText : styles.keyPillText
-                      }>
-                      {v.key}
-                    </VixText>
+                style={[styles.variant, isToday && styles.variantToday]}
+                scaleTo={0.99}
+                onPress={() => onSend(text)}>
+                {/* Penanda pilihan cuma untuk Motivational Words, yang
+                    kuncinya NAMA HARI — di situ ia keterangan sungguhan.
+                    Huruf A/B/C dihapus: ia tidak menerangkan apa pun, cuma
+                    menomori kalimat yang toh sudah terbaca di bawahnya. */}
+                {category.byDay === true && (
+                  <View style={styles.variantTop}>
+                    <View style={[styles.keyPill, isToday && styles.keyPillToday]}>
+                      <VixText
+                        heading="label"
+                        additionalStyle={
+                          isToday ? styles.keyPillTodayText : styles.keyPillText
+                        }>
+                        {v.key}
+                      </VixText>
+                    </View>
+                    {isToday && (
+                      <VixText heading="label" additionalStyle={styles.todayTag}>
+                        hari ini
+                      </VixText>
+                    )}
                   </View>
-                  {isToday && (
-                    <VixText heading="label" additionalStyle={styles.todayTag}>
-                      hari ini
-                    </VixText>
-                  )}
-                  <PressableScale
-                    style={styles.sendButton}
-                    onPress={() => onSend(text)}>
-                    <VixText heading="bold" additionalStyle={styles.sendText}>
-                      Kirim 💬
-                    </VixText>
-                  </PressableScale>
+                )}
+                <View style={styles.variantBody}>
+                  <VixText heading="paragraph" additionalStyle={styles.variantText}>
+                    {text}
+                  </VixText>
+                  {/* Satu-satunya sisa tombol Kirim: lambang tujuannya. Tanpa
+                      ini kartunya terbaca seperti kutipan yang cuma dibaca,
+                      bukan sesuatu yang mengirim begitu di-click. */}
+                  <IconSymbol
+                    name="bubble.left.fill"
+                    size={16}
+                    color={Color.MAIN_DARK}
+                  />
                 </View>
-                <VixText heading="paragraph" additionalStyle={styles.variantText}>
-                  {text}
-                </VixText>
                 {hasPlaceholder(text) && (
                   <VixText heading="label" additionalStyle={styles.warnText}>
                     ⚠️ Masih ada penanda yang belum diisi, isi di atas, atau
                     ketik langsung di WhatsApp.
                   </VixText>
                 )}
-              </View>
+              </PressableScale>
             );
           })}
         </Animated.View>
@@ -316,6 +338,7 @@ function CategoryCard({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
+  contentPinned: { ...SCREEN_CONTENT_PINNED, paddingBottom: 40 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   manualInput: { marginTop: 8 },
@@ -359,14 +382,9 @@ const styles = StyleSheet.create({
   keyPillToday: { backgroundColor: Color.MAIN },
   keyPillTodayText: { color: Color.TEXT_REVERSE },
   todayTag: { color: Color.MAIN_DARK },
-  sendButton: {
-    marginLeft: 'auto',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    backgroundColor: Color.MAIN,
-  },
-  sendText: { color: Color.TEXT_REVERSE },
-  variantText: { color: Color.TEXT_PARAGRAPH },
+  // Kalimatnya + lambang 💬 tujuannya, sebaris. Teksnya `flex: 1` supaya
+  // lambangnya tetap menempel ke kanan berapa pun panjang kalimatnya.
+  variantBody: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  variantText: { color: Color.TEXT_PARAGRAPH, flex: 1 },
   warnText: { color: Color.WARNING },
 });

@@ -88,8 +88,17 @@ console.log('\n=== Tombol tambah Race/Summit/Rekreasi dipatok (StickyTop) ===');
 ok('PrimaryButton "Tambah …" di dalam StickyTop, DI ATAS FlatList (bukan ListHeaderComponent)',
   /<StickyTop>\s*\n\s*<PrimaryButton\s*\n\s*label=\{`Tambah \$\{meta\.label\}`\}\s*\n\s*icon="plus"\s*\n\s*background=\{warna\}/.test(arsip) &&
   arsip.indexOf('</StickyTop>') < arsip.indexOf('<FlatList') && /ListHeaderComponent=\{<FormError message=\{error\} \/>\}/.test(arsip));
+// 28 Sep 2026: kedua angka itu (20 & 0) pindah ke token SCREEN_CONTENT_PINNED,
+// jadi yang diuji sekarang dua lapis — layar ini memakai tokennya, DAN token
+// itu benar-benar berisi paddingHorizontal 20 + paddingTop 0. Lebih ketat
+// daripada sebelumnya: dulu angkanya milik berkas ini sendirian, jadi ia bisa
+// benar sementara sub-tab di sebelahnya sudah bergeser.
 ok('isi daftar paddingTop 0 (jarak dari bar milik StickyTop); kartu berjarak marginBottom 10, listHeader dibuang',
-  /listContent: \{ paddingHorizontal: 20, paddingTop: 0, paddingBottom: 24 \}/.test(arsip) &&
+  /listContent: \{ \.\.\.SCREEN_CONTENT_PINNED, paddingBottom: 24 \}/.test(arsip) &&
+  /export const SCREEN_CONTENT_PINNED: ViewStyle = \{\s*\n\s*\.\.\.SCREEN_CONTENT,\s*\n\s*paddingTop: 0,/.test(
+    baca('assets/style/layout.ts')) &&
+  /export const SCREEN_CONTENT: ViewStyle = \{\s*\n\s*paddingHorizontal: 20,/.test(
+    baca('assets/style/layout.ts')) &&
   /marginBottom: 10,\s*\n\s*gap: 6,/.test(arsip) && !/listHeader/.test(arsip) && !/marginTop: 10,/.test(arsip));
 ok('Health (Race) & Fun (Summit/Rekreasi) sama-sama lewat FunArchive → satu perilaku',
   /<FunArchive category="race"/.test(baca('app/health.tsx')) && /<FunArchive category=\{tab\} \/>/.test(baca('app/fun.tsx')));

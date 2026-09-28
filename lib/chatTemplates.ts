@@ -75,7 +75,52 @@ export const DAY_NAMES = [
   'Sabtu',
 ];
 
+/**
+ * Urutannya = urutan kartunya di layar, dari atas ke bawah.
+ *
+ * 🎂 Happy Birthday PALING ATAS (28 Sep 2026). Dulu 🔥 Motivational Words yang
+ * di atas karena dikirim tiap pagi, tapi justru itu alasannya dipindah: yang
+ * tiap hari sudah hafal di mana tempatnya, sedangkan ulang tahun datang
+ * mendadak & harus segera dibalas — dan ia dulu duduk di urutan ke-12, harus
+ * digulung jauh dulu. Motivational Words juga punya dua pintu lain yang tidak
+ * lewat daftar ini: tombol di modal Follow Up (?cat=motivational) dan penanda
+ * "hari ini" di dalam kategorinya.
+ */
 export const CHAT_CATEGORIES: ChatCategory[] = [
+  {
+    // 🎂 Ulang tahun UMUM — untuk teman, bukan khusus CL/Main Team.
+    //
+    // Gaya bahasanya sengaja jauh lebih santai daripada ucapan di kartu Follow
+    // Up: tidak ada doa panjang, tidak ada "semakin dewasa rohani". Yang dikirim
+    // ke teman seangkatan harus terdengar seperti dirimu waktu ngobrol, bukan
+    // seperti sambutan.
+    //
+    // Empat pilihan supaya tidak semua orang menerima kalimat yang sama persis
+    // — dan itu penting: ucapan yang jelas hasil salin-tempel terasa lebih
+    // dingin daripada tidak mengucapkan sama sekali.
+    key: 'ulangtahun',
+    title: '🎂 Happy Birthday',
+    hint: 'Untuk siapa saja, bukan cuma CL atau Main Team',
+    fields: ['nama'],
+    variants: [
+      {
+        key: 'A',
+        text: 'HAPPY BIRTHDAY <nama>!! 🎉🎂 Wishing you all the best yaa, sehat terus, rezekinya ngalir, dan semua yang lagi diusahain jadi kenyataan. Tuhan Yesus berkati selaluu 🤍',
+      },
+      {
+        key: 'B',
+        text: 'Hbd <nama>! 🥳 Semoga tahun ini lebih banyak hal baik daripada hal yang bikin pusing wkwk. Sukses terus yaa, jangan lupa istirahat, dan tetap jadi orang baik 🙌✨',
+      },
+      {
+        key: 'C',
+        text: '<nama> ulang tahunnn 🎈 Selamat yaa! Makin bertambah umur, makin bertambah juga hikmat & damai sejahteranya. Semoga apa yang kamu doain diam-diam, Tuhan jawab tahun ini 🙏🎂',
+      },
+      {
+        key: 'D',
+        text: 'Happy birthday <nama>! 🎊 Thankyou udah jadi orang yang enak buat diajak cerita. Semoga tahun ini kamu dapet banyak kejutan yang bikin senyum. Gbu alwaysss 💛',
+      },
+    ],
+  },
   {
     key: 'motivational',
     title: '🔥 Motivational Words',
@@ -347,40 +392,6 @@ Marilah kepada-Ku, semua yang letih lesu dan berbeban berat, Aku akan memberi ke
       {
         key: 'D',
         text: 'Hai <nama> 👋 Aku manusia biasa dan pasti banyak salahnya. Kalau ada sikap atau ucapanku yang pernah bikin kamu gak nyaman, tolong kasih tau yaa. Aku mau memperbaiki, bukan membela diri 🙏',
-      },
-    ],
-  },
-  {
-    // 🎂 Ulang tahun UMUM — untuk teman, bukan khusus CL/Main Team.
-    //
-    // Gaya bahasanya sengaja jauh lebih santai daripada ucapan di kartu Follow
-    // Up: tidak ada doa panjang, tidak ada "semakin dewasa rohani". Yang dikirim
-    // ke teman seangkatan harus terdengar seperti dirimu waktu ngobrol, bukan
-    // seperti sambutan.
-    //
-    // Empat pilihan supaya tidak semua orang menerima kalimat yang sama persis
-    // — dan itu penting: ucapan yang jelas hasil salin-tempel terasa lebih
-    // dingin daripada tidak mengucapkan sama sekali.
-    key: 'ulangtahun',
-    title: '🎂 Happy Birthday',
-    hint: 'Untuk siapa saja, bukan cuma CL atau Main Team',
-    fields: ['nama'],
-    variants: [
-      {
-        key: 'A',
-        text: 'HAPPY BIRTHDAY <nama>!! 🎉🎂 Wishing you all the best yaa, sehat terus, rezekinya ngalir, dan semua yang lagi diusahain jadi kenyataan. Tuhan Yesus berkati selaluu 🤍',
-      },
-      {
-        key: 'B',
-        text: 'Hbd <nama>! 🥳 Semoga tahun ini lebih banyak hal baik daripada hal yang bikin pusing wkwk. Sukses terus yaa, jangan lupa istirahat, dan tetap jadi orang baik 🙌✨',
-      },
-      {
-        key: 'C',
-        text: '<nama> ulang tahunnn 🎈 Selamat yaa! Makin bertambah umur, makin bertambah juga hikmat & damai sejahteranya. Semoga apa yang kamu doain diam-diam, Tuhan jawab tahun ini 🙏🎂',
-      },
-      {
-        key: 'D',
-        text: 'Happy birthday <nama>! 🎊 Thankyou udah jadi orang yang enak buat diajak cerita. Semoga tahun ini kamu dapet banyak kejutan yang bikin senyum. Gbu alwaysss 💛',
       },
     ],
   },

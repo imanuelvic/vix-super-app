@@ -2,15 +2,15 @@ import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useEditParam } from '@/hooks/useEditParam';
@@ -67,8 +67,6 @@ export function FreelanceTab({
     if (ta !== tb) return ta ? 1 : -1;
     return a.deadline.toMillis() - b.deadline.toMillis();
   });
-  const active = projects.filter((p) => !p.done);
-  const activeFee = active.reduce((sum, p) => sum + p.fee, 0);
 
   // Buka sub-tab ini → daftarnya langsung datang ke proyek yang menyalakan
   // badge merahnya (belum selesai & sudah H-7).
@@ -78,33 +76,25 @@ export function FreelanceTab({
 
   return (
     <View style={styles.flex}>
-      <ScrollView
-        ref={listRef}
-        onContentSizeChange={onContentSizeChange}
-        onLayout={onLayout}
-        contentContainerStyle={styles.content}>
-        {/* Ringkasan usaha freelance */}
-        <SummaryCard>
-          <VixText heading="label" additionalStyle={summaryText.label}>
-            🌐 Website & App Developer, Freelance
-          </VixText>
-          <VixText heading="subheader" additionalStyle={summaryText.value}>
-            {active.length}{' '}
-            <VixText heading="label" additionalStyle={summaryText.label}>
-              proyek aktif · nilai {formatRupiah(activeFee)}
-            </VixText>
-          </VixText>
-        </SummaryCard>
-
+      {/* Dipatok di atas seperti tombol di CORE: tombolnya tetap terjangkau
+          walau daftar proyeknya digulung ke bawah. Kartu ringkasan "x proyek
+          aktif · nilai …" DIHAPUS (28 Sep 2026): tiap kartu proyek sudah
+          menulis nilainya & statusnya sendiri. */}
+      <StickyTop>
         <PrimaryButton
           label="Tambah Proyek"
           icon="plus"
           onPress={() =>
             router.push({ pathname: '/project/edit/[id]', params: { id: 'new' } })
           }
-          additionalStyle={styles.addButton}
         />
+      </StickyTop>
 
+      <ScrollView
+        ref={listRef}
+        onContentSizeChange={onContentSizeChange}
+        onLayout={onLayout}
+        contentContainerStyle={styles.content}>
         {sorted.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
             Belum ada proyek, catat proyek client pertamamu di sini 🚀
@@ -210,9 +200,7 @@ export function FreelanceTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
-  // Kartu hero-nya persis <SummaryCard> bawaan — tak perlu gaya sendiri.
-  addButton: { marginBottom: CARD_GAP },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
     ...PANEL,

@@ -4,6 +4,7 @@ import { Image, ScrollView, StyleSheet, View } from 'react-native';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { EditButton } from '@/components/common/EditButton';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   // paddingTop 0 — jarak atasnya sudah dipegang StickyTop di atas daftar ini.
   // paddingBottom lega supaya kartu terakhir tidak tertutup FAB.
-  content: { paddingHorizontal: 20, paddingTop: 0, paddingBottom: 90 },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 90 },
   empty: { textAlign: 'center', marginTop: 10 },
   // Alas kartu yang dipatok — lihat alasannya di renderHeader.
   stickyWrap: { backgroundColor: Color.BACKGROUND },

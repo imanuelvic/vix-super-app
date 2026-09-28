@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -40,6 +41,14 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
 
   return (
     <View style={styles.flex}>
+      {/* Dipatok di atas seperti Jadwalkan Visitasi & Buat Rapat Bulanan:
+          tombolnya tetap terjangkau walau riwayat puasanya digulung ke bawah.
+          Dulu ia duduk DI BAWAH kartu puasa yang sedang berjalan, jadi saat
+          ada puasa aktif ia sudah setengah layar dari atas. */}
+      <StickyTop>
+        <PrimaryButton label="Tambah Puasa Baru" icon="plus" onPress={() => open()} />
+      </StickyTop>
+
       <ScrollView contentContainerStyle={styles.content}>
         {/* Sedang puasa hari ini — pokok doa hari ini di depan mata */}
         {active && (
@@ -80,16 +89,9 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
         )}
 
         {/* Garis pemisah: di atasnya yang SEDANG berjalan, di bawahnya
-            tombol tambah & arsip. Cuma digambar kalau memang ada yang sedang
-            berjalan — kalau tidak, tidak ada yang perlu dipisahkan. */}
+            arsipnya. Cuma digambar kalau memang ada yang sedang berjalan —
+            kalau tidak, tidak ada yang perlu dipisahkan. */}
         {active && <View style={styles.pemisah} />}
-
-        <PrimaryButton
-          label="Tambah Puasa Baru"
-          icon="plus"
-          onPress={() => open()}
-          additionalStyle={styles.addButton}
-        />
 
         {plans.length === 0 && (
           <VixText heading="label" additionalStyle={styles.empty}>
@@ -149,7 +151,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   // 26 Sep 2026: puasa yang SEDANG berjalan digambar PEKAT (ungu tergelap,
   // tulisan putih), bukan pastel seperti sebelumnya. Dulu kartu aktif dan
   // kartu arsip di bawahnya sama-sama terang, jadi harus dibaca dulu untuk
@@ -174,7 +176,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 14,
   },
-  addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {
     ...PANEL,

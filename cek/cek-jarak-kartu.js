@@ -47,9 +47,19 @@ const isi = semua
 const bukan4 = isi.filter(([, m]) => m[1] !== '4' && m[1] !== '0');
 ok(`semua layar berpita paddingTop 4 (${isi.length} berkas; 0 = daftar yang dipatok, sengaja)`,
   bukan4.length === 0, bukan4.map(([f, m]) => `${f}=${m[1]}`).join(', '));
-// (16 Sep 2026: Multiplication ikut dipatok lewat StickyTop, jadi isinya 0 juga.)
-ok('yang 0 cuma daftar dipatok CORE (LeadersTab, MonthlyTab, MultiplicationTab)',
-  isi.filter(([, m]) => m[1] === '0').map(([f]) => path.basename(f)).sort().join(',') === 'LeadersTab.tsx,MonthlyTab.tsx,MultiplicationTab.tsx');
+// 28 Sep 2026: angka 0-nya tidak ditulis tangan lagi — ia datang dari token
+// SCREEN_CONTENT_PINNED. Ceknya sekaligus naik kelas: dulu ia cuma menghafal
+// nama tiga berkas (dan harus disunting tiap ada yang ikut dipatok), sekarang
+// ia menuntut ATURANNYA berlaku DUA ARAH — yang jarak atasnya dinolkan harus
+// yang tombolnya dipatok, dan yang tombolnya dipatok harus dinolkan. Lupa
+// salah satunya = kartu pertama berdiri 4 piksel meleset dari sub-tab sebelah.
+const pakaiPinned = semua.filter((f) => /\.\.\.SCREEN_CONTENT_PINNED/.test(baca(f))).sort();
+const pakaiSticky = semua
+  .filter((f) => /<StickyTop>/.test(baca(f)))
+  .sort();
+ok(`jarak atas 0 = tepat yang tombolnya dipatok, dua arah (${pakaiPinned.length} berkas)`,
+  pakaiPinned.length > 0 && pakaiPinned.join(',') === pakaiSticky.join(','),
+  `pinned: ${pakaiPinned.join(', ')} | sticky: ${pakaiSticky.join(', ')}`);
 
 console.log('\n=== Kartu blok & tombol tambah: tidak ada angka lepas lagi ===');
 const kartuBlok = [
@@ -78,9 +88,19 @@ ok(`${kartuBlok.length} kartu blok memakai marginBottom CARD_GAP`, salahBlok.len
 const tombol = semua.filter((f) => /add(Button|Btn): \{ marginBottom: \d+ \}/.test(baca(f)));
 ok('tidak ada tombol tambah dengan marginBottom angka lepas', tombol.length === 0, tombol.join(', '));
 // (16 Sep 2026: tiga tombol CORE yang dipatok tidak lagi bermargin sendiri;
-// jaraknya milik StickyTop → paddingBottom CARD_GAP.)
-ok('tombol tambah memakai CARD_GAP di ≥ 19 berkas',
-  semua.filter((f) => /add(Button|Btn): \{ marginBottom: CARD_GAP \}/.test(baca(f))).length >= 19);
+// jaraknya milik StickyTop → paddingBottom CARD_GAP. 28 Sep 2026: enam tombol
+// lagi ikut dipatok — Catat Tanggal Penting, Tulis Janji Tuhan, Tambah Puasa
+// Baru, Tambah Kartu, Tambah Proyek, Tambah Ide — jadi sisanya 14.)
+const bermargin = semua.filter((f) =>
+  /add(Button|Btn): \{ marginBottom: CARD_GAP \}/.test(baca(f)));
+ok(`tombol tambah yang IKUT TERGULUNG memakai CARD_GAP (${bermargin.length} berkas)`,
+  bermargin.length >= 14);
+// Sisi sebaliknya, dan ini yang benar-benar dijaga: tombol yang DIPATOK tidak
+// boleh punya margin sendiri sama sekali — dua jarak yang bertumpuk membuat
+// bar patoknya berdiri lebih tinggi daripada sub-tab sebelah.
+const patokBermargin = bermargin.filter((f) => /<StickyTop>/.test(baca(f)));
+ok('tidak ada tombol dipatok yang masih menambah margin sendiri',
+  patokBermargin.length === 0, patokBermargin.join(', '));
 ok('tombol yang dipatok (StickyTop) mengandalkan paddingBottom CARD_GAP milik bar-nya',
   /paddingBottom: CARD_GAP,/.test(baca('components/common/StickyTop.tsx')));
 

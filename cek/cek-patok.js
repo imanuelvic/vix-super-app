@@ -58,18 +58,25 @@ function cekPatok(label, file, tombol, opsi = {}) {
 
   // Jarak atas total harus tetap: dulu content.paddingTop 8, sekarang
   // StickyTop.paddingTop 8 + content.paddingTop 0.
+  //
+  // 28 Sep 2026: angka 0 itu tidak lagi ditulis di layarnya masing-masing —
+  // ia datang dari token SCREEN_CONTENT_PINNED, yang isinya SCREEN_CONTENT
+  // dengan paddingTop dinolkan. Jadi ceknya jadi dua lapis: layar memakai
+  // tokennya (di sini), dan token itu benar-benar berisi 0 (di `tokenPatok`
+  // di bawah). Sebelumnya tiga layar menulis sendiri `paddingHorizontal: 20,
+  // paddingTop: 0` — kalau salah satu digeser, tidak ada yang tahu.
   if (opsi.contentPinned) {
     // 16 Sep 2026: paddingTop isi layar disamakan 4 di seluruh app
     // (pita 6 + 4 = CARD_GAP).
     ok('content lama tetap ada, napasnya dari SCREEN_CONTENT (dipakai mode cari)',
-      /content:\s*{\s*\.\.\.SCREEN_CONTENT/.test(src));
-    ok('contentPinned paddingTop 0 (daftar yang dipatok)',
-      /contentPinned:\s*{\s*paddingTop:\s*0\s*}/.test(src));
-    ok('ScrollView daftar pakai [content, contentPinned]',
-      /contentContainerStyle=\{\[styles\.content,\s*styles\.contentPinned\]\}/.test(src));
+      /content:\s*{\s*\.\.\.SCREEN_CONTENT,/.test(src));
+    ok('contentPinned dari token SCREEN_CONTENT_PINNED (daftar yang dipatok)',
+      /contentPinned:\s*{\s*\.\.\.SCREEN_CONTENT_PINNED,/.test(src));
+    ok('ScrollView daftar pakai styles.contentPinned',
+      /contentContainerStyle=\{styles\.contentPinned\}/.test(src));
   } else {
-    ok('content paddingTop 0 (jarak atas pindah ke StickyTop)',
-      /content:\s*{[^}]*paddingTop:\s*0/.test(src));
+    ok('content dari token SCREEN_CONTENT_PINNED (jarak atas pindah ke StickyTop)',
+      /content:\s*{\s*\.\.\.SCREEN_CONTENT_PINNED,/.test(src));
   }
 
   // Anak StickyTop TIDAK menambah margin sendiri: jaraknya milik bar-nya.
@@ -77,17 +84,18 @@ function cekPatok(label, file, tombol, opsi = {}) {
     ok(`${nama} tidak lagi menambah margin sendiri`, !re.test(src), 'masih ada margin lepas');
   }
 
-  // paddingBottom & paddingHorizontal tidak boleh ikut berubah. Layar yang
-  // daftarnya DIPATOK memakai SCREEN_CONTENT (paddingTop-nya 4, dinolkan lagi
-  // oleh contentPinned); yang tidak dipatok menulis paddingTop 0 sendiri, jadi
-  // di situ paddingHorizontal-nya memang masih angka.
-  ok('paddingHorizontal 20 tetap',
-    opsi.contentPinned
-      ? /content:\s*{\s*\.\.\.SCREEN_CONTENT/.test(src)
-      : /content:\s*{[^}]*paddingHorizontal:\s*20/.test(src));
+  // paddingHorizontal tidak boleh ikut berubah. Sejak 28 Sep 2026 tidak ada
+  // lagi layar yang menulis angkanya sendiri di sini: semuanya menumpang token
+  // (yang nilainya diuji terpisah di `tokenPatok`), jadi tinggal memastikan
+  // tidak ada yang MENULIS ULANG angka di entri yang sama.
+  const entri = opsi.contentPinned
+    ? (/contentPinned:\s*{[^}]*}/.exec(src)?.[0] ?? '')
+    : (/\n  content:\s*{[^}]*}/.exec(src)?.[0] ?? '');
+  ok('paddingHorizontal tidak ditulis ulang (tetap dari token)',
+    entri !== '' && !/paddingHorizontal/.test(entri));
   if (opsi.paddingBottom != null) {
     ok(`paddingBottom ${opsi.paddingBottom} tetap (kartu terakhir tak ketutupan)`,
-      new RegExp(`content:\\s*{[^}]*paddingBottom:\\s*${opsi.paddingBottom}`).test(src));
+      new RegExp(`paddingBottom:\\s*${opsi.paddingBottom}`).test(entri));
   }
   return src;
 }
@@ -217,11 +225,36 @@ ok('Jadwalkan Visitasi, Buat Rapat Bulanan, Buat Rencana Multiplikasi semua Prim
     const m = s.match(new RegExp('<PrimaryButton[\\s\\S]{0,40}label="' + label + '"[\\s\\S]{0,140}?\\/>'));
     return !!m && /icon="plus"/.test(m[0]) && !/additionalStyle/.test(m[0]);
   }));
-ok('semua isi di bawah bar patok memakai paddingTop 0 (jaraknya dari bar)',
-  /contentPinned:\s*{\s*paddingTop:\s*0\s*}/.test(visit) &&
-  /content:\s*{[^}]*paddingTop:\s*0/.test(monthly) &&
-  /content:\s*{[^}]*paddingTop:\s*0/.test(multi) &&
-  /content:\s*{[^}]*paddingTop:\s*0/.test(leaders));
+ok('semua isi di bawah bar patok memakai token yang sama',
+  /contentPinned:\s*{\s*\.\.\.SCREEN_CONTENT_PINNED,/.test(visit) &&
+  /content:\s*{\s*\.\.\.SCREEN_CONTENT_PINNED,/.test(monthly) &&
+  /content:\s*{\s*\.\.\.SCREEN_CONTENT_PINNED,/.test(multi) &&
+  /content:\s*{\s*\.\.\.SCREEN_CONTENT_PINNED,/.test(leaders));
+
+// ---------- Tokennya sendiri ----------
+// Lapis kedua dari cek di atas: layar boleh memakai tokennya, tapi kalau isi
+// tokennya digeser, seluruh app ikut geser tanpa satu pun suite berbunyi.
+// Karena itu nilainya diuji DI SINI, sekali, untuk semuanya.
+console.log('\nToken jarak isi yang dipatok (assets/style/layout.ts)');
+const tokenPatok = baca('assets/style/layout.ts').replace(/\r\n/g, '\n');
+ok('SCREEN_CONTENT_PINNED = SCREEN_CONTENT dengan paddingTop dinolkan',
+  /export const SCREEN_CONTENT_PINNED: ViewStyle = \{\s*\n\s*\.\.\.SCREEN_CONTENT,\s*\n\s*paddingTop: 0,\s*\n\};/.test(tokenPatok));
+ok('jadi paddingHorizontal-nya tetap 20, satu angka untuk seluruh app',
+  /export const SCREEN_CONTENT: ViewStyle = \{\s*\n\s*paddingHorizontal: 20,/.test(tokenPatok));
+// Tidak boleh ada lagi yang menyalin kedua angkanya dengan tangan.
+const semuaSumber = [];
+(function jelajah(dir) {
+  for (const nama of fs.readdirSync(path.join(ROOT, dir))) {
+    const rel = `${dir}/${nama}`;
+    if (fs.statSync(path.join(ROOT, rel)).isDirectory()) jelajah(rel);
+    else if (/\.tsx?$/.test(nama)) semuaSumber.push(rel);
+  }
+})('components');
+const penyalin = semuaSumber.filter((f) =>
+  /paddingHorizontal:\s*20,\s*paddingTop:\s*0/.test(baca(f).replace(/\r\n/g, '\n')),
+);
+ok('tidak ada lagi layar yang menyalin "paddingHorizontal 20 + paddingTop 0" sendiri',
+  penyalin.length === 0, penyalin.join(', '));
 
 console.log(gagal === 0 ? '\n✅ LULUS — tombol dipatok, tampilan tidak bergeser.'
   : `\n❌ ${gagal} cek gagal.`);

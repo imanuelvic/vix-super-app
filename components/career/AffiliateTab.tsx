@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD, CARD_GAP } from '@/assets/style/card';
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { EditFooter } from '@/components/common/EditFooter';
 import { EmptyText } from '@/components/common/EmptyText';
@@ -14,7 +14,7 @@ import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
-import { SummaryCard } from '@/components/common/SummaryCard';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
@@ -162,24 +162,15 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
 
   return (
     <View style={styles.flex}>
+      {/* Dipatok di atas seperti tombol di CORE: ide datang kapan saja, jadi
+          tombolnya tidak boleh ikut tenggelam saat daftarnya digulung.
+          Kartu ringkasan "x tayang · y antre" DIHAPUS (28 Sep 2026): angka
+          yang sama sudah terbaca di chip penyaring tepat di bawahnya. */}
+      <StickyTop>
+        <PrimaryButton label="Tambah Ide" icon="plus" onPress={openAdd} />
+      </StickyTop>
+
       <ScrollView ref={scrollRef} contentContainerStyle={styles.content}>
-        <SummaryCard
-          label="Ide konten"
-          value={
-            ideas.length === 0
-              ? 'Belum ada ide 💡'
-              : `${counts.posted} tayang · ${counts.idea + counts.making} antre`
-          }
-          sub="Tulis dulu semua idenya, memilih mana yang digarap itu urusan nanti."
-        />
-
-        <PrimaryButton
-          label="Tambah Ide"
-          icon="plus"
-          onPress={openAdd}
-          additionalStyle={styles.addButton}
-        />
-
         <FormError message={error} />
 
         <FilterChips
@@ -372,8 +363,7 @@ export function AffiliateTab({ ideas }: { ideas: ContentIdea[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
-  addButton: { marginBottom: CARD_GAP },
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   card: {
     ...CARD,
     marginBottom: 10,
