@@ -286,8 +286,15 @@ hasil.then((h) => {
       /onPress=\{onExport\}/.test(layar) &&
       !/useEffect\([^)]*exportAllData/.test(layar) &&
       !/useEffect\(\(\) => \{\s*onExport/.test(layar));
+    // 28 Sep 2026: tombol Sign Out pindah ke layar ini, tepat di bawah kartu
+    // Cadangan Data, dan ia MENUMPANG penjaga sibuk yang sama ('keluar').
+    // Ceknya ikut naik: bukan cuma "ekspor tak bisa dobel", tapi "ekspor dan
+    // keluar tak bisa bertabrakan" — keluar di tengah pencadangan membuat
+    // berkasnya tidak pernah selesai ditulis.
     ok('pakai useBusyTask bersama, jadi tak mungkin jalan dobel',
-      /useBusyTask<'ekspor'>\(\)/.test(layar) && /busy === 'ekspor'/.test(layar));
+      /useBusyTask<'ekspor' \| 'keluar'>\(\)/.test(layar) && /busy === 'ekspor'/.test(layar));
+    ok('Sign Out memakai penjaga sibuk yang SAMA (tak bisa keluar saat mencadangkan)',
+      /key: 'keluar',/.test(layar) && /busy === 'keluar'/.test(layar));
     ok('kemajuannya kelihatan di tombolnya sendiri',
       /Membaca \$\{exportStep\}/.test(layar));
     ok('hasilnya dilaporkan: jumlah dokumen, koleksi, ukuran',

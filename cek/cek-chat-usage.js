@@ -59,10 +59,19 @@ const kepalaFollowup = core.slice(
 ok('💬 muncul di kanan atas sub-tab Follow Up',
   /<EmojiButton\s*\n\s*emoji="💬"/.test(kepalaFollowup));
 ok('menuju layar template chat', /router\.push\('\/chat-templates'\)/.test(kepalaFollowup));
-ok('🙏 pokok doa bulanan TIDAK tergusur — keduanya berdampingan',
-  /emoji="🙏"/.test(kepalaFollowup) &&
-  kepalaFollowup.indexOf('emoji="💬"') < kepalaFollowup.indexOf('emoji="🙏"') &&
-  /<View style=\{styles\.headerButtons\}>/.test(kepalaFollowup));
+// 28 Sep 2026: tombol 🙏 Prayer Points DIHAPUS dari pojok ini atas permintaan.
+// Ceknya dibalik — dan sekaligus jadi lebih berguna daripada sebelumnya: dulu
+// ia cuma memastikan dua tombol berdampingan, sekarang ia memastikan
+// menghapusnya TIDAK memutus jalan ke Prayer Points. Dua pintu yang tersisa
+// harus tetap ada, kalau tidak pokok doa bulanan jadi tak terjangkau dari CORE.
+ok('🙏 sudah tidak ada lagi di pojok kanan Follow Up',
+  !/emoji="🙏"/.test(kepalaFollowup));
+ok('satu-satunya tombol pojok Follow Up sekarang 💬 (bungkus dua tombol dilepas)',
+  !/<View style=\{styles\.headerButtons\}>/.test(kepalaFollowup) &&
+  (kepalaFollowup.match(/<EmojiButton/g) || []).length === 1);
+ok('Prayer Points tetap terjangkau: sub-tabnya sendiri + kartu "belum diisi" di Follow Up',
+  /\{ key: 'prayer', label: 'Prayer Points'/.test(core) &&
+  /router\.push\('\/monthly-prayers'\)/.test(baca('components/core/FollowupTab.tsx')));
 ok('rutenya terdaftar di typed routes',
   /chat-templates/.test(baca('.expo/types/router.d.ts')));
 

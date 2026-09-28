@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -53,7 +54,7 @@ import {
 // Versi app & tombol update PINDAH ke layar sendiri (app/app-version.tsx),
 // pintunya pil "📱 Aplikasi" di pojok kanan judul.
 export default function VersionScreen() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   // Tekan tab System lagi saat halamannya sedang dibuka → balik ke paling atas.
@@ -100,10 +101,33 @@ export default function VersionScreen() {
   // Satu-satunya tempat di app ini yang membaca SEMUA dokumen sekaligus, jadi
   // ia cuma jalan saat tombolnya di-click. Tidak ada langganan, tidak ada
   // pemanggilan otomatis saat layar dibuka.
-  const { busy, run } = useBusyTask<'ekspor'>();
+  const { busy, run } = useBusyTask<'ekspor' | 'keluar'>();
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportStep, setExportStep] = useState<string | null>(null);
+
+  // ===== Keluar dari akun 🚪 =====
+  const [confirmKeluar, setConfirmKeluar] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  async function onLogout() {
+    await run({
+      key: 'keluar',
+      start: () => setLogoutError(null),
+      task: async () => {
+        await logout();
+        setConfirmKeluar(false);
+      },
+      // Gagal → dialognya ditutup dan galatnya tampil di KARTU, satu tempat
+      // dengan galat ekspor. Kalau dibiarkan di dalam dialog, pesannya ikut
+      // hilang begitu dialognya ditutup, dan kamu tidak pernah tahu kenapa
+      // tadi tidak jadi keluar.
+      fail: () => {
+        setConfirmKeluar(false);
+        setLogoutError('Gagal keluar. Coba lagi.');
+      },
+    });
+  }
 
   // Kapan terakhir dicadangkan — satu dokumen kecil, dilanggan supaya
   // tanggalnya ikut berubah begitu ekspornya beres, tanpa muat ulang layar.
@@ -315,7 +339,47 @@ export default function VersionScreen() {
           )}
         </View>
 
+        {/* ===== Keluar dari akun 🚪 =====
+            Pindahan dari pojok judul tab Life (28 Sep 2026). Tempatnya TEPAT
+            di bawah Cadangan Data dengan sengaja: keluar sebelum pernah
+            mencadangkan berarti seluruh isinya cuma tergantung pada satu akun
+            yang harus bisa kamu masuki lagi. Urutan ini membuat tombol
+            cadangan terbaca lebih dulu.
+
+            Merah, dan pakai konfirmasi: di Life dulu ia satu ikon polos di
+            samping judul, tepat di atas kolom cari — satu click meleset
+            langsung mengeluarkan, tanpa sempat ditanya. */}
+        <VixText heading="title" additionalStyle={styles.sectionTitle}>
+          🚪 Akun
+        </VixText>
+        <View style={styles.usageCard}>
+          <VixText heading="label" additionalStyle={styles.signOutWho}>
+            Masuk sebagai {user?.email ?? '-'}
+          </VixText>
+          <PrimaryButton
+            label="Sign Out"
+            icon="rectangle.portrait.and.arrow.right"
+            background={Color.DANGER}
+            busy={busy === 'keluar'}
+            onPress={() => setConfirmKeluar(true)}
+            additionalStyle={styles.backupButton}
+          />
+          <ScreenError message={logoutError} />
+        </View>
       </ScrollView>
+
+      {/* Ditanya dulu. `busy` yang sama dengan ekspor, jadi mustahil keluar di
+          tengah pencadangan yang sedang berjalan — berkasnya tidak akan pernah
+          selesai ditulis kalau akunnya sudah dilepas duluan. */}
+      <ConfirmDialog
+        visible={confirmKeluar}
+        title="Keluar dari akun?"
+        detail="Kamu perlu masuk lagi dengan email & password untuk membukanya. Datamu di server tidak ada yang terhapus."
+        confirmLabel="Keluar"
+        busy={busy === 'keluar'}
+        onCancel={() => setConfirmKeluar(false)}
+        onConfirm={onLogout}
+      />
     </SafeAreaView>
   );
 }
@@ -380,4 +444,7 @@ const styles = StyleSheet.create({
   backupNote: { color: Color.MAIN_DARK, paddingBottom: 10 },
   backupLast: { color: Color.TEXT_LABEL, paddingTop: 10 },
   backupDue: { color: Color.WARNING, paddingTop: 10 },
+  // Baris "Masuk sebagai …" di atas tombol merah. paddingTop-nya sama dengan
+  // baris pertama kartu Cadangan Data, jadi kedua kartu bernapas sama.
+  signOutWho: { color: Color.TEXT_LABEL, paddingTop: 10 },
 });

@@ -16,39 +16,39 @@ import { useDueJump } from '@/hooks/useDueJump';
 import { useLive } from '@/hooks/useLive';
 import { isFeedbackDay } from '@/lib/chatTemplates';
 import {
-    birthdayGroupText,
-    birthdayPersonalText,
-    canDrawWeeklyFocus,
-    drawWeeklyFocus,
-    focusLeaders,
-    followupMessage,
-    isCurrentMonthPrayers,
-    isPrayerFollowupDay,
-    markBirthdayGreeted,
-    markPrayerFollowed,
-    monthlyPointsFor,
-    monthlyPrayersFilled,
-    nextBirthday,
-    personalityTips,
-    prayerChainMessage,
-    prayerFollowupLeaders,
-    saveCoreLeaders,
-    saveWeeklyFocus,
-    subscribeBirthdayGreets,
-    WEEKLY_FOCUS_COUNT,
-    weeklyFollowupTopic,
-    type BirthdayGreets,
-    type CoreLeader,
-    type MainTeamMember,
-    type MonthlyPrayers,
-    type WeeklyFocus,
+  birthdayGroupText,
+  birthdayPersonalText,
+  canDrawWeeklyFocus,
+  drawWeeklyFocus,
+  focusLeaders,
+  followupMessage,
+  isCurrentMonthPrayers,
+  isPrayerFollowupDay,
+  markBirthdayGreeted,
+  markPrayerFollowed,
+  monthlyPointsFor,
+  monthlyPrayersFilled,
+  nextBirthday,
+  personalityTips,
+  prayerChainMessage,
+  prayerFollowupLeaders,
+  saveCoreLeaders,
+  saveWeeklyFocus,
+  subscribeBirthdayGreets,
+  WEEKLY_FOCUS_COUNT,
+  weeklyFollowupTopic,
+  type BirthdayGreets,
+  type CoreLeader,
+  type MainTeamMember,
+  type MonthlyPrayers,
+  type WeeklyFocus,
 } from '@/lib/core';
 import { formatDayMonth, MONTH_NAMES } from '@/lib/format';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
-    openWhatsAppChat,
-    shareTextToWhatsApp,
-    WHATSAPP_ERROR,
+  openWhatsAppChat,
+  shareTextToWhatsApp,
+  WHATSAPP_ERROR,
 } from '@/lib/whatsapp';
 
 // Tab Follow Up Mingguan: tiap minggu (Sen–Min) fokus ke 2 CORE Leader untuk
@@ -709,7 +709,7 @@ export function FollowupTab({
               style={styles.pintuButton}
               onPress={() => bukaTemplate(followupModal.leader.id, 'motivational')}>
               <VixText heading="label" additionalStyle={styles.pintuText}>
-                🔥 Motivational Word
+                🔥 Motivational
               </VixText>
             </PressableScale>
             <PressableScale
@@ -718,7 +718,7 @@ export function FollowupTab({
               <VixText
                 heading="label"
                 additionalStyle={hariMasukan ? styles.pintuTextOn : styles.pintuText}>
-                🪞 Minta Masukan
+                🪞 Feedback
               </VixText>
             </PressableScale>
           </View>

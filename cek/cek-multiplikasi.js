@@ -173,10 +173,14 @@ c('muncul di pojok kanan sub-tab Multiplication',
   cabangMulti.length > 0 && /router\.push\('\/leader-criteria'\)/.test(cabangMulti));
 // 16 Sep 2026: 📜 Rules pindah ke samping judul "Jadwal Visitasi" (di dalam
 // VisitationTab); tempatnya di header diisi 📆 Kalender.
+// 28 Sep 2026: 🙏 Prayer Points dilepas dari pojok Follow Up atas permintaan —
+// sub-tabnya sendiri sudah ada di baris pil. Sisanya tidak boleh ikut hilang.
 c('tombol sub-tab lain tidak ada yang hilang',
   /emoji="📆"/.test(core) && /emoji="🕘"/.test(core) &&
     /emoji="📜"/.test(baca('components/core/VisitationTab.tsx')) &&
-    /emoji="💬"/.test(core) && /emoji="🙏"/.test(core) && /emoji="🗂️"/.test(core));
+    /emoji="💬"/.test(core) && /emoji="🗂️"/.test(core));
+c('🙏 memang sengaja dilepas, bukan tergeser tanpa sadar',
+  !/emoji="🙏"/.test(core) && /\{ key: 'prayer', label: 'Prayer Points'/.test(core));
 c('bentuknya EmojiButton, sama seperti tombol pojok kanan lain',
   /<EmojiButton\s+emoji="/.test(cabangMulti));
 c('rutenya terdaftar di _layout', /name="leader-criteria"/.test(baca('app/_layout.tsx')));

@@ -298,7 +298,7 @@ export default function FastingScreen() {
             </Kolom>
             <Kolom label="📜 Peraturan puasa saya">
               <FormInput
-                placeholder="mis. makan hanya jam 18.00–20.00"
+                placeholder="mis. makan hanya jam 12.00–19.00"
                 value={rules}
                 onChangeText={setRules}
                 editable={!busy && !terkunci}

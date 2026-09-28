@@ -34,7 +34,7 @@ import { logFeatureUse } from '@/lib/usage';
 
 export default function LifeScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { ref: scrollRef } = useScrollTop();
   const [query, setQuery] = useState('');
   const hasil = searchFeatures(query);
@@ -42,14 +42,13 @@ export default function LifeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <VixText heading="header" additionalStyle={styles.title}>
-            Life 🌿
-          </VixText>
-          <PressableScale onPress={logout} hitSlop={10}>
-            <IconSymbol name="rectangle.portrait.and.arrow.right" size={22} color={Color.MAIN} />
-          </PressableScale>
-        </View>
+        {/* Tombol keluar 🚪 PINDAH ke System (28 Sep 2026), tepat di bawah
+            Cadangan Data. Di sini ia berdiri sendirian di samping judul tanpa
+            konfirmasi apa pun — satu click meleset saat mau mengetik di kolom
+            cari langsung mengeluarkanmu dari akun. */}
+        <VixText heading="header" additionalStyle={styles.title}>
+          Life 🌿
+        </VixText>
         <SearchBar value={query} onChangeText={setQuery} placeholder="Cari fitur…" />
       </View>
 
@@ -130,7 +129,6 @@ const styles = StyleSheet.create({
     paddingBottom: CARD_GAP,
     gap: 8,
   },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { color: Color.MAIN_DARK },
   content: { paddingBottom: 32, alignItems: 'center' },
   contentInner: { ...CONTENT_COLUMN, paddingHorizontal: 20 },

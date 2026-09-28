@@ -108,7 +108,7 @@ export const FASTING_RULES: FastingRule[] = [
     key: 'makan',
     emoji: '🍽️',
     label: 'Makan',
-    text: 'Makan hanya jam 18.00 sampai 20.00. Di luar itu air putih saja.',
+    text: 'Makan hanya jam 12.00 sampai 19.00. Di luar itu air putih saja.',
   },
   {
     key: 'sosmed',
@@ -126,7 +126,7 @@ export const FASTING_RULES: FastingRule[] = [
     key: 'gabungan',
     emoji: '🔒',
     label: 'Makan + media sosial',
-    text: 'Makan hanya jam 18.00 sampai 20.00, dan tanpa media sosial sepanjang puasa.',
+    text: 'Makan hanya jam 12.00 sampai 19.00, dan tanpa media sosial sepanjang puasa.',
   },
 ];
 

@@ -359,9 +359,12 @@ console.log('\n=== 8. Idea For CORE: DICABUT total (16 Sep 2026) ===');
 {
   c('halamannya sudah tidak ada', !fs.existsSync(R + 'app/core-ideas.tsx'));
   const core = baca('app/(tabs)/core.tsx');
-  c('tombol 💡 tidak ada lagi di header; 💬 & 🙏 tetap',
+  // 28 Sep 2026: 🙏 Prayer Points ikut dilepas dari header atas permintaan
+  // (sub-tabnya sendiri sudah ada). Yang dijaga di sini tetap sama: 💡 Ide
+  // hilang TOTAL, bukan sekadar disembunyikan — dan 💬 tidak ikut terbawa.
+  c('tombol 💡 tidak ada lagi di header; 💬 tetap',
     !/emoji="💡"/.test(core) && !/core-ideas/.test(core) &&
-      /emoji="💬"/.test(core) && /emoji="🙏"/.test(core));
+      /emoji="💬"/.test(core));
   c('lib/core tidak punya kode ide lagi',
     !/CoreIdea|subscribeCoreIdeas|ideaReminderDue|IDEA_CADENCE/.test(baca('lib/core.ts')));
   c('Dashboard tidak lagi melanggan & mengingatkan ide',

@@ -179,18 +179,18 @@ export default function CoreScreen() {
               onPress={() => router.push('/core-calendar')}
             />
           ) : tab === 'followup' ? (
-            <View style={styles.headerButtons}>
-              {/* Template chat 💬 — kata-kata siap kirim (kedukaan, get well,
-                  wisuda, motivasi harian) untuk CL maupun grup CORE. */}
-              <EmojiButton
-                emoji="💬"
-                onPress={() => router.push('/chat-templates')}
-              />
-              <EmojiButton
-                emoji="🙏"
-                onPress={() => router.push('/monthly-prayers')}
-              />
-            </View>
+            /* Template chat 💬 — kata-kata siap kirim (kedukaan, get well,
+               wisuda, motivasi harian) untuk CL maupun grup CORE.
+
+               Tombol 🙏 Prayer Points DIHAPUS 28 Sep 2026: pokok doa bulanan
+               sudah punya sub-tab sendiri tepat di baris pil bawah pita ini,
+               dan Follow Up sendiri masih memunculkan kartu "belum diisi"
+               yang menuju ke sana. Jadi pintasan di pojok ini cuma pintu
+               ketiga ke tempat yang sama. */
+            <EmojiButton
+              emoji="💬"
+              onPress={() => router.push('/chat-templates')}
+            />
           ) : tab === 'leaders' ? (
             <EmojiButton emoji="🗂️" onPress={() => router.push('/ex-leaders')} />
           ) : tab === 'multiplication' ? (
