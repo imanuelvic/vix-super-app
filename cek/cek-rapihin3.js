@@ -25,8 +25,10 @@ const chore = baca('components/residence/ChoreTab.tsx');
 
 // Angka gaya HARUS sama persis dengan yang dulu ada di kedua file.
 const GAYA_LAMA = {
-  // (16 Sep 2026: paddingTop 4 = irama bersama seluruh app, pita 6 + 4.)
-  content: `content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 }`,
+  // (16 Sep 2026: paddingTop 4 = irama bersama seluruh app, pita 6 + 4.
+  //  28 Sep 2026: kedua angkanya pindah ke token SCREEN_CONTENT — NILAINYA
+  //  tidak berubah, dan itu dijaga di bawah.)
+  content: `content: { ...SCREEN_CONTENT, paddingBottom: 24 }`,
   groupTitle: `groupTitle: { marginTop: 14, marginBottom: 8 }`,
   rowLabel: `rowLabel: { flex: 1, color: Color.TEXT_TITLE }`,
   dateLine: `dateLine: { color: Color.TEXT_PLACEHOLDER }`,
@@ -47,6 +49,13 @@ for (const [nama, potong] of Object.entries(GAYA_LAMA)) {
 const cardTs = baca('assets/style/card.ts');
 ok('kartu baris memakai bentuk baku + jarak bawah 8',
   /row: \{\s*\n\s*\.\.\.CARD,[\s\S]{0,80}marginBottom: 8,/.test(up.replace(/\r\n/g, '\n')));
+// Napas isi layar juga pindah ke satu tempat (assets/style/layout.ts) — dulu
+// ditulis tangan di 100 tempat. Yang dijaga sama persis polanya dengan CARD di
+// bawah: barisnya memakai tokennya, DAN tokennya masih berisi angka yang sama.
+const layoutTs = baca('assets/style/layout.ts');
+ok('SCREEN_CONTENT masih paddingHorizontal 20 + paddingTop 4, tidak lebih',
+  /export const SCREEN_CONTENT: ViewStyle = \{\s*\n\s*paddingHorizontal: 20,\s*\n\s*paddingTop: 4,\s*\n\}/.test(
+    layoutTs.replace(/\r\n/g, '\n')));
 ok('bentuk bakunya: CONTAINER + BORDER, radius 14, border 1, padding 14/12',
   /backgroundColor: Color\.CONTAINER,/.test(cardTs) &&
   /borderRadius: 14,/.test(cardTs) &&

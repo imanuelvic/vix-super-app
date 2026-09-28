@@ -110,7 +110,10 @@ const PEMAKAI = [
   'components/learning/DiscussionTab.tsx',
   'components/friends/PlacesTab.tsx', 'components/tasks/PriorityTab.tsx',
 ];
-const beda = PEMAKAI.filter((f) => !/content: \{ paddingHorizontal: 20,/.test(baca(f)));
+// 28 Sep 2026: padding 20-nya tidak lagi ditulis tangan di tiap layar — ia
+// datang dari SCREEN_CONTENT, dan justru itu yang membuat ketujuhnya PASTI
+// sama (dulu cuma kebetulan sama).
+const beda = PEMAKAI.filter((f) => !/content: \{ \.\.\.SCREEN_CONTENT/.test(baca(f)));
 c('ketujuh pemakainya memang sama-sama ber-padding 20pt',
   beda.length === 0 && PEMAKAI.every((f) => /<FilterChips/.test(baca(f))),
   beda.join(', '));

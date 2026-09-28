@@ -94,8 +94,14 @@ ok('kotak "Alasan" tetap di dalam padding kartu (tak ada margin negatif)',
 
 // ---------- Yang tidak boleh berubah ----------
 console.log('\nYang tidak boleh berubah');
+// 28 Sep 2026: keempat properti bentuk kartunya pindah ke token PANEL
+// (assets/style/card.ts). NILAINYA tidak berubah, dan itu dijaga di baris
+// kedua — jadi jaminannya tetap utuh dari ujung ke ujung.
 ok('warna kartu tetap CONTAINER + garis BORDER',
-  /card:\s*\{[\s\S]{0,200}backgroundColor:\s*Color\.CONTAINER[\s\S]{0,200}borderColor:\s*Color\.BORDER/.test(src));
+  /card:\s*\{\s*\n\s*\.\.\.PANEL,/.test(src) &&
+  /backgroundColor: Color\.CONTAINER,\s*\n\s*borderRadius: 16,\s*\n\s*borderWidth: 1,\s*\n\s*borderColor: Color\.BORDER,/.test(
+    baca('assets/style/card.ts').replace(/\r\n/g, '\n'),
+  ));
 ok('kotak "Alasan" tetap berlatar BACKGROUND',
   /reasonBox:\s*\{\s*\n?\s*backgroundColor:\s*Color\.BACKGROUND/.test(src));
 ok('tombol kembalikan tetap hijau MAIN',

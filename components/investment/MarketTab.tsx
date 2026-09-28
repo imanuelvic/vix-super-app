@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -201,7 +202,7 @@ export function MarketTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   hero: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 18,
@@ -224,10 +225,7 @@ const styles = StyleSheet.create({
   // satu baris seperti FormError, jadi tetap ditulis sendiri di sini.
   error: { color: Color.DANGER, marginBottom: 8 },
   errorCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 16,
     gap: 10,
     alignItems: 'center',
@@ -240,10 +238,7 @@ const styles = StyleSheet.create({
   },
   retryText: { color: Color.TEXT_REVERSE },
   statsCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     marginBottom: 12,
     gap: 12,
@@ -265,10 +260,7 @@ const styles = StyleSheet.create({
   },
   statBoxLabel: { color: Color.TEXT_LABEL },
   chartCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 12,
     marginBottom: 12,
     gap: 6,

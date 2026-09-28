@@ -109,5 +109,60 @@ ok('Today: tumpukan blok berjarak satu angka (gap: CARD_GAP + 2), bukan margin l
   /sections: \{ gap: CARD_GAP \+ 2 \}/.test(baca('app/(tabs)/index.tsx')));
 ok('SECTION_SPACE tetap 10/10', /marginTop: 10,\s*\n\s*marginBottom: 10,/.test(baca('assets/style/section.ts')));
 
+// ============ Napas isi layar: satu token, bukan seratus salinan ============
+// 28 Sep 2026. Angkanya TIDAK berubah sedikit pun — yang berubah cuma tempat
+// ia ditulis. Dulu `paddingHorizontal: 20, paddingTop: 4` diketik tangan di 100
+// tempat pada 96 berkas; tidak ada satu pun yang salah sendirian, dan justru
+// itu bahayanya: mengubah napas layar berarti menyunting seratus berkas, jadi
+// dalam praktiknya ia tidak pernah bisa diubah lagi.
+console.log('\n=== Napas isi layar (SCREEN_CONTENT) ===');
+const layout = baca('assets/style/layout.ts');
+ok('SCREEN_CONTENT = paddingHorizontal 20 + paddingTop 4, dan TIDAK lebih',
+  /export const SCREEN_CONTENT: ViewStyle = \{\s*\n\s*paddingHorizontal: 20,\s*\n\s*paddingTop: 4,\s*\n\}/.test(layout));
+// paddingBottom sengaja di luar token: ia memang beda per layar (ber-FAB 40,
+// biasa 24), dan bedanya punya alasan.
+const blokNapas = /export const SCREEN_CONTENT: ViewStyle = \{[\s\S]*?\n\};/.exec(layout)?.[0] ?? '';
+ok('paddingBottom sengaja TIDAK ikut ke token',
+  blokNapas.length > 0 && !/paddingBottom/.test(blokNapas));
+const pemakaiNapas = semua.filter((f) => /\.\.\.SCREEN_CONTENT/.test(baca(f)));
+ok(`dipakai di ${pemakaiNapas.length} berkas (dulu ditulis tangan)`,
+  pemakaiNapas.length >= 95, String(pemakaiNapas.length));
+// Penjaga sebenarnya: tidak boleh ada yang menuliskannya sendiri lagi.
+const tulisTangan = semua.filter((f) =>
+  /paddingHorizontal: 20,\s*\n?\s*paddingTop: 4\b|paddingTop: 4,\s*\n?\s*paddingHorizontal: 20\b/.test(baca(f)));
+ok('tidak ada lagi yang menulis 20/4 sendiri', tulisTangan.length === 0,
+  tulisTangan.join(', ') || `${semua.length} berkas disisir`);
+// Nilai paddingBottom yang beda-beda HARUS tetap ada — kalau ikut terseret jadi
+// satu angka, layar ber-FAB kehilangan ruang & kartu terakhirnya ketutupan.
+ok('tiap layar tetap memegang paddingBottom-nya sendiri (24 · 28 · 32 · 40)',
+  ['24', '28', '32', '40'].every((n) =>
+    semua.some((f) => new RegExp(`\\.\\.\\.SCREEN_CONTENT, paddingBottom: ${n}`).test(baca(f)))));
+
+// ============ Bentuk kartu sudut 16: satu token, bukan 60 salinan ============
+// 28 Sep 2026. Angkanya TIDAK berubah — yang berubah cuma tempat ia ditulis.
+console.log('\n=== Bentuk kartu bergaris (PANEL) ===');
+ok('PANEL = CONTAINER + sudut 16 + garis 1 BORDER, dan TIDAK lebih',
+  /export const PANEL: ViewStyle = \{\s*\n\s*backgroundColor: Color\.CONTAINER,\s*\n\s*borderRadius: 16,\s*\n\s*borderWidth: 1,\s*\n\s*borderColor: Color\.BORDER,\s*\n\}/.test(card));
+// padding SENGAJA di luar token: 14 & 16 sama-sama dipakai, dan bedanya milik
+// kartunya masing-masing (sama seperti CARD yang juga tidak memuat gap/margin).
+const blokPanel = /export const PANEL: ViewStyle = \{[\s\S]*?\n\};/.exec(card)?.[0] ?? '';
+ok('padding, gap, & margin sengaja TIDAK ikut ke token',
+  blokPanel.length > 0 && !/padding|gap|margin/.test(blokPanel));
+const pemakaiPanel = semua.filter((f) => /\.\.\.PANEL\b/.test(baca(f)));
+ok(`dipakai di ${pemakaiPanel.length} berkas (dulu ditulis tangan)`,
+  pemakaiPanel.length >= 50, String(pemakaiPanel.length));
+// Penjaga sebenarnya: tidak boleh ada yang menyalin bentuknya lagi.
+const salinan = semua.filter((f) => {
+  const s = baca(f);
+  return /backgroundColor: Color\.CONTAINER,\s*\n\s*borderRadius: 16,\s*\n\s*borderWidth: 1,\s*\n\s*borderColor: Color\.BORDER,/.test(s);
+});
+ok('tidak ada lagi yang menyalin keempat propertinya', salinan.length === 0,
+  salinan.join(', ') || `${semua.length} berkas disisir`);
+// Dua bentuk kartu (14 & 16) memang masih hidup berdampingan, dan itu DISENGAJA
+// tidak disatukan: bedanya dua piksel, dan menyatukannya keputusan tampilan.
+// Yang dijaga: keduanya tetap punya definisi sendiri, bukan salin-menyalin.
+ok('CARD (sudut 14) tetap berdiri sendiri, tidak ikut tergeser',
+  /export const CARD: ViewStyle = \{[\s\S]{0,260}borderRadius: 14,/.test(card));
+
 console.log(gagal === 0 ? '\n✅ LULUS — satu irama jarak kartu.' : `\n❌ ${gagal} cek gagal.`);
 process.exit(gagal === 0 ? 0 : 1);

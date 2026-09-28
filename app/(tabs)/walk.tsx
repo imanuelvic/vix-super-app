@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { RewardButton } from '@/components/common/RewardButton';
 import { AttentionMark } from '@/components/common/Badge';
 import {
@@ -28,6 +29,7 @@ import { GospelStoryTab } from '@/components/spiritual/GospelStoryTab';
 import { PromiseTab } from '@/components/spiritual/PromiseTab';
 import { QuoteBox } from '@/components/spiritual/QuoteBox';
 import { SermonTab } from '@/components/spiritual/SermonTab';
+import { TestimonyTab } from '@/components/spiritual/TestimonyTab';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { BIBLE_CATEGORY } from '@/lib/reward';
@@ -57,7 +59,7 @@ import {
   type ReviveStreak,
 } from '@/lib/spiritual';
 
-type Tab = 'revive' | 'sermon' | 'bible' | 'promise' | 'fasting' | 'story';
+type Tab = 'revive' | 'sermon' | 'bible' | 'promise' | 'fasting' | 'testimony' | 'story';
 
 // 🚩 Panji, bukan hati atau tangan: "TUHAN panji-panjiku" (Keluaran 17:15) —
 // janji yang ditancapkan dan tetap berdiri sampai digenapi.
@@ -67,6 +69,12 @@ const TABS: BottomTab<Tab>[] = [
   { key: 'bible', label: 'Bible Reading', icon: 'books.vertical.fill' },
   { key: 'promise', label: 'Promise', icon: 'flag.fill' },
   { key: 'fasting', label: 'Fasting', icon: 'figure.mind.and.body' },
+  // 🪨 Batu peringatan (28 Sep 2026): tanggal-tanggal yang tidak boleh
+  // dilupakan. Ditaruh SESUDAH Promise dengan sengaja — Promise melihat ke
+  // depan (janji yang dipegang sampai digenapi), yang ini melihat ke belakang,
+  // ke yang sudah Dia kerjakan. Keduanya bersebelahan supaya terbaca sebagai
+  // satu pasang.
+  { key: 'testimony', label: 'Testimony', icon: 'calendar' },
   // 28 Sep 2026: cerita besar Alkitab & babak yang sedang dijalani. Ditaruh
   // PALING KANAN dengan sengaja — ia bukan yang dibuka tiap hari, melainkan
   // yang dibuka saat perlu diingatkan hari ini bagian dari apa.
@@ -355,6 +363,10 @@ export default function SpiritualScreen() {
           />
         ) : tab === 'promise' ? (
           <PromiseTab list={promises} />
+        ) : tab === 'testimony' ? (
+          // Langganannya di dalam komponennya sendiri — arsip seumur hidup
+          // ini tidak perlu ikut dibaca tiap kali tab Spiritual disentuh.
+          <TestimonyTab />
         ) : tab === 'story' ? (
           <GospelStoryTab />
         ) : (
@@ -370,7 +382,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   body: { flex: 1 },
   // Jarak atas SAMA dengan tab Sermon & Bible Reading (dan layar lain).
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   writeWrap: { marginTop: 4 },
   // Bentuk kartu & tombolnya ada di components/common/SkipToday.tsx.
   skippedGap: { marginTop: 4 },
@@ -385,13 +397,10 @@ const styles = StyleSheet.create({
   todayTitle: { color: Color.TEXT_TITLE },
   // Kartu pintu riwayat Morning Journey — kartu blok biasa (putih, bergaris).
   journeyCard: {
+    ...PANEL,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginTop: CARD_GAP,

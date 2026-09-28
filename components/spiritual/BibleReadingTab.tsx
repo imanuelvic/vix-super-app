@@ -2,7 +2,9 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -334,7 +336,7 @@ export function BibleReadingTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   empty: { textAlign: 'center', marginTop: 20 },
   // Baris streak: angka berjalan di kiri, rekor di kanan.
   streakRow: {
@@ -363,10 +365,7 @@ const styles = StyleSheet.create({
   nowTitle: { color: Color.SPIRITUAL_DEEP },
   nowSub: { color: Color.SPIRITUAL_DARK },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { EmptyText } from '@/components/common/EmptyText';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
@@ -85,5 +86,5 @@ export function DeviceLogTab({ transactions }: { transactions: Transaction[] }) 
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
 });

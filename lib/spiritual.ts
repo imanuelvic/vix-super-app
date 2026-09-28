@@ -46,6 +46,8 @@ export type ReviveEntry = {
   responses?: string[];
   /** 🙏 Pray: doa pribadi pagi itu ("hal yang ingin kuserahkan"). */
   prayer?: string;
+  /** 🙏 Pray: kunci PRAYER_TOPICS yang dipilih pagi itu (27 Sep 2026). */
+  prayerTopics?: string[];
 };
 
 /**
@@ -69,6 +71,9 @@ function normalizeRevive(id: string, d: Record<string, unknown>): ReviveEntry {
     date: isTimestamp(d.date) ? d.date : Timestamp.now(),
     responses: Array.isArray(d.responses) ? d.responses.filter((r): r is string => typeof r === 'string') : [],
     prayer: teks(d.prayer),
+    prayerTopics: Array.isArray(d.prayerTopics)
+      ? d.prayerTopics.filter((t): t is string => typeof t === 'string')
+      : [],
   };
 }
 
@@ -146,7 +151,10 @@ export function saveReviveEntry(
 
 /** Kolom Revive yang boleh ditulis Morning Journey, sebagian-sebagian. */
 export type JourneyFields = Partial<
-  Pick<ReviveEntry, 'title' | 'passage' | 'rhema' | 'reflection' | 'responses' | 'prayer'>
+  Pick<
+    ReviveEntry,
+    'title' | 'passage' | 'rhema' | 'reflection' | 'responses' | 'prayer' | 'prayerTopics'
+  >
 >;
 
 /**
@@ -174,6 +182,7 @@ export function saveJourneyFields(
     reflection: '',
     responses: [],
     prayer: '',
+    prayerTopics: [],
     ...fields,
     date: Timestamp.fromDate(now),
   });

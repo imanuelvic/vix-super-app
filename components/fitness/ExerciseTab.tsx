@@ -6,8 +6,9 @@ import {
   View,
 } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -910,7 +911,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: Color.FITNESS_DARK,
   },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28, gap: 10 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 28, gap: 10 },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -980,13 +981,10 @@ const styles = StyleSheet.create({
   // Kartu status & tombolnya ada di components/common/SkipToday.tsx.
   skipGap: { marginTop: 2 },
   exCard: {
+    ...PANEL,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },

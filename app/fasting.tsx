@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { ACTION_TOP } from '@/assets/style/space';
 import { DateField } from '@/components/common/DateField';
 import { FormError } from '@/components/common/FormError';
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   flex: { flex: 1 },
   // paddingTop 4 = sama dengan layar berisian lain (mis. Template Chat).
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
   error: { marginTop: 10 },
   // Jarak tombol aksi dari isian di atasnya — sama dengan layar Spiritual lain.

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { FilterChips } from '@/components/common/FilterChips';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -149,7 +150,7 @@ export default function MountainsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   sectionCount: { color: Color.FUN_DARK },
   row: {
     ...CARD,

@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { CrossButton, CrossMark } from '@/components/common/CrossButton';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -305,19 +307,16 @@ export default function FastingDaysScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   empty: { textAlign: 'center', marginTop: 20 },
   locked: { color: Color.TEXT_LABEL, marginBottom: 10 },
   fieldLabel: { marginTop: 12, marginBottom: 6 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },
   dayCard: {
+    ...PANEL,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,

@@ -121,7 +121,7 @@ ok('pola aslinya di Habits tidak diutak-atik',
   ));
 ok('tata letak UpkeepList tidak bergeser (View pembungkus tanpa gaya → Fragment)',
   /<Fragment key=\{group\.key\}>/.test(upkeep) &&
-  /content: \{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 \}/.test(upkeep) &&
+  /content: \{ \.\.\.SCREEN_CONTENT, paddingBottom: 24 \}/.test(upkeep) &&
   /groupTitle: \{ marginTop: 14, marginBottom: 8 \}/.test(upkeep));
 
 // ============ 4. Tanggal turnamen bisa dibetulkan ============

@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { VixText } from '@/components/common/VixText';
 
 // Tab Business 🍧: masih coming soon — mimpi yang menunggu waktunya:
@@ -29,7 +30,7 @@ export function BusinessTab() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,

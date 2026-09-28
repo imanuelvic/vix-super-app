@@ -15,6 +15,7 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { AttentionMark } from '@/components/common/Badge';
 import {
     BottomTabs,
@@ -947,7 +948,7 @@ const styles = StyleSheet.create({
   },
   chipBadgeText: { color: Color.TEXT_REVERSE },
   error: { paddingHorizontal: 20, marginBottom: 8 },
-  listContent: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 120 },
+  listContent: { ...SCREEN_CONTENT, paddingBottom: 120 },
   dayBlock: {
     paddingVertical: 10,
     borderBottomWidth: 1,

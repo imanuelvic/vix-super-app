@@ -51,7 +51,9 @@ for (const f of [
   const s = baca(f);
   ok(`${f}: edges top + isi paddingBottom 40`,
     /edges=\{\['top'\]\}/.test(s) && !/edges=\{\['top', 'bottom'\]\}/.test(s) &&
-    /content: \{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 \}/.test(s));
+    // 28 Sep 2026: napas 20/4 jadi token SCREEN_CONTENT; paddingBottom 40 —
+    // yang justru jadi pokok uji ini — tetap ditulis di layarnya sendiri.
+    /content: \{ \.\.\.SCREEN_CONTENT, paddingBottom: 40 \}/.test(s));
 }
 
 console.log('\n=== Footer/FAB yang dipatok: ruang aman bawah jadi miliknya ===');

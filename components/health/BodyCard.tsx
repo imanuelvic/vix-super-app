@@ -2,6 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, type KeyboardTypeOptions } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -365,10 +366,7 @@ function toneStyle(tone: 'ok' | 'warn' | 'danger') {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 16,
     marginBottom: 12,
   },

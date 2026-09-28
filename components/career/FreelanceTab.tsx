@@ -2,8 +2,9 @@ import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
@@ -209,20 +210,17 @@ export function FreelanceTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   // Kartu hero-nya persis <SummaryCard> bawaan — tak perlu gaya sendiri.
   addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 8 },
   card: {
+    ...PANEL,
     flexDirection: 'row',
     // 'flex-start': tombol ✏️ menempel di pojok kanan ATAS kartu, tidak ikut
     // turun ke tengah saat requirement-nya panjang.
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     padding: 14,
     marginBottom: 10,
   },

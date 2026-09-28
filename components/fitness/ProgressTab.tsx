@@ -2,8 +2,9 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
   runLabel: { color: Color.TEXT_LABEL },
   runValue: { color: Color.TEXT_TITLE },
   runSub: { color: Color.FITNESS_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.FITNESS_DARK,
     borderRadius: 20,
@@ -189,22 +190,16 @@ const styles = StyleSheet.create({
   heroLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   statRow: { flexDirection: 'row', gap: 10 },
   statCard: {
+    ...PANEL,
     flex: 1,
     alignItems: 'center',
     gap: 2,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     paddingVertical: 14,
   },
   statValue: { color: Color.FITNESS_DARK },
   // Data Tubuh — cerminan data Health, bukan sumber terpisah.
   bodyCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     marginTop: 10,
     gap: 10,

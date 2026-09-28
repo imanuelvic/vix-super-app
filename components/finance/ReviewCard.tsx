@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ReminderCard } from '@/components/common/ReminderCard';
@@ -86,10 +86,7 @@ function Baris({ label, sub, onPress }: { label: string; sub: string; onPress: (
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 16,
     paddingVertical: 4,
     marginBottom: CARD_GAP,

@@ -44,6 +44,37 @@ export const CARD: ViewStyle = {
   paddingVertical: 12,
 };
 
+/**
+ * Bentuk KOTAK BERGARIS sudut 16 — bentuk kartu yang paling banyak dipakai app
+ * ini: kartu daftar di 30-an layar, kartu ringkasan Finance, kartu info, blok
+ * catatan, sampai tile fakta.
+ *
+ * Keempat propertinya disalin utuh di 60 tempat pada 52 berkas sebelum 28 Sep
+ * 2026. Sama seperti CARD di atas, yang berbahaya bukan panjangnya melainkan
+ * bahwa tiap salinan adalah satu kesempatan lagi untuk meleset diam-diam.
+ *
+ * Yang TIDAK ikut ke sini justru yang memang beda-beda: padding (14 atau 16,
+ * kadang terpisah horizontal/vertical), `gap`, `marginBottom`, arah isinya, dan
+ * garis tepi kiri berwarna. Itu milik kartunya masing-masing.
+ *
+ *   const styles = StyleSheet.create({
+ *     card: { ...PANEL, padding: 14, marginBottom: 10, gap: 6 },
+ *   });
+ *
+ * ⚠️ Bedanya dengan CARD cuma DUA PIKSEL sudut (16 vs 14), dan itu memang
+ * pertumbuhan yang tidak pernah diputuskan siapa pun: CARD lahir lebih dulu
+ * dengan sudut 14, lalu layar-layar berikutnya menulis 16 sendiri sampai yang
+ * 16 justru jadi mayoritas. Menyatukannya = keputusan TAMPILAN, bukan
+ * kerapian, jadi ia sengaja tidak diambil di sini. Kalau suatu saat mau
+ * disatukan, sekarang tempatnya cuma satu baris.
+ */
+export const PANEL: ViewStyle = {
+  backgroundColor: Color.CONTAINER,
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: Color.BORDER,
+};
+
 // ═══════════════════════ Bayangan (versi 2.0, 22 Sep 2026) ═══════════════════
 // Dua tingkat saja, supaya tidak semua kartu "mengambang":
 //

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -312,7 +313,7 @@ export function PrayerPointsTab() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   monthLine: { color: Color.CORE_DARK, paddingHorizontal: 20, paddingBottom: 4 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   staleCard: {
     backgroundColor: Color.ACCENT,
     borderRadius: 16,
@@ -323,10 +324,7 @@ const styles = StyleSheet.create({
   staleText: { color: Color.ACCENT_DARK },
   staleSub: { color: Color.ACCENT_DARK },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     marginBottom: 12,
     gap: 8,

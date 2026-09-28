@@ -108,6 +108,47 @@ export function responsesLine(keys: string[] | undefined): string {
   return (keys ?? []).map(responseLabel).join(' · ');
 }
 
+// ---------------------------- 🙏 Pray ----------------------------
+// Kategori pokok doa, bentuknya sama persis dengan chip ❤️ Respond (27 Sep
+// 2026). Kenapa ditambahkan: kolom doa pagi selalu dimulai dari halaman
+// kosong, dan halaman kosong jam 5 pagi paling gampang dilewati begitu saja.
+// Memilih satu kategori tidak menggantikan doanya, tapi memberi titik mulai
+// ("hari ini untuk siapa?") sebelum menulis.
+//
+// Yang disimpan KUNCI-nya, sama seperti Respond, jadi labelnya boleh dirapikan
+// kapan saja tanpa menyentuh data lama. Kategorinya sengaja tujuh dan berhenti
+// di situ: ia harus muat dua baris di layar HP, bukan jadi daftar yang harus
+// dibaca dulu.
+export type PrayerTopicKey =
+  | 'family'
+  | 'ministry'
+  | 'work'
+  | 'health'
+  | 'money'
+  | 'future'
+  | 'nation';
+
+export const PRAYER_TOPICS: { key: PrayerTopicKey; emoji: string; label: string }[] = [
+  { key: 'family', emoji: '🏠', label: 'Keluarga' },
+  { key: 'ministry', emoji: '🔥', label: 'Pelayanan' },
+  { key: 'work', emoji: '💼', label: 'Kerja' },
+  { key: 'health', emoji: '🩺', label: 'Kesehatan' },
+  { key: 'money', emoji: '💰', label: 'Keuangan' },
+  { key: 'future', emoji: '🌄', label: 'Masa depan' },
+  { key: 'nation', emoji: '🇮🇩', label: 'Bangsa' },
+];
+
+/** "🏠 Keluarga" untuk kunci yang dikenal; kunci asing dicetak apa adanya. */
+export function prayerTopicLabel(key: string): string {
+  const o = PRAYER_TOPICS.find((t) => t.key === key);
+  return o ? `${o.emoji} ${o.label}` : key;
+}
+
+/** "🏠 Keluarga · 🔥 Pelayanan" — untuk baris riwayat & arsip Revive. */
+export function prayerTopicsLine(keys: string[] | undefined): string {
+  return (keys ?? []).map(prayerTopicLabel).join(' · ');
+}
+
 // ---------------------------- 🎵 Worship ----------------------------
 // Satu lagu per hari, dibuka lewat PENCARIAN YouTube (judul + penyanyi), bukan
 // id video: tautan pencarian tidak pernah basi walau videonya dihapus atau

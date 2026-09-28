@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -168,10 +169,7 @@ const styles = StyleSheet.create({
   // beberapa catatan panjang sekaligus.
   scroll: { maxHeight: 460 },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     borderLeftWidth: 3,
     borderLeftColor: Color.SPIRITUAL_DARK,
     paddingHorizontal: 14,

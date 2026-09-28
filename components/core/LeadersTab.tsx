@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -1204,6 +1205,7 @@ const styles = StyleSheet.create({
   },
   emptyText: { textAlign: 'center', marginBottom: 12 },
   card: {
+    ...PANEL,
     flexDirection: 'row',
     // 'flex-start': tombol 🎡 & ✏️ menempel di pojok kanan ATAS kartu, tidak
     // ikut turun ke tengah saat datanya panjang (pendidikan + pekerjaan +
@@ -1211,10 +1213,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 10,

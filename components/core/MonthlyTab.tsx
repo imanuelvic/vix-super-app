@@ -2,11 +2,13 @@ import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { EditButton } from '@/components/common/EditButton';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { Pagination } from '@/components/common/Pagination';
+import { PhotoViewer } from '@/components/common/PhotoViewer';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SearchBar } from '@/components/common/SearchBar';
@@ -52,6 +54,8 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const [error, setError] = useState<string | null>(null);
   // Kartu yang sedang dibentangkan (rapat lama default tertutup biar ringkas).
   const [openId, setOpenId] = useState<string | null>(null);
+  // Foto dokumentasi yang sedang dilihat satu layar penuh (null = tidak ada).
+  const [lihatFoto, setLihatFoto] = useState<string | null>(null);
 
   // Mode cari 🔍 — sama seperti sub-tab Pertemuan & Transaksi di Finance.
   const { searchMode, query, setQuery, toggleSearch } = useSearchMode();
@@ -161,21 +165,30 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
     return (
       // Isi notulennya sendiri jadi sakelar TUTUP. Kepalanya memang dipatok di
       // atas, tapi menutup dari mana saja tetap lebih enak daripada harus
-      // membidik judulnya. Mengecilnya dibuat samar (0.99): yang ditekan
+      // membidik judulnya. Mengecilnya dibuat samar (0.99): yang di-click
       // sebidang kartu, bukan tombol kecil.
       <PressableScale
         key={`isi-${m.id}`}
         style={styles.cardBody}
         scaleTo={0.99}
         onPress={() => setOpenId(null)}>
-        {/* Dokumentasi rapat — bukti fotonya, sama yang ikut ke PDF */}
+        {/* Dokumentasi rapat — bukti fotonya, sama yang ikut ke PDF.
+            Di kartu ia dipotong `cover` supaya kartunya tetap rapi, jadi
+            wajah di tepi foto bisa hilang. Click fotonya → satu layar penuh &
+            bisa dicubit (PhotoViewer). Pressable-nya bersarang di dalam
+            Pressable kartu: yang paling dalam yang menang, jadi click foto
+            TIDAK ikut menutup kartunya. */}
         {m.photos.map((photo, i) => (
-          <Image
+          <PressableScale
             key={`${i}-${photo.slice(0, 16)}`}
-            source={{ uri: photoUri(photo) }}
-            style={styles.cardPhoto}
-            resizeMode="cover"
-          />
+            scaleTo={0.985}
+            onPress={() => setLihatFoto(photoUri(photo))}>
+            <Image
+              source={{ uri: photoUri(photo) }}
+              style={styles.cardPhoto}
+              resizeMode="cover"
+            />
+          </PressableScale>
         ))}
         {MONTHLY_AGENDA_POINTS.map((p) => {
           const text = (m.points[p.key] ?? '').trim();
@@ -266,6 +279,9 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
           color={Color.TEXT_REVERSE}
         />
       </PressableScale>
+
+      {/* Foto dokumentasi satu layar penuh, bisa dicubit untuk memperbesar. */}
+      <PhotoViewer uri={lihatFoto} onClose={() => setLihatFoto(null)} />
     </View>
   );
 }
@@ -279,10 +295,7 @@ const styles = StyleSheet.create({
   // Alas kartu yang dipatok — lihat alasannya di renderHeader.
   stickyWrap: { backgroundColor: Color.BACKGROUND },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 10,

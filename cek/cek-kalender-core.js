@@ -132,7 +132,10 @@ ok('rekap: tabel jenis × CL (hati di kepala), Σ di kanan, Total di dasar, bari
 ok('rekap: navigasi tahun mentok 2026..tahun ini; nol dicetak "·" pudar',
   /const MIN_YEAR = 2026;/.test(rekap) && /disabled=\{year >= tahunIni\}/.test(rekap) && /n > 0 \? n : '·'/.test(rekap));
 ok('rekap: kolom CL sempit (minWidth 48) supaya 8 CL + Σ muat di iPhone 15; lebih dari itu bisa digeser',
-  /cell: \{ flex: 1, minWidth: 48/.test(rekap) && /<ScrollView horizontal/.test(rekap) && /tableScroll: \{ minWidth: '100%' \}/.test(rekap));
+  // 28 Sep 2026: ScrollView-nya ditulis bertingkat (kini punya `style` juga,
+  // lihat cek-jenis-diam.js), jadi yang dicari kata `horizontal`-nya sendiri.
+  /cell: \{ flex: 1, minWidth: 48/.test(rekap) && /<ScrollView\s+\n?\s*horizontal/.test(rekap) &&
+  /tableScroll: \{ minWidth: '100%' \}/.test(rekap));
 ok('header CORE: 📆 kalender di tab Visitation (bersama 🕘) & tab Monthly; 📜 tidak di header lagi',
   /tab === 'visitation' \? \(\s*\n\s*<View style=\{styles\.headerButtons\}>[\s\S]{0,400}emoji="📆"[\s\S]{0,200}emoji="🕘"/.test(core) &&
   /tab === 'monthly' \? \([\s\S]{0,200}emoji="📆"/.test(core) && !/emoji="📜"/.test(core));
@@ -142,7 +145,8 @@ ok('rute terdaftar & bertema CORE',
   /<Stack\.Screen name="core-calendar" \/>/.test(baca('app/_layout.tsx')) && /<Stack\.Screen name="core-recap" \/>/.test(baca('app/_layout.tsx')) &&
   /'core-calendar': 'core',\s*\n\s*'core-recap': 'core',/.test(baca('lib/featureTheme.ts')));
 ok('jarak kartu memakai CARD_GAP & paddingTop 4 (irama bersama)',
-  [kal, rekap].every((s) => /marginBottom: CARD_GAP/.test(s) && /paddingTop: 4/.test(s)));
+  // 28 Sep 2026: paddingTop 4 & paddingHorizontal 20 pindah ke SCREEN_CONTENT.
+  [kal, rekap].every((s) => /marginBottom: CARD_GAP/.test(s) && /\.\.\.SCREEN_CONTENT/.test(s)));
 ok('tidak ada tanda pisah panjang di teks layar', ![kal, rekap].some((s) => /(['"`].*—.*['"`]|>[^<]*—[^<]*<)/.test(s.replace(/\/\/.*|\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}/g, ''))));
 
 console.log(gagal === 0 ? '\n✅ LULUS — kalender & rekap CORE beres.' : `\n❌ ${gagal} cek gagal.`);

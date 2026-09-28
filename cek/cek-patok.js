@@ -21,8 +21,15 @@ function ok(nama, syarat, info = '') {
 // ---------- StickyTop: paddingnya harus sama dgn `content` yang lama ----------
 console.log('\nStickyTop (komponen bersama)');
 const sticky = baca('components/common/StickyTop.tsx');
-ok('paddingHorizontal 20 (sama seperti content)', /paddingHorizontal:\s*20/.test(sticky));
-ok('paddingTop 4 (+ pita header 6 = CARD_GAP di atas tombol)', /paddingTop:\s*4,/.test(sticky));
+// 28 Sep 2026: kedua angkanya tidak lagi ditulis di sini — keduanya datang dari
+// SCREEN_CONTENT, token yang SAMA dengan `content` daftar di bawahnya. Itu
+// justru inti ujinya: dulu keduanya cuma kebetulan sama, sekarang mustahil beda.
+ok('napasnya dari token yang sama dengan content (SCREEN_CONTENT)',
+  /\.\.\.SCREEN_CONTENT,/.test(sticky) &&
+  /import \{ SCREEN_CONTENT \} from '@\/assets\/style\/layout';/.test(sticky));
+ok('tokennya memang paddingHorizontal 20 + paddingTop 4 (+ pita header 6 = CARD_GAP)',
+  /paddingHorizontal: 20,\s*\n\s*paddingTop: 4,/.test(
+    baca('assets/style/layout.ts').replace(/\r\n/g, '\n')));
 ok('paddingBottom CARD_GAP (jarak ke daftar dipegang bar-nya, sama di semua sub-tab)',
   /paddingBottom:\s*CARD_GAP,/.test(sticky) && /import \{ CARD_GAP \} from '@\/assets\/style\/card';/.test(sticky));
 ok('latar = Color.BACKGROUND (nyatu dgn layar)', /backgroundColor:\s*Color\.BACKGROUND/.test(sticky));
@@ -54,8 +61,8 @@ function cekPatok(label, file, tombol, opsi = {}) {
   if (opsi.contentPinned) {
     // 16 Sep 2026: paddingTop isi layar disamakan 4 di seluruh app
     // (pita 6 + 4 = CARD_GAP).
-    ok('content lama tetap ada, paddingTop 4 seperti layar lain (dipakai mode cari)',
-      /content:\s*{[^}]*paddingTop:\s*4/.test(src));
+    ok('content lama tetap ada, napasnya dari SCREEN_CONTENT (dipakai mode cari)',
+      /content:\s*{\s*\.\.\.SCREEN_CONTENT/.test(src));
     ok('contentPinned paddingTop 0 (daftar yang dipatok)',
       /contentPinned:\s*{\s*paddingTop:\s*0\s*}/.test(src));
     ok('ScrollView daftar pakai [content, contentPinned]',
@@ -70,8 +77,14 @@ function cekPatok(label, file, tombol, opsi = {}) {
     ok(`${nama} tidak lagi menambah margin sendiri`, !re.test(src), 'masih ada margin lepas');
   }
 
-  // paddingBottom & paddingHorizontal tidak boleh ikut berubah.
-  ok('paddingHorizontal 20 tetap', /content:\s*{[^}]*paddingHorizontal:\s*20/.test(src));
+  // paddingBottom & paddingHorizontal tidak boleh ikut berubah. Layar yang
+  // daftarnya DIPATOK memakai SCREEN_CONTENT (paddingTop-nya 4, dinolkan lagi
+  // oleh contentPinned); yang tidak dipatok menulis paddingTop 0 sendiri, jadi
+  // di situ paddingHorizontal-nya memang masih angka.
+  ok('paddingHorizontal 20 tetap',
+    opsi.contentPinned
+      ? /content:\s*{\s*\.\.\.SCREEN_CONTENT/.test(src)
+      : /content:\s*{[^}]*paddingHorizontal:\s*20/.test(src));
   if (opsi.paddingBottom != null) {
     ok(`paddingBottom ${opsi.paddingBottom} tetap (kartu terakhir tak ketutupan)`,
       new RegExp(`content:\\s*{[^}]*paddingBottom:\\s*${opsi.paddingBottom}`).test(src));
@@ -127,8 +140,15 @@ ok('kartunya beralas krem selebar layar (sudut membulatnya tidak bocor saat dipa
   /stickyWrap: \{ backgroundColor: Color\.BACKGROUND \}/.test(monthly));
 ok('barisnya dipegang View DI DALAM (style anak sticky pindah ke pembungkus RN)',
   /style=\{\[styles\.card, expanded && styles\.cardOpen\]\}>\s*\{\/\*[\s\S]{0,900}?<View style=\{styles\.cardHeader\}>/.test(kepala));
+// 28 Sep 2026: bentuk kartunya (latar CONTAINER + garis BORDER, sudut 16)
+// pindah ke token PANEL. Yang dijaga tetap dua hal: kartunya memakai token itu,
+// DAN tokennya masih berlatar CONTAINER — kalau ia berubah jadi tembus pandang,
+// notulen yang tergulung akan terlihat lewat di belakang kepala yang dipatok.
 ok('latar kepala PEKAT (Color.CONTAINER) supaya isinya lewat di belakangnya',
-  /card:\s*{\s*\n\s*backgroundColor:\s*Color\.CONTAINER/.test(monthly));
+  /card:\s*{\s*\n\s*\.\.\.PANEL,/.test(monthly) &&
+  /export const PANEL: ViewStyle = \{\s*\n\s*backgroundColor: Color\.CONTAINER,/.test(
+    baca('assets/style/card.ts'),
+  ));
 ok('kartu terbentang tetap satu kesatuan: sudut bawah kepala dilepas, isinya melanjutkan dindingnya',
   /cardOpen:\s*{[^}]*marginBottom:\s*0[^}]*borderBottomLeftRadius:\s*0[^}]*borderBottomRightRadius:\s*0/.test(monthly) &&
   /cardBody:\s*{[^}]*borderTopWidth:\s*0[^}]*borderBottomLeftRadius:\s*16[^}]*borderBottomRightRadius:\s*16/.test(monthly));

@@ -25,7 +25,8 @@ console.log('\n=== 1. Tabel rekap: kolomnya bernapas ===');
   ok('ada jarak antar kolom (gap 6)', /gap: 6,\s*\n\s*paddingHorizontal: 10,/.test(r));
   ok('kolom label dipangkas 96 → 46, sisanya untuk kolom CL', /labelCol: \{ width: 46/.test(r));
   ok('tabelnya memang boleh digeser mendatar kalau melebihi layar',
-    /<ScrollView horizontal/.test(r) && /tableScroll: \{ minWidth: '100%' \}/.test(r));
+    // 28 Sep 2026: ditulis bertingkat sejak kolom Jenis dibekukan.
+    /<ScrollView\s+\n?\s*horizontal/.test(r) && /tableScroll: \{ minWidth: '100%' \}/.test(r));
   ok('tanggal Thanksgiving tetap dua baris ("15 Nov" lalu "24")',
     /formatTinyDate\(d\)\.replace\(\/ \(\\d\+\)\$\/, '\\n\$1'\)/.test(r));
 }

@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { DeadlineTag } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
@@ -258,15 +260,12 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   gone: { textAlign: 'center', marginTop: 24 },
   statusRow: { alignItems: 'center', paddingVertical: 10 },
   statusDone: { color: Color.SUCCESS },
   infoCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 14,
     paddingVertical: 4,
   },
@@ -285,20 +284,14 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { ...SECTION_SPACE },
   reqCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     borderLeftWidth: 3,
     borderLeftColor: Color.CAREER,
     padding: 14,
   },
   // ----- rincian biaya -----
   itemsCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 14,
   },
   itemRow: { paddingVertical: 12, gap: 2 },
@@ -324,10 +317,7 @@ const styles = StyleSheet.create({
   totalValue: { color: Color.MAIN_DARK },
   // ----- daftar perkiraan tarif (saat rinciannya masih kosong) -----
   estCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     gap: 4,
   },

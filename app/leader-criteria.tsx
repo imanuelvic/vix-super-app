@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { CardActionButton } from '@/components/common/CardActionButton';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -163,7 +164,7 @@ function Section({ section }: { section: CriteriaSection }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   visionCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 16,

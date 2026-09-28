@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { FormError } from '@/components/common/FormError';
@@ -596,7 +597,7 @@ function MatchSide({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   back: { alignSelf: 'flex-start', marginBottom: 10 },
   backText: { color: Color.MAIN },
   // ===== Daftar turnamen =====
@@ -712,10 +713,7 @@ const styles = StyleSheet.create({
   },
   reshuffleText: { color: Color.TOURNAMENT_DARK },
   matchCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 10,
     gap: 4,
     marginBottom: 10,

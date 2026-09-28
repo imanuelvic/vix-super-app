@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { InfoChip } from '@/components/common/InfoChip';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -128,17 +129,14 @@ export function PromiseTab({ list }: { list: HisPromise[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   barWrap: { marginTop: -4, marginBottom: 10 },
   addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 8 },
   // Bentuknya sengaja sekeluarga dengan kartu Catatan Khotbah: garis tepi kiri
   // tebal berwarna Spiritual, isinya bertingkat dari acuan → judul → cerita.
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     borderLeftWidth: 3,
     borderLeftColor: Color.SPIRITUAL_DARK,
     padding: 16,

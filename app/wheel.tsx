@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { Chip } from '@/components/common/Chip';
 import { EmojiButton } from '@/components/common/EmojiButton';
@@ -1024,7 +1025,7 @@ const styles = StyleSheet.create({
   },
   // Ikut warna pita header di belakangnya, bukan teal merek.
   quarterText: { minWidth: 80, textAlign: 'center', color: Color.WHEEL_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   // Wizard
   progressTrack: {
     height: 6,
@@ -1105,10 +1106,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   focusCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     marginBottom: 10,
     gap: 6,

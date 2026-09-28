@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -419,7 +420,7 @@ function TestRow({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 32 },
   hero: {
     backgroundColor: Color.SPIRITUAL_DARK,
     borderRadius: 22,
@@ -441,10 +442,7 @@ const styles = StyleSheet.create({
   },
   traitValue: { color: Color.TEXT_TITLE },
   noteCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 16,
     gap: 4,
     marginBottom: 10,

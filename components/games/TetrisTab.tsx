@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
@@ -361,7 +362,7 @@ function PadButton({
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
+  flex: { flex: 1, ...SCREEN_CONTENT, paddingBottom: 8 },
   scoreRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   scoreBox: {
     flex: 1,

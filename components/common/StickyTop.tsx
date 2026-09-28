@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 
 // Baris yang DIPATOK di atas daftar — tetap kelihatan walau daftarnya digulung
 // ke bawah. Isinya tombol utama sub-tab (mis. "+ Buat Rapat Bulanan"), yang
@@ -22,9 +23,12 @@ export function StickyTop({ children }: { children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  // Napas kiri-kanan & atasnya HARUS sama persis dengan isi ScrollView di
+  // bawahnya — kalau tidak, tombol yang dipatok berdiri sedikit lebih masuk
+  // (atau lebih keluar) daripada kartu-kartu di bawahnya. Memakai token yang
+  // sama membuatnya mustahil meleset.
   wrap: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
+    ...SCREEN_CONTENT,
     paddingBottom: CARD_GAP,
     backgroundColor: Color.BACKGROUND,
   },

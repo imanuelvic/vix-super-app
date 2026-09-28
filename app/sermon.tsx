@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { ActionStack } from '@/components/common/ActionStack';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -368,7 +369,7 @@ function ReadBlock({ label, text }: { label: string; text: string }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   multiInput: { minHeight: 110, textAlignVertical: 'top', marginBottom: 12 },

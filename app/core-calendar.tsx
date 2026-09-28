@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { deadlineBorder } from '@/components/common/Deadline';
 import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -280,7 +281,7 @@ const DAY = 34;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 32 },
   // Kartu besar (sudut 20 seperti kartu ringkasan), bukan kartu daftar:
   // isinya grid 7 kolom yang butuh tepi sempit.
   calendar: {

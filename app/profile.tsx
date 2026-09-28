@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -583,7 +584,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   body: { flex: 1 },
   headerWrap: { paddingHorizontal: 20, paddingTop: 12 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   error: { paddingHorizontal: 20, marginTop: 12 },
   // Di dalam ScrollView yang sudah punya padding sendiri → tak perlu ditambah.
   contentError: { marginBottom: 12 },
@@ -649,10 +650,7 @@ const styles = StyleSheet.create({
   },
   lifeText: { color: Color.ACCENT_DARK },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 16,
     marginBottom: 12,
     gap: 10,

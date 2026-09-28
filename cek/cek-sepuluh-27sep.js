@@ -103,7 +103,12 @@ console.log('\n=== 2. Lambang jenis acara bisa di-click ===');
   ok('tanpa em dash di penjelasannya (aturan teks app ini)',
     jenis.every(([, , , , desc]) => !desc.includes(String.fromCharCode(0x2014))));
   ok('kolom jenis di tabel jadi tombol, dan yang dibuka meta jenisnya',
-    /<PressableScale\s*\n\s*style=\{styles\.labelCol\}\s*\n\s*onPress=\{\(\) =>\s*\n?\s*setKindInfo\(\{\s*\n\s*icon: meta\.icon,\s*\n\s*label: meta\.label,\s*\n\s*desc: meta\.desc,/.test(recap));
+    /<PressableScale\s*\n\s*style=\{styles\.labelBtn\}\s*\n\s*onPress=\{\(\) =>\s*\n?\s*setKindInfo\(\{\s*\n\s*icon: meta\.icon,\s*\n\s*label: meta\.label,\s*\n\s*desc: meta\.desc,/.test(recap));
+  // 28 Sep 2026: sejak awal ia memang bisa di-click, tapi tidak ada satu pun
+  // tanda bahwa ia bisa — jadi penjelasan tiap jenis acara praktis tak pernah
+  // ditemukan. Sekarang berlatar pil, dan itu yang dijaga di sini.
+  ok('…dan KELIHATAN seperti tombol (pil berlatar, bukan lambang telanjang)',
+    /labelBtn: \{[\s\S]{0,220}borderRadius: 8,[\s\S]{0,60}backgroundColor: Color\.CORE,/.test(recap));
   ok('baris 📅 Thanksgiving ikut bisa di-click (keterangannya sendiri, bukan jenis acara)',
     /onPress=\{\(\) => setKindInfo\(INFO_THANKSGIVING\)\}/.test(recap) &&
     /const INFO_THANKSGIVING: KindInfo = \{/.test(recap));

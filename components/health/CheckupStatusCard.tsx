@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { VixText } from '@/components/common/VixText';
 import { formatDate } from '@/lib/format';
@@ -119,10 +120,7 @@ export function checkupSummary(
 
 const styles = StyleSheet.create({
   statusCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 16,
     marginBottom: 10,
     gap: 4,

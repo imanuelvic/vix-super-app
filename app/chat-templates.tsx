@@ -4,7 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -313,7 +315,7 @@ function CategoryCard({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   manualInput: { marginTop: 8 },
@@ -325,10 +327,7 @@ const styles = StyleSheet.create({
   // bukan margin bawah SelectField — daftar pilihannya terbuka INLINE di bawah
   // kolom, jadi margin di kolomnya akan menyisipkan celah di tengah.
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 10,

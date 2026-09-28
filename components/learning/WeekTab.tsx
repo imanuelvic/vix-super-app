@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -364,7 +365,7 @@ export function WeekTab({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 28 },
   hero: {
     backgroundColor: Color.LEARNING,
     borderRadius: 20,

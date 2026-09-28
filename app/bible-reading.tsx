@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { RewardButton } from '@/components/common/RewardButton';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { FormError } from '@/components/common/FormError';
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
   // Ikut warna pita header ungu di belakangnya.
   dateLine: { marginTop: 2, color: Color.SPIRITUAL_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
   // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.
   // Jarak ke bawahnya = INTRO_GAP milik SpiritualIntro: hitung mundur,

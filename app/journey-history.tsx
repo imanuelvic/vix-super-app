@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
@@ -17,7 +19,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import { isReflectionJournal, subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
 import { subscribeHabitNotes, type HabitNotes } from '@/lib/health';
-import { responsesLine } from '@/lib/journey';
+import { prayerTopicsLine, responsesLine } from '@/lib/journey';
 import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
 // Riwayat Morning Journey 🌤️ — pagi-pagi sebelumnya, hari terbaru dulu.
@@ -59,6 +61,7 @@ function teksCari(d: JourneyDay): string {
     e?.reflection,
     e?.prayer,
     responsesLine(e?.responses),
+    prayerTopicsLine(e?.prayerTopics),
   ]
     .filter(Boolean)
     .join(' ')
@@ -164,6 +167,7 @@ export default function JourneyHistoryScreen() {
                     <Baris label="💭" text={d.reflection} />
                     <Baris label="❤️" text={responsesLine(d.entry?.responses)} />
                     <Baris label="🏃🏻‍➡️" text={d.entry?.reflection} />
+                    <Baris label="🗂️" text={prayerTopicsLine(d.entry?.prayerTopics)} />
                     <Baris label="🙏" text={d.entry?.prayer} />
                   </PressableScale>
                 ))}
@@ -192,13 +196,10 @@ function Baris({ label, text }: { label: string; text: string | undefined }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  searchWrap: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 6 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  searchWrap: { ...SCREEN_CONTENT, paddingBottom: 6 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     marginBottom: 10,
     gap: 6,

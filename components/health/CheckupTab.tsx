@@ -2,8 +2,9 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -347,7 +348,7 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   navRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   navButton: {
     flex: 1,
@@ -368,10 +369,7 @@ const styles = StyleSheet.create({
   // Kotak ringkas hasil terakhir — dua angka berdampingan, satu click ke
   // halaman keterangan lengkapnya.
   summaryCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 10,

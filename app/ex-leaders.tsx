@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -205,7 +207,7 @@ export default function ExLeadersScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   emptyCard: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 20,
@@ -221,10 +223,7 @@ const styles = StyleSheet.create({
   // Kartu ex CL. Padding & jarak dilonggarkan (16→18 / 12→14) supaya kotak
   // "Alasan" di dalamnya tidak terasa menempel ke tepi kartu.
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 18,
     gap: 14,
     marginBottom: 14,

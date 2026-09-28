@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -70,13 +71,10 @@ export function NewsCard({
 
 const styles = StyleSheet.create({
   card: {
+    ...PANEL,
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 6,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     paddingLeft: 14,
     paddingRight: 6,
     paddingVertical: 12,

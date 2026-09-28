@@ -27,3 +27,35 @@ export const CONTENT_COLUMN: ViewStyle = {
   maxWidth: 680,
   alignSelf: 'center',
 };
+
+/**
+ * Napas ISI LAYAR — dua angka yang muncul di hampir setiap layar app ini.
+ *
+ *   paddingHorizontal 20  jarak kiri-kanan isi dari tepi layar. Ini satu-satunya
+ *                         angka yang menentukan lebar semua kartu, jadi satu
+ *                         layar yang menulis 18 atau 24 langsung terlihat
+ *                         "geser" begitu berdampingan dengan layar lain.
+ *   paddingTop 4          jarak isi dari pita header. Bukan angka karangan:
+ *                         ScreenHeader punya marginBottom 6, jadi 6 + 4 = 10 =
+ *                         CARD_GAP — jarak yang sama dengan antar-kartu di
+ *                         bawahnya (lihat assets/style/card.ts).
+ *
+ * `paddingBottom` SENGAJA tidak ikut: ia memang beda per layar, dan bedanya
+ * punya alasan (layar ber-FAB butuh 40 supaya kartu terakhir tidak tertutup,
+ * layar biasa cukup 24). Jadi ia tetap ditulis di layarnya masing-masing.
+ *
+ * Dipakai dengan disebar, sama seperti CARD & BLOCK_CARD:
+ *
+ *   const styles = StyleSheet.create({
+ *     content: { ...SCREEN_CONTENT, paddingBottom: 24 },
+ *   });
+ *
+ * Sebelum 28 Sep 2026 kedua angkanya ditulis tangan di 100 tempat pada 96
+ * berkas. Tidak ada satu pun yang salah sendirian — yang berbahaya justru itu:
+ * mengubah napas layar berarti menyunting seratus berkas, jadi dalam praktiknya
+ * ia tidak pernah bisa diubah lagi.
+ */
+export const SCREEN_CONTENT: ViewStyle = {
+  paddingHorizontal: 20,
+  paddingTop: 4,
+};

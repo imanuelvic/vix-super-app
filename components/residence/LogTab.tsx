@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { EmptyText } from '@/components/common/EmptyText';
 import { ExpenseRow } from '@/components/common/ExpenseRow';
 import { Pagination } from '@/components/common/Pagination';
@@ -100,6 +101,6 @@ export function LogTab({ items }: { items: ResidenceLog[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   source: { color: Color.MAIN, marginTop: 8, marginBottom: 10 },
 });

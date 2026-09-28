@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { RewardButton } from '@/components/common/RewardButton';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
@@ -166,7 +168,7 @@ export default function StepsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   todayCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 18,
@@ -187,10 +189,7 @@ const styles = StyleSheet.create({
   bestValue: { color: Color.ACCENT_DARK },
   bestDate: { color: Color.ACCENT_DARK },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 16,
   },
   cardTitle: { marginBottom: 4 },

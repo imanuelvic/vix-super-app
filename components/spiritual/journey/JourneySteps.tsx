@@ -18,6 +18,7 @@ import {
   JOURNEY_CLOSING,
   JOURNEY_NAME,
   openWorshipSong,
+  PRAYER_TOPICS,
   RESPONSE_OPTIONS,
   WORSHIP_SONG_ERROR,
   type WorshipSong,
@@ -336,13 +337,21 @@ export function PrayStep({
 }) {
   const { busy, formError, save } = useFormSave();
   const [prayer, setPrayer] = useDraft(entry?.prayer ?? '');
+  // Kategori pokok doa pagi ini (boleh lebih dari satu, boleh kosong).
+  const [topics, setTopics] = useDraft<string[]>(entry?.prayerTopics ?? []);
   // CL mana yang pokok doanya sedang dibuka (null = semua tertutup). Satu saja
   // pada satu waktu — supaya kartunya tetap pendek & fokus.
   const [openChain, setOpenChain] = useState<string | null>(null);
 
+  function toggleTopic(key: string) {
+    setTopics((cur) =>
+      cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key],
+    );
+  }
+
   function berdoa() {
     return save(async () => {
-      await onSave({ prayer: prayer.trim() });
+      await onSave({ prayer: prayer.trim(), prayerTopics: topics });
       onNext();
     });
   }
@@ -413,6 +422,20 @@ export function PrayStep({
         <JourneyFieldLabel>
           Hal apa yang ingin kamu serahkan kepada Tuhan pagi ini?
         </JourneyFieldLabel>
+        {/* Kategori pokok doa — bukan pengganti doanya, tapi titik mulai.
+            Kolom kosong jam 5 pagi paling gampang dilewati begitu saja; satu
+            chip sudah cukup membuat pertanyaannya jadi "hari ini untuk siapa?".
+            Boleh lebih dari satu, boleh tidak sama sekali. */}
+        <View style={[styles.chips, styles.topicChips]}>
+          {PRAYER_TOPICS.map((t) => (
+            <Chip
+              key={t.key}
+              label={`${t.emoji} ${t.label}`}
+              active={topics.includes(t.key)}
+              onPress={() => toggleTopic(t.key)}
+            />
+          ))}
+        </View>
         <FormInput
           style={js.bigInput}
           placeholder="Tuliskan doamu sendiri, sesederhana apa pun"
@@ -517,6 +540,9 @@ const styles = StyleSheet.create({
   // blok syafaatnya tidak berubah jadi daftar tautan.
   pointLink: { textDecorationLine: 'underline' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  // Chip kategori doa duduk DI ANTARA label & kolom tulisnya, jadi ia butuh
+  // napas sendiri — di langkah Respond jaraknya datang dari gap kartu.
+  topicChips: { marginBottom: 10 },
   // Kartu lagu: nada besar di kiri, judul & penyanyi di kanan.
   song: {
     flexDirection: 'row',

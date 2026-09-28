@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
@@ -196,9 +197,9 @@ const styles = StyleSheet.create({
   // seluruh app memakai paddingTop 4 untuk isi layar berpita (lihat
   // cek-jarak-kartu.js), dan satu layar yang menyimpang bikin irama jaraknya
   // pecah.
-  progressWrap: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 10, gap: 6 },
+  progressWrap: { ...SCREEN_CONTENT, paddingBottom: 10, gap: 6 },
   progressText: { color: Color.SPIRITUAL_DARK },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24, gap: 10 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24, gap: 10 },
   judul: { color: Color.SPIRITUAL_DEEP },
   ayatCard: {
     backgroundColor: Color.SPIRITUAL,

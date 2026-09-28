@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { BLOCK_CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import { PrioritiesBlock } from '@/components/today/PrioritiesBlock';
@@ -197,7 +198,7 @@ export function WorkFocusTab({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32, gap: CARD_GAP + 2 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 32, gap: CARD_GAP + 2 },
   card: { ...BLOCK_CARD },
   eyebrow: { color: Color.CAREER_DARK, marginBottom: 4 },
   quiet: { paddingVertical: 6 },

@@ -174,7 +174,7 @@ console.log('\n=== 5. Margin atas layar Puasa Baru ===');
 const puasa = baca('app/fasting.tsx');
 // 16 Sep 2026: paddingBottom 40 (dasar layar rata seperti Family, edges top saja).
 ok('jarak atas daftarnya 4 (sama dengan layar isian lain)',
-  /content: \{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 \}/.test(puasa));
+  /content: \{ \.\.\.SCREEN_CONTENT, paddingBottom: 40 \}/.test(puasa));
 ok('keenam kolomnya dikelompokkan, bukan berderet lurus',
   /<Bagian judul="📝 Tentang Puasa">/.test(puasa) &&
   /<Bagian judul="📆 Periode">/.test(puasa) &&

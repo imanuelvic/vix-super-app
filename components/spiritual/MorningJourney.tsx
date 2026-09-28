@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { ACTION_GAP } from '@/assets/style/space';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -238,7 +239,7 @@ export function MorningJourney({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.SPIRITUAL_DARK },
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   footer: { alignItems: 'center', gap: 2, marginTop: ACTION_GAP },
   skipButton: { paddingVertical: 12, paddingHorizontal: 12 },
   footerText: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },

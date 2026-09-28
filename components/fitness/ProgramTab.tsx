@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SegmentTabs } from '@/components/common/SegmentTabs';
 import { SelectField } from '@/components/common/SelectField';
@@ -173,13 +175,10 @@ export function ProgramTab({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 28 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 28 },
   picker: { marginTop: 10, marginBottom: 10 },
   dayBlock: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     marginBottom: 10,
     gap: 3,

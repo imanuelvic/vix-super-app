@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { CardActionButton } from '@/components/common/CardActionButton';
 import { EditFooter } from '@/components/common/EditFooter';
 import { FormError } from '@/components/common/FormError';
@@ -392,14 +393,11 @@ export default function CoreRulesScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Color.BACKGROUND },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 10 },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 10,

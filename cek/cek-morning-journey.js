@@ -188,7 +188,7 @@ ok('keyboard iOS tidak menutupi isian (KeyboardAvoidingView + keyboardShouldPers
   /<KeyboardAvoidingView\s+style=\{styles\.flex\}\s+behavior=\{Platform\.OS === 'ios' \? 'padding' : undefined\}>/.test(layar) &&
   /keyboardShouldPersistTaps="handled"/.test(layar));
 ok('tepi: edges top + paddingTop 4 + paddingBottom 40, latar SPIRITUAL_DARK (gaya fitur yang sama)',
-  /edges=\{\['top'\]\}/.test(layar) && /content: \{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 \}/.test(layar) &&
+  /edges=\{\['top'\]\}/.test(layar) && /content: \{ \.\.\.SCREEN_CONTENT, paddingBottom: 40 \}/.test(layar) &&
   /safe: \{ flex: 1, backgroundColor: Color\.SPIRITUAL_DARK \}/.test(layar));
 
 console.log('\n=== Kata-kata tiap langkah (sesuai konsep) ===');
@@ -218,7 +218,13 @@ ok('🙏 Pray: Doa Syafaat hari ini TETAP (topik + poin), Doa Rantai CL tetap (W
   /pointLink: \{ textDecorationLine: 'underline' \}/.test(steps) &&
   /💬 Doakan lewat WhatsApp/.test(steps) && /\{l\.done \? '✅ ' : ''\}/.test(steps) &&
   /Hal apa yang ingin kamu serahkan kepada Tuhan pagi ini\?/.test(steps) &&
-  /onSave\(\{ prayer: prayer\.trim\(\) \}\)/.test(steps) && /<JourneyNext label="Berdoa"/.test(steps));
+  // 27 Sep 2026: doanya sekarang disimpan BERSAMA kategori pokok doa yang
+  // dipilih (chip 🏠 Keluarga · 🔥 Pelayanan · …). Doa pribadinya sendiri
+  // tetap ditulis apa adanya — yang bertambah pilihan, bukan penggantinya.
+  // Rincian chipnya diuji sendiri di cek-foto-doa.js.
+  /onSave\(\{ prayer: prayer\.trim\(\), prayerTopics: topics \}\)/.test(steps) &&
+  /PRAYER_TOPICS\.map\(\(t\) => \(/.test(steps) &&
+  /<JourneyNext label="Berdoa"/.test(steps));
 ok('Doa Rantai tidak lagi menahan penutup: chainLeft cuma jadi keterangan lembut',
   /Masih ada \$\{chainLeft\} CORE Leader yang menunggu didoakan pagi ini\./.test(steps) &&
   !/chainLeft === 0 &&|const chainDone|chainDone &&/.test(layar + steps));

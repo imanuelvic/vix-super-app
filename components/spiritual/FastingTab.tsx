@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
@@ -148,7 +149,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   // 26 Sep 2026: puasa yang SEDANG berjalan digambar PEKAT (ungu tergelap,
   // tulisan putih), bukan pastel seperti sebelumnya. Dulu kartu aktif dan
   // kartu arsip di bawahnya sama-sama terang, jadi harus dibaca dulu untuk
@@ -176,11 +177,8 @@ const styles = StyleSheet.create({
   addButton: { marginBottom: CARD_GAP },
   empty: { textAlign: 'center', marginTop: 20 },
   card: {
+    ...PANEL,
     flex: 1,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     paddingHorizontal: 14,
     paddingVertical: 12,
     // 3 → 6: kutipan jawaban doanya butuh sedikit ruang napas dari baris

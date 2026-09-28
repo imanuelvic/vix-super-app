@@ -58,8 +58,8 @@ export const EXPORT_COLLECTIONS: string[] = [
   'fitness', 'fitnessDays', 'fun', 'funds', 'gratitude', 'habitDays', 'health',
   'house', 'houseLogs', 'learning', 'multiplications', 'otherTasks', 'priority',
   'promises', 'reading', 'reflectionFeed', 'revive', 'rewards', 'sermons',
-  'social', 'tasks', 'timeline', 'tournaments', 'transactions', 'usage',
-  'wheel', 'world',
+  'social', 'tasks', 'testimonies', 'timeline', 'tournaments', 'transactions',
+  'usage', 'wheel', 'world',
 ];
 
 /**

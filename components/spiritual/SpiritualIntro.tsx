@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -83,10 +84,7 @@ export const INTRO_GAP = 20;
 
 const styles = StyleSheet.create({
   reminderCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     borderLeftWidth: 3,
     borderLeftColor: Color.SPIRITUAL_DARK,
     padding: 14,

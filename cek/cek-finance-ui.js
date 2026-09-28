@@ -46,7 +46,8 @@ ok('Dashboard: semua angka lewat useFinanceInsight (satu sumber)', /const insigh
 ok('Dashboard: "See insight" membuka semua baris Budget Health', /onSeeInsight=\{\(\) => setAllHealth\(true\)\}/.test(dash));
 ok('Dashboard: Recent Transactions → sub-tab Transactions; hero tanpa budget → Budgeting',
   /onShowTab\('transactions'\)/.test(dash) && /onSetBudget=\{\(\) => onShowTab\('budgeting'\)\}/.test(dash));
-ok('Dashboard: paddingTop 4 (irama pita header) & kartu blok CARD_GAP', /content: \{ paddingHorizontal: 20, paddingTop: 4/.test(dash) && /marginBottom: CARD_GAP/.test(dash));
+// 28 Sep 2026: napas 20/4 itu sekarang token SCREEN_CONTENT (assets/style/layout.ts).
+ok('Dashboard: paddingTop 4 (irama pita header) & kartu blok CARD_GAP', /content: \{ \.\.\.SCREEN_CONTENT/.test(dash) && /marginBottom: CARD_GAP/.test(dash));
 
 const md = kodeSaja(baca('components/finance/MonthDetails.tsx'));
 ok('MonthDetails: Budget vs Realisasi, Pengeluaran Harian, quote & donat dipertahankan', /Budget vs Realisasi/.test(md) && /Pengeluaran Harian/.test(md) && /QUOTES/.test(md) && /<DonutChart/.test(md));

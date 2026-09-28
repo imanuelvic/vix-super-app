@@ -1,7 +1,8 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
 import {
@@ -117,7 +118,7 @@ export function GospelStoryTab() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   // Kartu pembuka: ungu pekat Spiritual, satu-satunya blok gelap di tab ini.
   heroCard: {
     backgroundColor: Color.SPIRITUAL_DEEP,
@@ -137,10 +138,7 @@ const styles = StyleSheet.create({
     backgroundColor: Color.SPIRITUAL_DARK,
   },
   card: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...PANEL,
     padding: 14,
     gap: 6,
   },

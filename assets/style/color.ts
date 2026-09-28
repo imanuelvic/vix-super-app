@@ -42,6 +42,14 @@ export const Color = {
   CONTRAST_CONTAINER: '#EFE6D8',
   BORDER: '#E6DDCF',
   OVERLAY: '#00000066', // latar gelap transparan di belakang modal
+  /**
+   * Latar FOTO satu layar penuh (27 Sep 2026). Sengaja bukan OVERLAY: yang di
+   * belakang modal biasa memang harus separuh tembus supaya layarnya masih
+   * terasa ada, sedangkan foto justru minta sekelilingnya hilang sama sekali.
+   * Hampir pekat, bukan hitam mati, supaya tepi fotonya tidak terlihat melekat
+   * ke layar.
+   */
+  PHOTO_BACKDROP: '#000000F2',
   // Abu-abu "tidak berlaku" — untuk pilihan yang memang belum punya isi, mis.
   // kategori Finance yang budget-nya belum diatur (0). Sengaja SEGELAP teks
   // keterangan, bukan pucat: yang dituju "tidak ada budget", bukan "mati".

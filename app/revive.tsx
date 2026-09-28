@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
+import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { ActionStack } from '@/components/common/ActionStack';
 import { BibleRefField } from '@/components/common/BibleRefField';
 import { FormError } from '@/components/common/FormError';
@@ -31,7 +32,7 @@ import { type LoginStreak as DayStreak } from '@/lib/reward';
 import { purgeNoteLinks } from '@/lib/coreNotes';
 import { formatFullDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { responsesLine } from '@/lib/journey';
+import { prayerTopicsLine, responsesLine } from '@/lib/journey';
 import { SAVE_ERROR } from '@/lib/messages';
 import {
     applicationPrompt,
@@ -410,6 +411,7 @@ function JourneyBlocks({ entry }: { entry: ReviveEntry }) {
   return (
     <>
       <BacaBlok label="❤️ Respons hati" text={responsesLine(entry.responses)} />
+      <BacaBlok label="🗂️ Kategori doa" text={prayerTopicsLine(entry.prayerTopics)} />
       <BacaBlok label="🙏 Doa pagi" text={entry.prayer ?? ''} />
     </>
   );
@@ -465,7 +467,7 @@ const styles = StyleSheet.create({
   bacaLabel: { color: Color.TEXT_LABEL },
   bacaText: { color: Color.TEXT_PARAGRAPH },
   flex: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   formGap: { marginBottom: 10 },
   fieldLabel: { marginBottom: 6 },
   // Label kolom + tombol 📌-nya. `flexWrap` supaya tombolnya TURUN ke baris
