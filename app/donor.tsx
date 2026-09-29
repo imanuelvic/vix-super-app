@@ -5,13 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -307,9 +308,9 @@ export default function DonorScreen() {
             additionalStyle={styles.addButton}
           />
           {upcoming.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada jadwal. Yuk rencanakan donor berikutnya 🩸
-            </VixText>
+            </EmptyText>
           ) : (
             upcoming.map(renderSchedule)
           )}
@@ -453,7 +454,7 @@ export default function DonorScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   heroCard: {
     backgroundColor: Color.MAIN_DARK,
@@ -498,7 +499,6 @@ const styles = StyleSheet.create({
   // Dua tombol lambang (✅ syarat · 💡 tips) di ujung kanan judul.
   sectionActions: { flexDirection: 'row', gap: 8 },
   addButton: { marginBottom: CARD_GAP },
-  empty: { textAlign: 'center', marginBottom: 8 },
   historyLabel: { marginTop: 6, marginBottom: 8, color: Color.TEXT_LABEL },
   card: {
     ...PANEL,

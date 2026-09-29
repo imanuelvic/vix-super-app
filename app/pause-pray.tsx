@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
 import { CardPreview } from '@/components/common/CardPreview';
@@ -184,7 +184,7 @@ export default function PausePrayScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 32 },
   sectionTitle: { ...SECTION_SPACE },
   prayerInput: { minHeight: 110, textAlignVertical: 'top' },

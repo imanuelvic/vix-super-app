@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_SAFE } from '@/assets/style/layout';
 import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -161,7 +162,7 @@ export default function FutsalBoardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
   per: { color: Color.TEXT_PLACEHOLDER },
   sisa: { color: Color.TEXT_PLACEHOLDER, marginTop: 6 },

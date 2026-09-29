@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Color } from '@/assets/style/color';
 import {
   BottomTabs,
   withBadge,
   type BottomTab,
 } from '@/components/common/BottomTabs';
+import { SCREEN_SAFE } from '@/assets/style/layout';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -189,6 +189,6 @@ export default function ResidenceScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { flex: 1 },
 });

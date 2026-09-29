@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { DeadlineTag } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
@@ -259,7 +259,7 @@ function InfoRow({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   gone: { textAlign: 'center', marginTop: 24 },
   statusRow: { alignItems: 'center', paddingVertical: 10 },

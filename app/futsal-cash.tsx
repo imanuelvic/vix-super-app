@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -326,7 +326,7 @@ export default function FutsalCashScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   flex: { flex: 1 },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   saldoCard: { ...CARD, marginTop: 10, gap: 2 },

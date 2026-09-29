@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Color } from '@/assets/style/color';
+import { SCREEN_SAFE } from '@/assets/style/layout';
 import { RewardButton } from '@/components/common/RewardButton';
 import {
   BottomTabs,
@@ -150,6 +150,6 @@ export default function FitnessScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   body: { flex: 1 },
 });

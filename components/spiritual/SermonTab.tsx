@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { EmptyText } from '@/components/common/EmptyText';
 import { InfoChip } from '@/components/common/InfoChip';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -54,9 +55,9 @@ export function SermonTab({ sermons }: { sermons: SermonNote[] }) {
         )}
 
         {sermons.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada catatan. Datang ke ibadah Minggu & catat firmannya di sini ⛪
-          </VixText>
+          </EmptyText>
         )}
 
         {pageItems.map((s) => {
@@ -99,7 +100,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   addButton: { marginBottom: CARD_GAP },
-  empty: { textAlign: 'center', marginTop: 8 },
   card: {
     ...PANEL,
     borderLeftWidth: 3,

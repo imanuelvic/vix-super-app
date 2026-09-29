@@ -7,6 +7,7 @@ import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { EditButton } from '@/components/common/EditButton';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { Pagination } from '@/components/common/Pagination';
 import { PhotoViewer } from '@/components/common/PhotoViewer';
@@ -218,11 +219,11 @@ export function MonthlyTab({ meetings }: { meetings: MonthlyMeeting[] }) {
   const dipatok: number[] = [];
   if (shown.length === 0) {
     baris.push(
-      <VixText key="kosong" heading="label" additionalStyle={styles.empty}>
+      <EmptyText key="kosong">
         {words.length > 0
           ? `Tidak ada notulen yang cocok dengan “${query.trim()}”.`
           : 'Belum ada notulen. Catat rapat mentoring bulan ini 🗒️'}
-      </VixText>,
+      </EmptyText>,
     );
   } else {
     for (const m of pageItems) {
@@ -292,7 +293,6 @@ const styles = StyleSheet.create({
   // paddingTop 0 — jarak atasnya sudah dipegang StickyTop di atas daftar ini.
   // paddingBottom lega supaya kartu terakhir tidak tertutup FAB.
   content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 90 },
-  empty: { textAlign: 'center', marginTop: 10 },
   // Alas kartu yang dipatok — lihat alasannya di renderHeader.
   stickyWrap: { backgroundColor: Color.BACKGROUND },
   card: {

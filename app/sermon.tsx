@@ -4,16 +4,18 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { ActionStack } from '@/components/common/ActionStack';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
 import { InfoChip } from '@/components/common/InfoChip';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ReadBlock } from '@/components/common/ReadBlock';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { ShareWhatsAppButton } from '@/components/common/ShareWhatsAppButton';
@@ -331,9 +333,9 @@ export default function SermonScreen() {
         </ScrollView>
       ) : (
         /* Dokumennya tidak ada & masa isinya sudah lewat. */
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText additionalStyle={styles.empty}>
           Catatan untuk Minggu ini tidak ada, dan masa pengisiannya sudah lewat.
-        </VixText>
+        </EmptyText>
       )}
 
       <ConfirmDialog
@@ -353,22 +355,8 @@ export default function SermonScreen() {
  * Satu blok catatan panjang di mode baca. Tidak ditampilkan sama sekali kalau
  * kosong — lebih baik pendek daripada penuh judul tanpa isi.
  */
-function ReadBlock({ label, text }: { label: string; text: string }) {
-  if (!text.trim()) return null;
-  return (
-    <View>
-      <VixText heading="label" additionalStyle={styles.readLabel}>
-        {label}
-      </VixText>
-      <VixText heading="paragraph" additionalStyle={styles.readText}>
-        {text}
-      </VixText>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
@@ -391,8 +379,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   quoteText: { color: Color.TEXT_TITLE, fontStyle: 'italic' },
-  readLabel: { color: Color.SPIRITUAL_DARK, marginBottom: 4 },
-  readText: { color: Color.TEXT_PARAGRAPH },
   editButton: {
     alignItems: 'center',
     paddingVertical: 14,
@@ -403,5 +389,8 @@ const styles = StyleSheet.create({
   },
   editText: { color: Color.SPIRITUAL_DARK },
   lockNote: { textAlign: 'center' },
-  empty: { textAlign: 'center', marginTop: 40, paddingHorizontal: 30 },
+  // Pesan SATU LAYAR, bukan baris di dalam daftar: ia anak langsung
+  // SafeAreaView, jadi napas kiri-kanannya ditulis di sini. Jarak atas-bawahnya
+  // milik EmptyText, sama dengan seluruh layar lain.
+  empty: { paddingHorizontal: 30 },
 });

@@ -7,10 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -261,9 +262,9 @@ export default function MultiplicationDetailScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="CORE" title="Multiplication 🌱" />
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText>
           Multiplikasi ini sudah tidak ada.
-        </VixText>
+        </EmptyText>
       </SafeAreaView>
     );
   }
@@ -357,10 +358,10 @@ export default function MultiplicationDetailScreen() {
             </PressableScale>
 
             {groups.length === 0 ? (
-              <VixText heading="label" additionalStyle={styles.empty}>
+              <EmptyText>
                 Timeline-nya masih kosong. Mulai dari langkah pertama, 
                 mis. “Training Calon CORE Leader Sesi 1” 🌱
-              </VixText>
+              </EmptyText>
             ) : (
               groups.map((g) => (
                 <View key={g.key}>
@@ -451,9 +452,9 @@ export default function MultiplicationDetailScreen() {
             </PressableScale>
 
             {shownMembers.length === 0 ? (
-              <VixText heading="label" additionalStyle={styles.empty}>
+              <EmptyText>
                 Belum ada yang masuk kelompok ini.
-              </VixText>
+              </EmptyText>
             ) : (
               shownMembers.map((p) => (
                 <PressableScale
@@ -599,9 +600,8 @@ export default function MultiplicationDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
-  empty: { textAlign: 'center', marginTop: 20, marginBottom: 12 },
   heroBar: { marginTop: 8, marginBottom: 2 },
   // Kartu "langkah berikutnya" — warna Spiritual biar beda jelas dari timeline.
   nextCard: {

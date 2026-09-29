@@ -58,18 +58,34 @@ export function ratePerKwh(p: TokenPurchase): number {
  */
 export type ReadingKind = 'home' | 'out';
 
+/**
+ * Urutannya = urutan chip di sheet & urutan penyebutan di kartu tagihan.
+ *
+ * 29 Sep 2026: 🚪 Berangkat naik ke depan, mengikuti urutan HARI — pagi dulu,
+ * baru sore. Sebelumnya 🏠 Sampai rumah yang di depan, jadi dua chip yang
+ * dibaca berdampingan menyebut sorenya lebih dulu daripada paginya.
+ *
+ * Urutan ini TIDAK menentukan apa pun selain tampilan: chip yang terpilih saat
+ * sheet dibuka ditebak bergantian dari catatan terakhir (lihat TokenTab), dan
+ * `readingKindMeta` di bawah menyebut jatuh-baliknya dengan nama, bukan lewat
+ * nomor urut.
+ */
 export const READING_KINDS: {
   key: ReadingKind;
   label: string;
   icon: string;
   hint: string;
 }[] = [
-  { key: 'home', label: 'Sampai rumah', icon: '🏠', hint: 'Sore/malam, baru sampai' },
   { key: 'out', label: 'Berangkat', icon: '🚪', hint: 'Pagi, sebelum pergi' },
+  { key: 'home', label: 'Sampai rumah', icon: '🏠', hint: 'Sore/malam, baru sampai' },
 ];
 
 export function readingKindMeta(key: string) {
-  return READING_KINDS.find((k) => k.key === key) ?? READING_KINDS[0];
+  // Jatuh-baliknya disebut DENGAN NAMA, bukan `READING_KINDS[0]`: kalau tidak,
+  // menukar urutan chip diam-diam ikut menukar arti catatan lama yang jenisnya
+  // tak dikenali.
+  const rumah = READING_KINDS.find((k) => k.key === 'home')!;
+  return READING_KINDS.find((k) => k.key === key) ?? rumah;
 }
 
 export type MeterReading = {

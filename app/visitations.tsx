@@ -3,10 +3,10 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PANEL } from '@/assets/style/card';
-import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { deadlineBorder } from '@/components/common/Deadline';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -15,7 +15,6 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
-import { VixText } from '@/components/common/VixText';
 import {
     VisitationCardBody,
     VisitationStatus,
@@ -164,10 +163,10 @@ export default function VisitationsScreen() {
           />
 
           {sorted.length === 0 && (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada riwayat, visitasi yang sudah selesai atau terlewat
               akan muncul di sini 📅
-            </VixText>
+            </EmptyText>
           )}
           {pageItems.map((v) => {
             const days = visitDaysUntil(v, today);
@@ -229,9 +228,8 @@ export default function VisitationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
-  empty: { textAlign: 'center', marginTop: 20 },
   card: {
     ...PANEL,
     padding: 14,

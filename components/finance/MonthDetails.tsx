@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { EmptyText } from '@/components/common/EmptyText';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
 import { TypeChips } from '@/components/finance/TypeChips';
@@ -326,9 +327,9 @@ export function MonthDetails({
       </View>
 
       {data.length === 0 ? (
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText>
           Belum ada transaksi {FINANCE_TYPE_LABEL[type]} bulan ini.
-        </VixText>
+        </EmptyText>
       ) : (
         data.map((d) => (
           <View key={d.key} style={styles.row}>
@@ -482,7 +483,6 @@ const styles = StyleSheet.create({
   sectionTitle: { marginBottom: 10 },
   chartWrap: { alignItems: 'center', marginVertical: 16 },
   chartTotal: { color: Color.TEXT_TITLE, marginTop: 2 },
-  empty: { textAlign: 'center', marginTop: 12 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

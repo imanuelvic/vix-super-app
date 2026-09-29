@@ -5,10 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { CrossButton, CrossMark } from '@/components/common/CrossButton';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -157,9 +158,9 @@ export default function FastingDaysScreen() {
       {plans === null ? (
         <LoadingCenter />
       ) : !plan ? (
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText>
           Puasanya sudah tidak ada.
-        </VixText>
+        </EmptyText>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <SummaryCard
@@ -306,9 +307,8 @@ export default function FastingDaysScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
-  empty: { textAlign: 'center', marginTop: 20 },
   locked: { color: Color.TEXT_LABEL, marginBottom: 10 },
   fieldLabel: { marginTop: 12, marginBottom: 6 },
   textArea: { minHeight: 84, textAlignVertical: 'top' },

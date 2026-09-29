@@ -1,5 +1,7 @@
 import type { ViewStyle } from 'react-native';
 
+import { Color } from '@/assets/style/color';
+
 /**
  * Kolom isi yang DIBATASI lebarnya & ditengahkan — di HP memenuhi layar, di
  * iPad/layar lebar berhenti di 680 dan duduk di tengah (bukan melar sampai
@@ -83,4 +85,34 @@ export const SCREEN_CONTENT: ViewStyle = {
 export const SCREEN_CONTENT_PINNED: ViewStyle = {
   ...SCREEN_CONTENT,
   paddingTop: 0,
+};
+
+/**
+ * Wadah PALING LUAR sebuah layar — `<SafeAreaView style={styles.safe}>`.
+ *
+ *   flex 1           layarnya memenuhi tinggi jendela, jadi daftar di dalamnya
+ *                    punya tinggi untuk digulung. Tanpa ini ScrollView-nya
+ *                    setinggi isinya saja.
+ *   backgroundColor  latar gading app. Ini yang terlihat di sela-sela kartu,
+ *                    di balik bar patok, dan di ruang kosong di bawah daftar
+ *                    pendek — jadi ia bukan hiasan: ia warna dasar app ini.
+ *
+ * 29 Sep 2026: sebelum ini kedua barisnya ditulis tangan di 80 berkas, semuanya
+ * bernama `safe` dan semuanya sama persis. Tidak ada satu pun yang salah; yang
+ * berbahaya justru itu — mengganti warna dasar app berarti menyunting delapan
+ * puluh berkas, jadi dalam praktiknya ia tidak pernah bisa diganti lagi.
+ *
+ * Dipakai dengan disebar, sama seperti SCREEN_CONTENT:
+ *
+ *   const styles = StyleSheet.create({
+ *     safe: { ...SCREEN_SAFE },
+ *   });
+ *
+ * SATU layar sengaja TIDAK memakainya: gerbang doa pagi (MorningJourney)
+ * berlatar ungu pekat sepenuh layar. Itu keputusan tampilan, bukan kelalaian,
+ * jadi ia tetap menulis warnanya sendiri.
+ */
+export const SCREEN_SAFE: ViewStyle = {
+  flex: 1,
+  backgroundColor: Color.BACKGROUND,
 };

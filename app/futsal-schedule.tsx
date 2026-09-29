@@ -2,8 +2,9 @@ import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Color } from '@/assets/style/color';
+import { SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
+import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -79,10 +80,10 @@ export default function FutsalScheduleScreen() {
           key={`${gang}-${currentPage}`}
           contentContainerStyle={styles.content}>
           {semua.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada jadwal {meta.label} sama sekali. Buat lewat “Jadwalkan
               Main” di sub-tab Fun Futsal ⚽
-            </VixText>
+            </EmptyText>
           ) : (
             <>
               {/* Kartu "main berikutnya" DIBUANG. Jadwal terdekat itu selalu
@@ -95,9 +96,9 @@ export default function FutsalScheduleScreen() {
                   daftar yang langsung dibuka dengan "🧾 Riwayat Main" tidak
                   menjelaskan kenapa tak ada satu pun jadwal di atasnya. */}
               {akanDatang.length === 0 ? (
-                <VixText heading="label" additionalStyle={styles.empty}>
+                <EmptyText>
                   Belum ada jadwal {meta.label} yang akan datang.
-                </VixText>
+                </EmptyText>
               ) : null}
 
               {pageItems.map((s, i) => {
@@ -137,8 +138,7 @@ export default function FutsalScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   sectionTitle: { ...SECTION_SPACE },
-  empty: { textAlign: 'center', marginVertical: 20 },
 });

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { CONTENT_COLUMN } from '@/assets/style/layout';
+import { CONTENT_COLUMN, SCREEN_SAFE } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
@@ -145,7 +145,7 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { paddingBottom: 32, alignItems: 'center' },
   inner: { ...CONTENT_COLUMN, paddingHorizontal: 20, gap: 8 },
   masterCard: { ...CARD, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },

@@ -7,6 +7,7 @@ import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { Pagination } from '@/components/common/Pagination';
@@ -225,11 +226,11 @@ export function BibleReadingTab({
         )}
 
         {list.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada catatan bacaan {meta.label.toLowerCase()}. Isi lewat kartu
             “{meta.title}” di Home pada jam {meta.fromHour}.00–{meta.toHour}.00
             📖
-          </VixText>
+          </EmptyText>
         )}
 
         {pageItems.map((d) => {
@@ -337,7 +338,6 @@ export function BibleReadingTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { ...SCREEN_CONTENT, paddingBottom: 24 },
-  empty: { textAlign: 'center', marginTop: 20 },
   // Baris streak: angka berjalan di kiri, rekor di kanan.
   streakRow: {
     flexDirection: 'row',

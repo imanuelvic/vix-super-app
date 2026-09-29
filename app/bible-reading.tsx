@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { RewardButton } from '@/components/common/RewardButton';
 import { BibleRefList } from '@/components/spiritual/BibleRefList';
 import { FormError } from '@/components/common/FormError';
@@ -380,7 +380,7 @@ export default function BibleReadingScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   // Ikut warna pita header ungu di belakangnya.
   dateLine: { marginTop: 2, color: Color.SPIRITUAL_DARK },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },

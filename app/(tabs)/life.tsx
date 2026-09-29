@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { CONTENT_COLUMN } from '@/assets/style/layout';
+import { CONTENT_COLUMN, SCREEN_SAFE } from '@/assets/style/layout';
 import { EmptyText } from '@/components/common/EmptyText';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SearchBar } from '@/components/common/SearchBar';
@@ -121,7 +121,7 @@ export default function LifeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   header: {
     ...CONTENT_COLUMN,
     paddingHorizontal: 20,

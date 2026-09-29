@@ -5,10 +5,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { EditButton } from '@/components/common/EditButton';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -279,9 +280,9 @@ export default function HistoryScreen() {
           </View>
 
           {years.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Tidak ada yang cocok dengan pencarian/filter ini.
-            </VixText>
+            </EmptyText>
           ) : (
             years.map((year, index) => {
               const yearItems = shown.filter((i) => i.year === year);
@@ -449,7 +450,7 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 90 },
   // Kartu ajakan isi otomatis (hanya muncul saat masih kosong).
   seedCard: {
@@ -472,7 +473,6 @@ const styles = StyleSheet.create({
   heroCard: { gap: 2, marginBottom: CARD_GAP },
   searchWrap: { marginBottom: 10 },
   sortRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  empty: { textAlign: 'center', marginTop: 10 },
   yearBlock: { marginBottom: 14 },
   yearHeader: {
     flexDirection: 'row',

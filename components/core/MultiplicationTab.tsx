@@ -9,6 +9,7 @@ import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditButton } from '@/components/common/EditButton';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -156,10 +157,10 @@ export function MultiplicationTab() {
           <FormError message={error} />
 
           {list.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada catatan pemekaran. Tekan “Buat Multiplikasi” untuk mulai
               menyusun timeline & pembagian anggotanya 🌱
-            </VixText>
+            </EmptyText>
           ) : (
             list.map((m, i) => {
               const { done: sDone, total } = multiProgress(m);
@@ -328,7 +329,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   // paddingTop 0 — jarak atasnya sudah dipegang StickyTop di atas daftar ini.
   content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 40 },
-  empty: { textAlign: 'center', marginTop: 10 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 18,

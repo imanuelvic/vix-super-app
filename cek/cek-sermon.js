@@ -139,14 +139,29 @@ ok('teks share-nya dipakai bersama, bukan disalin ke dua tempat',
   !/function sermonShareText/.test(tab));
 
 console.log('\n--- Enter terbaca saat dibaca ---');
+// 29 Sep 2026: ReadBlock PINDAH jadi komponen bersama
+// (components/common/ReadBlock.tsx) karena layar Puasa yang terkunci butuh
+// tampilan baca yang sama persis. Ceknya ikut pindah ke sana — dan jadi lebih
+// berguna: yang dijaga sekarang satu komponen untuk dua layar, bukan salinan
+// di satu berkas yang bisa berbeda sendiri dari kembarannya.
+const blok = baca('components/common/ReadBlock.tsx');
+// Komentarnya dikupas dulu: komponen itu MENJELASKAN kenapa ia tidak memakai
+// `numberOfLines`, dan penjelasan itu jangan sampai terbaca sebagai pemakaian.
+const blokKode = blok
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\/\/[^\n]*/g, '');
 ok('blok bacanya tidak memotong baris (tanpa numberOfLines)',
-  /function ReadBlock\(\{ label, text \}/.test(layar) &&
-  !/numberOfLines/.test(layar.slice(layar.indexOf('function ReadBlock'))));
+  /export function ReadBlock\(\{ label, text \}/.test(blokKode) &&
+  !/numberOfLines/.test(blokKode));
+ok('layar ini memakai blok BERSAMA itu, bukan salinan sendiri',
+  /from '@\/components\/common\/ReadBlock'/.test(layar) &&
+  !/function ReadBlock/.test(layar));
 ok('catatan & aplikasi ditampilkan utuh lewat blok itu',
   /<ReadBlock label="📝 Catatan Khotbah" text=\{note\.note \?\? ''\} \/>/.test(layar) &&
   /<ReadBlock label="🏃🏻‍➡️ Aplikasi" text=\{note\.reflection\} \/>/.test(layar));
 ok('blok kosong tidak ditampilkan (tak ada judul tanpa isi)',
-  /if \(!text\.trim\(\)\) return null;/.test(layar));
+  /if \(!text\.trim\(\)\) return null;/.test(blok));
 ok('di DAFTAR-nya tetap dipotong 2 baris — itu memang cuma cuplikan',
   /numberOfLines=\{2\}/.test(tab));
 

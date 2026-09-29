@@ -6,12 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -122,9 +123,9 @@ export default function BillScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScreenHeader backLabel="Friends" title="Split Bill 💸" />
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText>
           Tagihan ini sudah tidak ada.
-        </VixText>
+        </EmptyText>
       </SafeAreaView>
     );
   }
@@ -722,9 +723,8 @@ export default function BillScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 32 },
-  empty: { textAlign: 'center', marginTop: 20 },
   hero: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 20,

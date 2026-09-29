@@ -8,6 +8,7 @@ import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { DeadlineTag, deadlineBorder } from '@/components/common/Deadline';
 import { EditButton } from '@/components/common/EditButton';
+import { EmptyText } from '@/components/common/EmptyText';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { StickyTop } from '@/components/common/StickyTop';
@@ -96,9 +97,9 @@ export function FreelanceTab({
         onLayout={onLayout}
         contentContainerStyle={styles.content}>
         {sorted.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada proyek, catat proyek client pertamamu di sini 🚀
-          </VixText>
+          </EmptyText>
         )}
 
         {sorted.map((p) => {
@@ -201,7 +202,6 @@ export function FreelanceTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
-  empty: { textAlign: 'center', marginTop: 8 },
   card: {
     ...PANEL,
     flexDirection: 'row',

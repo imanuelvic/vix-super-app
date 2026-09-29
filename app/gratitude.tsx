@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
+import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -189,9 +190,9 @@ export default function GratitudeScreen() {
       ) : (
         <ScrollView key={currentPage} contentContainerStyle={styles.content}>
           {isi.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada yang tercatat.
-            </VixText>
+            </EmptyText>
           ) : (
             <>
               {pageItems.map((d) => (
@@ -226,10 +227,10 @@ export default function GratitudeScreen() {
               atas, tapi tidak ada lagi tempat mengisi yang baru. Itu kabar yang
               harus disebut, bukan didiamkan. */}
           {belumAda && (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Baris 🙏 Bersyukur 3 Hal sudah tidak ada di daftar kebiasaanmu, 
               catatan lama tetap tersimpan, tapi yang baru belum bisa diisi.
-            </VixText>
+            </EmptyText>
           )}
 
           {/*
@@ -258,9 +259,8 @@ export default function GratitudeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
-  empty: { textAlign: 'center', marginTop: 20 },
   card: {
     ...PANEL,
     borderLeftWidth: 3,

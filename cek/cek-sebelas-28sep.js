@@ -388,21 +388,29 @@ console.log("\n=== 11. Sub-tab God's Story ===");
     GS.GOSPEL_ACTS.map((a) => a.key).join(',') ===
       'creation,fall,redemption,renewal,restoration');
   // Inilah inti permintaannya: penanda "kamu di sini" di babak PENGUDUSAN.
+  // 29 Sep 2026: `gospelHereAct()` dihapus bersama kartu pembukanya — timeline
+  // menandainya langsung saat menggambar. Yang diuji tetap hal yang sama, cuma
+  // dicari dari daftarnya sendiri; ditambah satu cek bahwa helper-nya memang
+  // sudah tidak ada lagi, supaya ia tidak kembali sebagai ekspor tak terpakai.
+  const babakIni = GS.GOSPEL_ACTS.find((a) => a.key === GS.GOSPEL_HERE);
   ok('babak berjalan = Renewal, tahapnya Sanctification / Pengudusan',
     GS.GOSPEL_HERE === 'renewal' &&
-    GS.gospelHereAct().stage === 'Sanctification' &&
-    GS.gospelHereAct().stageId === 'Pengudusan');
+    babakIni.stage === 'Sanctification' &&
+    babakIni.stageId === 'Pengudusan');
+  ok('helper pencari babak berjalan sudah dibuang bersama kartu pembukanya',
+    GS.gospelHereAct === undefined &&
+    !/gospelHereAct/.test(tanpaKomentar(baca('lib/gospelStory.ts'))));
   ok('tiga tahap keselamatan terpasang di babak yang benar',
     GS.GOSPEL_ACTS.filter((a) => a.stage).map((a) => `${a.key}:${a.stage}`).join(' ') ===
       'redemption:Justification renewal:Sanctification restoration:Glorification');
   ok('pembenaran disebut SUDAH SELESAI, pemuliaan BELUM tiba',
     /Sudah SELESAI/.test(GS.GOSPEL_ACTS[2].now) && /Belum tiba/.test(GS.GOSPEL_ACTS[4].now));
   ok('babak berjalan mengatakan terus terang bahwa belum selesai itu wajar',
-    /belum selesai/i.test(GS.gospelHereAct().now) &&
-    /hidup kudus/i.test(GS.gospelHereAct().now));
+    /belum selesai/i.test(babakIni.now) &&
+    /hidup kudus/i.test(babakIni.now));
   ok('tiap babak punya ayatnya, dan ayatnya bisa di-click ke YouVersion',
     GS.GOSPEL_ACTS.every((a) => a.verseRef && a.verseText) &&
-    /openYouVersion\(a\.verseRef\)/.test(baca('components/spiritual/GospelStoryTab.tsx')));
+    /openYouVersion\(buka\.verseRef\)/.test(baca('components/spiritual/GospelStoryTab.tsx')));
   ok('jadi sub-tab Walk, paling kanan',
     /\{ key: 'story', label: "God's Story"/.test(baca('app/(tabs)/walk.tsx')) &&
     /tab === 'story' \? \(\s*\n\s*<GospelStoryTab \/>/.test(baca('app/(tabs)/walk.tsx')));

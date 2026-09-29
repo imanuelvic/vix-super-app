@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -684,7 +684,7 @@ export default function FutsalSessionScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   // Jaraknya ditaruh di BAWAH blok uang, bukan di atas judul "Squad &
   // Setoran": judul itu dipatok (sticky), dan jarak atas pada yang dipatok

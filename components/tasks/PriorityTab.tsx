@@ -10,6 +10,7 @@ import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FilterChips } from '@/components/common/FilterChips';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
@@ -213,9 +214,9 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
         <FormError message={error} />
 
         {sorted.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada reminder. Simpan ide/prioritas penting di sini 📝
-          </VixText>
+          </EmptyText>
         )}
 
         {sorted.map((item) => {
@@ -378,7 +379,6 @@ const styles = StyleSheet.create({
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
   heroCard: { gap: 2, marginBottom: CARD_GAP },
   addButton: { marginBottom: CARD_GAP },
-  empty: { textAlign: 'center', marginTop: 8 },
   card: {
     ...PANEL,
     flexDirection: 'row',

@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT, SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_CONTENT_PINNED, SCREEN_SAFE } from '@/assets/style/layout';
 import { FormInput } from '@/components/common/FormInput';
 import { KeyboardAwareScrollView } from '@/components/common/KeyboardAwareScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -336,7 +336,7 @@ function CategoryCard({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   contentPinned: { ...SCREEN_CONTENT_PINNED, paddingBottom: 40 },
   fieldLabel: { marginBottom: 6 },

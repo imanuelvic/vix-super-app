@@ -4,6 +4,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { ChipRow } from '@/components/common/ChipRow';
+import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { VixText } from '@/components/common/VixText';
@@ -133,9 +134,9 @@ export function NewsTab({
             />
           }>
           {(items ?? []).length === 0 && (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada berita yang masuk. Tarik ke bawah untuk muat ulang 📰
-            </VixText>
+            </EmptyText>
           )}
           {(items ?? []).map((n) => (
             <NewsCard
@@ -177,5 +178,4 @@ const styles = StyleSheet.create({
   },
   error: { color: Color.DANGER, textAlign: 'center' },
   content: { paddingHorizontal: 20, paddingBottom: 28 },
-  empty: { textAlign: 'center', marginTop: 20 },
 });

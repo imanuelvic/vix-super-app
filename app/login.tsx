@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SHADOW_RAISED, SHADOW_SOFT } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
+import { SCREEN_SAFE } from '@/assets/style/layout';
 import { AuthToggle, type AuthMode } from '@/components/auth/AuthToggle';
 import { WelcomeWaves, WAVE_HEIGHT } from '@/components/auth/WelcomeWaves';
 import { FormError } from '@/components/common/FormError';
@@ -228,7 +229,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   flex: { flex: 1 },
   // Isinya di tengah layar; ruang bawahnya disisakan untuk ombak supaya
   // kartunya tidak pernah duduk persis di atas gelombang.

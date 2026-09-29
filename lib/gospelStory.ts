@@ -119,7 +119,7 @@ export const GOSPEL_ACTS: GospelAct[] = [
   },
 ];
 
-/** Babak yang sedang dijalani — dipakai penanda 📍 "kamu di sini". */
-export function gospelHereAct(): GospelAct {
-  return GOSPEL_ACTS.find((a) => a.key === GOSPEL_HERE) ?? GOSPEL_ACTS[0];
-}
+// `gospelHereAct()` DIHAPUS 29 Sep 2026 bersama kartu pembuka "kamu di babak
+// Pengudusan". Satu-satunya pemakainya kartu itu; di timeline yang sekarang,
+// babak berjalan ditandai LANGSUNG saat menggambar deretnya
+// (`a.key === GOSPEL_HERE`), jadi tidak ada yang perlu mencarinya lebih dulu.

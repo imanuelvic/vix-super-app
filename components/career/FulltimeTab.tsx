@@ -9,6 +9,7 @@ import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -262,11 +263,11 @@ export function FulltimeTab({
         )}
 
         {column.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             {items.length === 0
               ? 'Belum ada roadmap, tulis prioritas kerjamu minggu ini 💪'
               : `Kolom ${STATUS_META[board].label} masih kosong.`}
-          </VixText>
+          </EmptyText>
         )}
 
         {column.map((item) => {
@@ -467,7 +468,6 @@ export function FulltimeTab({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
-  empty: { textAlign: 'center', marginTop: 8 },
   card: {
     ...PANEL,
     padding: 14,

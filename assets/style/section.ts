@@ -25,3 +25,25 @@ export const SECTION_SPACE: { marginTop: number; marginBottom: number } = {
   marginTop: 10,
   marginBottom: 10,
 };
+
+/**
+ * Judul bagian PERTAMA yang duduk tepat di bawah bar patok (`<StickyTop>`).
+ *
+ * Jarak atasnya dinolkan karena bar patok SUDAH memegangnya (paddingBottom
+ * CARD_GAP). Kalau tidak, judul pertama berdiri 10 piksel lebih rendah
+ * daripada kartu pertama di sub-tab sebelah — dan bedanya langsung terlihat
+ * begitu dua sub-tab dibandingkan berdampingan, persis keluhan 29 Sep 2026
+ * soal jarak "2026" di Testimony dibanding kartu pertama di Fasting.
+ *
+ * Jarak BAWAHNYA tetap sama, jadi jaraknya ke daftar di bawahnya tidak
+ * berubah sedikit pun:
+ *
+ *   const styles = StyleSheet.create({
+ *     yearTitle: { ...SECTION_SPACE },
+ *     yearTitleFirst: { ...SECTION_SPACE_FIRST },
+ *   });
+ */
+export const SECTION_SPACE_FIRST: { marginTop: number; marginBottom: number } = {
+  ...SECTION_SPACE,
+  marginTop: 0,
+};

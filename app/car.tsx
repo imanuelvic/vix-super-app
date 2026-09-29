@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Color } from '@/assets/style/color';
+import { SCREEN_SAFE } from '@/assets/style/layout';
 import { InfoTab } from '@/components/car/InfoTab';
 import { LogTab } from '@/components/car/LogTab';
 import { PartsTab } from '@/components/car/PartsTab';
@@ -96,6 +96,6 @@ export default function CarScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { flex: 1 },
 });

@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { ACTION_TOP } from '@/assets/style/space';
 import { DateField } from '@/components/common/DateField';
 import { FormError } from '@/components/common/FormError';
@@ -20,6 +20,7 @@ import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ProgressBar } from '@/components/common/ProgressBar';
+import { ReadBlock } from '@/components/common/ReadBlock';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -276,70 +277,104 @@ export default function FastingScreen() {
             </PressableScale>
           )}
 
-          {/* ===== Tentang puasanya ===== */}
-          <Bagian judul="📝 Tentang Puasa">
-            <Kolom label="Nama puasa">
-              <FormInput
-                placeholder="mis. Puasa 6 Hari Agustus"
-                value={title}
-                onChangeText={setTitle}
-                editable={!busy && !terkunci}
-              />
-            </Kolom>
-            <Kolom label="🙏 Pokok doa utama">
-              <FormInput
-                placeholder="Apa yang kamu doakan sepanjang puasa ini?"
-                value={prayer}
-                onChangeText={setPrayer}
-                editable={!busy && !terkunci}
-                multiline
-                style={styles.textArea}
-              />
-            </Kolom>
-            <Kolom label="📜 Peraturan puasa saya">
-              <FormInput
-                placeholder="mis. makan hanya jam 12.00–19.00"
-                value={rules}
-                onChangeText={setRules}
-                editable={!busy && !terkunci}
-                multiline
-                style={styles.textArea}
-              />
-            </Kolom>
-          </Bagian>
+          {/* ===== Isi puasanya: dua keadaan =====
+              Terkunci → TAMPILAN BACA (29 Sep 2026), bentuk yang sama persis
+              dengan Catatan Khotbah yang sudah lewat masanya: label kecil,
+              teksnya di bawahnya, tanpa kotak isian sama sekali.
 
-          {/* ===== Rentangnya ===== */}
-          <Bagian judul="📆 Periode">
-            <Kolom label="Mulai puasa">
-              <DateField
-                value={startDate}
-                onChange={setStartDate}
-                disabled={terkunci}
-              />
-            </Kolom>
-            <Kolom label="Selesai puasa">
-              <DateField
-                value={endDate}
-                onChange={setEndDate}
-                disabled={terkunci}
-              />
-            </Kolom>
-          </Bagian>
+              Dulu kotaknya tetap digambar, cuma `editable={false}`. Kotak yang
+              masih terlihat seperti kotak tetap mengundang diketik — dan
+              begitu di-click tidak terjadi apa-apa, yang terbaca "app-nya
+              rusak", bukan "ini sudah dikunci". */}
+          {terkunci ? (
+            <>
+              <Bagian judul="📝 Tentang Puasa">
+                <ReadBlock label="Nama puasa" text={title} />
+                <ReadBlock label="🙏 Pokok doa utama" text={prayer} />
+                <ReadBlock label="📜 Peraturan puasa saya" text={rules} />
+              </Bagian>
 
-          {/* ===== Hasil keseluruhan =====
-              Hanya untuk puasa yang sudah tersimpan: menanyakan jawaban doa
-              sebelum puasanya dimulai tidak ada gunanya. */}
-          {plan && (
-            <Bagian judul="✨ Jawaban Doa">
-              <FormInput
-                placeholder="Apa yang Tuhan kerjakan lewat puasa ini?"
-                value={answer}
-                onChangeText={setAnswer}
-                editable={!busy && !terkunci}
-                multiline
-                style={styles.textArea}
-              />
-            </Bagian>
+              <Bagian judul="📆 Periode">
+                <ReadBlock
+                  label="Mulai puasa"
+                  text={formatShortDayDate(startDate)}
+                />
+                <ReadBlock
+                  label="Selesai puasa"
+                  text={formatShortDayDate(endDate)}
+                />
+              </Bagian>
+
+              {/* Judul bagiannya sudah menyebut isinya, jadi tidak perlu label
+                  lagi. Kosong → seluruh kartunya tidak digambar: kartu berjudul
+                  "Jawaban Doa" yang isinya kosong cuma menagih sesuatu yang
+                  memang sudah tidak bisa diisi lagi. */}
+              {plan && answer.trim() ? (
+                <Bagian judul="✨ Jawaban Doa">
+                  <ReadBlock text={answer} />
+                </Bagian>
+              ) : null}
+            </>
+          ) : (
+            <>
+              {/* ===== Tentang puasanya ===== */}
+              <Bagian judul="📝 Tentang Puasa">
+                <Kolom label="Nama puasa">
+                  <FormInput
+                    placeholder="mis. Puasa 6 Hari Agustus"
+                    value={title}
+                    onChangeText={setTitle}
+                    editable={!busy}
+                  />
+                </Kolom>
+                <Kolom label="🙏 Pokok doa utama">
+                  <FormInput
+                    placeholder="Apa yang kamu doakan sepanjang puasa ini?"
+                    value={prayer}
+                    onChangeText={setPrayer}
+                    editable={!busy}
+                    multiline
+                    style={styles.textArea}
+                  />
+                </Kolom>
+                <Kolom label="📜 Peraturan puasa saya">
+                  <FormInput
+                    placeholder="mis. makan hanya jam 12.00–19.00"
+                    value={rules}
+                    onChangeText={setRules}
+                    editable={!busy}
+                    multiline
+                    style={styles.textArea}
+                  />
+                </Kolom>
+              </Bagian>
+
+              {/* ===== Rentangnya ===== */}
+              <Bagian judul="📆 Periode">
+                <Kolom label="Mulai puasa">
+                  <DateField value={startDate} onChange={setStartDate} />
+                </Kolom>
+                <Kolom label="Selesai puasa">
+                  <DateField value={endDate} onChange={setEndDate} />
+                </Kolom>
+              </Bagian>
+
+              {/* ===== Hasil keseluruhan =====
+                  Hanya untuk puasa yang sudah tersimpan: menanyakan jawaban doa
+                  sebelum puasanya dimulai tidak ada gunanya. */}
+              {plan && (
+                <Bagian judul="✨ Jawaban Doa">
+                  <FormInput
+                    placeholder="Apa yang Tuhan kerjakan lewat puasa ini?"
+                    value={answer}
+                    onChangeText={setAnswer}
+                    editable={!busy}
+                    multiline
+                    style={styles.textArea}
+                  />
+                </Bagian>
+              )}
+            </>
           )}
 
           <FormError message={error} gap="none" additionalStyle={styles.error} />
@@ -353,7 +388,7 @@ export default function FastingScreen() {
               di atas sudah ikut tersimpan atau belum.
 
               Terkunci → tombolnya HILANG, bukan sekadar mati: tombol mati yang
-              tetap terpampang cuma mengundang ditekan berulang. */}
+              tetap terpampang cuma mengundang di-click berulang. */}
           {terkunci ? (
             <VixText heading="label" additionalStyle={styles.locked}>
               🔒 Puasa ini sudah selesai lebih dari {FASTING_GRACE_DAYS} hari
@@ -427,7 +462,7 @@ function Kolom({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   flex: { flex: 1 },
   // paddingTop 4 = sama dengan layar berisian lain (mis. Template Chat).
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },

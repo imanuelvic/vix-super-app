@@ -5,13 +5,14 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
-import { SECTION_SPACE } from '@/assets/style/section';
+import { SECTION_SPACE, SECTION_SPACE_FIRST } from '@/assets/style/section';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { Chip } from '@/components/common/Chip';
 import { deadlineBorder } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditFooter } from '@/components/common/EditFooter';
 import { EmojiButton } from '@/components/common/EmojiButton';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -326,7 +327,7 @@ export function VisitationTab({
     <View style={styles.flex}>
       {/* Mode cari 🔍 — yang berganti hanya ISI layarnya; semuanya tetap di
           dalam pohon yang sama. Dulu bagian ini `return` sendiri lebih awal,
-          akibatnya modal di bawah tidak ikut terpasang: menekan hasil
+          akibatnya modal di bawah tidak ikut terpasang: meng-click hasil
           pencarian memang menyetel jadwal yang mau diedit, tapi sheet-nya
           tak pernah muncul. Sekarang satu modal dipakai kedua mode. */}
       {searchMode ? (
@@ -334,7 +335,7 @@ export function VisitationTab({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
           <View style={styles.searchWrap}>
-            {/* Langsung terfokus begitu FAB 🔍 ditekan */}
+            {/* Langsung terfokus begitu FAB 🔍 di-click */}
             <SearchBar
               value={query}
               onChangeText={setQuery}
@@ -344,13 +345,13 @@ export function VisitationTab({
           </View>
 
           {words.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Cari judul atau agendanya 🔍
-            </VixText>
+            </EmptyText>
           ) : results.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Tidak ada visitasi yang cocok dengan “{query.trim()}”.
-            </VixText>
+            </EmptyText>
           ) : (
             <>
               <VixText heading="label" additionalStyle={styles.searchCount}>
@@ -376,7 +377,9 @@ export function VisitationTab({
             <FormError message={error} />
 
             {/* ===== Jadwal visitasi ===== */}
-            <View style={styles.sectionRow}>
+            {/* Judul bagian PERTAMA di bawah bar patok: jarak atasnya sudah
+                milik bar itu, jadi tidak ditambah lagi di sini. */}
+            <View style={[styles.sectionRow, styles.sectionRowFirst]}>
               <VixText heading="title" additionalStyle={styles.sectionTitleFlex}>
                 📅 Jadwal Visitasi
               </VixText>
@@ -418,11 +421,11 @@ export function VisitationTab({
             )}
 
             {filtered.length === 0 ? (
-              <VixText heading="label" additionalStyle={styles.empty}>
+              <EmptyText>
                 {hasFilter
                   ? 'Tidak ada jadwal yang cocok dengan filter ini.'
                   : 'Belum ada jadwal · CORE mana yang mau kamu temui bulan ini? 😉'}
-              </VixText>
+              </EmptyText>
             ) : (
               <>
                 {pageItems.map(renderCard)}
@@ -503,7 +506,7 @@ export function VisitationTab({
         }>
         {/* Picker, bukan deretan chip: 10 CORE + 9 jenis visitasi bikin modal
             langsung penuh. Bentuknya sama persis dengan modal "Jadwalkan
-            Visitasi" — daftarnya baru terbentang saat kolomnya ditekan.
+            Visitasi" — daftarnya baru terbentang saat kolomnya di-click.
             `clearable` = pilih ulang yang sedang aktif → filternya lepas. */}
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           🫶 Per CORE Leader
@@ -570,6 +573,7 @@ const styles = StyleSheet.create({
     gap: 8,
     ...SECTION_SPACE,
   },
+  sectionRowFirst: { ...SECTION_SPACE_FIRST },
   sectionTitleFlex: { flex: 1 },
   sectionActions: { flexDirection: 'row', gap: 8 },
   activeFilterRow: {
@@ -578,7 +582,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  empty: { textAlign: 'center', marginBottom: 8 },
   card: {
     ...PANEL,
     padding: 14,

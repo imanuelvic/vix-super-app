@@ -1,182 +1,223 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
+import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import {
   GOSPEL_ACTS,
   GOSPEL_HERE,
-  gospelHereAct,
+  type GospelAct,
 } from '@/lib/gospelStory';
 import { openYouVersion } from '@/lib/spiritual';
 
-// Tab God's Story ✝️ — lima babak cerita besar Alkitab, dengan penanda
-// "kamu di sini" di babak Pengudusan.
+// Tab God's Story ✝️ — lima babak cerita besar Alkitab sebagai TIMELINE.
 //
 // Kenapa ini bukan sekadar bacaan: lihat komentar panjang di lib/gospelStory.ts.
 // Singkatnya, seluruh app ini mengurus hari ini, dan tab ini satu-satunya yang
 // memberi tahu hari ini itu bagian dari apa.
 //
-// Bentuknya sengaja KOLOM BERURUT ke bawah, bukan lima kotak sejajar seperti
-// bagan aslinya: di layar HP lima kolom berarti tulisan sekecil biji, dan yang
-// hilang justru isinya. Urut ke bawah juga lebih jujur pada bentuk ceritanya —
-// ia memang berjalan dari atas ke bawah, satu arah, dan kita berhenti di
-// tengah.
+// ── Bentuknya (29 Sep 2026) ────────────────────────────────────────────
+// Garis tegak di tengah, bulatan beremoji di tiap babak, dan papan namanya
+// berselang-seling kiri-kanan. Isi lengkap tiap babak (ayat, kutipan, artinya
+// hari ini) PINDAH ke modal yang terbuka saat babaknya di-click.
+//
+// Sebelumnya kelimanya digambar sebagai lima kartu penuh yang berderet, dan
+// akibatnya kebalikan dari maksudnya: yang harus terbaca sekali pandang adalah
+// URUTAN & LETAKMU di dalamnya, tapi yang memenuhi layar justru isi kelima
+// babak sekaligus — jadi harus digulung jauh cuma untuk melihat bahwa ceritanya
+// ada lima. Sekarang seluruh ceritanya muat dalam satu layar, dan yang ingin
+// dibaca dalam-dalam tinggal di-click.
+//
+// Babak berjalan (Renewal) tidak lagi diumumkan lewat kartu pembuka "kamu di
+// babak Pengudusan". Ia cukup DIBERI WARNA yang berbeda: dalam sebuah timeline,
+// satu titik yang berbeda sendiri sudah berarti "kamu di sini" tanpa perlu
+// dikalimatkan.
 export function GospelStoryTab() {
-  const sini = gospelHereAct();
+  const [buka, setBuka] = useState<GospelAct | null>(null);
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      {/* Kartu pembuka: satu kalimat yang paling ingin diingat. */}
-      <View style={styles.heroCard}>
-        <VixText heading="eyebrow" additionalStyle={styles.heroEyebrow}>
-          God&apos;s Big Story
-        </VixText>
-        <VixText heading="title" additionalStyle={styles.heroTitle}>
-          {sini.emoji} Kamu di babak {sini.stageId}
-        </VixText>
-        <VixText heading="paragraph" additionalStyle={styles.heroText}>
-          Pembenaranmu sudah selesai dikerjakan Yesus. Pemuliaan belum tiba. Di
-          antara keduanya, kamu sedang dikuduskan, dan itu memang belum selesai.
-        </VixText>
-        <VixText heading="paragraph" additionalStyle={styles.heroText}>
-          Jadi teruslah hidup kudus, hidup berkenan, hidup melayani. Bukan
-          supaya diterima, tapi karena sudah diterima.
-        </VixText>
-      </View>
-
-      {GOSPEL_ACTS.map((a, i) => {
-        const here = a.key === GOSPEL_HERE;
-        return (
-          <View key={a.key}>
-            {/* Garis penyambung antar-babak: ceritanya satu, bukan lima kartu
-                yang kebetulan berdekatan. */}
-            {i > 0 && <View style={styles.connector} />}
-            <View style={[styles.card, here && styles.cardHere]}>
-              <View style={styles.cardTop}>
-                <VixText
-                  heading="bold"
-                  additionalStyle={here ? styles.titleHere : styles.title}>
-                  {a.emoji} {a.title}
-                </VixText>
-                <VixText
-                  heading="label"
-                  additionalStyle={here ? styles.subHere : styles.sub}>
-                  {a.titleId}
-                </VixText>
-              </View>
-
-              {/* Tahap keselamatan yang jatuh di babak ini — cuma tiga babak
-                  terakhir yang punya, jadi barisnya memang tidak selalu ada. */}
-              {a.stage ? (
-                <View style={[styles.stagePill, here && styles.stagePillHere]}>
-                  <VixText
-                    heading="label"
-                    additionalStyle={here ? styles.stageTextHere : styles.stageText}>
-                    {here ? '📍 ' : ''}
-                    {a.stage} · {a.stageId}
-                  </VixText>
-                </View>
-              ) : null}
-
+    <View style={styles.flex}>
+      <ScrollView contentContainerStyle={styles.content}>
+        {GOSPEL_ACTS.map((a, i) => {
+          const here = a.key === GOSPEL_HERE;
+          // Berselang-seling kiri-kanan: itu yang membuat deretan ini terbaca
+          // sebagai perjalanan, bukan sebagai daftar.
+          const kanan = i % 2 === 0;
+          const papan = (
+            <PressableScale
+              style={[styles.papan, here && styles.papanHere]}
+              scaleTo={0.97}
+              onPress={() => setBuka(a)}>
               <VixText
-                heading="paragraph"
-                additionalStyle={here ? styles.bodyHere : styles.body}>
-                {a.summary}
+                heading="bold"
+                additionalStyle={here ? styles.namaHere : styles.nama}>
+                {a.title}
               </VixText>
-
-              {/* Ayatnya bisa di-click → terbuka di YouVersion, sama seperti
-                  acuan ayat di Revive & Promise. */}
-              <PressableScale onPress={() => void openYouVersion(a.verseRef)}>
-                <VixText
-                  heading="label"
-                  additionalStyle={here ? styles.verseHere : styles.verse}>
-                  📖 {a.verseRef}
-                </VixText>
-              </PressableScale>
               <VixText
                 heading="label"
-                additionalStyle={here ? styles.quoteHere : styles.quote}>
-                “{a.verseText}”
+                additionalStyle={here ? styles.namaIdHere : styles.namaId}>
+                {a.titleId}
               </VixText>
+            </PressableScale>
+          );
 
-              <View style={[styles.nowBox, here && styles.nowBoxHere]}>
-                <VixText
-                  heading="label"
-                  additionalStyle={here ? styles.nowTextHere : styles.nowText}>
-                  {a.now}
-                </VixText>
+          return (
+            <View key={a.key}>
+              {/* Garis penyambung antar-babak. Ceritanya SATU: kalau garisnya
+                  hilang, kelima bulatan cuma jadi lima tombol berdekatan. */}
+              {i > 0 && <View style={styles.garis} />}
+
+              <View style={styles.baris}>
+                {/* Kedua sisi sama-sama `flex: 1`, jadi bulatannya tetap tepat
+                    di tengah berapa pun panjang nama babaknya — dan garis
+                    tegak di atas & bawahnya benar-benar menyambung, bukan
+                    meleset sedikit di babak bernama panjang. */}
+                <View style={styles.sisi}>{!kanan ? papan : null}</View>
+                <PressableScale
+                  style={[styles.bulat, here && styles.bulatHere]}
+                  scaleTo={0.92}
+                  onPress={() => setBuka(a)}>
+                  <VixText additionalStyle={styles.emoji}>{a.emoji}</VixText>
+                </PressableScale>
+                <View style={styles.sisi}>{kanan ? papan : null}</View>
               </View>
             </View>
+          );
+        })}
+      </ScrollView>
+
+      {/* Penjelasan satu babak. Judulnya sudah menyebut babaknya, jadi di
+          dalamnya tinggal isinya. */}
+      <SheetModal
+        visible={buka !== null}
+        title={buka ? `${buka.emoji} ${buka.title}` : ''}
+        subtitle={buka?.titleId}
+        onClose={() => setBuka(null)}>
+        {buka ? (
+          <View style={styles.isiModal}>
+            {/* Tahap keselamatan yang jatuh di babak ini — cuma tiga babak
+                terakhir yang punya, jadi barisnya memang tidak selalu ada. */}
+            {buka.stage ? (
+              <View
+                style={[
+                  styles.tahap,
+                  buka.key === GOSPEL_HERE && styles.tahapHere,
+                ]}>
+                <VixText
+                  heading="label"
+                  additionalStyle={
+                    buka.key === GOSPEL_HERE
+                      ? styles.tahapTeksHere
+                      : styles.tahapTeks
+                  }>
+                  {buka.stage} · {buka.stageId}
+                </VixText>
+              </View>
+            ) : null}
+
+            <VixText heading="paragraph" additionalStyle={styles.ringkas}>
+              {buka.summary}
+            </VixText>
+
+            {/* Ayatnya bisa di-click → terbuka di YouVersion, sama seperti
+                acuan ayat di Revive & Promise. */}
+            <PressableScale onPress={() => void openYouVersion(buka.verseRef)}>
+              <VixText heading="label" additionalStyle={styles.ayat}>
+                📖 {buka.verseRef}
+              </VixText>
+            </PressableScale>
+            <VixText heading="label" additionalStyle={styles.kutipan}>
+              “{buka.verseText}”
+            </VixText>
+
+            <View style={styles.kiniBox}>
+              <VixText heading="label" additionalStyle={styles.kiniText}>
+                {buka.now}
+              </VixText>
+            </View>
           </View>
-        );
-      })}
-    </ScrollView>
+        ) : null}
+      </SheetModal>
+    </View>
   );
 }
 
+const BULAT = 58;
+
 const styles = StyleSheet.create({
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
-  // Kartu pembuka: ungu pekat Spiritual, satu-satunya blok gelap di tab ini.
-  heroCard: {
-    backgroundColor: Color.SPIRITUAL_DEEP,
-    borderRadius: 18,
-    padding: 16,
-    gap: 6,
-    marginBottom: CARD_GAP,
-  },
-  heroEyebrow: { color: Color.SPIRITUAL },
-  heroTitle: { color: Color.TEXT_REVERSE },
-  heroText: { color: Color.TEXT_ON_DARK_MUTED },
-  // Garis tegak penyambung babak — pendek saja, cukup untuk membaca urutannya.
-  connector: {
-    width: 2,
-    height: 14,
+  flex: { flex: 1 },
+  content: { ...SCREEN_CONTENT, paddingBottom: 32 },
+
+  // ── Timeline ───────────────────────────────────────────────────────────
+  baris: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sisi: { flex: 1 },
+  // Garis tegak antar-babak. `alignSelf: 'center'` cukup karena kedua sisi
+  // barisnya sama lebar — jadi ia jatuh tepat di bawah bulatannya.
+  garis: {
+    width: 3,
+    height: 22,
     alignSelf: 'center',
     backgroundColor: Color.SPIRITUAL_DARK,
+    borderRadius: 2,
   },
-  card: {
-    ...PANEL,
-    padding: 14,
-    gap: 6,
+  bulat: {
+    width: BULAT,
+    height: BULAT,
+    borderRadius: BULAT / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Color.CONTAINER,
+    borderWidth: 3,
+    borderColor: Color.SPIRITUAL_DARK,
   },
-  // Babak berjalan: pastel Spiritual bergaris tepi tegas, jadi ia langsung
-  // ketemu mata tanpa perlu dibaca satu per satu.
-  cardHere: {
-    backgroundColor: Color.SPIRITUAL,
+  // Babak berjalan: bulatannya PEKAT. Inilah satu-satunya penanda "kamu di
+  // sini" sekarang, jadi bedanya harus terbaca sekali pandang.
+  bulatHere: {
+    backgroundColor: Color.SPIRITUAL_DEEP,
     borderColor: Color.SPIRITUAL_DEEP,
-    borderWidth: 2,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  title: { color: Color.TEXT_TITLE },
-  titleHere: { color: Color.SPIRITUAL_DEEP },
-  sub: { color: Color.TEXT_LABEL },
-  subHere: { color: Color.SPIRITUAL_DARK },
-  stagePill: {
+  emoji: { fontSize: 24, lineHeight: 30 },
+  papan: {
+    backgroundColor: Color.CONTAINER,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Color.BORDER,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 1,
+  },
+  papanHere: {
+    backgroundColor: Color.SPIRITUAL_DEEP,
+    borderColor: Color.SPIRITUAL_DEEP,
+  },
+  nama: { color: Color.TEXT_TITLE },
+  namaHere: { color: Color.TEXT_REVERSE },
+  namaId: { color: Color.TEXT_LABEL },
+  namaIdHere: { color: Color.SPIRITUAL },
+
+  // ── Isi modal ──────────────────────────────────────────────────────────
+  isiModal: { gap: 10 },
+  tahap: {
     alignSelf: 'flex-start',
     backgroundColor: Color.CONTRAST_CONTAINER,
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
-  stagePillHere: { backgroundColor: Color.SPIRITUAL_DEEP },
-  stageText: { color: Color.TEXT_LABEL },
-  stageTextHere: { color: Color.TEXT_REVERSE },
-  body: { color: Color.TEXT_PARAGRAPH },
-  bodyHere: { color: Color.SPIRITUAL_DEEP },
-  verse: { color: Color.MAIN, textDecorationLine: 'underline' },
-  verseHere: { color: Color.SPIRITUAL_DEEP, textDecorationLine: 'underline' },
-  quote: { color: Color.TEXT_LABEL, fontStyle: 'italic' },
-  quoteHere: { color: Color.SPIRITUAL_DARK, fontStyle: 'italic' },
-  nowBox: {
+  tahapHere: { backgroundColor: Color.SPIRITUAL_DEEP },
+  tahapTeks: { color: Color.TEXT_LABEL },
+  tahapTeksHere: { color: Color.TEXT_REVERSE },
+  ringkas: { color: Color.TEXT_PARAGRAPH },
+  ayat: { color: Color.MAIN, textDecorationLine: 'underline' },
+  kutipan: { color: Color.TEXT_LABEL, fontStyle: 'italic' },
+  kiniBox: {
     borderLeftWidth: 3,
-    borderLeftColor: Color.BORDER,
+    borderLeftColor: Color.SPIRITUAL_DARK,
     paddingLeft: 10,
     marginTop: 2,
   },
-  nowBoxHere: { borderLeftColor: Color.SPIRITUAL_DEEP },
-  nowText: { color: Color.TEXT_PARAGRAPH },
-  nowTextHere: { color: Color.SPIRITUAL_DEEP },
+  kiniText: { color: Color.TEXT_PARAGRAPH },
 });

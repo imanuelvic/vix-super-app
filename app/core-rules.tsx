@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CardActionButton } from '@/components/common/CardActionButton';
 import { EditFooter } from '@/components/common/EditFooter';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
@@ -223,9 +224,9 @@ export default function CoreRulesScreen() {
             {r.body.trim() ? (
               <RuleBody body={r.body} />
             ) : (
-              <VixText heading="label" additionalStyle={styles.empty}>
+              <EmptyText>
                 Panduan ini belum ada isinya.
-              </VixText>
+              </EmptyText>
             )}
             <View style={styles.actionRow}>
               <CardActionButton
@@ -275,9 +276,9 @@ export default function CoreRulesScreen() {
           />
 
           {rules.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada panduan. Tambahkan aturan untuk jenis acara CORE-mu 📜
-            </VixText>
+            </EmptyText>
           ) : (
             rules.map(renderCard)
           )}
@@ -392,10 +393,9 @@ export default function CoreRulesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   addButton: { marginBottom: CARD_GAP },
-  empty: { textAlign: 'center', marginTop: 10 },
   card: {
     ...PANEL,
     paddingHorizontal: 14,

@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
-import { SECTION_SPACE } from '@/assets/style/section';
+import { SECTION_SPACE, SECTION_SPACE_FIRST } from '@/assets/style/section';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -166,9 +166,18 @@ export function TestimonyTab() {
           </View>
         ) : null}
 
-        {tahunan.map((tahun) => (
+        {tahunan.map((tahun, iTahun) => (
           <View key={tahun.year}>
-            <VixText heading="title" additionalStyle={styles.yearTitle}>
+            {/* Tahun PERTAMA tidak menambah jarak atasnya sendiri: jarak ke
+                tombol yang dipatok sudah milik bar patoknya. Tahun berikutnya
+                tetap bernapas penuh — di situ ia memang pemisah antara dua
+                daftar. */}
+            <VixText
+              heading="title"
+              additionalStyle={[
+                styles.yearTitle,
+                iTahun === 0 && styles.yearTitleFirst,
+              ]}>
               {tahun.year}
             </VixText>
             {tahun.items.map((t) => {
@@ -277,6 +286,7 @@ const styles = StyleSheet.create({
   emptyWrap: { alignItems: 'center' },
   seedPill: { marginTop: 4 },
   yearTitle: { ...SECTION_SPACE, color: Color.SPIRITUAL_DARK },
+  yearTitleFirst: { ...SECTION_SPACE_FIRST },
   card: { ...CARD, gap: 4, marginBottom: 8 },
   cardTop: {
     flexDirection: 'row',

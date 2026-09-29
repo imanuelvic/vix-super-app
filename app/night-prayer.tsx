@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BLOCK_CARD, CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { CONTENT_COLUMN } from '@/assets/style/layout';
+import { CONTENT_COLUMN, SCREEN_SAFE } from '@/assets/style/layout';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -17,7 +17,7 @@ import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { formatFullDate } from '@/lib/format';
 import { subscribeHabitDay, type HabitDay } from '@/lib/health';
-import { LOAD_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { SAVE_ERROR } from '@/lib/messages';
 import {
   nightAllDone,
   nightDoneCount,
@@ -52,12 +52,28 @@ export default function NightPrayerScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<NightKey | null>(null);
 
+  // `onError` WAJIB fungsi yang stabil (setError dari useState), bukan panah
+  // yang lahir tiap render — dan `todayId` wajib disebut di `deps`.
+  //
+  // Dulu di sini tertulis `onError: () => setError(LOAD_ERROR)`, dan itulah
+  // sebab centangnya tidak pernah menempel (29 Sep 2026). Rantainya:
+  // panah baru tiap render → `onError` jadi dependency baru → efek langganan
+  // dipasang ULANG → `liveDoc` langsung memutar ulang snapshot TERAKHIR yang
+  // ia pegang → `setDay` optimistis barusan tertimpa nilai lama. Dan karena
+  // pemutaran ulang itu membuat objek baru, `setDay` berubah lagi → render →
+  // pasang ulang → seterusnya. Centangnya tidak pernah sempat kelihatan.
+  //
+  // Kenapa tidak tertolong React Compiler: berkas ini TIDAK ikut dimemo
+  // (compiler menyerah pada `[nightDoneId(key)]:` sebagai kunci objek dan pada
+  // `try/finally` di bawah), jadi panahnya benar-benar lahir tiap render.
+  // Aturannya sendiri sudah tertulis di hooks/useLive.ts sejak lama; sekarang
+  // ditegakkan mesin lewat cek/cek-langganan-stabil.js.
   useLiveAll(
     (uid, fail) => [
       subscribeHabitDay(uid, todayId, setDay, fail),
       subscribeNightStreak(uid, setStreak, fail),
     ],
-    { onError: () => setError(LOAD_ERROR) },
+    { onError: setError, deps: [todayId] },
   );
 
   const plan = nightPlan(todayId, now);
@@ -170,7 +186,7 @@ export default function NightPrayerScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { paddingTop: 4, paddingBottom: 32, alignItems: 'center' },
   inner: { ...CONTENT_COLUMN, paddingHorizontal: 20, gap: CARD_GAP },
   hero: { ...BLOCK_CARD, gap: 4 },

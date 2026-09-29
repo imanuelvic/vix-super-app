@@ -25,7 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { CONTENT_COLUMN } from '@/assets/style/layout';
+import { CONTENT_COLUMN, SCREEN_SAFE } from '@/assets/style/layout';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
@@ -169,7 +169,7 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   topRow: {
     ...CONTENT_COLUMN,
     flexDirection: 'row',

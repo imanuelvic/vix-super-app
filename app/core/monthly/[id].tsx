@@ -4,9 +4,10 @@ import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
@@ -200,9 +201,9 @@ export default function MonthlyMeetingEditScreen() {
       {loading ? (
         <LoadingCenter />
       ) : hilang ? (
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText additionalStyle={styles.empty}>
           {error ?? 'Notulen ini sudah tidak ada.'}
-        </VixText>
+        </EmptyText>
       ) : (
         <>
           <KeyboardAwareScrollView contentContainerStyle={styles.content}>
@@ -332,9 +333,13 @@ export default function MonthlyMeetingEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 24 },
-  empty: { textAlign: 'center', marginTop: 24, paddingHorizontal: 20 },
+  // Pesan SATU LAYAR ("Notulen ini sudah tidak ada"), bukan baris di dalam
+  // daftar: ia anak langsung SafeAreaView, jadi napas kiri-kanannya harus
+  // ditulis di sini. Jarak atas-bawahnya tetap milik EmptyText, sama dengan
+  // seluruh layar lain.
+  empty: { paddingHorizontal: 20 },
   fieldLabel: { marginBottom: 6 },
   formGap: { marginBottom: 10 },
   textArea: { minHeight: 88, paddingTop: 12, textAlignVertical: 'top' },

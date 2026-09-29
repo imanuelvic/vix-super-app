@@ -90,15 +90,19 @@ console.log('\n== 1a. Puasa dikunci 3 hari sesudah selesai ==');
 const rencana = (endId) => ({ id: 'x', title: 'T', prayer: '', rules: '', answer: '', startId: '2026-08-24', endId, days: {} });
 const P = rencana('2026-08-29');
 
-c('masa tenggangnya 3 hari', puasa.FASTING_GRACE_DAYS === 3);
-c('batas terakhir bisa diedit = selesai + 3 hari',
-  puasa.fastingEditableUntil(P) === '2026-09-01', puasa.fastingEditableUntil(P));
+// 29 Sep 2026: tenggangnya dipendekkan 3 → 2 hari atas permintaan.
+// Tanggalnya TETAP ditulis apa adanya di sini, bukan dihitung dari
+// FASTING_GRACE_DAYS — kalau dihitung, ceknya cuma mengulang rumus yang
+// diujinya dan akan tetap hijau berapa pun angkanya.
+c('masa tenggangnya 2 hari', puasa.FASTING_GRACE_DAYS === 2);
+c('batas terakhir bisa diedit = selesai + 2 hari',
+  puasa.fastingEditableUntil(P) === '2026-08-31', puasa.fastingEditableUntil(P));
 // Hari terakhir puasa & sepanjang masa tenggang: MASIH bisa diedit.
 c('hari terakhir puasa (29 Agu) belum terkunci',
   puasa.fastingLocked(P, new Date(2026, 7, 29)) === false);
-c('hari ke-3 tenggang (1 Sep) masih bisa diedit — jawaban doa sering telat',
-  puasa.fastingLocked(P, new Date(2026, 8, 1)) === false);
-c('2 September TERKUNCI', puasa.fastingLocked(P, new Date(2026, 8, 2)) === true);
+c('hari ke-2 tenggang (31 Agu) masih bisa diedit — jawaban doa sering telat',
+  puasa.fastingLocked(P, new Date(2026, 7, 31)) === false);
+c('1 September TERKUNCI', puasa.fastingLocked(P, new Date(2026, 8, 1)) === true);
 c('sekali terkunci, selamanya terkunci',
   puasa.fastingLocked(P, new Date(2027, 0, 1)) === true &&
   puasa.fastingLocked(P, new Date(2030, 0, 1)) === true);
@@ -106,11 +110,11 @@ c('sekali terkunci, selamanya terkunci',
 c('puasa tanpa tanggal selesai tidak pernah terkunci',
   puasa.fastingLocked(rencana(''), new Date(2030, 0, 1)) === false);
 
-c('hitung mundur: 1 Sep = hari terakhir (0 hari lagi)',
-  puasa.fastingLockDaysLeft(P, new Date(2026, 8, 1)) === 0,
-  puasa.fastingLockDaysLeft(P, new Date(2026, 8, 1)));
-c('30 Agu → 2 hari lagi',
-  puasa.fastingLockDaysLeft(P, new Date(2026, 7, 30)) === 2);
+c('hitung mundur: 31 Agu = hari terakhir (0 hari lagi)',
+  puasa.fastingLockDaysLeft(P, new Date(2026, 7, 31)) === 0,
+  puasa.fastingLockDaysLeft(P, new Date(2026, 7, 31)));
+c('30 Agu → 1 hari lagi',
+  puasa.fastingLockDaysLeft(P, new Date(2026, 7, 30)) === 1);
 c('selama puasanya masih jalan, belum ada hitung mundur',
   puasa.fastingLockDaysLeft(P, new Date(2026, 7, 26)) === null);
 c('sesudah terkunci, hitung mundurnya berhenti (bukan angka negatif)',
@@ -120,11 +124,40 @@ const layarPuasa = baca('app/fasting.tsx');
 const layarHari = baca('app/fasting-days.tsx');
 c('layar Edit Puasa: tombol simpan HILANG saat terkunci (bukan sekadar mati)',
   /\{terkunci \? \([\s\S]{0,400}?🔒[\s\S]{0,400}?\) : \([\s\S]{0,300}?<PrimaryButton/.test(layarPuasa));
-c('kolom isiannya ikut baca-saja',
-  (layarPuasa.match(/editable=\{!busy && !terkunci\}/g) ?? []).length >= 4,
-  (layarPuasa.match(/editable=\{!busy && !terkunci\}/g) ?? []).length);
-c('tanggal mulai & selesai ikut dikunci',
-  (layarPuasa.match(/disabled=\{terkunci\}/g) ?? []).length === 2);
+// 29 Sep 2026: terkunci tidak lagi berarti "kotak isian yang dimatikan",
+// melainkan TAMPILAN BACA — kotaknya hilang sama sekali, sama seperti Catatan
+// Khotbah yang sudah lewat masanya. Ceknya ikut naik kelas: dulu cukup
+// menghitung `editable={!busy && !terkunci}`, yang tetap hijau walau kotaknya
+// masih terpampang; sekarang ia menuntut cabang terkuncinya benar-benar TIDAK
+// memuat satu pun kolom isian.
+const cabangKunci = (() => {
+  const src = kode('app/fasting.tsx');
+  const i = src.indexOf('{terkunci ? (');
+  if (i === -1) return '';
+  // Sampai pembuka cabang sebaliknya (formulirnya).
+  const j = src.indexOf(') : (', i);
+  return j === -1 ? '' : src.slice(i, j);
+})();
+c('ada cabang khusus saat terkunci', cabangKunci !== '');
+c('cabang terkunci memakai tampilan baca bersama (ReadBlock), bukan salinan sendiri',
+  /<ReadBlock/.test(cabangKunci) &&
+  /from '@\/components\/common\/ReadBlock'/.test(layarPuasa));
+c('tidak ada satu pun kolom isian di cabang terkunci',
+  !/<FormInput/.test(cabangKunci) && !/<DateField/.test(cabangKunci),
+  cabangKunci.match(/<(FormInput|DateField)/g)?.join(', '));
+c('keenam isinya tetap TERBACA saat terkunci (tidak ada yang hilang)',
+  ['Nama puasa', 'Pokok doa utama', 'Peraturan puasa saya', 'Mulai puasa',
+    'Selesai puasa', 'Jawaban Doa'].every((s) => cabangKunci.includes(s)),
+  cabangKunci.slice(0, 80));
+// Tanggalnya jadi teks, jadi ia harus diformat — bukan objek Date mentah.
+c('tanggalnya ditulis sebagai tanggal yang terbaca, bukan Date mentah',
+  /formatShortDayDate\(startDate\)/.test(cabangKunci) &&
+  /formatShortDayDate\(endDate\)/.test(cabangKunci));
+// Sisi sebaliknya: cabang yang MASIH bisa diubah tidak boleh ikut kehilangan
+// kolomnya — kalau tertukar, puasa baru jadi mustahil diisi.
+c('cabang yang masih bisa diubah tetap punya kolom isiannya',
+  (kode('app/fasting.tsx').match(/<FormInput/g) ?? []).length === 4 &&
+  (kode('app/fasting.tsx').match(/<DateField/g) ?? []).length === 2);
 c('menyimpan ditolak di sumbernya juga, bukan cuma tombolnya disembunyikan',
   /if \(!user \|\| busy \|\| terkunci\) return;/.test(layarPuasa));
 c('centang harian & simpan modal ikut ditolak saat terkunci',

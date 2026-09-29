@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
+import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { VixText } from '@/components/common/VixText';
 import { NewsCard } from '@/components/news/NewsCard';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
@@ -77,10 +76,10 @@ export default function NewsSavedScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           {items.length === 0 ? (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada yang disimpan. Tekan lambang 🔖 di kanan sebuah berita
               untuk menyimpannya ke sini.
-            </VixText>
+            </EmptyText>
           ) : (
             items.map((n) => (
               <NewsCard
@@ -105,7 +104,6 @@ export default function NewsSavedScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 28 },
-  empty: { textAlign: 'center', marginTop: 24 },
 });

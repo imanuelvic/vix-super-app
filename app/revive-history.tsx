@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
+import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -88,11 +89,11 @@ export default function ReviveHistoryScreen() {
           {/* key=currentPage → scroll balik ke atas tiap ganti halaman */}
           <ScrollView key={currentPage} contentContainerStyle={styles.content}>
             {filtered.length === 0 ? (
-              <VixText heading="label" additionalStyle={styles.empty}>
+              <EmptyText>
                 {q !== ''
                   ? 'Tidak ada Revive yang cocok dengan pencarianmu.'
                   : 'Belum ada Revive, mulai hari ini ✍️'}
-              </VixText>
+              </EmptyText>
             ) : (
               <>
                 {pageItems.map((e) => (
@@ -132,11 +133,10 @@ export default function ReviveHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   searchWrap: { ...SCREEN_CONTENT, paddingBottom: 6, gap: 4 },
   resultCount: { color: Color.TEXT_LABEL, paddingHorizontal: 2 },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
-  empty: { textAlign: 'center', marginTop: 20 },
   card: {
     ...PANEL,
     padding: 14,

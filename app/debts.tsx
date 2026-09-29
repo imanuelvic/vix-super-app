@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { AddButton } from '@/components/common/AddButton';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import {
@@ -19,6 +19,7 @@ import { DateField } from '@/components/common/DateField';
 import { deadlineBorder, DeadlineTag } from '@/components/common/Deadline';
 import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { MoneyInput } from '@/components/common/MoneyInput';
@@ -304,11 +305,11 @@ export default function DebtsScreen() {
           />
 
           {list.length === 0 && (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               {isMine
                 ? 'Belum ada pinjaman, semoga tetap begini 😌'
                 : 'Belum ada yang meminjam dari kamu.'}
-            </VixText>
+            </EmptyText>
           )}
 
           {list.map((d) => {
@@ -623,10 +624,9 @@ export default function DebtsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Color.BACKGROUND },
+  safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   addButton: { marginBottom: CARD_GAP },
-  empty: { textAlign: 'center', marginTop: 8 },
   card: {
     ...PANEL,
     padding: 14,

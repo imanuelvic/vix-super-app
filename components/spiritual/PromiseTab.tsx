@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
+import { EmptyText } from '@/components/common/EmptyText';
 import { InfoChip } from '@/components/common/InfoChip';
 import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -50,9 +51,9 @@ export function PromiseTab({ list }: { list: HisPromise[] }) {
       {/* key = halaman → balik ke atas tiap ganti halaman. */}
       <ScrollView key={currentPage} contentContainerStyle={styles.content}>
         {list.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada janji yang dicatat.
-          </VixText>
+          </EmptyText>
         )}
 
         {pageItems.map((p) => {
@@ -120,7 +121,6 @@ export function PromiseTab({ list }: { list: HisPromise[] }) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
-  empty: { textAlign: 'center', marginTop: 8 },
   // Bentuknya sengaja sekeluarga dengan kartu Catatan Khotbah: garis tepi kiri
   // tebal berwarna Spiritual, isinya bertingkat dari acuan → judul → cerita.
   card: {

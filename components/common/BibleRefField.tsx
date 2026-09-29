@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
+import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { SearchBar } from '@/components/common/SearchBar';
@@ -52,9 +53,9 @@ function BookList({
         </View>
       ))}
       {grouped.length === 0 && (
-        <VixText heading="label" additionalStyle={styles.empty}>
+        <EmptyText>
           Kitab tidak ditemukan.
-        </VixText>
+        </EmptyText>
       )}
     </>
   );
@@ -322,5 +323,4 @@ const styles = StyleSheet.create({
     borderColor: Color.MAIN,
   },
   bookRowText: { color: Color.TEXT_TITLE, flexShrink: 1 },
-  empty: { textAlign: 'center', marginVertical: 14 },
 });

@@ -4,6 +4,7 @@ import { Image, RefreshControl, ScrollView, StyleSheet, View } from 'react-nativ
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { ChipRow } from '@/components/common/ChipRow';
+import { EmptyText } from '@/components/common/EmptyText';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
@@ -98,9 +99,9 @@ export function CreatorsTab() {
             />
           }>
           {tampil.length === 0 && (
-            <VixText heading="label" additionalStyle={styles.empty}>
+            <EmptyText>
               Belum ada video yang masuk. Tarik ke bawah untuk muat ulang 🎬
-            </VixText>
+            </EmptyText>
           )}
 
           {tampil.map((v) => (
@@ -144,7 +145,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 24 },
   center: { alignItems: 'center', gap: 12, paddingTop: 40, paddingHorizontal: 20 },
   error: { textAlign: 'center', color: Color.DANGER },
-  empty: { textAlign: 'center', marginTop: 20 },
   card: {
     backgroundColor: Color.CONTAINER,
     borderRadius: 14,

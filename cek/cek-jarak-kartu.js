@@ -184,5 +184,59 @@ ok('tidak ada lagi yang menyalin keempat propertinya', salinan.length === 0,
 ok('CARD (sudut 14) tetap berdiri sendiri, tidak ikut tergeser',
   /export const CARD: ViewStyle = \{[\s\S]{0,260}borderRadius: 14,/.test(card));
 
+// =====================================================================
+console.log('\n=== Wadah terluar layar (SCREEN_SAFE) ===');
+// =====================================================================
+// 29 Sep 2026: `safe: { flex: 1, backgroundColor: Color.BACKGROUND }` ditulis
+// tangan di 80 berkas — semuanya bernama sama & sama persis isinya. Ini warna
+// DASAR app (yang terlihat di sela kartu, di balik bar patok, dan di ruang
+// kosong bawah daftar), jadi selama ia tersebar di 80 tempat ia praktis tidak
+// bisa diganti lagi.
+const layoutSafe = baca('assets/style/layout.ts');
+ok('SCREEN_SAFE = flex 1 + latar BACKGROUND, dan TIDAK lebih',
+  /export const SCREEN_SAFE: ViewStyle = \{\s*\n\s*flex: 1,\s*\n\s*backgroundColor: Color\.BACKGROUND,\s*\n\};/.test(layoutSafe));
+const pemakaiSafe = semua.filter((f) => /safe: \{ \.\.\.SCREEN_SAFE \}/.test(baca(f)));
+ok(`dipakai di ${pemakaiSafe.length} layar (dulu ditulis tangan)`,
+  pemakaiSafe.length >= 80, String(pemakaiSafe.length));
+// Penjaga sebenarnya: tidak boleh ada yang menyalinnya lagi.
+const salinanSafe = semua.filter((f) =>
+  /\{ flex: 1, backgroundColor: Color\.BACKGROUND \}/.test(baca(f)),
+);
+ok('tidak ada lagi layar yang menyalin kedua nilainya', salinanSafe.length === 0,
+  salinanSafe.join(', '));
+// Satu pengecualian yang DISENGAJA: gerbang doa pagi berlatar ungu pekat
+// sepenuh layar. Ia harus tetap begitu — kalau ia ikut memakai token, layar
+// paling khas app ini diam-diam berubah jadi gading.
+ok('gerbang doa pagi tetap berlatar ungu pekat (pengecualian yang disengaja)',
+  /safe: \{ flex: 1, backgroundColor: Color\.SPIRITUAL_DARK \}/.test(
+    baca('components/spiritual/MorningJourney.tsx')));
+
+// =====================================================================
+console.log('\n=== Daftar yang masih kosong (EmptyText) ===');
+// =====================================================================
+// Sebelum ini 18 layar menyalin gayanya sendiri dengan SEBELAS jarak berbeda
+// (8 · 10 · 12 · 14 · 20 · 24 · 40 …). Tidak ada satu pun yang salah
+// sendirian; yang salah adalah tidak ada dua yang sama.
+const kosong = baca('components/common/EmptyText.tsx');
+ok('jaraknya satu angka, dipegang komponennya sendiri',
+  /empty: \{ textAlign: 'center', marginVertical: 10 \}/.test(kosong));
+const pemakaiKosong = semua.filter((f) => /<EmptyText/.test(baca(f)));
+ok(`dipakai di ${pemakaiKosong.length} layar`, pemakaiKosong.length >= 55,
+  String(pemakaiKosong.length));
+const salinanKosong = semua.filter(
+  (f) => !f.endsWith('EmptyText.tsx') &&
+    /empty: \{ textAlign: 'center', margin/.test(baca(f)),
+);
+ok('tidak ada lagi layar yang menyalin gayanya sendiri', salinanKosong.length === 0,
+  salinanKosong.join(', '));
+// Pesan SATU LAYAR (bukan baris di dalam daftar) boleh menambah napas
+// kiri-kanannya sendiri — tapi jarak atas-bawahnya tetap milik EmptyText.
+ok('pesan satu layar cuma menambah napas kiri-kanan, bukan jarak atas-bawah',
+  ['app/sermon.tsx', 'app/core/monthly/[id].tsx'].every((f) => {
+    const s = baca(f);
+    return /<EmptyText additionalStyle=\{styles\.empty\}>/.test(s) &&
+      /^ {2}empty: \{ paddingHorizontal: \d+ \},$/m.test(s);
+  }));
+
 console.log(gagal === 0 ? '\n✅ LULUS — satu irama jarak kartu.' : `\n❌ ${gagal} cek gagal.`);
 process.exit(gagal === 0 ? 0 : 1);

@@ -184,7 +184,7 @@ export function fastingMonthlyLabel(now: Date): string {
 // sesudahnya. Jadi ada masa tenggang.
 
 /** Berapa hari SESUDAH tanggal selesai catatannya masih boleh diubah. */
-export const FASTING_GRACE_DAYS = 3;
+export const FASTING_GRACE_DAYS = 2;
 
 /** Hari terakhir puasa ini masih bisa diedit ("YYYY-MM-DD"). */
 export function fastingEditableUntil(plan: FastingPlan): string {

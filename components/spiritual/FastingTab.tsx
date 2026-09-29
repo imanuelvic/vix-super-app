@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
+import { EmptyText } from '@/components/common/EmptyText';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { StickyTop } from '@/components/common/StickyTop';
@@ -94,10 +95,10 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
         {active && <View style={styles.pemisah} />}
 
         {plans.length === 0 && (
-          <VixText heading="label" additionalStyle={styles.empty}>
+          <EmptyText>
             Belum ada catatan puasa. Tentukan pokok doa, tanggal mulai–selesai &
             peraturanmu, lalu centang tiap hari yang berhasil 🍽️
-          </VixText>
+          </EmptyText>
         )}
 
         {others.map((p) => {
@@ -176,7 +177,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 14,
   },
-  empty: { textAlign: 'center', marginTop: 20 },
   card: {
     ...PANEL,
     flex: 1,
