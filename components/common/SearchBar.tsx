@@ -1,5 +1,6 @@
 import { StyleSheet, TextInput, View } from 'react-native';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { closePickers } from '@/components/common/pickerBus';
@@ -49,10 +50,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },

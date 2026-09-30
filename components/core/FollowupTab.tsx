@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
@@ -768,10 +769,7 @@ const styles = StyleSheet.create({
   waRow: { flexDirection: 'row', gap: 10 },
   waFlex: { flex: 1 },
   upcomingCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 14,
     marginBottom: 10,
     gap: 4,

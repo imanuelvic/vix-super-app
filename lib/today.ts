@@ -57,7 +57,13 @@ import {
   fitWindowLabel,
   type FitDay,
 } from './fitness';
-import { daysBetween, formatDayDate, formatMonthsDays, whenLabel } from './format';
+import {
+  daysBetween,
+  formatDayDate,
+  formatMonthsDays,
+  MONTH_NAMES,
+  whenLabel,
+} from './format';
 import { billUnsettled, outstandingTotal, sortedBills, unpaidCount, type Bill } from './friends';
 import { funReminderDue, type FunData } from './fun';
 import { futsalReminders, type FutsalData } from './futsal';
@@ -113,6 +119,11 @@ import {
   type Task,
   type TaskCategory,
 } from './tasks';
+import {
+  timelineMonthPending,
+  timelineNagDay,
+  type TimelineItem,
+} from './timeline';
 import { readingDue, type MeterReading } from './token';
 import { formatRupiah } from './transactions';
 import {
@@ -230,6 +241,26 @@ export type TodayModel = {
    * berganti nama, syaratnya tidak.
    */
   fastingMonthly: boolean;
+  /**
+   * 📍 Wishlist bulan berjalan yang belum dicentang — penagih tiap Senin.
+   *
+   * Sama alasannya dengan `fastingMonthly`: kolomnya sendiri, bukan dibaca
+   * balik dari baris Today lewat id. Di sini bedanya penting sekali, karena
+   * barisnya cuma lahir di hari Senin sedangkan notifikasinya dijadwalkan
+   * MINGGUAN ke iOS — jadi yang dikirim ke penjadwal harus tetap benar walau
+   * app-nya kebetulan terakhir dibuka hari Kamis.
+   */
+  timeline: TodayTimeline;
+};
+
+/** Wishlist 📍 bulan berjalan yang masih menunggu. */
+export type TodayTimeline = {
+  /** Berapa yang belum dicentang bulan ini. 0 = tidak ada yang perlu ditagih. */
+  pending: number;
+  /** Nama bulannya, mis. "September". */
+  month: string;
+  /** Judul yang disebut di kalimat pengingatnya (paling banyak dua). */
+  titles: string[];
 };
 
 /**
@@ -333,6 +364,8 @@ export type TodayInput = {
   meterReadings: MeterReading[];
   wheel: WheelData | null;
   fun: FunData;
+  /** Wishlist TAHUN INI (📍 Timeline) — penagih 📍 tiap Senin bulan berjalan. */
+  timeline: TimelineItem[];
   /** Kapan data ini terakhir dicadangkan — penagih 📦 sebulan sekali. */
   backup: BackupInfo;
   /** null = data Finance belum termuat (kartunya belum bisa bicara). */
@@ -1001,6 +1034,30 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     }
   }
 
+  // 📍 Wishlist bulan ini yang belum dicentang — TIAP SENIN saja.
+  //
+  // `next`, bukan `today`: ini rencana sebulan, dan menaruhnya di daftar hari
+  // ini akan menyingkirkan hal lain yang memang bertenggat hari ini. Tapi ia
+  // tetap masuk daftar, jadi ia ikut terbaca di All Reminder dan ikut disebut
+  // pengingat 🌿 Life sore hari — selain punya notifikasi Senin paginya
+  // sendiri (kelompok 📍 Timeline di lib/notify.ts).
+  const wishlistBulanIni = timelineMonthPending(input.timeline, now);
+  if (timelineNagDay(now) && wishlistBulanIni.length > 0) {
+    push({
+      id: 'timeline-month',
+      section: 'life',
+      tier: 'next',
+      rank: 6,
+      emoji: '📍',
+      title: `Wishlist ${MONTH_NAMES[now.getMonth()]}: ${wishlistBulanIni.length} belum dicentang`,
+      detail: wishlistBulanIni
+        .slice(0, 2)
+        .map((i) => i.title)
+        .join(' · '),
+      href: { pathname: '/timeline' },
+    });
+  }
+
   // 🎉 Fun — sudah lama tidak refreshing: cukup jadi catatan "later".
   if (funReminderDue(input.fun, now)) {
     push({
@@ -1095,6 +1152,14 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     // memutuskan mana yang perlu berbunyi hari apa.
     learning: { done: input.learningWeek.steps, skill: skillMinggu.title },
     fastingMonthly: fastingMonthlyDue(plans, now),
+    // TANPA syarat hari Senin — sengaja. Barisnya di atas memang cuma lahir
+    // hari Senin, tapi notifikasinya dijadwalkan MINGGUAN ke iOS, jadi
+    // penjadwalnya harus tetap melihat isinya di hari apa pun app dibuka.
+    timeline: {
+      pending: wishlistBulanIni.length,
+      month: MONTH_NAMES[now.getMonth()],
+      titles: wishlistBulanIni.slice(0, 2).map((i) => i.title),
+    },
   };
 }
 

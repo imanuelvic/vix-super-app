@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
+import { CARD_GAP, FIELD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { AddButton } from '@/components/common/AddButton';
@@ -688,10 +688,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 8,

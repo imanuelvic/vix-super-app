@@ -1,3 +1,4 @@
+import { SummaryCard } from '@/components/common/SummaryCard';
 import { UpkeepList, type UpkeepGroup } from '@/components/common/UpkeepList';
 import { useAuth } from '@/contexts/auth';
 import { formatDate } from '@/lib/format';
@@ -64,17 +65,21 @@ export function ChoreTab({ status }: { status: ChoreStatusMap }) {
 
   return (
     <UpkeepList
-      summary={{
-        label: 'Kebersihan rumah',
-        value:
-          needsAttention === 0
-            ? 'Semua bersih 🙌'
-            : `${needsAttention} perlu dibersihkan ⚠️`,
-        sub:
-          unknownCount > 0
-            ? `${unknownCount} item belum pernah dicatat.`
-            : 'Click item mana pun untuk memperbarui tanggalnya.',
-      }}
+      summary={
+        <SummaryCard
+          label="Kebersihan rumah"
+          value={
+            needsAttention === 0
+              ? 'Semua bersih 🙌'
+              : `${needsAttention} perlu dibersihkan ⚠️`
+          }
+          sub={
+            unknownCount > 0
+              ? `${unknownCount} item belum pernah dicatat.`
+              : 'Click item mana pun untuk memperbarui tanggalnya.'
+          }
+        />
+      }
       groups={groups}
       dialogHint="Kapan terakhir dibersihkan / dikerjakan?"
       noteOf={(key) => status[key]?.note ?? ''}

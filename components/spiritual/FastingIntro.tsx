@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -211,10 +212,7 @@ const styles = StyleSheet.create({
   ayatText: { color: Color.SPIRITUAL_DEEP, fontStyle: 'italic' },
   paragraf: { color: Color.TEXT_PARAGRAPH },
   pilihan: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 14,
     gap: 4,
   },

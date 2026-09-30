@@ -20,6 +20,7 @@ import {
   KOLAM_PUASA,
   KOLAM_REFLEKSI,
   KOLAM_RESCUE,
+  KOLAM_TIMELINE,
   KOLAM_WORK,
 } from './notifyCopy';
 import { LEARNING_STEPS, learningWeekday } from './learning';
@@ -119,6 +120,7 @@ export type NotifyGroup =
   | 'fitness'
   | 'learning'
   | 'fasting'
+  | 'timeline'
   | 'night-prayer';
 
 export type NotifyGroupMeta = {
@@ -142,6 +144,7 @@ export const NOTIFY_GROUPS: NotifyGroupMeta[] = [
   { key: 'fitness', emoji: '💪', label: 'Olahraga hari ini', when: 'Tiap malam 21.00, kalau belum dicatat & tidak dilewati', opens: 'Fitness 💪, sub-tab Exercise' },
   { key: 'learning', emoji: '🎓', label: 'Target Learning', when: 'Sen · Rab · Jum pagi 08.00 & malam 20.00, Minggu sore 17.00', opens: 'Learning 🎓, sub-tab Target' },
   { key: 'fasting', emoji: '🗓️', label: 'Puasa bulanan', when: 'Senin terakhir tiap bulan 09.00 (plus Minggu sebelumnya)', opens: 'Puasa Baru 🍽️' },
+  { key: 'timeline', emoji: '📍', label: 'Wishlist bulan ini', when: 'Tiap Senin 08.00, sampai wishlist bulan itu dicentang', opens: 'Timeline 📍' },
   { key: 'reflection', emoji: '📝', label: 'Refleksi malam', when: 'Tiap malam 21.30', opens: 'Today 🏠' },
   { key: 'night-prayer', emoji: '🌙', label: 'Night Prayer', when: 'Tiap malam 22.00, kalau belum didoakan', opens: 'Night Prayer 🌙' },
 ];
@@ -259,6 +262,8 @@ const RUTE_OLAHRAGA: TodayHref = { pathname: '/fitness', params: { tab: 'exercis
 const RUTE_LEARNING: TodayHref = { pathname: '/learning', params: { tab: 'week' } };
 // Layar Puasa Baru — tanpa ?id=, jadi ia membuka perjalanan 3 langkahnya.
 const RUTE_PUASA: TodayHref = { pathname: '/fasting' };
+// 📍 Timeline — wishlist tahun berjalan, tempat centangnya ada.
+const RUTE_TIMELINE: TodayHref = { pathname: '/timeline' };
 // Refleksi ditulis di blok Refleksi layar Today, bukan layar tersendiri.
 const RUTE_REFLEKSI: TodayHref = { pathname: '/' };
 /** Bacaan Alkitab dicatat di Habits, di kartu sesi jam itu. */
@@ -496,6 +501,30 @@ export function buildSlots(
         ? 'Tentukan fokusnya dulu, baru tanggalnya. Jangan sampai jadi rutinitas.'
         : null,
       route: RUTE_PUASA,
+    },
+    {
+      // 📍 Wishlist bulan berjalan — TIAP SENIN pagi, sampai dicentang.
+      //
+      // Pemicunya MINGGUAN (weekday 2 = Senin), sama seperti target Learning:
+      // iOS yang mengurus harinya, jadi ia tetap berbunyi Senin walau app-nya
+      // sepekan tidak dibuka. Kalau ia dijadwalkan harian lalu didiamkan
+      // sendiri, "setiap Senin" cuma benar selama app-nya dibuka tiap hari.
+      //
+      // Yang mendiamkannya cuma centang di wishlist-nya (pending jadi 0).
+      id: 'timeline-month',
+      group: 'timeline',
+      weekday: 2,
+      hour: 8,
+      minute: 0,
+      title: isi(pilihKalimat(KOLAM_TIMELINE, dayId, 'wishlist'), {
+        bulan: model.timeline.month,
+        sisa: String(model.timeline.pending),
+      }),
+      body:
+        model.timeline.pending > 0
+          ? gabung(model.timeline.titles.map((t) => `📍 ${t}`))
+          : null,
+      route: RUTE_TIMELINE,
     },
     {
       id: 'reflection',

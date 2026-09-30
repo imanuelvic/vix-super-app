@@ -60,8 +60,12 @@ console.log('\n=== 2. Dua pintu, SATU layar ===');
   c('typed routes sudah mengenal keduanya (router.push tidak ditolak tsc)',
     /race\/\[id\]/.test(rute) && /fun\/\[id\]/.test(rute));
 
-  // Kategori dari param DIJALANKAN: yang tak dikenal jatuh ke Rekreasi, dan
+  // Kategori dari param DIJALANKAN: yang tak dikenal jatuh ke Summit, dan
   // kategori yang dipatok pintunya (race) menang atas param apa pun.
+  //
+  // Dulu jatuhnya ke Rekreasi. Rekreasi dibuang 30 Sep 2026, jadi pintu /fun
+  // tinggal satu kategori dan cadangannya pindah ke situ. Yang dijaga tetap
+  // sama: param ngawur TIDAK boleh membuat layarnya kosong atau crash.
   const m = layar.match(
     /const category: FunCategory =\s*\n?\s*kategoriTetap \?\?\s*\n?\s*\((.+?)\);/,
   );
@@ -71,11 +75,17 @@ console.log('\n=== 2. Dua pintu, SATU layar ===');
       'kategoriTetap', 'kategoriParam', 'KATEGORI',
       `return kategoriTetap ?? (${m[1]});`,
     );
-    const K = ['summit', 'race', 'reflection', 'recreation'];
+    // Daftar kategorinya dibaca dari sumbernya, bukan ditulis ulang di sini —
+    // kalau suatu saat ada kategori yang dibuang lagi, ceknya ikut tahu.
+    const K = JSON.parse(
+      (layar.match(/const KATEGORI: FunCategory\[\] = (\[[^\]]*\]);/)?.[1] ?? '[]')
+        .replace(/'/g, '"'),
+    );
+    c('daftar kategorinya terbaca dari sumbernya', K.length > 0, JSON.stringify(K));
     c('param "summit" → summit', tentukan(undefined, 'summit', K) === 'summit');
-    c('param ngawur → jatuh ke Rekreasi, bukan crash',
-      tentukan(undefined, 'apa-ini', K) === 'recreation');
-    c('tanpa param → Rekreasi', tentukan(undefined, undefined, K) === 'recreation');
+    c('param ngawur → jatuh ke Summit, bukan crash',
+      tentukan(undefined, 'apa-ini', K) === 'summit');
+    c('tanpa param → Summit', tentukan(undefined, undefined, K) === 'summit');
     c('pintu race menang walau param bilang lain',
       tentukan('race', 'summit', K) === 'race');
   }

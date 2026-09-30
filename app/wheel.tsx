@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CARD, PANEL } from '@/assets/style/card';
+import { CARD, FIELD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -1091,10 +1091,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
+    ...FIELD,
   },
   nextButton: { flex: 1 },
   // Fokus
@@ -1158,10 +1155,7 @@ const styles = StyleSheet.create({
   },
   tipDialogList: { maxHeight: 320 },
   tipRow: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 8,
@@ -1272,10 +1266,7 @@ const styles = StyleSheet.create({
   retakeButton: {
     alignItems: 'center',
     paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
+    ...FIELD,
     marginTop: 12,
   },
   retakeText: { color: Color.MAIN },

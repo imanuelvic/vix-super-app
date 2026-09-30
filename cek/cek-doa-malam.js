@@ -215,6 +215,9 @@ console.log('\n=== 7. Di layar Today ===');
     bills: [], futsal: { members: [], sessions: [], cash: [] },
     dataPlans: [], population: {}, carParts: {}, residenceChores: {},
     meterReadings: [], wheel: null, fun: { entries: [] },
+    // 30 Sep 2026: wishlist tahun berjalan (lib/timeline.ts), penagih tiap
+    // Senin. Kosong = tidak ada yang ditagih, keadaan wajar di fixture.
+    timeline: [],
     // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
     // belum pernah diekspor, dan itu memang keadaan wajar di fixture.
     backup: { lastDayId: '', docCount: 0 }, finance: null,
@@ -255,6 +258,9 @@ console.log('\n=== 8. Pengingat 🌙 22.00 ===');
     // 27 Sep 2026: pengingat 🎓 target Learning ikut membaca model ini juga.
     // Sama alasannya: yang diuji di blok ini cuma slot 🌙.
     learning: { done: {}, skill: 'Public Speaking' },
+    // 30 Sep 2026: penagih 📍 wishlist bulan berjalan (tiap Senin) ikut
+    // membacanya. Sama alasannya: yang diuji di blok ini cuma slot 🌙.
+    timeline: { pending: 0, month: 'September', titles: [] },
   });
   const slot = (night) =>
     N.buildSlots(model(night), null, { dayId: HARI }).find((s) => s.id === 'night-prayer');

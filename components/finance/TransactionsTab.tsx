@@ -9,7 +9,7 @@ import {
     type ViewStyle,
 } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD_GAP, FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { AddButton } from '@/components/common/AddButton';
 import { Chip } from '@/components/common/Chip';
@@ -1027,12 +1027,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
+    ...FIELD,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
     marginBottom: 8,
   },
   categoryValue: { color: Color.TEXT_TITLE },

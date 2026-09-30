@@ -86,13 +86,23 @@ console.log('\n  …dan tiap fitur tetap memakai rumus & teksnya sendiri');
 ok('Car: rumus partCondition + interval bulan',
   /partCondition\(/.test(parts) && /tiap \$\{part\.intervalMonths\} bulan/.test(parts));
 ok('Car: label nada "✅ Aman"', /ok: '✅ Aman'/.test(parts));
-ok('Car: ringkasan "Kondisi perawatan"', /label: 'Kondisi perawatan'/.test(parts));
+// 30 Sep 2026: kartu atas Car bukan lagi ringkasan "Kondisi perawatan" (angka
+// itu sudah ada di badge tab & tile Home) melainkan KILOMETER yang bisa
+// di-click & menerima isian. Yang dijaga bersama tinggal LETAKnya; isinya milik
+// tiap fitur — dan itu justru yang diperiksa di sini.
+ok('Car: kartu atasnya kilometer, bukan ringkasan yang mengulang badge',
+  /summary=\{<OdometerCard odometer=\{odometer\} \/>\}/.test(parts) &&
+  !/Kondisi perawatan/.test(parts) &&
+  /Kilometer sekarang/.test(baca('components/car/OdometerCard.tsx')) &&
+  /setCarOdometer\(user\.uid, angka, date, odometer\)/.test(
+    baca('components/car/OdometerCard.tsx')));
 ok('Car: penuntun dialog "diganti / dicek"', /dialogHint="Kapan terakhir diganti \/ dicek\?"/.test(parts));
 ok('Car: simpan tetap setPartDate', /setPartDate\(user\.uid, key, date, note\)/.test(parts));
 ok('Rumah: rumus choreCondition + interval hari',
   /choreCondition\(/.test(chore) && /choreIntervalLabel\(chore\.intervalDays\)/.test(chore));
 ok('Rumah: label nada "✅ Bersih"', /ok: '✅ Bersih'/.test(chore));
-ok('Rumah: ringkasan "Kebersihan rumah"', /label: 'Kebersihan rumah'/.test(chore));
+ok('Rumah: ringkasannya tetap "Kebersihan rumah" (lewat SummaryCard bersama)',
+  /<SummaryCard\s*\n\s*label="Kebersihan rumah"/.test(chore));
 ok('Rumah: penuntun dialog "dibersihkan / dikerjakan"',
   /dialogHint="Kapan terakhir dibersihkan \/ dikerjakan\?"/.test(chore));
 ok('Rumah: simpan tetap setChoreDate', /setChoreDate\(user\.uid, key, date, note\)/.test(chore));

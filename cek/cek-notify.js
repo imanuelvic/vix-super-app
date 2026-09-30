@@ -67,6 +67,9 @@ const KOSONG = () => ({
   bills: [], futsal: { members: [], sessions: [], cash: [] },
   dataPlans: [], population: {}, carParts: {}, residenceChores: {},
   meterReadings: [], wheel: null, fun: { entries: [] },
+  // 30 Sep 2026: wishlist tahun berjalan (lib/timeline.ts), penagih tiap
+  // Senin. Kosong = tidak ada yang ditagih, keadaan wajar di fixture.
+  timeline: [],
     // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
     // belum pernah diekspor, dan itu memang keadaan wajar di fixture.
     backup: { lastDayId: '', docCount: 0 }, finance: null,
@@ -90,8 +93,10 @@ console.log('\n=== 1. Kelompok & jam ===');
   // TETAP (Sen · Rab · Jum · Min) dan tiga hari pertama punya DUA jendela jam
   // (pagi 08.00 & malam 20.00). Lihat bagian 8 di bawah.
   // 28 Sep 2026: + 🗓️ puasa bulanan (Senin terakhir tiap bulan, 09.00).
-  ok('dua puluh dua pengingat: 15 harian + 7 target Learning',
-    id.join(',') === 'journey,journey-rescue,bible-morning,bible-daytime,bible-night,core,work,life,finance-morning,finance-evening,reward,fitness,fasting-monthly,reflection,night-prayer,learning-discover-8,learning-discover-20,learning-dig-8,learning-dig-20,learning-summarize-8,learning-summarize-20,learning-share-17', id.join(','));
+  // 30 Sep 2026: + 📍 wishlist bulan berjalan (tiap Senin 08.00, sampai
+  // dicentang). Sisipannya tepat sebelum refleksi, mengikuti urutan jamnya.
+  ok('dua puluh tiga pengingat: 16 harian + 7 target Learning',
+    id.join(',') === 'journey,journey-rescue,bible-morning,bible-daytime,bible-night,core,work,life,finance-morning,finance-evening,reward,fitness,fasting-monthly,timeline-month,reflection,night-prayer,learning-discover-8,learning-discover-20,learning-dig-8,learning-dig-20,learning-summarize-8,learning-summarize-20,learning-share-17', id.join(','));
   const jam = (x) => `${x.hour}.${String(x.minute).padStart(2, '0')}`;
   ok('jamnya sesuai jendela fiturnya (journey 6.00 · bacaan 7/12.30/21.15 · Finance 7.30 & 20.30 · refleksi 21.30)',
     jam(cari(s, 'journey')) === '6.00' && jam(cari(s, 'bible-morning')) === '7.00' &&
@@ -99,9 +104,57 @@ console.log('\n=== 1. Kelompok & jam ===');
     jam(cari(s, 'finance-morning')) === '7.30' && jam(cari(s, 'finance-evening')) === '20.30' &&
     jam(cari(s, 'reflection')) === '21.30' && jam(cari(s, 'night-prayer')) === '22.00');
   ok('tiap kelompok punya keterangan jam di layar pengaturan',
-    N.NOTIFY_GROUPS.length === 12 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
+    N.NOTIFY_GROUPS.length === 13 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
   ok('kelompoknya sama dengan yang dipakai slot',
-    new Set(s.map((x) => x.group)).size === 12);
+    new Set(s.map((x) => x.group)).size === 13);
+}
+
+// =====================================================================
+console.log('\n=== 1b. 📍 Wishlist bulan berjalan: tiap SENIN, sampai dicentang ===');
+// =====================================================================
+// Ini pengingat pertama yang harinya tetap TAPI bukan milik Learning, jadi
+// yang dijaga bukan cuma isinya melainkan CARA menjadwalkannya: pemicunya
+// harus mingguan (weekday), bukan harian yang didiamkan sendiri. Bedanya baru
+// terasa kalau app-nya sepekan tidak dibuka, dan saat itu sudah terlambat.
+{
+  const wishlist = (items) => {
+    const input = KOSONG();
+    input.timeline = items;
+    return cari(slotsOf(input), 'timeline-month');
+  };
+
+  const kosong = wishlist([]);
+  ok('belum ada wishlist bulan ini → DIAM (body null)', kosong.body === null);
+
+  // HARI = tanggal tetap milik suite ini; bulannya yang dipakai penyaring.
+  const bulanIni = new Date(HARI).getMonth();
+  const ada = wishlist([
+    { id: 'a', title: 'Race 10K', category: 'health', month: bulanIni, done: false },
+    { id: 'b', title: 'Holiday', category: 'fun', month: bulanIni, done: false },
+    { id: 'c', title: 'Sudah beres', category: 'fun', month: bulanIni, done: true },
+    { id: 'd', title: 'Bulan lain', category: 'fun', month: (bulanIni + 1) % 12, done: false },
+    { id: 'e', title: 'Target tahunan', category: 'fun', month: null, done: false },
+  ]);
+  ok('yang belum dicentang di BULAN INI saja yang ditagih',
+    ada.body !== null && /Race 10K/.test(ada.body) && /Holiday/.test(ada.body) &&
+    !/Sudah beres/.test(ada.body) && !/Bulan lain/.test(ada.body) &&
+    !/Target tahunan/.test(ada.body), ada.body);
+  // Bulannya WAJIB disebut: ini rencana sebulan, dan tanpa nama bulannya
+  // kalimatnya terdengar seperti tugas harian yang bisa ditunda ke besok.
+  // Penampung `{…}` yang lupa diisi juga ketahuan di sini.
+  ok('judulnya menyebut bulannya, tanpa penampung yang lupa diisi',
+    ada.title.includes('September') && !/[{}]/.test(ada.title), ada.title);
+  ok('berbunyi tiap SENIN (weekday 2), bukan tiap hari', ada.weekday === 2);
+  ok('jamnya 08.00', ada.hour === 8 && ada.minute === 0);
+  ok('click-nya membuka Timeline, tempat centangnya ada',
+    ada.route.pathname === '/timeline');
+  // Yang MENGHENTIKANNYA cuma centang. Tidak ada tombol tutup & tidak ada
+  // penundaan: kalau bisa didiamkan tanpa dikerjakan, wishlist-nya kembali
+  // jadi daftar yang tenggelam seperti sebelum penagih ini ada.
+  const semuaDicentang = wishlist([
+    { id: 'a', title: 'Race 10K', category: 'health', month: bulanIni, done: true },
+  ]);
+  ok('semuanya sudah dicentang → berhenti menagih', semuaDicentang.body === null);
 }
 
 console.log('\n=== 8. 🎓 Target Learning: harinya TETAP, bukan tiap hari ===');

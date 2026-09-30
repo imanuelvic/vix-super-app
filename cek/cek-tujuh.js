@@ -102,8 +102,10 @@ console.log('\n   Car → Parts & Residence → Maintenance (lewat UpkeepList)')
 ok('tujuannya baris jatuh tempo PERTAMA — aturan yang sama dengan badge',
   /\.find\(\(r\) => deadlineDue\(r\.tone\)\)/.test(upkeep));
 ok('tiap baris mencatat posisinya', /onLayout=\{\(e\) => setRowY\(row\.key/.test(upkeep));
-ok('Car tak perlu mengoper isyarat apa pun lagi',
-  /<PartsTab status=\{parts\} \/>/.test(baca('app/car.tsx')) &&
+// `odometer` menyusul 30 Sep 2026 (kartu kilometer); yang tetap dijaga: tak ada
+// satu pun isyarat LOMPATAN yang dioper ke bawah.
+ok('Car tak perlu mengoper isyarat lompatan apa pun',
+  /<PartsTab status=\{parts\} odometer=\{odometer\} \/>/.test(baca('app/car.tsx')) &&
   !/focusDue/.test(baca('components/car/PartsTab.tsx')));
 ok('Residence juga',
   /<ChoreTab status=\{chores\} \/>/.test(baca('app/residence.tsx')) &&

@@ -110,6 +110,35 @@ export function newTimelineId(): string {
   return `t${Date.now().toString(36)}`;
 }
 
+// ============ Penagih wishlist bulan berjalan (30 Sep 2026) ============
+//
+// Wishlist itu ditulis sekali di awal tahun lalu tenggelam: tidak ada tenggat,
+// tidak ada yang menagih, dan Desember datang dengan separuhnya masih kosong.
+// Sejak sekarang, begitu masuk bulan baru dan bulan itu punya wishlist yang
+// belum dicentang, app menagihnya TIAP SENIN sampai dicentang.
+//
+// Kenapa Senin, dan kenapa cuma seminggu sekali: ini rencana sebulan, bukan
+// pekerjaan harian. Ditagih tiap hari ia jadi kebisingan yang diabaikan;
+// ditagih sekali di awal pekan, ia jadi pertanyaan yang pas, "minggu ini
+// giliran yang mana?". Empat sampai lima kali sebulan, lalu berhenti sendiri.
+//
+// Yang MENGHENTIKANNYA cuma satu: centang di wishlist-nya. Tidak ada tombol
+// tutup, tidak ada penundaan — kalau bisa didiamkan tanpa dikerjakan, ia
+// kembali jadi daftar yang tenggelam seperti sebelumnya.
+
+/** Wishlist BULAN BERJALAN yang belum dicentang (target tahunan tidak ikut). */
+export function timelineMonthPending(
+  items: TimelineItem[],
+  now: Date,
+): TimelineItem[] {
+  return items.filter((i) => i.month === now.getMonth() && !i.done);
+}
+
+/** Hari ini Senin? (penagih wishlist cuma muncul di hari ini) */
+export function timelineNagDay(now: Date): boolean {
+  return now.getDay() === 1;
+}
+
 // ============ Rekap & PDF: SELURUH tahun sekaligus ============
 // Layarnya bekerja per tahun (1 dokumen = 1 read), dan itu memang benar untuk
 // dipakai sehari-hari. Tapi rekap & PDF harus melihat semuanya sekaligus —

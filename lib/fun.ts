@@ -11,15 +11,22 @@ import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 import { pickCompressedImage } from './photo';
 
-// Fitur Fun & Recreation 🎉 — arsip tempat & pencapaian yang sudah dikunjungi:
-// Summit gunung, Race, tempat refleksi, dan tempat rekreasi.
+// Fitur Fun 🎉 — arsip pencapaian yang sudah dijalani: Summit gunung & Race.
 //
 // Semua disimpan dalam SATU dokumen kecil: users/{uid}/fun/data — { entries[] }.
 // Tiap entri kecil & tanpa foto, jadi cukup 1 listener & hemat baca Firestore
 // (1 read untuk seluruh arsip). Menambah/ubah menulis ulang array-nya.
 // Path ini otomatis tercakup Security Rules users/{userId}/{document=**}.
+//
+// Dua kategori DIBUANG total 30 Sep 2026 atas permintaan pemilik app:
+// "recreation" (sub-tab Rekreasi 🏝️) dan "reflection" (sub-tab Refleksi 🧘 yang
+// sejak 30 Agu 2026 sudah tidak punya tab sendiri dan cuma menumpang di
+// Rekreasi). Keduanya hilang berikut tab, isian, dan pintu pencariannya.
+// Entri lama dengan kategori itu memang tidak ikut terhapus dari Firestore
+// (app ini tidak punya tugas latar), tapi tidak ada satu pun jalan di app yang
+// membacanya lagi.
 
-export type FunCategory = 'summit' | 'race' | 'reflection' | 'recreation';
+export type FunCategory = 'summit' | 'race';
 
 export type FunEntry = {
   id: string;
@@ -164,24 +171,6 @@ const FUN_CATEGORIES: {
     // Jaraknya punya kolom sendiri (distanceKm) sejak 14 Sep 2026; kolom ini
     // untuk hasilnya: finisher, PB, kategori umur, dsb.
     detailLabel: 'Hasil (mis. finisher, PB)',
-  },
-  {
-    key: 'reflection',
-    label: 'Refleksi',
-    emoji: '🧘',
-    bg: Color.SPIRITUAL,
-    fg: Color.SPIRITUAL_DARK,
-    titleLabel: 'Nama tempat',
-    detailLabel: 'Kesan / makna (opsional)',
-  },
-  {
-    key: 'recreation',
-    label: 'Rekreasi',
-    emoji: '🏝️',
-    bg: Color.FINANCE_INVESTMENT,
-    fg: Color.FINANCE_INVESTMENT_DARK,
-    titleLabel: 'Nama tempat',
-    detailLabel: 'Jenis / kesan (opsional)',
   },
 ];
 

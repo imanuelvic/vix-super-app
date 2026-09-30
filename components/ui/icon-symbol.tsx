@@ -79,7 +79,7 @@ const MAPPING = {
   // Sub-tab Fun Futsal ⚽ di Friends — bola kaki, sama seperti nama fiturnya.
   'soccerball': 'sports-soccer',
   'figure.mind.and.body': 'self-improvement',
-  'beach.umbrella.fill': 'beach-access',
+  // ('beach.umbrella.fill' dibuang 30 Sep 2026 bersama sub-tab Recreation.)
   'dumbbell.fill': 'fitness-center',
   'graduationcap.fill': 'school',
   'figure.walk': 'directions-walk',
@@ -116,6 +116,12 @@ const MAPPING = {
   // di sebelahnya memakai 'bubble.left.fill' yang sudah ada di atas; ✨ di app
   // ini khusus berarti AI, yaitu tombol Rapihkan di CORE & AI Reflection.)
   'doc.on.doc': 'content-copy',
+  // Sub-tab Analysis ✨ di Investment — satu-satunya tab beremblem AI di app
+  // ini, jadi ikonnya sengaja sama artinya dengan ✨ yang dipakai tombol AI
+  // lain (Rapihkan di CORE, AI Reflection di Habits).
+  'sparkles': 'auto-awesome',
+  // Tombol perbesar grafik harga jadi satu layar penuh (Investment).
+  'arrow.up.left.and.arrow.down.right': 'fullscreen',
 } as IconMapping;
 
 /**

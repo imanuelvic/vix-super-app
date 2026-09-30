@@ -95,6 +95,9 @@ const KOSONG = () => ({
   meterReadings: [],
   wheel: null,
   fun: { entries: [] },
+  // 30 Sep 2026: wishlist tahun berjalan (lib/timeline.ts), penagih tiap
+  // Senin. Kosong = tidak ada yang ditagih, jadi baris 📍-nya memang diam.
+  timeline: [],
   // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
   // belum pernah diekspor, jadi baris 📦-nya memang muncul di up next.
   backup: { lastDayId: '', docCount: 0 },

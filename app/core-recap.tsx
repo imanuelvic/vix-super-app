@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CenterDialog } from '@/components/common/CenterDialog';
@@ -347,10 +347,7 @@ const styles = StyleSheet.create({
   // geser), supaya sudut & garis tepinya tetap satu kartu utuh.
   tableWrap: {
     flexDirection: 'row',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     overflow: 'hidden',
   },
   // Kolom Jenis yang DIAM. Garis kanannya bukan hiasan: ia yang memberi tahu

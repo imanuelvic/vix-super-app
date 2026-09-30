@@ -229,12 +229,17 @@ console.log('\n=== 5. Fun: Creators masuk, Reflection keluar, Race pindah ===');
   const health = baca('app/health.tsx');
 
   // --- Tab-tabnya ---
-  c('Fun: Summit → Creators → Recreation', (() => {
+  // 30 Sep 2026: Recreation dibuang TOTAL atas permintaan pemilik app, jadi
+  // tab Fun tinggal dua. Penjaganya diperketat, bukan dilonggarkan: urutannya
+  // tetap dipatok, DAN "recreation" tidak boleh muncul lagi di mana pun di
+  // layar ini (lihat cek-tab-bawaan.js untuk penjaga se-fiturnya).
+  c('Fun: Summit → Creators', (() => {
     const keys = [...fun.matchAll(/\{ key: '(\w+)', label: '[^']+'/g)].map((m) => m[1]);
-    return JSON.stringify(keys) === '["summit","creators","recreation"]';
+    return JSON.stringify(keys) === '["summit","creators"]';
   })());
-  c('Reflection & Race sudah tidak ada di Fun',
-    !/label: 'Reflection'/.test(fun) && !/label: 'Race'/.test(fun));
+  c('Reflection, Race & Recreation sudah tidak ada di Fun',
+    !/label: 'Reflection'/.test(fun) && !/label: 'Race'/.test(fun) &&
+    !/label: 'Recreation'/.test(fun) && !/'recreation'/.test(fun));
   // 2 Sep 2026: Race & Steps ditukar tempatnya — Race jadi paling kiri. Yang
   // dijaga tetap sama: keduanya BERDAMPINGAN (soal kaki yang sama) dan
   // Check-up tetap di ujung kanan.
@@ -251,15 +256,19 @@ console.log('\n=== 5. Fun: Creators masuk, Reflection keluar, Race pindah ===');
   const arsip = baca('components/fun/FunArchive.tsx');
   c('arsipnya satu komponen, dipakai dua layar',
     /export function FunArchive\(\{\s*category,/.test(arsip) &&
-      /<FunArchive category=\{tab\} \/>/.test(fun));
+      /<FunArchive category="summit" \/>/.test(fun));
   c('sumber datanya tetap dokumen fun yang sama',
     /subscribeFun\(/.test(arsip) && /'fun', 'data'/.test(baca('lib/fun.ts')));
-  // Entri Refleksi lama tidak boleh jadi yatim — ia menumpang di Rekreasi.
-  c('entri Refleksi lama tetap punya tempat tampil (di Rekreasi)',
-    /category === 'recreation' && e\.category === 'reflection'/.test(arsip));
-  c('dan lambangnya tetap lambang aslinya, bukan lambang tabnya',
+  // Dulu di sini ada perkecualian "entri Refleksi lama menumpang di Rekreasi".
+  // Rekreasi dibuang 30 Sep 2026 bersama kategori Refleksi, jadi penyaringnya
+  // kembali lurus — dan yang dijaga sekarang justru KELURUSANNYA, supaya
+  // perkecualian semacam itu tidak lahir lagi diam-diam.
+  c('penyaringnya lurus: satu kategori, satu daftar',
+    /\.filter\(\(e\) => e\.category === category\)/.test(arsip) &&
+    !/e\.category === 'reflection'/.test(arsip));
+  c('dan lambangnya tetap lambang entrinya, bukan lambang tabnya',
     /funCategoryMeta\(item\.category\)\.emoji/.test(arsip));
-  c('tidak ada satu pun tulis Firestore untuk memindahkannya',
+  c('tidak ada satu pun tulis Firestore untuk memindahkan entri lama',
     !/category: 'recreation'/.test(arsip));
 
   // --- YouTube TANPA API key ---

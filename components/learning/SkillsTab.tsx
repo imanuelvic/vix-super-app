@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { DualButtons } from '@/components/common/DualButtons';
@@ -279,10 +279,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     borderLeftWidth: 3,
     borderLeftColor: Color.MAIN,
     paddingHorizontal: 12,

@@ -124,6 +124,9 @@ const KOSONG = () => ({
   bills: [], futsal: { members: [], sessions: [], cash: [] },
   dataPlans: [], population: {}, carParts: {}, residenceChores: {},
   meterReadings: [], wheel: null, fun: { entries: [] },
+  // 30 Sep 2026: wishlist tahun berjalan (lib/timeline.ts), penagih tiap
+  // Senin. Kosong = tidak ada yang ditagih, keadaan wajar di fixture.
+  timeline: [],
   backup: { lastDayId: '', docCount: 0 }, finance: null,
 });
 
@@ -264,7 +267,8 @@ console.log('=== 1. Sinkron notifikasi: disk cuma disentuh kalau ada yang beruba
   ok('SOURCES = jumlah sumber yang benar-benar ditandai', (() => {
     const diminta = Number(/const SOURCES = (\d+);/.exec(hook)[1]);
     const ditandai = (hook.match(/mark\('/g) || []).length;
-    return diminta === ditandai && diminta === 37;
+    // 38 sejak 30 Sep 2026: + wishlist 📍 tahun berjalan (penagih tiap Senin).
+    return diminta === ditandai && diminta === 38;
   })(), `${/const SOURCES = (\d+);/.exec(hook)[1]} vs ${(hook.match(/mark\('/g) || []).length} mark(`);
   // Fiturnya sendiri TIDAK hilang: badge ulang tahun di kaki app memakai
   // coreAttention, dan itu yang memang membaca ucapannya.

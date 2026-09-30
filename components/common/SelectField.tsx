@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -146,21 +147,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
+    ...FIELD,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
   },
   value: { color: Color.TEXT_TITLE, flexShrink: 1 },
   placeholder: { color: Color.TEXT_PLACEHOLDER, flexShrink: 1 },
   list: {
     marginTop: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
+    ...FIELD,
     overflow: 'hidden',
   },
   // Dibatasi tingginya supaya daftar panjang (mis. 16 MBTI) tetap ringkas.

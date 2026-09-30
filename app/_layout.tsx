@@ -152,7 +152,7 @@ function RootNavigator() {
         <Stack.Screen name="project/edit/[id]" />
         <Stack.Screen name="family" />
         <Stack.Screen name="fun" />
-        {/* Isian satu entri Fun (Summit / Rekreasi) — layar yang sama dengan race/[id] */}
+        {/* Isian satu entri Fun (Summit) — layar yang sama dengan race/[id] */}
         <Stack.Screen name="fun/[id]" />
         {/* Daftar gunung di Jawa + tanda taklukan (dari tombol 🏔️ sub-tab Summit) */}
         <Stack.Screen name="mountains" />

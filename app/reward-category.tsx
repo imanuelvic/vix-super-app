@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { BadgeTile, badgeGrid } from '@/components/common/BadgeTile';
@@ -211,10 +212,7 @@ const styles = StyleSheet.create({
 
   // ===== Kartu rincian lencana terpilih =====
   pickedCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 12,
     marginTop: 16,
     gap: 4,

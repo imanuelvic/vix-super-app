@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { SummaryCard } from '@/components/common/SummaryCard';
@@ -80,10 +81,7 @@ const styles = StyleSheet.create({
   heroName: { color: Color.TEXT_REVERSE, textAlign: 'center' },
   heroSub: { color: Color.TEXT_ON_DARK_MUTED },
   stnkCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 14,
     gap: 2,
     marginBottom: 10,
@@ -95,20 +93,14 @@ const styles = StyleSheet.create({
   stnkTitle: { color: Color.TEXT_TITLE },
   stnkWarnText: { color: Color.WARNING },
   detailCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 14,
   },
   sectionTitle: { marginBottom: 10 },
   tipsCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 14,
     gap: 10,
   },

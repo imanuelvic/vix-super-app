@@ -51,8 +51,14 @@ ok(`kata "click" dipakai di ${berklik.length} berkas`, berklik.length >= 40,
 // Teks yang benar-benar TAMPIL di layar (bukan komentar).
 console.log('\n=== Teks yang tampil di layar ===');
 for (const [nama, berkas_, pola] of [
-  ['Sparepart mobil', 'components/car/PartsTab.tsx',
-    /'Click bagian mana pun untuk memperbarui tanggalnya\.'/],
+  // 30 Sep 2026: ringkasan "Kondisi perawatan" di Car diganti kartu KILOMETER
+  // yang bisa di-click & menerima isian, jadi kalimat ajakannya ikut pindah ke
+  // sana. Keduanya dijaga sekaligus supaya salah satunya tidak bisa diam-diam
+  // kembali memakai "tekan".
+  ['Kilometer mobil (kartu kosong)', 'components/car/OdometerCard.tsx',
+    /'Click kartu ini untuk mengisi kilometer mobilmu sekarang\.'/],
+  ['Kilometer mobil (sudah terisi)', 'components/car/OdometerCard.tsx',
+    /Click untuk memperbarui\./],
   ['Tugas rumah', 'components/residence/ChoreTab.tsx',
     /'Click item mana pun untuk memperbarui tanggalnya\.'/],
   ['Pohon keluarga', 'app/family.tsx', /Click siapa pun di pohon untuk berpindah/],

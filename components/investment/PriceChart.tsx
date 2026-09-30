@@ -31,14 +31,22 @@ function shortMonth(dateStr: string): string {
 // Grafik garis harga berbasis SVG — untuk mempelajari tren aset. Dipakai Emas,
 // Bitcoin, Forex & IHSG; `color` mengubah warna garis/label; `format` mengubah
 // cara menulis nilai sumbu (default Rupiah singkat — IHSG memakai poin, bukan Rp).
+//
+// `height` cuma diisi oleh tampilan SATU LAYAR PENUH (30 Sep 2026): di sana
+// grafiknya setinggi layar, dan naik-turun yang di kartu kecil cuma terlihat
+// sebagai getaran jadi benar-benar terbaca. Tanpa prop ini tingginya persis
+// seperti sebelumnya, jadi semua kartu yang sudah ada tidak bergeser sedikit
+// pun.
 export function PriceChart({
   series,
   width,
+  height = H,
   color = GOLD,
   format = formatShortRupiah,
 }: {
   series: MarketPoint[];
   width: number;
+  height?: number;
   color?: string;
   format?: (n: number) => string;
 }) {
@@ -51,7 +59,7 @@ export function PriceChart({
   const n = series.length;
 
   const plotW = width - PAD_L - PAD_R;
-  const plotH = H - PAD_T - PAD_B;
+  const plotH = height - PAD_T - PAD_B;
   const x = (i: number) => PAD_L + (i / (n - 1)) * plotW;
   const y = (p: number) => PAD_T + (1 - (p - min) / range) * plotH;
 
@@ -59,8 +67,8 @@ export function PriceChart({
   const last = series[n - 1];
 
   return (
-    <View style={{ width, height: H }}>
-      <Svg width={width} height={H}>
+    <View style={{ width, height }}>
+      <Svg width={width} height={height}>
         {/* Garis grid atas & bawah (max & min) */}
         {[max, min].map((p) => (
           <Line
@@ -110,14 +118,14 @@ export function PriceChart({
             label harga terendah, tidak lagi berdesakan dengannya. */}
         <SvgText
           x={PAD_L}
-          y={H - AXIS_LABEL_DY}
+          y={height - AXIS_LABEL_DY}
           fontSize={10}
           fill={Color.TEXT_LABEL}>
           {shortMonth(series[0].date)}
         </SvgText>
         <SvgText
           x={width - PAD_R}
-          y={H - AXIS_LABEL_DY}
+          y={height - AXIS_LABEL_DY}
           fontSize={10}
           fill={Color.TEXT_LABEL}
           textAnchor="end">

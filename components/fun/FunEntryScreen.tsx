@@ -56,7 +56,7 @@ import {
 import { photoUri } from '@/lib/photo';
 import { formatRupiah } from '@/lib/transactions';
 
-const KATEGORI: FunCategory[] = ['summit', 'race', 'reflection', 'recreation'];
+const KATEGORI: FunCategory[] = ['summit', 'race'];
 
 /** Pilihan provinsi di isian Summit: tiga provinsi Jawa + "Lainnya" (ketik bebas). */
 type ProvinsiPilihan = MountainProvince | 'other';
@@ -68,8 +68,8 @@ const PROVINSI_OPTIONS: SelectOption<ProvinsiPilihan>[] = [
 /** Angka tersimpan → teks kolom uang ("" kalau nol). */
 const rupiahDraft = (n?: number) => (n ? groupDigits(String(n)) : '');
 
-// Layar isian SATU entri arsip Fun — Race 🏃 (di Health), Summit ⛰️, Rekreasi
-// 🏝️. `id` = 'new' berarti sedang menambah.
+// Layar isian SATU entri arsip Fun — Summit ⛰️ (di Fun) & Race 🏃 (di Health).
+// `id` = 'new' berarti sedang menambah.
 //
 // Kenapa layar sendiri, bukan sheet seperti dulu (14 Sep 2026): isian Race
 // itu panjang — nama, lokasi, jarak, harga, waktu tempuh, tanggal, catatan,
@@ -103,8 +103,7 @@ export function FunEntryScreen({
     }>();
   const isNew = id === 'new';
   const category: FunCategory =
-    kategoriTetap ??
-    (KATEGORI.find((k) => k === kategoriParam) ?? 'recreation');
+    kategoriTetap ?? (KATEGORI.find((k) => k === kategoriParam) ?? 'summit');
   const meta = funCategoryMeta(category);
 
   const [error, setError] = useState<string | null>(null);

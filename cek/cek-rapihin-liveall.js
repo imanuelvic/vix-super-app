@@ -122,9 +122,12 @@ ok('langganan berparameter hari/minggu → deps (fitness dayId, learning weekId,
 // memasang 37 langganan tanpa satu pun penangan galat, jadi kegagalan muat
 // tidak meninggalkan jejak apa pun di layar. Cek-nya ikut diperketat, bukan
 // dilonggarkan: deps-nya tetap dipatok persis, DAN sekarang wajib ada onError.
-ok('Today (useTodayData): deps [todayId, weekId, mark] + onError (baris menunggu semua sumber lewat mark)',
-  /\{ deps: \[todayId, weekId, mark\], onError: setLoadError \}/.test(baca('hooks/useTodayData.ts')) &&
-  /mark\('leaders', setLeaders\), fail\)/.test(baca('hooks/useTodayData.ts')));
+// 30 Sep 2026: `tahun` menyusul di deps — wishlist 📍 dilanggan per TAHUN
+// (satu dokumen), jadi pergantian tahun harus memindah dokumennya sendiri.
+ok('Today (useTodayData): deps [todayId, weekId, tahun, mark] + onError (baris menunggu semua sumber lewat mark)',
+  /\{ deps: \[todayId, weekId, tahun, mark\], onError: setLoadError \}/.test(baca('hooks/useTodayData.ts')) &&
+  /mark\('leaders', setLeaders\), fail\)/.test(baca('hooks/useTodayData.ts')) &&
+  /subscribeTimelineYear\(uid, tahun, mark\('timeline', setTimeline\), fail\)/.test(baca('hooks/useTodayData.ts')));
 ok('Dashboard: dua konstanta kuartal dihitung di dalam panah berbadan blok',
   /useLiveAll\(\s*\n\s*\(uid\) => \{\s*\n\s*const nowQ = quarterOf\(new Date\(\)\);\s*\n\s*const wheelQid = quarterDocId\(nowQ\.year, nowQ\.q\);\s*\n\s*return \[/.test(baca('app/reminders.tsx')) &&
   /\{ deps: \[todayId, weekId\] \}/.test(baca('app/reminders.tsx')));

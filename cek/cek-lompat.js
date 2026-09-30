@@ -322,7 +322,12 @@ ok(
   'Residence → Maintenance tanpa isyarat tambahan',
   /<ChoreTab status=\{chores\} \/>/.test(res),
 );
-ok('Car → Parts tanpa isyarat tambahan', /<PartsTab status=\{parts\} \/>/.test(car));
+// Car mengoper `odometer` sejak 30 Sep 2026 (kartu kilometer menggantikan
+// ringkasan "N bagian perlu perhatian"). Yang dijaga di sini tetap sama: TIDAK
+// ada isyarat lompatan yang dioper — lompatannya milik UpkeepList sendiri.
+ok('Car → Parts tanpa isyarat lompatan',
+  /<PartsTab status=\{parts\} odometer=\{odometer\} \/>/.test(car) &&
+  !/focusDue|dueKey/.test(car));
 ok(
   'repress benar-benar dibuang dari useTabScroll',
   !/repress/.test(kodeSaja(baca('components/common/useTabScroll.ts'))),

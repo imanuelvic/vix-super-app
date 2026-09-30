@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD, CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { Chip } from '@/components/common/Chip';
@@ -312,10 +312,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   quickCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 14,
     gap: 4,
     marginBottom: 10,

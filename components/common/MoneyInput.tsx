@@ -7,6 +7,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { closePickers } from '@/components/common/pickerBus';
 import { VixText } from '@/components/common/VixText';
@@ -44,10 +45,7 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingLeft: 16,
   },
   prefix: { color: Color.TEXT_LABEL, marginRight: 6, fontSize: 16 },

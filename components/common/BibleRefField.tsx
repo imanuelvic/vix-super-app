@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { EmptyText } from '@/components/common/EmptyText';
@@ -269,10 +270,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingHorizontal: 14,
     paddingVertical: 13,
   },
@@ -289,10 +287,7 @@ const styles = StyleSheet.create({
   // bagian baru dari formulir. Tingginya dipatok — 66 kitab tak boleh mendorong
   // kolom Pasal & ayat keluar dari layar.
   inlinePanel: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     padding: 10,
     gap: 8,
   },
@@ -310,13 +305,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
-    borderRadius: 12,
+    ...FIELD,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 4,
-    backgroundColor: Color.CONTAINER,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
   },
   bookRowActive: {
     backgroundColor: Color.MAIN_TRANSPARENT,

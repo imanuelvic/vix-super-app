@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD } from '@/assets/style/card';
@@ -12,7 +12,6 @@ import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
-import { SummaryCard } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useFormSave } from '@/hooks/useFormSave';
@@ -54,8 +53,16 @@ export function UpkeepList({
   dueNowOf,
   onDueNow,
 }: {
-  /** Kartu ringkasan paling atas. */
-  summary: { label: string; value: string; sub: string };
+  /**
+   * Kartu paling atas, dirakit oleh pemanggilnya.
+   *
+   * Dulu ini bentuk tetap `{ label, value, sub }` yang dipasang ke
+   * <SummaryCard>. Sejak 30 Sep 2026 Car memakai tempat ini untuk kartu
+   * KILOMETER yang bisa di-click & menerima isian, sedangkan Residence tetap
+   * ringkasan tiga baris — jadi yang diputuskan bersama tinggal LETAKnya,
+   * isinya milik masing-masing.
+   */
+  summary: ReactNode;
   groups: UpkeepGroup[];
   /** Kalimat di dalam dialog, mis. "Kapan terakhir diganti / dicek?". */
   dialogHint: string;
@@ -113,11 +120,7 @@ export function UpkeepList({
         contentContainerStyle={styles.content}
         onContentSizeChange={onContentSizeChange}
         onLayout={onLayout}>
-        <SummaryCard
-          label={summary.label}
-          value={summary.value}
-          sub={summary.sub}
-        />
+        {summary}
 
         {/* Judul kelompok & barisnya sengaja jadi SAUDARA (Fragment, bukan View
             pembungkus): posisi onLayout tiap baris jadi langsung relatif ke isi

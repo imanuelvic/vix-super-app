@@ -7,6 +7,7 @@ import {
   withTiming,
 } from 'react-native-reanimated';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -145,10 +146,7 @@ const styles = StyleSheet.create({
     minWidth: CELL,
     height: CELL,
     paddingHorizontal: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
+    ...FIELD,
     alignItems: 'center',
     justifyContent: 'center',
   },

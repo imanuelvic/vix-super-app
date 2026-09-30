@@ -20,8 +20,10 @@ import {
   CAR_INFO,
   countCarAttention,
   subscribeCarLogs,
+  subscribeCarOdometer,
   subscribePartStatus,
   type CarLog,
+  type CarOdometer,
   type PartStatusMap,
 } from '@/lib/car';
 
@@ -47,6 +49,7 @@ export default function CarScreen() {
   });
   const [logs, setLogs] = useState<CarLog[] | null>(null);
   const [parts, setParts] = useState<PartStatusMap | null>(null);
+  const [odometer, setOdometer] = useState<CarOdometer | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useLiveAll(
@@ -60,6 +63,10 @@ export default function CarScreen() {
         fail,
       ),
       subscribePartStatus(uid, setParts, fail),
+      // Dokumen yang SAMA dengan status sparepart (users/{uid}/car/parts).
+      // `liveDoc` ber-ref-count, jadi ini tidak menambah listener maupun
+      // pembacaan Firestore sama sekali — cuma pembaca kedua dari dokumen itu.
+      subscribeCarOdometer(uid, setOdometer, fail),
     ],
     { onError: setError },
   );
@@ -76,7 +83,7 @@ export default function CarScreen() {
         ) : tab === 'log' ? (
           <LogTab items={logs} />
         ) : tab === 'parts' ? (
-          <PartsTab status={parts} />
+          <PartsTab status={parts} odometer={odometer} />
         ) : (
           <InfoTab />
         )}

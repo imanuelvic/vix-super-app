@@ -81,6 +81,7 @@ import {
   type MyReminder,
 } from '@/lib/spiritual';
 import { subscribeOtherTasks, subscribeTasks, type OtherTask, type Task } from '@/lib/tasks';
+import { subscribeTimelineYear, type TimelineItem } from '@/lib/timeline';
 import { buildToday, type TodayModel } from '@/lib/today';
 import { subscribeMeterReadings, type MeterReading } from '@/lib/token';
 import { quarterDocId, quarterOf, subscribeWheel, type WheelData } from '@/lib/wheel';
@@ -96,7 +97,7 @@ import { quarterDocId, quarterOf, subscribeWheel, type WheelData } from '@/lib/w
 // efek di bawah yang menunggu `ready`). Penjaganya ada di suite cek-cepat.js:
 // ia menghitung sendiri jumlah `mark(` di berkas ini, memastikan kuncinya
 // unik, dan membandingkannya dengan angka ini.
-const SOURCES = 37;
+const SOURCES = 38;
 
 /**
  * Seluruh data yang dibutuhkan layar Today, di satu tempat.
@@ -127,6 +128,10 @@ export function useTodayData(): {
   const { user } = useAuth();
   const { now, todayId } = useNow();
   const weekId = weekDocId(now);
+  // Tahun wishlist 📍 yang dilanggan. Diambil dari `todayId` ("YYYY-MM-DD"),
+  // bukan dari `now`, supaya nilainya cuma berubah saat tanggalnya berganti —
+  // `now` sendiri berdetak tiap menit.
+  const tahun = Number(todayId.slice(0, 4));
   const finance = useFinanceStatus(now);
   const intercessionDismiss = useDailyDismiss('home:intercession', todayId);
 
@@ -169,6 +174,7 @@ export function useTodayData(): {
   const [meterReadings, setMeterReadings] = useState<MeterReading[]>([]);
   const [wheel, setWheel] = useState<WheelData | null>(null);
   const [fun, setFun] = useState<FunData>(EMPTY_FUN);
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [backup, setBackup] = useState<BackupInfo>(EMPTY_BACKUP);
 
   // Galat muat: diisi `useLiveAll` kalau ada langganan yang gagal. Tanpa ini
@@ -217,6 +223,10 @@ export function useTodayData(): {
         subscribeMeterReadings(uid, mark('readings', setMeterReadings), fail),
         subscribeWheel(uid, quarterDocId(q.year, q.q), mark('wheel', setWheel), fail),
         subscribeFun(uid, mark('fun', setFun), fail),
+        // 📍 Wishlist TAHUN INI saja — satu dokumen per tahun, jadi ini tepat
+        // satu pembacaan. Tahunnya ikut `deps` di bawah supaya pergantian
+        // tahun otomatis pindah dokumen.
+        subscribeTimelineYear(uid, tahun, mark('timeline', setTimeline), fail),
         subscribeBackupInfo(uid, mark('backup', setBackup), fail),
       ];
     },
@@ -224,7 +234,7 @@ export function useTodayData(): {
     // langganan yang gagal tidak meninggalkan jejak apa pun: layarnya cuma
     // diam. Sekarang galatnya sampai ke layar Today, dan pemiliknya tahu ini
     // gangguan muat data, bukan "memang tidak ada yang perlu dikerjakan".
-    { deps: [todayId, weekId, mark], onError: setLoadError },
+    { deps: [todayId, weekId, tahun, mark], onError: setLoadError },
   );
 
   // "Cron" kliping doa syafaat 📰🙏 — app ini tidak punya server maupun tugas
@@ -296,6 +306,7 @@ export function useTodayData(): {
           meterReadings,
           wheel,
           fun,
+          timeline,
           backup,
           finance,
         },
@@ -307,8 +318,8 @@ export function useTodayData(): {
       intercession, dismissed, feedGenerated, leaders, mainTeam, weeklyFocus,
       visitations, monthlyPrayers, tasks, otherTasks, roadmap, freelance, family, debts,
       checkups, profile, donor, learningWeek, topicsDone, bills, futsal, dataPlans,
-      population, carParts, residenceChores, meterReadings, wheel, fun, backup,
-      finance, now, todayId,
+      population, carParts, residenceChores, meterReadings, wheel, fun, timeline,
+      backup, finance, now, todayId,
     ],
   );
 

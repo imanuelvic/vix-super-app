@@ -167,9 +167,10 @@ for (const [f, harus] of [
   ['app/debts.tsx', 'Lent Out'],
   ['app/debts.tsx', 'My Debt'],
   ['app/finance.tsx', 'Transactions'],
-  // Sub-tab Reflection dibuang & Race pindah ke Health (30 Agu 2026).
+  // Sub-tab Reflection dibuang & Race pindah ke Health (30 Agu 2026);
+  // Recreation dibuang total 30 Sep 2026 (lihat cek-tab-bawaan.js).
   ['app/fun.tsx', 'Creators'],
-  ['app/fun.tsx', 'Recreation'],
+  ['app/fun.tsx', 'Summit'],
   ['app/health.tsx', 'Race'],
   ['app/investment.tsx', 'Gold'],
   ['app/investment.tsx', 'Stocks'],

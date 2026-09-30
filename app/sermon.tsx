@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { ActionStack } from '@/components/common/ActionStack';
@@ -382,10 +383,7 @@ const styles = StyleSheet.create({
   editButton: {
     alignItems: 'center',
     paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    backgroundColor: Color.CONTAINER,
+    ...FIELD,
   },
   editText: { color: Color.SPIRITUAL_DARK },
   lockNote: { textAlign: 'center' },

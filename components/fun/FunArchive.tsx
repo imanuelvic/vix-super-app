@@ -41,9 +41,9 @@ import { formatRupiah } from '@/lib/transactions';
 // panjang (plus foto medali) berdesakan dengan keyboard di dalam sheet.
 //
 // DIPAKAI DUA LAYAR, dan itu sebabnya ia berdiri sendiri di sini:
-//   • Fun & Recreation 🎉 → Summit, Creators & Rekreasi
-//   • Health 🍎           → Race (pindah ke sana 30 Agu 2026, karena race itu
-//                           soal tubuh & latihan, bukan rekreasi)
+//   • Fun 🎉    → Summit
+//   • Health 🍎 → Race (pindah ke sana 30 Agu 2026, karena race itu soal tubuh
+//                 & latihan, bukan rekreasi)
 // Datanya TETAP satu dokumen yang sama (users/{uid}/fun/data), jadi entri Race
 // lamamu tidak berpindah ke mana-mana — cuma tempat membacanya yang berubah.
 export function FunArchive({
@@ -99,19 +99,14 @@ export function FunArchive({
 
   // Entri kategori terpilih, terbaru di atas.
   //
-  // Sub-tab "Refleksi" dibuang 30 Agu 2026, tapi entri lamanya TIDAK dihapus
-  // dan TIDAK dibiarkan yatim: keduanya sama-sama soal TEMPAT yang pernah
-  // dikunjungi (kolom formnya pun sama — "Nama tempat"), jadi yang lama ikut
-  // tampil di Rekreasi. Datanya tidak ditulis ulang sama sekali; kalau nanti
-  // kamu mau memindahkannya betulan, tinggal buka & simpan ulang satu per satu.
+  // Dulu di sini ada satu perkecualian: entri "reflection" (sub-tab yang
+  // dibuang 30 Agu 2026) ikut ditampilkan di Rekreasi supaya tidak yatim.
+  // Rekreasi sendiri dibuang 30 Sep 2026, jadi perkecualiannya ikut hilang —
+  // penyaringnya kembali lurus: satu kategori, satu daftar.
   const entries = useMemo(
     () =>
       data.entries
-        .filter(
-          (e) =>
-            e.category === category ||
-            (category === 'recreation' && e.category === 'reflection'),
-        )
+        .filter((e) => e.category === category)
         .sort((a, b) => (b.date?.toMillis() ?? 0) - (a.date?.toMillis() ?? 0)),
     [data.entries, category],
   );
@@ -175,9 +170,10 @@ export function FunArchive({
               const keterangan = (
                 <>
                 <View style={styles.cardTop}>
-                  {/* Emoji milik entri ITU SENDIRI, bukan milik tab — supaya
-                      entri Refleksi 🧘 lama yang menumpang di Rekreasi tetap
-                      dikenali dari lambangnya. */}
+                  {/* Emoji milik entri ITU SENDIRI, bukan milik tab. Sekarang
+                      keduanya selalu sama (daftar ini satu kategori), tapi
+                      dibiarkan begini supaya kartu tetap benar kalau suatu saat
+                      ada daftar gabungan lagi. */}
                   <VixText heading="title">
                     {funCategoryMeta(item.category).emoji}
                   </VixText>

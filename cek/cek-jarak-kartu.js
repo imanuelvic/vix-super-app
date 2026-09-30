@@ -238,5 +238,91 @@ ok('pesan satu layar cuma menambah napas kiri-kanan, bukan jarak atas-bawah',
       /^ {2}empty: \{ paddingHorizontal: \d+ \},$/m.test(s);
   }));
 
-console.log(gagal === 0 ? '\n✅ LULUS — satu irama jarak kartu.' : `\n❌ ${gagal} cek gagal.`);
+// =====================================================================
+console.log('\n=== Bentuk kotak bergaris (FIELD · CARD · PANEL) ===');
+// =====================================================================
+// 30 Sep 2026: keempat properti bentuk kotak (latar CONTAINER + sudut +
+// borderWidth 1 + garis BORDER) masih ditulis tangan di 44 tempat pada 33
+// berkas, padahal DUA dari tiga bentuknya sudah punya token. Yang ketiga,
+// sudut 12 (kotak isian), belum punya nama sama sekali — dan justru itu yang
+// paling banyak disalin, termasuk di TUJUH komponen `components/common/` yang
+// dibuat supaya isian app ini seragam.
+const BENTUK = [
+  ['FIELD', 12, 'kotak isian & kotak kecil di dalam kartu'],
+  ['CARD', 14, 'kartu daftar'],
+  ['PANEL', 16, 'kotak bergaris di layar'],
+];
+for (const [nama, radius, peran] of BENTUK) {
+  ok(`${nama} (${peran}) = latar CONTAINER + sudut ${radius} + garis rambut`,
+    new RegExp(
+      `export const ${nama}[^=]*= \\{\\s*\\n\\s*backgroundColor: Color\\.CONTAINER,` +
+      `\\s*\\n\\s*borderRadius: ${radius},\\s*\\n\\s*borderWidth: 1,` +
+      `\\s*\\n\\s*borderColor: Color\\.BORDER,`,
+    ).test(card));
+}
+// Bedanya CARD dari dua lainnya: ia MEMBAWA paddingnya sendiri (14/12), karena
+// kartu daftar itu baris berulang yang iramanya justru harus sama. FIELD &
+// PANEL sengaja tidak, karena paddingnya memang beda-beda per pemakai.
+// Isi objeknya saja. Dua jebakan yang sudah memerahkan cek ini dua kali:
+// FIELD berakhir `} satisfies ViewStyle;` (bukan `};`), dan mencari `{` dari
+// nama tokennya akan mendarat di dalam KOMENTAR contohnya. Jadi polanya
+// langsung: `export const NAMA … = {` sampai `}` pertama.
+const potong = (n) =>
+  new RegExp(`export const ${n}[^=]*=\\s*\\{([^}]*)\\}`).exec(card)?.[1] ?? '';
+ok('CARD membawa paddingnya sendiri (irama baris daftar)',
+  /paddingHorizontal: 14,\s*\n\s*paddingVertical: 12,/.test(potong('CARD')));
+ok('FIELD & PANEL sengaja TIDAK membawa padding (milik tiap pemakai)',
+  !/padding/.test(potong('FIELD')) && !/padding/.test(potong('PANEL')));
+// Ketiganya HARUS tetap berbeda sudut. Menyatukannya keputusan TAMPILAN, bukan
+// kerapian, dan kalau suatu saat diambil, ia diambil sadar di satu baris.
+ok('ketiga sudutnya tetap berbeda (12 · 14 · 16), tidak diam-diam disamakan',
+  new Set(BENTUK.map(([n]) => /borderRadius: (\d+),/.exec(
+    card.slice(card.indexOf(`export const ${n}`)))[1])).size === 3);
+
+// Penjaga yang sebenarnya, sama seperti SCREEN_SAFE & EmptyText di atas:
+// bukan "tokennya dipakai", tapi "tidak ada lagi yang menyalinnya". Itu yang
+// mencegah berkas berikutnya menulis ulang keempat nilainya.
+const salinanKotak = [];
+for (const f of semua) {
+  const s = baca(f);
+  for (const blok of s.match(/\{[^{}]*\}/g) ?? []) {
+    if (!/backgroundColor: Color\.CONTAINER,/.test(blok)) continue;
+    if (!/borderWidth: 1,/.test(blok)) continue;
+    if (!/borderColor: Color\.BORDER,?/.test(blok)) continue;
+    const r = /borderRadius: (12|14|16),/.exec(blok);
+    if (r) salinanKotak.push(`${f} r${r[1]}`);
+  }
+}
+ok('tidak ada lagi berkas yang menyalin keempat nilainya',
+  salinanKotak.length === 0, salinanKotak.join(', '));
+
+const pakai = (t) => semua.filter((f) => new RegExp(`\\.\\.\\.${t}\\b`).test(baca(f)));
+ok(`FIELD dipakai ${pakai('FIELD').length} berkas`, pakai('FIELD').length >= 19,
+  String(pakai('FIELD').length));
+ok(`CARD dipakai ${pakai('CARD').length} berkas`, pakai('CARD').length >= 60,
+  String(pakai('CARD').length));
+ok(`PANEL dipakai ${pakai('PANEL').length} berkas`, pakai('PANEL').length >= 52,
+  String(pakai('PANEL').length));
+
+// Tujuh komponen isian bersama WAJIB satu bentuk. Kalau salah satunya kembali
+// menulis sendiri, rupa isian app diam-diam jadi dua macam — dan itu persis
+// keadaan sebelum token ini ada.
+const ISIAN = [
+  'components/common/FormInput.tsx', 'components/common/DateField.tsx',
+  'components/common/TimeField.tsx', 'components/common/SearchBar.tsx',
+  'components/common/SelectField.tsx', 'components/common/MoneyInput.tsx',
+  'components/common/BibleRefField.tsx',
+];
+const isianNakal = ISIAN.filter((f) => !/\.\.\.FIELD\b/.test(baca(f)));
+ok('ketujuh komponen isian bersama memakai satu bentuk yang sama',
+  isianNakal.length === 0, isianNakal.join(', '));
+
+// Pengecualian yang DISENGAJA & harus tetap begitu: chip/pil yang bisa dipilih
+// bergaris 1.5 supaya keadaan terpilihnya terbaca dari tebalnya, bukan cuma
+// dari warnanya. Kalau ia ikut ditarik ke token, penanda itu hilang.
+const tebal = semua.filter((f) => /borderWidth: 1\.5,/.test(baca(f)));
+ok(`chip & pil bergaris 1.5 tetap dibiarkan (${tebal.length} berkas, penanda terpilih)`,
+  tebal.length >= 5, String(tebal.length));
+
+console.log(gagal === 0 ? '\n✅ LULUS — satu irama jarak & bentuk kartu.' : `\n❌ ${gagal} cek gagal.`);
 process.exit(gagal === 0 ? 0 : 1);

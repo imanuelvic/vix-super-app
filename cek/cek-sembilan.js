@@ -58,8 +58,16 @@ ok('DULU tabrakan: dengan PAD_B lama (26) jaraknya cuma 5px',
   (210 - 8) - ((210 - 26) + 13) === 5);
 ok('bidang gambar garisnya TIDAK berubah (tetap 162px) — bentuk grafik sama',
   H - PAD_T - PAD_B === 162);
+// 30 Sep 2026: tingginya jadi prop (`height`) supaya grafik bisa digambar satu
+// layar penuh & dicubit. Patokan label bulannya ikut pindah ke `height` — dan
+// itu justru harus dipastikan, karena kalau salah satunya ketinggalan memakai
+// `H`, labelnya melayang di tengah layar saat diperbesar.
 ok('kedua label bulan memakai patokan yang sama',
-  (chart.match(/y=\{H - AXIS_LABEL_DY\}/g) ?? []).length === 2);
+  (chart.match(/y=\{height - AXIS_LABEL_DY\}/g) ?? []).length === 2);
+// Bawaannya WAJIB tetap H: semua kartu grafik yang sudah ada tidak mengoper
+// `height`, jadi begitu bawaannya berubah, empat tab pasar ikut bergeser.
+ok('tanpa prop `height`, tingginya persis seperti sebelumnya',
+  /height = H,/.test(chart) && /const plotH = height - PAD_T - PAD_B;/.test(chart));
 
 // ============ 3. Learning ============
 console.log('\n3. Learning: buang "Nyambung…", badge & reminder diskusi, jam belajar');

@@ -8,7 +8,9 @@ import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { ChartFullscreen } from '@/components/investment/ChartFullscreen';
 import { PriceChart } from '@/components/investment/PriceChart';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { formatShortRupiah } from '@/lib/format';
 import type { MarketPoint } from '@/lib/market';
 import { formatRupiah } from '@/lib/transactions';
@@ -61,6 +63,7 @@ export function MarketTab({
   onReload,
 }: Props) {
   const [chartW, setChartW] = useState(0);
+  const [besar, setBesar] = useState(false);
 
   const series = data?.series ?? [];
   const prices = series.map((s) => s.price);
@@ -169,20 +172,35 @@ export function MarketTab({
               </View>
             </View>
 
-            {/* Grafik tren harian ~6 bulan */}
-            <View
+            {/* Grafik tren harian ~6 bulan. Di-click → satu layar penuh yang
+                bisa dicubit (components/investment/ChartFullscreen.tsx): di
+                kartu sekecil ini, gerakan harian yang justru menentukan
+                keputusan cuma terlihat sebagai getaran garis. */}
+            <PressableScale
               style={styles.chartCard}
-              onLayout={(e) => setChartW(e.nativeEvent.layout.width - 24)}>
-              <PriceChart
-                series={data.series}
-                width={chartW}
-                color={chartColor}
-                format={formatShort}
-              />
+              scaleTo={0.98}
+              onLayout={(e) => setChartW(e.nativeEvent.layout.width - 24)}
+              onPress={() => setBesar(true)}>
+              <View>
+                <PriceChart
+                  series={data.series}
+                  width={chartW}
+                  color={chartColor}
+                  format={formatShort}
+                />
+                <View style={styles.expand}>
+                  <IconSymbol
+                    name="arrow.up.left.and.arrow.down.right"
+                    size={16}
+                    color={Color.TEXT_LABEL}
+                  />
+                </View>
+              </View>
               <VixText heading="label" additionalStyle={styles.chartHint}>
-                Pelajari trennya untuk membuat perkiraanmu sendiri 📈
+                Click grafiknya untuk satu layar penuh, lalu cubit untuk
+                memperbesar 🔍
               </VixText>
-            </View>
+            </PressableScale>
 
             <PressableScale style={styles.refreshButton} onPress={onReload}>
               <VixText heading="bold" additionalStyle={styles.refreshText}>
@@ -196,6 +214,20 @@ export function MarketTab({
           </>
         ) : null}
       </ScrollView>
+
+      {/* Deret yang ditampilkan SAMA PERSIS dengan yang di kartu — layar penuh
+          ini cuma menggambarnya lebih besar, tidak mengambil data baru. */}
+      {data && (
+        <ChartFullscreen
+          visible={besar}
+          onClose={() => setBesar(false)}
+          title={heroTitle}
+          sub={heroSub}
+          series={data.series}
+          color={chartColor}
+          format={formatShort}
+        />
+      )}
     </View>
   );
 }
@@ -266,6 +298,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   chartHint: { color: Color.TEXT_LABEL, textAlign: 'center' },
+  // Lambang "perbesar" di pojok kanan atas grafik — menjawab "ini bisa
+  // di-click?" tanpa menunggu kalimat di bawahnya dibaca.
+  expand: { position: 'absolute', top: 0, right: 0 },
   refreshButton: {
     alignSelf: 'center',
     backgroundColor: Color.CONTRAST_CONTAINER,

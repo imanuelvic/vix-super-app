@@ -146,6 +146,21 @@ export const KOLAM_PUASA: string[] = [
   '🍽️ Bulan ini mau fokus ke apa?',
 ];
 
+/**
+ * 📍 Wishlist bulan berjalan yang belum dicentang — berbunyi TIAP SENIN.
+ *
+ * Kalimatnya menyebut bulannya (`{bulan}`) & berapa yang tersisa (`{sisa}`),
+ * karena yang ditagih memang rencana sebulan: tanpa dua angka itu ia terdengar
+ * seperti tugas harian yang bisa ditunda ke besok.
+ */
+export const KOLAM_TIMELINE: string[] = [
+  '📍 Pekan baru di {bulan}',
+  '📍 {sisa} wishlist {bulan} masih menunggu',
+  '📍 Senin lagi, {bulan} jalan terus',
+  '📍 {bulan} tinggal beberapa pekan lagi',
+  '📍 Wishlist {bulan} belum selesai',
+];
+
 export const KOLAM_REFLEKSI: Kalimat[] = [
   { title: '📝 Refleksi hari ini', body: 'Apa yang terjadi, apa yang Tuhan ajarkan, apa yang kubawa ke besok?' },
   { title: '🌙 Sebelum hari ini ditutup', body: 'Tulis satu paragraf jujur. Tiga menit saja.' },

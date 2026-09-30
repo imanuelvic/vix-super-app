@@ -4,6 +4,7 @@ import DateTimePicker, {
 import { useRef } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { usePickerReveal } from '@/components/common/PickerScrollView';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -124,12 +125,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
+    ...FIELD,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
   },
   text: { color: Color.TEXT_TITLE },
   // Sama redupnya dengan placeholder kolom isian & SelectField — supaya "belum

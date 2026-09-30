@@ -239,6 +239,29 @@ export async function loadForex(force = false): Promise<ForexData> {
   return data;
 }
 
+/**
+ * Emas + Bitcoin + kurs sekaligus — bahan mentah sub-tab Analysis ✨.
+ *
+ * Ketiganya memang harus dibaca BERSAMA: emas & BTC di app ini dihargai dalam
+ * Rupiah, jadi sebagian gerakannya sebenarnya gerakan kursnya. Membaca salah
+ * satunya sendirian gampang salah kesimpulan ("emas naik" padahal Rupiah yang
+ * melemah).
+ *
+ * Tidak ada permintaan jaringan tambahan yang mubazir: ketiganya memakai cache
+ * 5 menit yang sama dengan tab harganya, jadi membuka Analysis sesudah melihat
+ * tab Gold biasanya nol permintaan baru.
+ */
+export type MarketAll = { gold: GoldData; btc: BtcData; forex: ForexData };
+
+export async function loadMarketAll(force = false): Promise<MarketAll> {
+  const [gold, btc, forex] = await Promise.all([
+    loadGold(force),
+    loadBtc(force),
+    loadForex(force),
+  ]);
+  return { gold, btc, forex };
+}
+
 // Bentuk minimal respons Yahoo yang kita pakai (bagian lain diabaikan).
 type YahooChartResponse = {
   chart?: {

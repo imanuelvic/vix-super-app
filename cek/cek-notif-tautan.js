@@ -74,6 +74,9 @@ const model = (over = {}) => ({
   // 27 Sep 2026: tujuh pengingat 🎓 target Learning (Sen · Rab · Jum · Min)
   // juga membacanya. Kosong = belum ada yang dikerjakan minggu ini.
   learning: over.learning || { done: {}, skill: 'Public Speaking' },
+  // 30 Sep 2026: penagih 📍 wishlist bulan berjalan (tiap Senin) ikut
+  // membacanya. pending 0 = tidak ada yang ditagih, jadi slotnya diam.
+  timeline: over.timeline || { pending: 0, month: 'September', titles: [] },
 });
 const item = (section, id, href) => ({
   id, section, tier: 'today', rank: 3, emoji: '🔔', title: id, href,
@@ -182,6 +185,9 @@ console.log('\n=== 5. Tujuannya sama dengan click barisnya di dalam app ===');
     bills: [], futsal: { members: [], sessions: [], cash: [] },
     dataPlans: [], population: {}, carParts: {}, residenceChores: {},
     meterReadings: [], wheel: null, fun: { entries: [] },
+    // 30 Sep 2026: wishlist tahun berjalan (lib/timeline.ts), penagih tiap
+    // Senin. Kosong = tidak ada yang ditagih, keadaan wajar di fixture.
+    timeline: [],
     // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
     // belum pernah diekspor, dan itu memang keadaan wajar di fixture.
     backup: { lastDayId: '', docCount: 0 }, finance: null,
@@ -254,8 +260,9 @@ console.log('\n=== 8. Layar Notification 📳 ===');
   ok('istilahnya "Click", bukan tekan/ketuk/tap',
     !/\b(tekan|ditekan|menekan|ketuk|diketuk|tap)\b/i.test(s.replace(/^\s*\/\/.*$/gm, '')));
   // 27 Sep 2026: + kelompok 🎓 Target Learning (Sen · Rab · Jum · Min).
-  ok('kedua belas kelompok punya keterangan tujuannya',
-    N.NOTIFY_GROUPS.length === 12 && N.NOTIFY_GROUPS.every((g) => typeof g.opens === 'string' && g.opens.length > 0));
+  // 30 Sep 2026: + kelompok 📍 Wishlist bulan ini (tiap Senin 08.00).
+  ok('ketiga belas kelompok punya keterangan tujuannya',
+    N.NOTIFY_GROUPS.length === 13 && N.NOTIFY_GROUPS.every((g) => typeof g.opens === 'string' && g.opens.length > 0));
   const teks = N.NOTIFY_GROUPS.map((g) => `${g.label} ${g.when} ${g.opens}`);
   ok('tanpa em dash di teks yang terbaca',
     teks.every((t) => !t.includes(String.fromCharCode(0x2014))) &&

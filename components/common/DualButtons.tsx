@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
@@ -54,10 +55,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: Color.CONTAINER,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
   },
   confirm: {
     flex: 1,

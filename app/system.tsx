@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
@@ -417,10 +418,7 @@ const styles = StyleSheet.create({
   usageHeroLabel: { color: Color.TEXT_ON_DARK_MUTED },
   usageHeroValue: { color: Color.TEXT_REVERSE },
   usageCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 16,

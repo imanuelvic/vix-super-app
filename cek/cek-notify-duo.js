@@ -76,6 +76,9 @@ const KOSONG = () => ({
   bills: [], futsal: { members: [], sessions: [], cash: [] },
   dataPlans: [], population: {}, carParts: {}, residenceChores: {},
   meterReadings: [], wheel: null, fun: { entries: [] },
+  // 30 Sep 2026: wishlist tahun berjalan (lib/timeline.ts), penagih tiap
+  // Senin. Kosong = tidak ada yang ditagih, keadaan wajar di fixture.
+  timeline: [],
     // 27 Sep 2026: catatan cadangan data (lib/backup.ts). Tanggal kosong =
     // belum pernah diekspor, dan itu memang keadaan wajar di fixture.
     backup: { lastDayId: '', docCount: 0 }, finance: null,

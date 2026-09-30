@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { InfoRow } from '@/components/common/InfoRow';
@@ -102,20 +103,14 @@ const styles = StyleSheet.create({
   addressTitle: { color: Color.TEXT_TITLE },
   addressText: { color: Color.TEXT_PARAGRAPH },
   detailCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 14,
   },
   sectionTitle: { marginBottom: 10 },
   tipsCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 14,
     gap: 10,
   },

@@ -226,7 +226,7 @@ export function subscribePartStatus(
   onChange: (status: PartStatusMap) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const ref = doc(db, 'users', uid, 'car', 'parts');
+  const ref = carPartsRef(uid);
   return liveDoc(
     ref,
     (snapshot) => {
@@ -242,7 +242,7 @@ export function setPartDate(
   date: Date,
   note = '',
 ) {
-  const ref = doc(db, 'users', uid, 'car', 'parts');
+  const ref = carPartsRef(uid);
   // merge: hanya part ini yang berubah, status part lain tetap.
   // dueNow dipadamkan: sekarang sudah ada tanggal betulan, jadi tenggatnya
   // kembali dihitung dari situ.
@@ -257,13 +257,97 @@ export function setPartDate(
   );
 }
 
+// ===================== Kilometer (odometer) =====================
+//
+// Dari 30 Sep 2026 kartu paling atas sub-tab Parts bukan lagi ringkasan
+// "N bagian perlu perhatian" — angka itu sudah ada di badge tab & tile Home,
+// jadi kartu terbesar layar ini cuma mengulanginya. Sekarang ia MENERIMA
+// ISIAN: berapa kilometer mobilnya sekarang.
+//
+// Kenapa itu yang menggantikannya: separuh jadwal perawatan Mazda ini
+// berpatokan jarak, bukan waktu ("tiap 6 bulan / 10.000 km"), dan sampai
+// sekarang app cuma bisa menghitung separuh yang waktu. Dengan dua catatan
+// kilometer, pemakaian per bulan bisa dihitung sendiri — dan barulah "10.000
+// km" jadi angka yang bisa diperkirakan, bukan sekadar tulisan di tip.
+//
+// Tempatnya menumpang DOKUMEN YANG SAMA dengan status sparepart
+// (users/{uid}/car/parts), jadi tidak ada koleksi baru, tidak ada listener
+// baru, dan tidak ada tambahan baca Firestore sama sekali: `liveDoc` membagi
+// satu listener ke semua yang melanggan dokumen itu (ref-count).
+
+/** Catatan kilometer: yang sekarang, dan yang sebelumnya (untuk hitung laju). */
+export type CarOdometer = {
+  km: number;
+  at: Timestamp;
+  /** Catatan sebelum ini; kosong = ini catatan pertama. */
+  prevKm?: number;
+  prevAt?: Timestamp;
+};
+
+function carPartsRef(uid: string) {
+  return doc(db, 'users', uid, 'car', 'parts');
+}
+
+/** Dengarkan catatan kilometer. null = belum pernah dicatat sama sekali. */
+export function subscribeCarOdometer(
+  uid: string,
+  onChange: (odometer: CarOdometer | null) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    carPartsRef(uid),
+    (snapshot) => {
+      const o = snapshot.data()?.odometer as CarOdometer | undefined;
+      onChange(o && typeof o.km === 'number' ? o : null);
+    },
+    onError,
+  );
+}
+
+/**
+ * Catat kilometer hari ini. Catatan yang BERLAKU sekarang digeser jadi
+ * `prev` — cukup dua titik untuk menghitung laju pemakaian, dan tidak menumbuh
+ * kan dokumen ini selamanya seperti kalau seluruh riwayatnya disimpan.
+ */
+export function setCarOdometer(
+  uid: string,
+  km: number,
+  date: Date,
+  current: CarOdometer | null,
+) {
+  const baru: CarOdometer = { km, at: Timestamp.fromDate(date) };
+  // Catatan lama jadi pembanding — kecuali ia dicatat di hari yang sama
+  // (berarti isian barusan cuma pembetulan salah ketik, bukan titik kedua).
+  if (current && current.at.toDate().toDateString() !== date.toDateString()) {
+    baru.prevKm = current.km;
+    baru.prevAt = current.at;
+  } else if (current) {
+    if (current.prevKm !== undefined) baru.prevKm = current.prevKm;
+    if (current.prevAt !== undefined) baru.prevAt = current.prevAt;
+  }
+  return setDoc(carPartsRef(uid), { odometer: baru }, { merge: true });
+}
+
+/**
+ * Pemakaian rata-rata km per BULAN, dari dua catatan terakhir. null kalau
+ * catatannya baru satu, jaraknya mundur (salah ketik), atau jedanya di bawah
+ * seminggu — di bawah itu satu perjalanan jauh bisa membuat angkanya ngawur.
+ */
+export function odometerPerMonth(o: CarOdometer | null): number | null {
+  if (!o || o.prevKm === undefined || !o.prevAt) return null;
+  const hari = daysBetween(o.prevAt.toDate(), o.at.toDate());
+  const selisih = o.km - o.prevKm;
+  if (hari < 7 || selisih <= 0) return null;
+  return (selisih / hari) * 30;
+}
+
 /**
  * Tandai part HARUS diservis sekarang tanpa tanggal terakhir. Dipakai saat kamu
  * tahu sesuatu sudah waktunya diganti tapi tidak tahu kapan terakhir dikerjakan
  * — memaksa mengarang tanggal cuma bikin jadwal berikutnya ikut salah.
  */
 export function setPartDueNow(uid: string, partKey: string, dueNow: boolean) {
-  const ref = doc(db, 'users', uid, 'car', 'parts');
+  const ref = carPartsRef(uid);
   return setDoc(ref, { status: { [partKey]: { dueNow } } }, { merge: true });
 }
 

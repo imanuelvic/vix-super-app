@@ -100,8 +100,14 @@ ok('isi daftar paddingTop 0 (jarak dari bar milik StickyTop); kartu berjarak mar
   /export const SCREEN_CONTENT: ViewStyle = \{\s*\n\s*paddingHorizontal: 20,/.test(
     baca('assets/style/layout.ts')) &&
   /marginBottom: 10,\s*\n\s*gap: 6,/.test(arsip) && !/listHeader/.test(arsip) && !/marginTop: 10,/.test(arsip));
-ok('Health (Race) & Fun (Summit/Rekreasi) sama-sama lewat FunArchive → satu perilaku',
-  /<FunArchive category="race"/.test(baca('app/health.tsx')) && /<FunArchive category=\{tab\} \/>/.test(baca('app/fun.tsx')));
+// Sejak Recreation dibuang (30 Sep 2026) Fun tinggal satu kategori arsip, jadi
+// kategorinya ditulis tetap — bukan lagi `{tab}`. Yang dijaga tetap sama & kini
+// lebih ketat: dua layar, satu komponen, dan tidak ada kategori ketiga yang
+// diam-diam hidup lagi di sini.
+ok('Health (Race) & Fun (Summit) sama-sama lewat FunArchive → satu perilaku',
+  /<FunArchive category="race"/.test(baca('app/health.tsx')) &&
+  /<FunArchive category="summit" \/>/.test(baca('app/fun.tsx')) &&
+  /export type FunCategory = 'summit' \| 'race';/.test(baca('lib/fun.ts')));
 
 console.log('\n=== Isian Summit: provinsi → gunung ===');
 const isian = baca('components/fun/FunEntryScreen.tsx');

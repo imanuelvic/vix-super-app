@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -407,10 +408,7 @@ const styles = StyleSheet.create({
   invoiceHint: { color: Color.TEXT_LABEL },
   presetWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   itemCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     padding: 10,
     gap: 8,
   },

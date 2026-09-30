@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP } from '@/assets/style/card';
+import { CARD, CARD_GAP, FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -159,10 +159,7 @@ const styles = StyleSheet.create({
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
   notFound: { paddingHorizontal: 20, marginTop: 12 },
   progressCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     padding: 14,
     gap: 10,
     marginBottom: CARD_GAP,
@@ -203,10 +200,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 8,

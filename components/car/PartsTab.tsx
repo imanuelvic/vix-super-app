@@ -1,11 +1,12 @@
+import { OdometerCard } from '@/components/car/OdometerCard';
 import { UpkeepList, type UpkeepGroup } from '@/components/common/UpkeepList';
 import { useAuth } from '@/contexts/auth';
 import {
-  countCarAttention,
   PART_GROUPS,
   partCondition,
   setPartDate,
   setPartDueNow,
+  type CarOdometer,
   type PartStatusMap,
   type PartTone,
 } from '@/lib/car';
@@ -24,16 +25,19 @@ const TONE_LABEL: Record<PartTone, string> = {
 //
 // Tampilan & dialognya milik bersama <UpkeepList> (dipakai juga Residence →
 // Maintenance); di sini tinggal merakit barisnya dari data mobil.
-export function PartsTab({ status }: { status: PartStatusMap }) {
+//
+// Kartu paling atasnya KILOMETER (30 Sep 2026), bukan lagi ringkasan "N bagian
+// perlu perhatian" — alasan lengkapnya di components/car/OdometerCard.tsx.
+export function PartsTab({
+  status,
+  odometer,
+}: {
+  status: PartStatusMap;
+  odometer: CarOdometer | null;
+}) {
   const { user } = useAuth();
 
   const now = new Date();
-
-  // Hitung berapa part yang perlu perhatian (untuk ringkasan atas) — sama
-  // dengan angka badge di Home.
-  const allParts = PART_GROUPS.flatMap((g) => g.parts);
-  const needsAttention = countCarAttention(status, now);
-  const unknownCount = allParts.filter((p) => !status[p.key]).length;
 
   const groups: UpkeepGroup[] = PART_GROUPS.map((group) => ({
     key: group.key,
@@ -66,17 +70,7 @@ export function PartsTab({ status }: { status: PartStatusMap }) {
 
   return (
     <UpkeepList
-      summary={{
-        label: 'Kondisi perawatan',
-        value:
-          needsAttention === 0
-            ? 'Semua terkendali 👍'
-            : `${needsAttention} bagian perlu perhatian ⚠️`,
-        sub:
-          unknownCount > 0
-            ? `${unknownCount} bagian belum pernah dicatat.`
-            : 'Click bagian mana pun untuk memperbarui tanggalnya.',
-      }}
+      summary={<OdometerCard odometer={odometer} />}
       groups={groups}
       dialogHint="Kapan terakhir diganti / dicek?"
       noteOf={(key) => status[key]?.note ?? ''}

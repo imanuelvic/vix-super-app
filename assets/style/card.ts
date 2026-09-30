@@ -35,11 +35,33 @@ export const CARD_GAP = 10;
 // `marginBottom`, arah & perataan isinya, dan garis tepi kiri berwarna. Itu
 // memang milik kartunya masing-masing — memaksakannya ke sini cuma membuat
 // tiap pemakai harus menimpanya lagi.
-export const CARD: ViewStyle = {
+/**
+ * Bentuk kartu daftar TANPA paddingnya — untuk kotak bersudut 14 yang jarak
+ * dalamnya memang harus beda.
+ *
+ * Kenapa perlu, dan ini ketahuan justru saat CARD diberlakukan ke seluruh app
+ * (30 Sep 2026): sepuluh kotak memakai bentuk yang sama persis tapi jarak
+ * dalamnya sengaja lain. Empat kartu rincian (App Info, System, Car, Residence)
+ * memakai 16/6 karena BARISNYA sendiri yang punya jarak tegak; tabel rekap CORE
+ * dan kartu kreator YouTube justru tidak boleh punya jarak dalam sama sekali,
+ * karena isinya menempel penuh ke tepi kartu.
+ *
+ * Tanpa nama ini, kesepuluhnya cuma punya dua pilihan yang sama-sama buruk:
+ * menulis ulang keempat propertinya (dan jadi salinan yang bisa meleset), atau
+ * memakai CARD lalu menimpa paddingnya (dan berbohong bahwa ia baris daftar).
+ *
+ * Pakai CARD kalau ia memang BARIS DAFTAR; pakai ini kalau jarak dalamnya
+ * milik kotak itu sendiri.
+ */
+export const CARD_SHAPE = {
   backgroundColor: Color.CONTAINER,
   borderRadius: 14,
   borderWidth: 1,
   borderColor: Color.BORDER,
+} satisfies ViewStyle;
+
+export const CARD: ViewStyle = {
+  ...CARD_SHAPE,
   paddingHorizontal: 14,
   paddingVertical: 12,
 };
@@ -74,6 +96,47 @@ export const PANEL: ViewStyle = {
   borderWidth: 1,
   borderColor: Color.BORDER,
 };
+
+/**
+ * Bentuk KOTAK ISIAN sudut 12 — yang paling sering disentuh jari di app ini:
+ * kolom teks, pemilih tanggal & jam, kotak pencarian, kolom nominal, pemilih
+ * ayat, tombol halaman, plus kotak-kotak kecil DI DALAM kartu (panel yang
+ * mengembang, sub-kotak rincian).
+ *
+ * Kenapa sudutnya 12 dan bukan 14/16: ini bukan kartu yang berdiri sendiri di
+ * layar, melainkan kotak yang duduk DI DALAM kartu atau formulir. Kotak kecil
+ * bersudut lebar terlihat menggelembung, dan sudut yang lebih rapat itulah yang
+ * membedakannya dari kartu di sekelilingnya. Jadi ini bukan pertumbuhan liar
+ * seperti 14-vs-16, melainkan peran yang memang berbeda.
+ *
+ * Keempat propertinya ditulis tangan di 29 tempat pada 21 berkas sebelum 30 Sep
+ * 2026 — tujuh di antaranya komponen bersama `components/common/` yang justru
+ * dibuat supaya isian app ini seragam. Artinya mengganti rupa isian app berarti
+ * menyunting tujuh berkas dan berharap tidak ada yang meleset; BibleRefField
+ * sendiri sudah memuat tiga salinan.
+ *
+ * Yang TIDAK ikut ke sini, sama seperti CARD & PANEL: padding (16/12, 14/10,
+ * 14/13, kadang cuma paddingLeft), `gap`, arah isinya, dan perataannya. Itu
+ * memang beda-beda per kotak.
+ *
+ *   const styles = StyleSheet.create({
+ *     field: { ...FIELD, flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12 },
+ *   });
+ *
+ * ⚠️ `satisfies`, bukan `: ViewStyle` seperti CARD & PANEL, dan itu bukan
+ * selera. Salah satu pemakainya `<FormInput>` yang gayanya bertipe TextStyle,
+ * dan menyebar sebuah ViewStyle UTUH ke sana membawa serta ~180 properti
+ * opsional yang tipenya lebih longgar (mis. `userSelect: string`) sehingga tsc
+ * menolaknya. Dengan `satisfies`, nilainya tetap diperiksa terhadap ViewStyle
+ * tapi tipenya tinggal keempat properti ini saja, jadi ia cocok di kotak View
+ * maupun di kolom teks.
+ */
+export const FIELD = {
+  backgroundColor: Color.CONTAINER,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: Color.BORDER,
+} satisfies ViewStyle;
 
 // ═══════════════════════ Bayangan (versi 2.0, 22 Sep 2026) ═══════════════════
 // Dua tingkat saja, supaya tidak semua kartu "mengambang":

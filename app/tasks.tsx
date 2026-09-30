@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { AttentionMark } from '@/components/common/Badge';
@@ -1099,10 +1100,7 @@ const styles = StyleSheet.create({
   },
   fabLabelText: { color: Color.TEXT_TITLE },
   searchRow: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 8,

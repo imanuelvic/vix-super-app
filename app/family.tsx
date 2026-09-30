@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
+import { CARD_GAP, FIELD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { CheckCircle } from '@/components/common/CheckCircle';
@@ -1004,10 +1004,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...FIELD,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -1016,10 +1013,7 @@ const styles = StyleSheet.create({
   pickerChevron: { color: Color.TEXT_LABEL },
   pickerList: {
     marginTop: 6,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
-    borderRadius: 12,
-    backgroundColor: Color.CONTAINER,
+    ...FIELD,
     overflow: 'hidden',
   },
   pickerRow: {

@@ -71,11 +71,25 @@ const fun = baca('app/fun.tsx');
 c('sub-tab pembukanya Creators',
   /useTabScroll<FunTab>\('creators', \{/.test(fun));
 c('bukan Summit lagi', !/useTabScroll<FunTab>\('summit'/.test(fun));
-c('ketiga sub-tabnya tetap ada & urutannya tidak digeser',
-  /key: 'summit'[\s\S]*key: 'creators'[\s\S]*key: 'recreation'/.test(fun));
-c('Creators tetap bisa ditinggalkan (Summit & Recreation masih di daftar)',
-  /\{ key: 'summit', label: 'Summit'/.test(fun) &&
-  /\{ key: 'recreation', label: 'Recreation'/.test(fun));
+// 30 Sep 2026: Recreation dibuang TOTAL (tab, kategori, isian, pencarian).
+// Ceknya diperketat: bukan cuma urutan tab yang tersisa, tapi juga bahwa tidak
+// ada satu pun jejak "recreation" yang tertinggal di jalur fitur ini — kalau
+// ada, ia akan jadi tab yatim yang tak bisa dibuka atau daftar yang tak bisa
+// diisi.
+c('kedua sub-tabnya tetap ada & urutannya tidak digeser',
+  /key: 'summit'[\s\S]*key: 'creators'/.test(fun));
+c('Creators tetap bisa ditinggalkan (Summit masih di daftar)',
+  /\{ key: 'summit', label: 'Summit'/.test(fun));
+c('Recreation benar-benar hilang dari seluruh jalurnya', (() => {
+  const jejak = [
+    'app/fun.tsx',
+    'lib/fun.ts',
+    'lib/featureIndex.ts',
+    'components/fun/FunArchive.tsx',
+    'components/fun/FunEntryScreen.tsx',
+  ].filter((f) => /'recreation'/.test(baca(f)));
+  return jejak.length === 0;
+})());
 
 console.log('\n== 2. Bible Reading membuka tab sesuai jam ==');
 

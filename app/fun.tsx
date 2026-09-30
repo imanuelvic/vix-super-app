@@ -9,32 +9,33 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { CreatorsTab } from '@/components/fun/CreatorsTab';
 import { FunArchive } from '@/components/fun/FunArchive';
-import { type FunCategory } from '@/lib/fun';
 
-type FunTab = FunCategory | 'creators';
+type FunTab = 'summit' | 'creators';
 
 // Tab bawah. Ikon SF dipetakan di icon-symbol.tsx.
 //
-// Dua perubahan (30 Agu 2026):
-//   • Race pindah ke fitur Health 🍎 — race itu soal tubuh & latihan, bukan
-//     rekreasi. Entrinya TIDAK dipindah ke mana-mana; dokumennya tetap sama,
+// Tiga perubahan sejauh ini:
+//   • 30 Agu 2026 — Race pindah ke fitur Health 🍎 (race itu soal tubuh &
+//     latihan). Entrinya TIDAK dipindah ke mana-mana; dokumennya tetap sama,
 //     cuma tempat membacanya yang berganti.
-//   • Reflection dibuang dari daftar tab.
+//   • 30 Agu 2026 — Reflection dibuang dari daftar tab.
+//   • 30 Sep 2026 — Recreation dibuang TOTAL atas permintaan pemilik app:
+//     tabnya, kategorinya, isiannya, dan pintu pencariannya. Yang tersisa di
+//     fitur ini cuma Summit (arsip) & Creators (yang isinya baru tiap hari).
 const FUN_TABS: BottomTab<FunTab>[] = [
   { key: 'summit', label: 'Summit', icon: 'mountain.2.fill' },
   { key: 'creators', label: 'Creators', icon: 'play.rectangle.fill' },
-  { key: 'recreation', label: 'Recreation', icon: 'beach.umbrella.fill' },
 ];
 
-// Fitur Fun & Recreation 🎉 — arsip petualangan + kabar terbaru dari kreator
-// YouTube yang kamu ikuti.
+// Fitur Fun 🎉 — arsip pendakian + kabar terbaru dari kreator YouTube yang
+// kamu ikuti.
 export default function FunScreen() {
-  // Hook bersama: ganti kategori + scroll ke atas tiap tab ditekan.
+  // Hook bersama: ganti kategori + scroll ke atas tiap tab di-click.
   //
-  // Mendarat di Creators, bukan Summit: Summit & Recreation itu ARSIP — isinya
-  // berubah cuma saat kamu sendiri menambah catatan, jadi membukanya
-  // menampilkan hal yang sama persis dengan kemarin. Creators justru sebaliknya,
-  // isinya video baru tiap kali dibuka — dan itulah alasan fitur ini dibuka.
+  // Mendarat di Creators, bukan Summit: Summit itu ARSIP — isinya berubah cuma
+  // saat kamu sendiri menambah catatan, jadi membukanya menampilkan hal yang
+  // sama persis dengan kemarin. Creators justru sebaliknya, isinya video baru
+  // tiap kali dibuka — dan itulah alasan fitur ini dibuka.
   const { tab, scrollKey, onTabPress } = useTabScroll<FunTab>('creators', {
     tabs: FUN_TABS,
   });
@@ -44,7 +45,7 @@ export default function FunScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenHeader
         backLabel="Home"
-        title="Fun & Recreation 🎉"
+        title="Fun 🎉"
         subtitle="Arsip petualangan & hiburan terbaru"
         // 🏔️ hanya di Summit: daftar gunung di Jawa + tanda ✓ yang sudah
         // ditaklukkan (app/mountains.tsx).
@@ -56,11 +57,7 @@ export default function FunScreen() {
       />
 
       <View style={styles.content} key={scrollKey}>
-        {tab === 'creators' ? (
-          <CreatorsTab />
-        ) : (
-          <FunArchive category={tab} />
-        )}
+        {tab === 'creators' ? <CreatorsTab /> : <FunArchive category="summit" />}
       </View>
 
       <BottomTabs tabs={FUN_TABS} value={tab} onChange={onTabPress} />

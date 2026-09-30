@@ -1,5 +1,6 @@
 import { StyleSheet, TextInput, type TextInputProps } from 'react-native';
 
+import { FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { closePickers } from '@/components/common/pickerBus';
 
@@ -22,14 +23,11 @@ export function FormInput({ style, onFocus, ...rest }: TextInputProps) {
 
 const styles = StyleSheet.create({
   input: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 12,
+    ...FIELD,
     paddingHorizontal: 16,
     paddingVertical: 12,
     color: Color.TEXT_TITLE,
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
-    borderWidth: 1,
-    borderColor: Color.BORDER,
   },
 });

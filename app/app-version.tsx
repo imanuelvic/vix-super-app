@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CARD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -172,10 +173,7 @@ const styles = StyleSheet.create({
   versionLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   versionValue: { color: Color.TEXT_REVERSE },
   detailCard: {
-    backgroundColor: Color.CONTAINER,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Color.BORDER,
+    ...CARD,
     paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 16,
