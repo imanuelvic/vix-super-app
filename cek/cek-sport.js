@@ -64,7 +64,12 @@ const BERPAGINASI = [
   'components/residence/LogTab.tsx',
   'components/fitness/NotesTab.tsx',
   'components/friends/PlacesTab.tsx',
-  'components/career/AffiliateTab.tsx',
+  // 6 jadi 5 pada 1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya. Daftar
+  // ini isinya layar yang WAJIB memakai Pagination bersama, jadi layar yang
+  // sudah tidak ada memang tidak boleh ikut didaftar; ini pengarahan ulang,
+  // bukan pelonggaran. Dulu berkasnya tetap tertulis di sini dan suite ini
+  // MELEDAK membacanya (ENOENT), jadi seluruh cek di bawahnya ikut tak
+  // terbaca padahal tidak ada hubungannya dengan Affiliate.
 ];
 for (const f of BERPAGINASI) {
   const src = baca(f);

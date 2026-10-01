@@ -3614,14 +3614,7 @@ expo-clipboard@~57.0.1:
   resolved "https://registry.yarnpkg.com/expo-clipboard/-/expo-clipboard-57.0.2.tgz#639996f99407acd34d37ba3d3b7f0b094ca62d97"
   integrity sha512-VB4Au8X/RbvJKUtJk+87vdtveWSNEa5RzY3ooeO6VNF7Rd49RbQXZOu3/TfEW9p7mU8TCfyTvjyCiAUwSoSJ4w==
 
-expo-constants@57.0.19, expo-constants@~57.0.19:
-  version "57.0.19"
-  resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-57.0.19.tgz#9df45e23672342f44f12f290399d95097af738c6"
-  integrity sha512-3eK1kZRwCdMizQLlM/PPlPwjaPnB5qKvdRDMBMnB1ZxmvWJBf9TB4uEO4DMMfIPaFUxYFs29dsR5fPr1gh3FTQ==
-  dependencies:
-    "@expo/env" "~2.4.3"
-
-expo-constants@~57.0.20:
+expo-constants@57.0.20, expo-constants@~57.0.19, expo-constants@~57.0.20:
   version "57.0.20"
   resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-57.0.20.tgz#d8691eccf44282f230a60b5f415b2d94cf7b9be0"
   integrity sha512-WycPVvBgbluSa6yAh6DKnX646ZHrae0gV2ZLum5fioNkR+DiWyulq1+UfS++Jc6yfAh/l55NOirv6mt5cnQhSw==
