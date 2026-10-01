@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { FormError } from '@/components/common/FormError';
@@ -6,6 +6,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SoftPill } from '@/components/common/SoftPill';
 import { VixText } from '@/components/common/VixText';
+import { useAiDay } from '@/hooks/useAiDay';
 import {
   generateReflection,
   loadReflectionAiDay,
@@ -14,7 +15,6 @@ import {
   reflectionReady,
   saveReflectionAiDay,
   REFLECTION_DAILY_CAP,
-  type ReflectionAiDay,
 } from '@/lib/reflectionAi';
 import { designOf } from '@/lib/shareImage';
 
@@ -50,23 +50,13 @@ export function ReflectionAiPanel({
   onUse: (text: string) => void;
 }) {
   // null = jatah hari ini belum terbaca dari penyimpanan (sekejap).
-  const [day, setDay] = useState<ReflectionAiDay | null>(null);
+  const [day, setDay] = useAiDay(dayId, loadReflectionAiDay);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Dismiss menyembunyikan lembarnya, hasilnya tetap ada.
   const [shown, setShown] = useState(true);
   // Tulisan sebelum "Use", supaya bisa dikembalikan tanpa dialog.
   const [sebelum, setSebelum] = useState<string | null>(null);
-
-  useEffect(() => {
-    let hidup = true;
-    loadReflectionAiDay(dayId).then((d) => {
-      if (hidup) setDay(d);
-    });
-    return () => {
-      hidup = false;
-    };
-  }, [dayId]);
 
   async function minta() {
     if (busy || !day) return;

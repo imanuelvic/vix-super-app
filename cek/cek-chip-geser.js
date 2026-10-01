@@ -106,7 +106,8 @@ c('…lalu memasang 20pt-nya sendiri di dalam (chip sejajar kartu di bawahnya)',
 
 // Angka -20 itu cuma benar kalau SEMUA pemakainya memang memberi 20pt.
 const PEMAKAI = [
-  'app/history.tsx', 'app/visitations.tsx', 'components/career/AffiliateTab.tsx',
+  // (1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya, bukan dilonggarkan.)
+  'app/history.tsx', 'app/visitations.tsx',
   'components/learning/DiscussionTab.tsx',
   'components/friends/PlacesTab.tsx', 'components/tasks/PriorityTab.tsx',
 ];

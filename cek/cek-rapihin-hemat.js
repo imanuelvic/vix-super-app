@@ -229,9 +229,14 @@ console.log('=== 1. Sinkron notifikasi: disk cuma disentuh kalau ada yang beruba
   console.log('\n=== 2. Bentuk gerbangnya dijaga ===');
   // =====================================================================
   const notify = baca('lib/notify.ts');
+  // Dicari DI DALAM syncNotifications saja. Sejak 1 Okt 2026 `setAppBadge`
+  // juga membaca sakelar yang sama, dan letaknya lebih atas di berkas — jadi
+  // mencari dari awal berkas akan menemukan sakelar milik fungsi lain dan
+  // menyimpulkan urutannya terbalik.
   ok('gerbang murahnya diperiksa SEBELUM sakelar dibaca dari disk', (() => {
-    const gerbang = notify.indexOf('if (murni === murniTerakhir) return;');
-    const sakelar = notify.indexOf('if (!(await notifyEnabled())) return;');
+    const badan = notify.slice(notify.indexOf('export async function syncNotifications'));
+    const gerbang = badan.indexOf('if (murni === murniTerakhir) return;');
+    const sakelar = badan.indexOf('if (!(await notifyEnabled())) return;');
     return gerbang > 0 && sakelar > 0 && gerbang < sakelar;
   })());
   ok('sidiknya dari model + Finance + tanggal, bukan daftar bagian tulis tangan',

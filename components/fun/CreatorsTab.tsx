@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Image, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD_SHAPE } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { Chip } from '@/components/common/Chip';
 import { ChipRow } from '@/components/common/ChipRow';
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', gap: 12, paddingTop: 40, paddingHorizontal: 20 },
   error: { textAlign: 'center', color: Color.DANGER },
   card: {
-    ...CARD,
+    ...CARD_SHAPE,
     overflow: 'hidden',
     marginBottom: 12,
   },

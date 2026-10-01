@@ -16,6 +16,8 @@ export function ForexTab() {
     <MarketTab
       heroTitle="💵 Kurs Rupiah (USD → IDR)"
       heroSub="Live dari Yahoo Finance (USDIDR=X) · Rupiah per 1 USD"
+      aiAsset="forex"
+      aiLabel="Kurs"
       statLabel="1 USD sekarang"
       srcText="Kurs pasar USD→IDR · Yahoo Finance"
       noteText="⚠️ Ini kurs pasar (indikatif). Kurs jual/beli di bank atau money changer biasanya sedikit berbeda."

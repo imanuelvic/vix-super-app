@@ -93,8 +93,6 @@ const MAPPING = {
   // Tombol kendali Tetris: putar balok & jatuhkan langsung ke dasar.
   'arrow.clockwise': 'rotate-right',
   'arrow.down.to.line': 'vertical-align-bottom',
-  // Sub-tab Affiliate 🤝 di Career — toa/pengeras suara (content creator).
-  'megaphone.fill': 'campaign',
   // Sub-tab Notes 📝 di Fitness — kumpulan tautan & catatan latihan.
   'note.text': 'sticky-note-2',
   // Sub-tab Token ⚡ di Residence — listrik prabayar.
@@ -116,10 +114,9 @@ const MAPPING = {
   // di sebelahnya memakai 'bubble.left.fill' yang sudah ada di atas; ✨ di app
   // ini khusus berarti AI, yaitu tombol Rapihkan di CORE & AI Reflection.)
   'doc.on.doc': 'content-copy',
-  // Sub-tab Analysis ✨ di Investment — satu-satunya tab beremblem AI di app
-  // ini, jadi ikonnya sengaja sama artinya dengan ✨ yang dipakai tombol AI
-  // lain (Rapihkan di CORE, AI Reflection di Habits).
-  'sparkles': 'auto-awesome',
+  // ('sparkles' sempat ada untuk sub-tab Analysis ✨ di Investment, 30 Sep
+  // 2026. Sehari kemudian bacaan AI-nya masuk ke tiap sub-tab aset, jadi
+  // tabnya hilang dan emblemnya cukup emoji ✨ seperti tombol AI lain.)
   // Tombol perbesar grafik harga jadi satu layar penuh (Investment).
   'arrow.up.left.and.arrow.down.right': 'fullscreen',
 } as IconMapping;

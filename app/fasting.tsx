@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { ACTION_TOP } from '@/assets/style/space';
@@ -19,10 +18,8 @@ import { FormInput } from '@/components/common/FormInput';
 import { InlineDelete } from '@/components/common/InlineDelete';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { ProgressBar } from '@/components/common/ProgressBar';
 import { ReadBlock } from '@/components/common/ReadBlock';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { FastingIntro } from '@/components/spiritual/FastingIntro';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -85,26 +82,18 @@ export default function FastingScreen() {
   const [introSelesai, setIntroSelesai] = useState(false);
   const introTampil = !planId && !introSelesai;
 
-  const progress = plan ? fastingProgress(plan) : { done: 0, total: 0 };
+  const progress = plan
+    ? fastingProgress(plan)
+    : { done: 0, failed: 0, total: 0 };
   // Lewat masa tenggang → catatannya baca-saja SELAMANYA (lihat lib/fasting.ts).
   const terkunci = plan ? fastingLocked(plan, today) : false;
   const sisaKunci = plan ? fastingLockDaysLeft(plan, today) : null;
 
-  // Pil keadaan di kartu atas. EMPAT, dan keempatnya menjawab pertanyaan yang
-  // sama: puasa ini sedang apa?
-  //
-  // Yang keempat ("🗓️ Belum mulai") ditambahkan 6 Sep: puasa yang tanggal
-  // mulainya masih di depan dulu jatuh ke cabang terakhir dan dilabeli
-  // "✅ Selesai" — padahal 0/7 hari, dan satu hari pun belum dijalani.
+  // Puasa yang tanggal mulainya masih di depan: hitungan hari yang berhasil
+  // memang 0 dan itu wajar, jadi keterangannya MENGHITUNG MUNDUR, bukan
+  // menagih sesuatu yang belum waktunya dijalani.
   const todayId = dayDocId(today);
   const belumMulai = !!plan && todayId < plan.startId;
-  const keadaan = terkunci
-    ? { label: '🔒 Terkunci', gaya: styles.pillLocked }
-    : belumMulai
-      ? { label: '🗓️ Belum mulai', gaya: styles.pillSoon }
-      : plan && todayId <= plan.endId
-        ? { label: '🔥 Berjalan', gaya: styles.pillLive }
-        : { label: '✅ Selesai', gaya: styles.pillDone };
   // Berapa hari lagi sampai hari pertamanya.
   const menujuMulai =
     belumMulai && plan
@@ -208,50 +197,17 @@ export default function FastingScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
-          {/* ===== Kartu keadaan =====
-              Yang paling ingin kamu tahu begitu layar ini terbuka bukan kolom
-              isian, tapi: puasa ini sedang apa, dan sudah sejauh mana. Dulu
-              jawabannya harus dikumpulkan sendiri dari enam kolom yang
-              berderet. */}
-          {plan && (
-            <SummaryCard style={styles.hero}>
-              <View style={styles.heroTop}>
-                {/* Angka besar di bawahnya = hari puasa yang BERHASIL. Untuk
-                    puasa yang belum mulai, angka itu memang 0 dan wajar —
-                    jadi labelnya menghitung mundur, bukan menagih. */}
-                <VixText heading="label" additionalStyle={summaryText.label}>
-                  {belumMulai
-                    ? `🗓️ Mulai ${menujuMulai} hari lagi`
-                    : '🍽️ Puasa berhasil'}
-                </VixText>
-                <View style={[styles.pill, keadaan.gaya]}>
-                  <VixText heading="label" additionalStyle={styles.pillText}>
-                    {keadaan.label}
-                  </VixText>
-                </View>
-              </View>
-              <VixText heading="header" additionalStyle={summaryText.value}>
-                {progress.done}
-                <VixText heading="title" additionalStyle={styles.heroTotal}>
-                  {' '}
-                  / {progress.total} hari
-                </VixText>
-              </VixText>
-              <ProgressBar
-                value={progress.done}
-                total={progress.total}
-                color={Color.SPIRITUAL}
-                track={Color.OVERLAY}
-              />
-              <VixText heading="label" additionalStyle={summaryText.label}>
-                📆 {formatShortDayDate(startDate)} → {formatShortDayDate(endDate)}
-              </VixText>
-            </SummaryCard>
-          )}
-
           {/* ===== Pintu ke checklist harian =====
-              Naik ke atas: inilah yang dibuka tiap malam, sedangkan kolom di
-              bawahnya diisi sekali di awal lalu jarang disentuh lagi. */}
+              1 Okt 2026: kartu keadaan di atasnya DIBUANG, jadi inilah yang
+              pertama terlihat. Kartu itu memakan sepertiga layar untuk
+              mengulang hal yang sudah tertulis di tempat lain — tanggalnya ada
+              di bagian 📆 Periode tepat di bawah, dan keadaan terkuncinya sudah
+              disebut pita judul. Yang benar-benar hilang cuma hitungan harinya,
+              dan hitungan itu pindah ke sini: ia keterangan dari pintu yang
+              dibukanya, bukan kartu tersendiri.
+
+              Inilah yang dibuka tiap malam, sedangkan kolom di bawahnya diisi
+              sekali di awal lalu jarang disentuh lagi. */}
           {plan && (
             <PressableScale
               style={styles.daysLink}
@@ -266,7 +222,11 @@ export default function FastingScreen() {
                   📆 Lihat Hari per Hari
                 </VixText>
                 <VixText heading="label" additionalStyle={styles.daysSub}>
-                  Centang puasamu tiap malam di sini
+                  {belumMulai
+                    ? `🗓️ Mulai ${menujuMulai} hari lagi`
+                    : `✅ ${progress.done} berhasil${
+                        progress.failed > 0 ? ` · ✗ ${progress.failed} gagal` : ''
+                      } dari ${progress.total} hari`}
                 </VixText>
               </View>
               <IconSymbol
@@ -471,31 +431,6 @@ const styles = StyleSheet.create({
   // Jarak tombol aksi dari isian di atasnya — sama dengan layar Spiritual lain.
   saveButton: { marginTop: ACTION_TOP },
   locked: { color: Color.TEXT_LABEL, marginTop: ACTION_TOP },
-
-  // ── Kartu keadaan ──────────────────────────────────────────────────────
-  hero: { gap: 8, marginBottom: CARD_GAP },
-  heroTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  // Angka besar "6" diikuti "/ 6 hari" yang lebih kecil — penyebutnya konteks,
-  // bukan berita, jadi tidak perlu sebesar yang dicapai.
-  heroTotal: { color: Color.TEXT_REVERSE, opacity: 0.75 },
-  pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  pillText: { color: Color.TEXT_REVERSE },
-  pillLive: { backgroundColor: Color.SPIRITUAL_DARK, borderColor: Color.SPIRITUAL },
-  pillDone: { backgroundColor: 'transparent', borderColor: Color.SPIRITUAL },
-  pillLocked: { backgroundColor: 'transparent', borderColor: Color.BORDER },
-  // Belum mulai: bergaris seperti 'Selesai' tapi PUDAR — belum terjadi apa-apa,
-  // jadi ia tidak boleh terlihat sekuat keadaan yang sudah dijalani.
-  pillSoon: { backgroundColor: 'transparent', borderColor: Color.TEXT_ON_DARK_MUTED },
 
   // ── Kelompok isian ─────────────────────────────────────────────────────
   bagian: {

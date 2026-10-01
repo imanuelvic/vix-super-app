@@ -13,6 +13,7 @@ import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { VixText } from '@/components/common/VixText';
+import { BudgetAiCard } from '@/components/finance/BudgetAiCard';
 import { PlanningCard } from '@/components/finance/PlanningCard';
 import { TypeChips } from '@/components/finance/TypeChips';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -39,6 +40,7 @@ import {
   type FinanceCategory,
   type FinanceType,
 } from '@/lib/categories';
+import type { MonthSlice } from '@/lib/financeInsight';
 import { groupDigits, MONTH_NAMES, parseAmount } from '@/lib/format';
 import { saveErrorOf } from '@/lib/messages';
 import { formatRupiah, type Transaction } from '@/lib/transactions';
@@ -77,12 +79,15 @@ export function BudgetingTab({
   month,
   budgetDoc,
   subcats,
+  history,
 }: {
   items: Transaction[];
   year: number;
   month: number;
   budgetDoc: BudgetDoc;
   subcats: SubcategoryMap;
+  /** Tiga bulan sebelum bulan yang dibuka — bahan Rekomendasi Budget AI. */
+  history: MonthSlice[];
 }) {
   const { user } = useAuth();
   const budget = budgetDoc.allocations;
@@ -99,7 +104,7 @@ export function BudgetingTab({
   const [lockBusy, setLockBusy] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
 
-  // Tombol "samakan dengan bulan lalu" — abu-abu kalau sudah pernah ditekan
+  // Tombol "samakan dengan bulan lalu" — abu-abu kalau sudah pernah dipakai
   // untuk bulan ini (status `copied` disuplai dari layar Finance).
   const [copying, setCopying] = useState(false);
   const [confirmCopy, setConfirmCopy] = useState(false);
@@ -164,13 +169,23 @@ export function BudgetingTab({
   // Nominal yang benar-benar disimpan sebagai budget kategori ini.
   const mainAmount = rolledUp ? subTotal : parseAmount(editAmount);
 
+  /** Dialog "🔒 terkunci" — satu-satunya jalan MENGUBAH budget bulan ini. */
+  function bukaUnlock() {
+    setEditing(null);
+    setUnlockError(null);
+    setUnlockOpen(true);
+  }
+
+  /**
+   * Buka kategori. Terkunci → dialog yang sama, tapi TAMPILAN BACA.
+   *
+   * Sampai 1 Okt 2026 kategori yang terkunci langsung melempar ke dialog
+   * Unlock, jadi sekadar ingin melihat rincian sub-budget yang sudah dibuat
+   * pun harus membuka kunci komitmennya dulu. Itu terbalik: yang dikunci
+   * MENGUBAH angkanya, bukan melihatnya, dan kunci yang menghalangi melihat
+   * cuma melatih orang membuka kunci karena hal sepele.
+   */
   function openEdit(category: FinanceCategory) {
-    // Terkunci → bukan dialog Set Budget, tapi dialog Unlock (tindakan sadar).
-    if (locked) {
-      setUnlockError(null);
-      setUnlockOpen(true);
-      return;
-    }
     setEditing(category);
     const current = budget[budgetKey(type, category.key)] ?? 0;
     setEditAmount(current > 0 ? groupDigits(String(current)) : '');
@@ -212,9 +227,10 @@ export function BudgetingTab({
   }
 
   function handleCopyPress() {
+    // Menyalin budget bulan lalu itu MENGUBAH angkanya, jadi tetap lewat
+    // Unlock walau dialog kategori kini boleh dibuka untuk dibaca.
     if (locked) {
-      setUnlockError(null);
-      setUnlockOpen(true);
+      bukaUnlock();
       return;
     }
     // Sudah pernah disamakan → minta konfirmasi dulu sebelum menimpa lagi.
@@ -308,7 +324,7 @@ export function BudgetingTab({
 
   return (
     <View style={styles.flex}>
-      {/* Kategori (jenis) menempel di atas — tetap bisa ditekan saat scroll */}
+      {/* Kategori (jenis) menempel di atas — tetap bisa di-click saat scroll */}
       <View style={styles.stickyHeader}>
         <TypeChips value={type} onChange={setType} />
       </View>
@@ -367,12 +383,26 @@ export function BudgetingTab({
           </VixText>
         </View>
 
+        {/* 🤖 Penyusun budget dari realisasi tiga bulan terakhir. Tempatnya
+            di sini, antara total dan daftar kategori: sesudah kamu melihat
+            berapa yang dianggarkan, sebelum kamu menyetelnya satu per satu. */}
+        <BudgetAiCard
+          type={type}
+          year={year}
+          month={month}
+          history={history}
+          budgetDoc={budgetDoc}
+          subcats={subcats}
+          locked={locked}
+          onUnlock={bukaUnlock}
+        />
+
         {rows.map((row) => {
           const percent =
             row.allocated > 0 ? (row.realized / row.allocated) * 100 : 0;
           const over = row.allocated > 0 && row.realized > row.allocated;
           return (
-            // Tekan kategori untuk set/ubah budget-nya.
+            // Click kategori untuk set/ubah budget-nya.
             <PressableScale
               key={row.key}
               style={styles.row}
@@ -421,126 +451,148 @@ export function BudgetingTab({
       {/* Modal kecil: set budget kategori */}
       <CenterDialog visible={!!editing} onClose={() => setEditing(null)}>
         <VixText heading="title" additionalStyle={styles.modalTitle}>
-          🎯 Set Budget
+          {locked ? '🔒 Budget Terkunci' : '🎯 Set Budget'}
         </VixText>
         {editing && (
           <VixText heading="label" additionalStyle={styles.modalCategory}>
             {editing.icon} {editing.label} · {FINANCE_TYPE_LABEL[type]}
           </VixText>
         )}
-        {/* Ada sub-budget → kolom ini jadi hasil penjumlahan (tidak diketik) */}
-        <MoneyInput
-          placeholder="Nominal budget"
-          value={rolledUp ? groupDigits(String(subTotal)) : editAmount}
-          onChangeText={(t) => setEditAmount(groupDigits(t))}
-          autoFocus={!rolledUp}
-          editable={!saving && !rolledUp}
-        />
-        {/* Saat sudah ada sub-budget, kolom di atas jelas terisi sendiri &
-            terkunci — keterangannya dihapus biar modalnya tidak bertele-tele. */}
-        {!rolledUp && (
-          <VixText heading="label" additionalStyle={styles.modalHint}>
-            Isi 0 atau kosongkan untuk menghapus budget.
-          </VixText>
-        )}
 
-        {/* Sub-budget: rincian di dalam kategori ini (mis. Groceries → Telur).
-            Totalnya LANGSUNG jadi budget kategori di atas. */}
-        <View style={styles.subSection}>
-          <View style={styles.subHeader}>
-            <VixText heading="bold" additionalStyle={styles.subTitle}>
-              🧩 Sub-budget
-            </VixText>
-            <VixText heading="bold" additionalStyle={styles.subTotalText}>
-              Total {formatRupiah(subTotal)}
-            </VixText>
-          </View>
-
-          {subDraft.length > 0 && (
-            <ScrollView
-              style={styles.subScroll}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator={false}>
-              {subDraft.map((s) => {
-                const real = editing
-                  ? (subRealization.get(
-                      subBudgetKey(type, editing.key, s.key),
-                    ) ?? 0)
-                  : 0;
-                return (
-                  <View key={s.key} style={styles.subRow}>
-                    <View style={styles.subRowTop}>
-                      <VixText
-                        heading="bold"
-                        numberOfLines={1}
-                        additionalStyle={styles.subLabel}>
-                        {s.label}
-                      </VixText>
-                      <VixText heading="label" additionalStyle={styles.realText}>
-                        {formatRupiah(real)}
-                      </VixText>
-                      {/* Hapus sub — permanen begitu Simpan ditekan.
-                          Sub bawaan (⛽ Bensin) tidak bisa dihapus. */}
-                      {!s.builtin && (
-                        <PressableScale
-                          onPress={() => removeSub(s.key)}
-                          disabled={saving}
-                          hitSlop={10}>
-                          <IconSymbol
-                            name="xmark"
-                            size={16}
-                            color={Color.TEXT_PLACEHOLDER}
-                          />
-                        </PressableScale>
-                      )}
-                    </View>
-                    <MoneyInput
-                      placeholder="Nominal sub-budget"
-                      value={s.amount}
-                      onChangeText={(t) => changeSubAmount(s.key, t)}
-                      editable={!saving}
-                    />
-                  </View>
-                );
-              })}
-            </ScrollView>
-          )}
-
-          {/* Tambah sub baru — namanya bebas, diketik sendiri */}
-          <View style={styles.subAddRow}>
-            <FormInput
-              style={styles.subAddInput}
-              placeholder="Nama sub-budget"
-              value={newSubLabel}
-              onChangeText={setNewSubLabel}
-              onSubmitEditing={addSub}
-              returnKeyType="done"
-              editable={!saving}
+        {locked && editing ? (
+          <BacaBudget
+            budget={budget[budgetKey(type, editing.key)] ?? 0}
+            realized={realization.get(budgetKey(type, editing.key)) ?? 0}
+            subs={subDraft.map((s) => ({
+              key: s.key,
+              label: s.label,
+              amount: parseAmount(s.amount),
+              realized:
+                subRealization.get(
+                  subBudgetKey(type, editing.key, s.key),
+                ) ?? 0,
+            }))}
+            subTotal={subTotal}
+            monthName={MONTH_NAMES[month]}
+            onClose={() => setEditing(null)}
+            onUnlock={bukaUnlock}
+          />
+        ) : (
+          <>
+            {/* Ada sub-budget → kolom ini jadi hasil penjumlahan (tidak diketik) */}
+            <MoneyInput
+              placeholder="Nominal budget"
+              value={rolledUp ? groupDigits(String(subTotal)) : editAmount}
+              onChangeText={(t) => setEditAmount(groupDigits(t))}
+              autoFocus={!rolledUp}
+              editable={!saving && !rolledUp}
             />
-            <PressableScale
-              style={styles.subAddButton}
-              onPress={addSub}
-              disabled={saving}>
-              <IconSymbol name="plus" size={20} color={Color.TEXT_REVERSE} />
-            </PressableScale>
-          </View>
+            {/* Saat sudah ada sub-budget, kolom di atas jelas terisi sendiri &
+                terkunci — keterangannya dihapus biar modalnya tidak bertele-tele. */}
+            {!rolledUp && (
+              <VixText heading="label" additionalStyle={styles.modalHint}>
+                Isi 0 atau kosongkan untuk menghapus budget.
+              </VixText>
+            )}
 
-          {/* Keterangan hanya perlu saat sub-budget masih kosong (mengajak
-              mengisi). Begitu sudah ada isinya, tulisannya dihapus. */}
-          {!rolledUp && (
-            <VixText heading="label" additionalStyle={styles.modalHint}>
-              Isi sub-budget kalau mau dirinci, totalnya otomatis jadi budget
-              kategori ini.
-            </VixText>
-          )}
-        </View>
+            {/* Sub-budget: rincian di dalam kategori ini (mis. Groceries → Telur).
+                Totalnya LANGSUNG jadi budget kategori di atas. */}
+            <View style={styles.subSection}>
+              <View style={styles.subHeader}>
+                <VixText heading="bold" additionalStyle={styles.subTitle}>
+                  🧩 Sub-budget
+                </VixText>
+                <VixText heading="bold" additionalStyle={styles.subTotalText}>
+                  Total {formatRupiah(subTotal)}
+                </VixText>
+              </View>
 
-        <DualButtons
-          confirmLabel="Simpan"
-          busy={saving}
-          onCancel={() => setEditing(null)}
-          onConfirm={handleSave}
-        />
+              {subDraft.length > 0 && (
+                <ScrollView
+                  style={styles.subScroll}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator={false}>
+                  {subDraft.map((s) => {
+                    const real = editing
+                      ? (subRealization.get(
+                          subBudgetKey(type, editing.key, s.key),
+                        ) ?? 0)
+                      : 0;
+                    return (
+                      <View key={s.key} style={styles.subRow}>
+                        <View style={styles.subRowTop}>
+                          <VixText
+                            heading="bold"
+                            numberOfLines={1}
+                            additionalStyle={styles.subLabel}>
+                            {s.label}
+                          </VixText>
+                          <VixText heading="label" additionalStyle={styles.realText}>
+                            {formatRupiah(real)}
+                          </VixText>
+                          {/* Hapus sub — permanen begitu Simpan di-click.
+                              Sub bawaan (⛽ Bensin) tidak bisa dihapus. */}
+                          {!s.builtin && (
+                            <PressableScale
+                              onPress={() => removeSub(s.key)}
+                              disabled={saving}
+                              hitSlop={10}>
+                              <IconSymbol
+                                name="xmark"
+                                size={16}
+                                color={Color.TEXT_PLACEHOLDER}
+                              />
+                            </PressableScale>
+                          )}
+                        </View>
+                        <MoneyInput
+                          placeholder="Nominal sub-budget"
+                          value={s.amount}
+                          onChangeText={(t) => changeSubAmount(s.key, t)}
+                          editable={!saving}
+                        />
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              )}
+
+              {/* Tambah sub baru — namanya bebas, diketik sendiri */}
+              <View style={styles.subAddRow}>
+                <FormInput
+                  style={styles.subAddInput}
+                  placeholder="Nama sub-budget"
+                  value={newSubLabel}
+                  onChangeText={setNewSubLabel}
+                  onSubmitEditing={addSub}
+                  returnKeyType="done"
+                  editable={!saving}
+                />
+                <PressableScale
+                  style={styles.subAddButton}
+                  onPress={addSub}
+                  disabled={saving}>
+                  <IconSymbol name="plus" size={20} color={Color.TEXT_REVERSE} />
+                </PressableScale>
+              </View>
+
+              {/* Keterangan hanya perlu saat sub-budget masih kosong (mengajak
+                  mengisi). Begitu sudah ada isinya, tulisannya dihapus. */}
+              {!rolledUp && (
+                <VixText heading="label" additionalStyle={styles.modalHint}>
+                  Diisi kalau mau dirinci. Totalnya jadi budget kategori ini.
+                </VixText>
+              )}
+            </View>
+
+            <DualButtons
+              confirmLabel="Simpan"
+              busy={saving}
+              onCancel={() => setEditing(null)}
+              onConfirm={handleSave}
+            />
+          </>
+        )}
       </CenterDialog>
 
       {/* Konfirmasi menyamakan ulang (menimpa budget bulan ini) */}
@@ -558,7 +610,7 @@ export function BudgetingTab({
       <ConfirmDialog
         visible={confirmLock}
         title={`Kunci budget ${MONTH_NAMES[month]} ${year}?`}
-        detail="Setelah dikunci, budget jadi komitmenmu bulan ini: tidak bisa diubah tanpa Unlock (dengan alasan, dan tercatat). Transaksi tetap bertambah dan dibandingkan dengan budget yang dikunci."
+        detail="Sesudah dikunci, mengubah budget harus pakai alasan. Transaksi tetap jalan seperti biasa."
         confirmLabel="Kunci"
         danger={false}
         busy={lockBusy}
@@ -577,8 +629,8 @@ export function BudgetingTab({
           🔒 Budget Bulan Ini Terkunci
         </VixText>
         <VixText heading="label" additionalStyle={styles.modalCategory}>
-          Ini komitmenmu untuk {MONTH_NAMES[month]}. Kalau memang perlu diubah,
-          tulis alasannya dulu; catatannya tersimpan bersama budget.
+          Tulis alasannya dulu. Catatan ini tersimpan bersama budget{' '}
+          {MONTH_NAMES[month]}.
         </VixText>
         <FormInput
           placeholder="Alasan unlock (mis. ada pengeluaran tak terduga)"
@@ -600,6 +652,109 @@ export function BudgetingTab({
         />
       </CenterDialog>
     </View>
+  );
+}
+
+/** Satu baris sub-budget di tampilan baca. */
+type SubBaca = { key: string; label: string; amount: number; realized: number };
+
+/**
+ * Budget satu kategori saat bulannya SUDAH DIKUNCI: nominalnya, realisasinya,
+ * dan rincian sub-budget yang sudah dibuat. Tinggal dibaca.
+ *
+ * Bentuknya sengaja BUKAN kotak isian yang dimatikan. Kotak yang masih
+ * terlihat seperti kotak tetap mengundang diketik, dan begitu di-click tidak
+ * terjadi apa-apa, yang terbaca "app-nya rusak", bukan "ini sudah dikunci".
+ * Pola yang sama dipakai catatan puasa yang terkunci (app/fasting.tsx).
+ *
+ * Tombol kanannya Unlock, BUKAN Simpan: dari sinilah tindakan sadarnya dimulai
+ * kalau angkanya memang perlu diubah. Jadi kuncinya tidak hilang, ia cuma
+ * pindah ke tempat yang benar: menghalangi MENGUBAH, bukan MELIHAT.
+ */
+function BacaBudget({
+  budget,
+  realized,
+  subs,
+  subTotal,
+  monthName,
+  onClose,
+  onUnlock,
+}: {
+  budget: number;
+  realized: number;
+  subs: SubBaca[];
+  subTotal: number;
+  monthName: string;
+  onClose: () => void;
+  onUnlock: () => void;
+}) {
+  const over = budget > 0 && realized > budget;
+  return (
+    <>
+      <View style={styles.bacaBlok}>
+        <View style={styles.rowBottom}>
+          <VixText heading="label">Budget</VixText>
+          <VixText heading="bold" additionalStyle={styles.bacaNilai}>
+            {formatRupiah(budget)}
+          </VixText>
+        </View>
+        <View style={styles.rowBottom}>
+          <VixText heading="label">Realisasi</VixText>
+          <VixText
+            heading="bold"
+            additionalStyle={over ? styles.overText : styles.realText}>
+            {formatRupiah(realized)}
+          </VixText>
+        </View>
+      </View>
+
+      {subs.length > 0 && (
+        <View style={styles.subSection}>
+          <View style={styles.subHeader}>
+            <VixText heading="bold" additionalStyle={styles.subTitle}>
+              🧩 Sub-budget
+            </VixText>
+            <VixText heading="bold" additionalStyle={styles.subTotalText}>
+              Total {formatRupiah(subTotal)}
+            </VixText>
+          </View>
+          <ScrollView
+            style={styles.subScroll}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}>
+            {subs.map((s) => (
+              <View key={s.key} style={styles.bacaSubRow}>
+                <VixText
+                  heading="bold"
+                  numberOfLines={1}
+                  additionalStyle={styles.subLabel}>
+                  {s.label}
+                </VixText>
+                <VixText heading="label" additionalStyle={styles.realText}>
+                  {formatRupiah(s.realized)}
+                </VixText>
+                <VixText heading="bold" additionalStyle={styles.bacaSubAmount}>
+                  {formatRupiah(s.amount)}
+                </VixText>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      <VixText heading="label" additionalStyle={styles.modalHint}>
+        Komitmenmu untuk {monthName}, jadi tinggal dilihat. Mau diubah? Unlock
+        dulu.
+      </VixText>
+
+      <DualButtons
+        cancelLabel="Tutup"
+        confirmLabel="🔓 Unlock"
+        danger
+        onCancel={onClose}
+        onConfirm={onUnlock}
+      />
+    </>
   );
 }
 
@@ -693,6 +848,16 @@ const styles = StyleSheet.create({
   modalTitle: { marginBottom: 2 },
   modalCategory: { marginBottom: 12 },
   modalHint: { marginTop: 6 },
+  // ===== Tampilan baca (bulan yang sudah dikunci) =====
+  bacaBlok: { gap: 6 },
+  bacaNilai: { color: Color.TEXT_TITLE },
+  bacaSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  bacaSubAmount: { color: Color.MAIN_DARK },
   // Penanda di baris kategori kalau ada rinciannya.
   subHint: { color: Color.TEXT_LABEL },
   // ===== Sub-budget di dalam modal Set Budget =====

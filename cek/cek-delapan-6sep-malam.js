@@ -248,21 +248,31 @@ c('halaman Pause & Pray sendiri tidak ikut dihapus',
 // ============================================================
 console.log('\n=== 6. Puasa yang belum mulai ===');
 // ============================================================
+// ⚠️ DIARAHKAN ULANG 1 Okt 2026, bukan dilonggarkan.
+//
+// Kartu keadaan di layar Puasa DIBUANG atas permintaan pemilik app, jadi pil
+// "🗓️ Belum mulai" / "🔥 Berjalan" / "✅ Selesai" sudah tidak ada lagi dan
+// cek lamanya mustahil lulus. Yang DIPERIKSA tetap sama persis: puasa yang
+// belum dimulai harus dibaca jujur, tidak boleh ditulis seolah sudah dijalani.
+// Jawabannya sekarang ada di keterangan pintu "Lihat Hari per Hari".
+//
+// Ditambah satu cek baru supaya kartunya tidak diam-diam kembali setengah
+// jalan: kalau <SummaryCard> atau pil keadaan muncul lagi di sini, suite ini
+// yang akan memberi tahu.
 const puasa = baca('app/fasting.tsx');
 c('ada keadaan "belum mulai"',
-  /const belumMulai = !!plan && todayId < plan\.startId;/.test(puasa) &&
-    /label: '🗓️ Belum mulai'/.test(puasa));
-c('tidak lagi jatuh ke "✅ Selesai"',
-  puasa.indexOf(`'🗓️ Belum mulai'`) < puasa.indexOf(`'✅ Selesai'`));
-c('"Selesai" cuma untuk yang tanggalnya SUDAH lewat',
-  /: plan && todayId <= plan\.endId\s*\n\s*\? \{ label: '🔥 Berjalan'/.test(puasa));
-c('labelnya menghitung mundur, bukan bilang "berhasil"',
+  /const belumMulai = !!plan && todayId < plan\.startId;/.test(puasa));
+c('kartu keadaan benar-benar dibuang, bukan disembunyikan',
+  !/<SummaryCard/.test(puasa) && !/pillSoon/.test(puasa) &&
+    !/const keadaan =/.test(puasa));
+c('yang belum mulai MENGHITUNG MUNDUR, bukan bilang "berhasil"',
   /belumMulai\s*\n?\s*\? `🗓️ Mulai \$\{menujuMulai\} hari lagi`/.test(puasa));
+c('yang sudah jalan menyebut hari berhasilnya, bukan "Selesai"',
+  /`✅ \$\{progress\.done\} berhasil/.test(puasa));
 c('hitung mundurnya minimal 1 hari (bukan "0 hari lagi")',
   /Math\.max\(\s*\n?\s*1,/.test(puasa));
-c('pilnya punya gayanya sendiri', /pillSoon: \{/.test(puasa));
-c('keadaan terkunci tetap menang di atas semuanya',
-  puasa.indexOf(`'🔒 Terkunci'`) < puasa.indexOf(`'🗓️ Belum mulai'`));
+c('keadaan terkunci tetap diumumkan, di pita judulnya',
+  /terkunci\s*\n?\s*\? '🔒 Sudah dikunci, tinggal dibaca'/.test(puasa));
 
 // ============================================================
 console.log('\n=== 7. Lencana angkat beban keluar dari Fitness ===');

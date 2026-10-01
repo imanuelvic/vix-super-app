@@ -88,9 +88,40 @@ ok('lib/budgets: BudgetDoc punya locked/lockedAt/unlocks; lockBudget & unlockBud
   /export function lockBudget\(/.test(lb) && /unlocks: arrayUnion\(\{ at: Timestamp\.now\(\), reason: bersih \}\)/.test(lb));
 ok('lib/budgets: salin bulan lalu memakai mergeFields (alokasi diganti utuh, jejak kunci tetap)', /\{ mergeFields: \['allocations', 'copiedFromPrev'\] \}/.test(lb));
 ok('lib/budgets: subscribeBudgetRange lewat documentId() (tanpa index baru)', /where\(documentId\(\), '>=', fromMonthId\)/.test(lb));
-ok('Budgeting: terkunci → click kategori & salin membuka dialog Unlock, bukan 🎯 Set Budget',
-  /function openEdit\(category: FinanceCategory\) \{\s*\n\s*if \(locked\) \{\s*\n\s*setUnlockError\(null\);\s*\n\s*setUnlockOpen\(true\);\s*\n\s*return;/.test(bt) &&
-  /function handleCopyPress\(\) \{\s*\n\s*if \(locked\) \{/.test(bt));
+// ⚠️ DIARAHKAN ULANG 1 Okt 2026, bukan dilonggarkan.
+//
+// Dulu kategori yang terkunci langsung melempar ke dialog Unlock, jadi sekadar
+// INGIN MELIHAT rincian sub-budget yang sudah dibuat pun harus membuka kunci
+// komitmennya dulu. Itu terbalik, dan pemilik app memintanya diperbaiki: yang
+// dikunci itu MENGUBAH angkanya, bukan melihatnya.
+//
+// Yang dijaga sekarang justru LEBIH banyak: dialognya boleh terbuka saat
+// terkunci, tapi WAJIB tampilan baca (tanpa satu pun kotak isian, tanpa tombol
+// Simpan), dan tiap jalan yang benar-benar mengubah angka tetap lewat Unlock.
+{
+  const iBaca = bt.indexOf('<BacaBudget');
+  const iMoney = bt.indexOf('<MoneyInput');
+  const iSimpan = bt.indexOf('confirmLabel="Simpan"');
+  ok('Budgeting: terkunci → kategori boleh DIBUKA untuk dibaca, bukan langsung Unlock',
+    /function openEdit\(category: FinanceCategory\) \{\s*\n\s*setEditing\(category\);/.test(bt) &&
+    /\{locked \? '🔒 Budget Terkunci' : '🎯 Set Budget'\}/.test(bt) &&
+    /\{locked && editing \? \(\s*\n\s*<BacaBudget/.test(bt));
+  ok('Budgeting: tampilan bacanya menyebut nominal, realisasi & tiap sub-budget',
+    /function BacaBudget\(\{/.test(bt) &&
+    /subs: SubBaca\[\];/.test(bt) &&
+    /subs\.map\(\(s\) => \(/.test(bt) &&
+    /subs=\{subDraft\.map\(\(s\) => \(\{/.test(bt));
+  ok('Budgeting: kotak isian & tombol Simpan HANYA di cabang tidak terkunci',
+    iBaca > 0 && iMoney > iBaca && iSimpan > iMoney &&
+    /\) : \(\s*\n\s*<>/.test(bt.slice(iBaca, iMoney)));
+  ok('Budgeting: dari tampilan baca, tombolnya Unlock (tindakan sadar), bukan Simpan',
+    /confirmLabel="🔓 Unlock"[\s\S]{0,120}onConfirm=\{onUnlock\}/.test(bt) &&
+    /function bukaUnlock\(\) \{\s*\n\s*setEditing\(null\);\s*\n\s*setUnlockError\(null\);\s*\n\s*setUnlockOpen\(true\);/.test(bt));
+  ok('Budgeting: yang MENGUBAH angka tetap lewat Unlock (salin bulan lalu & usulan AI)',
+    /function handleCopyPress\(\) \{\s*\n\s*if \(locked\) \{\s*\n\s*bukaUnlock\(\);/.test(bt) &&
+    /onUnlock=\{bukaUnlock\}/.test(bt) &&
+    /locked && rencana \? \(/.test(kodeSaja(baca('components/finance/BudgetAiCard.tsx'))));
+}
 ok('Budgeting: unlock butuh alasan ≥ 3 huruf, tersimpan lewat unlockBudget', /unlockReason\.trim\(\)\.length < 3/.test(bt) && /await unlockBudget\(user\.uid, year, month, unlockReason\)/.test(bt));
 ok('Budgeting: kunci lewat ConfirmDialog (bukan merah) yang menjelaskan komitmen', /title=\{`Kunci budget \$\{MONTH_NAMES\[month\]\} \$\{year\}\?`\}/.test(bt) && /confirmLabel="Kunci"\s*\n\s*danger=\{false\}/.test(bt));
 ok('Budgeting: tak bisa mengunci budget kosong', /Isi budget minimal satu kategori dulu sebelum mengunci\./.test(bt));

@@ -56,6 +56,11 @@ console.log('\n=== 2. Reward: nama & kartu saldo ===');
   ok('rutenya terdaftar di typed routes',
     baca('.expo/types/router.d.ts').includes('`/reward`') &&
     baca('.expo/types/router.d.ts').includes('`/reward-category`'));
+  // SATU pengecualian, ditambahkan 1 Okt 2026: lib/changelog.ts. Berkas itu
+  // riwayat versi yang dibaca pemilik app dari dalam app-nya, dan salah satu
+  // peristiwa yang dicatatnya memang "Achievement jadi Reward". Menyebut nama
+  // lama di situ bukan sisa yang terlewat, itu justru isinya. Di berkas lain
+  // larangannya tetap mutlak.
   ok('tak ada satu pun kata Achievement/Awards tersisa di sumber', (() => {
     const sisa = [];
     for (const d of ['app', 'components', 'lib', 'hooks', 'contexts', 'assets']) {
@@ -63,12 +68,18 @@ console.log('\n=== 2. Reward: nama & kartu saldo ===');
         for (const e of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
           const anak = `${rel}/${e.name}`;
           if (e.isDirectory()) sisir(anak);
+          else if (anak === 'lib/changelog.ts') continue;
           else if (/\.tsx?$/.test(e.name) && /chievement|Awards|AWARDS/.test(baca(anak))) sisa.push(anak);
         }
       })(d);
     }
     return sisa.length === 0;
   })());
+  // Pengecualian itu sendiri dijaga: cuma boleh dipakai untuk MENCATAT
+  // peristiwanya, bukan untuk menghidupkan lagi nama lamanya.
+  ok('pengecualian changelog cuma menyebutnya sebagai riwayat',
+    /Achievement jadi Reward/.test(baca('lib/changelog.ts')) &&
+    (baca('lib/changelog.ts').match(/chievement/g) ?? []).length === 1);
   ok('jalur Firestore TIDAK ikut berganti (data lama tetap terbaca)',
     /'users', uid, 'app', 'login'/.test(baca('lib/reward.ts')) &&
     /'users', uid, 'funds', 'self-reward'/.test(baca('lib/reward.ts')));
@@ -95,9 +106,15 @@ console.log('\n=== 4. Badge sub-tab & tombol pojok Work ===');
   // propsnya ditulis bertingkat. Yang dijaga tetap sama, PLUS badge-nya:
   // tanpa badge itu, angka tab Work di kaki app tidak bisa dijumlah dari
   // rincian yang kelihatan di layar ini (lihat workAttention di lib/career).
-  ok('tombol pojok Work jadi 🔔, menuju Reminder 🔔, & berbadge task hari ini',
-    /<EmojiButton\s*\n\s*emoji="🔔"\s*\n\s*badge=\{perhatian\.tasks\}\s*\n\s*onPress=\{\(\) => router\.push\('\/tasks'\)\}/.test(work) &&
-    /Reminder 🔔/.test(baca('app/tasks.tsx')));
+  // 1 Okt 2026: tujuannya ikut membawa kategorinya. Badge tombol ini
+  // menghitung task WORK hari ini, jadi mendarat di kategori bawaan
+  // (PERSONAL) berarti angkanya justru tidak kelihatan di layar yang baru
+  // dibuka. Yang dijaga: bentuk tombolnya, badge-nya, DAN kategorinya.
+  ok('tombol pojok Work jadi 🔔, menuju Reminder 🔔 kategori WORK, & berbadge task hari ini',
+    /<EmojiButton\s*\n\s*emoji="🔔"\s*\n\s*badge=\{perhatian\.tasks\}\s*\n\s*onPress=\{\(\) =>\s*\n?\s*router\.push\(\{ pathname: '\/tasks', params: \{ category: 'work' \} \}\)/.test(work) &&
+    /Reminder 🔔/.test(baca('app/tasks.tsx')) &&
+    // Kategorinya harus benar-benar dikenali layar tujuannya, bukan diabaikan.
+    /\{ key: 'work', label: 'WORK'/.test(baca('lib/tasks.ts')));
   ok('bukan lagi centang (yang di app ini berarti "selesai")', !/emoji="✅"/.test(work));
 }
 

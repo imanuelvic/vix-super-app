@@ -13,6 +13,7 @@ import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ReadBlock } from '@/components/common/ReadBlock';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { SheetModal } from '@/components/common/SheetModal';
@@ -77,7 +78,9 @@ export default function FastingDaysScreen() {
   const now = new Date();
   const todayId = dayDocId(now);
   const dayIds = plan ? fastingDayIds(plan.startId, plan.endId) : [];
-  const progress = plan ? fastingProgress(plan) : { done: 0, total: 0 };
+  const progress = plan
+    ? fastingProgress(plan)
+    : { done: 0, failed: 0, total: 0 };
   // Sesudah masa tenggang, layar ini baca-saja SELAMANYA — centangnya mati,
   // modalnya tetap boleh dibuka untuk dibaca.
   const terkunci = plan ? fastingLocked(plan, now) : false;
@@ -249,60 +252,127 @@ export default function FastingDaysScreen() {
             />
           )
         }>
-        {/* Dua jawaban tegas berdampingan: ✓ berhasil · ✗ gagal. Tidak ada yang
-            dipilih = belum dijawab (bukan otomatis "gagal"). */}
-        <View style={styles.doneRow}>
-          <PressableScale
-            style={styles.doneChoice}
-            disabled={terkunci}
-            onPress={() => setDraft({ done: !draft.done, failed: false })}>
-            {/* 42 = ukuran CrossMark di sebelahnya. Dulu 26, jadi dua pilihan
-                yang setara terlihat tidak sederajat: yang "Gagal" jauh lebih
-                besar daripada yang "Berhasil". */}
-            <CheckCircle checked={draft.done} size={42} />
-            <VixText heading="bold" additionalStyle={styles.doneText}>
-              Berhasil
-            </VixText>
-          </PressableScale>
-          <PressableScale
-            style={styles.doneChoice}
-            disabled={terkunci}
-            haptic="warning"
-            onPress={() => setDraft({ done: false, failed: !draft.failed })}>
-            <CrossMark on={!!draft.failed} />
-            <VixText
-              heading="bold"
-              additionalStyle={draft.failed ? styles.failedText : styles.doneText}>
-              Gagal
-            </VixText>
-          </PressableScale>
-        </View>
+        {terkunci ? (
+          /* ===== Terkunci → TAMPILAN BACA (1 Okt 2026) =====
+             Bentuknya sama persis dengan layar Puasa yang sudah dikunci:
+             label kecil, teksnya di bawahnya, tanpa kotak isian sama sekali.
 
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          🙏 Pokok Doa Hari Ini
-        </VixText>
-        <FormInput
-          placeholder="Yang khusus didoakan hari ini"
-          value={draft.prayer}
-          onChangeText={(v) => setDraft({ prayer: v })}
-          editable={!busy && !terkunci}
-          multiline
-          style={styles.textArea}
-        />
+             Dulu kotaknya tetap digambar, cuma `editable={false}`. Kotak yang
+             masih terlihat seperti kotak tetap mengundang diketik, dan begitu
+             di-click tidak terjadi apa-apa, yang terbaca "app-nya rusak",
+             bukan "ini sudah dikunci". */
+          <BacaHari day={draft} />
+        ) : (
+          <>
+            {/* Dua jawaban tegas berdampingan: ✓ berhasil · ✗ gagal. Tidak ada
+                yang dipilih = belum dijawab (bukan otomatis "gagal"). */}
+            <View style={styles.doneRow}>
+              <PressableScale
+                style={styles.doneChoice}
+                onPress={() => setDraft({ done: !draft.done, failed: false })}>
+                {/* 42 = ukuran CrossMark di sebelahnya. Dulu 26, jadi dua
+                    pilihan yang setara terlihat tidak sederajat: yang "Gagal"
+                    jauh lebih besar daripada yang "Berhasil". */}
+                <CheckCircle checked={draft.done} size={42} />
+                <VixText heading="bold" additionalStyle={styles.doneText}>
+                  Berhasil
+                </VixText>
+              </PressableScale>
+              <PressableScale
+                style={styles.doneChoice}
+                haptic="warning"
+                onPress={() => setDraft({ done: false, failed: !draft.failed })}>
+                <CrossMark on={!!draft.failed} />
+                <VixText
+                  heading="bold"
+                  additionalStyle={
+                    draft.failed ? styles.failedText : styles.doneText
+                  }>
+                  Gagal
+                </VixText>
+              </PressableScale>
+            </View>
 
-        <VixText heading="label" additionalStyle={styles.fieldLabel}>
-          ✨ Jawaban Doa Hari Ini
-        </VixText>
-        <FormInput
-          placeholder="Apa yang terjadi / Tuhan jawab hari ini?"
-          value={draft.answer}
-          onChangeText={(v) => setDraft({ answer: v })}
-          editable={!busy && !terkunci}
-          multiline
-          style={styles.textArea}
-        />
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              🙏 Pokok Doa Hari Ini
+            </VixText>
+            <FormInput
+              placeholder="Yang khusus didoakan hari ini"
+              value={draft.prayer}
+              onChangeText={(v) => setDraft({ prayer: v })}
+              editable={!busy}
+              multiline
+              style={styles.textArea}
+            />
+
+            <VixText heading="label" additionalStyle={styles.fieldLabel}>
+              ✨ Jawaban Doa Hari Ini
+            </VixText>
+            <FormInput
+              placeholder="Apa yang terjadi / Tuhan jawab hari ini?"
+              value={draft.answer}
+              onChangeText={(v) => setDraft({ answer: v })}
+              editable={!busy}
+              multiline
+              style={styles.textArea}
+            />
+          </>
+        )}
       </SheetModal>
     </SafeAreaView>
+  );
+}
+
+/**
+ * Catatan satu hari puasa yang sudah DIKUNCI: tinggal dibaca.
+ *
+ * Tiga keadaan jawabannya dibuat terbaca sekali pandang (berhasil · gagal ·
+ * belum dijawab), karena sesudah dikunci itulah satu-satunya yang tersisa dari
+ * hari itu dan tidak ada lagi tombol yang bisa menjelaskannya.
+ *
+ * Kalau hari itu GAGAL dan memang tidak ada yang ditulis, kekosongannya
+ * DIJELASKAN, bukan dibiarkan jadi layar kosong: kosong karena gagal dan
+ * kosong karena lupa mencatat terlihat sama persis, padahal artinya jauh
+ * berbeda.
+ */
+function BacaHari({ day }: { day: FastingDay }) {
+  const kosong = !day.prayer.trim() && !day.answer.trim();
+  return (
+    <View style={styles.baca}>
+      <View style={styles.bacaStatus}>
+        {day.failed ? (
+          <CrossMark on />
+        ) : (
+          <CheckCircle checked={day.done} size={42} />
+        )}
+        <VixText
+          heading="bold"
+          additionalStyle={
+            day.failed
+              ? styles.failedText
+              : day.done
+                ? styles.doneText
+                : styles.bacaKosong
+          }>
+          {day.failed
+            ? 'Puasa gagal'
+            : day.done
+              ? 'Puasa berhasil'
+              : 'Belum dijawab'}
+        </VixText>
+      </View>
+
+      <ReadBlock label="🙏 Pokok Doa Hari Ini" text={day.prayer} />
+      <ReadBlock label="✨ Jawaban Doa Hari Ini" text={day.answer} />
+
+      {kosong && (
+        <VixText heading="label" additionalStyle={styles.bacaKosong}>
+          {day.failed
+            ? 'Puasa hari ini gagal, jadi catatannya tidak diisi.'
+            : 'Tidak ada catatan yang ditulis untuk hari ini.'}
+        </VixText>
+      )}
+    </View>
   );
 }
 
@@ -331,4 +401,8 @@ const styles = StyleSheet.create({
   doneChoice: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   doneText: { color: Color.TEXT_TITLE },
   failedText: { color: Color.DANGER },
+  // ── Tampilan baca (hari yang sudah dikunci) ──────────────────────────────
+  baca: { gap: 12 },
+  bacaStatus: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  bacaKosong: { color: Color.TEXT_LABEL },
 });

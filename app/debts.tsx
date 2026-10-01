@@ -21,6 +21,8 @@ import { DualButtons } from '@/components/common/DualButtons';
 import { EditDelete } from '@/components/common/EditDelete';
 import { EmptyText } from '@/components/common/EmptyText';
 import { FormInput } from '@/components/common/FormInput';
+import { DeleteX } from '@/components/common/DeleteX';
+import { InlineDeleteConfirm } from '@/components/common/InlineDelete';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { MoneyInput } from '@/components/common/MoneyInput';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -78,8 +80,8 @@ const PERIODS: DebtPeriod[] = ['once', 'weekly', 'monthly'];
 export default function DebtsScreen() {
   const { user } = useAuth();
 
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan. `repress` =
-  // tab yang sama ditekan lagi → lompat ke pinjaman yang jatuh tempo.
+  // Hook bersama: ganti tab + scroll ke atas tiap tab di-click. `repress` =
+  // tab yang sama di-click lagi → lompat ke pinjaman yang jatuh tempo.
   // `tabs` dioper supaya reminder Pinjaman di Dashboard bisa mendarat di tab
   // yang sesuai arah pinjamannya (Tagih → Lent Out, Bayar → My Debt).
   const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('theirs', {
@@ -106,6 +108,8 @@ export default function DebtsScreen() {
   const [pDate, setPDate] = useState(new Date());
   const [pError, setPError] = useState<string | null>(null);
   const [pBusy, setPBusy] = useState(false);
+  /** Id pembayaran yang tombol ✗-nya baru di-click; null = tidak ada. */
+  const [hapusBayar, setHapusBayar] = useState<string | null>(null);
 
   useLiveAll(
     (uid, fail) => [
@@ -132,7 +136,7 @@ export default function DebtsScreen() {
   const totalRemaining = list.reduce((sum, d) => sum + debtRemaining(d), 0);
 
   // Pinjaman jatuh tempo pertama di daftar ini — tujuan lompatan saat sub-tab
-  // ditekan untuk kedua kali (isi badge merahnya).
+  // di-click untuk kedua kali (isi badge merahnya).
   const firstDue =
     list.find((d) => !d.done && deadlineDue(debtTone(d, today))) ?? null;
   const { ref: listRef, setRowY, onContentSizeChange, onLayout } = useDueJump(
@@ -258,8 +262,10 @@ export default function DebtsScreen() {
     if (!user || !paying) return;
     try {
       await deleteDebtPayment(user.uid, paying, paymentId);
+      setHapusBayar(null);
     } catch {
       setPError(DELETE_ERROR);
+      setHapusBayar(null);
     }
   }
 
@@ -281,7 +287,7 @@ export default function DebtsScreen() {
       {debts === null ? (
         <LoadingCenter />
       ) : (
-        // key=scrollKey → ScrollView re-mount tiap tab ditekan (scroll ke atas)
+        // key=scrollKey → ScrollView re-mount tiap tab di-click (scroll ke atas)
         <ScrollView
           key={scrollKey}
           ref={listRef}
@@ -586,25 +592,30 @@ export default function DebtsScreen() {
               </VixText>
               {[...payingLive.payments]
                 .sort((a, b) => b.date.toMillis() - a.date.toMillis())
-                .map((p) => (
-                  <View key={p.id} style={styles.payRow}>
-                    <View style={styles.payRowMain}>
-                      <VixText heading="bold" additionalStyle={styles.payAmount}>
-                        {formatRupiah(p.amount)}
-                      </VixText>
-                      <VixText heading="label">
-                        {formatFullDate(p.date.toDate())}
-                      </VixText>
+                .map((p) =>
+                  // Konfirmasinya INLINE, menggantikan barisnya: sheet ini
+                  // sendiri sudah modal, dan iOS tidak menampilkan modal di
+                  // atas modal (lihat components/common/InlineDelete.tsx).
+                  hapusBayar === p.id ? (
+                    <InlineDeleteConfirm
+                      key={p.id}
+                      onCancel={() => setHapusBayar(null)}
+                      onDelete={() => handleDeletePayment(p.id)}
+                    />
+                  ) : (
+                    <View key={p.id} style={styles.payRow}>
+                      <View style={styles.payRowMain}>
+                        <VixText heading="bold" additionalStyle={styles.payAmount}>
+                          {formatRupiah(p.amount)}
+                        </VixText>
+                        <VixText heading="label">
+                          {formatFullDate(p.date.toDate())}
+                        </VixText>
+                      </View>
+                      <DeleteX onPress={() => setHapusBayar(p.id)} />
                     </View>
-                    <PressableScale
-                      onPress={() => handleDeletePayment(p.id)}
-                      hitSlop={8}>
-                      <VixText heading="bold" additionalStyle={styles.payDelete}>
-                        Hapus
-                      </VixText>
-                    </PressableScale>
-                  </View>
-                ))}
+                  ),
+                )}
             </>
           )}
 
@@ -696,7 +707,6 @@ const styles = StyleSheet.create({
   },
   payRowMain: { flex: 1, gap: 1 },
   payAmount: { color: Color.TEXT_TITLE },
-  payDelete: { color: Color.DANGER },
   lunasRow: {
     flexDirection: 'row',
     alignItems: 'center',

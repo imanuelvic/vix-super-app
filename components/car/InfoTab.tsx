@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD, CARD_SHAPE } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { SummaryCard } from '@/components/common/SummaryCard';
@@ -82,7 +82,6 @@ const styles = StyleSheet.create({
   heroSub: { color: Color.TEXT_ON_DARK_MUTED },
   stnkCard: {
     ...CARD,
-    padding: 14,
     gap: 2,
     marginBottom: 10,
   },
@@ -93,7 +92,7 @@ const styles = StyleSheet.create({
   stnkTitle: { color: Color.TEXT_TITLE },
   stnkWarnText: { color: Color.WARNING },
   detailCard: {
-    ...CARD,
+    ...CARD_SHAPE,
     paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 14,
@@ -101,7 +100,6 @@ const styles = StyleSheet.create({
   sectionTitle: { marginBottom: 10 },
   tipsCard: {
     ...CARD,
-    padding: 14,
     gap: 10,
   },
   tip: { color: Color.TEXT_PARAGRAPH },

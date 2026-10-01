@@ -6,7 +6,7 @@ import {
   View,
 } from 'react-native';
 
-import { CARD, PANEL } from '@/assets/style/card';
+import { CARD, CARD_SHAPE, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
@@ -1034,7 +1034,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    ...CARD,
+    ...CARD_SHAPE,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 8,

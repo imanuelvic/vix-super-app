@@ -10,6 +10,11 @@ import { VixText } from '@/components/common/VixText';
 // bertumpuk (ConfirmDialog di atas SheetModal tidak muncul).
 // Langkah 1: link "Hapus…". Langkah 2: kotak konfirmasi inline.
 // Beri `key` per item di pemanggil supaya state konfirmasi ikut reset.
+//
+// Kotak langkah-2-nya diekspor sendiri sebagai <InlineDeleteConfirm/> untuk
+// pemanggil yang pemicunya BUKAN link, mis. tombol ✗ kecil di ujung baris
+// (<DeleteX/>). Bentuk & kalimatnya tetap satu, jadi konfirmasi hapus di
+// seluruh app terbaca sama.
 export function InlineDelete({
   label,
   busy = false,
@@ -37,6 +42,29 @@ export function InlineDelete({
   }
 
   return (
+    <InlineDeleteConfirm
+      busy={busy}
+      onCancel={() => setConfirming(false)}
+      onDelete={onDelete}
+    />
+  );
+}
+
+/**
+ * Kotak konfirmasinya saja — untuk baris yang pemicunya bukan link "Hapus…"
+ * melainkan tombol ✗ kecil di ujungnya (<DeleteX/>). Pemanggil yang memegang
+ * barisnya sendiri yang memutuskan kapan kotak ini menggantikan barisnya.
+ */
+export function InlineDeleteConfirm({
+  busy = false,
+  onCancel,
+  onDelete,
+}: {
+  busy?: boolean;
+  onCancel: () => void;
+  onDelete: () => void;
+}) {
+  return (
     <Animated.View
       entering={FadeInDown.duration(200)}
       style={styles.confirmBox}>
@@ -44,10 +72,7 @@ export function InlineDelete({
         Yakin mau menghapus? Tindakan ini permanen.
       </VixText>
       <View style={styles.row}>
-        <PressableScale
-          style={styles.cancel}
-          onPress={() => setConfirming(false)}
-          disabled={busy}>
+        <PressableScale style={styles.cancel} onPress={onCancel} disabled={busy}>
           <VixText heading="bold">Batal</VixText>
         </PressableScale>
         <PressableScale

@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Schema } from 'firebase/ai';
 
+import { aiDayStore, sisaJatah } from './aiDay';
 import { guardedAiCall } from './aiGuard';
 import { aturanEmoji, GAYA_BAHASA, rapikanEmoji } from './aiStyle';
 import {
@@ -158,32 +158,19 @@ export type ReflectionAiDay = {
 
 export const EMPTY_REFLECTION_AI_DAY: ReflectionAiDay = { attempts: 0, result: null };
 
-const PREFIX = 'ai:reflection:';
+const HARI = aiDayStore<ReflectionAiDay>(
+  'reflection',
+  EMPTY_REFLECTION_AI_DAY,
+  (v) => ({
+    attempts: typeof v.attempts === 'number' ? v.attempts : 0,
+    result: typeof v.result === 'string' ? v.result : null,
+  }),
+);
 
-export async function loadReflectionAiDay(dayId: string): Promise<ReflectionAiDay> {
-  try {
-    const raw = await AsyncStorage.getItem(PREFIX + dayId);
-    if (!raw) return EMPTY_REFLECTION_AI_DAY;
-    const v = JSON.parse(raw) as Partial<ReflectionAiDay>;
-    return {
-      attempts: typeof v.attempts === 'number' ? v.attempts : 0,
-      result: typeof v.result === 'string' ? v.result : null,
-    };
-  } catch {
-    return EMPTY_REFLECTION_AI_DAY;
-  }
-}
-
-export async function saveReflectionAiDay(dayId: string, day: ReflectionAiDay): Promise<void> {
-  try {
-    await AsyncStorage.setItem(PREFIX + dayId, JSON.stringify(day));
-  } catch {
-    // Tidak tersimpan = paling buruk boleh dipanggil lagi hari ini; pagar
-    // umum lib/aiGuard.ts masih berdiri.
-  }
-}
+export const loadReflectionAiDay = HARI.load;
+export const saveReflectionAiDay = HARI.save;
 
 /** Masih boleh minta lagi hari ini? */
 export function reflectionAttemptsLeft(day: ReflectionAiDay): number {
-  return Math.max(0, REFLECTION_DAILY_CAP - day.attempts);
+  return sisaJatah(REFLECTION_DAILY_CAP, day.attempts);
 }

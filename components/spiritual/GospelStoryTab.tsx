@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD_SHAPE } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 24, lineHeight: 30 },
   papan: {
-    ...CARD,
+    ...CARD_SHAPE,
     paddingHorizontal: 12,
     paddingVertical: 10,
     gap: 1,

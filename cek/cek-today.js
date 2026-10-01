@@ -270,7 +270,14 @@ console.log('\n=== 9. Bentuk layar & navigasi baru ===');
 // tujuannya (Reminder 🔔), bukan centang yang tertukar arti dengan "selesai".
   // 28 Sep 2026: tombol 🔔 sekarang berbadge (task WORK hari ini), jadi
   // propsnya ditulis bertingkat. Bentuk lengkapnya dijaga cek-reward-rupa.js.
-  ok('Work: sub-tab Focus (WorkFocusTab) + tombol 🔔 Reminder', /<WorkFocusTab roadmap=\{roadmap\} freelance=\{freelance\} \/>/.test(baca('app/(tabs)/work.tsx')) && /emoji="🔔"/.test(baca('app/(tabs)/work.tsx')) && /badge=\{perhatian\.tasks\}/.test(baca('app/(tabs)/work.tsx')));
+  // ⚠️ DIARAHKAN ULANG 1 Okt 2026: sub-tab Focus DIHAPUS atas permintaan
+  // pemilik app, justru KARENA isinya mengumpulkan ulang hal yang sudah tampil
+  // di tab Today. Jadi yang dijaga sekarang kebalikannya: ia tidak boleh
+  // kembali. Tombol 🔔 berbadge tetap diperiksa seperti semula.
+  ok('Work: tanpa sub-tab Focus lagi (sudah dijawab tab Today) + tombol 🔔 Reminder',
+    !/WorkFocusTab/.test(baca('app/(tabs)/work.tsx')) &&
+    !/'focus'/.test(baca('app/(tabs)/work.tsx')) &&
+    /emoji="🔔"/.test(baca('app/(tabs)/work.tsx')) && /badge=\{perhatian\.tasks\}/.test(baca('app/(tabs)/work.tsx')));
   ok('Life: pencarian + grid LIFE_FEATURES (tanpa Walk/CORE/Work, plus Habits/Reward/Profile/System)',
     /searchFeatures\(query\)/.test(baca('app/(tabs)/life.tsx')) && /LIFE_FEATURES/.test(baca('app/(tabs)/life.tsx')) &&
     /PUNYA_TAB = new Set\(\['spiritual', 'core', 'career'\]\)/.test(baca('lib/featureGrid.ts')));
@@ -313,10 +320,10 @@ console.log('\n=== 10. Rupa 2.0: token warna, bayangan, tipografi ===');
   // 23 Sep 2026 (/rapihin): bentuk kartu bloknya jadi BLOCK_CARD (sudah
   // memuat SHADOW_SOFT); hero tetap memakai SHADOW_SOFT langsung karena
   // sudut & paddingnya memang khas (22 / 20).
-  ok('bayangan lembut dipakai lewat BLOCK_CARD (bagian, prioritas, refleksi, Work Focus) & hero; tab bar memakai SHADOW_RAISED',
+  ok('bayangan lembut dipakai lewat BLOCK_CARD (bagian, prioritas, refleksi) & hero; tab bar memakai SHADOW_RAISED',
     /\.\.\.SHADOW_SOFT,/.test(baca('assets/style/card.ts')) &&
     /\.\.\.SHADOW_SOFT,/.test(baca('components/today/GodHero.tsx')) &&
-    ['components/today/TodaySection.tsx', 'components/today/PrioritiesBlock.tsx', 'components/today/ReflectionBlock.tsx', 'components/career/WorkFocusTab.tsx']
+    ['components/today/TodaySection.tsx', 'components/today/PrioritiesBlock.tsx', 'components/today/ReflectionBlock.tsx']
       .every((f) => /\.\.\.BLOCK_CARD/.test(baca(f))) &&
     /\.\.\.SHADOW_RAISED,/.test(layout_()));
   ok('tipografi: display & eyebrow ditambahkan ke VixText', /display: \{ fontSize: 28/.test(baca('components/common/VixText.tsx')) && /eyebrow: \{ fontSize: 11/.test(baca('components/common/VixText.tsx')));
@@ -324,7 +331,7 @@ console.log('\n=== 10. Rupa 2.0: token warna, bayangan, tipografi ===');
 }
 
 console.log('\n=== Istilah ===');
-for (const f of ['lib/today.ts', 'hooks/useTodayData.ts', 'app/(tabs)/index.tsx', 'app/(tabs)/life.tsx', 'components/today/GodHero.tsx', 'components/today/PrioritiesBlock.tsx', 'components/today/TodaySection.tsx', 'components/today/ReflectionBlock.tsx', 'components/today/FoldedList.tsx', 'components/career/WorkFocusTab.tsx', 'lib/featureIndex.ts']) {
+for (const f of ['lib/today.ts', 'hooks/useTodayData.ts', 'app/(tabs)/index.tsx', 'app/(tabs)/life.tsx', 'components/today/GodHero.tsx', 'components/today/PrioritiesBlock.tsx', 'components/today/TodaySection.tsx', 'components/today/ReflectionBlock.tsx', 'components/today/FoldedList.tsx', 'lib/featureIndex.ts']) {
   const s = baca(f);
   ok(`${f}: tanpa tekan/ketuk/tap/klik & tanpa em dash di string`, !/\b(tekan|ditekan|menekan|ketuk|diketuk|tap|klik)\b/i.test(s.replace(/Gesture\.Tap\(\)/g, '')) &&
     !/['"`][^'"`\n]*—[^'"`\n]*['"`]/.test(s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')));

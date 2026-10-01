@@ -148,7 +148,8 @@ const F = [
   'app/reward.tsx', 'app/core-rules.tsx',
   'app/diseases.tsx', 'app/donor.tsx', 'app/history.tsx', 'app/timeline.tsx',
   'app/visitations.tsx', 'components/car/LogTab.tsx',
-  'components/career/AffiliateTab.tsx', 'components/career/FulltimeTab.tsx',
+  // (1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya.)
+  'components/career/FulltimeTab.tsx',
   'components/core/VisitationTab.tsx',
   'components/fitness/NotesTab.tsx',
   'components/friends/PlacesTab.tsx',
@@ -169,7 +170,8 @@ const F = [
   // (app/core/monthly/[id].tsx) dengan pola project/edit: Hapus di ujung
   // isi (InlineDelete), Batal/Simpan di footer. Jadi tinggal 14 sheet;
   // 16 Sep 2026 sheet Idea For CORE dicabut bersama fiturnya → 13.
-  c('13 sheet memakai EditFooter', pakai === 13, `${pakai}/13`);
+  // 13 → 12 pada 1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya.
+  c('12 sheet memakai EditFooter', pakai === 12, `${pakai}/12`);
   c('layar notulen tetap berbunyi "Hapus notulen ini" (InlineDelete, seperti project/edit)',
     /<InlineDelete\s*\n\s*label="Hapus notulen ini"/.test(baca('app/core/monthly/[id].tsx')) &&
       !/<EditFooter|<EditDelete/.test(baca('app/core/monthly/[id].tsx')));
@@ -187,7 +189,6 @@ const F = [
     'app/timeline.tsx': 'Hapus wishlist ini',
     'app/visitations.tsx': 'Hapus permanen jadwal ini',
     'components/car/LogTab.tsx': 'Hapus catatan ini',
-    'components/career/AffiliateTab.tsx': 'Hapus ide ini',
     'components/career/FulltimeTab.tsx': 'Hapus prioritas ini',
     'components/core/VisitationTab.tsx': 'Hapus jadwal ini',
     'components/fitness/NotesTab.tsx': 'Hapus catatan ini',

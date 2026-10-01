@@ -30,6 +30,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
   const todayId = dayDocId(now);
   const active = activeFasting(plans, now);
   const others = plans.filter((p) => p.id !== active?.id);
+  const aktifTanda = active ? fastingProgress(active) : null;
 
   function open(id?: string) {
     router.push(id ? { pathname: '/fasting', params: { id } } : '/fasting');
@@ -59,7 +60,7 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
             <VixText heading="label" additionalStyle={styles.activeLabel}>
               🍽️ Sedang Puasa, hari ke-
               {fastingDayNumber(active, todayId)} dari{' '}
-              {fastingProgress(active).total}
+              {aktifTanda?.total ?? 0}
             </VixText>
             <VixText heading="title" additionalStyle={styles.activeTitle}>
               {active.title}
@@ -69,11 +70,18 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
                 📜 {active.rules}
               </VixText>
             ) : null}
+            {aktifTanda && (
+              <Tanda
+                done={aktifTanda.done}
+                failed={aktifTanda.failed}
+                onDark
+              />
+            )}
           </PressableScale>
         )}
 
         {/* Tombolnya di LUAR kartu, bukan di dalamnya: PressableScale bersarang
-            tidak andal di iOS — yang di dalam sering tak menerima tekanan. */}
+            tidak andal di iOS — yang di dalam sering tidak menanggapi click. */}
         {active && (
           <PressableScale
             style={styles.daysButton}
@@ -102,11 +110,11 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
         )}
 
         {others.map((p) => {
-          const { done, total } = fastingProgress(p);
+          const { done, failed, total } = fastingProgress(p);
           const upcoming = p.startId > todayId;
           return (
             /* Dua tujuan, dua tombol BERSEBELAHAN (bukan bersarang — di iOS
-               Pressable di dalam Pressable sering tak menerima tekanan):
+               Pressable di dalam Pressable sering tidak menanggapi click):
                📆 di depan → checklist hariannya; kartunya → keterangannya. */
             <View key={p.id} style={styles.row}>
               <PressableScale
@@ -130,6 +138,8 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
                   {formatShortDate(dayIdToDate(p.endId))}
                   {upcoming ? ' · belum mulai' : ''}
                 </VixText>
+                {/* Hasilnya terbaca dari daftar, tanpa membuka apa pun. */}
+                <Tanda done={done} failed={failed} />
                 {/* Pokok doa utamanya TIDAK ditampilkan di sini: isinya
                     perkara pribadi yang panjang, dan di daftar ia cuma jadi
                     dua baris terpotong yang tidak terbaca utuh. Tempat
@@ -146,6 +156,50 @@ export function FastingTab({ plans }: { plans: FastingPlan[] }) {
           );
         })}
       </ScrollView>
+    </View>
+  );
+}
+
+/**
+ * Tanda hasil puasa di daftar: berapa hari BERHASIL, berapa hari GAGAL.
+ *
+ * Angka "1/6" di tombol 📆 saja tidak menjawab pertanyaan yang sebenarnya,
+ * yaitu: lima sisanya itu gagal, atau memang belum sempat dijawab? Keduanya
+ * terlihat sama persis dari angka itu, padahal artinya jauh berbeda, dan yang
+ * satu memang layak dilihat berulang (lihat lib/fasting.ts).
+ *
+ * Yang nol tidak digambar: puasa tanpa kegagalan tidak perlu diberi tahu "0
+ * gagal", dan puasa yang belum dijalani sama sekali tidak diberi baris kosong.
+ *
+ * `onDark` = sedang di atas kartu ungu pekat (puasa yang berjalan). Di situ
+ * hijau & merahnya tidak terbaca, jadi yang membedakan tinggal lambangnya.
+ */
+function Tanda({
+  done,
+  failed,
+  onDark = false,
+}: {
+  done: number;
+  failed: number;
+  onDark?: boolean;
+}) {
+  if (done === 0 && failed === 0) return null;
+  return (
+    <View style={styles.tanda}>
+      {done > 0 && (
+        <VixText
+          heading="label"
+          additionalStyle={onDark ? styles.tandaOnDark : styles.tandaDone}>
+          ✅ {done} berhasil
+        </VixText>
+      )}
+      {failed > 0 && (
+        <VixText
+          heading="label"
+          additionalStyle={onDark ? styles.tandaOnDark : styles.tandaFail}>
+          ✗ {failed} gagal
+        </VixText>
+      )}
     </View>
   );
 }
@@ -188,6 +242,11 @@ const styles = StyleSheet.create({
   },
   cardTitle: { color: Color.TEXT_TITLE, flexShrink: 1 },
   cardDate: { color: Color.SPIRITUAL_DARK },
+  // Tanda berhasil & gagal, berdampingan dalam satu baris.
+  tanda: { flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
+  tandaDone: { color: Color.SUCCESS },
+  tandaFail: { color: Color.DANGER },
+  tandaOnDark: { color: Color.TEXT_ON_DARK_MUTED },
   // Satu baris daftar = tombol 📆 + kartunya, bersebelahan.
   row: { flexDirection: 'row', alignItems: 'stretch', gap: 8, marginBottom: 8 },
   // Tombol checklist harian di DEPAN tiap puasa. Lebarnya tetap supaya

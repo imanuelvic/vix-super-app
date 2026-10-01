@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Schema } from 'firebase/ai';
 
+import { aiDayStore, sisaJatah } from './aiDay';
 import { guardedAiCall } from './aiGuard';
 import { aturanEmoji, GAYA_BAHASA, rapikanEmoji, tanpaEmoji } from './aiStyle';
 import type { BudgetDoc } from './budgets';
@@ -331,33 +331,17 @@ export type CoachDay = {
 };
 
 export const EMPTY_COACH_DAY: CoachDay = { calls: 0, answers: {} };
-const PREFIX = 'ai:coach:';
 
-export async function loadCoachDay(dayId: string): Promise<CoachDay> {
-  try {
-    const raw = await AsyncStorage.getItem(PREFIX + dayId);
-    if (!raw) return EMPTY_COACH_DAY;
-    const v = JSON.parse(raw) as Partial<CoachDay>;
-    return {
-      calls: typeof v.calls === 'number' ? v.calls : 0,
-      answers: v.answers && typeof v.answers === 'object' ? v.answers : {},
-    };
-  } catch {
-    return EMPTY_COACH_DAY;
-  }
-}
+const HARI = aiDayStore<CoachDay>('coach', EMPTY_COACH_DAY, (v) => ({
+  calls: typeof v.calls === 'number' ? v.calls : 0,
+  answers: v.answers && typeof v.answers === 'object' ? v.answers : {},
+}));
 
-export async function saveCoachDay(dayId: string, day: CoachDay): Promise<void> {
-  try {
-    await AsyncStorage.setItem(PREFIX + dayId, JSON.stringify(day));
-  } catch {
-    // Tidak tersimpan = paling buruk boleh dipanggil lagi hari ini; pagar
-    // umum lib/aiGuard.ts masih berdiri.
-  }
-}
+export const loadCoachDay = HARI.load;
+export const saveCoachDay = HARI.save;
 
 export function coachCallsLeft(day: CoachDay): number {
-  return Math.max(0, COACH_DAILY_CAP - day.calls);
+  return sisaJatah(COACH_DAILY_CAP, day.calls);
 }
 
 /**

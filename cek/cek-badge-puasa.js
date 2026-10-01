@@ -183,16 +183,19 @@ c('daftar hari & modalnya PINDAH — tak tertinggal di layar Edit Puasa',
 c('kartu ringkasan besar pindah ke layar hari per hari',
   /<SummaryCard[\s\S]{0,200}Puasa berhasil/.test(layarHari) &&
   !/styles\.progressCard/.test(layarPuasa));
-// 2 Sep 2026: angkanya naik ke kartu keadaan paling atas (progres + pil
-// "🔥 Berjalan / ✅ Selesai / 🔒 Terkunci"), jadi tombolnya tinggal menyebut
-// gunanya. Yang tetap dijaga: angkanya cuma ada SEKALI di layar ini.
-c('di layar Edit angkanya cuma DITULIS sekali, di kartu keadaannya',
-  /\{progress\.done\}/.test(layarPuasa) &&
-  // Dua pemakaian, satu tempat: angkanya DITULIS sekali, lalu angka yang sama
-  // mengisi bar progres di bawahnya. Bukan dua kartu yang sama-sama melapor.
-  (layarPuasa.match(/progress\.done/g) ?? []).length === 2 &&
-  /value=\{progress\.done\}/.test(layarPuasa) &&
-  /Centang puasamu tiap malam di sini/.test(layarPuasa));
+// ⚠️ DIARAHKAN ULANG 1 Okt 2026, bukan dilonggarkan.
+//
+// 2 Sep 2026 angkanya naik ke kartu keadaan paling atas (progres + pil
+// "🔥 Berjalan / ✅ Selesai / 🔒 Terkunci"). Kartu itu DIBUANG 1 Okt atas
+// permintaan pemilik app, jadi angkanya pindah lagi, kini jadi keterangan di
+// dalam tombol menuju Hari per Hari.
+//
+// Yang dijaga TETAP SAMA PERSIS: angkanya tidak pernah dilaporkan dua kali di
+// satu layar. Dulu dua pemakaian satu tempat (tulisan + bar); sekarang satu.
+c('di layar Edit angkanya cuma DITULIS sekali, di tombol Hari per Hari',
+  (layarPuasa.match(/progress\.done/g) ?? []).length === 1 &&
+  !/<ProgressBar/.test(layarPuasa) &&
+  /📆 Lihat Hari per Hari[\s\S]{0,400}\$\{progress\.done\} berhasil/.test(layarPuasa));
 
 const tabPuasa = baca('components/spiritual/FastingTab.tsx');
 c('tiap baris daftar punya tombol 📆 DI DEPANNYA',

@@ -8,11 +8,13 @@ import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
+import { AnalysisPanel } from '@/components/investment/AnalysisPanel';
 import { ChartFullscreen } from '@/components/investment/ChartFullscreen';
 import { PriceChart } from '@/components/investment/PriceChart';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { formatShortRupiah } from '@/lib/format';
 import type { MarketPoint } from '@/lib/market';
+import type { MarketAsset } from '@/lib/marketAi';
 import { formatRupiah } from '@/lib/transactions';
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -34,6 +36,10 @@ type Props = {
   statLabel: string; // "Harga sekarang" / "Harga sekarang (1 BTC)"
   srcText: string; // baris sumber (COMEX/kurs, dsb) — dihitung pemanggil
   noteText: string;
+  /** Aset mana yang dibacakan AI di panel ✨ bawah grafik. */
+  aiAsset: MarketAsset;
+  /** Nama pendeknya untuk judul panel itu, mis. "Emas". */
+  aiLabel: string;
   chartColor?: string;
   // Cara menulis nilai: default Rupiah ("Rp 1.234"). IHSG memakai poin (tanpa Rp)
   // dengan mengoper formatValue/formatShort sendiri.
@@ -54,6 +60,8 @@ export function MarketTab({
   statLabel,
   srcText,
   noteText,
+  aiAsset,
+  aiLabel,
   chartColor,
   formatValue = (n: number) => formatRupiah(Math.round(n)),
   formatShort = formatShortRupiah,
@@ -201,6 +209,11 @@ export function MarketTab({
                 memperbesar 🔍
               </VixText>
             </PressableScale>
+
+            {/* ✨ Bacaan AI untuk aset INI — di bawah grafiknya, karena itu
+                urutan membacanya: lihat trennya dulu, baru baca pendapat AI
+                atasnya. Dulu ini sub-tab tersendiri (lihat AnalysisPanel). */}
+            <AnalysisPanel asset={aiAsset} label={aiLabel} />
 
             <PressableScale style={styles.refreshButton} onPress={onReload}>
               <VixText heading="bold" additionalStyle={styles.refreshText}>

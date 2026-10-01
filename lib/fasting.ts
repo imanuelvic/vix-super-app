@@ -79,14 +79,26 @@ export function fastingDay(plan: FastingPlan, dayId: string): FastingDay {
   return plan.days?.[dayId] ?? EMPTY_FASTING_DAY;
 }
 
-/** Berapa hari sudah dicentang berhasil, dari total hari puasanya. */
+/**
+ * Hitungan satu periode puasa: berapa hari BERHASIL, berapa hari GAGAL, dari
+ * berapa hari seluruhnya.
+ *
+ * `failed` ikut dihitung (1 Okt 2026) karena di daftar puasa "1 dari 6" saja
+ * tidak menjawab pertanyaan yang sebenarnya: lima sisanya itu gagal, atau
+ * memang belum dijawab? Dua angka itu dua hal yang berbeda, dan yang satu
+ * tidak bisa disimpulkan dari yang lain.
+ *
+ * Hari yang tidak masuk keduanya = belum dijawab sama sekali.
+ */
 export function fastingProgress(plan: FastingPlan): {
   done: number;
+  failed: number;
   total: number;
 } {
   const ids = fastingDayIds(plan.startId, plan.endId);
   return {
     done: ids.filter((id) => plan.days?.[id]?.done).length,
+    failed: ids.filter((id) => plan.days?.[id]?.failed).length,
     total: ids.length,
   };
 }

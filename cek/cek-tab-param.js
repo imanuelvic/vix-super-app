@@ -211,7 +211,7 @@ console.log('\n=== 5. Keenam layar memakainya, penjaganya hilang ===');
 // =====================================================================
 const PAKAI = [
   ['app/profile.tsx', 'profile', true],
-  ['app/(tabs)/work.tsx', 'focus', false], // 22 Sep 2026: tab Work membuka Focus dulu
+  ['app/(tabs)/work.tsx', 'fulltime', false], // 1 Okt 2026: Focus dihapus, Work langsung ke Fulltime
   ['app/(tabs)/core.tsx', 'followup', false],
   ['app/learning.tsx', 'week', false],
   ['app/news.tsx', 'news', false],
@@ -271,8 +271,8 @@ console.log('\n=== 6. Daftar tab yang sah = daftar tab yang TAMPIL ===');
 // jadi dibuktikan dulu keduanya memang sama.
 const LAMA = {
   // 'insurance' dulu ada di antara affiliate & business — dihapus permanen.
-  // 22 Sep 2026: 'focus' (Work Today) ditambahkan di depan.
-  'app/(tabs)/work.tsx': ['focus', 'fulltime', 'freelance', 'affiliate', 'business'],
+  // 1 Okt 2026: 'focus' & 'affiliate' ikut dihapus permanen.
+  'app/(tabs)/work.tsx': ['fulltime', 'freelance', 'business'],
   'app/learning.tsx': ['week', 'skills', 'topics'],
   'app/news.tsx': ['news', 'population'],
 };

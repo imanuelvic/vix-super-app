@@ -72,7 +72,11 @@ const kartuBlok = [
   // (28 Sep 2026: `introCard` Prayer Points dibuang — kartu pembukanya sendiri
   // yang dihapus atas permintaan pemilik app, bukan jaraknya yang dilonggarkan.)
   ['components/core/PrayerPointsTab.tsx', 'staleCard'], ['app/multiplication/[id].tsx', 'nextCard'],
-  ['app/bible-reading.tsx', 'summaryCard'], ['app/reward.tsx', 'heroCard'], ['app/fasting.tsx', 'hero'],
+  // (1 Okt 2026: `hero` layar Puasa dibuang — kartu keadaannya sendiri yang
+  // dihapus atas permintaan pemilik app, bukan jaraknya yang dilonggarkan.
+  // Angkanya pindah ke keterangan tombol "Lihat Hari per Hari" di bawahnya.)
+  ['app/bible-reading.tsx', 'summaryCard'], ['app/reward.tsx', 'heroCard'],
+  ['components/finance/BudgetAiCard.tsx', 'trigger'],
   ['app/history.tsx', 'heroCard'], ['app/timeline.tsx', 'progressCard'], ['components/health/StepsTab.tsx', 'heroCard'],
   ['components/tasks/PriorityTab.tsx', 'heroCard'], ['components/residence/TokenTab.tsx', 'hero'],
   ['components/residence/TokenTab.tsx', 'dueCard'],
@@ -181,8 +185,11 @@ ok('tidak ada lagi yang menyalin keempat propertinya', salinan.length === 0,
 // Dua bentuk kartu (14 & 16) memang masih hidup berdampingan, dan itu DISENGAJA
 // tidak disatukan: bedanya dua piksel, dan menyatukannya keputusan tampilan.
 // Yang dijaga: keduanya tetap punya definisi sendiri, bukan salin-menyalin.
-ok('CARD (sudut 14) tetap berdiri sendiri, tidak ikut tergeser',
-  /export const CARD: ViewStyle = \{[\s\S]{0,260}borderRadius: 14,/.test(card));
+// (Sejak 30 Sep 2026 sudut 14 tinggal di CARD_SHAPE, dan CARD dibangun dari
+// situ. Penjaga lengkapnya di bagian "Bentuk kotak bergaris" paling bawah.)
+ok('sudut 14 tetap berdiri sendiri, tidak ikut tergeser ke 16',
+  /export const CARD_SHAPE[^=]*= \{[\s\S]{0,120}borderRadius: 14,/.test(card) &&
+  /export const CARD: ViewStyle = \{\s*\n\s*\.\.\.CARD_SHAPE,/.test(card));
 
 // =====================================================================
 console.log('\n=== Wadah terluar layar (SCREEN_SAFE) ===');
@@ -249,7 +256,7 @@ console.log('\n=== Bentuk kotak bergaris (FIELD · CARD · PANEL) ===');
 // dibuat supaya isian app ini seragam.
 const BENTUK = [
   ['FIELD', 12, 'kotak isian & kotak kecil di dalam kartu'],
-  ['CARD', 14, 'kartu daftar'],
+  ['CARD_SHAPE', 14, 'kartu bersudut 14 yang jarak dalamnya sendiri'],
   ['PANEL', 16, 'kotak bergaris di layar'],
 ];
 for (const [nama, radius, peran] of BENTUK) {
@@ -260,6 +267,11 @@ for (const [nama, radius, peran] of BENTUK) {
       `\\s*\\n\\s*borderColor: Color\\.BORDER,`,
     ).test(card));
 }
+// CARD = bentuk itu + padding baris daftar, DIBANGUN dari CARD_SHAPE bukan
+// disalin. Kalau ia menulis keempat propertinya lagi, dua tokennya bisa
+// meleset diam-diam dan itu persis masalah yang dibuang di sini.
+ok('CARD dibangun dari CARD_SHAPE, bukan menyalinnya',
+  /export const CARD: ViewStyle = \{\s*\n\s*\.\.\.CARD_SHAPE,\s*\n\s*paddingHorizontal: 14,\s*\n\s*paddingVertical: 12,\s*\n\};/.test(card));
 // Bedanya CARD dari dua lainnya: ia MEMBAWA paddingnya sendiri (14/12), karena
 // kartu daftar itu baris berulang yang iramanya justru harus sama. FIELD &
 // PANEL sengaja tidak, karena paddingnya memang beda-beda per pemakai.
@@ -269,10 +281,8 @@ for (const [nama, radius, peran] of BENTUK) {
 // langsung: `export const NAMA … = {` sampai `}` pertama.
 const potong = (n) =>
   new RegExp(`export const ${n}[^=]*=\\s*\\{([^}]*)\\}`).exec(card)?.[1] ?? '';
-ok('CARD membawa paddingnya sendiri (irama baris daftar)',
-  /paddingHorizontal: 14,\s*\n\s*paddingVertical: 12,/.test(potong('CARD')));
-ok('FIELD & PANEL sengaja TIDAK membawa padding (milik tiap pemakai)',
-  !/padding/.test(potong('FIELD')) && !/padding/.test(potong('PANEL')));
+ok('ketiga bentuk dasarnya sengaja TIDAK membawa padding (milik tiap pemakai)',
+  ['FIELD', 'CARD_SHAPE', 'PANEL'].every((n) => !/padding/.test(potong(n))));
 // Ketiganya HARUS tetap berbeda sudut. Menyatukannya keputusan TAMPILAN, bukan
 // kerapian, dan kalau suatu saat diambil, ia diambil sadar di satu baris.
 ok('ketiga sudutnya tetap berbeda (12 · 14 · 16), tidak diam-diam disamakan',
@@ -299,10 +309,25 @@ ok('tidak ada lagi berkas yang menyalin keempat nilainya',
 const pakai = (t) => semua.filter((f) => new RegExp(`\\.\\.\\.${t}\\b`).test(baca(f)));
 ok(`FIELD dipakai ${pakai('FIELD').length} berkas`, pakai('FIELD').length >= 19,
   String(pakai('FIELD').length));
-ok(`CARD dipakai ${pakai('CARD').length} berkas`, pakai('CARD').length >= 60,
+ok(`CARD dipakai ${pakai('CARD').length} berkas`, pakai('CARD').length >= 52,
   String(pakai('CARD').length));
+ok(`CARD_SHAPE dipakai ${pakai('CARD_SHAPE').length} berkas`,
+  pakai('CARD_SHAPE').length >= 10, String(pakai('CARD_SHAPE').length));
 ok(`PANEL dipakai ${pakai('PANEL').length} berkas`, pakai('PANEL').length >= 52,
   String(pakai('PANEL').length));
+// Penjaga yang lahir dari kesalahan nyata (30 Sep 2026): memakai ...CARD lalu
+// menimpa paddingnya berarti kotak itu BUKAN baris daftar, dan kalau ia dulu
+// tak punya padding sama sekali, ...CARD diam-diam MENAMBAHKANNYA. Yang begitu
+// tempatnya di CARD_SHAPE.
+const penimpa = [];
+for (const f of semua) {
+  for (const b of baca(f).match(/^ {2}\w+: \{[^}]*\}/gm) ?? []) {
+    if (!/\.\.\.CARD,/.test(b)) continue;
+    if (/padding(Horizontal|Vertical)?: /.test(b)) penimpa.push(`${f}:${/^ {2}(\w+)/.exec(b)[1]}`);
+  }
+}
+ok('tak ada pemakai ...CARD yang menimpa paddingnya (itu tandanya CARD_SHAPE)',
+  penimpa.length === 0, penimpa.join(', '));
 
 // Tujuh komponen isian bersama WAJIB satu bentuk. Kalau salah satunya kembali
 // menulis sendiri, rupa isian app diam-diam jadi dua macam — dan itu persis

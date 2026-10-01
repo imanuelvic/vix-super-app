@@ -37,7 +37,7 @@ const PATOK = [
   ['components/spiritual/FastingTab.tsx', 'Tambah Puasa Baru', 'onPress={() => open()}'],
   ['components/career/FulltimeTab.tsx', 'Tambah Kartu', 'onPress={openAdd}'],
   ['components/career/FreelanceTab.tsx', 'Tambah Proyek', "pathname: '/project/edit/[id]'"],
-  ['components/career/AffiliateTab.tsx', 'Tambah Ide', 'onPress={openAdd}'],
+  // (1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya.)
 ];
 const sumber = Object.fromEntries(PATOK.map(([f]) => [f, baca(f)]));
 
@@ -129,8 +129,10 @@ console.log('\n=== 3. "Margin jarak yang sama" — dijamin satu token ===');
   // diperiksa satu-satu lalu terlewat pada layar ke-13.
   const pakaiToken = semuaTsx.filter((f) => /\.\.\.SCREEN_CONTENT_PINNED/.test(baca(f))).sort();
   const pakaiPatok = semuaTsx.filter((f) => /<StickyTop>/.test(baca(f))).sort();
+  // Lantainya 12 → 11 pada 1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya.
+  // Yang benar-benar dijaga tetap utuh, yaitu KESAMAAN kedua daftar itu.
   ok(`yang dipatok = yang jarak atasnya 0, dua arah (${pakaiToken.length} berkas)`,
-    pakaiToken.length >= 12 && pakaiToken.join(',') === pakaiPatok.join(','),
+    pakaiToken.length >= 11 && pakaiToken.join(',') === pakaiPatok.join(','),
     `token: ${pakaiToken.length} | patok: ${pakaiPatok.length}`);
   const nyalin = semuaTsx.filter((f) => /paddingHorizontal: 20,\s*paddingTop: 0/.test(baca(f)));
   ok('tidak ada lagi layar yang menyalin angkanya sendiri', nyalin.length === 0, nyalin.join(', '));
@@ -166,9 +168,6 @@ console.log('\n=== 4. Isi keenam sub-tab tidak ikut hilang ===');
   ok('Freelance: nilai tiap proyek tetap tertulis di kartunya',
     /formatRupiah\(nilai\)/.test(fr));
 
-  const af = sumber['components/career/AffiliateTab.tsx'];
-  ok('Affiliate: chip penyaring beserta hitungannya tetap — itu pengganti kartunya',
-    /<FilterChips/.test(af) && /count: counts\[s\.key\]/.test(af));
 }
 
 // =====================================================================

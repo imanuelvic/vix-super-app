@@ -100,8 +100,8 @@ export function FocusCard({
       </View>
       {progress.length === 0 ? (
         <VixText heading="label">
-          Belum ada fokus. Tetapkan batas mingguan untuk pengeluaran yang rawan
-          (mis. Gojek ≤ 4× seminggu) supaya kamu diingatkan sebelum lewat.
+          Belum ada fokus. Tetapkan batas mingguan untuk pengeluaran yang
+          rawan, mis. Gojek 4× seminggu.
         </VixText>
       ) : (
         progress.map((p) => {

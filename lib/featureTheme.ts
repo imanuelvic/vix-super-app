@@ -100,6 +100,8 @@ const ROUTE_FEATURE: Record<string, string> = {
   saku: 'finance',
   'saku/[key]': 'finance',
   debts: 'finance',
+  'budget-recap': 'finance',
+  'emergency-fund': 'finance',
 
   // Sisanya: satu fitur, satu layar (plus sub-halaman ber-ruas sama).
   learning: 'learning',

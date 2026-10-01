@@ -15,6 +15,7 @@ import { AddButton } from '@/components/common/AddButton';
 import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
+import { DeleteX } from '@/components/common/DeleteX';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -826,13 +827,7 @@ export function TransactionsTab({
                     ? 'Rp ••••••'
                     : `${isIncome ? '+' : '-'}${formatRupiah(item.amount)}`}
                 </VixText>
-                <PressableScale onPress={() => setConfirmDelete(item)} hitSlop={10}>
-                  <IconSymbol
-                    name="xmark"
-                    size={16}
-                    color={Color.TEXT_PLACEHOLDER}
-                  />
-                </PressableScale>
+                <DeleteX onPress={() => setConfirmDelete(item)} />
               </View>
             </PressableScale>
           );

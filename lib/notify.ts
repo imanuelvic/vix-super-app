@@ -712,6 +712,42 @@ let murniTerakhir = '';
 function lupakanJadwal(): void {
   terakhir = '';
   murniTerakhir = '';
+  badgeTerakhir = -1;
+}
+
+// ====================== 🔴 Angka merah di ikon app ======================
+//
+// Sampai 30 Sep 2026 angka ini = `model.today.length`, dan itu SALAH dengan
+// cara yang tidak kelihatan: daftar Today dipangkas ke TODAY_MAX (7), jadi
+// begitu ada tujuh hal atau lebih, ikonnya menempel di 7 selamanya. Terlihat
+// seperti "badge macet", padahal ia memang terus diperbarui ke angka yang
+// sudah dibatasi.
+//
+// Sekarang ia = JUMLAH BADGE YANG KELIHATAN DI DALAM APP (CORE + Work). Itu
+// satu-satunya angka yang bisa dicocokkan sendiri oleh pemiliknya: buka app,
+// jumlahkan angka merah di kaki layar, hasilnya harus sama dengan yang di
+// ikon. Badge yang tidak bisa diperiksa cuma jadi kecemasan.
+//
+// Dipasang dari app/(tabs)/_layout.tsx — di situlah kedua angka itu dihitung,
+// dan layar itu selalu hidup selama app dibuka.
+let badgeTerakhir = -1;
+
+/**
+ * Setel angka merah di ikon app. Aman dipanggil sesering apa pun: angka yang
+ * sama tidak ditulis dua kali, dan modul notifikasinya di-require malas (di
+ * Expo Go / build lama ia tidak ada, dan fungsi ini diam saja).
+ *
+ * Diam juga kalau sakelar pengingat mati — mematikannya sudah menolkan angka
+ * ini (setNotifyEnabled), jadi menulisnya lagi cuma menghidupkannya kembali.
+ */
+export async function setAppBadge(jumlah: number): Promise<void> {
+  const mod = getModule();
+  if (!mod) return;
+  const n = Math.max(0, Math.round(jumlah));
+  if (n === badgeTerakhir) return;
+  if (!(await notifyEnabled())) return;
+  badgeTerakhir = n;
+  await mod.setBadgeCountAsync(n).catch(() => false);
 }
 
 /**
@@ -806,7 +842,11 @@ export async function syncNotifications(
       );
     }
     await AsyncStorage.setItem(IDS_KEY, JSON.stringify(ids));
-    await mod.setBadgeCountAsync(jumlahHariIni).catch(() => false);
+    // Angka di ikon app TIDAK disetel di sini lagi (30 Sep 2026). Ia dulu
+    // menumpang di sini, jadi ia cuma ikut berubah saat JADWALNYA berubah,
+    // dan isinya `model.today.length` yang sudah dipangkas ke TODAY_MAX.
+    // Sekarang `setAppBadge` dipanggil dari app/(tabs)/_layout.tsx dengan
+    // jumlah badge yang benar-benar kelihatan di dalam app.
   } catch {
     // Gagal di tengah jalan → kedua sidiknya dilupakan, jadi sinkron
     // berikutnya benar-benar mencoba lagi (bukan disangka "sudah sama").

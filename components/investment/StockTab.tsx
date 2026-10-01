@@ -19,6 +19,8 @@ export function StockTab() {
     <MarketTab
       heroTitle="📊 IHSG (Saham Indonesia)"
       heroSub="Live dari Yahoo Finance (^JKSE) · poin indeks"
+      aiAsset="saham"
+      aiLabel="IHSG"
       statLabel="Poin IHSG sekarang"
       srcText="Indeks Harga Saham Gabungan · Bursa Efek Indonesia (IDX)"
       noteText="⚠️ Ini indeks gabungan (poin), bukan harga 1 saham. Naik/turunnya mencerminkan pasar saham Indonesia secara umum."

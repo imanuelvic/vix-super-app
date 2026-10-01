@@ -313,7 +313,6 @@ const styles = StyleSheet.create({
   content: { ...SCREEN_CONTENT, paddingBottom: 24 },
   quickCard: {
     ...CARD,
-    padding: 14,
     gap: 4,
     marginBottom: 10,
   },

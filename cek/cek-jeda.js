@@ -58,7 +58,16 @@ c('padding body DINOLKAN (dulu 36/40/44 — cuma berlaku sekali)',
   /body \{[\s\S]*?padding: 0;/.test(src));
 c('PAGE_MARGINS memakai angka lama persis (halaman 1 tak bergeser)',
   /PAGE_MARGINS = \{ top: 36, right: 40, bottom: 44, left: 40 \}/.test(src));
-c('margins diteruskan ke printToFileAsync', /printToFileAsync\(\{ html, margins: PAGE_MARGINS \}\)/.test(src));
+// 1 Okt 2026: kertasnya bisa MENDATAR (laporan keuangan berkolom bulan), jadi
+// tepinya dipilih dulu di sebuah variabel. Yang dijaga tetap sama & kini lebih
+// kuat: tegak WAJIB memakai PAGE_MARGINS yang sama persis seperti dulu, dan
+// mendatar punya tepinya sendiri — bukan diam-diam tanpa tepi sama sekali.
+c('margins diteruskan ke printToFileAsync',
+  /printToFileAsync\(\{ html, margins: tepi, \.\.\.kertas \}\)/.test(src) &&
+  /: PAGE_MARGINS;/.test(src) &&
+  /landscape\s*\n?\s*\? \{ top: \d+, right: \d+, bottom: \d+, left: \d+ \}/.test(src));
+c('kertas mendatar = 792×612 (US Letter diputar), tegak tetap bawaannya',
+  /landscape \? \{ width: 792, height: 612 \} : \{\}/.test(src));
 c('gaya .jeda ada di CSS bersama', /\.jeda \{ height: 9px; \}/.test(src));
 
 // Tombol share-nya sudah jadi emoji 📤 di kanan atas (lihat cek-foto.js);

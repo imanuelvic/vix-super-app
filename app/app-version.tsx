@@ -4,15 +4,22 @@ import { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD_SHAPE } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SheetModal } from '@/components/common/SheetModal';
 import { VixText } from '@/components/common/VixText';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useNow } from '@/hooks/useNow';
-import { formatDayDate, formatShortDayDateTime } from '@/lib/format';
+import { CHANGELOG, changelogTotal, type ReleaseNote } from '@/lib/changelog';
+import {
+  dayIdToDate,
+  formatDayDate,
+  formatShortDayDateTime,
+  formatTinyDate,
+} from '@/lib/format';
 
 type Message = { kind: 'info' | 'success' | 'error'; text: string };
 
@@ -28,6 +35,8 @@ const APP_BIRTHDAY = new Date(2026, 6, 21);
 export default function AppVersionScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
+  // 📖 Riwayat versi, dibuka dari kartu versinya sendiri (1 Okt 2026).
+  const [riwayat, setRiwayat] = useState(false);
   // Jam berjalan (hook bersama) — bukan `new Date()` lepas saat render, supaya
   // umurnya ikut berganti sendiri lewat tengah malam.
   const { now } = useNow();
@@ -80,8 +89,13 @@ export default function AppVersionScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Kartu versi terpasang */}
-        <View style={styles.versionCard}>
+        {/* Kartu versi = pintu ke riwayatnya. Angka versi sendiri tidak
+            memberi tahu apa-apa ("2.0.1" itu apa?); yang sebenarnya ingin
+            diingat adalah apa yang berubah sejak dulu, dan di situlah
+            tempatnya bertanya. */}
+        <PressableScale
+          style={styles.versionCard}
+          onPress={() => setRiwayat(true)}>
           <VixText heading="label" additionalStyle={styles.versionLabel}>
             Versi Aplikasi
           </VixText>
@@ -91,7 +105,17 @@ export default function AppVersionScreen() {
           <VixText heading="label" additionalStyle={styles.versionLabel}>
             🎂 Hari ke-{appAgeDays} sejak dibuat
           </VixText>
-        </View>
+          <View style={styles.versionHint}>
+            <VixText heading="label" additionalStyle={styles.versionLabel}>
+              📖 Click untuk lihat semua perubahan
+            </VixText>
+            <IconSymbol
+              name="chevron.right"
+              size={14}
+              color={Color.TEXT_ON_DARK_MUTED}
+            />
+          </View>
+        </PressableScale>
 
         {/* Detail teknis — berguna saat cek kenapa update tidak masuk */}
         <View style={styles.detailCard}>
@@ -141,9 +165,62 @@ export default function AppVersionScreen() {
             {message.text}
           </VixText>
         )}
-        
+
       </ScrollView>
+
+      {/* Riwayat versi: tiap versi beserta rangkuman perubahannya. Daftarnya
+          ditulis tangan di lib/changelog.ts, bukan dibaca dari git, dan
+          alasannya ada di komentar berkas itu. */}
+      <SheetModal
+        visible={riwayat}
+        title="📱 Version History"
+        subtitle={`${CHANGELOG.length} versi, ${changelogTotal()} perubahan tercatat`}
+        onClose={() => setRiwayat(false)}>
+        {CHANGELOG.map((rilis) => (
+          <Rilis
+            key={rilis.version}
+            rilis={rilis}
+            terpasang={rilis.version === appVersion}
+          />
+        ))}
+      </SheetModal>
     </SafeAreaView>
+  );
+}
+
+/** Satu versi di daftar riwayat. */
+function Rilis({
+  rilis,
+  terpasang,
+}: {
+  rilis: ReleaseNote;
+  /** Versi inilah yang sedang berjalan di HP ini. */
+  terpasang: boolean;
+}) {
+  return (
+    <View style={styles.rilis}>
+      <View style={styles.rilisTop}>
+        <VixText heading="bold" additionalStyle={styles.rilisVersi}>
+          v{rilis.version}
+        </VixText>
+        {terpasang && (
+          <View style={styles.rilisPil}>
+            <VixText heading="label" additionalStyle={styles.rilisPilText}>
+              terpasang
+            </VixText>
+          </View>
+        )}
+        <View style={styles.rilisSpasi} />
+        <VixText heading="label" additionalStyle={styles.rilisTanggal}>
+          {formatTinyDate(dayIdToDate(rilis.date))}
+        </VixText>
+      </View>
+      {rilis.items.map((baris) => (
+        <VixText key={baris} heading="label" additionalStyle={styles.rilisItem}>
+          {baris}
+        </VixText>
+      ))}
+    </View>
   );
 }
 
@@ -172,8 +249,40 @@ const styles = StyleSheet.create({
   },
   versionLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   versionValue: { color: Color.TEXT_REVERSE },
+  // Ajakan membuka riwayat: dipisahkan garis tipis supaya terbaca sebagai
+  // tombol, bukan sebagai baris keterangan ketiga.
+  //
+  // Garisnya MAIN (hijau sedang), bukan OVERLAY: OVERLAY itu hitam transparan
+  // untuk latar belakang modal, dan di atas kartu MAIN_DARK yang memang sudah
+  // gelap ia praktis tidak terlihat. Pola yang sama dipakai bar realisasi di
+  // kartu gelap Budgeting.
+  versionHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Color.MAIN,
+  },
+
+  // ── Riwayat versi ──────────────────────────────────────────────────────
+  rilis: { marginBottom: 18, gap: 4 },
+  rilisTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rilisVersi: { color: Color.TEXT_TITLE },
+  rilisSpasi: { flex: 1 },
+  rilisTanggal: { color: Color.TEXT_LABEL },
+  // Penanda versi yang sedang berjalan di HP ini.
+  rilisPil: {
+    backgroundColor: Color.MAIN,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  rilisPilText: { color: Color.TEXT_REVERSE },
+  rilisItem: { color: Color.TEXT_PARAGRAPH },
   detailCard: {
-    ...CARD,
+    ...CARD_SHAPE,
     paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 16,

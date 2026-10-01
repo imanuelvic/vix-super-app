@@ -58,10 +58,9 @@ export const FEATURE_INDEX: FeatureEntry[] = [
   e('🕘', 'Riwayat Visitasi', 'CORE', { pathname: '/visitations' }, 'riwayat visitasi', 'semua jadwal'),
 
   // 💼 Work
-  e('🎯', 'Work Focus', 'Work › Focus', { pathname: '/work', params: { tab: 'focus' } }, 'fokus', 'focus', 'kerja hari ini', 'ship'),
+  // (1 Okt 2026: Work › Focus & Work › Affiliate dibuang bersama sub-tabnya.)
   e('💻', 'Fulltime NDC', 'Work › Fulltime', { pathname: '/work', params: { tab: 'fulltime' } }, 'fulltime', 'roadmap', 'ndc', 'prioritas kerja', 'deadline'),
   e('🌐', 'Freelance', 'Work › Freelance', { pathname: '/work', params: { tab: 'freelance' } }, 'freelance', 'proyek', 'client', 'invoice', 'fee'),
-  e('📣', 'Affiliate', 'Work › Affiliate', { pathname: '/work', params: { tab: 'affiliate' } }, 'affiliate', 'konten', 'ide konten', 'endorse', 'tiktok'),
   e('🍧', 'Business', 'Work › Business', { pathname: '/work', params: { tab: 'business' } }, 'bisnis', 'business', 'cendol', 'roa'),
   e('✅', 'Reminder harian', 'Work › Tasks', { pathname: '/tasks', params: { tab: 'daily' } }, 'task', 'tugas', 'reminder', 'to do', 'todo', 'daily'),
   e('📌', 'Prioritas P1 P2 P3', 'Work › Tasks', { pathname: '/tasks', params: { tab: 'priority' } }, 'prioritas', 'priority', 'p1', 'p2', 'p3', 'tenggat'),
@@ -90,7 +89,10 @@ export const FEATURE_INDEX: FeatureEntry[] = [
   e('🧠', 'Skills', 'Life › Learning › Skills', { pathname: '/learning', params: { tab: 'skills' } }, 'skills', 'topik', 'ilmu'),
   e('💬', 'Discussion', 'Life › Learning › Discussion', { pathname: '/learning', params: { tab: 'topics' } }, 'diskusi', 'obrolan', 'bahan percakapan'),
   e('📔', 'Arsip Rangkuman', 'Life › Learning', { pathname: '/learning-archive' }, 'rangkuman', 'arsip belajar'),
-  e('✨', 'Analysis Pasar', 'Life › Invest › Analysis', { pathname: '/investment', params: { tab: 'analysis' } }, 'analisis', 'analysis', 'ai pasar', 'prediksi', 'arah harga', 'naik turun'),
+  // Bacaan AI ✨ tidak punya sub-tab sendiri lagi (1 Okt 2026) — ia ada di
+  // DALAM tiap sub-tab aset. Pintu pencariannya menuju Emas, aset yang paling
+  // sering dibaca pemilik app; dari situ tinggal geser ke aset lain.
+  e('✨', 'Analysis Pasar', 'Life › Invest › Gold', { pathname: '/investment', params: { tab: 'emas' } }, 'analisis', 'analysis', 'ai pasar', 'prediksi', 'arah harga', 'naik turun'),
   e('🏅', 'Emas', 'Life › Invest › Gold', { pathname: '/investment', params: { tab: 'emas' } }, 'emas', 'gold', 'harga emas'),
   e('₿', 'Bitcoin', 'Life › Invest › Crypto', { pathname: '/investment', params: { tab: 'crypto' } }, 'bitcoin', 'btc', 'crypto', 'kripto'),
   e('📈', 'IHSG', 'Life › Invest › Stocks', { pathname: '/investment', params: { tab: 'saham' } }, 'saham', 'ihsg', 'stocks'),

@@ -74,6 +74,12 @@ Module._load = ((asli) => function (req, parent, isMain) {
   if (/style\/color$/.test(req)) {
     return { Color: new Proxy({}, { get: (_, k) => `Color.${String(k)}` }) };
   }
+  // 30 Sep 2026: komponen isian bersama memakai token bentuk FIELD, jadi
+  // berkas gayanya ikut ter-require saat SelectField dijalankan di sini.
+  // Isinya tidak diperiksa suite ini — yang diuji perilaku pemilihnya.
+  if (/style\/card$/.test(req)) {
+    return new Proxy({}, { get: () => ({}) });
+  }
   if (req === 'react/jsx-runtime') return { jsx: () => null, jsxs: () => null, Fragment: 'Fragment' };
   if (req === 'react') return { useState: () => [null, () => {}], useEffect: () => {} };
   if (/PressableScale$/.test(req)) return { PressableScale: 'PressableScale' };

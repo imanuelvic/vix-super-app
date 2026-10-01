@@ -1,20 +1,24 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useState, type ReactNode } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
+import { CARD_GAP, FIELD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { FormError } from '@/components/common/FormError';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { PressableScale } from '@/components/common/PressableScale';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { SheetModal } from '@/components/common/SheetModal';
 import { SoftPill } from '@/components/common/SoftPill';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { CoachAnswerView } from '@/components/finance/CoachCard';
 import { useAuth } from '@/contexts/auth';
+import { useAiDay } from '@/hooks/useAiDay';
 import { useFinanceInsight } from '@/hooks/useFinanceInsight';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useLiveAll } from '@/hooks/useLiveAll';
@@ -31,7 +35,6 @@ import {
   loadCoachDay,
   saveCoachDay,
   type CoachAnswer,
-  type CoachDay,
   type CoachQuestionKey,
 } from '@/lib/financeCoach';
 import {
@@ -40,6 +43,14 @@ import {
   subscribeFinanceFocus,
   type FocusItem,
 } from '@/lib/financeFocus';
+import {
+  buildFinanceReport,
+  reportBounds,
+  reportMonths,
+  REPORT_RANGES,
+  type ReportRange,
+} from '@/lib/financeReport';
+import { shareFinanceReport } from '@/lib/financeReportPdf';
 import {
   addDays,
   catName,
@@ -52,8 +63,13 @@ import {
   type WeeklyReview,
 } from '@/lib/financeInsight';
 import { dayId, dayIdToDate, formatWeekRange, MONTH_NAMES, monthId } from '@/lib/format';
-import { LOAD_ERROR } from '@/lib/messages';
-import { formatRupiah, subscribeTransactionsRange, type Transaction } from '@/lib/transactions';
+import { LOAD_ERROR, pdfErrorOf } from '@/lib/messages';
+import {
+  fetchTransactionsRange,
+  formatRupiah,
+  subscribeTransactionsRange,
+  type Transaction,
+} from '@/lib/transactions';
 
 // 📅 Weekly Money Review & 📆 Monthly Review (22 Sep 2026).
 //
@@ -91,6 +107,11 @@ export default function FinanceReviewScreen() {
   const [focusItems, setFocusItems] = useState<FocusItem[]>([]);
   const [subcats, setSubcats] = useState<SubcategoryMap>({});
   const [error, setError] = useState<string | null>(null);
+
+  // 📤 Bagikan laporan PDF: sheet pilih rentang + rentang yang sedang dibuat.
+  const [bagikan, setBagikan] = useState(false);
+  const [bagikanBusy, setBagikanBusy] = useState<ReportRange | null>(null);
+  const [bagikanError, setBagikanError] = useState<string | null>(null);
 
   // Satu rentang: HISTORY_MONTHS bulan sebelum bulan acuan s.d. akhir bulan
   // acuan (atau akhir minggunya kalau minggunya menyeberang bulan).
@@ -174,19 +195,36 @@ export default function FinanceReviewScreen() {
 
   // ✨ Ringkasan Coach (Gemini) — pertanyaan 'weekly' / 'monthly'.
   const todayId = dayId(new Date());
-  const [day, setDay] = useState<CoachDay | null>(null);
+  // null = jatah hari ini belum terbaca dari penyimpanan (sekejap).
+  const [day, setDay] = useAiDay(todayId, loadCoachDay);
   const [answer, setAnswer] = useState<CoachAnswer | null>(null);
   const [busy, setBusy] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  useEffect(() => {
-    let hidup = true;
-    loadCoachDay(todayId).then((d) => {
-      if (hidup) setDay(d);
-    });
-    return () => {
-      hidup = false;
-    };
-  }, [todayId]);
+
+  /**
+   * Tarik transaksi `bulan` bulan ke belakang (berakhir di bulan yang sedang
+   * dibuka), susun laporannya, lalu buka share sheet OS.
+   *
+   * Dibaca SEKALI JALAN, bukan dilanggan: berkas ini dibuat sesekali, dan
+   * melanggan selusin bulan di latar demi itu cuma menambah pembacaan
+   * Firestore yang tak pernah dipakai lagi.
+   */
+  async function bagikanLaporan(bulan: ReportRange) {
+    if (!user || bagikanBusy !== null) return;
+    setBagikanBusy(bulan);
+    setBagikanError(null);
+    try {
+      const bulanan = reportMonths(year, month, bulan);
+      const { start, end } = reportBounds(bulanan);
+      const semua = await fetchTransactionsRange(user.uid, start, end);
+      await shareFinanceReport(buildFinanceReport(semua, bulanan), new Date());
+      setBagikan(false);
+    } catch {
+      setBagikanError(pdfErrorOf('laporan'));
+    } finally {
+      setBagikanBusy(null);
+    }
+  }
 
   async function minta() {
     if (busy || !day) return;
@@ -238,7 +276,18 @@ export default function FinanceReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader backLabel="Finance" title={judul} subtitle={sub} />
+      <ScreenHeader
+        backLabel="Finance"
+        title={judul}
+        subtitle={sub}
+        // 📤 hanya di Monthly: laporannya berkolom BULAN, jadi menariknya
+        // dari layar mingguan tidak punya arti yang jelas.
+        right={
+          kind === 'month' ? (
+            <EmojiButton emoji="📤" onPress={() => setBagikan(true)} />
+          ) : undefined
+        }
+      />
       <ScreenError message={error === LOAD_ERROR ? error : null} />
       {items === null ? (
         <LoadingCenter />
@@ -434,6 +483,41 @@ export default function FinanceReviewScreen() {
           </View>
         </ScrollView>
       )}
+
+      {/* 📤 Bagikan laporan: pilih dulu berapa bulan yang ditarik. Rentangnya
+          selalu BERAKHIR di bulan yang sedang dibuka, jadi "12 bulan" dari
+          September 2026 berarti Oktober 2025 sampai September 2026. */}
+      <SheetModal
+        visible={bagikan}
+        title="📤 Share Financial Report"
+        subtitle="PDF tabel: kategori ke bawah, bulan ke samping"
+        onClose={() => setBagikan(false)}>
+        {REPORT_RANGES.map((r) => (
+          <PressableScale
+            key={r.months}
+            style={styles.rentang}
+            disabled={bagikanBusy !== null}
+            onPress={() => bagikanLaporan(r.months)}>
+            <View style={styles.rentangKiri}>
+              <VixText heading="bold" additionalStyle={styles.rentangLabel}>
+                {r.label}
+              </VixText>
+              <VixText heading="label">{r.sub}</VixText>
+            </View>
+            {bagikanBusy === r.months ? (
+              <ActivityIndicator color={Color.MAIN} />
+            ) : (
+              <VixText heading="bold" additionalStyle={styles.rentangPanah}>
+                ›
+              </VixText>
+            )}
+          </PressableScale>
+        ))}
+        <VixText heading="label" additionalStyle={styles.rentangNota}>
+          Rentangnya berakhir di {MONTH_NAMES[month]} {year}.
+        </VixText>
+        <FormError message={bagikanError} gap="top" />
+      </SheetModal>
     </SafeAreaView>
   );
 }
@@ -463,6 +547,21 @@ function Baris({ kiri, kanan, merah = false }: { kiri: string; kanan: string; me
 const styles = StyleSheet.create({
   safe: { ...SCREEN_SAFE },
   content: { ...SCREEN_CONTENT, paddingBottom: 40 },
+  // Pilihan rentang di sheet 📤 Bagikan Laporan.
+  rentang: {
+    ...FIELD,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  rentangKiri: { flex: 1, gap: 1 },
+  rentangLabel: { color: Color.TEXT_TITLE },
+  rentangPanah: { color: Color.TEXT_PLACEHOLDER },
+  rentangNota: { color: Color.TEXT_LABEL, marginTop: 2 },
   card: {
     ...PANEL,
     padding: 16,

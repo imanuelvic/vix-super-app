@@ -36,8 +36,16 @@ const vix = baca('components/common/VixText.tsx');
 // =====================================================================
 console.log('=== 1. Tabelnya dua bagian: yang diam & yang bergeser ===');
 // =====================================================================
+// 30 Sep 2026: bingkainya lewat token bersama CARD_SHAPE (bentuk kartu sudut
+// 14 TANPA padding) — dulu keempat propertinya ditulis tangan di sini. Ceknya
+// diperketat: bukan cuma tokennya dipakai, tapi tokennya memang masih bersudut
+// 14 dan memang tanpa padding (tabel ini isinya menempel penuh ke tepinya).
 ok('pembungkusnya berbaris mendatar & memegang bingkai kartunya',
-  /tableWrap: \{\s*\n\s*flexDirection: 'row',[\s\S]{0,200}borderRadius: 14,/.test(recap));
+  /tableWrap: \{\s*\n\s*flexDirection: 'row',\s*\n\s*\.\.\.CARD_SHAPE,/.test(recap) &&
+  /export const CARD_SHAPE[^=]*= \{[\s\S]{0,120}borderRadius: 14,/.test(
+    baca('assets/style/card.ts')) &&
+  !/padding/.test(
+    /export const CARD_SHAPE[^=]*=\s*\{([^}]*)\}/.exec(baca('assets/style/card.ts'))[1]));
 /** Letak ScrollView mendatarnya di berkas (ditulis bertingkat). */
 const MULAI_GESER = recap.search(/<ScrollView\s+\n?\s*horizontal/);
 ok('kolom Jenis berdiri DI LUAR ScrollView mendatar', (() => {

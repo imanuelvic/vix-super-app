@@ -16,6 +16,7 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { BudgetingTab } from '@/components/finance/BudgetingTab';
 import { DashboardTab } from '@/components/finance/DashboardTab';
+import { ReviewTab } from '@/components/finance/ReviewTab';
 import { TransactionsTab } from '@/components/finance/TransactionsTab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
@@ -36,23 +37,30 @@ import {
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { subscribeFinanceFocus, type FocusItem } from '@/lib/financeFocus';
 import { historySlices, HISTORY_MONTHS } from '@/lib/financeInsight';
+import { liveMonths, reviewLiveStart } from '@/lib/financeReview';
 import { MONTH_NAMES, monthId } from '@/lib/format';
 import { LOAD_ERROR } from '@/lib/messages';
 import { PRIVACY_PIN } from '@/lib/pin';
 import {
+  fetchTransactionsRange,
   subscribeTransactionsByMonth,
   subscribeTransactionsRange,
   type Transaction,
 } from '@/lib/transactions';
 
-type FinanceTab = 'dashboard' | 'transactions' | 'budgeting';
+type FinanceTab = 'dashboard' | 'transactions' | 'budgeting' | 'review';
 type IconName = ComponentProps<typeof IconSymbol>['name'];
 
 // Sub-menu Finance — tab bar DI BAWAH (pakai komponen BottomTabs bersama).
+// 1 Okt 2026: Budgeting & Dashboard BERTUKAR TEMPAT. Budgeting itu yang
+// ditetapkan lebih dulu lalu ditaati sebulan penuh; Dashboard membacanya.
+// Urutan tabnya sekarang mengikuti urutan itu: rencana, catatan, bacaan,
+// rekap.
 const SEGMENTS: { key: FinanceTab; label: string; icon: IconName }[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: 'chart.pie.fill' },
-  { key: 'transactions', label: 'Transactions', icon: 'list.bullet' },
   { key: 'budgeting', label: 'Budgeting', icon: 'chart.bar.fill' },
+  { key: 'transactions', label: 'Transactions', icon: 'list.bullet' },
+  { key: 'dashboard', label: 'Dashboard', icon: 'chart.pie.fill' },
+  { key: 'review', label: 'Review', icon: 'calendar' },
 ];
 
 export default function FinanceScreen() {
@@ -110,6 +118,28 @@ export default function FinanceScreen() {
   // Layar terkunci sampai PIN benar. Selama terkunci, Firestore belum
   // di-subscribe sama sekali — jadi tidak ada biaya read kalau batal masuk.
   const [unlocked, setUnlocked] = useState(false);
+
+  // 📋 Review — transaksi sejak REVIEW_LIVE_FROM, bahan rekap bulanannya.
+  //
+  // DIAMBIL SEKALI, bukan dilanggan, dan baru saat sub-menunya dibuka: rekap
+  // sebelas tahun tidak perlu hidup per detik, dan selama tab lain yang
+  // dibuka ia nol pembacaan Firestore. Satu query rentang, tanpa index baru.
+  const [reviewTx, setReviewTx] = useState<Transaction[] | null>(null);
+  const reviewLive = useMemo(() => liveMonths(reviewTx ?? []), [reviewTx]);
+  useEffect(() => {
+    if (!user || !unlocked || tab !== 'review' || reviewTx !== null) return;
+    let hidup = true;
+    fetchTransactionsRange(user.uid, reviewLiveStart(), new Date(2100, 0, 1))
+      .then((rows) => {
+        if (hidup) setReviewTx(rows);
+      })
+      .catch(() => {
+        if (hidup) setReviewTx([]);
+      });
+    return () => {
+      hidup = false;
+    };
+  }, [user, unlocked, tab, reviewTx]);
 
   // Pinjaman 🤝 — cuma untuk angka merah di tombol header. Jam berjalannya
   // dipakai supaya badge ikut berganti sendiri lewat tengah malam.
@@ -205,21 +235,47 @@ export default function FinanceScreen() {
         title="Finance 💰"
         subtitle="Catat pemasukan, pengeluaran & budget"
         right={
-          <View style={styles.headerButtons}>
-            {/* Pinjaman 🤝 (pinjam-meminjam). Angka merah = pinjaman yang
-                jatuh temponya sudah H-1 — tombolnya sama di semua sub-menu. */}
-            <EmojiButton
-              emoji="🤝"
-              badge={debtUrgentCount(debts, liveNow)}
-              onPress={() => router.push('/debts')}
-            />
-            {/* Saku 👛 (dana per tujuan) */}
-            <EmojiButton emoji="👛" onPress={() => router.push('/saku')} />
-          </View>
+          // 🤝 Pinjaman & 👛 Saku HANYA di sub-menu Transaksi (1 Okt 2026).
+          // Keduanya soal UANG YANG BERGERAK, sama seperti isi tab itu;
+          // berdiri di atas Dashboard, Budgeting & Review mereka cuma dua
+          // tombol yang tidak ada hubungannya dengan apa pun di layar.
+          tab === 'transactions' ? (
+            <View style={styles.headerButtons}>
+              {/* Angka merah = pinjaman yang jatuh temponya sudah H-1. */}
+              <EmojiButton
+                emoji="🤝"
+                badge={debtUrgentCount(debts, liveNow)}
+                onPress={() => router.push('/debts')}
+              />
+              {/* Saku 👛 (dana per tujuan) */}
+              <EmojiButton emoji="👛" onPress={() => router.push('/saku')} />
+            </View>
+          ) : tab === 'budgeting' ? (
+            // Dua layar yang isinya RENCANA jangka panjang, jadi tempatnya di
+            // atas sub-tab Budgeting: rekap setahun & dana darurat.
+            <View style={styles.headerButtons}>
+              <EmojiButton
+                emoji="📊"
+                onPress={() =>
+                  router.push({
+                    pathname: '/budget-recap',
+                    params: { year: String(year) },
+                  })
+                }
+              />
+              <EmojiButton
+                emoji="🚨"
+                onPress={() => router.push('/emergency-fund')}
+              />
+            </View>
+          ) : undefined
         }
       />
 
-      {/* Navigasi bulan */}
+      {/* Navigasi bulan. Sub-menu Review TIDAK memakainya: ia punya navigasi
+          TAHUN sendiri, dan dua penunjuk tanggal di satu layar cuma bikin
+          ragu yang mana yang sedang menggerakkan angkanya. */}
+      {tab !== 'review' && (
       <View style={styles.topBar}>
         <View style={styles.monthRow}>
           <PressableScale onPress={() => shiftMonth(-1)} hitSlop={10}>
@@ -249,12 +305,15 @@ export default function FinanceScreen() {
           </PressableScale>
         )}
       </View>
+      )}
 
       <ScreenError message={error} />
 
       {/* key=scrollKey → konten re-mount tiap sub-menu ditekan (scroll ke atas) */}
       <View style={styles.content} key={scrollKey}>
-        {loading ? (
+        {tab === 'review' ? (
+          <ReviewTab live={reviewLive} loading={reviewTx === null} />
+        ) : loading ? (
           <LoadingCenter />
         ) : tab === 'dashboard' ? (
           <DashboardTab
@@ -285,6 +344,7 @@ export default function FinanceScreen() {
             month={month}
             budgetDoc={budgetDoc}
             subcats={subcats}
+            history={history}
           />
         )}
       </View>

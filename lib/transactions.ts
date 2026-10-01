@@ -3,12 +3,14 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   orderBy,
   query,
   Timestamp,
   updateDoc,
   where,
   type FirestoreError,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 
 import type { FinanceType } from './categories';
@@ -149,13 +151,46 @@ export function subscribeTransactionsRange(
   onChange: (items: Transaction[]) => void,
   onError?: (error: FirestoreError) => void,
 ) {
-  const q = query(
+  return liveList<Transaction>(rangeQuery(uid, start, end), onChange, onError, baris);
+}
+
+/** Kueri rentang tanggal — dipakai bersama langganan & pengambilan sekali jalan. */
+function rangeQuery(uid: string, start: Date, end: Date) {
+  return query(
     transactionsCollection(uid),
     where('date', '>=', Timestamp.fromDate(start)),
     where('date', '<', Timestamp.fromDate(end)),
     orderBy('date', 'desc'),
   );
-  return liveList<Transaction>(q, onChange, onError);
+}
+
+/**
+ * Satu baris transaksi dari dokumennya.
+ *
+ * `id` ditaruh SESUDAH sebaran isinya, persis seperti pemeta bawaan
+ * `liveList`: kalau sebelum, dokumen yang kebetulan punya field `id` akan
+ * menimpa id aslinya, dan menghapusnya bisa mengenai dokumen yang salah.
+ * Dipakai bersama supaya langganan & pengambilan sekali jalan mustahil
+ * menghasilkan bentuk baris yang berbeda.
+ */
+function baris(d: QueryDocumentSnapshot): Transaction {
+  return { ...d.data(), id: d.id } as Transaction;
+}
+
+/**
+ * Transaksi dalam rentang [start, end) — SEKALI JALAN, bukan langganan.
+ *
+ * Dipakai laporan PDF (sampai 12 bulan): ia dibaca sekali saat tombolnya
+ * di-click, lalu selesai. Melanggannya akan membuat selusin bulan terus
+ * mengalir di latar hanya untuk satu berkas yang dibuat sesekali.
+ */
+export async function fetchTransactionsRange(
+  uid: string,
+  start: Date,
+  end: Date,
+): Promise<Transaction[]> {
+  const snapshot = await getDocs(rangeQuery(uid, start, end));
+  return snapshot.docs.map(baris);
 }
 
 export function addTransaction(

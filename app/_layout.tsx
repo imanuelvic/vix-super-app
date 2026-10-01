@@ -140,6 +140,9 @@ function RootNavigator() {
         <Stack.Screen name="saku" />
         <Stack.Screen name="saku/[key]" />
         <Stack.Screen name="debts" />
+        {/* Dua layar RENCANA, dibuka dari pita sub-tab Budgeting */}
+        <Stack.Screen name="budget-recap" />
+        <Stack.Screen name="emergency-fund" />
 
         <Stack.Screen name="investment" />
         <Stack.Screen name="car" />

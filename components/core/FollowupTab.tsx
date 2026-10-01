@@ -770,7 +770,6 @@ const styles = StyleSheet.create({
   waFlex: { flex: 1 },
   upcomingCard: {
     ...CARD,
-    padding: 14,
     marginBottom: 10,
     gap: 4,
   },

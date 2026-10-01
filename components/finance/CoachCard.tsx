@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { CARD_GAP, PANEL } from '@/assets/style/card';
@@ -10,6 +10,7 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SoftPill } from '@/components/common/SoftPill';
 import { VixText } from '@/components/common/VixText';
+import { useAiDay } from '@/hooks/useAiDay';
 import {
   askCoach,
   COACH_QUESTIONS,
@@ -18,7 +19,6 @@ import {
   loadCoachDay,
   saveCoachDay,
   type CoachAnswer,
-  type CoachDay,
   type CoachFacts,
   type CoachQuestionKey,
 } from '@/lib/financeCoach';
@@ -45,21 +45,12 @@ export function CoachCard({
   onSeeInsight?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [day, setDay] = useState<CoachDay | null>(null);
+  // null = jatah hari ini belum terbaca dari penyimpanan (sekejap).
+  const [day, setDay] = useAiDay(dayId, loadCoachDay);
   const [question, setQuestion] = useState<CoachQuestionKey | null>(null);
   const [answer, setAnswer] = useState<CoachAnswer | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let hidup = true;
-    loadCoachDay(dayId).then((d) => {
-      if (hidup) setDay(d);
-    });
-    return () => {
-      hidup = false;
-    };
-  }, [dayId]);
 
   const headline = insights[0];
   const rest = insights.slice(1, 3);
@@ -139,8 +130,8 @@ export function CoachCard({
           <CoachAnswerView answer={answer} />
         ) : !busy && !error ? (
           <VixText heading="label" additionalStyle={styles.hint}>
-            Pilih pertanyaan di atas. Pertanyaan yang sama dengan angka yang sama
-            dijawab dari ingatan, tanpa memakai kuota.
+            Pilih pertanyaan di atas. Pertanyaan yang sama dijawab dari
+            ingatan, tanpa memakai jatah.
           </VixText>
         ) : null}
       </SheetModal>
@@ -159,8 +150,7 @@ export function CoachAnswerView({ answer }: { answer: CoachAnswer }) {
       <Bagian label="INTERPRETASI" items={answer.interpretasi} />
       <Bagian label="SARAN" items={answer.saran} />
       <VixText heading="label" additionalStyle={styles.footnote}>
-        Coach membaca ringkasan angka saja, bukan catatan transaksimu. Keputusan
-        tetap milikmu.
+        Coach cuma membaca ringkasan angka. Keputusan tetap milikmu.
       </VixText>
     </View>
   );

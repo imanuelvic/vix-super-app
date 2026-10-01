@@ -138,7 +138,9 @@ const TULISAN = 'hari ini aku belajar sabar yg susah bgt, tp Tuhan tolong';
   c('Use This Reflection mengganti kolom & bisa dikembalikan tanpa dialog', /label="Use This Reflection"/.test(panel) && /setSebelum\(text\);\s*onUse\(day\.result\);/.test(panel) && /Kembalikan tulisan asli/.test(panel));
   c('Try Again dibatasi jatah harian; Dismiss cuma menyembunyikan (hasil tetap)', /Try Again · \$\{sisa\} lagi/.test(panel) && /disabled=\{sisa === 0\}/.test(panel) && /onPress=\{\(\) => setShown\(false\)\}/.test(panel) && /✨ Lihat refleksi AI/.test(panel));
   c('gagal → FormError, tidak ada retry otomatis', /<FormError message=\{error\}/.test(panel) && !/retry|setTimeout/i.test(panel));
-  c('jatah & hasil dibaca/disimpan per hari', /loadReflectionAiDay\(dayId\)/.test(panel) && /saveReflectionAiDay\(dayId, baru\)/.test(panel));
+  // Pembacanya kini hook bersama useAiDay (lihat cek-rapihin-ai-hari.js);
+  // yang dijaga tetap sama: jatah & hasilnya per HARI, dibaca lalu disimpan.
+  c('jatah & hasil dibaca/disimpan per hari', /useAiDay\(dayId, loadReflectionAiDay\)/.test(panel) && /saveReflectionAiDay\(dayId, baru\)/.test(panel));
 
   console.log('penyambungan');
   const nf = baca('components/common/NoteField.tsx');

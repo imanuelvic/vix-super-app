@@ -319,8 +319,19 @@ export async function sharePdf(
   html: string,
   dialogTitle: string,
   fileName?: string,
+  /**
+   * Kertas MENDATAR (792×612) alih-alih tegak. Dipakai laporan keuangan
+   * berkolom bulan: dua belas kolom angka di kertas tegak jadi terlalu sempit
+   * untuk dibaca, apalagi dipresentasikan. Tepinya ikut ditukar supaya jarak
+   * kiri-kanan tetap terasa sama lebarnya dengan atas-bawah.
+   */
+  landscape = false,
 ): Promise<void> {
-  const { uri } = await Print.printToFileAsync({ html, margins: PAGE_MARGINS });
+  const kertas = landscape ? { width: 792, height: 612 } : {};
+  const tepi = landscape
+    ? { top: 32, right: 36, bottom: 34, left: 36 }
+    : PAGE_MARGINS;
+  const { uri } = await Print.printToFileAsync({ html, margins: tepi, ...kertas });
 
   // expo-print selalu menamai hasilnya acak (cache/Print/<UUID>.pdf), jadi di
   // WhatsApp muncul sebagai "9F3C1A….pdf".

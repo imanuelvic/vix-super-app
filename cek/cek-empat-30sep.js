@@ -248,7 +248,7 @@ console.log('\n=== 2b. 📈 Grafik harga satu layar penuh & bisa dicubit ===');
 }
 
 // =====================================================================
-console.log('\n=== 2c. ✨ Bacaan AI pasar: harian & mingguan ===');
+console.log('\n=== 2c. ✨ Bacaan AI pasar: per aset, harian & mingguan ===');
 // =====================================================================
 {
   // --- Peras deret harga: DIJALANKAN ---
@@ -262,13 +262,17 @@ console.log('\n=== 2c. ✨ Bacaan AI pasar: harian & mingguan ===');
   ok('deret terlalu pendek → null, bukan angka karangan',
     MA.seriesStat([{ date: '2026-08-01', price: 1 }]) === null);
 
-  const brief = MA.marketBrief({ emas: s, btc: s, kurs: s });
-  ok('ringkasannya menyebut ketiga asetnya',
-    /EMAS/.test(brief) && /BITCOIN/.test(brief) && /KURS USD/.test(brief));
+  const brief = MA.marketBrief({ emas: s, btc: s, saham: s, forex: s });
+  ok('ringkasannya menyebut keempat asetnya',
+    /EMAS/.test(brief) && /BITCOIN/.test(brief) && /IHSG/.test(brief) &&
+    /KURS USD ke IDR/.test(brief));
+  // Aset yang datanya belum ada TIDAK dikarang jadi baris kosong.
+  ok('aset tanpa data tidak muncul di ringkasannya',
+    !/IHSG/.test(MA.marketBrief({ emas: s })));
   // Inilah pagar biaya yang sebenarnya: deret 6 bulan itu ratusan titik, dan
   // mengirimnya mentah adalah cara tercepat menghabiskan kuota gratis.
   ok('yang dikirim BELASAN angka, bukan ratusan titik mentah',
-    brief.length < 1200 && !/1050|1120|1240/.test(brief), String(brief.length));
+    brief.length < 1600 && !/1050|1120|1240/.test(brief), String(brief.length));
   ok('satuan titiknya disebut, supaya "30 titik" tidak dibaca "sebulan persis"',
     /satu titik = satu hari perdagangan/.test(brief));
 
@@ -276,36 +280,44 @@ console.log('\n=== 2c. ✨ Bacaan AI pasar: harian & mingguan ===');
   const sinyal = {
     arah: 'naik', keyakinan: 'sedang', ringkas: 'Emas menguat pelan.',
     alasan: ['Naik 3% sebulan.', 'Kurs melemah.'], cermati: 'Kalau kurs berbalik.',
-    aksi: 'Cicil pembelian.',
+    aksi: 'Cicil pembelian.', catatan: 'Bukan nasihat keuangan.',
   };
-  const hasil = MA.finalizeMarketAnalysis({ emas: sinyal, btc: sinyal, catatan: 'Bukan nasihat.' });
+  const hasil = MA.finalizeMarketAnalysis(sinyal);
   ok('jawaban benar terbaca utuh',
-    hasil.emas.arah === 'naik' && hasil.btc.keyakinan === 'sedang' &&
-    hasil.emas.alasan.length === 2);
+    hasil.arah === 'naik' && hasil.keyakinan === 'sedang' && hasil.alasan.length === 2);
   const lempar = (f) => { try { f(); return false; } catch { return true; } };
   ok('arah yang tidak dikenal DITOLAK, bukan diloloskan apa adanya',
-    lempar(() => MA.finalizeMarketAnalysis({ emas: { ...sinyal, arah: 'meroket' }, btc: sinyal })));
+    lempar(() => MA.finalizeMarketAnalysis({ ...sinyal, arah: 'meroket' })));
+  ok('keyakinan yang tidak dikenal juga ditolak',
+    lempar(() => MA.finalizeMarketAnalysis({ ...sinyal, keyakinan: 'yakin banget' })));
   ok('jawaban kosong ditolak', lempar(() => MA.finalizeMarketAnalysis({})));
   ok('alasan dipangkas maksimal 4 baris',
-    MA.finalizeMarketAnalysis({
-      emas: { ...sinyal, alasan: ['a', 'b', 'c', 'd', 'e', 'f'] }, btc: sinyal,
-    }).emas.alasan.length === 4);
+    MA.finalizeMarketAnalysis({ ...sinyal, alasan: ['a', 'b', 'c', 'd', 'e', 'f'] })
+      .alasan.length === 4);
   // Dua aturan gaya app ini ditegakkan di PENYARING, bukan cuma diminta ke
   // model: tanda pisah panjang & emoji.
   const kotor = MA.finalizeMarketAnalysis({
-    emas: { ...sinyal, ringkas: `Emas ${String.fromCharCode(0x2014)} naik 🔥` }, btc: sinyal,
+    ...sinyal, ringkas: `Emas ${String.fromCharCode(0x2014)} naik 🔥`,
   });
   ok('tanda pisah panjang dibersihkan dari jawabannya',
-    !kotor.emas.ringkas.includes(String.fromCharCode(0x2014)), kotor.emas.ringkas);
+    !kotor.ringkas.includes(String.fromCharCode(0x2014)), kotor.ringkas);
   ok('emoji dibuang (lambang arahnya dipasang app sendiri)',
-    !/🔥/.test(kotor.emas.ringkas), kotor.emas.ringkas);
+    !/🔥/.test(kotor.ringkas), kotor.ringkas);
   ok('catatan penutup tidak pernah kosong',
-    MA.finalizeMarketAnalysis({ emas: sinyal, btc: sinyal }).catatan.length > 0);
+    MA.finalizeMarketAnalysis({ ...sinyal, catatan: '' }).catatan.length > 0);
+
+  // Kunci simpanannya memisahkan aset DAN rentang: bacaan emas harian tidak
+  // boleh menimpa bacaan Bitcoin mingguan.
+  ok('bacaan disimpan terpisah per aset & per rentang',
+    MA.kunciBacaan('emas', 'harian') === 'emas|harian' &&
+    MA.kunciBacaan('btc', 'mingguan') === 'btc|mingguan');
 
   // --- Pagar biaya & kejujuran ---
   const src = baca('lib/marketAi.ts');
   ok('lewat pagar bersama lib/aiGuard.ts (dedupe, cooldown, kunci 429)',
     /guardedAiCall\(`market\|/.test(src));
+  ok('kunci pagarnya memuat asetnya, jadi aset berbeda tidak saling menimpa',
+    /`market\|\$\{aset\}\|\$\{rentang\}\|\$\{dayId\}/.test(src));
   ok('punya jatah sendiri per hari, di atas pagar umum',
     /export const MARKET_DAILY_CAP = \d+;/.test(src) && /marketAttemptsLeft/.test(src));
   ok('hasilnya disimpan per hari → membuka tabnya lagi TIDAK memanggil AI lagi',
@@ -315,6 +327,13 @@ console.log('\n=== 2c. ✨ Bacaan AI pasar: harian & mingguan ===');
   ok('tanpa kunci API apa pun di kode', !/AIza[\w-]{10,}|apiKey|API_KEY/.test(src));
   ok('tanpa Vertex AI / Cloud Function (proyek wajib tetap Spark)',
     !/vertex|Vertex|functions|onCall/.test(src));
+  // INI penyebab "Jawaban AI terpotong karena terlalu panjang" yang dilaporkan
+  // pemilik app 1 Okt 2026: Gemini 3.x menghitung token "berpikir" ke dalam
+  // maxOutputTokens, dan 2048 untuk jawaban DUA aset rutin kehabisan di tengah.
+  ok('jawabannya satu aset saja & jatah tokennya dinaikkan (anti-terpotong)',
+    /maxOutputTokens: 4096,/.test(src) &&
+    /Kamu diberi angka EMPAT aset sekaligus, tapi yang kamu jawab HANYA SATU aset/.test(src) &&
+    /JAWABLAH PENDEK/.test(src));
   // Ini bukan penasihat keuangan, dan promptnya harus mengatakannya sendiri.
   ok('prompt melarang angka ramalan yang pasti',
     /JANGAN menyebut angka ramalan yang pasti/.test(src));
@@ -326,28 +345,46 @@ console.log('\n=== 2c. ✨ Bacaan AI pasar: harian & mingguan ===');
   ok('kurs USD ikut dibaca, karena harganya dalam Rupiah',
     /KURS USD ke IDR ikut menggerakkannya/.test(src));
 
-  // --- Layarnya ---
-  const tab = kode('components/investment/AnalysisTab.tsx');
+  // --- Layarnya: panel di DALAM tiap sub-tab, bukan sub-tab sendiri ---
+  const panel = kode('components/investment/AnalysisPanel.tsx');
+  const panelUtuh = baca('components/investment/AnalysisPanel.tsx');
   ok('dua rentang: harian & mingguan',
-    /key: 'harian'/.test(tab) && /key: 'mingguan'/.test(tab));
+    /key: 'harian'/.test(panel) && /key: 'mingguan'/.test(panel));
   ok('beritanya dari RSS publik yang sudah ada, bukan sumber berbayar baru',
-    /fetchNews\('crypto'\)/.test(tab) && /fetchNews\('bloomberg'\)/.test(tab));
+    /fetchNews\('crypto'\)/.test(panel) && /fetchNews\('bloomberg'\)/.test(panel));
   ok('satu sumber berita mati tidak membatalkan bacaannya',
-    /Promise\.allSettled/.test(tab));
-  ok('angka yang dibaca AI ikut ditampilkan, jadi jawabannya bisa diperiksa',
-    /Angka yang dibaca/.test(baca('components/investment/AnalysisTab.tsx')));
+    /Promise\.allSettled/.test(panel));
   ok('sisa jatah hari ini diberitahu terus terang',
-    /Sisa \$\{sisa\} dari \$\{MARKET_DAILY_CAP\} bacaan hari ini/.test(baca('components/investment/AnalysisTab.tsx')));
+    /Sisa \$\{sisa\} dari \$\{MARKET_DAILY_CAP\} bacaan hari ini/.test(panelUtuh));
   ok('jatah habis → tombolnya mati, bukan mencoba lalu gagal',
-    /disabled=\{!pasar \|\| hari === null \|\| sisa === 0\}/.test(tab));
-  ok('peringatan "bukan nasihat keuangan" ada di layarnya sendiri',
-    /BUKAN\s*\n?\s*nasihat\s*\n?\s*keuangan/.test(baca('components/investment/AnalysisTab.tsx')));
-  ok('tabnya terdaftar & ada di pencarian fitur',
-    /\{ key: 'analysis', label: 'Analysis', icon: 'sparkles' \}/.test(baca('app/investment.tsx')) &&
-    /params: \{ tab: 'analysis' \}/.test(baca('lib/featureIndex.ts')));
-  ok('emas, BTC & kurs diambil sekaligus (dibaca bersama, bukan sendiri-sendiri)',
+    /disabled=\{hari === null \|\| sisa === 0\}/.test(panel));
+  // Harga baru diambil saat tombolnya di-click: membuka sub-tab aset tidak
+  // boleh menambah permintaan jaringan apa pun untuk panel ini.
+  ok('tanpa permintaan jaringan sampai tombolnya di-click',
+    /await loadMarketAll\(false\)/.test(panel) && !/useAsyncData/.test(panel));
+  ok('keempat aset dikirim sebagai konteks walau yang dijawab satu',
+    /emas: seriesStat\(pasar\.gold\.series\)/.test(panel) &&
+    /btc: seriesStat\(pasar\.btc\.series\)/.test(panel) &&
+    /saham: seriesStat\(pasar\.ihsg\.series\)/.test(panel) &&
+    /forex: seriesStat\(pasar\.forex\.series\)/.test(panel));
+
+  // Sub-tab Analysis tersendiri DIBUANG — panelnya pindah ke tiap sub-tab aset.
+  ok('tidak ada lagi sub-tab Analysis tersendiri',
+    !fs.existsSync(path.join(ROOT, 'components/investment/AnalysisTab.tsx')) &&
+    !/key: 'analysis'/.test(baca('app/investment.tsx')));
+  const pasarTab = kode('components/investment/MarketTab.tsx');
+  ok('panelnya dipasang MarketTab, jadi keempat sub-tab dapat yang sama',
+    /<AnalysisPanel asset=\{aiAsset\} label=\{aiLabel\} \/>/.test(pasarTab));
+  const aset = ['GoldTab:emas', 'CryptoTab:btc', 'StockTab:saham', 'ForexTab:forex'];
+  ok('tiap sub-tab menyebut asetnya sendiri', aset.every((x) => {
+    const [berkas, kunci] = x.split(':');
+    return new RegExp(`aiAsset="${kunci}"`).test(
+      baca(`components/investment/${berkas}.tsx`));
+  }));
+  ok('keempat aset diambil sekaligus (dibaca bersama, bukan sendiri-sendiri)',
     /export async function loadMarketAll/.test(baca('lib/market.ts')) &&
-    /loadMarketAll/.test(tab));
+    /loadIhsg\(force\)/.test(baca('lib/market.ts')) &&
+    /loadMarketAll/.test(panel));
 }
 
 // =====================================================================
@@ -395,7 +432,7 @@ console.log('\n=== 4. Aturan tetap proyek ===');
   const jalur = [
     'lib/timeline.ts', 'lib/car.ts', 'lib/marketAi.ts', 'lib/market.ts',
     'lib/fun.ts', 'lib/notifyCopy.ts',
-    'components/car/OdometerCard.tsx', 'components/investment/AnalysisTab.tsx',
+    'components/car/OdometerCard.tsx', 'components/investment/AnalysisPanel.tsx',
     'components/investment/ChartFullscreen.tsx', 'components/investment/MarketTab.tsx',
     'components/investment/PriceChart.tsx', 'app/fun.tsx', 'app/investment.tsx',
   ];

@@ -252,7 +252,8 @@ function lanjut3() {
   const F = [
     'app/core-rules.tsx', 'app/debts.tsx', 'app/diseases.tsx', 'app/family.tsx',
     'app/history.tsx', 'app/timeline.tsx', 'app/visitations.tsx',
-    'components/car/LogTab.tsx', 'components/career/AffiliateTab.tsx',
+    // (1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya.)
+    'components/car/LogTab.tsx',
     'components/career/FulltimeTab.tsx', 'components/core/LeadersTab.tsx',
     // 14 Sep sore: form notulen pindah dari MonthlyTab ke layarnya sendiri.
     'app/core/monthly/[id].tsx', 'components/core/MultiplicationTab.tsx',
@@ -272,8 +273,10 @@ function lanjut3() {
     if (b) bersih++;
     if (!a || !b) c(`${f} pindah`, false, `hook=${a} bersih=${b}`);
   }
-  c('18 berkas memanggil useFormSave', pindah === 18, `${pindah}/18`);
-  c('18 berkas tak lagi punya useState busy/formError sendiri', bersih === 18, `${bersih}/18`);
+  // 18 → 17 pada 1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya. Angkanya
+  // turun karena berkasnya memang hilang, BUKAN karena ceknya dilonggarkan.
+  c('17 berkas memanggil useFormSave', pindah === 17, `${pindah}/17`);
+  c('17 berkas tak lagi punya useState busy/formError sendiri', bersih === 17, `${bersih}/17`);
 
   // Badan handleSave-nya: blok lama harus HILANG total di kesembilan belasnya.
   const badan = (s) => {
@@ -297,7 +300,7 @@ function lanjut3() {
   // Penjaga `busy` di baris pertama tidak boleh ikut hilang.
   const berpenjaga = F.filter((f) => /if \([^)]*\bbusy\) return;/.test(badan(baca(f))));
   c('penjaga "sedang sibuk → abaikan" tetap ada di semuanya',
-    berpenjaga.length === 18, `${berpenjaga.length}/18`);
+    berpenjaga.length === 17, `${berpenjaga.length}/17`);
 
   // =====================================================================
   console.log('\n=== 5. Tombol 🗑️ Hapus SENGAJA tidak disentuh ===');

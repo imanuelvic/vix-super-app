@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { type ColorValue } from 'react-native';
 
 import { SHADOW_RAISED } from '@/assets/style/card';
@@ -9,7 +9,6 @@ import { VixText } from '@/components/common/VixText';
 import { HapticTab } from '@/components/haptic-tab';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
-import { subscribeAffiliateIdeas, type ContentIdea } from '@/lib/affiliate';
 import {
   subscribeFreelance,
   subscribeRoadmap,
@@ -31,6 +30,7 @@ import {
   type Visitation,
   type WeeklyFocus,
 } from '@/lib/core';
+import { setAppBadge } from '@/lib/notify';
 import { subscribeTasks, type Task } from '@/lib/tasks';
 
 export const unstable_settings = {
@@ -92,11 +92,6 @@ export default function TabLayout() {
   const [focus, setFocus] = useState<WeeklyFocus>(EMPTY_WEEKLY_FOCUS);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
   const [freelance, setFreelance] = useState<FreelanceProject[]>([]);
-  // Ide konten Affiliate ikut dilanggan di sini (28 Sep 2026): ia punya badge
-  // sub-tab sendiri di layar Work, jadi ia harus ikut ke badge tab Work juga.
-  // Dokumennya sama dengan yang dilanggan layar Work, dan liveDoc memakai
-  // listener bersama → nol pembacaan tambahan.
-  const [ideas, setIdeas] = useState<ContentIdea[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useLiveAll((uid) => [
@@ -107,7 +102,6 @@ export default function TabLayout() {
     subscribeWeeklyFocus(uid, setFocus),
     subscribeRoadmap(uid, setRoadmap),
     subscribeFreelance(uid, setFreelance),
-    subscribeAffiliateIdeas(uid, setIdeas),
     subscribeTasks(uid, setTasks),
   ]);
 
@@ -117,7 +111,20 @@ export default function TabLayout() {
   // lib/career.ts yang menghitungnya SEKALI, dan layar Work memakai fungsi
   // yang sama untuk badge tiap sub-tabnya — jadi "Fulltime 1 · Freelance 1"
   // di atas dan "Work 2" di bawah mustahil berbeda lagi.
-  const workBadge = workAttention({ roadmap, freelance, ideas, tasks, now, todayId }).total;
+  const workBadge = workAttention({ roadmap, freelance, tasks, now, todayId }).total;
+
+  // 🔴 Angka merah di ikon app = JUMLAH kedua badge di atas, bukan angka lain.
+  //
+  // Inilah satu-satunya angka yang bisa dicocokkan sendiri: buka app,
+  // jumlahkan angka merah di kaki layar, hasilnya harus sama dengan yang di
+  // ikon. Sebelum 30 Sep 2026 isinya panjang daftar Today, yang dipangkas ke
+  // TODAY_MAX (7) — jadi ikonnya menempel di 7 dan terlihat seperti macet.
+  //
+  // Di sini, bukan di layar Today: layar ini selalu hidup selama app dibuka,
+  // dan di sinilah kedua angkanya memang dihitung.
+  useEffect(() => {
+    setAppBadge(coreBadge + workBadge).catch(() => {});
+  }, [coreBadge, workBadge]);
 
   return (
     <Tabs

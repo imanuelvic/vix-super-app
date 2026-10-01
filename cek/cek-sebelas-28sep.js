@@ -284,8 +284,13 @@ console.log('\n=== 6. Freelance ⏸️ ditahan client ===');
   ok('kartunya bilang terus terang, dan warnanya netral (bukan merah/kuning)',
     /⏸️ Ditahan client/.test(baca('components/career/FreelanceTab.tsx')) &&
     /p\.done \|\| ditahan \? 'unknown' : deadlineTone\(days\)/.test(baca('components/career/FreelanceTab.tsx')));
-  ok('tidak ikut jadi "yang harus dikirim hari ini" di sub-tab Focus',
-    /!p\.done && !freelanceOnHold\(p\)/.test(baca('components/career/WorkFocusTab.tsx')));
+  // ⚠️ DIARAHKAN ULANG 1 Okt 2026: sub-tab Focus DIHAPUS atas permintaan
+  // pemilik app (isinya cuma mengulang tab Today). Yang diperiksa tetap sama:
+  // proyek yang ditahan client tidak boleh ikut ditagih. Tempatnya sekarang
+  // badge Work, satu-satunya yang masih menagih proyek freelance.
+  ok('yang ditahan client tidak ikut ditagih di badge Work',
+    /freelanceReminderWindow\(p, now\)/.test(baca('lib/career.ts')) &&
+    /if \(freelanceOnHold\(p\)\) return false;/.test(baca('lib/career.ts')));
 }
 
 // ===================================================================
@@ -326,7 +331,6 @@ console.log('\n=== 9. Badge Work: atas & bawah dari satu hitungan ===');
   const a = C.workAttention({
     roadmap: [{ id: 'r', title: 'R', note: '', priority: 1, status: 'progress', deadline: ts(2026, 9, 29) }],
     freelance: [{ id: 'f', name: 'F', client: 'C', requirement: '', fee: 0, done: false, deadline: ts(2026, 9, 29) }],
-    ideas: [{ stage: 'idea' }, { stage: 'posted' }],
     tasks: [
       { done: false, dayId: hariIni, category: 'work' },
       { done: true, dayId: hariIni, category: 'work' },
@@ -337,20 +341,24 @@ console.log('\n=== 9. Badge Work: atas & bawah dari satu hitungan ===');
   });
   // Inilah aturannya, dan inilah yang dulu tidak berlaku: angka di kaki app =
   // jumlah angka yang kelihatan rinciannya di layar Work.
-  ok('total = jumlah keempat pecahannya, tanpa kecuali',
-    a.total === a.fulltime + a.freelance + a.affiliate + a.tasks && a.total === 4,
+  // (1 Okt 2026: pecahannya tinggal TIGA; Affiliate dihapus bersama sub-tabnya.
+  // Aturannya tidak berubah sedikit pun, cuma penjumlahnya yang berkurang satu.)
+  ok('total = jumlah ketiga pecahannya, tanpa kecuali',
+    a.total === a.fulltime + a.freelance + a.tasks && a.total === 3,
     JSON.stringify(a));
   ok('tiap pecahannya benar sendiri-sendiri',
-    a.fulltime === 1 && a.freelance === 1 && a.affiliate === 1 && a.tasks === 1);
+    a.fulltime === 1 && a.freelance === 1 && a.tasks === 1);
+  ok('ide Affiliate benar-benar hilang dari hitungannya',
+    !('affiliate' in a) && !/pendingIdeas/.test(baca('lib/career.ts')));
   ok('task kategori lain & yang sudah selesai tidak ikut terhitung', a.tasks === 1);
   ok('kaki app memakai fungsi yang SAMA, bukan hitungan sendiri',
-    /workAttention\(\{ roadmap, freelance, ideas, tasks, now, todayId \}\)\.total/.test(
+    /workAttention\(\{ roadmap, freelance, tasks, now, todayId \}\)\.total/.test(
       baca('app/(tabs)/_layout.tsx')) &&
     !/roadmap\.filter\(\(r\) => r\.status !== 'done'/.test(baca('app/(tabs)/_layout.tsx')));
   ok('layar Work memakai fungsi yang sama untuk badge sub-tabnya',
     /const perhatian = workAttention\(\{/.test(baca('app/(tabs)/work.tsx')) &&
     /fulltime: perhatian\.fulltime,/.test(baca('app/(tabs)/work.tsx')) &&
-    /affiliate: perhatian\.affiliate,/.test(baca('app/(tabs)/work.tsx')));
+    /freelance: perhatian\.freelance,/.test(baca('app/(tabs)/work.tsx')));
   // Task WORK hari ini tidak punya sub-tab, jadi tanpa badge di tombol 🔔
   // angka kaki app tetap tidak bisa dijumlah dari yang kelihatan.
   ok('task hari ini kelihatan rinciannya di badge tombol 🔔',

@@ -282,7 +282,23 @@ console.log('\n=== 6. Mesinnya sendiri ===');
     /LEGACY_IDS_KEY/.test(nf));
   ok('sakelar lama Finance ikut terbaca, jadi yang sudah menyalakannya tidak mati diam-diam',
     /LEGACY_FINANCE_KEY/.test(nf));
-  ok('angka di ikon app = jumlah baris hari ini', /setBadgeCountAsync\(jumlahHariIni\)/.test(nf));
+  // 1 Okt 2026: angka di ikon app TIDAK lagi dihitung di sini. Dulu isinya
+  // `model.today.length`, yang sudah dipangkas ke TODAY_MAX (7) — jadi begitu
+  // ada tujuh hal atau lebih, ikonnya menempel di 7 selamanya dan terlihat
+  // seperti macet. Sekarang `setAppBadge` dipanggil dari app/(tabs)/_layout.tsx
+  // dengan JUMLAH BADGE YANG KELIHATAN DI DALAM APP (CORE + Work), satu-satunya
+  // angka yang bisa dicocokkan sendiri oleh pemiliknya.
+  ok('angka di ikon app tidak lagi menumpang di penjadwal notifikasi',
+    !/setBadgeCountAsync\(jumlahHariIni\)/.test(nf) &&
+    /export async function setAppBadge/.test(nf));
+  ok('badge-nya tidak ditulis dua kali untuk angka yang sama',
+    /if \(n === badgeTerakhir\) return;/.test(nf));
+  ok('badge ikon = jumlah badge CORE + Work yang kelihatan di dalam app',
+    /setAppBadge\(coreBadge \+ workBadge\)/.test(baca('app/(tabs)/_layout.tsx')));
+  // Mematikan pengingat menolkan angkanya; menyalakannya lagi harus menghitung
+  // ulang, bukan menyangka "sudah sama" dengan angka sebelum dimatikan.
+  ok('mematikan pengingat menolkan angkanya, & sidiknya ikut dilupakan',
+    /setBadgeCountAsync\(0\)/.test(nf) && /badgeTerakhir = -1;/.test(nf));
   ok('izin diminta saat dinyalakan; ditolak → "denied"; tanpa modul → "needs-build"',
     /requestPermissionsAsync\(/.test(nf) && /return 'denied'/.test(nf) && /return 'needs-build'/.test(nf));
   ok('kelompok bawaannya NYALA (dimatikan sendiri = "0")',

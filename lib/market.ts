@@ -240,26 +240,32 @@ export async function loadForex(force = false): Promise<ForexData> {
 }
 
 /**
- * Emas + Bitcoin + kurs sekaligus — bahan mentah sub-tab Analysis ✨.
+ * Keempat aset sekaligus — bahan mentah bacaan AI ✨ di tiap sub-tab.
  *
- * Ketiganya memang harus dibaca BERSAMA: emas & BTC di app ini dihargai dalam
- * Rupiah, jadi sebagian gerakannya sebenarnya gerakan kursnya. Membaca salah
- * satunya sendirian gampang salah kesimpulan ("emas naik" padahal Rupiah yang
- * melemah).
+ * Keempatnya memang harus dibaca BERSAMA walau yang ditanya cuma satu: emas &
+ * BTC di app ini dihargai dalam Rupiah, jadi sebagian gerakannya sebenarnya
+ * gerakan kursnya. Membaca salah satunya sendirian gampang salah kesimpulan
+ * ("emas naik" padahal Rupiah yang melemah).
  *
- * Tidak ada permintaan jaringan tambahan yang mubazir: ketiganya memakai cache
- * 5 menit yang sama dengan tab harganya, jadi membuka Analysis sesudah melihat
- * tab Gold biasanya nol permintaan baru.
+ * Tidak ada permintaan jaringan tambahan yang mubazir: keempatnya memakai
+ * cache 5 menit yang sama dengan tab harganya, dan ia baru dipanggil saat
+ * tombol ✨ di-click, bukan saat tabnya dibuka.
  */
-export type MarketAll = { gold: GoldData; btc: BtcData; forex: ForexData };
+export type MarketAll = {
+  gold: GoldData;
+  btc: BtcData;
+  ihsg: StockData;
+  forex: ForexData;
+};
 
 export async function loadMarketAll(force = false): Promise<MarketAll> {
-  const [gold, btc, forex] = await Promise.all([
+  const [gold, btc, ihsg, forex] = await Promise.all([
     loadGold(force),
     loadBtc(force),
+    loadIhsg(force),
     loadForex(force),
   ]);
-  return { gold, btc, forex };
+  return { gold, btc, ihsg, forex };
 }
 
 // Bentuk minimal respons Yahoo yang kita pakai (bagian lain diabaikan).

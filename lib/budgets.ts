@@ -317,6 +317,96 @@ export function saveCategoryBudget(
   return setDoc(ref, { allocations }, { merge: true });
 }
 
+// ============ Menerapkan satu rencana budget sekaligus 🤖 ============
+//
+// Dipakai tombol Rekomendasi AI di sub-tab Budgeting (lihat lib/budgetAi.ts):
+// sesudah usulannya disetujui, SELURUH kategori satu jenis ditulis dalam SATU
+// tulisan, bukan satu per satu per kategori.
+//
+// Yang paling mudah terlewat di sini: kategori yang punya sub-budget. Di layar
+// Budgeting, budget kategori yang punya sub = TOTAL semua sub-nya (satu sumber
+// angka, tidak boleh bisa berbeda). Jadi menimpa angka kategorinya saja akan
+// memutus hubungan itu diam-diam: layarnya menampilkan satu angka, jumlah
+// sub-nya angka lain. Karena itu sub-nya ikut DIBAGI ULANG menurut
+// perbandingannya sekarang.
+
+/**
+ * Bagi `target` ke beberapa nominal MENURUT PERBANDINGANNYA sekarang.
+ * Jumlah hasilnya dijamin PERSIS `target`, dan tidak ada yang negatif.
+ *
+ * Dibulatkan ke ribuan supaya angkanya tetap enak dibaca; sisa pembulatannya
+ * ditimpakan ke nominal terbesar dulu, lalu menurun, jadi penyesuaiannya
+ * jatuh di tempat yang paling tidak terasa.
+ */
+export function scaleAmounts(values: number[], target: number): number[] {
+  if (values.length === 0) return [];
+  const total = values.reduce((a, b) => a + b, 0);
+  if (total <= 0 || target <= 0) return values.map(() => 0);
+
+  const KELIPATAN = 1000;
+  const hasil = values.map((v) =>
+    Math.max(0, Math.round((v * target) / total / KELIPATAN) * KELIPATAN),
+  );
+
+  let sisa = target - hasil.reduce((a, b) => a + b, 0);
+  if (sisa !== 0) {
+    // Urut dari nominal terbesar: yang besar paling sanggup menanggung
+    // selisihnya tanpa berubah artinya.
+    const urutan = hasil.map((_, i) => i).sort((a, b) => hasil[b] - hasil[a]);
+    for (const i of urutan) {
+      if (sisa === 0) break;
+      const baru = Math.max(0, hasil[i] + sisa);
+      sisa -= baru - hasil[i];
+      hasil[i] = baru;
+    }
+  }
+  return hasil;
+}
+
+/** Nominal satu sub-budget sekarang. */
+export type SubAmount = { key: string; amount: number };
+
+/**
+ * Susun tambalan map `allocations` dari sebuah rencana (kategori → nominal).
+ * MURNI: tidak menyentuh Firestore, jadi angkanya bisa diuji apa adanya.
+ *
+ * `subs` = sub-budget yang sudah ada per kategori. Yang nominalnya 0 tidak
+ * ikut dibagi: sub yang memang belum pernah diisi tidak boleh tiba-tiba
+ * kebagian angka hanya karena budget kategorinya berubah.
+ */
+export function budgetPlanPatch(
+  type: FinanceType,
+  plan: { key: string; amount: number }[],
+  subs: Record<string, SubAmount[]>,
+): BudgetMap {
+  const out: BudgetMap = {};
+  for (const baris of plan) {
+    out[budgetKey(type, baris.key)] = baris.amount;
+    const terisi = (subs[baris.key] ?? []).filter((s) => s.amount > 0);
+    if (terisi.length === 0) continue;
+    const baru = scaleAmounts(
+      terisi.map((s) => s.amount),
+      baris.amount,
+    );
+    terisi.forEach((s, i) => {
+      out[subBudgetKey(type, baris.key, s.key)] = baru[i];
+    });
+  }
+  return out;
+}
+
+/** Tulis tambalan dari `budgetPlanPatch` — SATU tulisan untuk seluruh jenis. */
+export function applyBudgetPlan(
+  uid: string,
+  year: number,
+  month: number,
+  patch: BudgetMap,
+) {
+  const ref = doc(db, 'users', uid, 'budgets', monthId(year, month));
+  // merge: true → alokasi jenis lain (dan sub yang tidak disentuh) tetap utuh.
+  return setDoc(ref, { allocations: patch }, { merge: true });
+}
+
 // ==================== Sub-kategori (sub-budget) ====================
 // Contoh: Groceries → "Telur", "Beras", "Sabun". Dipakai dua tempat:
 //   • Budgeting  → tiap sub punya nominal budget sendiri per bulan

@@ -40,6 +40,10 @@ export type Fund = {
 // Bersihkan datanya sendiri di Firebase Console kalau memang mau hilang total.
 // (Home 🏘️ & Car 🚗 dibuang atas permintaan — 24 Agustus 2026.)
 export const FUNDS: Fund[] = [
+  // 🚨 Emergency Fund punya LAYARNYA SENDIRI (app/emergency-fund.tsx) dengan
+  // target & kemajuan, tapi mutasinya dompet biasa seperti yang lain. Dua
+  // layar, SATU data: menabung dari layar mana pun hasilnya sama.
+  { key: 'emergency', label: 'Emergency', icon: '🚨' },
   { key: 'vacation', label: 'Vacation', icon: '🛩️' },
   { key: 'self-reward', label: 'Self-Reward', icon: '🏆' },
   { key: 'impulsive', label: 'Impulsive', icon: '🤑' },

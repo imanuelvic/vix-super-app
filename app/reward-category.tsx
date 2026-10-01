@@ -213,7 +213,6 @@ const styles = StyleSheet.create({
   // ===== Kartu rincian lencana terpilih =====
   pickedCard: {
     ...CARD,
-    padding: 12,
     marginTop: 16,
     gap: 4,
   },

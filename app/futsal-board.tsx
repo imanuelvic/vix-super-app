@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD } from '@/assets/style/card';
+import { CARD_SHAPE } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_SAFE } from '@/assets/style/layout';
 import { EmptyText } from '@/components/common/EmptyText';
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
   per: { color: Color.TEXT_PLACEHOLDER },
   sisa: { color: Color.TEXT_PLACEHOLDER, marginTop: 6 },
-  papan: { ...CARD, paddingVertical: 4 },
+  papan: { ...CARD_SHAPE, paddingHorizontal: 14, paddingVertical: 4 },
   papanRow: {
     flexDirection: 'row',
     alignItems: 'center',

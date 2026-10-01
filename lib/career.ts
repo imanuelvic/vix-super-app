@@ -5,15 +5,19 @@ import {
     type FirestoreError,
 } from 'firebase/firestore';
 
-import { pendingIdeas, type ContentIdea } from './affiliate';
 import { db } from './firebase';
 import { liveDoc } from './liveDoc';
 
 // Career 💼 — "topi" pekerjaan pemilik app:
 // 1) Fulltime : Software Engineer / Mobile Developer di NDC → roadmap prioritas
 // 2) Freelance : proyek website & aplikasi → client, deadline, requirement, fee
-// 3) Affiliate : ide konten & endorse (lihat lib/affiliate.ts)
-// 4) Business  : es cendol & roa Manado (masih coming soon)
+// 3) Business  : es cendol & roa Manado (masih coming soon)
+//
+// Affiliate (ide konten & endorse) DIHAPUS TOTAL 1 Okt 2026 atas permintaan
+// pemilik app, bersama sub-tab Focus. Dokumen lamanya di
+// users/{uid}/career/affiliate tidak ikut terhapus dari Firestore (app ini
+// tidak punya tugas latar belakang), jadi ia tinggal di sana tanpa bisa
+// dibuka dari layar mana pun.
 //
 // Penyimpanan hemat: SATU dokumen per bidang di users/{uid}/career/*.
 
@@ -185,42 +189,34 @@ export function freelanceReminderWindow(
 // Dulu angkanya dihitung DUA KALI: sekali di app/(tabs)/_layout.tsx untuk
 // badge tab Work di kaki app, sekali lagi di app/(tabs)/work.tsx untuk badge
 // tiap sub-tab. Dua hitungan dari dua daftar bahan yang tidak sama persis,
-// jadi hasilnya memang berbeda: kaki app menghitung task WORK hari ini tapi
-// TIDAK menghitung ide Affiliate; sub-tabnya justru kebalikannya. Di layar,
-// "Fulltime 1 · Freelance 1" duduk tepat di atas "Work 3", dan tidak ada cara
-// membaca selisihnya.
+// jadi hasilnya memang berbeda, dan di layar tidak ada cara membaca selisihnya.
 //
 // Sekarang satu fungsi, satu jawaban. Aturannya: **angka di kaki app = jumlah
 // angka yang kelihatan rinciannya di layar Work**, tanpa kecuali. Task WORK
 // hari ini tidak punya sub-tab (layarnya dibuka lewat tombol 🔔 di pojok
 // kanan), jadi tombol itulah yang memakai badge `tasks` — dengan begitu
-// keempat pecahannya benar-benar terlihat dan bisa dijumlah sendiri.
+// ketiga pecahannya benar-benar terlihat dan bisa dijumlah sendiri.
 
 export type WorkAttention = {
   /** P1 roadmap yang belum selesai. */
   fulltime: number;
   /** Proyek freelance yang tenggatnya ≤ H-7 (yang ditahan client tidak ikut). */
   freelance: number;
-  /** Ide konten yang belum tayang. */
-  affiliate: number;
   /** Task kategori WORK hari ini yang belum dicentang (tombol 🔔). */
   tasks: number;
-  /** Jumlah keempatnya — inilah badge tab Work di kaki app. */
+  /** Jumlah ketiganya — inilah badge tab Work di kaki app. */
   total: number;
 };
 
 export function workAttention({
   roadmap,
   freelance,
-  ideas,
   tasks,
   now,
   todayId,
 }: {
   roadmap: RoadmapItem[];
   freelance: FreelanceProject[];
-  /** Ide konten Affiliate — aturan "belum tayang" milik lib/affiliate. */
-  ideas: ContentIdea[];
   /** Task harian — cukup ketiga kolom ini, jadi lib ini tak perlu impor. */
   tasks: { done: boolean; dayId: string; category: string }[];
   now: Date;
@@ -232,17 +228,13 @@ export function workAttention({
   const freelanceCount = freelance.filter((p) =>
     freelanceReminderWindow(p, now),
   ).length;
-  // Aturannya dipanggil dari lib/affiliate, bukan disalin ke sini: kalau
-  // "belum tayang" suatu saat berubah artinya, ia harus berubah di SATU tempat.
-  const affiliate = pendingIdeas(ideas);
   const tasksCount = tasks.filter(
     (t) => !t.done && t.dayId === todayId && t.category === 'work',
   ).length;
   return {
     fulltime,
     freelance: freelanceCount,
-    affiliate,
     tasks: tasksCount,
-    total: fulltime + freelanceCount + affiliate + tasksCount,
+    total: fulltime + freelanceCount + tasksCount,
   };
 }

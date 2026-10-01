@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { CARD } from '@/assets/style/card';
+import { CARD_SHAPE } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { CenterDialog } from '@/components/common/CenterDialog';
 import { EmojiButton } from '@/components/common/EmojiButton';
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   updated: { marginTop: 2, marginBottom: 10 },
   empty: { color: Color.TEXT_PARAGRAPH },
   rows: {
-    ...CARD,
+    ...CARD_SHAPE,
     paddingHorizontal: 14,
     paddingVertical: 4,
   },

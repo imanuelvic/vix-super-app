@@ -141,7 +141,6 @@ const styles = StyleSheet.create({
   },
   quickCard: {
     ...CARD,
-    padding: 14,
     gap: 4,
     marginBottom: 10,
   },

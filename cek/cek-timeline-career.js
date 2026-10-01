@@ -180,13 +180,14 @@ const dash = baca('app/reminders.tsx');
 
   const blok = /const TABS[^=]*= \[([\s\S]*?)\n\];/.exec(layarCareer);
   const kunci = [...blok[1].matchAll(/key: '([^']+)'/g)].map((m) => m[1]);
-  // 22 Sep 2026: tab Work menambah 'focus' di depan; insurance tetap tiada.
-  c('insurance tetap tiada; urutan empat topi tetap (didahului Focus)',
-    kunci.join(' · ') === 'focus · fulltime · freelance · affiliate · business',
+  // 1 Okt 2026: 'focus' & 'affiliate' dihapus permanen atas permintaan pemilik
+  // app, menyusul 'insurance' yang sudah lebih dulu tiada. Yang dijaga tetap
+  // sama: daftarnya persis segitu, tidak ada tab hantu yang diam-diam kembali.
+  c('insurance/focus/affiliate tetap tiada; tinggal tiga topi',
+    kunci.join(' · ') === 'fulltime · freelance · business',
     kunci.join(' · '));
   c('tipe CareerTab ikut (bukan cuma daftarnya)',
-    /type CareerTab = 'focus' \| 'fulltime' \| 'freelance' \| 'affiliate' \| 'business';/
-      .test(layarCareer));
+    /type CareerTab = 'fulltime' \| 'freelance' \| 'business';/.test(layarCareer));
 
   for (const [nama, src] of [
     ['app/(tabs)/work.tsx', layarCareer],
@@ -210,8 +211,12 @@ const dash = baca('app/reminders.tsx');
   // workAttention di lib/career.ts). Dokumennya SAMA dengan yang sudah
   // dilanggan Today & kaki app, dan liveDoc memakai listener bersama, jadi
   // tidak ada pembacaan Firestore tambahan.
-  c('layar Career tinggal empat langganan (roadmap, freelance, ide affiliate, task)',
-    langgananCareer.length === 4, langgananCareer.join(' · '));
+  // 1 Okt 2026: langganan ide Affiliate ikut dibuang bersama sub-tabnya, jadi
+  // tinggal tiga. Satu langganan = satu pembacaan Firestore terus-menerus,
+  // dan angka ini yang membuktikan ia benar-benar berkurang, bukan cuma
+  // namanya yang hilang dari layar.
+  c('layar Career tinggal tiga langganan (roadmap, freelance, task)',
+    langgananCareer.length === 3, langgananCareer.join(' · '));
 
   // =================================================================
   console.log('\n== 4. Tak ada pintu yang menuju tab yang sudah tiada ==');
@@ -227,10 +232,11 @@ const dash = baca('app/reminders.tsx');
   c('semua ?tab=… kartu Produktif menunjuk tab Career yang benar-benar ada',
     tujuan.length > 0 && tujuan.every((t) => kunci.includes(t)),
     tujuan.join(' · '));
-  c('saran pengganti asuransi memakai tab yang memang menghasilkan (affiliate)',
-    /tab: 'affiliate', text: '📣/.test(dash));
-  c('sarannya tetap tiga (kartunya tidak jadi kosong sebelah)',
-    (dash.match(/id: 'pg-\d'/g) ?? []).length === 3);
+  // Saran 'affiliate' ikut dibuang 1 Okt 2026 — yang penting bukan jumlahnya,
+  // tapi bahwa tidak ada saran yang menunjuk tab yang sudah tiada (sudah
+  // dijaga cek di atas: semua ?tab=… harus ada di `kunci`).
+  c('sarannya tinggal dua, dan keduanya menunjuk tab yang masih ada',
+    (dash.match(/id: 'pg-\d'/g) ?? []).length === 2);
 
   // =================================================================
   console.log('\n== 5. Yang SENGAJA tidak ikut dihapus ==');

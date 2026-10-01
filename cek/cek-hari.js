@@ -160,9 +160,17 @@ ok('baris "Buka di Google Maps" sudah dibuang',
   !/Buka di Google Maps/.test(info) && !/addressLink/.test(info));
 ok('penandanya garis tepi warna tile Residence di Home (HOUSE_DARK)',
   /addressCard: \{[\s\S]{0,400}?borderColor: Color\.HOUSE_DARK/.test(info));
+// 30 Sep 2026: kedua kartu lainnya memakai token bentuk bersama (CARD_SHAPE &
+// CARD) — dulu keempat propertinya ditulis tangan di sini. Yang dijaga tetap
+// sama: cuma kartu ALAMAT yang bergaris warna, sisanya garis BORDER polos.
+// Dicek lewat tokennya supaya tetap benar walau nilainya suatu saat berubah
+// di satu tempat.
 ok('kartu lain di layar ini tetap bergaris tepi BORDER polos',
-  /detailCard: \{[\s\S]{0,200}?borderColor: Color\.BORDER/.test(info) &&
-  /tipsCard: \{[\s\S]{0,200}?borderColor: Color\.BORDER/.test(info));
+  /detailCard: \{\s*\n\s*\.\.\.CARD_SHAPE,/.test(info) &&
+  /tipsCard: \{\s*\n\s*\.\.\.CARD,/.test(info) &&
+  !/detailCard: \{[\s\S]{0,200}?borderColor: Color\.(?!BORDER)/.test(info) &&
+  !/tipsCard: \{[\s\S]{0,200}?borderColor: Color\.(?!BORDER)/.test(info) &&
+  /borderColor: Color\.BORDER,/.test(baca('assets/style/card.ts')));
 ok('alamat tulisannya tidak diubah',
   /Jl\. Casa Cluster Gladiola Blok G5 No\.6/.test(res));
 

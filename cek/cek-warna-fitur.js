@@ -182,12 +182,13 @@ c(
   kontras(Color.CAREER_DARK, Color.CONTAINER) >= 4.5,
   `kontras ${kontras(Color.CAREER_DARK, Color.CONTAINER).toFixed(2)}`,
 );
-const affiliate = baca('components/career/AffiliateTab.tsx');
+// (1 Okt 2026: AffiliateTab dihapus bersama sub-tabnya, jadi tinggal satu
+// tulisan Career yang memakai warna ini. Yang dijaga tetap sama: warnanya
+// tidak boleh jadi token nganggur.)
 const fulltime = baca('components/career/FulltimeTab.tsx');
 c(
-  'dua tulisan Career yang memakainya masih ada (🛍️ produk & 📥 backlog)',
-  /product: \{ color: Color\.CAREER_DARK \}/.test(affiliate) &&
-    /backlog: \{ color: Color\.CAREER_DARK \}/.test(fulltime),
+  'tulisan Career yang memakainya masih ada (📥 backlog)',
+  /backlog: \{ color: Color\.CAREER_DARK \}/.test(fulltime),
 );
 
 console.log('\n== 3. Rute mana milik fitur mana ==');

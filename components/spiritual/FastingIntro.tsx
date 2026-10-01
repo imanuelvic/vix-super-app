@@ -213,7 +213,6 @@ const styles = StyleSheet.create({
   paragraf: { color: Color.TEXT_PARAGRAPH },
   pilihan: {
     ...CARD,
-    padding: 14,
     gap: 4,
   },
   // Yang dipilih jadi ungu pekat — satu saja, jadi tidak pernah ada dua kartu

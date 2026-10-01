@@ -720,7 +720,6 @@ export default function DashboardScreen() {
   if (productivity.length === 0) {
     productivity.push(
       { id: 'pg-1', tab: 'freelance', text: '🌐 Cari / follow up 1 proyek freelance baru' },
-      { id: 'pg-2', tab: 'affiliate', text: '📣 Bikin 1 ide konten affiliate baru' },
       { id: 'pg-3', tab: 'business', text: '🍧 Kembangkan ide bisnis (es cendol & roa)' },
     );
   }

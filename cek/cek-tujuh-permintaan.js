@@ -187,11 +187,12 @@ console.log('\n=== 3. Satu komponen untuk SEMUA baris chip yang digeser ===');
       !/horizontal\s*\n\s*showsHorizontalScrollIndicator/.test(s));
   }
 
-  // FilterChips menyentuh 6 layar sekaligus.
+  // FilterChips menyentuh 5 layar sekaligus (dulu 6; AffiliateTab dihapus
+  // bersama sub-tabnya 1 Okt 2026).
   const enam = ['app/history.tsx', 'app/visitations.tsx',
-    'components/career/AffiliateTab.tsx', 'components/learning/DiscussionTab.tsx',
+    'components/learning/DiscussionTab.tsx',
     'components/friends/PlacesTab.tsx', 'components/tasks/PriorityTab.tsx'];
-  c('6 layar ikut kebagian lewat FilterChips tanpa diubah satu pun',
+  c('5 layar ikut kebagian lewat FilterChips tanpa diubah satu pun',
     enam.every((f) => /<FilterChips/.test(baca(f))), enam.length + ' layar');
 
   // Chip kategori Reminder punya badge & jadi sasaran seret — harus tetap utuh.

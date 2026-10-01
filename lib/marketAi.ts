@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Schema } from 'firebase/ai';
 
+import { aiDayStore, sisaJatah } from './aiDay';
 import { guardedAiCall } from './aiGuard';
 import { GAYA_BAHASA, tanpaEmoji } from './aiStyle';
 import {
@@ -16,10 +16,20 @@ import type { MarketPoint } from './market';
 // ✨ Analysis — pembaca pasar untuk fitur Investment 📈.
 //
 // Yang dilakukannya: mengambil deret harga enam bulan yang MEMANG SUDAH ada di
-// app (emas, Bitcoin, kurs USD/IDR), memerasnya jadi belasan angka, menambahkan
-// judul berita kripto & bisnis terbaru, lalu meminta Gemini membaca keduanya
-// bersama-sama dan menjawab dalam bentuk tetap: arah, seberapa yakin, alasan,
-// apa yang dicermati, dan apa yang masuk akal dilakukan.
+// app (emas, Bitcoin, IHSG, kurs USD/IDR), memerasnya jadi belasan angka,
+// menambahkan judul berita kripto & bisnis terbaru, lalu meminta Gemini
+// membaca keduanya bersama-sama dan menjawab dalam bentuk tetap: arah,
+// seberapa yakin, alasan, apa yang dicermati, dan apa yang masuk akal
+// disiapkan.
+//
+// ── SATU aset per permintaan (1 Okt 2026) ─────────────────────────────────
+// Semula satu jawaban memuat emas DAN Bitcoin sekaligus, dan itu terlalu
+// panjang: Gemini 3.x menghitung token "berpikir" ke dalam maxOutputTokens,
+// jadi jawabannya rutin terpotong di tengah ("MAX_TOKENS") dan yang sampai ke
+// layar cuma pesan galat. Sekarang tiap sub-tab bertanya tentang ASETNYA
+// SENDIRI, jawabannya seperempat panjangnya, dan jatah tokennya dinaikkan dua
+// kali lipat. Angkanya tetap dikirim lengkap keempat aset, karena membaca satu
+// aset tanpa melihat kursnya memang gampang salah kesimpulan.
 //
 // ── Kenapa angkanya diperas dulu, bukan dikirim mentah ────────────────────
 // Deret enam bulan itu ±130 titik per aset. Dikirim apa adanya, satu
@@ -35,8 +45,8 @@ import type { MarketPoint } from './market';
 // layanan berbayar di jalur ini.
 //
 // Tiga lapis penahan pemakaian:
-//   1. Hasilnya DISIMPAN per hari per rentang (AsyncStorage). Membuka tabnya
-//      lagi tidak memanggil AI lagi, seharian.
+//   1. Hasilnya DISIMPAN per hari per aset per rentang (AsyncStorage).
+//      Membuka tabnya lagi tidak memanggil AI lagi, seharian.
 //   2. Jatah sendiri: MARKET_DAILY_CAP panggilan per hari untuk fitur ini.
 //   3. Pagar umum lib/aiGuard.ts di bawahnya (dedupe, cooldown, kunci 429,
 //      batas harian seluruh app).
@@ -47,6 +57,16 @@ import type { MarketPoint } from './market';
 // dan mewajibkan menyebut apa yang bisa membuat bacaannya meleset.
 
 export type MarketHorizon = 'harian' | 'mingguan';
+
+/** Aset yang bisa dibacakan — satu per sub-tab Investment. */
+export type MarketAsset = 'emas' | 'btc' | 'saham' | 'forex';
+
+export const MARKET_ASSET_LABEL: Record<MarketAsset, string> = {
+  emas: 'EMAS (per gram, Rupiah)',
+  btc: 'BITCOIN (1 BTC, Rupiah)',
+  saham: 'IHSG (poin indeks)',
+  forex: 'KURS USD ke IDR (Rupiah per 1 USD)',
+};
 
 export type MarketArah = 'naik' | 'turun' | 'sideways';
 export type MarketKeyakinan = 'rendah' | 'sedang' | 'tinggi';
@@ -63,17 +83,18 @@ export type MarketSignal = {
   cermati: string;
   /** Apa yang masuk akal dilakukan, tanpa menyuruh beli atau jual. */
   aksi: string;
-};
-
-export type MarketAnalysis = {
-  emas: MarketSignal;
-  btc: MarketSignal;
   /** Satu kalimat penutup yang jujur soal batas bacaan ini. */
   catatan: string;
 };
 
-/** Jatah panggilan AI Analysis per hari (harian + mingguan + satu ulangan). */
-export const MARKET_DAILY_CAP = 3;
+/**
+ * Jatah panggilan AI Analysis per hari.
+ *
+ * Enam, bukan tiga: sejak bacaannya per aset, satu hari yang wajar = emas &
+ * Bitcoin di rentang harian (2) plus satu dua bacaan mingguan atau aset lain.
+ * Masih jauh di bawah batas 30 per hari milik pagar umum lib/aiGuard.ts.
+ */
+export const MARKET_DAILY_CAP = 6;
 
 /** Berapa judul berita yang ikut dikirim. Cukup untuk konteks, bukan kliping. */
 export const MARKET_NEWS_LIMIT = 12;
@@ -134,10 +155,10 @@ const pct = (n: number | null): string =>
 
 const bulat = (n: number): string => Math.round(n).toLocaleString('id-ID');
 
-function blok(nama: string, satuan: string, s: SeriesStat): string {
+function blok(nama: string, s: SeriesStat): string {
   return [
     `${nama}:`,
-    `- sekarang ${bulat(s.now)} ${satuan}`,
+    `- sekarang ${bulat(s.now)}`,
     `- 1 titik terakhir ${pct(s.d1)}, 7 titik ${pct(s.d7)}, 30 titik ${pct(s.d30)}, seluruh 6 bulan ${pct(s.d180)}`,
     `- tertinggi 6 bulan ${bulat(s.high)}, terendah ${bulat(s.low)}`,
     `- posisi sekarang ${s.pos.toFixed(0)} dari 100 di rentang itu (0 = terendah, 100 = tertinggi)`,
@@ -145,17 +166,14 @@ function blok(nama: string, satuan: string, s: SeriesStat): string {
 }
 
 /** Bahan angka untuk promptnya. MURNI, jadi suite bisa memeriksanya langsung. */
-export function marketBrief(input: {
-  emas: SeriesStat | null;
-  btc: SeriesStat | null;
-  kurs: SeriesStat | null;
-}): string {
+export function marketBrief(input: Partial<Record<MarketAsset, SeriesStat | null>>): string {
   const bagian: string[] = [
     'Data harga 6 bulan terakhir (satu titik = satu hari perdagangan, jadi 30 titik kira-kira 6 minggu kalender):',
   ];
-  if (input.emas) bagian.push(blok('EMAS (per gram)', 'Rupiah', input.emas));
-  if (input.btc) bagian.push(blok('BITCOIN (1 BTC)', 'Rupiah', input.btc));
-  if (input.kurs) bagian.push(blok('KURS USD ke IDR', 'Rupiah per 1 USD', input.kurs));
+  for (const aset of ['emas', 'btc', 'saham', 'forex'] as MarketAsset[]) {
+    const s = input[aset];
+    if (s) bagian.push(blok(MARKET_ASSET_LABEL[aset], s));
+  }
   return bagian.join('\n\n');
 }
 
@@ -166,9 +184,11 @@ const RENTANG_TEKS: Record<MarketHorizon, string> = {
   mingguan: 'satu sampai dua pekan ke depan',
 };
 
-const SYSTEM = `Kamu membantu satu orang Indonesia (bukan pedagang profesional) MEMBACA pasar emas dan Bitcoin dari data yang dia punya sendiri. Dia memantau harganya lewat aplikasi pribadinya dan sedang belajar mengenali kapan harga sedang murah dan kapan sedang mahal.
+const SYSTEM = `Kamu membantu satu orang Indonesia (bukan pedagang profesional) MEMBACA pasar dari data yang dia punya sendiri. Dia memantau harganya lewat aplikasi pribadinya dan sedang belajar mengenali kapan harga sedang murah dan kapan sedang mahal.
 
-Yang kamu kerjakan: membaca angka yang diberikan, menghubungkannya dengan judul berita yang diberikan, lalu menyebut arah yang PALING MASUK AKAL beserta alasannya.
+Kamu diberi angka EMPAT aset sekaligus, tapi yang kamu jawab HANYA SATU aset yang disebut di pertanyaannya. Tiga lainnya cuma konteks.
+
+Yang kamu kerjakan: membaca angka yang diberikan, menghubungkannya dengan judul berita yang diberikan, lalu menyebut arah yang PALING MASUK AKAL untuk aset itu beserta alasannya.
 
 Aturan yang tidak boleh dilanggar:
 - JANGAN menyebut angka ramalan yang pasti. Dilarang menulis "besok Rp2.500.000" atau "akan naik 5%". Yang boleh: arah, dan kira-kira seberapa kuat.
@@ -178,22 +198,22 @@ Aturan yang tidak boleh dilanggar:
 - Emas dan Bitcoin dihargai dalam Rupiah di sini, jadi KURS USD ke IDR ikut menggerakkannya. Kalau kurs sedang bergerak kencang, sebut itu.
 - Keyakinan "tinggi" hanya kalau beberapa hal menunjuk arah yang sama sekaligus. Kalau ragu, pilih yang lebih rendah.
 
-Bentuk tiap kolom:
+Bentuk tiap kolom. JAWABLAH PENDEK, ini dibaca di layar HP:
 - arah: persis salah satu dari "naik", "turun", "sideways".
 - keyakinan: persis salah satu dari "rendah", "sedang", "tinggi".
 - ringkas: SATU kalimat, maksimal 15 kata.
-- alasan: 2 sampai 4 baris, satu kalimat per baris, maksimal 15 kata per baris. Sebut angkanya kalau ada.
-- cermati: satu kalimat, apa yang bisa membuat bacaan ini meleset atau angka yang perlu dia lihat.
-- aksi: satu kalimat, hal yang bisa dia siapkan. Bukan perintah beli atau jual.
-- catatan: satu kalimat penutup yang jujur bahwa ini bacaan dari data terbatas, bukan nasihat keuangan.
+- alasan: 2 sampai 3 baris, satu kalimat per baris, maksimal 15 kata per baris. Sebut angkanya kalau ada.
+- cermati: SATU kalimat, maksimal 20 kata: apa yang bisa membuat bacaan ini meleset atau angka yang perlu dia lihat.
+- aksi: SATU kalimat, maksimal 20 kata: hal yang bisa dia siapkan. Bukan perintah beli atau jual.
+- catatan: SATU kalimat pendek yang jujur bahwa ini bacaan dari data terbatas, bukan nasihat keuangan.
 
 ${GAYA_BAHASA}
 
 Aturan emoji: JANGAN memakai emoji sama sekali. Aplikasinya sendiri yang memasang lambang arah dan warnanya.
 
-Kembalikan JSON dengan kunci: emas, btc, catatan.`;
+Kembalikan JSON dengan kunci: arah, keyakinan, ringkas, alasan, cermati, aksi, catatan.`;
 
-const SINYAL = Schema.object({
+const SKEMA = Schema.object({
   properties: {
     arah: Schema.enumString({ enum: ['naik', 'turun', 'sideways'] }),
     keyakinan: Schema.enumString({ enum: ['rendah', 'sedang', 'tinggi'] }),
@@ -201,11 +221,8 @@ const SINYAL = Schema.object({
     alasan: Schema.array({ items: Schema.string() }),
     cermati: Schema.string(),
     aksi: Schema.string(),
+    catatan: Schema.string(),
   },
-});
-
-const SKEMA = Schema.object({
-  properties: { emas: SINYAL, btc: SINYAL, catatan: Schema.string() },
 });
 
 function model(nama: string) {
@@ -215,7 +232,11 @@ function model(nama: string) {
       // Rendah: ini membaca angka, bukan menulis puisi. Jawaban yang "kreatif"
       // di sini justru berarti mengarang.
       temperature: 0.3,
-      maxOutputTokens: 2048,
+      // 4096, bukan 2048: Gemini 3.x menghitung token "berpikir" ke dalam
+      // jatah ini, dan dengan 2048 jawabannya rutin terpotong di tengah
+      // (finishReason MAX_TOKENS) sehingga yang sampai ke layar cuma pesan
+      // galat. Jawabannya sendiri cuma ±80 kata; sisanya ruang berpikir.
+      maxOutputTokens: 4096,
       responseMimeType: 'application/json',
       responseSchema: SKEMA,
     },
@@ -233,8 +254,9 @@ function kalimat(v: unknown): string {
   return tanpaEmoji(stripEmDash(v).replace(/^["“”']+|["“”']+$/g, '')).trim();
 }
 
-function bacaSinyal(v: unknown): MarketSignal {
-  const o = (v ?? {}) as Record<string, unknown>;
+/** Jawaban mentah Gemini → bentuk yang dipakai layar. Melempar kalau rusak. */
+export function finalizeMarketAnalysis(jawaban: unknown): MarketSignal {
+  const o = (jawaban ?? {}) as Record<string, unknown>;
   const arah = ARAH.find((a) => a === o.arah);
   const keyakinan = KEYAKINAN.find((k) => k === o.keyakinan);
   const ringkas = kalimat(o.ringkas);
@@ -252,15 +274,6 @@ function bacaSinyal(v: unknown): MarketSignal {
     alasan,
     cermati: kalimat(o.cermati),
     aksi: kalimat(o.aksi),
-  };
-}
-
-/** Jawaban mentah Gemini → bentuk yang dipakai layar. Melempar kalau rusak. */
-export function finalizeMarketAnalysis(jawaban: unknown): MarketAnalysis {
-  const o = (jawaban ?? {}) as Record<string, unknown>;
-  return {
-    emas: bacaSinyal(o.emas),
-    btc: bacaSinyal(o.btc),
     catatan:
       kalimat(o.catatan) ||
       'Ini bacaan dari data terbatas, bukan nasihat keuangan.',
@@ -268,20 +281,22 @@ export function finalizeMarketAnalysis(jawaban: unknown): MarketAnalysis {
 }
 
 /**
- * Minta satu bacaan pasar. `brief` dari `marketBrief`, `judul` dari RSS berita.
+ * Minta satu bacaan pasar untuk SATU aset. `brief` dari `marketBrief`, `judul`
+ * dari RSS berita.
  *
- * `dayId` & `rentang` ikut jadi kunci pagar, jadi permintaan yang sama di hari
- * yang sama tidak pernah dikirim dua kali; `attempt` dinaikkan kalau memang
- * sengaja minta bacaan baru.
+ * `aset`, `dayId` & `rentang` ikut jadi kunci pagar, jadi permintaan yang sama
+ * di hari yang sama tidak pernah dikirim dua kali; `attempt` dinaikkan kalau
+ * memang sengaja minta bacaan baru.
  */
 export async function generateMarketAnalysis(
+  aset: MarketAsset,
   brief: string,
   judul: string[],
   rentang: MarketHorizon,
   dayId: string,
   attempt = 1,
-): Promise<MarketAnalysis> {
-  if (!brief.includes('EMAS') && !brief.includes('BITCOIN')) {
+): Promise<MarketSignal> {
+  if (!brief.includes(MARKET_ASSET_LABEL[aset])) {
     throw new AiAnswerError('Harga belum termuat. Perbarui harganya dulu.');
   }
   const berita = judul.slice(0, MARKET_NEWS_LIMIT);
@@ -291,9 +306,9 @@ export async function generateMarketAnalysis(
         .join('\n')}`
     : 'Tidak ada judul berita yang bisa diambil kali ini. Baca dari angkanya saja, dan sebut keterbatasan itu di kolom cermati.';
 
-  const pertanyaan = `Baca arah EMAS dan BITCOIN untuk ${RENTANG_TEKS[rentang]}.\n\n${brief}\n\n${bagianBerita}`;
+  const pertanyaan = `Baca arah ${MARKET_ASSET_LABEL[aset]} untuk ${RENTANG_TEKS[rentang]}. Aset lain di bawah cuma konteks, jangan ikut dijawab.\n\n${brief}\n\n${bagianBerita}`;
 
-  return guardedAiCall(`market|${rentang}|${dayId}|${attempt}|${brief}`, () =>
+  return guardedAiCall(`market|${aset}|${rentang}|${dayId}|${attempt}|${brief}`, () =>
     withModelFallback(async (nama) => {
       const hasil = await model(nama).generateContent(pertanyaan);
       return finalizeMarketAnalysis(parseJsonAnswer(hasil));
@@ -310,47 +325,32 @@ export function marketAiErrorMessage(e: unknown): string {
 
 // ===================== Jatah & hasil per hari (AsyncStorage) =====================
 
+/** Kunci bacaan tersimpan: "emas|harian". */
+type KunciBacaan = `${MarketAsset}|${MarketHorizon}`;
+
 export type MarketAiDay = {
-  /** Berapa kali AI dipanggil hari itu (kedua rentang digabung). */
+  /** Berapa kali AI dipanggil hari itu (semua aset & rentang digabung). */
   attempts: number;
-  /** Bacaan terakhir per rentang, supaya membuka tabnya lagi tidak memanggil AI. */
-  harian: MarketAnalysis | null;
-  mingguan: MarketAnalysis | null;
+  /** Bacaan terakhir per aset+rentang, supaya membuka tabnya lagi tidak memanggil AI. */
+  hasil: Partial<Record<KunciBacaan, MarketSignal>>;
 };
 
-export const EMPTY_MARKET_AI_DAY: MarketAiDay = {
-  attempts: 0,
-  harian: null,
-  mingguan: null,
-};
+export const EMPTY_MARKET_AI_DAY: MarketAiDay = { attempts: 0, hasil: {} };
 
-const PREFIX = 'ai:market:';
+export const kunciBacaan = (
+  aset: MarketAsset,
+  rentang: MarketHorizon,
+): KunciBacaan => `${aset}|${rentang}`;
 
-export async function loadMarketAiDay(dayId: string): Promise<MarketAiDay> {
-  try {
-    const raw = await AsyncStorage.getItem(PREFIX + dayId);
-    if (!raw) return EMPTY_MARKET_AI_DAY;
-    const v = JSON.parse(raw) as Partial<MarketAiDay>;
-    return {
-      attempts: typeof v.attempts === 'number' ? v.attempts : 0,
-      harian: v.harian ?? null,
-      mingguan: v.mingguan ?? null,
-    };
-  } catch {
-    return EMPTY_MARKET_AI_DAY;
-  }
-}
+const HARI = aiDayStore<MarketAiDay>('market', EMPTY_MARKET_AI_DAY, (v) => ({
+  attempts: typeof v.attempts === 'number' ? v.attempts : 0,
+  hasil: v.hasil && typeof v.hasil === 'object' ? v.hasil : {},
+}));
 
-export async function saveMarketAiDay(dayId: string, day: MarketAiDay): Promise<void> {
-  try {
-    await AsyncStorage.setItem(PREFIX + dayId, JSON.stringify(day));
-  } catch {
-    // Tidak tersimpan = paling buruk boleh dipanggil lagi hari ini; pagar
-    // umum lib/aiGuard.ts masih berdiri.
-  }
-}
+export const loadMarketAiDay = HARI.load;
+export const saveMarketAiDay = HARI.save;
 
 /** Masih boleh minta lagi hari ini? */
 export function marketAttemptsLeft(day: MarketAiDay): number {
-  return Math.max(0, MARKET_DAILY_CAP - day.attempts);
+  return sisaJatah(MARKET_DAILY_CAP, day.attempts);
 }

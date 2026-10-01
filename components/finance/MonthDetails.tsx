@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { CARD, CARD_GAP, FIELD, PANEL } from '@/assets/style/card';
+import { CARD_GAP, CARD_SHAPE, FIELD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { EmptyText } from '@/components/common/EmptyText';
 import { VixText } from '@/components/common/VixText';
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: 10, marginBottom: CARD_GAP },
   statTile: {
     flex: 1,
-    ...CARD,
+    ...CARD_SHAPE,
     paddingVertical: 12,
     alignItems: 'center',
     gap: 2,

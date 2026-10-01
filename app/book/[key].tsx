@@ -160,7 +160,6 @@ const styles = StyleSheet.create({
   notFound: { paddingHorizontal: 20, marginTop: 12 },
   progressCard: {
     ...CARD,
-    padding: 14,
     gap: 10,
     marginBottom: CARD_GAP,
   },

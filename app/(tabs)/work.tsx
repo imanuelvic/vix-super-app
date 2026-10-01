@@ -4,11 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SCREEN_SAFE } from '@/assets/style/layout';
-import { AffiliateTab } from '@/components/career/AffiliateTab';
 import { BusinessTab } from '@/components/career/BusinessTab';
 import { FreelanceTab } from '@/components/career/FreelanceTab';
 import { FulltimeTab } from '@/components/career/FulltimeTab';
-import { WorkFocusTab } from '@/components/career/WorkFocusTab';
 import { EmojiButton } from '@/components/common/EmojiButton';
 import {
   BottomTabs,
@@ -21,7 +19,6 @@ import { useTabScroll } from '@/components/common/useTabScroll';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
-import { subscribeAffiliateIdeas, type ContentIdea } from '@/lib/affiliate';
 import {
   subscribeFreelance,
   subscribeRoadmap,
@@ -31,24 +28,26 @@ import {
 } from '@/lib/career';
 import { subscribeTasks, type Task } from '@/lib/tasks';
 
-type CareerTab = 'focus' | 'fulltime' | 'freelance' | 'affiliate' | 'business';
+type CareerTab = 'fulltime' | 'freelance' | 'business';
 
-// Sub-tab Work (pil di bawah pita). Focus = "apa yang harus kukirim hari
-// ini?": P1, tenggat ≤ 7 hari, task WORK hari ini, & 3 prioritas harian.
+// Sub-tab Work (pil di bawah pita).
+//
+// 1 Okt 2026: Focus & Affiliate DIHAPUS TOTAL atas permintaan pemilik app.
+// Focus cuma mengumpulkan ulang hal yang sudah tampil di tab Today (P1,
+// tenggat dekat, task WORK hari ini, tiga prioritas harian), jadi ia layar
+// kedua untuk jawaban yang sama. Affiliate tidak lagi dijalani.
 const TABS: BottomTab<CareerTab>[] = [
-  { key: 'focus', label: 'Focus', icon: 'target' },
   { key: 'fulltime', label: 'Fulltime', icon: 'laptopcomputer' },
   { key: 'freelance', label: 'Freelance', icon: 'globe' },
-  { key: 'affiliate', label: 'Affiliate', icon: 'megaphone.fill' },
   { key: 'business', label: 'Business', icon: 'cart.fill' },
 ];
 
-// Career 💼 — empat topi pekerjaan: engineer NDC, freelancer, content creator /
-// affiliate, dan (nanti) bisnis kuliner Manado.
+// Career 💼 — tiga topi pekerjaan: engineer NDC, freelancer, dan (nanti)
+// bisnis kuliner Manado.
 export default function CareerScreen() {
   const router = useRouter();
 
-  // ?edit=<id> untuk otomatis membuka modal edit item yang ditekan.
+  // ?edit=<id> untuk otomatis membuka modal edit item yang di-click.
   // (?tab=… diurus useTabScroll di bawah.)
   const { edit: editParam } = useLocalSearchParams<{ edit?: string }>();
 
@@ -59,15 +58,14 @@ export default function CareerScreen() {
   const clearEditParam = useCallback(() => {
     if (editParam) router.setParams({ edit: '' });
   }, [editParam, router]);
-  // Hook bersama: ganti tab + scroll ke atas tiap tab ditekan, plus buka
+  // Hook bersama: ganti tab + scroll ke atas tiap tab di-click, plus buka
   // sub-tab tertentu lewat ?tab=… (reminder Dashboard & deep link).
-  const { tab, scrollKey, onTabPress } = useTabScroll<CareerTab>('focus', {
+  const { tab, scrollKey, onTabPress } = useTabScroll<CareerTab>('fulltime', {
     tabs: TABS,
   });
 
   const [roadmap, setRoadmap] = useState<RoadmapItem[] | null>(null);
   const [freelance, setFreelance] = useState<FreelanceProject[] | null>(null);
-  const [ideas, setIdeas] = useState<ContentIdea[] | null>(null);
   // Task harian kategori WORK — bukan untuk digambar di sini, tapi untuk badge
   // tombol 🔔 supaya pecahan badge tab Work terlihat lengkap.
   const [tasks, setTasks] = useState<Task[] | null>(null);
@@ -85,7 +83,6 @@ export default function CareerScreen() {
         fail,
       ),
       subscribeFreelance(uid, setFreelance, fail),
-      subscribeAffiliateIdeas(uid, setIdeas, fail),
       subscribeTasks(uid, setTasks, fail),
     ],
     { onError: setError },
@@ -96,7 +93,6 @@ export default function CareerScreen() {
   const perhatian = workAttention({
     roadmap: roadmap ?? [],
     freelance: freelance ?? [],
-    ideas: ideas ?? [],
     tasks: tasks ?? [],
     now,
     todayId,
@@ -111,10 +107,16 @@ export default function CareerScreen() {
         title="Work 💼"
         subtitle="Kerjakan segenap hati, hasilnya menyusul"
         right={
+          // Langsung ke kategori WORK, bukan daftar kategori bawaan
+          // (PERSONAL): badge di tombol ini memang menghitung task WORK hari
+          // ini, jadi membuka kategori lain berarti angkanya tidak kelihatan
+          // di layar yang baru dibuka.
           <EmojiButton
             emoji="🔔"
             badge={perhatian.tasks}
-            onPress={() => router.push('/tasks')}
+            onPress={() =>
+              router.push({ pathname: '/tasks', params: { category: 'work' } })
+            }
           />
         }
       />
@@ -124,14 +126,13 @@ export default function CareerScreen() {
           (workAttention di lib/career.ts). Aturannya satu: angka di kaki app =
           jumlah semua angka yang kelihatan rinciannya di layar ini. Task WORK
           hari ini tidak punya sub-tab, jadi ia memakai badge tombol 🔔 di
-          pojok kanan — dengan begitu keempat pecahannya benar-benar terlihat
+          pojok kanan — dengan begitu ketiga pecahannya benar-benar terlihat
           dan bisa dijumlah sendiri. */}
       <BottomTabs
         placement="top"
         tabs={withBadge(TABS, {
           fulltime: perhatian.fulltime,
           freelance: perhatian.freelance,
-          affiliate: perhatian.affiliate,
         })}
         value={tab}
         onChange={onTabPress}
@@ -140,10 +141,8 @@ export default function CareerScreen() {
       <ScreenError message={error} />
 
       <View style={styles.content} key={scrollKey}>
-        {roadmap === null || freelance === null || ideas === null ? (
+        {roadmap === null || freelance === null ? (
           <LoadingCenter />
-        ) : tab === 'focus' ? (
-          <WorkFocusTab roadmap={roadmap} freelance={freelance} />
         ) : tab === 'fulltime' ? (
           <FulltimeTab
             items={roadmap}
@@ -156,8 +155,6 @@ export default function CareerScreen() {
             editId={editParam}
             onEditConsumed={clearEditParam}
           />
-        ) : tab === 'affiliate' ? (
-          <AffiliateTab ideas={ideas} />
         ) : (
           <BusinessTab />
         )}

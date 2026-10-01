@@ -34,8 +34,8 @@ export function SafeToSpendHero({
           Belum terhitung
         </VixText>
         <VixText heading="label" additionalStyle={summaryText.label}>
-          Atur budget kategori harian (Food, Snacks, Transportation, …) supaya
-          jatah harianmu terhitung dari tanggal aktual.
+          Atur budget kategori harian dulu, supaya jatah harianmu bisa
+          dihitung.
         </VixText>
         <PressableScale onPress={onSetBudget} hitSlop={6}>
           <VixText heading="bold" additionalStyle={styles.link}>

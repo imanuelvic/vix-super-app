@@ -16,6 +16,7 @@ import { SCREEN_SAFE } from '@/assets/style/layout';
 import { AddButton } from '@/components/common/AddButton';
 import { Chip } from '@/components/common/Chip';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { CopyChip, CopyConfirm } from '@/components/common/CopyAction';
 import { DateField } from '@/components/common/DateField';
 import { DualButtons } from '@/components/common/DualButtons';
 import { FormError } from '@/components/common/FormError';
@@ -104,6 +105,10 @@ export default function FundScreen() {
   const [editDate, setEditDate] = useState(new Date());
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  // Salin mutasi (📋 di modal edit) — konfirmasinya INLINE di dalam modal,
+  // karena iOS tidak mendukung modal bertumpuk (sama seperti tab Transaksi).
+  const [confirmCopy, setConfirmCopy] = useState(false);
+  const [copying, setCopying] = useState(false);
 
   // Modal konfirmasi hapus.
   const [confirmDelete, setConfirmDelete] = useState<FundEntry | null>(null);
@@ -190,6 +195,43 @@ export default function FundScreen() {
     setEditAmount(groupDigits(String(entry.amount)));
     setEditDate(entry.date ? entry.date.toDate() : new Date());
     setEditError(null);
+  }
+
+  /**
+   * Salin mutasi yang sedang dibuka jadi DATA BARU — isinya persis seperti
+   * yang tampil di modal (transaksi, catatan, nominal, arah masuk/keluar),
+   * kecuali TANGGALNYA yang otomatis jadi hari ini. Mutasi aslinya tidak
+   * diubah sama sekali, dan saldo saku ikut bertambah/berkurang sendiri
+   * karena `addFundEntry` memang satu batch dengan saldonya.
+   *
+   * Sama persis dengan tombol 📋 di tab Transaksi: pengeluaran yang berulang
+   * tiap minggu (konsumsi CORE, bensin) tidak perlu diketik ulang.
+   */
+  async function handleCopy() {
+    if (!user || !key || !editing || copying) return;
+    const value = parseAmount(editAmount);
+    const invalid = validate(editTitle, editCause, value);
+    if (invalid) {
+      setEditError(invalid);
+      setConfirmCopy(false);
+      return;
+    }
+    setEditError(null);
+    setCopying(true);
+    try {
+      await addFundEntry(user.uid, key, {
+        title: editTitle.trim(),
+        cause: editCause.trim(),
+        direction: editing.direction,
+        amount: value,
+      });
+      setConfirmCopy(false);
+      setEditing(null);
+    } catch {
+      setEditError(SAVE_ERROR);
+    } finally {
+      setCopying(false);
+    }
   }
 
   async function handleSaveEdit() {
@@ -462,7 +504,24 @@ export default function FundScreen() {
             ? `${fund.icon} ${fund.label} · ${editing.direction === 'debit' ? 'Masuk' : 'Keluar'}`
             : undefined
         }
-        onClose={() => setEditing(null)}>
+        onClose={() => setEditing(null)}
+        headerRight={
+          // 📋 = salin jadi mutasi baru bertanggal hari ini, sama seperti
+          // tombol 📋 di tab Transaksi & Edit Paket fitur Device.
+          <CopyChip
+            onPress={() => setConfirmCopy(true)}
+            disabled={copying || editSaving}
+          />
+        }>
+        {/* Konfirmasi salin — inline (bukan modal baru) supaya muncul di iOS */}
+        {confirmCopy && (
+          <CopyConfirm
+            title="📋 Salin jadi mutasi baru?"
+            busy={copying}
+            onCancel={() => setConfirmCopy(false)}
+            onConfirm={handleCopy}
+          />
+        )}
         <FormInput
           placeholder="Transaksi"
           value={editTitle}

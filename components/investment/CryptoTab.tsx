@@ -21,6 +21,8 @@ export function CryptoTab() {
     <MarketTab
       heroTitle="₿ Harga Bitcoin"
       heroSub="Live dari Yahoo Finance (BTC-USD) · dalam Rupiah"
+      aiAsset="btc"
+      aiLabel="Bitcoin"
       statLabel="Harga sekarang (1 BTC)"
       srcText={srcText}
       noteText="⚠️ Crypto sangat fluktuatif. Ini data untuk dipelajari, bukan ajakan beli/jual."

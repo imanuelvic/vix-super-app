@@ -36,6 +36,8 @@ export function GoldTab() {
       heroTitle="🏅 Harga Emas 1 gr"
       heroSub="Live dari Yahoo Finance (COMEX) · estimasi Rupiah/gram"
       heroAction={{ label: '🔗 Bandingkan harga Antam', onPress: openLogamMulia }}
+      aiAsset="emas"
+      aiLabel="Emas"
       statLabel="Harga sekarang"
       srcText={srcText}
       noteText="⚠️ Ini harga emas internasional (spot/futures). Harga beli Antam biasanya lebih tinggi karena ada premium & pajak."
