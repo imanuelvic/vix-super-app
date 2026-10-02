@@ -75,7 +75,11 @@ const kartuBlok = [
   // (1 Okt 2026: `hero` layar Puasa dibuang — kartu keadaannya sendiri yang
   // dihapus atas permintaan pemilik app, bukan jaraknya yang dilonggarkan.
   // Angkanya pindah ke keterangan tombol "Lihat Hari per Hari" di bawahnya.)
-  ['app/bible-reading.tsx', 'summaryCard'], ['app/reward.tsx', 'heroCard'],
+  // (2 Okt 2026: `summaryCard` layar Baca Alkitab dibuang — layarnya jadi
+  // Bible Journey dan ringkasan "Akan tersimpan sebagai" kini <JourneyBox/>
+  // DI DALAM kartu langkah penutup, yang jaraknya datang dari `gap` kartu itu.
+  // Jadi bukan jaraknya yang dilonggarkan, kartu bloknya yang tidak ada lagi.)
+  ['app/reward.tsx', 'heroCard'],
   ['components/finance/BudgetAiCard.tsx', 'trigger'],
   ['app/history.tsx', 'heroCard'], ['app/timeline.tsx', 'progressCard'], ['components/health/StepsTab.tsx', 'heroCard'],
   ['components/tasks/PriorityTab.tsx', 'heroCard'], ['components/residence/TokenTab.tsx', 'hero'],
@@ -309,7 +313,14 @@ ok('tidak ada lagi berkas yang menyalin keempat nilainya',
 const pakai = (t) => semua.filter((f) => new RegExp(`\\.\\.\\.${t}\\b`).test(baca(f)));
 ok(`FIELD dipakai ${pakai('FIELD').length} berkas`, pakai('FIELD').length >= 19,
   String(pakai('FIELD').length));
-ok(`CARD dipakai ${pakai('CARD').length} berkas`, pakai('CARD').length >= 52,
+// 52 → 51 pada 2 Okt 2026: app/bible-reading.tsx berhenti memakai `...CARD`
+// karena kartu ringkasannya memang TIDAK ADA LAGI (layarnya jadi Bible
+// Journey, ringkasannya pindah jadi <JourneyBox/> di dalam kartu langkah).
+// Angkanya diturunkan satu mengikuti kenyataan, bukan supaya cek ini lolos:
+// kalau ada berkas LAIN yang diam-diam menyalin bentuk kartu alih-alih
+// memakai tokennya, cek "tidak ada lagi berkas yang menyalin keempat
+// nilainya" di atas yang menangkapnya.
+ok(`CARD dipakai ${pakai('CARD').length} berkas`, pakai('CARD').length >= 51,
   String(pakai('CARD').length));
 ok(`CARD_SHAPE dipakai ${pakai('CARD_SHAPE').length} berkas`,
   pakai('CARD_SHAPE').length >= 10, String(pakai('CARD_SHAPE').length));

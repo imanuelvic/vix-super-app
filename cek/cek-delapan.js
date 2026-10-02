@@ -274,9 +274,12 @@ console.log('\n=== 2. Catatan Revive jadi arsip + 🔗 Connect to CORE ===');
 console.log('\n=== 3. Tanggal di layar Baca Alkitab ===');
 // =====================================================================
 {
-  const br = baca('app/bible-reading.tsx');
+  // 2 Okt 2026: layarnya jadi Bible Journey, jadi tanggalnya ikut pindah ke
+  // kepala perjalanan itu. Yang dijaga tetap sama: harinya kelihatan tanpa
+  // perlu diingat-ingat, dengan pemformat yang sama seperti layar rohani lain.
+  const br = baca('components/spiritual/BibleJourney.tsx');
   c('tanggalnya ditampilkan di headernya',
-    /📅 \{formatFullDate\(now\)\}/.test(br));
+    /📅 \{formatFullDate\(new Date\(\)\)\}/.test(br));
   c('memakai pemformat yang sama dengan layar rohani lain',
     /formatFullDate/.test(baca('app/revive.tsx')) &&
       /formatFullDate/.test(baca('app/sermon.tsx')));
@@ -345,10 +348,13 @@ console.log('\n=== 4 & 5. YouVersion: langsung ke pasal & terjemahannya ===');
     dibuka.length === 1 && dibuka[0].url === 'youversion://' &&
       /apps\.apple\.com/.test(dibuka[0].fallback));
 
-  // Layarnya.
+  // Layarnya. 2 Okt 2026: tombol YouVersion pindah ke langkah 📖 Read, dan
+  // yang dioper tetap acuan PERTAMA yang terisi beserta terjemahannya.
   c('tombol di layar Baca Alkitab mengoper bacaan & terjemahannya',
-    /passage=\{filled\[0\]\}/.test(baca('app/bible-reading.tsx')) &&
-      /version=\{versiTerpakai\}/.test(baca('app/bible-reading.tsx')));
+    /onOpenBible=\{\(\) => onOpenBible\(filled\[0\] \?\? '', version\)\}/
+      .test(baca('components/spiritual/BibleJourney.tsx')) &&
+      /void openYouVersion\(passage \|\| undefined, version\)/
+        .test(baca('app/bible-reading.tsx')));
   const tab = baca('components/spiritual/BibleReadingTab.tsx');
   c('tiap acuan di riwayat jadi tombolnya sendiri',
     /splitBibleRefs\(d\[session\]\)\.map/.test(tab) &&

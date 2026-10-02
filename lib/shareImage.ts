@@ -41,6 +41,12 @@ export const ARCHIVE_NAME = 'vixtory.archive';
  * Rupa kartu. Sengaja SEDIKIT & tenang — ini identitas satu arsip, bukan
  * kumpulan tema. Warnanya diambil dari palet app (assets/style/color) supaya
  * hasilnya terasa satu keluarga dengan aplikasinya.
+ *
+ * Ketiganya SEKELUARGA dengan `DAYPART_SHADE` (latar layar Bible Journey 📖),
+ * tapi sengaja bukan nilai yang sama: di sini kertasnya adalah kartunya
+ * sendiri, sedangkan di layar ada kartu putih yang harus tetap terbaca
+ * sebagai kartu di atasnya. Gading #F7F3EC yang pas untuk gambar nyaris tak
+ * terbedakan dari kartu putih kalau dipakai sebagai latar layar.
  */
 export type ShareDesign = {
   key: string;

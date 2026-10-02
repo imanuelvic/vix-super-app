@@ -24,6 +24,9 @@ import { BIBLE_VERSION_DEFAULT } from '@/lib/spiritual';
 //   • `version` / `onVersionChange` — kolom Terjemahan di dalam kartu
 //     pertama. Dulu bloknya disalin di KEDUA pemakainya, sebaris polos di
 //     luar kartu; sekarang ia ikut masuk ke kartu acuannya, sekali saja.
+//   • `tone` — warnanya. Bawaannya ungu Spiritual; Bible Journey 📖
+//     mengopernya dari warna sesi (2 Okt 2026), supaya kartu acuan di layar
+//     baca tidak jadi satu-satunya benda ungu di tengah layar pagi/malam.
 export function BibleRefList({
   refs,
   onChange,
@@ -32,6 +35,7 @@ export function BibleRefList({
   hint,
   version,
   onVersionChange,
+  tone = SPIRITUAL_REF_TONE,
 }: {
   refs: string[];
   onChange: (refs: string[]) => void;
@@ -49,13 +53,19 @@ export function BibleRefList({
    */
   version?: string;
   onVersionChange?: (version: string) => void;
+  tone?: BibleRefTone;
 }) {
   return (
     <>
       {refs.map((ref, i) => (
-        <View key={i} style={styles.refCard}>
+        <View
+          key={i}
+          style={[
+            styles.refCard,
+            { backgroundColor: tone.soft, borderColor: tone.accent },
+          ]}>
           <View style={styles.refTop}>
-            <VixText heading="bold" additionalStyle={styles.refTitle}>
+            <VixText heading="bold" additionalStyle={{ color: tone.accent }}>
               Bacaan {i + 1}
             </VixText>
             {/* Tombol hapus baru muncul saat barisnya lebih dari satu:
@@ -71,7 +81,7 @@ export function BibleRefList({
             )}
           </View>
           {i === 0 && hint ? (
-            <VixText heading="label" additionalStyle={styles.suggestHint}>
+            <VixText heading="label" additionalStyle={{ color: tone.hint }}>
               {hint}
             </VixText>
           ) : null}
@@ -95,8 +105,8 @@ export function BibleRefList({
               satu app dibuka, satu terjemahan dipilih, lalu semua pasalnya
               dibaca di situ. */}
           {i === 0 && onVersionChange ? (
-            <View style={styles.versionRow}>
-              <VixText heading="label" additionalStyle={styles.versionLabel}>
+            <View style={[styles.versionRow, { borderTopColor: tone.accent }]}>
+              <VixText heading="label" additionalStyle={{ color: tone.accent }}>
                 Terjemahan{refs.length > 1 ? ' (semua bacaan)' : ''}
               </VixText>
               <FormInput
@@ -115,9 +125,9 @@ export function BibleRefList({
 
       {/* Baca lebih dari satu kitab hari itu? Tambah baris baru. */}
       <PressableScale
-        style={styles.addButton}
+        style={[styles.addButton, { borderColor: tone.accent }]}
         onPress={() => onChange([...refs, ''])}>
-        <VixText heading="bold" additionalStyle={styles.addText}>
+        <VixText heading="bold" additionalStyle={{ color: tone.accent }}>
           ➕ Tambah kitab lain
         </VixText>
       </PressableScale>
@@ -125,12 +135,23 @@ export function BibleRefList({
   );
 }
 
+/**
+ * Warna kartu acuan. `soft` latar kartunya, `accent` judul/garis/tepinya,
+ * `hint` baris saran di bawah judul (sengaja lebih pekat dari accent, supaya
+ * ia terbaca sebagai keterangan, bukan judul kedua).
+ */
+export type BibleRefTone = { soft: string; accent: string; hint: string };
+
+export const SPIRITUAL_REF_TONE: BibleRefTone = {
+  soft: Color.SPIRITUAL,
+  accent: Color.SPIRITUAL_DARK,
+  hint: Color.SPIRITUAL_DEEP,
+};
+
 const styles = StyleSheet.create({
   refCard: {
-    backgroundColor: Color.SPIRITUAL,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: Color.SPIRITUAL_DARK,
     padding: 14,
     gap: 10,
     marginBottom: 10,
@@ -142,20 +163,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  refTitle: { color: Color.SPIRITUAL_DARK },
   versionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: Color.SPIRITUAL_DARK,
     paddingTop: 10,
   },
-  versionLabel: { color: Color.SPIRITUAL_DARK },
   // Sempit: isinya cuma singkatan 2–4 huruf (TB, BIS, NIV, TSI).
   versionInput: { flex: 1, maxWidth: 140 },
-  // Sedikit lebih gelap dari judul kartunya: keterangan, bukan judul kedua.
-  suggestHint: { color: Color.SPIRITUAL_DEEP },
   removeText: { color: Color.DANGER },
   addButton: {
     alignItems: 'center',
@@ -163,8 +179,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: Color.SPIRITUAL_DARK,
     marginBottom: 12,
   },
-  addText: { color: Color.SPIRITUAL_DARK },
 });

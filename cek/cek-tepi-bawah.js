@@ -43,7 +43,10 @@ console.log('\n=== Layar biasa: seperti Family (edges top, paddingBottom 40) ===
 ok('Family sebagai acuan: edges top, paddingBottom 40',
   /edges=\{\['top'\]\}/.test(baca('app/family.tsx')) && /paddingBottom: 40 \}/.test(baca('app/family.tsx')));
 for (const f of [
-  'app/bible-reading.tsx', 'app/book.tsx', 'app/book/[key].tsx', 'app/daily-priority.tsx',
+  // 2 Okt 2026: app/bible-reading.tsx jadi lapisan DATA saja; tepi layarnya
+  // pindah ke kerangka perjalanannya, jadi yang diuji berkas itu.
+  'components/spiritual/BibleJourney.tsx',
+  'app/book.tsx', 'app/book/[key].tsx', 'app/daily-priority.tsx',
   'app/fasting-days.tsx', 'app/fasting.tsx', 'app/steps.tsx', 'app/project/[id].tsx',
   'app/promise.tsx', 'app/mountains.tsx', 'components/spiritual/MorningJourney.tsx',
   'app/multiplication/[id].tsx',

@@ -17,6 +17,7 @@ import {
   BAPA_KAMI,
   JOURNEY_CLOSING,
   JOURNEY_NAME,
+  journeyStepMeta,
   openWorshipSong,
   PRAYER_TOPICS,
   RESPONSE_OPTIONS,
@@ -46,7 +47,7 @@ export type SaveJourney = (fields: JourneyFields) => Promise<void>;
 // ============================ 🌅 Arrive ============================
 export function ArriveStep({ onNext }: { onNext: () => void }) {
   return (
-    <JourneyCard step="arrive">
+    <JourneyCard step={journeyStepMeta('arrive')}>
       <VixText heading="title" additionalStyle={styles.greeting}>
         Selamat pagi, {JOURNEY_NAME}.
       </VixText>
@@ -90,7 +91,7 @@ export function ReceiveStep({
   }
 
   return (
-    <JourneyCard step="receive">
+    <JourneyCard step={journeyStepMeta('receive')}>
       <JourneyQuestion>
         Baca renungan Revive hari ini pelan-pelan. Bukan untuk menyelesaikannya,
         tapi untuk mendengar.
@@ -155,7 +156,7 @@ export function ReflectStep({
   }
 
   return (
-    <JourneyCard step="reflect">
+    <JourneyCard step={journeyStepMeta('reflect')}>
       <JourneyQuestion>{prompt}</JourneyQuestion>
       {bisaTulis ? (
         <FormInput
@@ -211,7 +212,7 @@ export function RespondStep({
   }
 
   return (
-    <JourneyCard step="respond">
+    <JourneyCard step={journeyStepMeta('respond')}>
       <JourneyQuestion>
         Setelah membaca dan berefleksi, apa respons hatimu pagi ini?
       </JourneyQuestion>
@@ -266,7 +267,7 @@ export function WorshipStep({
   }
 
   return (
-    <JourneyCard step="worship">
+    <JourneyCard step={journeyStepMeta('worship')}>
       <JourneyQuestion>
         Sebelum melangkah, tinggal sebentar. Satu lagu untuk pagi ini:
       </JourneyQuestion>
@@ -357,7 +358,7 @@ export function PrayStep({
   }
 
   return (
-    <JourneyCard step="pray">
+    <JourneyCard step={journeyStepMeta('pray')}>
       {/* Doa Syafaat — jadwal mingguan pemiliknya sendiri (lib/intercession.ts),
           pokok doanya berganti tiap hari. Diganti Doa Rantai di bawah pada hari
           yang memang giliran CL, jadi langkah ini selalu satu blok syafaat. */}
@@ -518,7 +519,7 @@ export function CloseStep({
   busy: boolean;
 }) {
   return (
-    <JourneyCard step="close">
+    <JourneyCard step={journeyStepMeta('close')}>
       <JourneyQuestion>Tutup pagi ini dengan doa yang Tuhan Yesus ajarkan.</JourneyQuestion>
       <JourneyBox>
         <VixText heading="paragraph" additionalStyle={js.boxText}>

@@ -36,12 +36,19 @@ ok('Reminder → tombol app memakai INTRO_GAP',
   /reminderCard: \{[\s\S]*?marginBottom: INTRO_GAP,/.test(intro));
 ok('tombol app → isi layar memakai INTRO_GAP',
   /appButton: \{[\s\S]*?marginBottom: INTRO_GAP,/.test(intro));
-ok('hitung mundur → Reminder memakai angka yang SAMA (diimpor, bukan disalin)',
-  /import \{ INTRO_GAP, SpiritualIntro \} from '@\/components\/spiritual\/SpiritualIntro';/.test(alkitab) &&
-  /countdown: \{[\s\S]*?marginBottom: INTRO_GAP,/.test(alkitab));
-ok('urutan tumpukannya tetap: hitung mundur → SpiritualIntro → BibleRefList',
-  alkitab.indexOf('styles.countdown') < alkitab.indexOf('<SpiritualIntro') &&
-  alkitab.indexOf('<SpiritualIntro') < alkitab.indexOf('<BibleRefList'));
+// 2 Okt 2026: layar Baca Alkitab jadi Bible Journey. Hitung mundur & Reminder
+// tidak lagi dua kartu bertumpuk yang jaraknya harus disamakan — keduanya kini
+// DI DALAM satu kartu langkah 🌅 Open, jadi jarak antar-isinya satu angka
+// milik kartu itu (`gap` di JourneyCard), bukan marginBottom per kartu.
+// INTRO_GAP tetap dijaga di atas: Revive masih memakai SpiritualIntro.
+const langkah = baca('components/spiritual/journey/BibleSteps.tsx');
+ok('Baca Alkitab: Reminder & sisa waktu satu kartu, jaraknya dari gap kartunya',
+  /card: \{[\s\S]*?gap: 14,/.test(baca('components/spiritual/journey/JourneyCard.tsx')) &&
+  /🕊️ Reminder/.test(langkah) &&
+  !/marginBottom: \d+/.test(langkah));
+ok('urutan tumpukannya tetap: Reminder → sisa waktu → baru kartu Bacaan',
+  langkah.indexOf('🕊️ Reminder') < langkah.indexOf('⏳ Jendela') &&
+  langkah.indexOf('⏳ Jendela') < langkah.indexOf('<BibleRefList'));
 ok('tidak ada angka jarak lepas yang tertinggal di kedua kartu pembuka',
   !/marginBottom: 14,/.test(intro));
 ok('Revive memakai komponen yang sama (ikut lega, tidak ada salinan)',
@@ -49,7 +56,8 @@ ok('Revive memakai komponen yang sama (ikut lega, tidak ada salinan)',
 
 console.log('\n=== Istilah ===');
 ok('tidak ada "tekan" di berkas yang disentuh',
-  ![home, alkitab, intro].some((s) => /\btekan\b|ditekan|menekan/.test(s)));
+  ![home, alkitab, intro, langkah, baca('components/spiritual/BibleJourney.tsx')]
+    .some((s) => /\btekan\b|ditekan|menekan/.test(s)));
 
 console.log(gagal === 0 ? '\n✅ LULUS — jaraknya rapi.' : `\n❌ ${gagal} cek gagal.`);
 process.exit(gagal === 0 ? 0 : 1);

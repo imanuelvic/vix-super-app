@@ -53,11 +53,33 @@ ok('hapus TIDAK berubah: pesannya ke layar (setError DELETE_ERROR), busy padam d
   !/SAVE_ERROR/.test(sermon));
 
 console.log('\n=== Baca Alkitab 📖: simpan & lewati ===');
-ok('memakai hook; pesan gagalnya tetap bernama `error` (JSX tidak disentuh)',
+// 2 Okt 2026: layarnya jadi Bible Journey, jadi <FormError/> pindah ke dalam
+// kartu langkahnya (yang memang tempat tombolnya berada). Hooknya sendiri &
+// nama `error`-nya tidak berubah, dan layar ini tetap tidak memegang setBusy
+// atau setError sendiri.
+ok('memakai hook; pesan gagalnya tetap bernama `error` & sampai ke langkahnya',
   /const \{ busy, formError: error, save \} = useFormSave\(\);/.test(bible) &&
-  /<FormError message=\{error\} \/>/.test(bible) && !/setBusy|setError\(/.test(bible));
-ok('simpan lewat save(): tulis bacaan → naikkan streak → ke arsip',
-  /await save\(async \(\) => \{\s*\n\s*await saveBibleReading\([\s\S]{0,300}await bumpBibleStreaks\([\s\S]{0,1400}router\.replace\(\{\s*\n\s*pathname: '\/walk',\s*\n\s*params: \{ tab: 'bible', session \},\s*\n\s*\}\);\s*\n\s*\}\);/.test(bible));
+  /error=\{error\}/.test(bible) && !/setBusy|setError\(/.test(bible) &&
+  /<FormError message=\{error\} gap="none" \/>/.test(
+    baca('components/spiritual/journey/BibleSteps.tsx')));
+{
+  // Dipotong dari handleDone-nya: `handleSaveRead` juga memakai save() +
+  // saveBibleReading, jadi tanpa potongan ini regexnya bisa cocok di fungsi
+  // yang salah dan diam-diam berhenti menguji urutan yang dimaksud.
+  const done = bible.slice(bible.indexOf('async function handleDone')).replace(/\s+/g, ' ');
+  ok('simpan lewat save(): tulis bacaan → naikkan streak → ke arsip',
+    /await save\(async \(\) => \{[\s\S]{0,400}await saveBibleReading\(user\.uid, dayId, session, passage, version\);[\s\S]{0,400}await bumpBibleStreaks\([\s\S]{0,300}router\.replace\(\{ pathname: '\/walk', params: \{ tab: 'bible', session \} \}\);/.test(done));
+  // Langkah 📖 Read menyimpan acuannya supaya tidak hilang kalau perjalanannya
+  // ditinggal, tapi streak 🔥 TIDAK ikut naik di sana: yang berarti "aku
+  // memang membacanya hari ini" cuma satu clickan, dan itu di penutupnya.
+  const read = bible.slice(
+    bible.indexOf('async function handleSaveRead'),
+    bible.indexOf('async function handleSaveJourney'),
+  );
+  ok('langkah Read menyimpan bacaannya TANPA menaikkan streak',
+    /await saveBibleReading\(user\.uid, dayId, session, passage, version\)/.test(
+      read.replace(/\s+/g, ' ')) && !/bumpBibleStreaks/.test(read));
+}
 ok('lewati lewat save() juga (pesannya memang SAVE_ERROR dulu)',
   /await save\(async \(\) => \{\s*\n\s*await saveBibleReading\(\s*\n\s*user\.uid,\s*\n\s*dayId,\s*\n\s*session,\s*\n\s*skipped \? '' : BIBLE_SKIPPED,\s*\n\s*\);\s*\n\s*if \(!skipped\) router\.back\(\);\s*\n\s*\}\);/.test(bible));
 ok('LOAD_ERROR untuk saran tetap lewat useAsyncData', /useAsyncData\(muatSaran, LOAD_ERROR\)/.test(bible) && !/SAVE_ERROR/.test(bible));

@@ -161,8 +161,11 @@ ok('"Nanti dulu" ada di kaki journey; "Lewati" hanya selagi jendela pagi terbuka
 ok('ketujuh langkah dirender lewat step === …, key={step} supaya kartunya lahir baru',
   ['arrive', 'receive', 'reflect', 'respond', 'worship', 'pray'].every((k) => new RegExp(`step === '${k}' \\? \\(`).test(layar)) &&
   /<CloseStep onConfirm=\{handleConfirm\} busy=\{busy\} \/>/.test(layar) && /<View key=\{step\}>/.test(layar));
+// 2 Okt 2026: daftar langkahnya DIOPER (`steps={JOURNEY_STEPS}`) sejak jejak
+// ini dipakai bersama Bible Journey 📖. Yang dijaga tetap sama — Morning
+// Journey memakai ketujuh langkahnya sendiri, bukan daftar lain.
 ok('jejak 🌅→📖→💭→❤️→🎵→🙏→🌤️ tanpa angka; yang sudah dilalui bisa di-click untuk kembali',
-  /<JourneyTrail current=\{step\} onJump=\{setStep\} \/>/.test(layar) &&
+  /<JourneyTrail steps=\{JOURNEY_STEPS\} current=\{step\} onJump=\{setStep\} \/>/.test(layar) &&
   /disabled=\{!passed\}/.test(trail) && /emojiFuture: \{ opacity: 0\.35 \}/.test(trail) &&
   // (komentar penjelas boleh menyebut "3/7"; kodenya yang tidak boleh)
   !/\d+\s*\/\s*\d+|%/.test(trail.replace(/^\s*(\/\/|\*|\/\*\*).*$/gm, '')));

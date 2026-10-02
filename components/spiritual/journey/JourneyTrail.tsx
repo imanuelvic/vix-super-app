@@ -3,11 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Color } from '@/assets/style/color';
 import { PressableScale } from '@/components/common/PressableScale';
 import { VixText } from '@/components/common/VixText';
-import {
-  JOURNEY_STEPS,
-  journeyStepIndex,
-  type JourneyStepKey,
-} from '@/lib/journey';
+import type { JourneyStepMeta } from '@/components/spiritual/journey/JourneyCard';
 
 /**
  * Jejak perjalanan 🌅 📖 💭 ❤️ 🎵 🙏 🌤️ di atas kartu — penunjuk yang sangat
@@ -17,18 +13,32 @@ import {
  *
  * Langkah yang sudah dilalui bisa di-click untuk kembali (mis. menambah
  * tulisan refleksi); yang belum, tidak — urutannya memang mengalir ke depan.
+ *
+ * 2 Okt 2026: daftar langkahnya DIOPER, tidak lagi dibaca sendiri dari
+ * `JOURNEY_STEPS`. Bible Journey 📖 memakai jejak yang sama persis dengan
+ * lima langkahnya sendiri, dan menyalin komponen ini berarti dua jejak yang
+ * sama HANYA sampai salah satunya dirapikan.
  */
-export function JourneyTrail({
+export function JourneyTrail<K extends string>({
+  steps,
   current,
   onJump,
+  dotColor = Color.TEXT_REVERSE,
 }: {
-  current: JourneyStepKey;
-  onJump: (step: JourneyStepKey) => void;
+  steps: (JourneyStepMeta & { key: K })[];
+  current: K;
+  onJump: (step: K) => void;
+  /**
+   * Warna titik langkah aktif. Bawaannya putih (latar ungu tua Morning
+   * Journey); Bible Journey mengopernya dari warna sesi, karena latar pagi &
+   * siang terang dan titik putih di atasnya tidak kelihatan sama sekali.
+   */
+  dotColor?: string;
 }) {
-  const now = journeyStepIndex(current);
+  const now = steps.findIndex((s) => s.key === current);
   return (
     <View style={styles.row}>
-      {JOURNEY_STEPS.map((s, i) => {
+      {steps.map((s, i) => {
         const passed = i < now;
         const active = i === now;
         return (
@@ -46,7 +56,9 @@ export function JourneyTrail({
               ]}>
               {s.emoji}
             </VixText>
-            <View style={[styles.dot, active && styles.dotActive]} />
+            <View
+              style={[styles.dot, active && { backgroundColor: dotColor }]}
+            />
           </PressableScale>
         );
       })}
@@ -67,7 +79,7 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 20, lineHeight: 26 },
   emojiFuture: { opacity: 0.35 },
   // Titik penanda langkah aktif; yang lain tetap memakan tempat yang sama
-  // (transparan) supaya barisnya tidak melompat saat berpindah.
+  // (transparan) supaya barisnya tidak melompat saat berpindah. Warnanya
+  // dioper (`dotColor`), karena latar jejak ini tidak selalu gelap.
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: 'transparent' },
-  dotActive: { backgroundColor: Color.TEXT_REVERSE },
 });

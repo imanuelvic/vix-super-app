@@ -205,12 +205,18 @@ console.log('\n=== 2. Reading: yang sudah terlewat tak ditawari lewati ===');
       terlewat('__skip__', -5) === false);
   }
 
+  // 2 Okt 2026: layarnya jadi Bible Journey. <SkipButton/> diganti kaki layar
+  // milik perjalanan itu, tapi ATURANNYA sama persis — layar yang punya
+  // datanya tetap yang memutuskan (`canSkip={!terlewat}`), kerangkanya cuma
+  // menggambar. Rumus `terlewat` di atas masih diuji dari sumber yang sama.
+  const kerangka = baca('components/spiritual/BibleJourney.tsx');
   c('tombol lewati disembunyikan kalau sudah terlewat',
-    /\{!terlewat && \(\s*<SkipButton/.test(layar));
+    /canSkip=\{!terlewat\}/.test(layar) && /\{canSkip && \(/.test(kerangka));
   // Yang TERLANJUR ditandai lewat sendiri tetap punya tombolnya, karena di
   // keadaan itu bunyinya "↩️ Batalkan lewati" — dan membatalkan masih berguna.
   c('tombolnya tetap ada di dalam jendela & untuk membatalkan',
-    /label="⏭️ Lewati baca hari ini"/.test(layar) &&
+    /Lewati untuk hari ini/.test(kerangka) &&
+      /'↩️ Batalkan lewati'/.test(kerangka) &&
       /skipped=\{skipped\}/.test(layar));
 
   // Alasan menyembunyikannya: Habits SUDAH menandainya ✗ sendiri. Kalau
@@ -229,8 +235,12 @@ console.log('\n=== 2. Reading: yang sudah terlewat tak ditawari lewati ===');
       S.bibleMirrorState({ ...kosong, morning: 'Amsal 3' }, 'morning', pagiLewat)
         .skipped === false);
 
+  // Kalimatnya pindah ke langkah 🌅 Open, tapi TIDAK dilunakkan: nada
+  // perjalanannya boleh tenang, akibatnya tetap disebut apa adanya.
   c('keterangan jendelanya jujur menyebut akibatnya',
-    /Otomatis ✗ di Habits, streak hilang/.test(layar));
+    /Otomatis ✗ di Habits, streak hilang/.test(
+      baca('components/spiritual/journey/BibleSteps.tsx'),
+    ));
 }
 
 // =====================================================================
@@ -238,14 +248,17 @@ console.log('\n=== 3. Terjemahan pindah ke DALAM kartu bacaan ===');
 // =====================================================================
 {
   const komp = baca('components/spiritual/BibleRefList.tsx');
-  const layar = baca('app/bible-reading.tsx');
+  // 2 Okt 2026: "layar catat" kini langkah 📖 Read di Bible Journey.
+  const layar = baca('components/spiritual/journey/BibleSteps.tsx');
   const tab = baca('components/spiritual/BibleReadingTab.tsx');
 
   // Isi SATU kartu, dipotong dari pembuka kartunya sampai penutup .map().
   // Penutupnya dicari dengan indentasinya ikut ("\n      ))}"): `))}` polos
   // juga muncul di tengah kartu (ekor `onChange(refs.map(…))}`), dan potongan
   // yang berhenti di situ akan diam-diam melewatkan separuh isi kartunya.
-  const awal = komp.indexOf('style={styles.refCard}');
+  // 2 Okt 2026: gayanya jadi daftar (`[styles.refCard, { … }]`) karena warnanya
+  // kini dioper lewat `tone`, jadi penandanya ikut berubah bentuk.
+  const awal = komp.indexOf('styles.refCard,');
   const akhir = komp.indexOf('\n      ))}', awal);
   const kartu = komp.slice(awal, akhir);
   c('kolomnya benar-benar DI DALAM kartu bacaan',
@@ -258,22 +271,27 @@ console.log('\n=== 3. Terjemahan pindah ke DALAM kartu bacaan ===');
     /versionRow: \{[\s\S]*?borderTopWidth: 1,/.test(komp));
 
   // Bloknya berhenti disalin: SATU tempat, dua pemakai.
-  for (const [nama, isi] of [
-    ['layar catat', layar],
-    ['sheet ubah riwayat', tab],
+  for (const [nama, isi, setter] of [
+    ['langkah 📖 Read', layar, 'onVersion'],
+    ['sheet ubah riwayat', tab, 'setVersion'],
   ]) {
     c(`${nama} mengoper terjemahannya ke komponen bersama`,
-      /version=\{version\}/.test(isi) && /onVersionChange=\{setVersion\}/.test(isi));
+      /version=\{version\}/.test(isi) &&
+        new RegExp(`onVersionChange=\\{${setter}\\}`).test(isi));
     c(`${nama} tidak lagi menyalin blok kolomnya sendiri`,
       !/styles\.versionRow/.test(isi) && !/versionInput/.test(isi));
   }
 
-  // Terjemahannya tetap ikut tersimpan — pindah tempat, bukan hilang.
+  // Terjemahannya tetap ikut tersimpan — pindah tempat, bukan hilang. Sejak
+  // 2 Okt 2026 `versiTerpakai` di layar DIBUANG, bukan hilang diam-diam:
+  // jatuh-ke-TB-nya sudah ada di dalam saveBibleReading sendiri, jadi menulis
+  // ulang aturan yang sama di layar cuma memberi dua tempat yang bisa
+  // berbeda pendapat.
   c('layar catat tetap menyimpan terjemahan yang dipakai',
-    /versiTerpakai,\s*\);/.test(layar) &&
-      /const versiTerpakai = version\.trim\(\) \|\| BIBLE_VERSION_DEFAULT;/.test(
-        layar,
-      ));
+    /saveBibleReading\(user\.uid, dayId, session, passage, version\)/.test(
+      baca('app/bible-reading.tsx'),
+    ) &&
+      /version\.trim\(\) \|\| BIBLE_VERSION_DEFAULT/.test(baca('lib/spiritual.ts')));
   c('sheet ubah tetap menyimpannya saat Perbarui',
     /version\.trim\(\) \|\| BIBLE_VERSION_DEFAULT,/.test(tab));
 }

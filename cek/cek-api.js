@@ -91,7 +91,6 @@ const PINTU = [
   ['app/fitness.tsx', 'Fitness 💪', /right=\{<RewardButton category="fitness" \/>\}/, ['fitness']],
   ['app/learning.tsx', 'Learning 🎓', /right=\{<RewardButton category="learning" \/>\}/, ['learning']],
   ['app/steps.tsx', 'Langkah Kaki 👣', /right=\{<RewardButton category="steps" \/>\}/, ['steps']],
-  ['app/bible-reading.tsx', 'Bacaan Alkitab 📖', /right=\{<RewardButton category=\{BIBLE_CATEGORY\[session\]\} \/>\}/, []],
   ['app/(tabs)/walk.tsx', 'Spiritual ✝️ (Revive)', /<RewardButton category="login" \/>/, ['login']],
   ['app/health.tsx', 'Health 🍎 (Steps)', /<RewardButton category="week" \/>/, ['week']],
 ];
@@ -120,6 +119,22 @@ c('tidak tertukar: pagi→pagi, siang→siang, malam→malam',
     peta.night === 'bibleNight');
 c('layar Bacaan Alkitab memakai sesi yang SEDANG dibuka (bukan tebakan tetap)',
   /const session = bibleSessionOf\(sessionParam\)/.test(baca('app/bible-reading.tsx')));
+// 2 Okt 2026: layar Baca Alkitab jadi Bible Journey, dan kepalanya BUKAN lagi
+// <ScreenHeader/>, jadi tak ada lagi slot `right` untuk <RewardButton/>.
+// Pintunya tidak dilonggarkan, ia PINDAH & jadi lebih berisi: pil 🔥 di pojok
+// kanan yang menampilkan angka streak sesi ini dan membuka kategori yang sama.
+{
+  const layar = baca('app/bible-reading.tsx');
+  const kerangka = baca('components/spiritual/BibleJourney.tsx');
+  c('Bacaan Alkitab 📖 — pil 🔥 membuka kategori sesi yang sedang dibuka',
+    /onOpenReward=\{\(\) => router\.push\(\{ pathname: '\/reward-category', params: \{ cat: BIBLE_CATEGORY\[session\] \}/
+      .test(layar.replace(/\s+/g, ' ')));
+  c('Bacaan Alkitab 📖 — angkanya streak sesi ini, bukan sekadar lambang',
+    /streak=\{bibleStreakNow\(streaks, session, dayId\)\}/.test(layar) &&
+      /🔥 \{streak\}/.test(kerangka));
+  c('Bacaan Alkitab 📖 — pil-nya memang bisa di-click ke Reward',
+    /onPress=\{onOpenReward\}/.test(kerangka));
+}
 const spir = baca('app/(tabs)/walk.tsx');
 c('tab Bible Reading memakai sesi yang jendelanya sedang berjalan',
   /category=\{BIBLE_CATEGORY\[bibleSessionNow\(now\) \?\? 'morning'\]\}/

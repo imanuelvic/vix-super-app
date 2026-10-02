@@ -172,13 +172,21 @@ ok('Bacaan Alkitab: efek pengisi acuan hilang',
 // Sumbernya kini dua: catatan hari ini kalau ada, kalau tidak rekomendasi
 // sambungan bacaan terakhir (lihat cek-saran-bacaan.js). Yang tersimpan tetap
 // MENANG — membuka layar untuk menambah kitab kedua tidak boleh ditimpa saran.
+// 2 Okt 2026: layarnya jadi Bible Journey, jadi draftnya PINDAH — nilai
+// awalnya tetap dihitung di layar (yang punya datanya), useDraft-nya dipegang
+// kerangka perjalanan karena langkah 📖 Read & 🕊️ Close sama-sama membacanya.
+// Aturannya tidak berubah: yang tersimpan menang atas saran.
+const kerangka = baca('components/spiritual/BibleJourney.tsx');
+const langkah = baca('components/spiritual/journey/BibleSteps.tsx');
 ok('Bacaan Alkitab: acuan tersimpan menang; belum dicatat → sarannya',
-  /useDraft<string\[\]>\(\s*\n\s*tercatat\s*\n\s*\? existing\.split\(','\)\.map\(\(s\) => s\.trim\(\)\)\s*\n\s*: \[saran\?\.next \?\? ''\],/.test(baca_) &&
-  /const tercatat = !!existing && !skipped;/.test(baca_));
-// Tambah/hapus barisnya pindah ke komponen bersama; yang tinggal di layar
-// cuma penampung draftnya — dan itu memang yang diuji di sini.
+  /const initialRefs = tercatat \? splitBibleRefs\(existing\) : \[saran\?\.next \?\? ''\];/.test(baca_) &&
+  /const tercatat = !!existing && !skipped;/.test(baca_) &&
+  /const \[refs, setRefs\] = useDraft<string\[\]>\(initialRefs\);/.test(kerangka));
+// Tambah/hapus barisnya pindah ke komponen bersama; yang tinggal di langkah
+// Read cuma penampung draftnya — dan itu memang yang diuji di sini.
 ok('Bacaan Alkitab: tambah/hapus baris acuan tetap jalan',
-  /<BibleRefList\s*\n\s*refs=\{refs\}\s*\n\s*onChange=\{setRefs\}/.test(baca_) &&
+  /<BibleRefList\s*\n\s*refs=\{refs\}\s*\n\s*onChange=\{onRefs\}/.test(langkah) &&
+  /onRefs=\{setRefs\}/.test(kerangka) &&
   /onChange\(\[\.\.\.refs, ''\]\)/.test(
     baca('components/spiritual/BibleRefList.tsx'),
   ) &&

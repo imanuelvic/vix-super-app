@@ -26,6 +26,7 @@ import {
     BIBLE_SESSIONS,
     BIBLE_VERSION_DEFAULT,
     bibleHasOther,
+    bibleNoteWritten,
     bibleSessionMeta,
     bibleSessionNow,
     bibleSessionOfClock,
@@ -282,6 +283,34 @@ export function BibleReadingTab({
                   ({d.versions[session] || BIBLE_VERSION_DEFAULT})
                 </VixText>
               </View>
+
+              {/* ✨ Apa yang didapat & 💛 ayat yang memberkati, dari langkah
+                  Receive & Verse di Bible Journey (2 Okt 2026). Inilah yang
+                  membuat arsip ini jadi bacaan, bukan absensi: sebelumnya satu
+                  baris catatan cuma berisi "Amsal 16 (TB)" dan setahun lagi
+                  tidak ada yang bisa diingat darinya.
+
+                  Hari yang belum punya isian ini (seluruh catatan sebelum 2
+                  Okt 2026) tidak digambar sama sekali — bukan kotak kosong. */}
+              {bibleNoteWritten(d.notes[session]) && (
+                <View style={styles.noteBox}>
+                  {d.notes[session].verse ? (
+                    <VixText heading="bold" additionalStyle={styles.noteVerse}>
+                      💛 {d.notes[session].verse}
+                    </VixText>
+                  ) : null}
+                  {d.notes[session].verseText ? (
+                    <VixText heading="paragraph" additionalStyle={styles.noteQuote}>
+                      “{d.notes[session].verseText}”
+                    </VixText>
+                  ) : null}
+                  {d.notes[session].note ? (
+                    <VixText heading="paragraph" additionalStyle={styles.noteText}>
+                      ✨ {d.notes[session].note}
+                    </VixText>
+                  ) : null}
+                </View>
+              )}
             </View>
           );
         })}
@@ -394,4 +423,16 @@ const styles = StyleSheet.create({
   refChipPlain: { backgroundColor: 'transparent', paddingHorizontal: 0 },
   refChipText: { color: Color.SPIRITUAL_DARK },
   cardVersion: { color: Color.TEXT_LABEL },
+  // Isian perjalanan: dipisah garis tipis di atasnya, jadi acuannya tetap yang
+  // pertama terbaca dan tulisanmu jadi isi kartunya.
+  noteBox: {
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+    marginTop: 6,
+    paddingTop: 8,
+    gap: 4,
+  },
+  noteVerse: { color: Color.SPIRITUAL_DEEP },
+  noteQuote: { color: Color.TEXT_PARAGRAPH, fontStyle: 'italic', lineHeight: 22 },
+  noteText: { color: Color.TEXT_TITLE, lineHeight: 22 },
 });

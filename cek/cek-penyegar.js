@@ -189,10 +189,20 @@ c('komponennya satu', /export function SpiritualIntro/.test(baca('components/spi
 c('Revive memakainya', /<SpiritualIntro reminder=\{reminder\} \/>/.test(baca('app/revive.tsx')));
 // 28 Agu 2026: tombolnya boleh menuju app yang BEDA per layar — Baca Alkitab
 // membuka YouVersion (Alkitabnya), Revive tetap NDC Ministry (renungannya).
-c('Baca Alkitab memakainya',
-  /<SpiritualIntro\s*\n\s*reminder=\{dailyReminder\(dayId, `baca-\$\{session\}`\)\}\s*\n\s*app="youversion"/.test(
+// 2 Okt 2026: Baca Alkitab jadi Bible Journey, dan Reminder + tombol app-nya
+// tidak lagi satu blok yang berdampingan — Reminder masuk ke kartu langkah 🌅
+// Open, tombol YouVersion ke langkah 📖 Read, karena keduanya memang berguna
+// pada saat yang berbeda. Yang dijaga tetap: undiannya BERGARAM per sesi
+// (jadi pagi, siang, malam, & Revive tidak menampilkan kalimat yang sama),
+// dan tujuan tombolnya tetap YouVersion.
+c('Baca Alkitab memakai reminder bergaram per sesi + tombol YouVersion',
+  /reminder=\{dailyReminder\(dayId, `baca-\$\{session\}`\)\}/.test(
     baca('app/bible-reading.tsx'),
-  ));
+  ) &&
+    /🕊️ Reminder/.test(baca('components/spiritual/journey/BibleSteps.tsx')) &&
+    /label="📖 Buka YouVersion"/.test(
+      baca('components/spiritual/journey/BibleSteps.tsx'),
+    ));
 c('deep link NDC & YouVersion cuma ditulis sekali (di lib/spiritual.ts)',
   /const NDC_DEEPLINK/.test(spiritSrc) &&
     /const YOUVERSION_DEEPLINK/.test(spiritSrc) &&

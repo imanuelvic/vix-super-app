@@ -201,8 +201,16 @@ c('judul kartunya ikut berubah sendiri',
   ));
 c('acuan yang tak terbaca dipakai apa adanya (bukan kartu tanpa acuan)',
   /\|\| dipilih;/.test(story));
+// 2 Okt 2026: sumber nomor ayatnya BERTAMBAH, bukan berkurang. Langkah 💛
+// Verse di Bible Journey sudah menanyakan ayat yang memberkati, jadi kalau
+// ada, dialah yang dipakai; tanpa itu (catatan lama, atau Verse dikosongkan)
+// nilainya tetap ikut acuan yang dioper seperti dulu.
 c('nilai awalnya ikut acuan yang dioper (catatan lama tak kehilangan ayatnya)',
-  /const awal = parseBibleRef\(refs\[0\] \?\? ''\);/.test(story));
+  /const awal = parseBibleRef\(ayatPilihan \|\| refs\[0\] \|\| ''\);/.test(story));
+c('ayat dari langkah 💛 Verse menang atas bacaan pertama hari itu',
+  /const ayatPilihan = \(typeof verseParam === 'string' \? verseParam : ''\)\.trim\(\);/.test(story) &&
+    /ayatPilihan && awal\.book\s*\?\s*bibleRefText\(awal\.book, awal\.chapter, '', ''\)\s*:\s*\(refs\[0\] \?\? ''\)/
+      .test(story));
 // Chip pilih bacaan membandingkan acuan MENTAH-nya: kalau dibandingkan dengan
 // `reference` yang sudah berayat, tak ada satu chip pun yang pernah aktif.
 c('chip pilih bacaan tetap menyorot yang benar', /active=\{r === pickedRef\}/.test(story));

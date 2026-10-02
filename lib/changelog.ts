@@ -44,8 +44,12 @@ export type ReleaseNote = {
 export const CHANGELOG: ReleaseNote[] = [
   {
     version: '2.0.1',
-    date: '2026-10-01',
+    date: '2026-10-02',
     items: [
+      '📖 Baca Alkitab jadi perjalanan lima langkah, satu layar satu pertanyaan',
+      '✨ Apa yang kamu dapat & ayat yang memberkati ikut tersimpan di arsip',
+      '🌅 Warna layar bacanya ikut sesi: pagi hangat, siang teduh, malam gelap',
+      '📸 Bagikan ayatnya ke Instagram jadi tawaran di akhir, bebas dilewati',
       '📤 Laporan keuangan PDF, bisa ditarik 1, 3, 6, atau 12 bulan sekaligus',
       '🤖 Rekomendasi Budget AI dari realisasi 3 bulan terakhir, tinggal disetujui',
       '🔒 Budget terkunci sekarang boleh dilihat, Unlock cuma untuk mengubah',

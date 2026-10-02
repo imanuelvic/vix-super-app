@@ -50,10 +50,14 @@ export default function BibleStoryScreen() {
     session: sessionParam,
     refs: refsParam,
     version: versionParam,
+    verse: verseParam,
+    verseText: verseTextParam,
   } = useLocalSearchParams<{
     session?: string;
     refs?: string;
     version?: string;
+    verse?: string;
+    verseText?: string;
   }>();
   const session = bibleSessionOf(sessionParam);
   const meta = bibleSessionMeta(session);
@@ -66,18 +70,31 @@ export default function BibleStoryScreen() {
 
   const { now, todayId } = useNow();
 
+  // 💛 Ayat yang memberkati, dari langkah Verse di Bible Journey (2 Okt 2026).
+  // Kalau ada, DIALAH yang dipajang: acuannya sudah lengkap sampai nomor ayat
+  // dan bunyinya sudah kamu salin sendiri, jadi layar ini tidak lagi memulai
+  // dari kosong. Tanpa parameter itu (mis. dibuka dari catatan lama) bentuknya
+  // persis seperti dulu.
+  const ayatPilihan = (typeof verseParam === 'string' ? verseParam : '').trim();
+  const bunyiAyat = (typeof verseTextParam === 'string' ? verseTextParam : '').trim();
+
+  // Ayat berapa sampai ayat berapa. Langkah 📖 Read cuma menyimpan kitab &
+  // pasalnya ("Amsal 5"); nomor ayatnya datang dari langkah 💛 Verse, atau
+  // diketik di sini kalau waktu itu dikosongkan.
+  const awal = parseBibleRef(ayatPilihan || refs[0] || '');
   // Acuan yang sedang dipilih. Nilai awalnya yang pertama — parameternya sudah
-  // ada sejak render pertama, jadi tak perlu efek penyelaras.
-  const [pickedRef, setPickedRef] = useState(refs[0] ?? '');
-  // Ayat berapa sampai ayat berapa. Layar catat bacaan cuma menyimpan kitab &
-  // pasalnya ("Amsal 5") — ayatnya dipilih DI SINI, karena yang benar-benar
-  // butuh "dari ayat mana sampai ayat mana" cuma gambar Story-nya. Nilai
-  // awalnya ikut acuan yang dioper, jadi catatan lama yang sudah berayat tidak
-  // kehilangan ayatnya.
-  const awal = parseBibleRef(refs[0] ?? '');
+  // ada sejak render pertama, jadi tak perlu efek penyelaras. Kalau ada ayat
+  // dari journey, KITABNYA yang menang: ayat yang memberkati tidak selalu dari
+  // bacaan pertama hari itu, dan memakai refs[0] akan menempelkan nomor ayat
+  // Mazmur ke pasal Amsal.
+  const [pickedRef, setPickedRef] = useState(
+    ayatPilihan && awal.book
+      ? bibleRefText(awal.book, awal.chapter, '', '')
+      : (refs[0] ?? ''),
+  );
   const [ayatDari, setAyatDari] = useState(awal.verseFrom);
   const [ayatSampai, setAyatSampai] = useState(awal.verseTo);
-  const [verse, setVerse] = useState('');
+  const [verse, setVerse] = useState(bunyiAyat);
   const [pickedKey, setPickedKey] = useState(SHARE_DESIGNS[0].key);
   // Tombol mana yang sedang bekerja — dua tombol, satu proses.
   const kerja = useBusyTask<'save' | 'ig'>();

@@ -414,6 +414,47 @@ export const BIBLE_VERSION_DEFAULT = 'TB';
 /** Terjemahan tiap sesi dalam satu hari. */
 export type BibleReadingVersions = Record<BibleSession, string>;
 
+// ===================== Catatan perjalanan 📖 (2 Okt 2026) =====================
+// Isian langkah ✨ Receive & 💛 Verse di Bible Journey. Menumpang DOKUMEN HARI
+// YANG SUDAH ADA (users/{uid}/bibleRead/{hari}) sebagai field datar per sesi:
+// `morningNote`, `morningVerse`, `morningVerseText`, lalu daytime… & night….
+//
+// Kenapa bukan koleksi baru: satu dokumen per hari sudah dilanggan Home,
+// Habits, Today, & layar bacanya sendiri. Menambah koleksi berarti menambah
+// read yang dibayar tiap hari untuk data yang selalu dibaca bersamaan.
+//
+// Ketiganya BOLEH kosong. Perjalanannya tetap dihitung dibaca selama acuannya
+// terisi, jadi tidak ada langkah yang diam-diam jadi wajib.
+
+export type BibleReadingNote = {
+  /** ✨ Apa yang kamu dapatkan dari bacaan ini. */
+  note: string;
+  /** 💛 Acuan ayat yang memberkati hari itu, mis. "Amsal 27:17". */
+  verse: string;
+  /** Bunyi ayatnya, disalin sendiri. Dipakai lagi oleh Story Instagram. */
+  verseText: string;
+};
+
+export const EMPTY_BIBLE_NOTE: BibleReadingNote = {
+  note: '',
+  verse: '',
+  verseText: '',
+};
+
+/** Catatan perjalanan ketiga sesi dalam satu hari. */
+export type BibleReadingNotes = Record<BibleSession, BibleReadingNote>;
+
+export const EMPTY_BIBLE_NOTES: BibleReadingNotes = {
+  morning: EMPTY_BIBLE_NOTE,
+  daytime: EMPTY_BIBLE_NOTE,
+  night: EMPTY_BIBLE_NOTE,
+};
+
+/** Ada yang ditulis di langkah Receive/Verse? (kosong = tidak digambar) */
+export function bibleNoteWritten(note: BibleReadingNote): boolean {
+  return !!(note.note.trim() || note.verse.trim() || note.verseText.trim());
+}
+
 /** Acuan + terjemahannya, siap ditampilkan: "Amsal 16 (TB)". */
 export function bibleRefWithVersion(passage: string, version: string): string {
   const acuan = passage.trim();
@@ -496,6 +537,8 @@ export type BibleReadingDay = BibleReadingSessions & {
   date: Timestamp;
   /** Terjemahan tiap sesi hari itu — kosong di Firestore berarti TB. */
   versions: BibleReadingVersions;
+  /** Isian ✨ Receive & 💛 Verse tiap sesi hari itu (boleh kosong). */
+  notes: BibleReadingNotes;
 };
 
 /** Sesi yang jendelanya sedang terbuka sekarang (null = di luar jam baca). */
@@ -555,6 +598,20 @@ function readVersions(data?: Record<string, unknown>): BibleReadingVersions {
   };
 }
 
+/**
+ * Catatan perjalanan tiap sesi. Catatan lama tidak punya field ini sama
+ * sekali → kosong, dan itu memang benar: dulu memang belum ada yang ditanyakan.
+ */
+function readNotes(data?: Record<string, unknown>): BibleReadingNotes {
+  const ambil = (k: string) => ((data?.[k] as string) || '').trim();
+  const sesi = (s: BibleSession): BibleReadingNote => ({
+    note: ambil(`${s}Note`),
+    verse: ambil(`${s}Verse`),
+    verseText: ambil(`${s}VerseText`),
+  });
+  return { morning: sesi('morning'), daytime: sesi('daytime'), night: sesi('night') };
+}
+
 /** Satu dokumen hari → satu baris riwayat. Dipakai langganan & sekali-ambil. */
 function bibleDayRow(d: QueryDocumentSnapshot): BibleReadingDay {
   return {
@@ -562,6 +619,7 @@ function bibleDayRow(d: QueryDocumentSnapshot): BibleReadingDay {
     ...readSessions(d.data()),
     date: d.data().date as Timestamp,
     versions: readVersions(d.data()),
+    notes: readNotes(d.data()),
   };
 }
 
@@ -666,13 +724,18 @@ export function subscribeBibleReadingToday(
   onChange: (
     sessions: BibleReadingSessions,
     versions: BibleReadingVersions,
+    notes: BibleReadingNotes,
   ) => void,
   onError?: (error: FirestoreError) => void,
 ) {
   return liveDoc(
     doc(db, 'users', uid, 'bibleRead', dayId),
     (snapshot) =>
-      onChange(readSessions(snapshot.data()), readVersions(snapshot.data())),
+      onChange(
+        readSessions(snapshot.data()),
+        readVersions(snapshot.data()),
+        readNotes(snapshot.data()),
+      ),
     onError,
   );
 }
@@ -701,9 +764,44 @@ export function saveBibleReading(
 }
 
 /**
+ * Simpan isian perjalanan (✨ Receive & 💛 Verse) SATU sesi — merge, jadi
+ * acuan & terjemahannya tidak tersentuh. Bentuknya sama dengan
+ * `saveJourneyFields` milik Morning Journey: tiap langkah menyimpan bagiannya
+ * sendiri begitu "Lanjut" di-click, bukan semuanya sekaligus di akhir.
+ *
+ * `date` ikut ditulis supaya dokumen yang LAHIR dari langkah ini (catatan
+ * ditulis sebelum "Sudah baca") tetap punya field yang diurutkan kueri
+ * riwayat. Tanpa itu, hari yang isinya cuma catatan tidak akan pernah muncul.
+ */
+export type BibleJourneyFields = Partial<BibleReadingNote>;
+
+export function saveBibleJourney(
+  uid: string,
+  dayId: string,
+  session: BibleSession,
+  fields: BibleJourneyFields,
+) {
+  const isi: Record<string, unknown> = {
+    date: Timestamp.fromDate(dayIdToDate(dayId)),
+  };
+  if (fields.note !== undefined) isi[`${session}Note`] = fields.note.trim();
+  if (fields.verse !== undefined) isi[`${session}Verse`] = fields.verse.trim();
+  if (fields.verseText !== undefined) {
+    isi[`${session}VerseText`] = fields.verseText.trim();
+  }
+  return setDoc(doc(db, 'users', uid, 'bibleRead', dayId), isi, { merge: true });
+}
+
+/**
  * Hapus catatan bacaan SATU sesi — PERMANEN. Kalau sesi satunya di hari itu
  * juga kosong, dokumen harinya ikut dihapus supaya tidak menyisakan data
  * kosong di Firestore.
+ *
+ * Catatan perjalanannya (Note/Verse/VerseText) ikut dikosongkan. Kalau tidak,
+ * tulisan "apa yang aku dapat" tertinggal sebagai yatim: bacaannya sudah tidak
+ * ada, jadi tidak ada satu layar pun yang bisa menampilkannya lagi, sementara
+ * ia tetap ikut terekspor & terbaca selamanya. Hapus di app ini selalu
+ * permanen, dan permanen berarti tidak menyisakan ekornya.
  */
 export function deleteBibleReading(
   uid: string,
@@ -712,7 +810,18 @@ export function deleteBibleReading(
   otherFilled: boolean,
 ) {
   const ref = doc(db, 'users', uid, 'bibleRead', dayId);
-  return otherFilled ? setDoc(ref, { [session]: '' }, { merge: true }) : deleteDoc(ref);
+  return otherFilled
+    ? setDoc(
+        ref,
+        {
+          [session]: '',
+          [`${session}Note`]: '',
+          [`${session}Verse`]: '',
+          [`${session}VerseText`]: '',
+        },
+        { merge: true },
+      )
+    : deleteDoc(ref);
 }
 
 // ===== Streak baca Alkitab 🔥 — SATU dokumen: users/{uid}/app/bibleStreak =====

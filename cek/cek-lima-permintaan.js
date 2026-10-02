@@ -125,8 +125,12 @@ c('baris WAG tetap menuju Spiritual › Revive',
 console.log('\n=== 2. Sesudah "Sudah baca" → arsip sesi itu juga ===');
 c('tidak lagi router.back() sesudah menyimpan',
   !/bibleDayComplete\(today, session\),\s*\n\s*\);\s*\n\s*router\.back\(\);/.test(layarBaca));
-c('memakai replace, bukan push (formulirnya sudah selesai)',
-  /router\.replace\(\{\s*\n\s*pathname: '\/walk',\s*\n\s*params: \{ tab: 'bible', session \},/.test(layarBaca));
+// 2 Okt 2026: baris yang sama, cuma muat satu baris sesudah layarnya jadi
+// Bible Journey (isinya pindah ke komponen, jadi `router.replace` tak lagi
+// menjorok sedalam dulu).
+c('memakai replace, bukan push (perjalanannya sudah selesai)',
+  /router\.replace\(\{ pathname: '\/walk', params: \{ tab: 'bible', session \} \}\);/
+    .test(layarBaca.replace(/\s+/g, ' ')));
 c('sesinya DIOPER apa adanya, bukan dihitung ulang dari jam sekarang',
   /params: \{ tab: 'bible', session \}/.test(layarBaca) &&
     !/params: \{ tab: 'bible', session: bibleSessionNow/.test(layarBaca));

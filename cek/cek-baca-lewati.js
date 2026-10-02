@@ -63,9 +63,18 @@ c('penanda "dilewati" tetap disimpan (bukan dihapus dari Firestore)',
     /saveBibleReading\(\s*user\.uid,\s*dayId,\s*session,\s*skipped \? '' : BIBLE_SKIPPED,/.test(baca('app/bible-reading.tsx')));
 c('baris Today tetap padam (✓) saat hari itu dilewati (tak menagih lagi)',
   /done: !!input\.bibleReading\[bibleSession\]/.test(BACA_TODAY('lib/today.ts')));
+// 2 Okt 2026: <SkipNotice/> tidak lagi dipakai — di Bible Journey keadaan
+// "dilewati" tidak punya kartu peringatan sendiri, ia disebut di KAKI layar
+// bersama tombol pembatalnya, jadi penjelasan & jalan keluarnya berdampingan.
+// Pembatalannya sendiri tidak berubah sedikit pun.
 c('layar catat bacaan tetap bisa MEMBATALKAN "dilewati"',
   /skipped \? '' : BIBLE_SKIPPED/.test(baca('app/bible-reading.tsx')) &&
-    /<SkipNotice/.test(baca('app/bible-reading.tsx')));
+    /⏭️ Hari ini ditandai dilewati\. Streak 🔥 tidak bertambah\./
+      .test(baca('components/spiritual/BibleJourney.tsx')) &&
+    /\{skipped\s*\?\s*'↩️ Batalkan lewati'/
+      .test(baca('components/spiritual/BibleJourney.tsx')) &&
+    /onPress=\{skipped \? onSkip : \(\) => setSkipConfirm\(true\)\}/
+      .test(baca('components/spiritual/BibleJourney.tsx')));
 c('jalan masuknya masih ada walau kartu Home padam: baris Habits bisa dipencet',
   /route: \{ pathname: '\/bible-reading', params: \{ session: 'morning' \} \}/.test(baca('lib/habits.ts')));
 

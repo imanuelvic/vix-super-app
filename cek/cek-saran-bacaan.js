@@ -203,10 +203,19 @@ console.log('\n== 3. Sekali ambil, satu kueri untuk tiga sesi ==');
 
   console.log('\n== 4. Layar catat bacaan ==');
 
+  // 2 Okt 2026: layarnya jadi Bible Journey. Nilai awalnya tetap dihitung DI
+  // SINI (layar inilah yang punya datanya); useDraft-nya yang pindah ke
+  // kerangka perjalanan, karena langkah 📖 Read & 🕊️ Close sama-sama memakai
+  // acuannya. Aturannya tidak berubah sedikit pun.
+  const rapat = layar.replace(/\s+/g, ' ');
+  const kerangka = baca('components/spiritual/BibleJourney.tsx');
+  const langkah = baca('components/spiritual/journey/BibleSteps.tsx');
   c('Bacaan 1 dimulai dari sarannya saat hari ini belum dicatat',
-    /const \[refs, setRefs\] = useDraft<string\[\]>\(\s*\n\s*tercatat\s*\n\s*\? existing\.split\(','\)\.map\(\(s\) => s\.trim\(\)\)\s*\n\s*: \[saran\?\.next \?\? ''\],\s*\n\s*\);/.test(layar));
+    /const initialRefs = tercatat \? splitBibleRefs\(existing\) : \[saran\?\.next \?\? ''\];/.test(rapat) &&
+    /const \[refs, setRefs\] = useDraft<string\[\]>\(initialRefs\);/.test(kerangka));
   c('terjemahannya juga ikut terisi sendiri',
-    /tercatat \? versiTersimpan : \(saran\?\.version \?\? versiTersimpan\)/.test(layar));
+    /const initialVersion = tercatat \? versiTersimpan : \(saran\?\.version \?\? versiTersimpan\);/.test(rapat) &&
+    /const \[version, setVersion\] = useDraft\(initialVersion\);/.test(kerangka));
   // Catatan hari ini SELALU menang: membuka layar untuk menambah kitab kedua
   // tidak boleh menimpa yang sudah tersimpan dengan tebakan.
   c('catatan hari ini menang atas saran',
@@ -230,11 +239,19 @@ console.log('\n== 3. Sekali ambil, satu kueri untuk tiga sesi ==');
     /🎉 \$\{saran\.last\}, kitabnya tamat\. Pilih kitab baru ya\./.test(layar));
   c('keterangannya cuma di kartu Bacaan 1, & tidak muncul kalau sudah dicatat',
     /\{i === 0 && hint \? \(/.test(baca('components/spiritual/BibleRefList.tsx')) &&
-    /hint=\{saranHint\}/.test(layar) &&
-    /tercatat \|\| !saran\s*\n\s*\? null/.test(layar));
-  // Kolom bisa terisi sendiri sekarang → label lama akan berbohong.
-  c('kotak ringkasan tidak lagi mengaku "Tersimpan" sebelum disimpan',
-    /\{tercatat \? 'Tersimpan sebagai' : 'Akan tersimpan sebagai'\}/.test(layar));
+    /hint=\{hint\}/.test(langkah) && /hint=\{hint\}/.test(kerangka) &&
+    /const hint = tercatat \|\| !saran \? null/.test(rapat));
+  // Kolom bisa terisi sendiri sekarang → label lama akan berbohong. Di
+  // perjalanan ini kotaknya cuma ada di langkah PENUTUP, dan di situ isinya
+  // memang belum tersimpan sampai "✅ Sudah baca" di-click — jadi kalimatnya
+  // selalu "Akan tersimpan", tak ada lagi keadaan yang bisa mengaku terlalu
+  // cepat. Ini mengencangkan, bukan melonggarkan.
+  // Tiap "tersimpan sebagai" wajib "AKAN tersimpan sebagai" — tidak ada satu
+  // pun yang boleh berdiri sendiri.
+  c('kotak ringkasan tidak pernah mengaku "Tersimpan" sebelum disimpan',
+    /Akan tersimpan sebagai/.test(langkah) &&
+    (langkah.match(/[Tt]ersimpan sebagai/g) ?? []).length ===
+      (langkah.match(/Akan tersimpan sebagai/g) ?? []).length);
 
   console.log(ok ? '\nLULUS' : '\nGAGAL');
   process.exit(ok ? 0 : 1);

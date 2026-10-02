@@ -283,19 +283,26 @@ c('kaki: tanggal + vixtory.archive, sama seperti Feed refleksi',
 console.log('\n=== B. Layar & pintunya ===');
 const layar = baca('app/bible-story.tsx');
 const bacaan = baca('app/bible-reading.tsx');
+// 2 Okt 2026: layar catat bacaan jadi Bible Journey, jadi pintunya ada di
+// kartu langkah 🕊️ Close. Syaratnya sama persis — tanpa acuan tak ada yang
+// bisa dipajang — cuma namanya kini `canShare`, dihitung di kerangkanya.
+const kerangka = baca('components/spiritual/BibleJourney.tsx');
+const langkah = baca('components/spiritual/journey/BibleSteps.tsx');
 c('pintunya di layar catat bacaan, MUNCUL hanya kalau sudah ada isinya',
-  /\{filled\.length > 0 && \([\s\S]*?pathname: '\/bible-story'/.test(bacaan));
+  /canShare=\{filled\.length > 0\}/.test(kerangka) &&
+    /\{canShare \? \(\s*\n\s*<JourneyAction/.test(langkah) &&
+    /pathname: '\/bible-story'/.test(bacaan));
 // Terjemahannya ikut dioper (2 Sep 2026): yang membaca Story-mu tidak punya
 // cara lain untuk tahu "Amsal 1:4" itu versi yang mana.
 c('acuan, sesi & terjemahannya dioper lewat parameter',
-  /refs: filled\.join\(', '\),/.test(bacaan) &&
-    /version: versiTerpakai,/.test(bacaan));
+  /refs: passage,/.test(bacaan) && /version,/.test(bacaan) && /session,/.test(bacaan));
 c('layar Story membacanya & jatuh ke TB kalau kosong',
   /version: versionParam,/.test(layar) &&
     /BIBLE_VERSION_DEFAULT/.test(layar) &&
     /version=\{version\}/.test(layar));
 c('sifatnya opsional — tombol "Sudah baca" & "Lewati" tidak tersentuh',
-  /label="✅ Sudah baca"/.test(bacaan) && /label="⏭️ Lewati baca hari ini"/.test(bacaan));
+  /label="✅ Sudah baca"/.test(langkah) &&
+    /Lewati untuk hari ini/.test(kerangka));
 c('layar Story tidak menyentuh Firestore sama sekali', (() => {
   const impor = (layar.match(/^import .*$/gm) || []).join('\n');
   return !/firebase|firestore|liveDoc|subscribe/i.test(impor);

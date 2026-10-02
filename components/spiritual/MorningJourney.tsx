@@ -28,6 +28,7 @@ import {
 } from '@/components/spiritual/journey/JourneySteps';
 import { type IntercessionTopic } from '@/lib/intercession';
 import {
+  JOURNEY_STEPS,
   nextJourneyStep,
   reflectPromptOfDay,
   worshipSongOfDay,
@@ -136,7 +137,7 @@ export function MorningJourney({
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
-          <JourneyTrail current={step} onJump={setStep} />
+          <JourneyTrail steps={JOURNEY_STEPS} current={step} onJump={setStep} />
 
           {/* key = langkah → kartunya lahir baru tiap berpindah, jadi isian
               draf langkah sebelumnya tidak menempel & animasi masuknya jalan. */}

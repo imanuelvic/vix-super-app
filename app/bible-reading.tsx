@@ -1,33 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD, CARD_GAP } from '@/assets/style/card';
-import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
-import { RewardButton } from '@/components/common/RewardButton';
-import { BibleRefList } from '@/components/spiritual/BibleRefList';
-import { FormError } from '@/components/common/FormError';
-import { PressableScale } from '@/components/common/PressableScale';
-import { PrimaryButton } from '@/components/common/PrimaryButton';
-import { ScreenHeader } from '@/components/common/ScreenHeader';
-import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
-import { VixText } from '@/components/common/VixText';
-import { INTRO_GAP, SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
+import { BibleJourney } from '@/components/spiritual/BibleJourney';
 import { useAuth } from '@/contexts/auth';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import { useDraft } from '@/hooks/useDraft';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
 import { BIBLE_CATEGORY } from '@/lib/reward';
-import {
-  dayIdToDate,
-  formatFullDate,
-  formatMinutesLeft,
-  formatShortDayDate,
-} from '@/lib/format';
+import { dayIdToDate, formatShortDayDate } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { LOAD_ERROR } from '@/lib/messages';
 import {
@@ -35,38 +16,49 @@ import {
   BIBLE_VERSION_DEFAULT,
   bibleDayComplete,
   bibleMinutesLeft,
-  bibleRefWithVersion,
-  bibleSessionMeta,
   bibleSessionOf,
+  bibleStreakNow,
   bumpBibleStreaks,
   dailyReminder,
+  EMPTY_BIBLE_NOTES,
   EMPTY_BIBLE_STREAKS,
   fetchBibleSuggestions,
   isBibleSkipped,
+  openYouVersion,
+  saveBibleJourney,
   saveBibleReading,
   subscribeBibleReadingToday,
   subscribeBibleStreaks,
+  type BibleJourneyFields,
+  type BibleReadingNotes,
   type BibleReadingSessions,
   type BibleReadingVersions,
   type BibleStreaks,
 } from '@/lib/spiritual';
+import { splitBibleRefs } from '@/lib/bible';
 
-// Layar catat bacaan Alkitab 📖 — dibuka dari kartu Morning/Night Bible
-// Reading di HOME (di bawah kartu sapaan). Dibuat halaman penuh (bukan modal)
-// karena pemilih kitab sendiri sudah memakai modal; modal di atas modal tidak
-// andal di iOS.
+// Layar catat bacaan Alkitab 📖 — dibuka dari kartu Morning/Midday/Night
+// Bible Reading di Home, dari baris Habits, & dari arsipnya di Walk.
+//
+// 2 Okt 2026: isinya jadi PERJALANAN lima langkah (lihat
+// components/spiritual/BibleJourney.tsx). Layar ini tinggal mengurus DATA —
+// langganan, rekomendasi, & penyimpanan — persis seperti pasangan
+// app/morning-journey.tsx & components/spiritual/MorningJourney.tsx.
+//
+// Tetap halaman penuh (bukan modal) karena pemilih kitabnya sendiri sudah
+// memakai modal; modal di atas modal tidak andal di iOS.
 export default function BibleReadingScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { session: sessionParam } = useLocalSearchParams<{ session?: string }>();
   const session = bibleSessionOf(sessionParam);
-  const meta = bibleSessionMeta(session);
 
   // Jam BERJALAN (di-segarkan tiap menit) — untuk hitung mundur jendela baca.
   const { now } = useNow();
 
   const [today, setToday] = useState<BibleReadingSessions | null>(null);
   const [versions, setVersions] = useState<BibleReadingVersions | null>(null);
+  const [notes, setNotes] = useState<BibleReadingNotes>(EMPTY_BIBLE_NOTES);
   const [streaks, setStreaks] = useState<BibleStreaks>(EMPTY_BIBLE_STREAKS);
   // Penanda sibuk + pesan gagal formulir (hook bersama).
   const { busy, formError: error, save } = useFormSave();
@@ -75,9 +67,10 @@ export default function BibleReadingScreen() {
 
   useLiveAll(
     (uid) => [
-      subscribeBibleReadingToday(uid, dayId, (sessions, versi) => {
+      subscribeBibleReadingToday(uid, dayId, (sessions, versi, catatan) => {
         setToday(sessions);
         setVersions(versi);
+        setNotes(catatan);
       }),
       subscribeBibleStreaks(uid, setStreaks),
     ],
@@ -105,37 +98,24 @@ export default function BibleReadingScreen() {
   const saran = semuaSaran?.[session] ?? null;
 
   // Beberapa acuan sekaligus — kalau hari itu baca lebih dari satu kitab.
-  // Isinya ikut catatan tersimpan SELAMA belum diketik (hook bersama useDraft),
-  // jadi begitu datanya sampai kolomnya langsung terisi — tanpa efek yang
-  // menimpa ketikan yang sedang berjalan. Hal yang sama berlaku untuk
-  // rekomendasi: begitu sampai ia mengisi kolom yang masih kosong, tapi tidak
-  // pernah menimpa yang sudah kamu pilih sendiri.
-  const [refs, setRefs] = useDraft<string[]>(
-    tercatat
-      ? existing.split(',').map((s) => s.trim())
-      : [saran?.next ?? ''],
-  );
+  // Dipecah dengan pemisah yang sama dengan arsipnya, jadi "Amsal 3:5-6"
+  // tetap utuh. Belum tercatat → ikut rekomendasi pasal berikutnya.
+  const initialRefs = tercatat ? splitBibleRefs(existing) : [saran?.next ?? ''];
 
-  // Terjemahan yang dibaca ("TB", "BIS", "NIV", …). Bebas diketik: daftar
-  // terjemahan di YouVersion terlalu panjang untuk dijadikan pilihan, dan
-  // yang kamu pakai sehari-hari cuma segelintir. Kosong = TB.
-  //
-  // Belum dicatat hari ini → ikut terjemahan yang dipakai TERAKHIR di sesi
-  // ini. Ganti terjemahan itu jarang, jadi menyalin TB terus-menerus padahal
-  // sebulan terakhir baca TSI cuma bikin catatannya keliru.
+  // Terjemahan yang dibaca ("TB", "BIS", "NIV", …). Belum dicatat hari ini →
+  // ikut terjemahan yang dipakai TERAKHIR di sesi ini. Ganti terjemahan itu
+  // jarang, jadi menyalin TB terus-menerus padahal sebulan terakhir baca TSI
+  // cuma bikin catatannya keliru.
   const versiTersimpan = versions?.[session] ?? BIBLE_VERSION_DEFAULT;
-  const [version, setVersion] = useDraft<string>(
-    tercatat ? versiTersimpan : (saran?.version ?? versiTersimpan),
-  );
-
-  const filled = refs.map((r) => r.trim()).filter(Boolean);
-  const versiTerpakai = version.trim() || BIBLE_VERSION_DEFAULT;
+  const initialVersion = tercatat
+    ? versiTersimpan
+    : (saran?.version ?? versiTersimpan);
 
   // Keterangan kecil di kartu Bacaan 1: dari mana angka itu datang. Tanpa ini
   // pasal yang tiba-tiba terisi bisa disangka catatan yang sudah tersimpan.
   // Kitab yang tamat tidak disambung sendiri ke kitab berikutnya — memilih
   // kitab baru itu keputusanmu, jadi yang muncul ucapan selamat, bukan tebakan.
-  const saranHint =
+  const hint =
     tercatat || !saran
       ? null
       : saran.next
@@ -144,25 +124,47 @@ export default function BibleReadingScreen() {
           ? `🎉 ${saran.last}, kitabnya tamat. Pilih kitab baru ya.`
           : null;
 
-  // Sisa waktu jendela sesi ini. ≤ 0 = sudah lewat; ≤ 30 menit = aba-aba merah.
-  const minutesLeft = bibleMinutesLeft(session, now);
-  const closingSoon = minutesLeft <= 30;
-
   // Jendelanya habis DAN sesi ini masih kosong — bukan "belum dibaca", tapi
   // "terlewat". `!existing` mencakup keduanya sekaligus: belum dicatat dan
-  // belum ditandai lewat sendiri.
+  // belum ditandai lewat sendiri. Saat itu Habits sudah menandainya ✗ sendiri
+  // (lihat `bibleMirrorState`), jadi tombol lewati tak lagi menawarkan apa pun.
+  const minutesLeft = bibleMinutesLeft(session, now);
   const terlewat = !existing && minutesLeft <= 0;
 
-  async function handleSave() {
-    if (!user || !today || filled.length === 0) return;
+  /**
+   * 📖 Read — acuan & terjemahannya tersimpan, streak BELUM naik.
+   *
+   * Sengaja TANPA `save()` di sini: penanda sibuk & pesan gagalnya milik
+   * langkah Read sendiri, supaya perjalanannya tidak maju ke langkah
+   * berikutnya kalau tulisannya gagal tersimpan.
+   */
+  async function handleSaveRead(passage: string, version: string) {
+    if (!user || !passage) return;
+    await saveBibleReading(user.uid, dayId, session, passage, version);
+  }
+
+  /** ✨ Receive & 💛 Verse — tiap langkah menyimpan bagiannya sendiri. */
+  async function handleSaveJourney(fields: BibleJourneyFields) {
+    if (!user) return;
+    await saveBibleJourney(user.uid, dayId, session, fields);
+  }
+
+  /**
+   * 🕊️ Close — "✅ Sudah baca": pastikan acuannya tersimpan, naikkan streak 🔥,
+   * lalu ke arsipnya di sub-tab sesi yang BARUSAN dicatat.
+   *
+   * `replace`, bukan `push`: perjalanan ini sudah selesai tugasnya, jadi
+   * tombol kembali dari arsipnya menuju Home, bukan balik ke langkah penutup
+   * yang isinya sudah tersimpan.
+   *
+   * Sesinya DIOPER apa adanya, bukan diambil ulang dari jam sekarang:
+   * mencatat bacaan Siang jam 23.00 itu wajar, dan yang harus terlihat adalah
+   * yang barusan kamu tulis — bukan sesi yang kebetulan sedang berjalan.
+   */
+  async function handleDone(passage: string, version: string) {
+    if (!user || !today || !passage) return;
     await save(async () => {
-      await saveBibleReading(
-        user.uid,
-        dayId,
-        session,
-        filled.join(', '),
-        versiTerpakai,
-      );
+      await saveBibleReading(user.uid, dayId, session, passage, version);
       // "Lengkap" = KETIGA sesi hari ini terisi setelah simpan ini.
       await bumpBibleStreaks(
         user.uid,
@@ -171,30 +173,14 @@ export default function BibleReadingScreen() {
         session,
         bibleDayComplete(today, session),
       );
-      // Selesai mencatat → langsung ke arsipnya, di sub-tab sesi yang BARUSAN
-      // dicatat. Dulu `router.back()`: kembali ke tempat asal (Home / kartu
-      // reminder), dan bacaan yang barusan disimpan tak terlihat di mana pun
-      // sampai kamu sendiri membuka Spiritual › Bible Reading.
-      //
-      // `replace`, bukan `push`: layar ini sudah selesai tugasnya, jadi tombol
-      // kembali dari arsipnya menuju Home — bukan balik ke formulir yang isinya
-      // sudah tersimpan.
-      //
-      // Sesinya DIOPER apa adanya, bukan diambil ulang dari jam sekarang:
-      // mencatat bacaan Siang jam 23.00 itu wajar, dan yang harus terlihat
-      // adalah yang barusan kamu tulis — bukan sesi yang kebetulan sedang
-      // berjalan.
-      router.replace({
-        pathname: '/walk',
-        params: { tab: 'bible', session },
-      });
+      router.replace({ pathname: '/walk', params: { tab: 'bible', session } });
     });
   }
 
   /**
    * Lewati sesi hari ini. Kartu reminder di Home berhenti menagih, tapi
    * streak 🔥 SENGAJA tidak dinaikkan — supaya angkanya tetap jujur.
-   * Menekannya lagi (saat sudah dilewati) membatalkan status itu.
+   * Meng-click-nya lagi (saat sudah dilewati) membatalkan status itu.
    */
   async function handleSkip() {
     if (!user) return;
@@ -209,218 +195,58 @@ export default function BibleReadingScreen() {
     });
   }
 
+  /**
+   * Story Instagram 9:16 — OPSIONAL. Acuan, ayat, & bunyinya dioper apa adanya
+   * lewat parameter (pendek), jadi layar Story tidak perlu membaca Firestore
+   * sama sekali. Terjemahannya ikut: yang membaca Story-mu tidak punya cara
+   * lain untuk tahu "Amsal 1:4" itu versi yang mana.
+   */
+  function handleShare(passage: string, version: string) {
+    router.push({
+      pathname: '/bible-story',
+      params: {
+        session,
+        refs: passage,
+        version,
+        verse: notes[session].verse,
+        verseText: notes[session].verseText,
+      },
+    });
+  }
+
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader
-        backLabel="Home"
-        title={`${meta.title} ${meta.emoji}`}
-        // Mazmur 1:2 / Yosua 1:8 — merenungkan firman-Nya siang & malam.
-        // Layar ini punya tiga sesi (pagi, siang, malam), jadi kalimatnya
-        // sekaligus menjelaskan kenapa bacanya dibagi tiga.
-        subtitle="Merenungkan firman-Nya pagi, siang & malam"
-        // Layar ini SATU sesi saja, jadi modal yang dibuka pun sesi itu:
-        // pagi 🌅 / siang 🌤️ / malam 🌙 — bukan daftar semua kategori.
-        right={<RewardButton category={BIBLE_CATEGORY[session]} />}>
-        {/* Tanggalnya, sama seperti layar rohani lain (Tulis Revive, Catatan
-            Khotbah): catatan bacaan itu melekat pada HARI tertentu, jadi
-            harinya harus kelihatan tanpa perlu diingat-ingat. */}
-        <VixText heading="label" additionalStyle={styles.dateLine}>
-          📅 {formatFullDate(now)}
-        </VixText>
-      </ScreenHeader>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Hitung mundur jendela baca — supaya jelas "sampai jam berapa ini
-            masih terhitung tepat waktu", bukan menebak-nebak. Hanya muncul
-            selagi sesi ini belum diisi & belum dilewati (kalau sudah, kotak
-            ringkasan / pemberitahuan "dilewati" yang bicara). Merah di 30
-            menit terakhir — aba-aba yang sama seperti gerbang doa pagi. */}
-        {!existing && (
-          <View
-            style={[styles.countdown, closingSoon && styles.countdownSoon]}>
-            <VixText
-              heading="bold"
-              additionalStyle={
-                closingSoon ? styles.countdownSoonText : styles.countdownText
-              }>
-              {minutesLeft > 0
-                ? `⏳ Tinggal ${formatMinutesLeft(minutesLeft)}`
-                : `⌛ Jendela ${meta.label.toLowerCase()} sudah lewat`}
-            </VixText>
-            <VixText heading="label" additionalStyle={styles.countdownSub}>
-              {minutesLeft > 0
-                ? `Jendela ${meta.label} ${meta.emoji} akan tutup jam ${meta.toHour}.00.`
-                : `Jam ${meta.fromHour}.00–${meta.toHour}.00 sudah habis. Otomatis ✗ di Habits, streak hilang.`}
-            </VixText>
-          </View>
-        )}
-
-        {/* Reminder hari ini + pintasan ke YouVersion — bentuknya sama dengan
-            Tulis Revive, tapi tujuan tombolnya beda: di sini yang dibuka
-            ALKITABNYA (YouVersion), bukan renungan NDC. Undiannya diberi garam
-            berbeda per sesi, jadi pagi, malam, & Revive tidak menampilkan
-            kalimat yang sama persis. */}
-        {/* Begitu bacaannya diisi, tombolnya tidak lagi cuma "buka app": ia
-            membuka PASAL ITU. Acuan pertama yang dipakai — kalau ada beberapa
-            kitab, sisanya tinggal di-click dari riwayatnya. */}
-        <SpiritualIntro
-          reminder={dailyReminder(dayId, `baca-${session}`)}
-          app="youversion"
-          passage={filled[0]}
-          version={versiTerpakai}
-        />
-
-        {/* Terjemahannya ikut MASUK ke kartu bacaan — dulu ia sebaris polos
-            di bawah tumpukan kartu, terpisah dari acuan yang justru ia
-            jelaskan. "Amsal 3" dan "TB" satu keterangan yang sama. */}
-        <BibleRefList
-          refs={refs}
-          onChange={setRefs}
-          editable={!busy}
-          hint={saranHint}
-          version={version}
-          onVersionChange={setVersion}
-        />
-
-        {filled.length > 0 && (
-          <View style={styles.summaryCard}>
-            {/* Sebelum "Sudah baca" di-click isinya belum tersimpan apa pun —
-                dan sekarang kolomnya bisa terisi sendiri dari rekomendasi,
-                jadi kalimatnya harus jujur menyebut mana yang mana. */}
-            <VixText heading="label" additionalStyle={styles.summaryLabel}>
-              {tercatat ? 'Tersimpan sebagai' : 'Akan tersimpan sebagai'}
-            </VixText>
-            <VixText heading="bold" additionalStyle={styles.summaryText}>
-              {bibleRefWithVersion(filled.join(', '), versiTerpakai)}
-            </VixText>
-          </View>
-        )}
-
-        <FormError message={error} />
-
-        {/* Sedang berstatus dilewati → beri tahu, dan tombolnya jadi pembatal */}
-        {skipped && (
-          <SkipNotice
-            title="⏭️ Skipped Today"
-            detail={
-              '🔥 Streak tidak bertambah'
-            }
-            additionalStyle={styles.skippedGap}
-          />
-        )}
-
-        {/* OPSIONAL — bacaan hari ini jadi Story Instagram 9:16 bertanda
-            `vixtory.archive`, sekeluarga dengan Feed refleksi harian.
-            Acuannya dioper apa adanya lewat parameter (pendek), jadi Story
-            bisa dibuat walau "Sudah baca" belum di-click. Baru muncul setelah
-            ada isinya — tanpa acuan tak ada yang bisa dipajang.
-
-            Duduk DI ATAS "Sudah baca": membagikannya dilakukan sambil ayatnya
-            masih di layar. Dulu ia paling bawah, di balik dua tombol dan
-            sebuah garis pemisah — jadi baru ketemu sesudah bacaannya dicatat,
-            saat layar ini justru sudah selesai dipakai.
-
-            Garis pemisahnya ikut dibuang: ia dulu menandai "yang di bawah ini
-            bonus". Di atas tombol utama tak ada lagi batas yang perlu
-            ditandai — yang tersisa cuma sebaris garis di tengah tumpukan
-            tombol. Jaraknya sekarang marginBottom milik barisnya sendiri,
-            sama dengan jarak tombol utama ke tombol lewati. */}
-        {filled.length > 0 && (
-          <PressableScale
-            style={styles.storyRow}
-            onPress={() =>
-              router.push({
-                pathname: '/bible-story',
-                // Terjemahannya ikut dioper — yang membaca Story-mu tidak
-                // punya cara lain untuk tahu "Amsal 1:4" itu versi yang mana.
-                params: {
-                  session,
-                  refs: filled.join(', '),
-                  version: versiTerpakai,
-                },
-              })
-            }>
-            <VixText heading="bold" additionalStyle={styles.storyText}>
-              📖 Bagikan ayatnya ke Instagram Story
-            </VixText>
-          </PressableScale>
-        )}
-
-        {/* Aktif setelah minimal satu bacaan terisi (handleSave juga menjaga). */}
-        <PrimaryButton
-          label="✅ Sudah baca"
-          busy={busy}
-          onPress={handleSave}
-          additionalStyle={[
-            styles.save,
-            filled.length === 0 && styles.saveDisabled,
-          ]}
-        />
-
-        {/* Jujur lebih baik daripada mengarang bacaan demi streak.
-
-            Tombolnya HILANG begitu jendelanya habis tanpa sesi ini terisi:
-            saat itu Habits sudah menandainya ✗ sendiri (lihat
-            `bibleMirrorState` di lib/spiritual.ts), jadi ia tak lagi
-            menawarkan apa pun — cuma meminta melewati hari yang memang sudah
-            terlewat. Yang sudah TERLANJUR ditandai lewat sendiri tetap punya
-            tombolnya: di keadaan itu bunyinya "↩️ Batalkan lewati", dan
-            membatalkan masih ada gunanya. */}
-        {!terlewat && (
-          <SkipButton
-            skipped={skipped}
-            label="⏭️ Lewati baca hari ini"
-            busy={busy}
-            onPress={handleSkip}
-          />
-        )}
-      </ScrollView>
-    </SafeAreaView>
+    <BibleJourney
+      session={session}
+      reminder={dailyReminder(dayId, `baca-${session}`)}
+      minutesLeft={minutesLeft}
+      streak={bibleStreakNow(streaks, session, dayId)}
+      initialRefs={initialRefs}
+      initialVersion={initialVersion}
+      note={notes[session]}
+      hint={hint}
+      ready={today !== null}
+      skipped={skipped}
+      canSkip={!terlewat}
+      busy={busy}
+      error={error}
+      onOpenBible={(passage, version) =>
+        void openYouVersion(passage || undefined, version)
+      }
+      onSaveRead={handleSaveRead}
+      onSaveJourney={handleSaveJourney}
+      onShare={handleShare}
+      onDone={handleDone}
+      onSkip={() => void handleSkip()}
+      onOpenReward={() =>
+        router.push({
+          pathname: '/reward-category',
+          params: { cat: BIBLE_CATEGORY[session] },
+        })
+      }
+      onBack={() => {
+        if (router.canGoBack()) router.back();
+        else router.replace('/');
+      }}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { ...SCREEN_SAFE },
-  // Ikut warna pita header ungu di belakangnya.
-  dateLine: { marginTop: 2, color: Color.SPIRITUAL_DARK },
-  content: { ...SCREEN_CONTENT, paddingBottom: 40 },
-  // Hitung mundur jendela baca. Tenang (krem) selama masih longgar, merah
-  // samar di 30 menit terakhir — dua keadaan, bukan warna yang berkedip.
-  // Jarak ke bawahnya = INTRO_GAP milik SpiritualIntro: hitung mundur,
-  // Reminder, tombol YouVersion, lalu kartu Bacaan — satu tumpukan, satu irama.
-  countdown: {
-    backgroundColor: Color.CONTRAST_CONTAINER,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 2,
-    marginBottom: INTRO_GAP,
-  },
-  countdownSoon: { backgroundColor: Color.DANGER_TRANSPARENT },
-  countdownText: { color: Color.ACCENT_DARK },
-  countdownSoonText: { color: Color.DANGER },
-  countdownSub: { color: Color.TEXT_LABEL },
-  // Jaraknya SAMA dengan `save` di bawahnya — ketiganya (Story, Sudah baca,
-  // Lewati) satu tumpukan tombol, jadi jarak antar-barisnya tidak boleh beda.
-  storyRow: {
-    backgroundColor: Color.SPIRITUAL,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 2,
-    marginBottom: 10,
-  },
-  storyText: { color: Color.SPIRITUAL_DARK },
-  summaryCard: {
-    ...CARD,
-    gap: 2,
-    marginBottom: CARD_GAP,
-  },
-  summaryLabel: { color: Color.TEXT_LABEL },
-  summaryText: { color: Color.TEXT_TITLE },
-  save: { marginBottom: 10 },
-  saveDisabled: { opacity: 0.45 },
-  // Bentuk kartunya ada di components/common/SkipToday.tsx — di sini cukup
-  // jaraknya saja, karena tiap layar menaruhnya di posisi berbeda.
-  skippedGap: { marginBottom: CARD_GAP },
-});

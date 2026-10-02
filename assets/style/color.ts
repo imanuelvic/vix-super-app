@@ -288,3 +288,68 @@ export const Color = {
    */
   TABBAR_INACTIVE: '#8FB3AA',
 } as const;
+
+// ══════════════════════════════════════════════════════════════════════
+// WARNA SESI HARI — 🌅 Pagi · 🌤️ Siang · 🌙 Malam (2 Okt 2026)
+//
+// Untuk layar yang isinya bergantung pada JAM BERAPA ia dibuka, bukan pada
+// fitur apa ia berada. Yang pertama memakainya: Bible Journey 📖, tiga sesi
+// baca Alkitab. Di layar seperti itu ungu Spiritual menjawab pertanyaan yang
+// salah: yang ingin terasa "ini pagi" atau "ini malam", bukan "ini fitur
+// rohani".
+//
+// Sekeluarga dengan tiga rupa kartu Story (Morning/Midday/Night di
+// lib/shareImage.ts), tapi SENGAJA bukan nilai yang sama. Di gambar Story,
+// `paper` adalah kartunya sendiri; di sini ia latar yang di atasnya masih ada
+// kartu putih. Gading #F7F3EC yang pas untuk gambar nyaris tak terbedakan
+// dari kartu putih kalau dipakai sebagai latar layar, jadi pagi di sini
+// memakai pasir hangat dan siang memakai mint kabut.
+//
+// Bentuknya mengikuti Morning Journey: latar berwarna pekat, kartu putih
+// mengambang di atasnya. `ink` & `muted` itu tulisan DI ATAS latar (jejak
+// langkah, kaki layar); `accent` & `soft` dipakai DI DALAM kartu putih, jadi
+// keduanya wajib terbaca di atas putih, bukan di atas latarnya.
+// ══════════════════════════════════════════════════════════════════════
+
+export type DaypartKey = 'morning' | 'daytime' | 'night';
+
+export type DaypartShade = {
+  /** Latar satu layar penuh. */
+  paper: string;
+  /** Tulisan pokok DI ATAS `paper`. */
+  ink: string;
+  /** Tulisan sekunder & keterangan kecil di atas `paper`. */
+  muted: string;
+  /** Tombol utama, nama langkah, & tautan — dipakai di atas kartu PUTIH. */
+  accent: string;
+  /** Kotak bacaan di dalam kartu putih (ayat, ringkasan). */
+  soft: string;
+};
+
+export const DAYPART_SHADE: Record<DaypartKey, DaypartShade> = {
+  // 🌅 Pagi — pasir hangat & perunggu, cahaya pertama.
+  morning: {
+    paper: '#E6D3B3',
+    ink: '#3A2B16',
+    muted: '#6E5030',
+    accent: '#6E5030',
+    soft: '#EFE6D8',
+  },
+  // 🌤️ Siang — mint kabut, teduh di tengah hari yang ramai.
+  daytime: {
+    paper: '#C9E3DC',
+    ink: '#0B3D36',
+    muted: '#2F5248',
+    accent: '#176B5D',
+    soft: '#E8EFE9',
+  },
+  // 🌙 Malam — evergreen hampir pekat, supaya mata boleh beristirahat.
+  // Satu-satunya yang tulisannya terang di atas latar.
+  night: {
+    paper: '#12211C',
+    ink: '#F3EFE6',
+    muted: '#8FA79C',
+    accent: '#0B3D36',
+    soft: '#C9E3DC',
+  },
+};

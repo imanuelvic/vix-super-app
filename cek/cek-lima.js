@@ -208,25 +208,34 @@ console.log('\n=== 2. Terjemahan Alkitab & YouVersion ===');
   c('tombolnya bisa dua tujuan, bawaannya tetap NDC',
     /app = 'ndc'/.test(intro) && /youversion: \{ label: '📖 Buka YouVersion'/.test(intro));
 
+  // 2 Okt 2026: layar Baca Alkitab jadi Bible Journey. SpiritualIntro tidak
+  // lagi dipakai di sana (Revive masih), jadi tombol YouVersion-nya berdiri
+  // sendiri di langkah 📖 Read — tujuannya sama persis: Alkitabnya, bukan NDC.
   const layar = baca('app/bible-reading.tsx');
-  c('layar Baca Alkitab memakai YouVersion', /app="youversion"/.test(layar));
+  const langkah = baca('components/spiritual/journey/BibleSteps.tsx');
+  const kerangka = baca('components/spiritual/BibleJourney.tsx');
+  c('layar Baca Alkitab memakai YouVersion',
+    /label="📖 Buka YouVersion"/.test(langkah) &&
+      /void openYouVersion\(passage \|\| undefined, version\)/.test(layar));
   c('layar Tulis Revive TETAP NDC Ministry',
-    !/app="youversion"/.test(baca('app/revive.tsx')));
+    !/app="youversion"/.test(baca('app/revive.tsx')) &&
+      /<SpiritualIntro reminder=\{reminder\} \/>/.test(baca('app/revive.tsx')));
 
   c('subtitle-nya bicara merenungkan firman pagi–siang–malam',
-    /subtitle="Merenungkan firman-Nya pagi, siang & malam"/.test(layar));
+    /Merenungkan firman-Nya pagi, siang & malam/.test(kerangka));
   c('subtitle lama sudah tidak ada',
-    !/Pilih kitab, lalu isi pasal & ayatnya/.test(layar));
+    !/Pilih kitab, lalu isi pasal & ayatnya/.test(layar + langkah + kerangka));
   // 10 Sep 2026: kolomnya pindah KE DALAM kartu bacaan, jadi bentuknya ada
   // di komponen bersamanya. Kata "Terjemahan" berhenti jadi bukti — ia kini
   // juga muncul di komentar layar ini; yang diuji: layarnya benar-benar
   // MENGOPER nilainya, dan tetap ikut menyimpannya.
   c('kolom terjemahan ada di layar catat & ikut tersimpan',
-    /version=\{version\}/.test(layar) &&
-      /onVersionChange=\{setVersion\}/.test(layar) &&
-      /versiTerpakai/.test(layar));
-  c('ringkasan "Tersimpan sebagai" ikut menampilkan terjemahannya',
-    /bibleRefWithVersion\(filled\.join\(', '\), versiTerpakai\)/.test(layar));
+    /version=\{version\}/.test(langkah) &&
+      /onVersionChange=\{onVersion\}/.test(langkah) &&
+      /saveBibleReading\(user\.uid, dayId, session, passage, version\)/.test(layar));
+  c('ringkasan "Akan tersimpan sebagai" ikut menampilkan terjemahannya',
+    /Akan tersimpan sebagai/.test(langkah) &&
+      /\{bibleRefWithVersion\(passage, version\)\}/.test(langkah));
 }
 
 // =====================================================================
