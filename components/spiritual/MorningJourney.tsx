@@ -26,6 +26,7 @@ import {
   type ChainLeader,
   type SaveJourney,
 } from '@/components/spiritual/journey/JourneySteps';
+import { formatFullDate } from '@/lib/format';
 import { type IntercessionTopic } from '@/lib/intercession';
 import {
   JOURNEY_STEPS,
@@ -163,6 +164,7 @@ export function MorningJourney({
               <RespondStep
                 entry={entry}
                 ready={reviveReady}
+                dateLabel={formatFullDate(new Date())}
                 onSave={onSaveRevive}
                 onNext={next}
               />

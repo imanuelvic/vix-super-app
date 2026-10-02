@@ -81,6 +81,8 @@ const MAPPING = {
   'figure.mind.and.body': 'self-improvement',
   // ('beach.umbrella.fill' dibuang 30 Sep 2026 bersama sub-tab Recreation.)
   'dumbbell.fill': 'fitness-center',
+  // Sub-tab Record ⏱️ di Fitness — stopwatch olahraga.
+  'stopwatch.fill': 'timer',
   'graduationcap.fill': 'school',
   'figure.walk': 'directions-walk',
   // Burung — satu-satunya ikon burung di Material Icons ("flutter-dash").

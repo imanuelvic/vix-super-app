@@ -191,9 +191,15 @@ console.log('\n=== 2. 🙏 Chip kategori pokok doa di langkah Pray ===');
 
   // Langkah Respond TIDAK ikut berubah — permintaannya menambah, bukan
   // memindahkan.
+  // 2 Okt 2026: jumlah chipnya BERTAMBAH jadi 10 atas permintaan pemilik app,
+  // jadi yang dikunci di sini bukan angkanya lagi — melainkan bahwa langkah
+  // Respond tetap menggambar dari SATU daftar bersama, bukan daftar sendiri.
+  // (Isi & urutan daftarnya dijaga cek-morning-journey.js.)
   const respond = blok(steps, 'RespondStep');
-  ok('chip ❤️ Respond tetap seperti semula (5 pilihan, dari RESPONSE_OPTIONS)',
-    /RESPONSE_OPTIONS\.map\(\(o\) => \(/.test(respond) && J.RESPONSE_OPTIONS.length === 5);
+  ok('chip ❤️ Respond tetap digambar dari RESPONSE_OPTIONS, bukan daftar sendiri',
+    /RESPONSE_OPTIONS\.map\(\(o\) => \(/.test(respond) &&
+      J.RESPONSE_OPTIONS.length >= 5 &&
+      !/label="[^"]*Bersyukur/.test(respond));
 
   // ---- Tempat menyimpannya ----
   const spi = baca('lib/spiritual.ts');

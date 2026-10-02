@@ -90,10 +90,20 @@ ok('prompt refleksi: tiga dari permintaan + senada, satu per hari & tetap sepanj
   J.reflectPromptOfDay('2026-09-21') === J.reflectPromptOfDay('2026-09-21') &&
   new Set(['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25'].map(J.reflectPromptOfDay)).size >= 2);
 // 22 Sep 2026: Bersyukur = 💚 (hati hijau), bukan ❤️ yang sudah dipakai jejak Respond.
-ok('chip respons: 💚 Bersyukur · 🕊️ Menyerahkan · 💪 Berani melangkah · 🤝 Mengampuni · 🌱 Bertumbuh',
-  J.RESPONSE_OPTIONS.map((o) => `${o.emoji} ${o.label}`).join(' · ') ===
+// 2 Okt 2026: lima chip ditambahkan ATAS PERMINTAAN PEMILIK APP. Kelima yang
+// lama tetap di urutan semula — itu yang dikunci di sini, karena menggeser
+// chip yang sudah hafal di tangan membuat jari memilih yang salah.
+ok('lima chip lama tetap di urutan semula: 💚 · 🕊️ · 💪 · 🤝 · 🌱',
+  J.RESPONSE_OPTIONS.slice(0, 5).map((o) => `${o.emoji} ${o.label}`).join(' · ') ===
     '💚 Bersyukur · 🕊️ Menyerahkan · 💪 Berani melangkah · 🤝 Mengampuni · 🌱 Bertumbuh' &&
   J.responsesLine(['grateful', 'grow']) === '💚 Bersyukur · 🌱 Bertumbuh' && J.responsesLine(undefined) === '');
+ok('lima chip baru: 🤲 Percaya · 🙇 Bertobat · ⚓ Berharap · 🕯️ Ditenangkan · 🫶 Mengasihi',
+  J.RESPONSE_OPTIONS.slice(5).map((o) => `${o.emoji} ${o.label}`).join(' · ') ===
+    '🤲 Percaya · 🙇 Bertobat · ⚓ Berharap · 🕯️ Ditenangkan · 🫶 Mengasihi',
+  J.RESPONSE_OPTIONS.slice(5).map((o) => `${o.emoji} ${o.label}`).join(' · '));
+ok('tidak ada chip yang kembar lambang maupun kuncinya',
+  new Set(J.RESPONSE_OPTIONS.map((o) => o.emoji)).size === J.RESPONSE_OPTIONS.length &&
+  new Set(J.RESPONSE_OPTIONS.map((o) => o.key)).size === J.RESPONSE_OPTIONS.length);
 ok('chip Bersyukur tidak kembar dengan lambang langkah Respond (❤️)',
   J.RESPONSE_OPTIONS.every((o) => o.emoji !== J.JOURNEY_STEPS.find((s) => s.key === 'respond').emoji));
 ok('lagu worship: ≥ 20, satu per hari, tautan pencarian YouTube (bukan id video)',

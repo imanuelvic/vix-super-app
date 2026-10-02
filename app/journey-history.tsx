@@ -19,7 +19,7 @@ import { usePagination } from '@/hooks/usePagination';
 import { dayIdToDate, formatFullDate } from '@/lib/format';
 import { isReflectionJournal, subscribeHabitSchedule, type ScheduledHabit } from '@/lib/habits';
 import { subscribeHabitNotes, type HabitNotes } from '@/lib/health';
-import { prayerTopicsLine, responsesLine } from '@/lib/journey';
+import { prayerTopicsLine, responsesLine, tallyResponses } from '@/lib/journey';
 import { subscribeReviveEntries, type ReviveEntry } from '@/lib/spiritual';
 
 // Riwayat Morning Journey 🌤️ — pagi-pagi sebelumnya, hari terbaru dulu.
@@ -139,6 +139,17 @@ export default function JourneyHistoryScreen() {
 
           {/* key=currentPage → scroll balik ke atas tiap ganti halaman */}
           <ScrollView key={currentPage} contentContainerStyle={styles.content}>
+            {/* ❤️ Respons yang paling sering muncul (2 Okt 2026).
+                Dihitung dari SELURUH pagi yang sudah terbaca di layar ini,
+                bukan dari halaman yang sedang dibuka — dan karena datanya
+                memang sudah dilanggan untuk daftar di bawahnya, kartu ini
+                tidak menambah satu pun pembacaan Firestore.
+
+                Disembunyikan selagi mencari: angka "paling sering" yang ikut
+                menyusut mengikuti kata kunci bukan menjawab pertanyaan apa
+                pun, ia cuma terbaca seperti rekapmu tiba-tiba berubah. */}
+            {!q && <ResponsRekap pagi={semua} />}
+
             {semua.length === 0 ? (
               <EmptyText>
                 {q
@@ -181,6 +192,65 @@ export default function JourneyHistoryScreen() {
   );
 }
 
+/**
+ * ❤️ Rekap respons hati: mana yang paling sering kamu tandai.
+ *
+ * Yang di atas bukan sekadar daftar terurut — yang teratas diberi kalimatnya
+ * sendiri, karena itulah jawaban dari pertanyaan yang membuat kartu ini ada:
+ * "respons apa yang paling sering muncul di hatiku?".
+ *
+ * Yang BELUM PERNAH ditandai ikut disebut di kaki kartu, dan itu disengaja:
+ * daftar yang cuma memajang kemenangan tidak memberi tahu apa pun yang belum
+ * kamu sadari.
+ */
+function ResponsRekap({ pagi }: { pagi: JourneyDay[] }) {
+  const rekap = tallyResponses(pagi.map((d) => d.entry?.responses));
+  const terpakai = rekap.filter((r) => r.count > 0);
+  if (terpakai.length === 0) return null;
+
+  const teratas = terpakai[0];
+  const tertinggi = teratas.count;
+  const belum = rekap.filter((r) => r.count === 0);
+
+  return (
+    <View style={styles.rekap}>
+      <VixText heading="label" additionalStyle={styles.rekapLabel}>
+        ❤️ Respons Hatimu
+      </VixText>
+      <VixText heading="bold" additionalStyle={styles.rekapTop}>
+        {teratas.emoji} {teratas.label} paling sering, {teratas.count}×
+      </VixText>
+
+      {terpakai.map((r) => (
+        <View key={r.key} style={styles.rekapRow}>
+          <VixText heading="paragraph" additionalStyle={styles.rekapName}>
+            {r.emoji} {r.label}
+          </VixText>
+          {/* Panjang batangnya relatif terhadap yang TERATAS, bukan terhadap
+              jumlah pagi: yang ingin terbaca perbandingan antar-respons. */}
+          <View style={styles.rekapBarTrack}>
+            <View
+              style={[
+                styles.rekapBar,
+                { width: `${Math.max(6, (r.count / tertinggi) * 100)}%` },
+              ]}
+            />
+          </View>
+          <VixText heading="label" additionalStyle={styles.rekapCount}>
+            {r.count}
+          </VixText>
+        </View>
+      ))}
+
+      {belum.length > 0 ? (
+        <VixText heading="label" additionalStyle={styles.rekapBelum}>
+          Belum pernah: {belum.map((r) => `${r.emoji} ${r.label}`).join(' · ')}
+        </VixText>
+      ) : null}
+    </View>
+  );
+}
+
 /** Satu baris isian pagi itu — lambang di kiri, teksnya dipotong 3 baris. */
 function Baris({ label, text }: { label: string; text: string | undefined }) {
   if (!text || !text.trim()) return null;
@@ -208,4 +278,29 @@ const styles = StyleSheet.create({
   title: { color: Color.SPIRITUAL_DARK },
   baris: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   barisText: { flex: 1, color: Color.TEXT_PARAGRAPH },
+  // Rekap respons: pastel Spiritual, jadi ia terbaca sebagai ringkasan di atas
+  // arsip yang putih, bukan sebagai salah satu kartu hari.
+  rekap: {
+    backgroundColor: Color.SPIRITUAL,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    gap: 6,
+  },
+  rekapLabel: { color: Color.SPIRITUAL_DARK },
+  rekapTop: { color: Color.SPIRITUAL_DEEP, marginBottom: 2 },
+  rekapRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Lebar tetap supaya batangnya mulai di garis yang sama untuk semua baris;
+  // tanpa itu, batang yang sejajar justru tidak bisa dibandingkan.
+  rekapName: { width: 150, color: Color.TEXT_TITLE },
+  rekapBarTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: Color.CONTAINER,
+    overflow: 'hidden',
+  },
+  rekapBar: { height: 8, borderRadius: 999, backgroundColor: Color.SPIRITUAL_DARK },
+  rekapCount: { minWidth: 22, textAlign: 'right', color: Color.SPIRITUAL_DARK },
+  rekapBelum: { color: Color.SPIRITUAL_DARK, marginTop: 4 },
 });

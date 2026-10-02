@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SCREEN_SAFE } from '@/assets/style/layout';
+import { EmojiButton } from '@/components/common/EmojiButton';
 import { RewardButton } from '@/components/common/RewardButton';
 import {
   BottomTabs,
@@ -16,9 +18,11 @@ import { ExerciseTab } from '@/components/fitness/ExerciseTab';
 import { NotesTab } from '@/components/fitness/NotesTab';
 import { ProgramTab } from '@/components/fitness/ProgramTab';
 import { ProgressTab } from '@/components/fitness/ProgressTab';
+import { RecordTab } from '@/components/fitness/RecordTab';
 import { useAuth } from '@/contexts/auth';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
+import { useStopwatch } from '@/hooks/useStopwatch';
 import { type LoginStreak } from '@/lib/reward';
 import { subscribeFitNotes, type FitNote } from '@/lib/fitNotes';
 import {
@@ -38,11 +42,15 @@ import {
   type WeightTarget,
 } from '@/lib/health';
 
-type Tab = 'program' | 'exercise' | 'progress' | 'notes';
+type Tab = 'program' | 'exercise' | 'record' | 'progress' | 'notes';
 
+// Record ⏱️ sengaja DI TENGAH, seperti tombol rekam di app lari: ia satu-
+// satunya sub-tab yang dipakai sambil berdiri bersiap, bukan sambil duduk
+// membaca, jadi ia harus jatuh tepat di bawah ibu jari.
 const TABS: BottomTab<Tab>[] = [
   { key: 'program', label: 'Program', icon: 'calendar' },
   { key: 'exercise', label: 'Exercise', icon: 'dumbbell.fill' },
+  { key: 'record', label: 'Record', icon: 'stopwatch.fill' },
   { key: 'progress', label: 'Progress', icon: 'chart.line.uptrend.xyaxis' },
   { key: 'notes', label: 'Notes', icon: 'note.text' },
 ];
@@ -60,6 +68,11 @@ const TABS: BottomTab<Tab>[] = [
 // Health (profile + target) supaya cuma ada satu sumber kebenaran.
 export default function FitnessScreen() {
   const { user } = useAuth();
+  const router = useRouter();
+  // Stopwatch ⏱️ dipegang DI SINI, bukan di dalam sub-tab Record: kalau ia
+  // lahir bersama tab-nya, berpindah sub-tab sejenak akan mematikan detaknya,
+  // dan badge "sedang berjalan" di kaki layar tak punya sumber angka.
+  const watch = useStopwatch();
   // `tabs` dioper supaya reminder sesi latihan di Dashboard bisa menuju
   // sub-tab Exercise lewat ?tab=.
   const { tab, scrollKey, onTabPress } = useTabScroll<Tab>('exercise', {
@@ -112,9 +125,21 @@ export default function FitnessScreen() {
         backLabel="Home"
         title="Fitness 💪"
         subtitle="Pilih sendiri olahraganya tiap hari · pagi atau sore"
+        // 📜 Riwayat sesi yang direkam stopwatch, lalu 🔥 Reward. Keduanya
+        // berdiri di SEMUA sub-tab (header ini dipakai bersama), jadi riwayat
+        // larimu bisa dibuka dari mana pun di dalam Fitness.
+        //
         // Sesi latihan di layar inilah yang menghidupkan kategori
         // "🏋️ Fitness Konsisten" — jadi pintunya ditaruh di sini juga.
-        right={<RewardButton category="fitness" />}
+        right={
+          <>
+            <EmojiButton
+              emoji="📜"
+              onPress={() => router.push('/fitness-history')}
+            />
+            <RewardButton category="fitness" />
+          </>
+        }
       />
 
       <ScreenError message={error} />
@@ -130,6 +155,8 @@ export default function FitnessScreen() {
             streak={streak}
             bodyWeightKg={profile?.weightKg ?? null}
           />
+        ) : tab === 'record' ? (
+          <RecordTab watch={watch} day={day} dayId={dayId} />
         ) : tab === 'progress' ? (
           <ProgressTab streak={streak} profile={profile} target={target} />
         ) : (
@@ -140,8 +167,15 @@ export default function FitnessScreen() {
       {/* Badge Exercise = gerakan hari ini yang belum dicentang, angkanya
           SAMA dengan badge tile Fitness di Home & kartu reminder Dashboard.
           Hari yang ditandai ✕ (dilewati) tidak lagi menampilkan badge. */}
+      {/* Badge Record = 1 selagi stopwatch-nya JALAN. Bukan hitungan, tapi
+          pengingat: stopwatch yang lupa dihentikan diam-diam mencatat sesi
+          tiga jam, dan satu-satunya petunjuknya ada di sub-tab yang sedang
+          tidak kamu buka. */}
       <BottomTabs
-        tabs={withBadge(TABS, { exercise: fitPendingToday(day, now) })}
+        tabs={withBadge(TABS, {
+          exercise: fitPendingToday(day, now),
+          record: watch.running ? 1 : 0,
+        })}
         value={tab}
         onChange={onTabPress}
       />

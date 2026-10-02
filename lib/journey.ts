@@ -85,7 +85,17 @@ export function reflectPromptOfDay(dayId: string): string {
 // ---------------------------- ❤️ Respond ----------------------------
 // Chip yang boleh dipilih lebih dari satu. Yang disimpan KUNCI-nya, jadi
 // label boleh dirapikan kapan saja tanpa menyentuh data lama.
-export type ResponseKey = 'grateful' | 'surrender' | 'brave' | 'forgive' | 'grow';
+export type ResponseKey =
+  | 'grateful'
+  | 'surrender'
+  | 'brave'
+  | 'forgive'
+  | 'grow'
+  | 'trust'
+  | 'repent'
+  | 'hope'
+  | 'calm'
+  | 'love';
 
 export const RESPONSE_OPTIONS: { key: ResponseKey; emoji: string; label: string }[] = [
   // 💚 (bukan ❤️): hati merah sudah jadi lambang langkah Respond di jejak
@@ -95,6 +105,23 @@ export const RESPONSE_OPTIONS: { key: ResponseKey; emoji: string; label: string 
   { key: 'brave', emoji: '💪', label: 'Berani melangkah' },
   { key: 'forgive', emoji: '🤝', label: 'Mengampuni' },
   { key: 'grow', emoji: '🌱', label: 'Bertumbuh' },
+  // Lima tambahan (2 Okt 2026). Ditaruh SESUDAH yang lama, bukan disisipkan
+  // di antaranya: lima chip pertama sudah hafal di tangan, dan menggesernya
+  // membuat jari memilih yang salah selama berminggu-minggu.
+  //
+  // Tiap tambahan mengisi keadaan hati yang memang belum punya tempatnya, dan
+  // sengaja tidak bertumpang tindih dengan yang sudah ada:
+  //   🤲 Percaya    ≠ 🕊️ Menyerahkan — melepaskan kendali vs mempercayakan
+  //   ⚓ Berharap   — menanti yang belum kelihatan (Ibrani 6:19)
+  //   🙇 Bertobat   — satu-satunya yang mengakui kesalahan
+  //   🕯️ Ditenangkan— hasil paling sering dari pagi yang tidak menghasilkan
+  //                   keputusan apa pun, dan dulu tidak bisa dicatat
+  //   🫶 Mengasihi  — satu-satunya yang arahnya KELUAR, ke orang lain
+  { key: 'trust', emoji: '🤲', label: 'Percaya' },
+  { key: 'repent', emoji: '🙇', label: 'Bertobat' },
+  { key: 'hope', emoji: '⚓', label: 'Berharap' },
+  { key: 'calm', emoji: '🕯️', label: 'Ditenangkan' },
+  { key: 'love', emoji: '🫶', label: 'Mengasihi' },
 ];
 
 /** "💚 Bersyukur" untuk kunci yang dikenal; kunci asing dicetak apa adanya. */
@@ -106,6 +133,102 @@ export function responseLabel(key: string): string {
 /** "💚 Bersyukur · 🌱 Bertumbuh" — untuk baris riwayat & arsip Revive. */
 export function responsesLine(keys: string[] | undefined): string {
   return (keys ?? []).map(responseLabel).join(' · ');
+}
+
+// ---------------------- Yang paling sering dipilih ----------------------
+// "Respons apa yang paling sering muncul di hatiku?" — pertanyaan yang cuma
+// bisa dijawab kalau pagi-pagi sebelumnya dihitung bersama. Dihitung dari
+// data yang SUDAH dilanggan layar riwayat, jadi tidak ada pembacaan tambahan.
+
+export type ResponseTally = {
+  key: string;
+  emoji: string;
+  label: string;
+  count: number;
+};
+
+/**
+ * Hitung tiap respons dari banyak pagi, terbanyak dulu.
+ *
+ * Yang belum pernah dipilih IKUT dikembalikan dengan angka 0 — justru itu
+ * kabar yang paling berguna ("setahun ini aku tidak pernah menandai
+ * Bertobat"), dan kalau disaring di sini, layarnya tidak punya cara untuk
+ * tahu bedanya "nol" dengan "tidak ada pilihannya".
+ *
+ * Kunci asing (dari catatan lama, atau pilihan yang suatu saat dihapus dari
+ * daftar) tetap dihitung dan dicetak apa adanya, bukan dibuang diam-diam.
+ *
+ * Urutannya: angka terbesar dulu; yang seri mengikuti urutan daftar aslinya,
+ * supaya hasilnya tidak berganti-ganti sendiri tiap kali layarnya dibuka.
+ */
+export function tallyResponses(pagi: (string[] | undefined)[]): ResponseTally[] {
+  const urutan = new Map(RESPONSE_OPTIONS.map((o, i) => [o.key as string, i]));
+  const hitung = new Map<string, number>();
+  for (const o of RESPONSE_OPTIONS) hitung.set(o.key, 0);
+  for (const keys of pagi) {
+    for (const k of keys ?? []) hitung.set(k, (hitung.get(k) ?? 0) + 1);
+  }
+  return [...hitung.entries()]
+    .map(([key, count]) => {
+      const o = RESPONSE_OPTIONS.find((x) => x.key === key);
+      return {
+        key,
+        emoji: o?.emoji ?? '🏷️',
+        label: o?.label ?? key,
+        count,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.count - a.count ||
+        (urutan.get(a.key) ?? 999) - (urutan.get(b.key) ?? 999) ||
+        a.key.localeCompare(b.key),
+    );
+}
+
+// ---------------------- Dibagikan ke WhatsApp ----------------------
+// Bentuknya mengikuti share Revive yang sudah lama ada (app/revive.tsx):
+// pembuka, isinya, lalu satu kalimat berkat. Bedanya yang dibagikan di sini
+// RESPONS HATINYA, bukan seluruh catatan Revive — itu sebabnya ia berdiri di
+// langkah ❤️ Respond, sebelum 🎵 Worship.
+//
+// Bagian yang kosong DILEWATI seluruhnya, bukan dikirim sebagai label tanpa
+// isi: pagi yang cuma menandai satu chip tetap layak dibagikan, dan "✨" yang
+// menggantung tanpa kalimat cuma membuat pesannya terbaca seperti formulir
+// yang belum selesai.
+
+export const JOURNEY_SHARE_CLOSING = 'God bless, have a nice day!';
+
+export function respondShareText(input: {
+  /** "Jumat, 2 Oktober 2026" */
+  dateLabel: string;
+  title: string;
+  passage: string;
+  rhema: string;
+  responses: string[];
+  /** Satu hal yang ingin dibawa ke dalam hari ini. */
+  carry: string;
+}): string {
+  const isi = (s: string) => s.trim();
+  const bacaan = [isi(input.title), isi(input.passage)].filter(Boolean).join(' · ');
+  const respons = responsesLine(input.responses.filter((r) => r.trim()));
+
+  // Tiap kelompok dipisah baris kosong; kelompok yang kosong tidak ikut, jadi
+  // tidak pernah ada dua baris kosong berurutan.
+  const kelompok: string[][] = [
+    [`🌅 Morning Journey`, input.dateLabel],
+    [bacaan ? `📖 ${bacaan}` : '', isi(input.rhema) ? `✨ ${isi(input.rhema)}` : ''],
+    [
+      respons ? `❤️ Respons hatiku: ${respons}` : '',
+      isi(input.carry) ? `🏃 Yang aku bawa hari ini: ${isi(input.carry)}` : '',
+    ],
+    [JOURNEY_SHARE_CLOSING],
+  ];
+
+  return kelompok
+    .map((baris) => baris.filter(Boolean).join('\n'))
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 // ---------------------------- 🙏 Pray ----------------------------

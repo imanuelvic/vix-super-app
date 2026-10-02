@@ -1,6 +1,11 @@
 import {
+    collection,
     doc,
     getDoc,
+    getDocs,
+    limit,
+    orderBy,
+    query,
     setDoc,
     Timestamp,
     type FirestoreError,
@@ -650,6 +655,70 @@ export type FitDayDone = Record<string, boolean>;
 /** Hasil satu sesi lari: jarak & waktunya. */
 export type FitRun = { km: number; minutes: number };
 
+// ===================== ⏱️ Sesi yang DIREKAM (2 Okt 2026) =====================
+//
+// Beda dengan `runs` di atas, dan bedanya penting:
+//   • `runs`  = hasil sesi yang DIRENCANAKAN, diketik di sub-tab Exercise.
+//               Dikunci id paketnya, jadi satu paket lari = satu angka.
+//   • `logs`  = sesi yang BENAR-BENAR kamu jalani, direkam stopwatch di
+//               sub-tab Record. Bisa berapa kali pun sehari, dan ada walau
+//               hari itu kamu tidak memilih paket apa pun.
+//
+// Keduanya sengaja tidak digabung jadi satu angka: menjumlahkannya berarti
+// menebak bahwa lari yang direkam itu lari yang sama dengan yang diketik, dan
+// tebakan yang salah membuat jarak mingguanmu berlipat tanpa kelihatan.
+//
+// Menumpang dokumen harian yang SUDAH ADA (users/{uid}/fitnessDays/{hari}),
+// jadi tidak ada koleksi baru & tidak ada tambahan biaya baca: layar Fitness
+// memang sudah melanggan dokumen itu.
+
+/** Satu sesi olahraga yang direkam stopwatch. */
+export type FitLog = {
+  /** Jenis olahraganya — lambangnya ikut FIT_MENU_GROUPS. */
+  kind: FitKind;
+  /** Lamanya, dalam DETIK. */
+  seconds: number;
+  /** Jam mulai "HH.MM" menurut jam HP. Kosong = catatan lama. */
+  at: string;
+  /** Jarak km; 0 = tidak dicatat (bukan "lari sejauh nol"). */
+  km: number;
+  /** Lokasi, mis. "Kedaung Kali Angke". Kosong = tidak dicatat. */
+  place: string;
+};
+
+/**
+ * Jenis olahraga yang punya JARAK & LOKASI. Angkat beban & renang tidak:
+ * menanyakan "berapa km" sesudah angkat beban cuma kolom yang selalu kosong.
+ */
+export function fitLogHasRoute(kind: FitKind): boolean {
+  return kind === 'run' || kind === 'walk';
+}
+
+/** Lambang & nama satu jenis olahraga, dari daftar yang sama dengan Pick. */
+export function fitKindMeta(kind: FitKind): { emoji: string; label: string } {
+  const g = FIT_MENU_GROUPS.find((x) => x.kind === kind);
+  return g ?? { emoji: '🏅', label: 'Olahraga' };
+}
+
+/** Membaca daftar sesi terekam satu hari; bentuk asing dibuang, bukan dipaksa. */
+function readFitLogs(raw: unknown): FitLog[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((x) => {
+    const o = x as Partial<FitLog> | null;
+    if (!o || typeof o.seconds !== 'number' || o.seconds <= 0) return [];
+    const kind = FIT_MENU_GROUPS.some((g) => g.kind === o.kind)
+      ? (o.kind as FitKind)
+      : 'run';
+    return [{
+      kind,
+      seconds: Math.round(o.seconds),
+      at: typeof o.at === 'string' ? o.at : '',
+      km: typeof o.km === 'number' && o.km > 0 ? o.km : 0,
+      place: typeof o.place === 'string' ? o.place.trim() : '',
+    }];
+  });
+}
+
 /**
  * Satu hari latihan: paket yang KAMU PILIH, gerakan yang sudah dicentang,
  * hasil tiap sesi lari, dan apakah harinya sengaja DILEWATI. `skipped`
@@ -663,6 +732,8 @@ export type FitDay = {
   picks: string[];
   /** Jarak & waktu tiap paket lari, dikunci id paketnya. */
   runs: Record<string, FitRun>;
+  /** Sesi yang direkam stopwatch hari itu, urut sesuai saat direkam. */
+  logs: FitLog[];
 };
 
 export const EMPTY_FIT_DAY: FitDay = {
@@ -670,6 +741,7 @@ export const EMPTY_FIT_DAY: FitDay = {
   skipped: false,
   picks: [],
   runs: {},
+  logs: [],
 };
 
 /** Membaca satu dokumen harian — dipakai bersama oleh langganan & ambil-sekali. */
@@ -679,6 +751,7 @@ function readFitDay(data: Record<string, unknown> | undefined): FitDay {
     skipped: data?.skipped === true,
     picks: (data?.picks as string[]) ?? [],
     runs: (data?.runs as Record<string, FitRun>) ?? {},
+    logs: readFitLogs(data?.logs),
   };
 }
 
@@ -806,7 +879,7 @@ export function fitPendingToday(day: FitDay, now: Date): number {
 export function setFitDaySkipped(uid: string, dayId: string, skipped: boolean) {
   return setDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
-    { skipped, date: Timestamp.fromDate(new Date()) },
+    { skipped, date: fitDayDate(dayId) },
     { merge: true },
   );
 }
@@ -819,7 +892,7 @@ export function setFitDaySkipped(uid: string, dayId: string, skipped: boolean) {
 export function setFitPicks(uid: string, dayId: string, picks: string[]) {
   return setDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
-    { picks, date: Timestamp.fromDate(new Date()) },
+    { picks, date: fitDayDate(dayId) },
     { merge: true },
   );
 }
@@ -837,9 +910,126 @@ export function setFitRun(
 ) {
   return setDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
-    { runs: { [pickId]: run }, date: Timestamp.fromDate(new Date()) },
+    { runs: { [pickId]: run }, date: fitDayDate(dayId) },
     { merge: true },
   );
+}
+
+/**
+ * Tanggal dokumen harian = HARINYA, bukan saat ia terakhir ditulis.
+ *
+ * Dulu keempat penulisnya memakai `new Date()`. Selama tidak ada yang membaca
+ * field itu, keduanya sama saja. Sejak riwayat olahraga mengurutkan dokumen
+ * ini lewat `date`, bedanya jadi nyata: membetulkan catatan Senin pada hari
+ * Jumat akan melemparkan Senin ke puncak riwayat, seolah kamu baru berolahraga
+ * hari itu.
+ */
+function fitDayDate(dayId: string): Timestamp {
+  return Timestamp.fromDate(dayIdToDate(dayId));
+}
+
+// ===================== ⏱️ Sesi terekam =====================
+
+/**
+ * Tambahkan satu sesi terekam ke hari itu.
+ *
+ * Daftar lamanya DIOPER, bukan dibaca ulang dari server: layar Fitness sudah
+ * melanggan dokumen harian ini, jadi membacanya lagi cuma menambah biaya untuk
+ * data yang sudah ada di tangan. (Firestore tidak punya "append" untuk array
+ * objek — `arrayUnion` membandingkan isi, jadi dua sesi yang kebetulan persis
+ * sama akan menyusut jadi satu.)
+ */
+export function appendFitLog(
+  uid: string,
+  dayId: string,
+  current: FitLog[],
+  log: FitLog,
+) {
+  return setDoc(
+    doc(db, 'users', uid, 'fitnessDays', dayId),
+    { logs: [...current, log], date: fitDayDate(dayId) },
+    { merge: true },
+  );
+}
+
+/**
+ * Hapus satu sesi terekam — PERMANEN, seperti semua hapus di app ini.
+ * Dokumen harinya tidak ikut dihapus: di dalamnya masih ada centang gerakan,
+ * pilihan paket, & hasil lari yang tidak ada hubungannya dengan sesi ini.
+ */
+export function removeFitLog(
+  uid: string,
+  dayId: string,
+  current: FitLog[],
+  index: number,
+) {
+  return setDoc(
+    doc(db, 'users', uid, 'fitnessDays', dayId),
+    { logs: current.filter((_, i) => i !== index), date: fitDayDate(dayId) },
+    { merge: true },
+  );
+}
+
+/** Total DETIK sesi terekam hari itu — "hari ini aku olahraga berapa lama". */
+export function fitLogSeconds(day: FitDay | undefined): number {
+  return (day?.logs ?? []).reduce((n, l) => n + l.seconds, 0);
+}
+
+/** Satu baris riwayat: sesinya beserta hari asalnya. */
+export type FitLogEntry = FitLog & { dayId: string };
+
+/**
+ * Riwayat sesi terekam, terbaru dulu.
+ *
+ * Satu kueri untuk seluruh riwayat, bukan satu baca per hari: hari yang tidak
+ * punya dokumen tidak ikut terbaca sama sekali, jadi yang dibayar cuma hari
+ * yang memang berisi. Batas harinya menentukan biayanya, dan karena itu ia
+ * ditulis jelas sebagai angka, bukan disembunyikan di dalam kueri.
+ */
+export const FIT_HISTORY_DAYS = 120;
+
+export async function fetchFitLogs(
+  uid: string,
+  days: number = FIT_HISTORY_DAYS,
+): Promise<FitLogEntry[]> {
+  const snapshot = await getDocs(
+    query(
+      collection(db, 'users', uid, 'fitnessDays'),
+      orderBy('date', 'desc'),
+      limit(days),
+    ),
+  );
+  return snapshot.docs.flatMap((d) =>
+    readFitLogs(d.data().logs).map((l) => ({ ...l, dayId: d.id })),
+  );
+}
+
+/** Hanya sesi berjarak (lari & jalan) — isi kartu riwayat di sub-tab Progress. */
+export function fitRouteLogs(logs: FitLogEntry[]): FitLogEntry[] {
+  return logs.filter((l) => fitLogHasRoute(l.kind));
+}
+
+/**
+ * Sesi terekam dari hari-hari yang SUDAH ADA DI TANGAN, terbaru dulu.
+ *
+ * Dipakai sub-tab Progress, yang memang sudah membaca seminggu terakhir untuk
+ * rekap larinya. Karena itu kartu riwayat di sana TIDAK menambah satu pun
+ * pembacaan Firestore: riwayat lengkapnya ada di layar Workout History, dan ke
+ * sanalah "Lihat semua" menuju.
+ */
+export function fitLogsOfDays(days: Record<string, FitDay>): FitLogEntry[] {
+  return Object.entries(days)
+    .flatMap(([dayId, d]) => d.logs.map((l) => ({ ...l, dayId })))
+    .sort((a, b) => (a.dayId < b.dayId ? 1 : a.dayId > b.dayId ? -1 : 0));
+}
+
+/**
+ * Pace satu sesi terekam, mis. "7:28 /km". Kosong kalau jarak atau waktunya
+ * belum ada. Bentuknya sama persis dengan `fitPace` supaya angka pace di
+ * riwayat dan di rekap mingguan tidak terbaca sebagai dua satuan berbeda.
+ */
+export function fitLogPace(log: FitLog): string {
+  return fitPace(log.km, log.seconds / 60);
 }
 
 export function setFitExerciseDone(
@@ -850,7 +1040,7 @@ export function setFitExerciseDone(
 ) {
   return setDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
-    { done: { [exerciseId]: done }, date: Timestamp.fromDate(new Date()) },
+    { done: { [exerciseId]: done }, date: fitDayDate(dayId) },
     { merge: true },
   );
 }

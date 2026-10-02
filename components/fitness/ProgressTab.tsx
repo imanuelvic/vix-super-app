@@ -11,11 +11,14 @@ import { useAuth } from '@/contexts/auth';
 import { type LoginStreak } from '@/lib/reward';
 import {
   fetchFitDays,
+  fitKindMeta,
+  fitLogsOfDays,
   fitPace,
+  fitRouteLogs,
   fitRunTotals,
   type FitDay,
 } from '@/lib/fitness';
-import { formatDecimal } from '@/lib/format';
+import { dayIdToDate, formatClock, formatDecimal, formatShortDayDate } from '@/lib/format';
 import {
   bmiCategory,
   bmiValue,
@@ -62,6 +65,13 @@ export function ProgressTab({
 
   const lari = fitRunTotals(weekDays);
   const pace = fitPace(lari.km, lari.minutes);
+  // Lima terakhir saja di kartu — sisanya di layar Workout History.
+  //
+  // Hanya yang BERJARAK (lari & jalan): di sub-tab Progress, kemajuan angkat
+  // beban sudah diwakili streak & beban tersimpan, sedangkan yang cuma
+  // terbaca dari jarak & pace ya lari. Sesi beban & renang tetap tercatat
+  // utuh, tempatnya di layar Workout History.
+  const rekaman = fitRouteLogs(fitLogsOfDays(weekDays)).slice(0, 5);
 
   const count = streak?.count ?? 0;
   const best = streak?.best ?? 0;
@@ -116,6 +126,54 @@ export function ProgressTab({
           </VixText>
         </View>
       )}
+
+      {/* ⏱️ Riwayat sesi yang DIREKAM stopwatch (2 Okt 2026).
+          Sengaja terpisah dari kartu "Lari minggu ini" di atas: yang itu hasil
+          sesi yang kamu RENCANAKAN & ketik di Exercise, yang ini sesi yang
+          benar-benar kamu jalani lewat Record. Menjumlahkan keduanya berarti
+          menebak bahwa keduanya lari yang sama, dan tebakan yang salah
+          melipatgandakan jarak mingguanmu tanpa kelihatan.
+
+          Dihitung dari `weekDays` yang SUDAH dibaca di atas → nol pembacaan
+          Firestore tambahan. Riwayat lengkapnya di layar Workout History. */}
+      <PressableScale
+        style={styles.logCard}
+        onPress={() => router.push('/fitness-history')}>
+        <View style={styles.bodyTop}>
+          <VixText heading="bold" additionalStyle={styles.bodyTitle}>
+            🏃 Riwayat Lari & Jalan
+          </VixText>
+          <VixText heading="label" additionalStyle={styles.bodyLink}>
+            Lihat semua ›
+          </VixText>
+        </View>
+        {rekaman.length === 0 ? (
+          <VixText heading="label" additionalStyle={styles.logEmpty}>
+            Belum ada lari atau jalan yang direkam minggu ini. Buka sub-tab
+            Record ⏱️, pilih olahraganya, lalu click Mulai.
+          </VixText>
+        ) : (
+          rekaman.map((l, i) => {
+            const m = fitKindMeta(l.kind);
+            return (
+              <View key={`${l.dayId}-${l.at}-${i}`} style={styles.logRow}>
+                <VixText heading="label" additionalStyle={styles.logDay}>
+                  {formatShortDayDate(dayIdToDate(l.dayId))}
+                </VixText>
+                <VixText heading="bold" additionalStyle={styles.logMain}>
+                  {m.emoji} {formatClock(l.seconds)}
+                  {l.km > 0 ? ` · ${formatDecimal(l.km)} km` : ''}
+                </VixText>
+                {l.place ? (
+                  <VixText heading="label" numberOfLines={1} additionalStyle={styles.logPlace}>
+                    📍 {l.place}
+                  </VixText>
+                ) : null}
+              </View>
+            );
+          })
+        )}
+      </PressableScale>
 
       {profile && (
         <PressableScale
@@ -215,4 +273,12 @@ const styles = StyleSheet.create({
   bodyRow: { flexDirection: 'row', gap: 10 },
   bodyItem: { flex: 1, gap: 1 },
   bodyValue: { color: Color.TEXT_TITLE },
+  // Riwayat sesi terekam. Bentuknya sama dengan kartu Data Tubuh di bawahnya:
+  // keduanya kartu yang bisa di-click menuju layar lain.
+  logCard: { ...PANEL, padding: 14, marginTop: 10, gap: 8 },
+  logEmpty: { color: Color.TEXT_LABEL },
+  logRow: { gap: 1 },
+  logDay: { color: Color.TEXT_LABEL },
+  logMain: { color: Color.TEXT_TITLE },
+  logPlace: { color: Color.FITNESS_DARK },
 });

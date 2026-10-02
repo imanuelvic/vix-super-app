@@ -13,6 +13,7 @@ import { FormInput } from '@/components/common/FormInput';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { ShareStylePicker } from '@/components/common/ShareStylePicker';
 import { VixText } from '@/components/common/VixText';
 import { BibleStoryCard } from '@/components/spiritual/BibleStoryCard';
 import { useBusyTask } from '@/hooks/useBusyTask';
@@ -245,19 +246,7 @@ export default function BibleStoryScreen() {
             />
           </CardPreview>
 
-          <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            🎨 Style
-          </VixText>
-          <View style={styles.chipWrap}>
-            {SHARE_DESIGNS.map((d) => (
-              <Chip
-                key={d.key}
-                label={d.label}
-                active={d.key === design.key}
-                onPress={() => setPickedKey(d.key)}
-              />
-            ))}
-          </View>
+          <ShareStylePicker value={design.key} onChange={setPickedKey} />
 
           <ActionStack>
             <PrimaryButton

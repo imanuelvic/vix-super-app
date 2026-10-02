@@ -46,6 +46,14 @@ export const CHANGELOG: ReleaseNote[] = [
     version: '2.0.1',
     date: '2026-10-02',
     items: [
+      '⏱️ Record: stopwatch olahraga baru, di tengah kaki layar Fitness',
+      '🏃 Sesudah lari atau jalan, isi jarak, lama, & lokasinya',
+      '💬 Bagikan sesinya ke grup keluarga: kartu sapaan & kata penyemangat',
+      '📜 Riwayat olahraga di pojok kanan atas Fitness, per sesi',
+      '🙏 Follow up CORE: ganti pertanyaan jadi 🔀 di kanan, kartunya lebih lega',
+      '❤️ Respons hati pagi bertambah: Percaya, Bertobat, Berharap, Ditenangkan, Mengasihi',
+      '📊 Riwayat Journey menunjukkan respons hati yang paling sering kamu pilih',
+      '💬 Respons paginya bisa dibagikan ke WhatsApp sebelum lanjut ke Worship',
       '📖 Baca Alkitab jadi perjalanan lima langkah, satu layar satu pertanyaan',
       '✨ Apa yang kamu dapat & ayat yang memberkati ikut tersimpan di arsip',
       '🌅 Warna layar bacanya ikut sesi: pagi hangat, siang teduh, malam gelap',
@@ -171,7 +179,7 @@ export const CHANGELOG: ReleaseNote[] = [
       '🍽️ Puasa, 🏅 streak, 😴 catatan tidur',
       '🎮 Games & 🌍 World',
       '📚 Learning, catatan belajar mingguan',
-      '🤝 Satu langganan dipakai bersama banyak layar, bacaan Firestore jadi hemat',
+      '⚡ Pindah layar jadi lebih cepat & lebih hemat kuota',
     ],
   },
   {
@@ -239,7 +247,7 @@ export const CHANGELOG: ReleaseNote[] = [
     date: '2026-07-23',
     items: [
       '✝️ Spiritual, 🏥 Health, 🙏 CORE, 🎡 Wheel of Life, 🚗 Car & 🪙 Trading',
-      '🏅 Reward, lencana dari kebiasaan yang dijalani',
+      '🏆 Reward, lencana dari kebiasaan yang dijalani',
     ],
   },
   {
@@ -248,7 +256,7 @@ export const CHANGELOG: ReleaseNote[] = [
     items: [
       '🎂 Hari lahir aplikasi ini',
       '💰 Finance: transaksi, budget & Saku',
-      '✅ Tasks',
+      '✅ Reminder',
       '🔥 Firebase, masuk dengan akun sendiri',
     ],
   },

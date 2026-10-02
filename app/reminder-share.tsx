@@ -5,13 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
-import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
 import { CardPreview } from '@/components/common/CardPreview';
-import { Chip } from '@/components/common/Chip';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { ShareStylePicker } from '@/components/common/ShareStylePicker';
 import { VixText } from '@/components/common/VixText';
 import { ReminderShareCard } from '@/components/spiritual/ReminderShareCard';
 import { useBusyTask } from '@/hooks/useBusyTask';
@@ -100,19 +99,7 @@ export default function ReminderShareScreen() {
             />
           </CardPreview>
 
-          <VixText heading="title" additionalStyle={styles.sectionTitle}>
-            🎨 Style
-          </VixText>
-          <View style={styles.chipWrap}>
-            {SHARE_DESIGNS.map((d) => (
-              <Chip
-                key={d.key}
-                label={d.label}
-                active={d.key === design.key}
-                onPress={() => setPickedKey(d.key)}
-              />
-            ))}
-          </View>
+          <ShareStylePicker value={design.key} onChange={setPickedKey} />
 
           <ActionStack>
             <PrimaryButton
@@ -139,6 +126,4 @@ const styles = StyleSheet.create({
   content: { ...SCREEN_CONTENT, paddingBottom: 32 },
   emptyWrap: { paddingHorizontal: 20, paddingTop: 20 },
   empty: { textAlign: 'center' },
-  sectionTitle: { ...SECTION_SPACE },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

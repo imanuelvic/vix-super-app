@@ -107,6 +107,8 @@ const ROUTE_FEATURE: Record<string, string> = {
   learning: 'learning',
   'learning-archive': 'learning',
   fitness: 'fitness',
+  'fitness-history': 'fitness',
+  'workout-share': 'fitness',
   family: 'family',
   investment: 'investment',
   work: 'career',

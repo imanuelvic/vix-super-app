@@ -2,21 +2,20 @@ import { StyleSheet, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { StreakPill } from '@/components/common/StreakPill';
 import { VixText, type VixHeading } from '@/components/common/VixText';
-import { DAYPART } from '@/lib/daypart';
+import { greetingOfHour } from '@/lib/daypart';
 import { formatGreetingDate } from '@/lib/format';
 
 /**
  * Teks sapaan sesuai jam perangkat (pagi/siang/sore/malam).
  *
- * Lambangnya ikut DAYPART supaya sama dengan sesi di Habits & Bacaan
- * Alkitab. Sore memang bukan salah satu sesi itu, jadi tetap 🌇.
+ * Aturannya sendiri ada di `greetingOfHour` (lib/daypart.ts) — di sini cuma
+ * dirangkai jadi satu kalimat. Dipisah begitu sejak kartu olahraga yang
+ * dikirim ke grup keluarga butuh kata & lambangnya terpisah; dengan satu
+ * aturan bersama, batas jamnya mustahil melenceng antar-layar.
  */
 export function greetingText(): string {
-  const h = new Date().getHours();
-  if (h < 11) return `Selamat pagi ${DAYPART.morning}`;
-  if (h < 15) return `Selamat siang ${DAYPART.daytime}`;
-  if (h < 19) return 'Selamat sore 🌇';
-  return `Selamat malam ${DAYPART.night}`;
+  const { label, emoji } = greetingOfHour(new Date().getHours());
+  return `${label} ${emoji}`;
 }
 
 // Sapaan personal sesuai jam — teks saja. Dipakai <GreetingHeader/> di bawah

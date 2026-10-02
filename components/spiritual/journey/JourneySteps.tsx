@@ -7,6 +7,7 @@ import { Chip } from '@/components/common/Chip';
 import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ShareWhatsAppButton } from '@/components/common/ShareWhatsAppButton';
 import { VixText } from '@/components/common/VixText';
 import { SpiritualIntro } from '@/components/spiritual/SpiritualIntro';
 import { useDraft } from '@/hooks/useDraft';
@@ -20,10 +21,12 @@ import {
   journeyStepMeta,
   openWorshipSong,
   PRAYER_TOPICS,
+  respondShareText,
   RESPONSE_OPTIONS,
   WORSHIP_SONG_ERROR,
   type WorshipSong,
 } from '@/lib/journey';
+import { shareTextToWhatsApp, WHATSAPP_ERROR } from '@/lib/whatsapp';
 import { type JourneyFields, type ReviveEntry, type WorshipPassage } from '@/lib/spiritual';
 
 import {
@@ -186,17 +189,45 @@ export function ReflectStep({
 export function RespondStep({
   entry,
   ready,
+  dateLabel,
   onSave,
   onNext,
 }: {
   entry: ReviveEntry | null;
   ready: boolean;
+  /** Tanggal hari ini, untuk pesan yang dibagikan ke WhatsApp. */
+  dateLabel: string;
   onSave: SaveJourney;
   onNext: () => void;
 }) {
-  const { busy, formError, save } = useFormSave();
+  const { busy, formError, save, setFormError } = useFormSave();
   const [responses, setResponses] = useDraft<string[]>(entry?.responses ?? []);
   const [carry, setCarry] = useDraft(entry?.reflection ?? '');
+
+  // Ada yang bisa dibagikan? Pagi yang belum menandai apa pun & belum menulis
+  // apa pun tidak punya isi — tombolnya memang belum perlu ada di situ.
+  const adaIsi = responses.length > 0 || carry.trim().length > 0;
+
+  /**
+   * Buka WhatsApp dengan pesannya siap kirim — chat/grupnya kamu pilih
+   * sendiri di sana. Sengaja TIDAK menyimpan dulu: yang dibagikan apa yang
+   * sedang di layar, dan membagikan bukan cara menyimpan. Isinya tersimpan
+   * saat "Lanjut" di-click, sama seperti langkah journey lainnya.
+   */
+  function bagikan() {
+    setFormError(null);
+    shareTextToWhatsApp(
+      respondShareText({
+        dateLabel,
+        title: entry?.title ?? '',
+        passage: entry?.passage ?? '',
+        rhema: entry?.rhema ?? '',
+        responses,
+        carry,
+      }),
+      () => setFormError(WHATSAPP_ERROR),
+    );
+  }
 
   function toggle(key: string) {
     setResponses((cur) =>
@@ -240,6 +271,13 @@ export function RespondStep({
           editable={!busy}
         />
       </View>
+
+      {/* 💬 Bagikan responsnya ke WhatsApp — bentuk & tombolnya SAMA dengan
+          share Revive, karena memang hal yang sama: satu pagi yang ingin
+          diceritakan. Opsional, dan tidak menghalangi apa pun: 🎵 Worship
+          tetap satu click di bawahnya. */}
+      {adaIsi && <ShareWhatsAppButton onPress={bagikan} />}
+
       <FormError message={formError} gap="none" />
       <JourneyNext label="Lanjut" onPress={lanjut} busy={busy} disabled={!ready} />
     </JourneyCard>

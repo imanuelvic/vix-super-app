@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Color } from '@/assets/style/color';
@@ -7,11 +7,11 @@ import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { ActionStack } from '@/components/common/ActionStack';
 import { CardPreview } from '@/components/common/CardPreview';
-import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
+import { ShareStylePicker } from '@/components/common/ShareStylePicker';
 import { VixText } from '@/components/common/VixText';
 import { BibleStoryCard } from '@/components/spiritual/BibleStoryCard';
 import { useBusyTask } from '@/hooks/useBusyTask';
@@ -140,19 +140,7 @@ export default function PausePrayScreen() {
           />
         </CardPreview>
 
-        <VixText heading="title" additionalStyle={styles.sectionTitle}>
-          🎨 Style
-        </VixText>
-        <View style={styles.chipWrap}>
-          {SHARE_DESIGNS.map((d) => (
-            <Chip
-              key={d.key}
-              label={d.label}
-              active={d.key === design.key}
-              onPress={() => setPickedKey(d.key)}
-            />
-          ))}
-        </View>
+        <ShareStylePicker value={design.key} onChange={setPickedKey} />
 
         {/* Kartu kosong tidak ada gunanya disimpan — tombolnya diredupkan
             sampai doanya diketik (buatStory juga menjaga). */}
@@ -189,7 +177,6 @@ const styles = StyleSheet.create({
   sectionTitle: { ...SECTION_SPACE },
   prayerInput: { minHeight: 110, textAlignVertical: 'top' },
   tooLong: { color: Color.DANGER, marginTop: 6 },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   disabled: { opacity: 0.45 },
   savedNote: { textAlign: 'center', color: Color.SUCCESS },
 });

@@ -475,14 +475,8 @@ export function FollowupTab({
             🔗 Doa Rantai · {monthTitle}
           </VixText>
           <VixText heading="label" additionalStyle={styles.prayerFillText}>
-            Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader dulu, ini yang
-            jadi dasar follow up Selasa & Kamis 🙏
+            Awal bulan! Tanyakan & isi pokok doa tiap CORE Leader 🙏
           </VixText>
-          <View style={styles.prayerFillButton}>
-            <VixText heading="bold" additionalStyle={styles.prayerFillButtonText}>
-              Isi Sekarang →
-            </VixText>
-          </View>
         </PressableScale>
       ) : isPrayerDay && prayerLeadersToday.length > 0 ? (
         <>
@@ -656,21 +650,28 @@ export function FollowupTab({
           </View>
           <ScrollView
             style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
             showsVerticalScrollIndicator={false}>
-            {/* Pertanyaan follow up */}
-            <View style={styles.questionBox}>
-              <VixText heading="paragraph" additionalStyle={styles.questionText}>
-                “{fmTopic.question}”
-              </VixText>
+            {/* Pertanyaan follow up + 🔀 penggantinya, SEBARIS (2 Okt 2026).
+                Dulu tombolnya satu pil penuh bertuliskan "Ganti pertanyaan" di
+                bawah kotak ini. Tulisannya cuma perlu dibaca sekali; sesudah
+                itu ia tinggal baris yang memakan tinggi di modal yang dibuka
+                tiap hari. Sekarang ia lambang saja di kanan pertanyaannya,
+                jadi jelas pula pertanyaan MANA yang diganti. */}
+            <View style={styles.questionRow}>
+              <View style={styles.questionBox}>
+                <VixText heading="paragraph" additionalStyle={styles.questionText}>
+                  “{fmTopic.question}”
+                </VixText>
+              </View>
+              <PressableScale
+                style={styles.modalShuffleButton}
+                onPress={() => shuffleTopic(followupModal.id)}
+                hitSlop={10}
+                accessibilityLabel="Ganti pertanyaan">
+                <VixText additionalStyle={styles.modalShuffleText}>🔀</VixText>
+              </PressableScale>
             </View>
-            {/* Ganti pertanyaan — tombol kecil di dalam modal */}
-            <PressableScale
-              style={styles.modalShuffleButton}
-              onPress={() => shuffleTopic(followupModal.id)}>
-              <VixText heading="label" additionalStyle={styles.modalShuffleText}>
-                🔀 Ganti pertanyaan
-              </VixText>
-            </PressableScale>
             {/* Ide pendekatan sesuai kepribadian. Label "💡 Ide Pendekatan"
                 dibuang 28 Sep 2026 — dua pil DISC/MBTI di sebelah kirinya
                 sudah menjelaskan sendiri kalimat itu datang dari mana. */}
@@ -804,16 +805,6 @@ const styles = StyleSheet.create({
   },
   prayerFillTitle: { color: Color.SPIRITUAL_DARK },
   prayerFillText: { color: Color.SPIRITUAL_DARK },
-  prayerFillButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: Color.SPIRITUAL_DARK,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  prayerFillButtonText: { color: Color.TEXT_REVERSE },
-  // Kartu header "Doa Rantai" (follow up pokok doa bergilir Selasa & Kamis) —
-  // gaya kartu hijau tua yang menonjol, senada dengan kartu Follow Up Mingguan.
   doaRantaiCard: {
     backgroundColor: Color.MAIN_DARK,
     borderRadius: 16,
@@ -829,7 +820,10 @@ const styles = StyleSheet.create({
   },
   doaRantaiTitle: { color: Color.TEXT_REVERSE },
   leaderName: { color: Color.TEXT_TITLE },
+  // Pertanyaan di kiri, 🔀 penggantinya di kanan — satu baris.
+  questionRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   questionBox: {
+    flex: 1,
     backgroundColor: Color.BACKGROUND,
     borderLeftWidth: 3,
     borderLeftColor: Color.MAIN,
@@ -912,18 +906,20 @@ const styles = StyleSheet.create({
   },
   smallDoneText: { color: Color.TEXT_REVERSE },
   // Tombol "Ganti pertanyaan" kecil di dalam modal follow up.
+  // Bundaran kecil berisi 🔀 saja. Ukurannya 36 (bukan sebesar EmojiButton 42
+  // di kepala modal): ia pelengkap pertanyaannya, bukan pintu ke layar lain.
+  // Daerah sentuhnya tetap lega lewat hitSlop 10.
   modalShuffleButton: {
-    alignSelf: 'flex-start',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Color.CONTAINER,
     borderWidth: 1,
     borderColor: Color.BORDER,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginTop: 8,
-    marginBottom: 4,
   },
-  modalShuffleText: { color: Color.TEXT_LABEL },
+  modalShuffleText: { fontSize: 17, lineHeight: 23 },
   // Modal tengah (pokok doa & ide pendekatan)
   // Kepala modal follow up: judul + topik di kiri, 🎡 📋 di kanan.
   modalHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
@@ -932,6 +928,10 @@ const styles = StyleSheet.create({
   modalTitle: { color: Color.TEXT_TITLE, marginBottom: 2 },
   modalSub: { color: Color.TEXT_LABEL, marginBottom: 10 },
   modalScroll: { maxHeight: 320, marginBottom: 12 },
+  // Napas antara pertanyaan & tiap kartu kepribadian (2 Okt 2026, permintaan
+  // pemilik app). Satu angka di sini, bukan margin per kartu: dengan margin
+  // per kartu, yang terakhir menyisakan ruang menggantung di dasar gulungan.
+  modalScrollContent: { gap: 10 },
   modalPointBox: {
     backgroundColor: Color.CONTAINER,
     borderLeftWidth: 3,

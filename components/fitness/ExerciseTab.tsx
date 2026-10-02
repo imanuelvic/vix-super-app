@@ -39,6 +39,8 @@ import {
   FIT_TIME_LABEL,
   fitDayComplete,
   fitExercisesOf,
+  fitKindMeta,
+  fitLogSeconds,
   fitMenuLabel,
   fitPace,
   fitPickedMinutes,
@@ -58,7 +60,7 @@ import {
   type FitSession,
   type FitWeights,
 } from '@/lib/fitness';
-import { dayIdToDate, formatDecimal, parseDecimal } from '@/lib/format';
+import { dayIdToDate, formatClock, formatDecimal, parseDecimal } from '@/lib/format';
 import { formatFinish, splitFinishSec, toFinishSec } from '@/lib/fun';
 import { weekDayIds } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
@@ -704,6 +706,34 @@ export function ExerciseTab({
           );
         })}
 
+        {/* ===== ⏱️ Sesi yang direkam stopwatch (2 Okt 2026) =====
+            Hasil sub-tab Record, ditampilkan di sini karena di sinilah hari
+            itu dibaca utuh. Centang gerakan menjawab "sudah dikerjakan belum";
+            yang ini menjawab "berapa lama tadi" — dua pertanyaan berbeda yang
+            kebetulan jatuh di hari yang sama.
+
+            Hari tanpa sesi terekam tidak digambar sama sekali: merekam itu
+            pilihan, jadi kotak kosong di sini cuma akan terbaca sebagai
+            kekurangan. */}
+        {viewDay.logs.length > 0 && (
+          <View style={styles.logCard}>
+            <View style={styles.exMain}>
+              <VixText heading="bold" additionalStyle={styles.runTitle}>
+                ⏱️ Direkam {formatClock(fitLogSeconds(viewDay))}
+              </VixText>
+              <VixText heading="label" additionalStyle={styles.runValue}>
+                {viewDay.logs
+                  .map((l) => {
+                    const m = fitKindMeta(l.kind);
+                    const jarak = l.km > 0 ? ` ${formatDecimal(l.km)} km` : '';
+                    return `${m.emoji} ${formatClock(l.seconds)}${jarak}`;
+                  })
+                  .join(' · ')}
+              </VixText>
+            </View>
+          </View>
+        )}
+
         {/* ⏭️ Lewati olahraga hari ini — jujur mencatat "hari ini tidak
             olahraga", bukan menyembunyikannya. Click lagi untuk membatalkan
             tandanya (streak 🔥 tetap tidak kembali). */}
@@ -1028,6 +1058,15 @@ const styles = StyleSheet.create({
   },
   runTitle: { color: Color.TEXT_TITLE },
   runValue: { color: Color.FITNESS_DARK },
+  // Sesi terekam: bentuk kartunya sama dengan hasil lari di atasnya, tapi
+  // TIDAK bisa di-click — di sini ia catatan, yang mengubahnya sub-tab Record.
+  logCard: {
+    ...CARD,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 3,
+    borderLeftColor: Color.FITNESS,
+  },
   // ---- Daftar pilihan di sheet ----
   groupLabel: { color: Color.TEXT_PLACEHOLDER, marginTop: 10, marginBottom: 6 },
   menuRow: {

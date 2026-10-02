@@ -88,7 +88,10 @@ c('judul & tombol ditengahkan, jadi tak perlu lagi jarak atas manual',
 console.log('\n=== Tiap layar fitur punya pintunya ===');
 // [file, keterangan, pola yang harus ada, kategori yang dituju]
 const PINTU = [
-  ['app/fitness.tsx', 'Fitness 💪', /right=\{<RewardButton category="fitness" \/>\}/, ['fitness']],
+  // 2 Okt 2026: pojok kanan Fitness berisi DUA tombol (📜 riwayat olahraga +
+  // 🔥 Reward), jadi `right=` tidak lagi langsung berisi <RewardButton/>.
+  // Tombolnya sendiri tetap ada & tetap menuju kategori yang sama.
+  ['app/fitness.tsx', 'Fitness 💪', /<RewardButton category="fitness" \/>/, ['fitness']],
   ['app/learning.tsx', 'Learning 🎓', /right=\{<RewardButton category="learning" \/>\}/, ['learning']],
   ['app/steps.tsx', 'Langkah Kaki 👣', /right=\{<RewardButton category="steps" \/>\}/, ['steps']],
   ['app/(tabs)/walk.tsx', 'Spiritual ✝️ (Revive)', /<RewardButton category="login" \/>/, ['login']],

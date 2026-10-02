@@ -346,6 +346,30 @@ export function formatDecimal(n: number): string {
   return (s.endsWith('.0') ? s.slice(0, -2) : s).replace('.', ',');
 }
 
+/**
+ * Detik → jam berjalan: "05:09" · "1:00:00". Jam baru muncul kalau memang
+ * lewat sejam, dan detik minus tidak pernah tergambar.
+ *
+ * Dipakai stopwatch olahraga ⏱️ di layarnya, daftar sesi di Exercise &
+ * Progress, riwayat olahraga, dan kartu yang dibagikan ke grup keluarga.
+ * Ditaruh di sini (2 Okt 2026) karena sempat ada DUA salinan: satu di
+ * hooks/useStopwatch.ts untuk layarnya, satu di lib/workoutShare.ts karena
+ * modul kartunya harus bisa jalan tanpa React. Dua pemformat yang wajib sama
+ * persis adalah hal yang paling pelan melencengnya, dan lib/format.ts tidak
+ * mengimpor apa pun — jadi keduanya bisa memakai yang satu ini.
+ *
+ * Beda dengan `formatFinish` (lib/fun.ts, "1j 25m 30d"): yang itu untuk CATATAN
+ * hasil race yang dibaca sekilas, yang ini untuk angka yang BERDETAK.
+ */
+export function formatClock(seconds: number): string {
+  const t = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  const dua = (n: number) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${dua(m)}:${dua(s)}` : `${dua(m)}:${dua(s)}`;
+}
+
 /** Rupiah ringkas untuk kartu kecil: 1.234.567 → "Rp1,2 jt". */
 export function formatShortRupiah(n: number): string {
   const abs = Math.abs(n);

@@ -155,7 +155,11 @@ c('memakai kartu yang sama persis', /<BibleStoryCard/.test(doa));
 c('kopnya PAUSE & PRAY', /'PAUSE & PRAY'/.test(doa) && /sessionLabel=\{KOP\}/.test(doa));
 c('TIDAK mengoper acuan/terjemahan', !/reference=/.test(doa) && !/version=/.test(doa));
 c('ukuran & rasio Story dipakai apa adanya', /STORY_W/.test(doa) && /STORY_H/.test(doa));
-c('tiga style yang sama (Morning/Midday/Night)', /SHARE_DESIGNS\.map/.test(doa));
+// 2 Okt 2026: blok pemilih rupanya diekstrak jadi <ShareStylePicker/>, dipakai
+// keempat layar kartu. Daftar rupanya tetap satu & tetap SHARE_DESIGNS.
+c('tiga style yang sama (Morning/Midday/Night)',
+  /<ShareStylePicker value=\{design\.key\} onChange=\{setPickedKey\} \/>/.test(doa) &&
+    /SHARE_DESIGNS\.map/.test(baca('components/common/ShareStylePicker.tsx')));
 c('simpan ke Foto', /savePngToPhotos/.test(doa));
 c('buka kamera Story Instagram', /openInstagram\('story'\)/.test(doa));
 c('nomor arsip vixtory ikut', /archiveNo\(todayId\)/.test(doa));

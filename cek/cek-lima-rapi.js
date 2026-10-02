@@ -95,18 +95,27 @@ try {
     { cwd: ROOT, stdio: 'pipe', shell: true },
   );
 } catch { /* keluhan tipe tak menghalangi tsc membuat JS-nya */ }
-const { DAYPART } = require(path.join(OUT, 'daypart.js'));
+const { DAYPART, greetingOfHour } = require(path.join(OUT, 'daypart.js'));
 
 ok('satu sumber lambangnya ada & isinya bertiga',
   DAYPART.morning === '🌅' && DAYPART.daytime === '🌤️' && DAYPART.night === '🌙',
   JSON.stringify(DAYPART));
 
+// 2 Okt 2026: aturan sapaannya PINDAH ke lib/daypart.ts (`greetingOfHour`),
+// karena kartu olahraga untuk grup keluarga butuh kata & lambangnya terpisah.
+// Jadi yang memakai DAYPART sekarang berkas aturannya sendiri; Greeting.tsx
+// cuma merangkainya, dan itu diuji di bawah.
 const pemakai = {
   'Habits (sesi kebiasaan)': 'lib/habits.ts',
   'Bacaan Alkitab': 'lib/spiritual.ts',
   'Reward': 'lib/reward.ts',
-  'Sapaan Home': 'components/common/Greeting.tsx',
 };
+// Aturan sapaannya tinggal DI DALAM lib/daypart.ts, jadi ia tidak mengimpor
+// dirinya sendiri — yang diuji cukup bahwa lambangnya memang dari DAYPART.
+ok('Sapaan (aturan jamnya) memakai DAYPART',
+  /emoji: DAYPART\.morning/.test(baca('lib/daypart.ts')) &&
+  /emoji: DAYPART\.daytime/.test(baca('lib/daypart.ts')) &&
+  /emoji: DAYPART\.night/.test(baca('lib/daypart.ts')));
 for (const [nama, berkas] of Object.entries(pemakai)) {
   const src = baca(berkas);
   ok(`${nama} memakai DAYPART`,
@@ -127,7 +136,34 @@ ok('lambangnya tidak ditulis ulang mentah-mentah di daftar sesinya',
 ok('sesi Pagi Fitness ikut sumber yang sama',
   /\$\{DAYPART\.morning\} Sesi pagi/.test(baca('lib/fitness.ts')));
 ok('"Selamat sore 🌇" tetap 🌇 (sore memang bukan salah satu sesi)',
-  /'Selamat sore 🌇'/.test(baca('components/common/Greeting.tsx')));
+  /\{ label: 'Selamat sore', emoji: '🌇' \}/.test(baca('lib/daypart.ts')));
+// Satu aturan, dua pemakai: layar Masuk & kepala layar berdate lewat
+// greetingText, kartu olahraga lewat greetingOfHour langsung. Dijalankan
+// sungguhan supaya batas jamnya tidak bisa melenceng diam-diam.
+ok('Greeting.tsx merangkai dari aturan itu, bukan menyalin batas jamnya',
+  /const \{ label, emoji \} = greetingOfHour\(new Date\(\)\.getHours\(\)\);/
+    .test(baca('components/common/Greeting.tsx')) &&
+  !/h < 11|h < 15|h < 19/.test(baca('components/common/Greeting.tsx')));
+// Tengah malam ikut "pagi", dan itu memang aturan yang sudah berlaku sejak
+// dulu — dipindahkan apa adanya, bukan diam-diam diperbaiki. Dikunci di sini
+// supaya kalau suatu saat mau diubah, perubahannya disengaja.
+ok('batas jamnya: pagi <11, siang <15, sore <19, sisanya malam',
+  greetingOfHour(0).label === 'Selamat pagi' &&
+  greetingOfHour(5).label === 'Selamat pagi' &&
+  greetingOfHour(10).label === 'Selamat pagi' &&
+  greetingOfHour(11).label === 'Selamat siang' &&
+  greetingOfHour(14).label === 'Selamat siang' &&
+  greetingOfHour(15).label === 'Selamat sore' &&
+  greetingOfHour(18).label === 'Selamat sore' &&
+  greetingOfHour(19).label === 'Selamat malam' &&
+  greetingOfHour(23).label === 'Selamat malam',
+  [0, 10, 11, 14, 15, 18, 19, 23]
+    .map((h) => `${h}→${greetingOfHour(h).label}`)
+    .join(' '));
+ok('lambang sapaannya memang dari DAYPART, bukan hex yang diketik ulang',
+  greetingOfHour(7).emoji === DAYPART.morning &&
+  greetingOfHour(13).emoji === DAYPART.daytime &&
+  greetingOfHour(21).emoji === DAYPART.night);
 ok('kata-kata chat buatanmu sendiri tidak ikut diubah',
   /Selamat pagi! ☀️ uda mo akhir minggu/.test(baca('lib/chatTemplates.ts')));
 
