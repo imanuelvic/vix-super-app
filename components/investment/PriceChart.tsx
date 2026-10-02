@@ -32,36 +32,44 @@ function shortMonth(dateStr: string): string {
 // Bitcoin, Forex & IHSG; `color` mengubah warna garis/label; `format` mengubah
 // cara menulis nilai sumbu (default Rupiah singkat — IHSG memakai poin, bukan Rp).
 //
-// `height` cuma diisi oleh tampilan SATU LAYAR PENUH (30 Sep 2026): di sana
-// grafiknya setinggi layar, dan naik-turun yang di kartu kecil cuma terlihat
-// sebagai getaran jadi benar-benar terbaca. Tanpa prop ini tingginya persis
-// seperti sebelumnya, jadi semua kartu yang sudah ada tidak bergeser sedikit
-// pun.
+// `height` diisi tampilan SATU LAYAR PENUH (30 Sep 2026) & kartu berat badan
+// di Fitness › Progress (3 Okt 2026, lebih pendek). Tanpa prop ini tingginya
+// persis seperti sebelumnya, jadi semua kartu pasar tidak bergeser sedikit pun.
+//
+// `reference` (3 Okt 2026, dipakai grafik berat: 🎯 target) = satu garis
+// patokan mendatar. Skalanya ikut melebar supaya garis itu selalu kelihatan;
+// label tertinggi/terendah tetap milik datanya, jadi tidak ada angka kembar.
+// Grafik pasar tidak memakainya, jadi bentuknya tidak berubah.
 export function PriceChart({
   series,
   width,
   height = H,
   color = GOLD,
   format = formatShortRupiah,
+  reference,
 }: {
   series: MarketPoint[];
   width: number;
   height?: number;
   color?: string;
   format?: (n: number) => string;
+  reference?: { value: number; label: string };
 }) {
   if (series.length < 2 || width <= 0) return null;
 
   const prices = series.map((s) => s.price);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
-  const range = max - min || 1;
+  // Batas skala: data, ditambah garis patokan kalau ada.
+  const lo = reference ? Math.min(min, reference.value) : min;
+  const hi = reference ? Math.max(max, reference.value) : max;
+  const range = hi - lo || 1;
   const n = series.length;
 
   const plotW = width - PAD_L - PAD_R;
   const plotH = height - PAD_T - PAD_B;
   const x = (i: number) => PAD_L + (i / (n - 1)) * plotW;
-  const y = (p: number) => PAD_T + (1 - (p - min) / range) * plotH;
+  const y = (p: number) => PAD_T + (1 - (p - lo) / range) * plotH;
 
   const points = series.map((s, i) => `${x(i)},${y(s.price)}`).join(' ');
   const last = series[n - 1];
@@ -82,6 +90,33 @@ export function PriceChart({
             strokeDasharray="4 4"
           />
         ))}
+        {/* Garis patokan (mis. 🎯 target berat) — garis rambut netral, labelnya
+            di kanan: DI BAWAH garis kalau garisnya di bawah titik terakhir,
+            di atasnya kalau tidak, supaya tidak menimpa label harga terakhir. */}
+        {reference ? (
+          <>
+            <Line
+              x1={PAD_L}
+              y1={y(reference.value)}
+              x2={width - PAD_R}
+              y2={y(reference.value)}
+              stroke={Color.TEXT_PLACEHOLDER}
+              strokeWidth={1}
+            />
+            <SvgText
+              x={width - PAD_R}
+              y={
+                y(reference.value) > y(last.price)
+                  ? y(reference.value) + 12
+                  : y(reference.value) - 5
+              }
+              fontSize={10}
+              fill={Color.TEXT_LABEL}
+              textAnchor="end">
+              {reference.label}
+            </SvgText>
+          </>
+        ) : null}
         {/* Garis harga */}
         <Polyline
           points={points}

@@ -8,6 +8,7 @@ import {
 import { Color } from '@/assets/style/color';
 import { hashString } from './core';
 import { db } from './firebase';
+import { dayId as dayIdOf, daysBetween } from './format';
 import { liveDoc } from './liveDoc';
 import { pickCompressedImage } from './photo';
 
@@ -203,6 +204,35 @@ export function saveFun(uid: string, data: FunData) {
   return setDoc(funDoc(uid), data);
 }
 
+// ===================== 🏁 Race berikutnya (3 Okt 2026) =====================
+// Race MENDATANG = entri Race yang tanggalnya hari ini atau nanti. Tidak ada
+// kolom baru: mendaftarkan race cukup menambah entri Race bertanggal ke depan
+// di Health › Race; waktu tempuh & medalinya diisi sesudah lomba, di entri
+// yang sama. Dibaca Fitness (hitung mundur + saran blok C) & Today.
+
+export type UpcomingRace = {
+  entry: FunEntry;
+  /** "YYYY-MM-DD" hari-H. */
+  dayId: string;
+  /** Sisa hari; 0 = hari ini. */
+  days: number;
+};
+
+/** Race terdekat yang belum lewat; null kalau tidak ada. */
+export function nextRace(data: FunData, now: Date): UpcomingRace | null {
+  let terdekat: UpcomingRace | null = null;
+  for (const e of data.entries) {
+    if (e.category !== 'race' || !e.date) continue;
+    const d = e.date.toDate();
+    const days = daysBetween(now, d);
+    if (days < 0) continue;
+    if (!terdekat || days < terdekat.days) {
+      terdekat = { entry: e, dayId: dayIdOf(d), days };
+    }
+  }
+  return terdekat;
+}
+
 // ===================== Foto medali (khusus Race) =====================
 /**
  * Pilih foto medali dari galeri lalu kompres kecil supaya hemat: lebar 360px →
@@ -219,12 +249,19 @@ export function pickCompressedMedal(): Promise<string | null> {
 
 const FUN_REMINDER_DAYS = 30;
 
-/** Tanggal kegiatan Fun TERBARU (yang punya tanggal). null kalau belum ada. */
-function lastFunDate(data: FunData): Date | null {
+/**
+ * Tanggal kegiatan Fun TERBARU (yang punya tanggal). null kalau belum ada.
+ *
+ * Yang tanggalnya masih di DEPAN dilewati (3 Okt 2026): sejak race mendatang
+ * didaftarkan sebagai entri bertanggal ke depan, entri itu bukan "kegiatan
+ * terakhir" — tanpa penjaga ini pengingat refreshing diam sampai hari-H.
+ */
+function lastFunDate(data: FunData, now: Date): Date | null {
   let latest: number | null = null;
   for (const e of data.entries) {
     if (!e.date) continue;
     const t = e.date.toMillis();
+    if (t > now.getTime()) continue;
     if (latest === null || t > latest) latest = t;
   }
   return latest === null ? null : new Date(latest);
@@ -235,14 +272,14 @@ function lastFunDate(data: FunData): Date | null {
  * dari 30 hari lalu — atau belum pernah mengisi sama sekali.
  */
 export function funReminderDue(data: FunData, now: Date): boolean {
-  const last = lastFunDate(data);
+  const last = lastFunDate(data, now);
   if (!last) return data.entries.length === 0; // belum pernah → ajak mulai
   return now.getTime() - last.getTime() > FUN_REMINDER_DAYS * 86_400_000;
 }
 
 /** Berapa hari sejak Fun terakhir (null kalau belum pernah). */
 export function daysSinceLastFun(data: FunData, now: Date): number | null {
-  const last = lastFunDate(data);
+  const last = lastFunDate(data, now);
   if (!last) return null;
   return Math.floor((now.getTime() - last.getTime()) / 86_400_000);
 }

@@ -39,7 +39,8 @@ type HealthTab = 'steps' | 'race' | 'checkup';
 // menuntut ketelitian yang tak pernah benar-benar dijalani, dan angka yang
 // setengah terisi lebih menyesatkan daripada tidak ada angka sama sekali.
 // Yang menjaga tubuh sekarang: langkah kaki, latihan di Fitness, berat badan
-// di Check-up, dan air putih di kartu sapaan Home.
+// di Profile › Data Tubuh (riwayat & grafiknya di Fitness › Progress), dan air
+// putih di kartu sapaan Home.
 //
 // Race pindah ke sini dari Fun (30 Agu 2026) & berdampingan dengan Steps:
 // keduanya soal kaki yang sama — Steps mencatat latihannya sehari-hari, Race
@@ -103,9 +104,9 @@ export default function HealthScreen() {
       {/* Tombol kanan atas menyesuaikan sub-tab yang sedang dibuka:
           Steps → rekor langkah · sisanya → info kesehatan.
           Di sebelahnya 🔥 reward milik sub-tab itu:
-            Steps → 📅 Target Mingguan (aerobik + strength) — angkanya tak
-                    tampil di mana pun selain di modal itu, beda dengan
-                    patokan jarak yang sudah ✅/❌ satu per satu di tab ini.
+            Steps → 📅 Target Mingguan (aerobik + strength) — pencapaian
+                    anjuran umumnya; sejak 3 Okt 2026 anjuran itu juga
+                    tergambar sebagai garis patokan di Fitness › Progress.
             Race & Check-up belum punya pencapaian → tak ada tombol 🔥.
           💧 Air Putih dulu digantung di sub-tab Diet; sesudah Diet dihapus
           pencapaiannya tetap utuh & terbuka dari layar Reward 🏆. */}
@@ -118,8 +119,10 @@ export default function HealthScreen() {
             {tab === 'steps' ? (
               <EmojiButton emoji="👣" onPress={() => router.push('/steps')} />
             ) : (
+              // 📋 Info Kesehatan (3 Okt 2026: dulu 💪🏻, yang terbaca sebagai
+              // Fitness, bukan catatan nilai normal & tips).
               <EmojiButton
-                emoji="💪🏻"
+                emoji="📋"
                 onPress={() => router.push('/health-info')}
               />
             )}

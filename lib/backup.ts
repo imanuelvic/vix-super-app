@@ -91,7 +91,7 @@ export function backupLine(info: BackupInfo, todayId: string): string {
   const kapan =
     umur === 0 ? 'hari ini' : umur === 1 ? 'kemarin' : `${umur} hari lalu`;
   const tanggal = formatShortDayDate(dayIdToDate(info.lastDayId));
-  return `📦 Terakhir diekspor{"\n"}${tanggal} (${kapan}) · ${info.docCount} docs`;
+  return `📦 Terakhir diekspor\n${tanggal} (${kapan}) · ${info.docCount} dokumen`;
 }
 
 /** Ajakan mencadangkan lagi — dipakai kartu System & baris Today. */

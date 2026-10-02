@@ -25,10 +25,12 @@ import {
 // Kartu 🎯 Target Langkah Mingguan — target jarak yang KAMU tentukan sendiri,
 // dengan tulisan "sisa sekian lagi", persis pola target berat di layar Habits.
 //
-// Bedanya dengan kartu "Target Sehat Mingguan" di bawahnya: yang itu ANJURAN
-// umum untuk orang dewasa (±150 menit aerobik + 2 hari strength). Yang ini
-// milikmu — dan seperti akumulasi mingguannya, ia mulai dari nol lagi tiap
-// Senin jam 00.00.
+// Sejak 3 Okt 2026 inilah SATU-SATUNYA target mingguan di Steps. Anjuran umum
+// orang dewasa (±70.000 langkah + 2 hari angkat beban) tidak lagi berdiri
+// sebagai kartu kedua di sini — dua target yang mengukur hal mirip cuma
+// membuat yang mana yang dikejar jadi kabur. Anjuran itu kini jadi garis
+// patokan di grafik konsistensi Fitness › Progress. Seperti akumulasi
+// mingguannya, target ini mulai dari nol lagi tiap Senin jam 00.00.
 export function WeekTargetCard({ km }: { km: number }) {
   const { user } = useAuth();
   const [target] = useLive<WeekDistanceTarget | null>(subscribeWeekTarget);

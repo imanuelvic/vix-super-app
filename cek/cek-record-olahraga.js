@@ -78,10 +78,14 @@ console.log('\n=== 1. Record duduk DI TENGAH kaki layar ===');
   const daftar = layar.match(/const TABS: BottomTab<Tab>\[\] = \[([\s\S]*?)\];/);
   c('daftar sub-tabnya ketemu', !!daftar);
   const kunci = [...(daftar?.[1] ?? '').matchAll(/key: '([a-z]+)'/g)].map((m) => m[1]);
-  c('lima sub-tab: Program · Exercise · Record · Progress · Notes',
-    kunci.join(',') === 'program,exercise,record,progress,notes', kunci.join(','));
-  c('Record tepat di tengah, bukan di ujung',
-    kunci.indexOf('record') === Math.floor(kunci.length / 2),
+  // 3 Okt 2026: Program bukan sub-tab lagi (etalasenya di sheet Pick
+  // Exercise), jadi tinggal empat. Record tetap tepat di sebelah Exercise —
+  // sub-tab yang dipakai sambil berdiri bersiap, dekat ibu jari.
+  c('empat sub-tab: Exercise · Record · Progress · Notes',
+    kunci.join(',') === 'exercise,record,progress,notes', kunci.join(','));
+  c('Record tepat di sebelah Exercise, bukan di ujung',
+    kunci.indexOf('record') === kunci.indexOf('exercise') + 1 &&
+      kunci.indexOf('record') !== kunci.length - 1,
     `urutan ke-${kunci.indexOf('record') + 1} dari ${kunci.length}`);
   c('lambangnya stopwatch & sudah terdaftar di peta ikon',
     /key: 'record', label: 'Record', icon: 'stopwatch.fill'/.test(daftar?.[1] ?? '') &&
@@ -191,9 +195,11 @@ c('hapus selalu lewat konfirmasi dulu',
   /<ConfirmDialog/.test(rekam) && /Hapus permanen, tidak bisa dikembalikan/.test(rekam));
 // Bentuk asing dibuang, bukan dipaksa jadi angka: satu dokumen rusak tidak
 // boleh membuat seluruh riwayat berhenti tergambar.
+// 3 Okt 2026: hasil lari yang DIKETIK boleh cuma berisi jarak (waktunya
+// lupa dicatat) — yang dibuang tinggal sesi tanpa lama DAN tanpa jarak.
 c('data yang bentuknya asing dilewati, bukan bikin layar meledak',
   /if \(!Array\.isArray\(raw\)\) return \[\];/.test(fitness) &&
-    /typeof o\.seconds !== 'number' \|\| o\.seconds <= 0/.test(fitness));
+    /if \(detik <= 0 && jarak <= 0\) return \[\];/.test(fitness));
 
 // Tanggal dokumen = HARINYA. Kalau ia "kapan terakhir ditulis", membetulkan
 // catatan Senin pada hari Jumat akan melempar Senin ke puncak riwayat.
@@ -272,24 +278,31 @@ c('daftarnya berpaginasi, tidak jadi gulungan tanpa ujung',
 console.log('\n=== 8. Dua sumber angka lari tidak dijumlahkan diam-diam ===');
 // =====================================================================
 
-// `runs` = hasil sesi yang direncanakan (diketik di Exercise).
-// `logs` = sesi yang benar-benar direkam (Record).
-// Menjumlahkannya berarti menebak keduanya lari yang sama — dan tebakan yang
-// salah melipatgandakan jarak mingguan tanpa kelihatan di layar mana pun.
-c('fitRunTotals TETAP cuma menjumlah `runs`',
-  /for \(const run of Object\.values\(day\.runs\)\)/.test(fitness) &&
-    !/for \(const [a-z]+ of Object\.values\(day\.logs\)\)/.test(fitness));
-c('keduanya tampil sebagai dua kartu dengan judul yang beda',
-  /🏃 Lari minggu ini/.test(kemajuan) && /🏃 Riwayat Lari & Jalan/.test(kemajuan));
+// 3 Okt 2026 (review Fitness, disetujui pemilik app): hasil yang DIKETIK di
+// Exercise kini disimpan sebagai sesi bertanda paketnya (`pick`) di `logs`
+// — SATU daftar dengan rekaman Record. Bahaya lamanya tetap dijaga: hasil
+// bentuk lama (`runs`) cuma ikut kalau hari itu belum punya sesi lari, jadi
+// lari yang direkam lalu juga diketik tidak terhitung dua kali.
+c('hasil ketik disimpan sebagai sesi bertanda paketnya, menggantikan yang lama',
+  /export function saveFitRunLog\(/.test(fitness) &&
+    /runs: \{ \[log\.pick\]: deleteField\(\) \}/.test(fitness));
+c('hasil bentuk lama cuma dipakai kalau hari itu belum punya sesi lari',
+  /if \(day\.logs\.some\(\(l\) => l\.kind === 'run'\)\) return day\.logs;/.test(fitness));
+c('ringkasan minggu & riwayat membaca SATU daftar itu',
+  /fitDistanceTotals\(weekDays\)/.test(kemajuan) && /🏃 Riwayat Lari & Jalan/.test(kemajuan) &&
+    /fitDayLogs\(readFitDay\(d\.data\(\)\)\)/.test(fitness));
 // Kartu di Progress menyaring yang berjarak; sesi beban & renang tetap utuh,
 // tempatnya di layar Workout History.
 c('kartu Progress cuma berisi lari & jalan, riwayat penuhnya di layar sendiri',
   /fitRouteLogs\(fitLogsOfDays\(weekDays\)\)\.slice\(0, 5\)/.test(kemajuan) &&
     !/fitRouteLogs/.test(riwayat));
+// Kartu "⏱️ Direkam" di Exercise berisi rekaman stopwatch saja — hasil ketik
+// paket sudah tampil di kartu "🏃 Hasil …"-nya sendiri.
 c('sub-tab Exercise menampilkan total yang DIREKAM, terpisah dari centangnya',
-  /⏱️ Direkam \{formatClock\(fitLogSeconds\(viewDay\)\)\}/.test(latihan));
+  /const rekaman = viewDay\.logs\.filter\(\(l\) => !l\.pick\);/.test(latihan) &&
+    /⏱️ Direkam \{formatClock\(rekamanDetik\)\}/.test(latihan));
 c('hari tanpa sesi terekam tidak digambar sebagai kotak kosong',
-  /\{viewDay\.logs\.length > 0 && \(/.test(latihan));
+  /\{rekaman\.length > 0 && \(/.test(latihan));
 
 // =====================================================================
 console.log('\n=== 9. Pintu riwayat & aturan repo ===');

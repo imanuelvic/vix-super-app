@@ -44,8 +44,20 @@ export type ReleaseNote = {
 export const CHANGELOG: ReleaseNote[] = [
   {
     version: '2.0.1',
-    date: '2026-10-02',
+    date: '2026-10-03',
     items: [
+      '⚖️ Pengingat timbang membuka isian berat, bukan Check-up',
+      '📈 Berat badan kini tercatat riwayatnya, grafiknya di Fitness Progress',
+      '👣 Steps: target 10.000 langkah sehari menggantikan patokan jarak lari',
+      '🗓️ Rekap bulan, kuartal, & tahun di Steps jadi satu kartu',
+      '🎯 Steps cukup satu target mingguan, anjuran umum pindah ke Fitness',
+      '🩺 Tombol Catat Pemeriksaan menempel di atas, ikon Info jadi 📋',
+      '🏃 Hasil lari yang diketik & yang direkam kini satu daftar',
+      '🏋️ Kemajuan beban tiap gerakan tercatat, terlihat di Progress',
+      '📊 Progress: ringkasan minggu ini & konsistensi 8 minggu terakhir',
+      '📅 Tab Program pindah ke Pick Exercise, gerakan paketnya bisa diintip',
+      '⏱️ Timer istirahat antar set di kartu gerakan beban',
+      '🏁 Race mendatang dihitung mundur, program menyarankan blok C menjelang hari-H',
       '👣 Tombol Tambah & Perbarui di kartu langkah jadi tulisan putih',
       '🌤️ Riwayat Morning Journey dihapus, isinya tetap ada di Revive History',
       '⏰ Reminder bisa diberi jam, HP berbunyi tepat di jam itu',

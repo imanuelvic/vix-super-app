@@ -62,12 +62,13 @@ import {
   dayIdToDate,
   daysBetween,
   formatDayDate,
+  formatDecimal,
   formatMonthsDays,
   MONTH_NAMES,
   whenLabel,
 } from './format';
 import { billUnsettled, outstandingTotal, sortedBills, unpaidCount, type Bill } from './friends';
-import { funReminderDue, type FunData } from './fun';
+import { funReminderDue, nextRace, type FunData } from './fun';
 import { futsalReminders, type FutsalData } from './futsal';
 import {
   countedHabits,
@@ -783,11 +784,29 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     }
   }
 
+  // 🏁 Race berikutnya (3 Okt 2026) — entri Race bertanggal ke depan di
+  // Health › Race. Dua minggu terakhir masuk "up next", H-1 & hari-H masuk
+  // "hari ini". Sekaligus jadi bahan saran program (blok C menjelang race).
+  const race = nextRace(input.fun, now);
+  if (race && race.days <= 14) {
+    const km = race.entry.distanceKm;
+    push({
+      id: 'race-next',
+      section: 'life',
+      tier: race.days <= 1 ? 'today' : 'next',
+      rank: 4,
+      emoji: '🏁',
+      title: race.entry.title || 'Race',
+      detail: `${whenLabel(race.days)}${km ? ` · ${formatDecimal(km)} km` : ''}`,
+      href: { pathname: '/health', params: { tab: 'race' } },
+    });
+  }
+
   // 💪 Olahraga hari ini — belum memilih / masih ada gerakan / hari pemulihan.
   const fitLeft = fitPendingToday(input.fitDay, now);
   if (fitLeft > 0) {
     const picked = fitSessionsOf(input.fitDay, now);
-    const saran = fitSessionFor(now);
+    const saran = fitSessionFor(now, race?.dayId);
     const walkOnly = picked.length > 0 && picked.every((s) => s.kind === 'walk');
     push({
       id: 'fitness',
@@ -823,13 +842,27 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
     });
   }
 
-  // 🩺 Health — cek tensi/gula, timbang mingguan, donor darah.
+  // ⚖️ Timbang berat mingguan — barisnya SENDIRI (3 Okt 2026). Dulu ia
+  // menumpang baris 🩺 di bawah, yang membuka Check-up — padahal kolom berat
+  // ada di Profile › Data Tubuh, jadi click-nya mendarat di layar yang tidak
+  // bisa mengisinya. Sekarang langsung membuka isian beratnya.
+  if (input.profile && needsWeighIn(input.profile, now)) {
+    push({
+      id: 'weigh-in',
+      section: 'life',
+      tier: 'today',
+      rank: 5,
+      emoji: '⚖️',
+      title: 'Timbang berat minggu ini',
+      detail: `Terakhir ${formatDecimal(input.profile.weightKg)} kg`,
+      href: { pathname: '/profile', params: { tab: 'body', weighIn: '1' } },
+    });
+  }
+
+  // 🩺 Health — cek tensi/gula & donor darah.
   const health: string[] = [];
   for (const c of checkupDueReminders(input.checkups, now)) {
     health.push(`${c.icon} ${c.label} waktunya cek lagi${c.days < 0 ? ` (lewat ${-c.days} hari)` : ''}`);
-  }
-  if (input.profile && needsWeighIn(input.profile, now)) {
-    health.push('⚖️ Timbang berat minggu ini');
   }
   if (donorReminderDue(input.donor, now)) {
     const eligible = nextEligibleDate(input.donor);

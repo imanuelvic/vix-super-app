@@ -12,6 +12,7 @@ import {
     setDoc,
     Timestamp,
     updateDoc,
+    writeBatch,
     type FirestoreError,
 } from 'firebase/firestore';
 
@@ -94,8 +95,84 @@ export function subscribeHealthProfile(
 }
 
 export function saveHealthProfile(uid: string, data: Partial<HealthProfile>) {
-  const ref = doc(db, 'users', uid, 'health', 'profile');
-  return setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+  const batch = writeBatch(db);
+  batch.set(
+    doc(db, 'users', uid, 'health', 'profile'),
+    { ...data, updatedAt: serverTimestamp() },
+    { merge: true },
+  );
+  // ⚖️ Beratnya ikut dicatat ke riwayat, satu titik untuk HARI ini — satu
+  // tulisan (batch), jadi profil & riwayatnya tidak mungkin berbeda pendapat.
+  if (typeof data.weightKg === 'number' && data.weightKg > 0) {
+    batch.set(
+      doc(db, 'users', uid, 'health', 'weightLog'),
+      { points: { [dayDocId(new Date())]: data.weightKg } },
+      { merge: true },
+    );
+  }
+  return batch.commit();
+}
+
+// ============================== Riwayat berat ⚖️ ==============================
+// users/{uid}/health/weightLog — SATU dokumen kecil: { points: { "YYYY-MM-DD": kg } }.
+//
+// Sampai 3 Okt 2026 berat cuma disimpan sebagai nilai TERKINI di profil, jadi
+// tiap timbang menimpa yang lama dan naik-turunnya tidak pernah terlihat,
+// padahal ada target berat & pengingat timbang tiap Minggu. Sekarang tiap
+// simpan Data Tubuh ikut mencatat satu titik untuk HARI itu (simpan dua kali
+// sehari = titik hari itu ditimpa, bukan bertambah). Satu titik ±20 byte;
+// timbang tiap Minggu = ±52 titik setahun, jadi satu dokumen cukup puluhan
+// tahun. Koleksinya `health`, yang memang sudah ikut Ekspor Data.
+
+/** Satu kali timbang. */
+export type WeightPoint = { dayId: string; kg: number };
+
+/** Membaca peta titik dari dokumen; isi yang bukan angka sah dibuang. */
+function readWeightPoints(raw: unknown): WeightPoint[] {
+  if (!raw || typeof raw !== 'object') return [];
+  return Object.entries(raw as Record<string, unknown>)
+    .filter(
+      (e): e is [string, number] =>
+        /^\d{4}-\d{2}-\d{2}$/.test(e[0]) && typeof e[1] === 'number' && e[1] > 0,
+    )
+    .map(([d, kg]) => ({ dayId: d, kg }))
+    .sort((a, b) => a.dayId.localeCompare(b.dayId));
+}
+
+export function subscribeWeightLog(
+  uid: string,
+  onChange: (points: WeightPoint[]) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    doc(db, 'users', uid, 'health', 'weightLog'),
+    (snapshot) => onChange(readWeightPoints(snapshot.data()?.points)),
+    onError,
+  );
+}
+
+/**
+ * Titik grafik berat, urut tanggal: riwayatnya, ditambah berat TERKINI di
+ * profil kalau hari simpannya belum tercatat. Itu yang membuat berat yang
+ * disimpan SEBELUM riwayat ini ada tetap muncul sebagai titik pertamanya,
+ * bukan hilang. Profil yang belum pernah disimpan (`updatedAt` null) cuma
+ * berisi angka bawaan, jadi tidak ikut.
+ *
+ * `sejak` = dayId paling awal yang diambil (mis. 12 minggu lalu).
+ */
+export function weightSeries(
+  points: WeightPoint[],
+  profile: HealthProfile | null,
+  sejak?: string,
+): WeightPoint[] {
+  const out = [...points];
+  const disimpan = profile?.updatedAt ? dayDocId(profile.updatedAt.toDate()) : null;
+  if (profile && disimpan && !out.some((p) => p.dayId === disimpan)) {
+    out.push({ dayId: disimpan, kg: profile.weightKg });
+  }
+  return out
+    .filter((p) => !sejak || p.dayId >= sejak)
+    .sort((a, b) => a.dayId.localeCompare(b.dayId));
 }
 
 /**
@@ -964,18 +1041,16 @@ export function stepsToKm(steps: number, heightCm: number): number {
 }
 
 /**
- * Patokan jarak SEHARI memakai istilah yang dipakai pelari. Easy Run =
- * lari santai; Long Run = latihan jarak jauh mingguan; sisanya nama lomba.
+ * 🎯 Target langkah HARIAN (3 Okt 2026) — angka bulat yang dikenal orang dan
+ * memang terkejar dengan jalan kaki biasa.
+ *
+ * Menggantikan patokan jarak ala pelari (Easy Run 5K … Full Marathon) yang
+ * dulu dipakai untuk menilai jarak HARIAN dari langkah. Jarak itu hasil jalan
+ * kaki, bukan lari, jadi tiap hari tertulis "Full Marathon kurang 35,8 km" —
+ * angka yang tidak pernah dimaksudkan untuk dikejar. Pencapaian jarak sehari
+ * tetap hidup di Reward 🏆 (kategori Distance), yang memang soal rekor.
  */
-export const RUN_DAY_MILESTONES: { km: number; emoji: string; label: string }[] =
-  [
-    { km: 3, emoji: '🚶', label: 'Shakeout' },
-    { km: 5, emoji: '🏃', label: 'Easy Run · 5K' },
-    { km: 10, emoji: '⚡', label: 'Tempo Run · 10K' },
-    { km: 15, emoji: '🔥', label: 'Long Run · 15K' },
-    { km: 21.1, emoji: '🏅', label: 'Half Marathon' },
-    { km: 42.2, emoji: '👑', label: 'Full Marathon' },
-  ];
+export const DAY_STEP_GOAL = 10_000;
 
 /** Patokan AKUMULASI Senin–Minggu (mileage mingguan ala buku latihan lari). */
 export const RUN_WEEK_MILESTONES: { km: number; emoji: string; label: string }[] =

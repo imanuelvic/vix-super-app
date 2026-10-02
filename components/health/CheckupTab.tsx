@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CARD, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { SECTION_SPACE } from '@/assets/style/section';
 import { Chip } from '@/components/common/Chip';
 import { DateField } from '@/components/common/DateField';
@@ -18,6 +18,7 @@ import { Pagination } from '@/components/common/Pagination';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { SheetModal } from '@/components/common/SheetModal';
+import { StickyTop } from '@/components/common/StickyTop';
 import { VixText } from '@/components/common/VixText';
 import { checkupSummary } from '@/components/health/CheckupStatusCard';
 import { useAuth } from '@/contexts/auth';
@@ -145,6 +146,13 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
 
   return (
     <View style={styles.flex}>
+      {/* Tombol catat DIPATOK di atas daftar (standar app 28 Sep 2026, Check-up
+          ikut 3 Okt 2026): riwayatnya bisa panjang, dan tombol yang ikut
+          tergulung memaksa menggulung balik ke atas tiap mau mencatat. */}
+      <StickyTop>
+        <PrimaryButton label="Catat Pemeriksaan" icon="plus" onPress={openAdd} />
+      </StickyTop>
+
       <KeyboardAwareScrollView contentContainerStyle={styles.content}>
         {/* Tombol menuju riwayat sakit & donor darah. (Info kesehatan kini ada
             di tombol kanan atas layar Health.) */}
@@ -199,14 +207,6 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
             Lihat nilai normal, tips & jadwal cek berikutnya ›
           </VixText>
         </PressableScale>
-
-        {/* ===== Catat pemeriksaan baru → buka bottom sheet ===== */}
-        <PrimaryButton
-          label="Catat Pemeriksaan"
-          icon="plus"
-          onPress={openAdd}
-          additionalStyle={styles.addButton}
-        />
 
         {/* ===== Riwayat ===== */}
         <VixText heading="title" additionalStyle={styles.sectionTitle}>
@@ -348,7 +348,8 @@ export function CheckupTab({ checkups }: { checkups: Checkup[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
+  // Jarak atasnya 0: tombol catat yang dipatok (StickyTop) sudah memegangnya.
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   navRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   navButton: {
     flex: 1,
@@ -382,7 +383,6 @@ const styles = StyleSheet.create({
   summaryWarn: { color: Color.DANGER },
   summaryHint: { color: Color.TEXT_LABEL },
   sectionTitle: { ...SECTION_SPACE },
-  addButton: { marginTop: 4, marginBottom: 4 },
   fieldLabel: { marginBottom: 6 },
   chipRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   chipFlex: { flex: 1 },

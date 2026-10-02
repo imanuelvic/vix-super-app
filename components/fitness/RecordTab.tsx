@@ -214,10 +214,15 @@ export function RecordTab({
               <View key={`${l.at}-${i}`} style={styles.logRow}>
                 <View style={styles.logMain}>
                   <VixText heading="bold" additionalStyle={styles.logTitle}>
-                    {m.emoji} {m.label} · {formatClock(l.seconds)}
+                    {m.emoji} {m.label}
+                    {l.seconds > 0 ? ` · ${formatClock(l.seconds)}` : ''}
                   </VixText>
+                  {/* Sejak 3 Okt 2026 hasil lari yang DIKETIK di kartu Exercise
+                      juga sesi di daftar ini (satu sumber jarak lari) —
+                      ditandai supaya tidak disangka rekaman stopwatch. */}
                   <VixText heading="label" additionalStyle={styles.logSub}>
                     {[
+                      l.pick ? '✍️ diketik di Exercise' : '',
                       l.at ? `mulai ${l.at}` : '',
                       l.km > 0 ? `${formatDecimal(l.km)} km` : '',
                       pace,
@@ -230,25 +235,27 @@ export function RecordTab({
                       sapaan jamnya, sesi ini, & satu kalimat penyemangat.
                       Sesinya dioper lewat parameter (pendek), jadi layar
                       berbaginya tidak perlu membaca Firestore sama sekali. */}
-                  <PressableScale
-                    style={styles.shareChip}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/workout-share',
-                        params: {
-                          kind: l.kind,
-                          seconds: String(l.seconds),
-                          km: String(l.km),
-                          place: l.place,
-                          dayId,
-                        },
-                      })
-                    }
-                    hitSlop={6}>
-                    <VixText heading="label" additionalStyle={styles.shareText}>
-                      💬 Bagikan ke grup
-                    </VixText>
-                  </PressableScale>
+                  {l.seconds > 0 ? (
+                    <PressableScale
+                      style={styles.shareChip}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/workout-share',
+                          params: {
+                            kind: l.kind,
+                            seconds: String(l.seconds),
+                            km: String(l.km),
+                            place: l.place,
+                            dayId,
+                          },
+                        })
+                      }
+                      hitSlop={6}>
+                      <VixText heading="label" additionalStyle={styles.shareText}>
+                        💬 Bagikan ke grup
+                      </VixText>
+                    </PressableScale>
+                  ) : null}
                 </View>
                 <DeleteX onPress={() => setHapus(i)} disabled={busy} />
               </View>

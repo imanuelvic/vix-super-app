@@ -80,7 +80,7 @@ export const FEATURE_INDEX: FeatureEntry[] = [
   e('🩸', 'Donor Darah', 'Life › Health', { pathname: '/donor' }, 'donor', 'darah', 'pmi'),
   e('ℹ️', 'Info Kesehatan', 'Life › Health', { pathname: '/health-info' }, 'info kesehatan', 'tips sehat'),
   e('💪', 'Fitness Exercise', 'Life › Fitness › Exercise', { pathname: '/fitness', params: { tab: 'exercise' } }, 'fitness', 'gym', 'olahraga', 'latihan', 'workout', 'lari'),
-  e('📅', 'Program Latihan', 'Life › Fitness › Program', { pathname: '/fitness', params: { tab: 'program' } }, 'program', 'jadwal latihan'),
+  e('📅', 'Program Latihan', 'Life › Fitness › Exercise › Pick', { pathname: '/fitness', params: { tab: 'exercise' } }, 'program', 'jadwal latihan', 'blok'),
   e('📈', 'Progress Fitness', 'Life › Fitness › Progress', { pathname: '/fitness', params: { tab: 'progress' } }, 'progress', 'streak gym'),
   e('📝', 'Notes Fitness', 'Life › Fitness › Notes', { pathname: '/fitness', params: { tab: 'notes' } }, 'notes', 'video latihan'),
   e('👨‍👩‍👧', 'Family', 'Life › Family', { pathname: '/family' }, 'keluarga', 'family', 'silsilah', 'ulang tahun keluarga'),

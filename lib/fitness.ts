@@ -1,5 +1,6 @@
 import {
     collection,
+    deleteField,
     doc,
     getDoc,
     getDocs,
@@ -8,6 +9,7 @@ import {
     query,
     setDoc,
     Timestamp,
+    writeBatch,
     type FirestoreError,
 } from 'firebase/firestore';
 
@@ -15,7 +17,7 @@ import { type LoginStreak as DayStreak } from './reward';
 import { pickOfDay, weekIndex } from './core';
 import { DAYPART } from './daypart';
 import { db } from './firebase';
-import { dayIdToDate } from './format';
+import { dayIdToDate, daysBetween } from './format';
 import { FITNESS_HABIT_ID } from './habits';
 import {
     bumpWeekGym,
@@ -540,8 +542,27 @@ export const FIT_DAY_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 /** Urutan giliran blok. Satu-satunya sumber daftar blok — tab Program ikut ini. */
 export const FIT_BLOCK_ORDER: FitBlock[] = ['A', 'B', 'C'];
 
-/** Blok yang berlaku pada tanggal ini — berganti tiap 2 minggu (A→B→A…). */
-export function fitBlockOf(d: Date): FitBlock {
+/**
+ * 🏁 Berapa hari menjelang race blok C (persiapan race) yang disarankan,
+ * menggantikan giliran blok biasa (3 Okt 2026). Empat minggu = tiga sampai
+ * empat long run hari Minggu sebelum hari-H.
+ */
+export const FIT_RACE_PREP_DAYS = 28;
+
+/**
+ * Blok yang disarankan pada tanggal ini — berganti tiap 2 minggu (A→B→C…),
+ * KECUALI menjelang race: `raceDayId` 1–28 hari lagi → blok C. Hari-H-nya
+ * sendiri kembali ke giliran biasa (hari itu yang dijalani race-nya).
+ *
+ * Tanpa `raceDayId` hasilnya persis seperti dulu — dan itu penting: hari lama
+ * yang belum punya `picks` menghitung ulang paketnya lewat fungsi ini
+ * (fitPicksOf), jadi riwayatnya tidak boleh ikut berubah.
+ */
+export function fitBlockOf(d: Date, raceDayId?: string | null): FitBlock {
+  if (raceDayId) {
+    const sisa = daysBetween(d, dayIdToDate(raceDayId));
+    if (sisa >= 1 && sisa <= FIT_RACE_PREP_DAYS) return 'C';
+  }
   return FIT_BLOCK_ORDER[Math.floor(weekIndex(d) / 2) % FIT_BLOCK_ORDER.length];
 }
 
@@ -558,9 +579,9 @@ export function fitSessionOfWeekday(
   return list.find((s) => s.weekday === weekday) ?? list[0];
 }
 
-/** Sesi latihan untuk tanggal ini. */
-export function fitSessionFor(d: Date): FitSession {
-  return fitSessionOfWeekday(d.getDay(), fitBlockOf(d));
+/** Sesi latihan untuk tanggal ini (`raceDayId` → lihat fitBlockOf). */
+export function fitSessionFor(d: Date, raceDayId?: string | null): FitSession {
+  return fitSessionOfWeekday(d.getDay(), fitBlockOf(d, raceDayId));
 }
 
 /**
@@ -635,13 +656,131 @@ export function subscribeFitWeights(
   );
 }
 
-/** Simpan beban satu gerakan — merge, gerakan lain tidak tersentuh. */
-export function saveFitWeight(uid: string, exerciseId: string, kg: number) {
-  return setDoc(
+/**
+ * Simpan beban satu gerakan — merge, gerakan lain tidak tersentuh.
+ *
+ * Sejak 3 Okt 2026 tiap perubahan ikut dicatat ke riwayat bebannya (satu
+ * titik per hari, satu tulisan batch). `awal` = beban SEBELUM riwayat ini
+ * ada, dioper pemanggil hanya pada perubahan pertama sebuah gerakan, supaya
+ * "naik dari 40 kg" tetap punya titik mulainya.
+ */
+export function saveFitWeight(
+  uid: string,
+  exerciseId: string,
+  kg: number,
+  awal?: number | null,
+) {
+  const batch = writeBatch(db);
+  batch.set(
     doc(db, 'users', uid, 'fitness', 'weights'),
     { map: { [exerciseId]: kg } },
     { merge: true },
   );
+  batch.set(
+    doc(db, 'users', uid, 'fitness', 'weightLog'),
+    {
+      log: { [exerciseId]: { [dayDocId(new Date())]: kg } },
+      ...(awal != null && awal > 0 ? { base: { [exerciseId]: awal } } : {}),
+    },
+    { merge: true },
+  );
+  return batch.commit();
+}
+
+// ===================== 🏋️ Riwayat beban (3 Okt 2026) =====================
+// users/{uid}/fitness/weightLog — SATU dokumen kecil:
+//   { base: { [gerakan]: kg }, log: { [gerakan]: { "YYYY-MM-DD": kg } } }
+//
+// Programnya menjanjikan "progressive overload terukur", tapi sampai hari
+// ini tiap gerakan cuma menyimpan kg TERAKHIR — naiknya tidak pernah bisa
+// dilihat. `base` = beban sebelum riwayat ini ada (titik mulai), `log` =
+// tiap kali bebannya diubah. Koleksinya `fitness`, yang memang sudah ikut
+// Ekspor Data.
+
+export type FitWeightLog = {
+  base: Record<string, number>;
+  log: Record<string, Record<string, number>>;
+};
+
+export const EMPTY_FIT_WEIGHT_LOG: FitWeightLog = { base: {}, log: {} };
+
+export function subscribeFitWeightLog(
+  uid: string,
+  onChange: (log: FitWeightLog) => void,
+  onError?: (error: FirestoreError) => void,
+) {
+  return liveDoc(
+    doc(db, 'users', uid, 'fitness', 'weightLog'),
+    (snapshot) => {
+      const data = snapshot.data();
+      onChange({
+        base: (data?.base as Record<string, number>) ?? {},
+        log: (data?.log as Record<string, Record<string, number>>) ?? {},
+      });
+    },
+    onError,
+  );
+}
+
+/** Gerakan ini sudah punya riwayat (atau titik mulai)? */
+export function fitWeightTracked(log: FitWeightLog, exerciseId: string): boolean {
+  return exerciseId in log.base || Object.keys(log.log[exerciseId] ?? {}).length > 0;
+}
+
+/** Satu gerakan dari katalog paket — nama & lambangnya, untuk daftar kemajuan. */
+export function fitExerciseById(id: string): Exercise | undefined {
+  for (const s of FIT_MENU) {
+    const ex = s.exercises.find((e) => e.id === id);
+    if (ex) return ex;
+  }
+  return undefined;
+}
+
+/** Kemajuan satu gerakan: dari berapa, sekarang berapa, & rekornya. */
+export type FitWeightProgress = {
+  id: string;
+  emoji: string;
+  name: string;
+  /** Titik mulai: beban sebelum riwayat ada, atau catatan pertamanya. */
+  from: number;
+  /** Beban sekarang. */
+  to: number;
+  /** Beban tertinggi yang pernah tercatat. */
+  best: number;
+  /** Hari bebannya terakhir diubah. */
+  lastDayId: string;
+};
+
+/**
+ * Daftar kemajuan beban, yang paling baru diubah di atas. Gerakan yang sudah
+ * tidak ada di katalog dilewati (namanya tidak bisa ditampilkan lagi).
+ */
+export function fitWeightProgress(
+  log: FitWeightLog,
+  current: FitWeights,
+): FitWeightProgress[] {
+  const out: FitWeightProgress[] = [];
+  for (const [id, hari] of Object.entries(log.log)) {
+    const ex = fitExerciseById(id);
+    const titik = Object.entries(hari)
+      .filter(([, kg]) => typeof kg === 'number' && kg > 0)
+      .sort(([a], [b]) => a.localeCompare(b));
+    if (!ex || titik.length === 0) continue;
+    const base = log.base[id];
+    const from = base != null && base > 0 ? base : titik[0][1];
+    const to = current[id] ?? titik[titik.length - 1][1];
+    const best = Math.max(from, ...titik.map(([, kg]) => kg));
+    out.push({
+      id,
+      emoji: ex.emoji,
+      name: ex.name,
+      from,
+      to,
+      best,
+      lastDayId: titik[titik.length - 1][0],
+    });
+  }
+  return out.sort((a, b) => b.lastDayId.localeCompare(a.lastDayId));
 }
 
 /** Beban yang dipakai: hasil simpananmu, kalau belum ada pakai saran program. */
@@ -684,6 +823,12 @@ export type FitLog = {
   km: number;
   /** Lokasi, mis. "Kedaung Kali Angke". Kosong = tidak dicatat. */
   place: string;
+  /**
+   * Id paket Exercise yang hasilnya dicatat lewat sesi ini (3 Okt 2026).
+   * Cuma terisi untuk hasil lari yang DIKETIK di kartu "🏃 Hasil …" di
+   * Exercise; sesi yang direkam stopwatch di Record tidak punya paket.
+   */
+  pick?: string;
 };
 
 /**
@@ -705,16 +850,22 @@ function readFitLogs(raw: unknown): FitLog[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((x) => {
     const o = x as Partial<FitLog> | null;
-    if (!o || typeof o.seconds !== 'number' || o.seconds <= 0) return [];
+    if (!o) return [];
+    const detik = typeof o.seconds === 'number' && o.seconds > 0 ? o.seconds : 0;
+    const jarak = typeof o.km === 'number' && o.km > 0 ? o.km : 0;
+    // Sesi tanpa lama & tanpa jarak bukan olahraga, ia salah simpan. Hasil
+    // lari yang DIKETIK boleh cuma berisi jarak (waktunya lupa dicatat).
+    if (detik <= 0 && jarak <= 0) return [];
     const kind = FIT_MENU_GROUPS.some((g) => g.kind === o.kind)
       ? (o.kind as FitKind)
       : 'run';
     return [{
       kind,
-      seconds: Math.round(o.seconds),
+      seconds: Math.round(detik),
       at: typeof o.at === 'string' ? o.at : '',
-      km: typeof o.km === 'number' && o.km > 0 ? o.km : 0,
+      km: jarak,
       place: typeof o.place === 'string' ? o.place.trim() : '',
+      ...(typeof o.pick === 'string' && o.pick ? { pick: o.pick } : {}),
     }];
   });
 }
@@ -898,19 +1049,37 @@ export function setFitPicks(uid: string, dayId: string, picks: string[]) {
 }
 
 /**
- * Simpan jarak & waktu satu sesi lari. Dikunci id PAKETNYA, bukan id
- * gerakannya: satu paket lari = satu kali lari, walau di dalamnya ada
- * pemanasan & pendinginan yang juga bertanda cardio.
+ * Simpan hasil lari yang DIKETIK di kartu "🏃 Hasil …" Exercise (3 Okt 2026).
+ *
+ * Dulu hasil ini punya tempat sendiri (`runs`, dikunci id paketnya), terpisah
+ * dari sesi yang direkam stopwatch (`logs`). Akibatnya jarak larimu tersebar:
+ * "Lari minggu ini" cuma membaca yang diketik, riwayat cuma yang direkam.
+ * Sekarang keduanya SATU daftar — hasil ketik disimpan sebagai sesi biasa
+ * bertanda paketnya (`pick`), jadi Progress, Riwayat, & Record membaca hal
+ * yang sama.
+ *
+ * Satu paket lari = satu kali lari: kalau paket ini sudah punya hasil, yang
+ * lama DIGANTI, bukan ditambah. Isian yang dikosongkan (jarak & waktu 0)
+ * MENGHAPUS hasilnya, sama seperti dulu menyimpan kosong berarti "belum
+ * diisi". Hasil bentuk lama (`runs[paket]`) ikut dibuang di tulisan yang
+ * sama — isinya sudah pindah ke sesi ini.
  */
-export function setFitRun(
+export function saveFitRunLog(
   uid: string,
   dayId: string,
-  pickId: string,
-  run: FitRun,
+  current: FitLog[],
+  log: FitLog & { pick: string },
 ) {
+  const kosong = log.seconds <= 0 && log.km <= 0;
+  const i = current.findIndex((l) => l.pick === log.pick);
+  const logs = kosong
+    ? current.filter((l) => l.pick !== log.pick)
+    : i >= 0
+      ? current.map((l, k) => (k === i ? log : l))
+      : [...current, log];
   return setDoc(
     doc(db, 'users', uid, 'fitnessDays', dayId),
-    { runs: { [pickId]: run }, date: fitDayDate(dayId) },
+    { logs, runs: { [log.pick]: deleteField() }, date: fitDayDate(dayId) },
     { merge: true },
   );
 }
@@ -970,6 +1139,52 @@ export function removeFitLog(
   );
 }
 
+/**
+ * Semua sesi satu hari dalam SATU daftar (3 Okt 2026): yang direkam di
+ * Record & yang diketik di Exercise (keduanya `logs`), ditambah hasil lari
+ * bentuk LAMA (`runs`, sebelum 3 Okt) yang dibaca sebagai sesi lari.
+ *
+ * Hasil lama cuma dipakai kalau hari itu BELUM punya sesi lari di `logs` —
+ * kalau sudah ada, besar kemungkinan itu lari yang sama (direkam lalu juga
+ * diketik), dan menjumlahkan keduanya membuat jaraknya dobel tanpa kelihatan.
+ */
+export function fitDayLogs(day: FitDay | undefined): FitLog[] {
+  if (!day) return [];
+  if (day.logs.some((l) => l.kind === 'run')) return day.logs;
+  const lama: FitLog[] = Object.entries(day.runs)
+    .filter(([, r]) => r.km > 0 || r.minutes > 0)
+    .map(([pick, r]) => ({
+      kind: 'run',
+      seconds: Math.round(r.minutes * 60),
+      at: '',
+      km: r.km > 0 ? r.km : 0,
+      place: '',
+      pick,
+    }));
+  return [...day.logs, ...lama];
+}
+
+/**
+ * Hasil lari SATU paket Exercise: sesi yang bertanda paketnya, atau — untuk
+ * hari sebelum 3 Okt 2026 — hasil bentuk lama `runs[paket]` yang dibaca
+ * sebagai sesi. null = belum ada hasilnya.
+ */
+export function fitRunResult(day: FitDay | undefined, pickId: string): FitLog | null {
+  if (!day) return null;
+  const log = day.logs.find((l) => l.pick === pickId);
+  if (log) return log;
+  const r = day.runs[pickId];
+  if (!r || (r.km <= 0 && r.minutes <= 0)) return null;
+  return {
+    kind: 'run',
+    seconds: Math.round(r.minutes * 60),
+    at: '',
+    km: r.km > 0 ? r.km : 0,
+    place: '',
+    pick: pickId,
+  };
+}
+
 /** Total DETIK sesi terekam hari itu — "hari ini aku olahraga berapa lama". */
 export function fitLogSeconds(day: FitDay | undefined): number {
   return (day?.logs ?? []).reduce((n, l) => n + l.seconds, 0);
@@ -1000,7 +1215,7 @@ export async function fetchFitLogs(
     ),
   );
   return snapshot.docs.flatMap((d) =>
-    readFitLogs(d.data().logs).map((l) => ({ ...l, dayId: d.id })),
+    fitDayLogs(readFitDay(d.data())).map((l) => ({ ...l, dayId: d.id })),
   );
 }
 
@@ -1019,7 +1234,7 @@ export function fitRouteLogs(logs: FitLogEntry[]): FitLogEntry[] {
  */
 export function fitLogsOfDays(days: Record<string, FitDay>): FitLogEntry[] {
   return Object.entries(days)
-    .flatMap(([dayId, d]) => d.logs.map((l) => ({ ...l, dayId })))
+    .flatMap(([dayId, d]) => fitDayLogs(d).map((l) => ({ ...l, dayId })))
     .sort((a, b) => (a.dayId < b.dayId ? 1 : a.dayId > b.dayId ? -1 : 0));
 }
 
@@ -1129,29 +1344,24 @@ export function syncFitnessHabitSkipped(
 }
 
 /**
- * Total jarak & waktu lari beberapa hari sekaligus — bahan rekap mingguan.
- *
- * Yang dijumlahkan cuma yang benar-benar kamu isi. Sesi lari yang dicentang
- * selesai tapi angkanya dikosongkan tidak dihitung sebagai "0 km": itu bukan
- * lari sejauh nol, itu lari yang jaraknya tidak dicatat.
+ * Total jarak lari & jalan beberapa hari sekaligus — bahan ringkasan minggu
+ * di Progress. Sumbernya SATU daftar (`fitDayLogs`): yang direkam, yang
+ * diketik, & hasil bentuk lama, tanpa dobel.
  */
-export function fitRunTotals(days: Record<string, FitDay>): {
+export function fitDistanceTotals(days: Record<string, FitDay>): {
   km: number;
-  minutes: number;
   sessions: number;
 } {
   let km = 0;
-  let minutes = 0;
   let sessions = 0;
   for (const day of Object.values(days)) {
-    for (const run of Object.values(day.runs)) {
-      if (run.km <= 0 && run.minutes <= 0) continue;
-      km += run.km;
-      minutes += run.minutes;
+    for (const l of fitDayLogs(day)) {
+      if (!fitLogHasRoute(l.kind)) continue;
+      km += l.km;
       sessions += 1;
     }
   }
-  return { km, minutes, sessions };
+  return { km, sessions };
 }
 
 /** "5:24 /km" — pace dari jarak & waktu. Kosong kalau salah satunya belum ada. */

@@ -116,13 +116,16 @@ ok('modal Hasil lari: tiga kolom Jam · Menit · Detik (number-pad, 2 digit) per
   /\['Jam', fJam, setFJam\],\s*\n\s*\['Menit', fMenit, setFMenit\],\s*\n\s*\['Detik', fDetik, setFDetik\],/.test(ex) &&
   /keyboardType="number-pad"/.test(ex) && /onChangeText=\{\(t\) => ubah\(t\.replace\(\/\[\^0-9\]\/g, ''\)\.slice\(0, 2\)\)\}/.test(ex) &&
   !/Waktu \(menit\), mis\. 32/.test(ex));
-ok('tersimpan tetap sebagai menit desimal (toFinishSec ÷ 60) → catatan lama & pace tetap',
-  /minutes: toFinishSec\(Number\(fJam\), Number\(fMenit\), Number\(fDetik\)\) \/ 60,/.test(ex) &&
-  /fitPace\(run\.km, run\.minutes\)/.test(ex));
-ok('membuka modal mengisi ulang ketiga kolom dari menit tersimpan (splitFinishSec)',
-  /splitFinishSec\(Math\.round\(ada\.minutes \* 60\)\)/.test(ex) && /setFJam\(t\.h > 0 \? String\(t\.h\) : ''\)/.test(ex));
+// 3 Okt 2026 (review Fitness): hasil lari kini disimpan sebagai SESI lari
+// (detik utuh, satu daftar dengan rekaman Record). Hasil bentuk lama yang
+// masih dalam menit desimal tetap terbaca lewat fitRunResult (menit × 60).
+ok('tersimpan sebagai sesi lari berdetik utuh (toFinishSec), pace dari rumus yang sama',
+  /seconds: toFinishSec\(Number\(fJam\), Number\(fMenit\), Number\(fDetik\)\),/.test(ex) &&
+  /fitLogPace\(hasil\)/.test(ex));
+ok('membuka modal mengisi ulang ketiga kolom dari hasil tersimpan (splitFinishSec)',
+  /splitFinishSec\(ada\.seconds\)/.test(ex) && /setFJam\(t\.h > 0 \? String\(t\.h\) : ''\)/.test(ex));
 ok('kartu hasil menampilkan "32m 30d" (formatFinish), bukan "32,5 menit"',
-  /formatFinish\(Math\.round\(run\.minutes \* 60\)\)/.test(ex) && !/formatDecimal\(run\.minutes\)/.test(ex));
+  /formatFinish\(hasil\.seconds\)/.test(ex) && !/formatDecimal\(run\.minutes\)/.test(ex));
 ok('rumus Race yang dipakai: 0j 41m 30d → 41,5 menit; 41,5 menit → 41m 30d',
   FU.toFinishSec(0, 41, 30) / 60 === 41.5 && FU.formatFinish(Math.round(41.5 * 60)) === '41m 30d' &&
   JSON.stringify(FU.splitFinishSec(Math.round(41.5 * 60))) === JSON.stringify({ h: 0, m: 41, s: 30 }));

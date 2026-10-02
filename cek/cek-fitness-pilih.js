@@ -71,7 +71,9 @@ const F = pasang(tsc(baca('lib/fitness.ts')), (nama) => {
 });
 
 const SENIN = new Date('2026-09-07T00:00:00');
-const kosong = { done: {}, skipped: false, picks: [], runs: {} };
+// `logs` ikut sejak 3 Okt 2026 — hasil lari kini dibaca lewat fitDayLogs,
+// yang memang selalu menerima dokumen harian lengkap dari readFitDay.
+const kosong = { done: {}, skipped: false, picks: [], runs: {}, logs: [] };
 
 // ============================================================
 console.log('=== 1. Katalog paket — 18, idnya tetap & unik ===');
@@ -253,16 +255,17 @@ c('jarak/waktu kosong tidak menghasilkan pace ngawur',
     // Dicentang selesai tapi angkanya dikosongkan — itu BUKAN lari sejauh nol.
     'd3': { ...kosong, runs: { 'easyrun-a': { km: 0, minutes: 0 } } },
   };
-  const t = F.fitRunTotals(minggu);
-  c('totalnya dijumlah dari seluruh hari', t.km === 8 && t.minutes === 50);
-  c('sesi tanpa angka tidak dihitung sebagai 0 km', t.sessions === 2);
+  // 3 Okt 2026: total minggu ini dibaca dari SATU daftar sesi (fitDayLogs);
+  // hasil bentuk lama `runs` ikut terbaca sebagai sesi lari.
+  const t = F.fitDistanceTotals(minggu);
+  c('totalnya dijumlah dari seluruh hari (hasil lama ikut)', t.km === 8, String(t.km));
+  c('sesi tanpa angka tidak dihitung sebagai 0 km', t.sessions === 2, String(t.sessions));
 }
 
 // ============================================================
 console.log('\n=== 7. Layarnya ikut kenyataan barunya ===');
 // ============================================================
 const ex = kode('components/fitness/ExerciseTab.tsx');
-const prog = kode('components/fitness/ProgramTab.tsx');
 const dash = kode('app/reminders.tsx');
 
 c('tab Exercise tak lagi menghitung sesi dari hari + blok',
@@ -274,26 +277,31 @@ c('ada pintu memilih & membuang kategori',
 c('pilihannya disusun dulu, baru ditulis sekali',
   /const \[draf, setDraf\] = useState<string\[\]>\(\[\]\)/.test(ex) &&
     /onConfirm=\{\(\) => simpanPicks\(draf\)\}/.test(ex));
+// 3 Okt 2026: sarannya ikut race terdekat (blok C menjelang hari-H), dan
+// hasil lari disimpan sebagai sesi lari bertanda paket (saveFitRunLog).
 c('saran program bisa diambil satu klik, dan hilang setelah diambil',
-  /const saran = fitSessionFor\(today\);/.test(ex) &&
+  /const saran = fitSessionFor\(today, race\?\.dayId\);/.test(ex) &&
     /saranBelumDiambil/.test(ex) &&
     /const ambilSaran = /.test(ex));
 c('isian hasil lari muncul per paket lari',
-  /sesiHari\.filter\(\(s\) => s\.kind === 'run'\)/.test(ex) && /setFitRun\(/.test(ex));
+  /sesiHari\.filter\(\(s\) => s\.kind === 'run'\)/.test(ex) && /saveFitRunLog\(/.test(ex));
 
 // Menyimpan pilihan + menyelaraskan cermin Habits ditulis SEKALI di lib —
 // dua layar memakainya, dan cermin Habits itu yang paling gampang terlupa
 // kalau logikanya disalin.
 c('penyimpan pilihan dipakai bersama, bukan disalin',
   /export async function applyFitPicks/.test(fitLib) &&
-    /applyFitPicks\(/.test(ex) &&
-    /applyFitPicks\(/.test(prog));
-// Buktinya STRUKTURAL, bukan kalimat: tab Program tak lagi memutuskan isi
-// harimu — ia cuma menawarkan, dan tombol itulah tawarannya.
-c('tab Program menawarkan, bukan menentukan',
-  /Ambil untuk hari ini/.test(prog) &&
-    /applyFitPicks\(/.test(prog) &&
-    /const sudahDiambil = dipilih\.includes\(session\.id\);/.test(prog));
+    /applyFitPicks\(/.test(ex));
+// 3 Okt 2026: tab Program DILEBUR ke sheet Pick Exercise. Etalasenya tetap
+// menawarkan, bukan menentukan: blok yang disarankan disebut, paket saran
+// hari ini ditandai, & tiap paket bisa diintip gerakannya sebelum dipilih.
+c('tab Program sudah tidak ada sebagai berkas sendiri',
+  !fs.existsSync(R + 'components/fitness/ProgramTab.tsx'));
+c('etalasenya di sheet Pick: blok saran, tanda saran hari ini, & intip gerakan',
+  /💡 Program minggu ini: blok/.test(ex) &&
+    /💡 saran hari ini · /.test(ex) &&
+    /onPress=\{\(\) => intip\(s\.id\)\}/.test(ex) &&
+    /terbuka &&\s*\n\s*s\.exercises\.map/.test(ex));
 
 // Dashboard: keadaan KETIGA yang dulu tidak mungkin ada.
 c('Dashboard punya kartu untuk hari yang belum dipilih',

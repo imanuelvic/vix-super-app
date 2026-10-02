@@ -58,9 +58,12 @@ ok('kotak statistik yang tak terpakai ikut dibuang (tak ada kode mati)',
 // 30 Agu 2026: tab Steps dirombak — "🎯 Target Sehat Mingguan" (anjuran umum)
 // dipisahkan jadi "🩺 Anjuran Kesehatan", dan di atasnya ada kartu 🎯 Target
 // Mingguan yang diisi sendiri. Kartu lain tetap.
+// 3 Okt 2026 (review Health, disetujui pemilik app): kartu 🏃 Patokan Jarak
+// Harian diganti target 10.000 langkah di kartu hari ini, dan 🩺 Anjuran
+// Kesehatan keluar (anjurannya jadi garis patokan di Fitness › Progress).
 ok('sisa kartu Steps tidak diutak-atik',
-  /🏃 Patokan Jarak Harian/.test(steps) &&
-  /🩺 Anjuran Kesehatan/.test(steps) &&
+  !/🏃 Patokan Jarak Harian/.test(steps) &&
+  !/🩺 Anjuran Kesehatan/.test(steps) &&
   /<WeekTargetCard km=\{weekKm\} \/>/.test(steps) &&
   /📅 This Week/.test(steps));
 

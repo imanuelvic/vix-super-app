@@ -204,19 +204,23 @@ console.log('\n=== 5. Tanggal ekspor terakhir & tagihannya ===');
 console.log('\n=== 6. Tab Steps dipisah per periode + 3 bulan & setahun ===');
 {
   const steps = baca('components/health/StepsTab.tsx');
-  const urut = ['JUDUL_HARI', 'JUDUL_MINGGU', 'JUDUL_BULAN', 'JUDUL_KUARTAL', 'JUDUL_TAHUN'];
-  ok('lima kepala periode, urut dari yang terpendek ke terpanjang',
+  // 3 Okt 2026 (review Health, disetujui pemilik app): bulan, 3 bulan, &
+  // setahun DIGABUNG jadi satu kartu Rekap — kepalanya tinggal tiga, tetap
+  // urut dari yang terpendek, dan setahun tetap PALING BAWAH di kartunya.
+  const urut = ['JUDUL_HARI', 'JUDUL_MINGGU', 'JUDUL_REKAP'];
+  ok('tiga kepala periode, urut dari yang terpendek ke terpanjang',
     urut.every((n, i) => steps.indexOf(`{${n}}`) > 0 && (i === 0 || steps.indexOf(`{${urut[i - 1]}}`) < steps.indexOf(`{${n}}`))),
     urut.map((n) => `${n}@${steps.indexOf(`{${n}}`)}`).join(' '));
   ok('per tahun memang PALING BAWAH, seperti yang diminta',
-    steps.indexOf('{JUDUL_TAHUN}') === Math.max(...urut.map((n) => steps.indexOf(`{${n}}`))));
-  // Patokan harian dulu duduk di bawah kartu bulanan — periodenya harian tapi
-  // letaknya di kelompok terpanjang.
-  ok('patokan jarak HARIAN ikut naik ke kelompok harian',
-    steps.indexOf('🏃 Patokan Jarak Harian') < steps.indexOf('{JUDUL_MINGGU}'));
-  ok('tiap kartu tetap menyebut kapan angkanya mulai dari nol lagi',
-    /const RESET_KUARTAL = '🔄 Mulai lagi tiap kuartal baru/.test(steps) &&
-    /const RESET_TAHUNAN = '🔄 Mulai lagi tiap 1 Januari';/.test(steps));
+    steps.indexOf('title: `🏁 ${now.getFullYear()}`') > steps.indexOf('title: `📊 Q${q.q} ${q.year}`') &&
+      steps.indexOf('title: `📊 Q${q.q} ${q.year}`') > steps.indexOf('title: `🗓️ ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`'));
+  // Patokan jarak harian ala pelari DIBUANG (3 Okt 2026) — jarak dari langkah
+  // itu jalan kaki; gantinya target 10.000 langkah di kartu hari ini.
+  ok('patokan jarak HARIAN diganti target langkah harian',
+    !/Patokan Jarak Harian/.test(steps) && /total=\{DAY_STEP_GOAL\}/.test(steps));
+  ok('kartu Rekap tetap menyebut kapan tiap periodenya mulai dari nol lagi',
+    /tanggal 1, kuartal tiap Jan · Apr · Jul · Okt, tahun tiap 1 Januari/.test(steps) &&
+    /\{RESET_REKAP\}/.test(steps));
   ok('kuartal kalender, sekeluarga dengan Wheel of Life',
     JSON.stringify(H.quarterMonthIds(new Date(2026, 8, 27))) === JSON.stringify(['2026-07', '2026-08', '2026-09']) &&
     JSON.stringify(H.quarterOfDate(new Date(2026, 8, 27))) === JSON.stringify({ year: 2026, q: 3 }));
@@ -230,8 +234,10 @@ console.log('\n=== 6. Tab Steps dipisah per periode + 3 bulan & setahun ===');
   ok('patokan 3 bulan & setahun = kelipatan patokan bulanan (3× dan 12×)',
     H.RUN_QUARTER_MILESTONES.map((m) => m.km).join(',') === '300,600,900' &&
     H.RUN_YEAR_MILESTONES.map((m) => m.km).join(',') === '1200,2400,3600');
-  ok('keduanya memakai kartu yang SAMA dengan minggu & bulan (bukan kartu baru)',
-    (steps.match(/<MileageCard/g) ?? []).length === 4);
+  // Minggu ini tetap kartu besarnya sendiri; tiga periode panjang satu kartu.
+  ok('minggu ini kartu sendiri, tiga periode panjang SATU kartu Rekap',
+    (steps.match(/<MileageCard/g) ?? []).length === 1 &&
+      (steps.match(/<RecapCard/g) ?? []).length === 1);
 }
 
 // ===================================================================

@@ -18,7 +18,7 @@ import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
 import { useKeyedData } from '@/hooks/useKeyedData';
 import { useLiveAll } from '@/hooks/useLiveAll';
-import { formatDecimal, formatShortDayDate } from '@/lib/format';
+import { daysBetween, formatDecimal, formatShortDayDate, whenLabel } from '@/lib/format';
 import {
     EMPTY_FUN,
     formatFinish,
@@ -196,6 +196,18 @@ export function FunArchive({
                     </VixText>
                   </View>
                 </View>
+                {/* 🏁 Race yang tanggalnya masih di DEPAN = race mendatang
+                    (3 Okt 2026): hitung mundurnya juga tampil di Fitness &
+                    Today, dan program menyarankan blok C menjelang hari-H. */}
+                {item.category === 'race' &&
+                item.date &&
+                daysBetween(new Date(), item.date.toDate()) >= 0 ? (
+                  <VixText
+                    heading="bold"
+                    additionalStyle={[styles.cardDetail, { color: warna }]}>
+                    ⏳ {whenLabel(daysBetween(new Date(), item.date.toDate()))}
+                  </VixText>
+                ) : null}
                 {item.detail ? (
                   <VixText
                     heading="label"

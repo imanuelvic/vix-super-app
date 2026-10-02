@@ -401,7 +401,9 @@ console.log('\n=== 7. Tidak ada lagi tulisan yang terpotong keluar kartu ===');
 // boleh turun ke baris berikutnya. Tanpa flexWrap, yang kedua tidak menyusut
 // & tidak turun — ia menerobos keluar kartu lalu terpotong di tepi layar.
 const WAJIB_WRAP = [
-  ['components/health/StepsTab.tsx', ['heroTop', 'cardHeader', 'goalTop', 'msRow']],
+  // 3 Okt 2026: goalTop & msRow ikut kartunya yang dibuang (anjuran kesehatan
+  // & patokan harian); baris judul kartu Rekap yang baru wajib wrap juga.
+  ['components/health/StepsTab.tsx', ['heroTop', 'cardHeader', 'recapTop']],
   ['components/health/WeekTargetCard.tsx', ['top']],
   ['components/health/BodyCard.tsx', ['cardHeader', 'row']],
   ['components/health/CheckupStatusCard.tsx', ['statusHeader']],

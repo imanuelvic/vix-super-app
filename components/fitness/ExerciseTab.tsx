@@ -23,9 +23,12 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SkipButton, SkipNotice } from '@/components/common/SkipToday';
 import { VixText } from '@/components/common/VixText';
 import { DonutChart } from '@/components/finance/DonutChart';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
+import { useAccordion } from '@/hooks/useAccordion';
 import { useDueJump } from '@/hooks/useDueJump';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { haptic } from '@/lib/haptics';
 import { type LoginStreak } from '@/lib/reward';
 import {
   applyFitPicks,
@@ -35,33 +38,48 @@ import {
   FIT_DAY_SHORT,
   FIT_MENU,
   FIT_MENU_GROUPS,
+  FIT_RACE_PREP_DAYS,
   FIT_RECOVERY,
   FIT_TIME_LABEL,
+  fitBlockOf,
   fitDayComplete,
   fitExercisesOf,
   fitKindMeta,
-  fitLogSeconds,
+  fitLogPace,
   fitMenuLabel,
-  fitPace,
   fitPickedMinutes,
   fitPicksOf,
   fitQuote,
+  fitRunResult,
   fitSessionFor,
   fitSessionsOf,
+  fitWeightTracked,
+  saveFitRunLog,
   saveFitWeight,
   setFitDaySkipped,
   setFitExerciseDone,
-  setFitRun,
   syncFitnessHabit,
   syncFitnessHabitSkipped,
   weightOf,
   type Exercise,
   type FitDay,
   type FitSession,
+  type FitWeightLog,
   type FitWeights,
 } from '@/lib/fitness';
-import { dayIdToDate, formatClock, formatDecimal, parseDecimal } from '@/lib/format';
-import { formatFinish, splitFinishSec, toFinishSec } from '@/lib/fun';
+import {
+  dayIdToDate,
+  formatClock,
+  formatDecimal,
+  parseDecimal,
+  whenLabel,
+} from '@/lib/format';
+import {
+  formatFinish,
+  splitFinishSec,
+  toFinishSec,
+  type UpcomingRace,
+} from '@/lib/fun';
 import { weekDayIds } from '@/lib/health';
 import { openExternalUrl } from '@/lib/linking';
 
@@ -83,17 +101,23 @@ import { openExternalUrl } from '@/lib/linking';
 // yang sama, dan daftar gerakannya digabung jadi satu ceklis.
 export function ExerciseTab({
   weights,
+  weightLog,
   day,
   dayId,
   streak,
   bodyWeightKg,
+  race,
 }: {
   weights: FitWeights;
+  /** Riwayat beban — untuk tahu perubahan beban mana yang PERTAMA (titik mulai). */
+  weightLog: FitWeightLog;
   day: FitDay;
   dayId: string;
   streak: LoginStreak | null;
   /** Berat badan dari fitur Health — satu-satunya sumber, tak bisa diubah di sini. */
   bodyWeightKg: number | null;
+  /** 🏁 Race terdekat yang belum lewat (entri Race bertanggal ke depan). */
+  race: UpcomingRace | null;
 }) {
   const { user } = useAuth();
   const { width } = useWindowDimensions();
@@ -150,6 +174,32 @@ export function ExerciseTab({
   const [fMenit, setFMenit] = useState('');
   const [fDetik, setFDetik] = useState('');
 
+  // ⏱️ Timer istirahat antar set (3 Okt 2026) — satu yang jalan sekaligus.
+  // Sisa waktunya dihitung dari jam (`endsAt`), bukan dari jumlah detak, jadi
+  // HP yang dikunci di tengah istirahat tetap menunjukkan sisa yang benar
+  // begitu dibuka lagi. Selesai → getar, lalu chip-nya bilang "lanjut".
+  const [rest, setRest] = useState<{ id: string; endsAt: number } | null>(null);
+  const [restNow, setRestNow] = useState(0);
+  const [restDone, setRestDone] = useState<string | null>(null);
+  useEffect(() => {
+    if (!rest) return;
+    const t = setInterval(() => {
+      const now = Date.now();
+      if (now >= rest.endsAt) {
+        haptic('success');
+        setRest(null);
+        setRestDone(rest.id);
+      } else {
+        setRestNow(now);
+      }
+    }, 250);
+    return () => clearInterval(t);
+  }, [rest]);
+
+  // Sheet Pick: satu paket yang sedang diintip gerakannya — etalase yang
+  // dulu jadi sub-tab Program sendiri.
+  const { isOpen: diintip, toggle: intip } = useAccordion<string>();
+
   const { skipped } = day;
   const isToday = weekday === todayWeekday;
   const viewDayId = isToday ? dayId : weekIdOf(weekday);
@@ -185,8 +235,12 @@ export function ExerciseTab({
   const canSkip = isToday && (skipped || !allDone);
 
   // Saran program untuk HARI INI. Ia tidak lagi menentukan apa pun — cuma
-  // tawaran, dan cuma ditawarkan kalau belum kamu ambil.
-  const saran = fitSessionFor(today);
+  // tawaran, dan cuma ditawarkan kalau belum kamu ambil. Menjelang race
+  // (1–28 hari lagi) sarannya blok C, persiapan race.
+  const saran = fitSessionFor(today, race?.dayId);
+  const blokSaran = fitBlockOf(today, race?.dayId);
+  const persiapanRace =
+    !!race && race.days >= 1 && race.days <= FIT_RACE_PREP_DAYS;
   const saranBelumDiambil = isToday && !picks.includes(saran.id);
 
   // Buka sub-tab ini → daftar gerakan langsung datang ke gerakan HARI INI yang
@@ -312,8 +366,13 @@ export function ExerciseTab({
   async function saveWeight() {
     if (!user || !editing) return;
     const kg = parseDecimal(fWeight);
+    // Perubahan PERTAMA sebuah gerakan membawa beban lamanya sebagai titik
+    // mulai riwayat — tanpa itu "naik dari 40 kg" tidak punya angka awal.
+    const awal = fitWeightTracked(weightLog, editing.id)
+      ? null
+      : weightOf(editing, weights);
     try {
-      await saveFitWeight(user.uid, editing.id, kg);
+      await saveFitWeight(user.uid, editing.id, kg, awal);
     } catch {
       // Diamkan — snapshot akan mengoreksi tampilan otomatis.
     } finally {
@@ -322,10 +381,10 @@ export function ExerciseTab({
   }
 
   function openRun(s: FitSession) {
-    const ada = viewDay.runs[s.id];
+    const ada = fitRunResult(viewDay, s.id);
     setFKm(ada && ada.km > 0 ? String(ada.km) : '');
-    const t = ada && ada.minutes > 0
-      ? splitFinishSec(Math.round(ada.minutes * 60))
+    const t = ada && ada.seconds > 0
+      ? splitFinishSec(ada.seconds)
       : { h: 0, m: 0, s: 0 };
     setFJam(t.h > 0 ? String(t.h) : '');
     setFMenit(t.h > 0 || t.m > 0 ? String(t.m) : '');
@@ -333,18 +392,37 @@ export function ExerciseTab({
     setRunOf(s);
   }
 
+  // Hasilnya disimpan sebagai SESI lari bertanda paketnya (3 Okt 2026), di
+  // daftar yang sama dengan rekaman Record — satu sumber jarak lari untuk
+  // Progress & Riwayat. Lihat saveFitRunLog di lib/fitness.ts.
   async function saveRun() {
     if (!user || !runOf) return;
     try {
-      await setFitRun(user.uid, dayId, runOf.id, {
+      await saveFitRunLog(user.uid, dayId, day.logs, {
+        kind: 'run',
+        seconds: toFinishSec(Number(fJam), Number(fMenit), Number(fDetik)),
+        at: '',
         km: parseDecimal(fKm),
-        minutes: toFinishSec(Number(fJam), Number(fMenit), Number(fDetik)) / 60,
+        place: '',
+        pick: runOf.id,
       });
     } catch {
       // Diamkan — snapshot akan mengoreksi tampilan otomatis.
     } finally {
       setRunOf(null);
     }
+  }
+
+  /** Mulai (atau batalkan) istirahat sesudah satu set gerakan ini. */
+  function toggleRest(ex: Exercise) {
+    setRestDone(null);
+    if (rest?.id === ex.id) {
+      setRest(null);
+      return;
+    }
+    const now = Date.now();
+    setRestNow(now);
+    setRest({ id: ex.id, endsAt: now + restSecondsOf(ex) * 1000 });
   }
 
   // ===================== Deretan hari =====================
@@ -384,7 +462,7 @@ export function ExerciseTab({
     // Lambang hari: kalau sudah memilih, lambang paket pertamanya. Kalau
     // belum, lambang SARAN program hari itu — diredupkan, karena ia baru
     // tawaran, bukan sesuatu yang sudah kamu putuskan.
-    const emoji = sesi[0]?.emoji ?? fitSessionFor(tanggal).emoji;
+    const emoji = sesi[0]?.emoji ?? fitSessionFor(tanggal, race?.dayId).emoji;
     return (
       <PressableScale
         key={wd}
@@ -424,6 +502,11 @@ export function ExerciseTab({
 
   // Paket lari hari ini — masing-masing punya kartu isian jarak & waktunya.
   const sesiLari = sesiHari.filter((s) => s.kind === 'run');
+  // Sesi yang DIREKAM di Record (bukan hasil ketik paket) — kartunya sendiri
+  // di bawah, dan penanda "sudah direkam" di kartu hasil lari.
+  const rekaman = viewDay.logs.filter((l) => !l.pick);
+  const rekamanDetik = rekaman.reduce((n, l) => n + l.seconds, 0);
+  const lariDirekam = rekaman.some((l) => l.kind === 'run');
   // Semua yang dipilih cuma jalan? Tutup dengan pengingat pemulihan.
   const hanyaJalan =
     sesiHari.length > 0 && sesiHari.every((s) => s.kind === 'walk');
@@ -450,6 +533,24 @@ export function ExerciseTab({
         onContentSizeChange={onContentSizeChange}
         onLayout={onLayout}
         contentContainerStyle={styles.content}>
+        {/* 🏁 Hitung mundur race terdekat (3 Okt 2026) — dari entri Race
+            bertanggal ke depan di Health › Race. Dua bulan terakhir saja:
+            race yang masih jauh belum mengubah apa pun di latihan harian. */}
+        {race && race.days <= RACE_SHOWN_DAYS && (
+          <View style={styles.raceCard}>
+            <VixText heading="bold" additionalStyle={styles.raceTitle}>
+              🏁 {race.entry.title || 'Race'}
+              {race.entry.distanceKm
+                ? ` · ${formatDecimal(race.entry.distanceKm)} km`
+                : ''}
+            </VixText>
+            <VixText heading="label" additionalStyle={styles.raceSub}>
+              {whenLabel(race.days)}
+              {persiapanRace ? ' · program menyarankan blok C, persiapan race' : ''}
+            </VixText>
+          </View>
+        )}
+
         {/* Hero — apa yang kamu kerjakan hari ini, bukan apa kata jadwal */}
         <View style={styles.hero}>
           <View style={styles.heroMain}>
@@ -660,6 +761,26 @@ export function ExerciseTab({
                       </VixText>
                     </PressableScale>
                   )}
+                  {/* ⏱️ Istirahat antar set — cuma untuk gerakan beban
+                      hari ini yang belum beres. Perut 60 dtk, lainnya 90. */}
+                  {isToday && !exSkipped && !checked && !ex.cardio ? (
+                    <PressableScale
+                      style={[styles.restChip, rest?.id === ex.id && styles.restChipOn]}
+                      onPress={() => toggleRest(ex)}
+                      hitSlop={6}>
+                      <VixText
+                        heading="label"
+                        additionalStyle={
+                          rest?.id === ex.id ? styles.restTextOn : styles.restText
+                        }>
+                        {rest?.id === ex.id
+                          ? `⏳ ${formatClock(Math.max(0, Math.ceil((rest.endsAt - restNow) / 1000)))}`
+                          : restDone === ex.id
+                            ? '✅ Lanjut set'
+                            : `⏸️ Istirahat ${restSecondsOf(ex)} dtk`}
+                      </VixText>
+                    </PressableScale>
+                  ) : null}
                   {ex.video ? (
                     <PressableScale
                       style={styles.videoChip}
@@ -681,9 +802,8 @@ export function ExerciseTab({
             adalah ANGKANYA — 5 km dalam 32 menit itu kabar, "selesai" bukan.
             Satu kartu per paket lari, karena satu paket = sekali lari. */}
         {sesiLari.map((s) => {
-          const run = viewDay.runs[s.id];
-          const ada = run && (run.km > 0 || run.minutes > 0);
-          const pace = ada ? fitPace(run.km, run.minutes) : '';
+          const hasil = fitRunResult(viewDay, s.id);
+          const pace = hasil ? fitLogPace(hasil) : '';
           return (
             <PressableScale
               key={`run-${s.id}`}
@@ -695,11 +815,19 @@ export function ExerciseTab({
                   🏃 Hasil {s.title}
                 </VixText>
                 <VixText heading="label" additionalStyle={styles.runValue}>
-                  {ada
-                    ? `${formatDecimal(run.km)} km · ${formatFinish(Math.round(run.minutes * 60))}${pace ? ` · ${pace}` : ''}`
-                    : isToday
-                      ? 'Belum diisi, click untuk mencatat jarak & waktunya'
-                      : 'Jaraknya tidak dicatat'}
+                  {hasil
+                    ? [
+                        hasil.km > 0 ? `${formatDecimal(hasil.km)} km` : '',
+                        hasil.seconds > 0 ? formatFinish(hasil.seconds) : '',
+                        pace,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
+                    : lariDirekam
+                      ? '⏱️ Sudah direkam di Record, tak perlu diisi lagi'
+                      : isToday
+                        ? 'Belum diisi, click untuk mencatat jarak & waktunya'
+                        : 'Jaraknya tidak dicatat'}
                 </VixText>
               </View>
             </PressableScale>
@@ -715,14 +843,14 @@ export function ExerciseTab({
             Hari tanpa sesi terekam tidak digambar sama sekali: merekam itu
             pilihan, jadi kotak kosong di sini cuma akan terbaca sebagai
             kekurangan. */}
-        {viewDay.logs.length > 0 && (
+        {rekaman.length > 0 && (
           <View style={styles.logCard}>
             <View style={styles.exMain}>
               <VixText heading="bold" additionalStyle={styles.runTitle}>
-                ⏱️ Direkam {formatClock(fitLogSeconds(viewDay))}
+                ⏱️ Direkam {formatClock(rekamanDetik)}
               </VixText>
               <VixText heading="label" additionalStyle={styles.runValue}>
-                {viewDay.logs
+                {rekaman
                   .map((l) => {
                     const m = fitKindMeta(l.kind);
                     const jarak = l.km > 0 ? ` ${formatDecimal(l.km)} km` : '';
@@ -772,6 +900,14 @@ export function ExerciseTab({
             onConfirm={() => simpanPicks(draf)}
           />
         }>
+        {/* Etalase program (3 Okt 2026, dulu sub-tab Program): blok yang
+            sedang disarankan di paling atas, lalu tiap paket bisa DIINTIP
+            gerakannya lewat ▾ — tepat di tempat paketnya dipilih. */}
+        <VixText heading="label" additionalStyle={styles.blokNote}>
+          {persiapanRace
+            ? '🏁 Menjelang race: program menyarankan blok C, persiapan race'
+            : `💡 Program minggu ini: blok ${blokSaran}, berganti tiap 2 minggu`}
+        </VixText>
         {FIT_MENU_GROUPS.map((g) => (
           <View key={g.kind}>
             <VixText heading="label" additionalStyle={styles.groupLabel}>
@@ -779,22 +915,63 @@ export function ExerciseTab({
             </VixText>
             {FIT_MENU.filter((s) => s.kind === g.kind).map((s) => {
               const dipilih = draf.includes(s.id);
+              const terbuka = diintip(s.id);
               return (
-                <PressableScale
-                  key={s.id}
-                  style={[styles.menuRow, dipilih && styles.menuRowOn]}
-                  onPress={() => toggleDraf(s.id)}
-                  hitSlop={4}>
-                  <CheckCircle checked={dipilih} />
-                  <View style={styles.exMain}>
-                    <VixText heading="bold" additionalStyle={styles.menuName}>
-                      {s.emoji} {fitMenuLabel(s)}
-                    </VixText>
-                    <VixText heading="label">
-                      {s.focus} · ±{s.minutes} menit
-                    </VixText>
+                <View key={s.id} style={[styles.menuRow, dipilih && styles.menuRowOn]}>
+                  {/* Dua sasaran click yang BERSAUDARA, bukan bersarang —
+                      Pressable di dalam Pressable tidak andal di iOS. */}
+                  <View style={styles.menuTop}>
+                    <PressableScale
+                      style={styles.menuPick}
+                      onPress={() => toggleDraf(s.id)}
+                      hitSlop={4}>
+                      <CheckCircle checked={dipilih} />
+                      <View style={styles.exMain}>
+                        <VixText heading="bold" additionalStyle={styles.menuName}>
+                          {s.emoji} {fitMenuLabel(s)}
+                        </VixText>
+                        <VixText heading="label">
+                          {s.id === saran.id ? '💡 saran hari ini · ' : ''}
+                          {s.focus} · ±{s.minutes} menit
+                        </VixText>
+                      </View>
+                    </PressableScale>
+                    <PressableScale
+                      style={styles.peekButton}
+                      onPress={() => intip(s.id)}
+                      hitSlop={8}>
+                      <IconSymbol
+                        name={terbuka ? 'chevron.up' : 'chevron.down'}
+                        size={18}
+                        color={Color.TEXT_LABEL}
+                      />
+                    </PressableScale>
                   </View>
-                </PressableScale>
+                  {terbuka &&
+                    s.exercises.map((ex) => {
+                      const kg = weightOf(ex, weights);
+                      return (
+                        <View key={ex.id} style={styles.peekRow}>
+                          <View style={styles.exMain}>
+                            <VixText heading="label" additionalStyle={styles.peekName}>
+                              {ex.emoji} {ex.name}
+                            </VixText>
+                            <VixText heading="label">
+                              {ex.sets} set × {ex.reps}
+                            </VixText>
+                          </View>
+                          {/* Lari & jalan tidak punya beban — kolomnya ⏱️. */}
+                          <VixText heading="label" additionalStyle={styles.peekWeight}>
+                            {ex.cardio
+                              ? '⏱️'
+                              : kg == null || kg === 0
+                                ? 'BW'
+                                : `${formatDecimal(kg)} kg`}
+                          </VixText>
+                        </View>
+                      );
+                    })}
+                </View>
               );
             })}
           </View>
@@ -880,6 +1057,17 @@ export function ExerciseTab({
 // Ukuran pil hari — dipakai juga untuk menghitung apakah 7 hari muat satu baris.
 const DAY_PILL_WIDTH = 58;
 const DAY_GAP = 8;
+
+// 🏁 Race baru dihitung mundur di sini dua bulan sebelum hari-H.
+const RACE_SHOWN_DAYS = 60;
+
+/**
+ * Lama istirahat antar set: gerakan perut 60 detik, beban lain 90 detik —
+ * patokan umum latihan hipertrofi.
+ */
+function restSecondsOf(ex: Exercise): number {
+  return ex.core ? 60 : 90;
+}
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
@@ -1048,6 +1236,25 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   videoText: { color: Color.TEXT_LABEL },
+  // ⏱️ Chip istirahat — kalem saat diam, menyala jingga saat menghitung.
+  restChip: {
+    backgroundColor: Color.CONTRAST_CONTAINER,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  restChipOn: { backgroundColor: Color.FITNESS_DARK },
+  restText: { color: Color.TEXT_LABEL },
+  restTextOn: { color: Color.TEXT_REVERSE },
+  // 🏁 Kartu hitung mundur race — pita jingga tipis, bukan kartu besar kedua.
+  raceCard: {
+    ...CARD,
+    borderLeftWidth: 3,
+    borderLeftColor: Color.FITNESS_DARK,
+    gap: 2,
+  },
+  raceTitle: { color: Color.TEXT_TITLE },
+  raceSub: { color: Color.FITNESS_DARK },
   // ---- Hasil lari ----
   runCard: {
     ...CARD,
@@ -1068,17 +1275,31 @@ const styles = StyleSheet.create({
     borderLeftColor: Color.FITNESS,
   },
   // ---- Daftar pilihan di sheet ----
+  blokNote: { color: Color.FITNESS_DARK, marginBottom: 2 },
   groupLabel: { color: Color.TEXT_PLACEHOLDER, marginTop: 10, marginBottom: 6 },
   menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     ...CARD_SHAPE,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 8,
   },
   menuRowOn: { backgroundColor: Color.FITNESS, borderColor: Color.FITNESS_DARK },
+  // Baris atas kartu paket: [✓ nama paket] [▾] — dua sasaran click bersaudara.
+  menuTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  menuPick: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  peekButton: { paddingHorizontal: 6, paddingVertical: 6 },
+  // Gerakan yang diintip — bentuknya sekeluarga dengan daftar di tab Program dulu.
+  peekRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 6,
+    marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: Color.BORDER,
+  },
+  peekName: { color: Color.TEXT_TITLE },
+  peekWeight: { color: Color.FITNESS_DARK },
   menuName: { color: Color.TEXT_TITLE },
   tipRow: CARD,
   tipText: { color: Color.TEXT_TITLE },

@@ -309,8 +309,10 @@ console.log('\n=== 7. Steps: lebih sederhana + kapan resetnya ===');
     /RESET_HARIAN = '🔄 Mulai lagi tiap hari, jam 00\.00'/.test(s));
   c('reset MINGGUAN disebut hari Senin',
     /RESET_MINGGUAN = '🔄 Mulai lagi tiap Senin'/.test(s));
+  // 3 Okt 2026: bulan, kuartal, & tahun jadi SATU kartu Rekap — resetnya
+  // ditulis sekali di kakinya, tetap menyebut tanggal 1 untuk bulan.
   c('reset BULANAN disebut tanggal 1',
-    /RESET_BULANAN = '🔄 Mulai lagi tiap tanggal 1'/.test(s));
+    /RESET_REKAP =\s*\n\s*'🔄 Bulan mulai lagi tiap tanggal 1,/.test(s));
   // Tiap kartu memakai keterangannya yang benar.
   // 15 Sep 2026: di bawah keterangan harian ada petunjuk izin Apple Health
   // (cuma tampil saat angkanya 0) — ia yang menutup kartu, keterangan
@@ -319,17 +321,20 @@ console.log('\n=== 7. Steps: lebih sederhana + kapan resetnya ===');
     /\{RESET_HARIAN\}[\s\S]{0,260}\{PETUNJUK_IZIN\}[\s\S]{0,80}<\/SummaryCard>/.test(s));
   c('kartu Minggu Ini memakai keterangan mingguan',
     /title="📅 This Week"\s*\n\s*reset=\{RESET_MINGGUAN\}/.test(s));
-  c('kartu bulanan memakai keterangan bulanan',
-    /MONTH_NAMES\[now\.getMonth\(\)\][\s\S]{0,40}reset=\{RESET_BULANAN\}/.test(s));
-  c('kartu Anjuran Kesehatan ikut menyebut periodenya (mingguan juga)',
-    /🩺 Anjuran Kesehatan[\s\S]{0,200}\{RESET_MINGGUAN\}/.test(s));
+  c('kartu Rekap memakai keterangan periodenya',
+    /<RecapCard/.test(s) && /\{RESET_REKAP\}/.test(s));
+  // 3 Okt 2026: kartu anjuran kesehatan keluar dari Steps — target mingguan
+  // cukup satu (milikmu). Anjurannya pindah ke grafik Fitness › Progress.
+  c('anjuran kesehatan tidak lagi jadi kartu kedua di Steps',
+    !/Anjuran Kesehatan/.test(s) && !/WEEK_STEP_GOAL/.test(s));
 
-  // Penyederhanaan: patokan harian yang SUDAH tembus tidak ditampilkan lagi.
-  c('patokan harian hanya menampilkan yang BELUM tembus',
-    /const belumTembus = RUN_DAY_MILESTONES\.filter\(\(m\) => todayKm < m\.km\)/.test(s));
-  c('kalau semuanya tembus, diganti satu baris perayaan',
-    /belumTembus\.length === 0 \?/.test(s) &&
-      /Semua patokan hari ini sudah tembus/.test(s));
+  // 3 Okt 2026: patokan jarak harian ala pelari DIBUANG; gantinya satu
+  // target 10.000 langkah yang memang terkejar dengan jalan kaki.
+  c('patokan harian diganti target 10.000 langkah',
+    !/RUN_DAY_MILESTONES/.test(s) && /total=\{DAY_STEP_GOAL\}/.test(s) &&
+      /export const DAY_STEP_GOAL = 10_000;/.test(baca('lib/health.ts')));
+  c('kartu hari ini bilang sisanya, atau tercapai',
+    /langkah lagi menuju/.test(s) && /langkah tercapai/.test(s));
   c('baris "sudah tercapai" digabung ke baris langkahnya',
     !/\$\{hit\.label\} tercapai/.test(s));
 

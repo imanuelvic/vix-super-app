@@ -156,8 +156,10 @@ c('Spiritual tetap punya 📖 riwayat Revive di tab Revive',
 const health = baca('app/health.tsx');
 c('Health tetap punya 👣 rekor langkah di tab Steps',
   /emoji="👣"/.test(health) && /router\.push\('\/steps'\)/.test(health));
-c('Health tetap punya 💪🏻 info kesehatan di tab lain',
-  /emoji="💪🏻"/.test(health) && /router\.push\('\/health-info'\)/.test(health));
+// 3 Okt 2026: lambangnya 💪🏻 → 📋 (💪🏻 terbaca sebagai Fitness, bukan
+// catatan nilai normal & tips). Tombolnya sendiri tetap ada.
+c('Health tetap punya 📋 info kesehatan di tab lain',
+  /emoji="📋"/.test(health) && /router\.push\('\/health-info'\)/.test(health));
 c('Reward tetap punya 🗄️ arsip klaim',
   /emoji="🗄️"/.test(layarAch));
 // 28 Sep 2026: + `onBand`. Pilnya berdiri DI DALAM pita header, dan warna

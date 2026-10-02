@@ -10,6 +10,7 @@ import { FormError } from '@/components/common/FormError';
 import { FormInput } from '@/components/common/FormInput';
 import { GreetingHeader } from '@/components/common/Greeting';
 import { PressableScale } from '@/components/common/PressableScale';
+import { ProgressBar } from '@/components/common/ProgressBar';
 import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
@@ -19,6 +20,7 @@ import { useHealthToday } from '@/hooks/useHealthToday';
 import { useLive } from '@/hooks/useLive';
 import { formatDecimal, groupDigits, MONTH_NAMES } from '@/lib/format';
 import {
+  DAY_STEP_GOAL,
   dayDocId,
   manualInDays,
   monthDayIds,
@@ -26,7 +28,6 @@ import {
   quarterOfDate,
   recordStepDays,
   recordStepWeeks,
-  RUN_DAY_MILESTONES,
   RUN_MONTH_MILESTONES,
   RUN_QUARTER_MILESTONES,
   RUN_WEEK_MILESTONES,
@@ -38,10 +39,7 @@ import {
   stepsInPrefixes,
   stepsToKm,
   subscribeManualSteps,
-  WEEK_GYM_GOAL,
-  WEEK_STEP_GOAL,
   weekDayIds,
-  weekStartId,
   type HealthProfile,
   type StepDaysMap,
   type StepManualMap,
@@ -50,9 +48,16 @@ import {
 import { readRecentDailySteps } from '@/lib/healthkit';
 import { SAVE_ERROR } from '@/lib/messages';
 
-// Tab Steps 👣 — langkah hari ini dari Apple Health, plus akumulasi MINGGUAN
-// (Senin–Minggu) dan BULANAN ala tantangan Strava. Jarak dipakai supaya
-// pencapaiannya memakai patokan yang dikenal pelari (5K, Long Run, dst).
+// Tab Steps 👣 — langkah hari ini dari Apple Health menuju 🎯 10.000 langkah,
+// target mingguanmu sendiri (km), lalu satu kartu Rekap untuk bulan, kuartal,
+// & tahun ala tantangan Strava.
+//
+// 3 Okt 2026 (review Health): patokan jarak ala pelari untuk HARIAN dibuang —
+// jarak dari langkah itu jalan kaki, jadi "Full Marathon kurang 35,8 km" tiap
+// hari bukan sesuatu yang dikejar. Kartu anjuran kesehatan umum (70.000 langkah +
+// 2 hari angkat beban) juga keluar dari sini: target mingguan cukup SATU, yang
+// kamu pasang sendiri. Kedua anjurannya pindah jadi garis patokan di grafik
+// konsistensi Fitness › Progress.
 //
 // ── Kapan angkanya mulai dari nol lagi ────────────────────────────────────
 // Tiap kartu di layar ini punya periodenya sendiri, dan dulu itu cuma
@@ -70,9 +75,10 @@ const RESET_HARIAN = '🔄 Mulai lagi tiap hari, jam 00.00';
 const PETUNJUK_IZIN =
   'Sudah jalan tapi tetap 0? Buka Pengaturan iPhone → Kesehatan → Akses Data & Perangkat → vix, lalu nyalakan Langkah.';
 const RESET_MINGGUAN = '🔄 Mulai lagi tiap Senin';
-const RESET_BULANAN = '🔄 Mulai lagi tiap tanggal 1';
-const RESET_KUARTAL = '🔄 Mulai lagi tiap kuartal baru (Jan · Apr · Jul · Okt)';
-const RESET_TAHUNAN = '🔄 Mulai lagi tiap 1 Januari';
+// Tiga periode panjang kini satu kartu, jadi resetnya ditulis sekali di kaki
+// kartu itu — tetap menyebut kapan masing-masing mulai lagi.
+const RESET_REKAP =
+  '🔄 Bulan mulai lagi tiap tanggal 1, kuartal tiap Jan · Apr · Jul · Okt, tahun tiap 1 Januari';
 
 // Judul kelompok periode — tab ini memuat lima hitungan yang RESET-nya
 // berbeda-beda, dan dulu urutannya campur: patokan harian duduk di paling
@@ -81,9 +87,9 @@ const RESET_TAHUNAN = '🔄 Mulai lagi tiap 1 Januari';
 // kepalanya sendiri, urut dari yang paling pendek ke yang paling panjang.
 const JUDUL_HARI = '⏱️ Per Hari';
 const JUDUL_MINGGU = '📅 Per Minggu';
-const JUDUL_BULAN = '🗓️ Per Bulan';
-const JUDUL_KUARTAL = '📊 Per 3 Bulan';
-const JUDUL_TAHUN = '🏁 Per Tahun';
+// Bulan, 3 bulan, & setahun dulu tiga kelompok dengan tiga kartu besar (3 Okt
+// 2026: digabung). Periode panjang jarang perlu dibaca lebih dari satu baris.
+const JUDUL_REKAP = '🗓️ Rekap';
 export function StepsTab({
   profile,
   stepDays,
@@ -178,17 +184,10 @@ export function StepsTab({
   const yearKm = stepsToKm(yearTotal, height);
   const q = quarterOfDate(now);
 
-  // Hari strength training minggu ini — dicatat dari fitur Fitness.
-  const thisWeekGym = weeks[weekStartId(now)]?.gym ?? 0;
-
   const todayKm = stepsToKm(todaySteps, height);
-  // Patokan harian yang BELUM tembus — itu yang masih berguna dilihat.
-  const belumTembus = RUN_DAY_MILESTONES.filter((m) => todayKm < m.km);
-  const dayHit = runMilestoneOf(todayKm, RUN_DAY_MILESTONES);
+  // 🎯 Sisa menuju target harian — 0 = sudah tembus.
+  const sisaHarian = Math.max(0, DAY_STEP_GOAL - todaySteps);
   const weekHit = runMilestoneOf(weekKm, RUN_WEEK_MILESTONES);
-  const monthHit = runMilestoneOf(monthKm, RUN_MONTH_MILESTONES);
-  const quarterHit = runMilestoneOf(quarterKm, RUN_QUARTER_MILESTONES);
-  const yearHit = runMilestoneOf(yearKm, RUN_YEAR_MILESTONES);
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -242,9 +241,21 @@ export function StepsTab({
         <VixText heading="header" additionalStyle={summaryText.value}>
           {groupDigits(String(todaySteps))}
         </VixText>
+        {/* 🎯 Menuju 10.000 langkah — bar putih di atas kartu gelap, satu
+            target yang memang terkejar dengan jalan kaki biasa. */}
+        <View style={styles.heroBar}>
+          <ProgressBar
+            value={todaySteps}
+            total={DAY_STEP_GOAL}
+            color={Color.TEXT_REVERSE}
+            track={Color.SURFACE_ON_DARK}
+          />
+        </View>
         <VixText heading="label" additionalStyle={summaryText.label}>
           ≈ {formatDecimal(todayKm)} km
-          {dayHit ? `  ·  ${dayHit.emoji} ${dayHit.label}` : ''}
+          {sisaHarian > 0
+            ? `  ·  ${groupDigits(String(sisaHarian))} langkah lagi menuju ${groupDigits(String(DAY_STEP_GOAL))}`
+            : `  ·  ✅ ${groupDigits(String(DAY_STEP_GOAL))} langkah tercapai`}
         </VixText>
         {/* Bagian yang kamu catat sendiri disebut terpisah — angka gabungan
             yang tidak bisa diurai lagi asal-usulnya cuma jadi angka yang tak
@@ -276,38 +287,6 @@ export function StepsTab({
         }
       />
 
-      {/* ===== Patokan jarak harian ala pelari =====
-          Dulu kartu ini duduk paling BAWAH, di bawah kartu bulanan — padahal
-          periodenya harian. Sekarang ia berkumpul dengan angka hari ini.
-
-          Yang SUDAH tembus hari ini tidak ditampilkan lagi — daftarnya jadi
-          "sisa yang bisa dikejar", bukan tujuh baris tetap yang setengahnya
-          cuma centang. Kalau semuanya tembus, barulah satu baris perayaan. */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <VixText heading="title">🏃 Patokan Jarak Harian</VixText>
-          <VixText heading="label" additionalStyle={styles.resetText}>
-            {RESET_HARIAN}
-          </VixText>
-        </View>
-        {belumTembus.length === 0 ? (
-          <VixText heading="bold" additionalStyle={styles.msValueOn}>
-            🎉 Semua patokan hari ini sudah tembus!
-          </VixText>
-        ) : (
-          belumTembus.map((m) => (
-            <View key={m.label} style={styles.msRow}>
-              <VixText heading="bold" additionalStyle={styles.msLabel}>
-                {m.emoji} {m.label}
-              </VixText>
-              <VixText heading="bold" additionalStyle={styles.msValue}>
-                kurang {formatDecimal(m.km - todayKm)} km
-              </VixText>
-            </View>
-          ))
-        )}
-      </View>
-
       <VixText heading="title" additionalStyle={styles.sectionTitle}>
         {JUDUL_MINGGU}
       </VixText>
@@ -328,75 +307,33 @@ export function StepsTab({
         milestones={RUN_WEEK_MILESTONES}
       />
 
-      {/* Anjuran kesehatan umum — BUKAN target pribadi (itu kartu di atas).
-          Periodenya sama dengan kartu Minggu Ini, jadi keterangan resetnya
-          cukup satu baris di sini juga. */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <VixText heading="title">🩺 Anjuran Kesehatan</VixText>
-          <VixText heading="label" additionalStyle={styles.resetText}>
-            {RESET_MINGGUAN}
-          </VixText>
-        </View>
-        <GoalRow
-          label="🚶 Aktivitas aerobik"
-          value={weekTotal}
-          goal={WEEK_STEP_GOAL}
-          unit="langkah"
-        />
-        <GoalRow
-          label="🏋️ Strength training"
-          value={thisWeekGym}
-          goal={WEEK_GYM_GOAL}
-          unit="hari"
-        />
-      </View>
-
       <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        {JUDUL_BULAN}
+        {JUDUL_REKAP}
       </VixText>
 
-      {/* ===== Bulan ini (tantangan ala Strava) ===== */}
-      <MileageCard
-        title={`🗓️ ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`}
-        reset={RESET_BULANAN}
-        km={monthKm}
-        steps={monthTotal}
-        hit={monthHit}
-        milestones={RUN_MONTH_MILESTONES}
+      {/* ===== Bulan · 3 bulan · setahun — SATU kartu (3 Okt 2026) =====
+          Dulu tiga kelompok dengan tiga kartu besar, masing-masing berjudul,
+          berketerangan reset, & berbar sendiri. Angka periode panjang jarang
+          perlu lebih dari satu baris; patokannya (100K Bulanan, dst) tetap. */}
+      <RecapCard
+        rows={[
+          {
+            title: `🗓️ ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`,
+            km: monthKm,
+            milestones: RUN_MONTH_MILESTONES,
+          },
+          {
+            title: `📊 Q${q.q} ${q.year}`,
+            km: quarterKm,
+            milestones: RUN_QUARTER_MILESTONES,
+          },
+          {
+            title: `🏁 ${now.getFullYear()}`,
+            km: yearKm,
+            milestones: RUN_YEAR_MILESTONES,
+          },
+        ]}
       />
-
-      <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        {JUDUL_KUARTAL}
-      </VixText>
-
-      {/* ===== Kuartal berjalan (Q1–Q4 kalender) ===== */}
-      <MileageCard
-        title={`📊 Q${q.q} ${q.year}`}
-        reset={RESET_KUARTAL}
-        km={quarterKm}
-        steps={quarterTotal}
-        hit={quarterHit}
-        milestones={RUN_QUARTER_MILESTONES}
-      />
-
-      <VixText heading="title" additionalStyle={styles.sectionTitle}>
-        {JUDUL_TAHUN}
-      </VixText>
-
-      {/* ===== Setahun penuh, paling bawah =====
-          Periode terpanjang, jadi ia yang paling jarang perlu dilihat. Isinya
-          ikut bertambah selama riwayat langkahnya tersimpan; tahun-tahun
-          sebelum app ini dipakai memang tidak ada datanya. */}
-      <MileageCard
-        title={`🏁 ${now.getFullYear()}`}
-        reset={RESET_TAHUNAN}
-        km={yearKm}
-        steps={yearTotal}
-        hit={yearHit}
-        milestones={RUN_YEAR_MILESTONES}
-      />
-
     </ScrollView>
   );
 }
@@ -559,42 +496,52 @@ function MileageCard({
   );
 }
 
-// Baris target mingguan: bar progres + "x / y" dan ✅ kalau sudah tercapai.
-function GoalRow({
-  label,
-  value,
-  goal,
-  unit,
+/**
+ * 🗓️ Rekap periode panjang — bulan, kuartal, & tahun dalam SATU kartu
+ * (3 Okt 2026). Tiap barisnya: berapa jauh & tinggal berapa lagi menuju
+ * patokan berikutnya — satu baris tulisan, supaya tiga periode muat
+ * ringkas. Jumlah langkahnya cukup di kartu mingguan; resetnya ketiga
+ * periode ditulis sekali di kaki kartu.
+ */
+function RecapCard({
+  rows,
 }: {
-  label: string;
-  value: number;
-  goal: number;
-  unit: string;
+  rows: {
+    title: string;
+    km: number;
+    milestones: { km: number; emoji: string; label: string }[];
+  }[];
 }) {
-  const pct = Math.min((value / goal) * 100, 100);
-  const done = value >= goal;
   return (
-    <View style={styles.goalRow}>
-      <View style={styles.goalTop}>
-        <VixText heading="bold" additionalStyle={styles.goalLabel}>
-          {label}
-        </VixText>
-        <VixText
-          heading="bold"
-          additionalStyle={done ? styles.goalDone : styles.goalValue}>
-          {done ? '✅ ' : ''}
-          {groupDigits(String(value))}/{groupDigits(String(goal))} {unit}
-        </VixText>
-      </View>
-      <View style={styles.barTrack}>
-        <View
-          style={[
-            styles.barFill,
-            { width: `${pct}%` },
-            done && styles.barFillDone,
-          ]}
-        />
-      </View>
+    <View style={styles.card}>
+      {rows.map((r, i) => {
+        // Patokan berikutnya yang belum tercapai (null = semua sudah lewat).
+        const next = r.milestones.find((m) => r.km < m.km) ?? null;
+        const pct = next ? Math.min((r.km / next.km) * 100, 100) : 100;
+        return (
+          <View key={r.title} style={i > 0 ? styles.recapRowNext : undefined}>
+            <View style={styles.recapTop}>
+              <VixText heading="bold" additionalStyle={styles.recapTitle}>
+                {r.title}
+              </VixText>
+              <VixText heading="bold" additionalStyle={styles.kmText}>
+                {formatDecimal(r.km)} km
+              </VixText>
+            </View>
+            <View style={styles.barTrack}>
+              <View style={[styles.barFill, { width: `${pct}%` }]} />
+            </View>
+            <VixText heading="label" additionalStyle={styles.subText}>
+              {next
+                ? `Kurang ${formatDecimal(next.km - r.km)} km ke ${next.emoji} ${next.label}`
+                : '🎉 Semua patokan periode ini sudah tembus!'}
+            </VixText>
+          </View>
+        );
+      })}
+      <VixText heading="label" additionalStyle={styles.recapReset}>
+        {RESET_REKAP}
+      </VixText>
     </View>
   );
 }
@@ -606,6 +553,8 @@ const styles = StyleSheet.create({
   sectionTitle: { ...SECTION_SPACE },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
   heroCard: { gap: 2, marginBottom: CARD_GAP },
+  // Bar 🎯 10.000 langkah di kartu gelap — napas kecil dari angka besarnya.
+  heroBar: { marginVertical: 4 },
   heroActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // Pil tombol DI ATAS kartu gelap: latar putih redup + tulisan putih. Dua
   // warna itu yang tetap terbaca di atas warna fitur apa pun (merah tua di
@@ -658,28 +607,23 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   barFill: { height: '100%', borderRadius: 4, backgroundColor: Color.MAIN },
-  barFillDone: { backgroundColor: Color.SUCCESS },
-  goalRow: { marginTop: 10 },
-  goalTop: {
+  // ---- Kartu Rekap ----
+  // Baris judul periode + km-nya; `flexWrap` dengan alasan yang sama dengan
+  // cardHeader di atas (nama bulan & angka km sama-sama berubah panjang).
+  recapTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },
-  goalLabel: { color: Color.TEXT_TITLE },
-  goalValue: { color: Color.TEXT_LABEL },
-  goalDone: { color: Color.SUCCESS },
-  msRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    paddingVertical: 8,
+  recapTitle: { color: Color.TEXT_TITLE },
+  // Baris kedua & ketiga dipisah garis rambut — satu kartu, tiga periode.
+  recapRowNext: {
     borderTopWidth: 1,
     borderTopColor: Color.BORDER,
+    marginTop: 8,
+    paddingTop: 10,
   },
-  msLabel: { color: Color.TEXT_PLACEHOLDER },
-  msValue: { color: Color.TEXT_PLACEHOLDER },
-  msValueOn: { color: Color.SUCCESS },
+  recapReset: { color: Color.TEXT_LABEL, marginTop: 8 },
 });

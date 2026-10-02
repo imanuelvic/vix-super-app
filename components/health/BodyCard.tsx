@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, type KeyboardTypeOptions } from 'react-native';
 
@@ -97,12 +97,17 @@ export function BodyCard({ profile }: { profile: HealthProfile }) {
   }
 
   // Reminder timbang berat dari Home (?weighIn=1) → buka editor sekali.
+  // Paramnya DILEPAS sesudah dipakai (3 Okt 2026): Profile itu layar tab yang
+  // tak pernah mati, dan kartu ini lahir ulang tiap sub-tab 🧍 dibuka — param
+  // yang tertinggal akan membuka editornya lagi di kunjungan berikutnya.
+  const router = useRouter();
   const { weighIn } = useLocalSearchParams<{ weighIn?: string }>();
   const weighInOpened = useRef(false);
   useEffect(() => {
     if (weighIn === '1' && !weighInOpened.current) {
       weighInOpened.current = true;
       openEdit();
+      router.setParams({ weighIn: '' });
     }
     // openEdit stabil secara fungsional; cukup bereaksi pada param.
     // eslint-disable-next-line react-hooks/exhaustive-deps

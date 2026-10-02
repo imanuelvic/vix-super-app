@@ -132,6 +132,7 @@ import {
     EMPTY_FUN,
     funIdeasToday,
     funReminderDue,
+    nextRace,
     subscribeFun,
     type FunData,
 } from '@/lib/fun';
@@ -530,11 +531,13 @@ export default function DashboardScreen() {
   if (weighInDue) {
     healthRows.push({
       id: 'weigh',
-      // Data Tubuh sekarang tinggal di tab Profile — ?weighIn=1 langsung
-      // membuka editornya begitu layar Profile terbuka.
+      // Data Tubuh tinggal di sub-tab 🧍 Profile — ?tab=body membukanya
+      // (3 Okt 2026: tanpa ini Profile terbuka di sub-tab pertama, kartu Data
+      // Tubuh belum tergambar, dan editornya tidak pernah muncul), lalu
+      // ?weighIn=1 langsung membuka editornya.
       text: '⚖️ Timbang berat minggu ini, update berat (kg)',
       onPress: () =>
-        router.push({ pathname: '/profile', params: { weighIn: '1' } }),
+        router.push({ pathname: '/profile', params: { tab: 'body', weighIn: '1' } }),
     });
   }
   // Donor darah — sudah boleh lagi (hari Minggu). "Sejak" dihitung bulan+hari.
@@ -614,8 +617,9 @@ export default function DashboardScreen() {
   const fitPicked = fitSessionsOf(fitDay, now);
   const fitBelumPilih = fitPicked.length === 0;
   // Saran program hari ini — dipakai sebagai bocoran di kartu ajakan, bukan
-  // sebagai isi hari yang seolah sudah ditetapkan.
-  const fitSaran = fitSessionFor(now);
+  // sebagai isi hari yang seolah sudah ditetapkan. Menjelang race (entri Race
+  // bertanggal ke depan) sarannya blok C, sama dengan Today & Exercise.
+  const fitSaran = fitSessionFor(now, nextRace(fun, now)?.dayId);
   // Satu sumber angka dengan badge tile Home & sub-tab Exercise: jendela jam
   // dan tanda ✕ sudah diurus di dalamnya. Hari yang belum dipilih bernilai 1 —
   // satu hal memang menunggu, yaitu memilihnya.

@@ -24,8 +24,9 @@ import {
   type FitLogEntry,
 } from '@/lib/fitness';
 
-// Riwayat olahraga ⏱️ — semua sesi yang direkam stopwatch di sub-tab Record,
-// terbaru dulu. Dibuka dari tombol 📜 di pojok kanan atas Fitness.
+// Riwayat olahraga ⏱️ — semua sesi yang tercatat, terbaru dulu: yang direkam
+// stopwatch di Record & (sejak 3 Okt 2026) hasil lari yang diketik di
+// Exercise, termasuk hasil bentuk lamanya. Dibuka dari tombol 📜 Fitness.
 //
 // Dibaca SEKALI saat layar dibuka (bukan langganan): riwayat tidak berubah
 // selagi kamu membacanya, dan langganan ke 120 dokumen itu mahal untuk
@@ -57,7 +58,7 @@ export default function FitnessHistoryScreen() {
       <ScreenHeader
         backLabel="Fitness"
         title="Workout History ⏱️"
-        subtitle={`Sesi yang direkam di Record · ${FIT_HISTORY_DAYS} hari terakhir`}
+        subtitle={`Sesi yang tercatat · ${FIT_HISTORY_DAYS} hari terakhir`}
       />
 
       <ScreenError message={error} />
@@ -97,7 +98,8 @@ export default function FitnessHistoryScreen() {
                       ) : null}
                     </View>
                     <VixText heading="bold" additionalStyle={styles.cardTitle}>
-                      {m.emoji} {m.label} · {formatClock(l.seconds)}
+                      {m.emoji} {m.label}
+                      {l.seconds > 0 ? ` · ${formatClock(l.seconds)}` : ''}
                     </VixText>
                     {l.km > 0 || l.place ? (
                       <VixText heading="label" additionalStyle={styles.cardSub}>

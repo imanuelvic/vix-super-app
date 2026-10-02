@@ -16,7 +16,6 @@ import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { ExerciseTab } from '@/components/fitness/ExerciseTab';
 import { NotesTab } from '@/components/fitness/NotesTab';
-import { ProgramTab } from '@/components/fitness/ProgramTab';
 import { ProgressTab } from '@/components/fitness/ProgressTab';
 import { RecordTab } from '@/components/fitness/RecordTab';
 import { useAuth } from '@/contexts/auth';
@@ -27,28 +26,40 @@ import { type LoginStreak } from '@/lib/reward';
 import { subscribeFitNotes, type FitNote } from '@/lib/fitNotes';
 import {
   EMPTY_FIT_DAY,
+  EMPTY_FIT_WEIGHT_LOG,
   fitPendingToday,
   settleFitDays,
   subscribeFitDay,
   subscribeFitStreak,
+  subscribeFitWeightLog,
   subscribeFitWeights,
   type FitDay,
+  type FitWeightLog,
   type FitWeights,
 } from '@/lib/fitness';
+import { EMPTY_FUN, nextRace, subscribeFun, type FunData } from '@/lib/fun';
 import {
   subscribeHealthProfile,
+  subscribeWeekStats,
+  subscribeWeightLog,
   subscribeWeightTarget,
   type HealthProfile,
+  type WeekStatsMap,
+  type WeightPoint,
   type WeightTarget,
 } from '@/lib/health';
 
-type Tab = 'program' | 'exercise' | 'record' | 'progress' | 'notes';
+type Tab = 'exercise' | 'record' | 'progress' | 'notes';
 
-// Record ⏱️ sengaja DI TENGAH, seperti tombol rekam di app lari: ia satu-
-// satunya sub-tab yang dipakai sambil berdiri bersiap, bukan sambil duduk
-// membaca, jadi ia harus jatuh tepat di bawah ibu jari.
+// Record ⏱️ tepat di sebelah Exercise, dekat ibu jari: ia satu-satunya
+// sub-tab yang dipakai sambil berdiri bersiap, bukan sambil duduk membaca.
+//
+// Program 📅 bukan sub-tab lagi (3 Okt 2026): etalasenya pindah ke dalam sheet
+// "Pick Exercise" di Exercise — tiap paket bisa dibuka untuk melihat
+// gerakannya, tepat di tempat paket itu dipilih. Dulu ada dua jalan untuk hal
+// yang sama (Ambil di Program, Pilih di Exercise) dan keduanya menulis ke
+// pilihan hari yang sama.
 const TABS: BottomTab<Tab>[] = [
-  { key: 'program', label: 'Program', icon: 'calendar' },
   { key: 'exercise', label: 'Exercise', icon: 'dumbbell.fill' },
   { key: 'record', label: 'Record', icon: 'stopwatch.fill' },
   { key: 'progress', label: 'Progress', icon: 'chart.line.uptrend.xyaxis' },
@@ -57,9 +68,9 @@ const TABS: BottomTab<Tab>[] = [
 
 // Fitness 💪 — olahraga harian yang KAMU pilih sendiri.
 //
-// Tab Program memajang program lean-atletis lengkap (3 hari beban, 2 lari, 2
-// jalan) sebagai SARAN yang bisa diambil; yang menentukan isi hari ini tetap
-// kamu, di tab Exercise. Jamnya bebas pagi atau sore; pengingatnya menyala di
+// Program lean-atletis lengkap (3 hari beban, 2 lari, 2 jalan) tinggal sebagai
+// SARAN di dalam sheet Pick Exercise; yang menentukan isi hari ini tetap kamu,
+// di tab Exercise. Jamnya bebas pagi atau sore; pengingatnya menyala di
 // dua jendela (05.00 & 16.00).
 // Semua data di-subscribe di sini (bukan per tab) supaya pindah tab tidak
 // memutus-sambung listener Firestore terus-menerus. Semuanya dokumen kecil.
@@ -86,6 +97,14 @@ export default function FitnessScreen() {
   const [target, setTarget] = useState<WeightTarget | null>(null);
   // Catatan & tautan latihan — isi sub-tab Notes 📝.
   const [notes, setNotes] = useState<FitNote[]>([]);
+  // Riwayat beban 🏋️ & berat badan ⚖️, rekap mingguan (hari angkat beban &
+  // langkah), & arsip Race untuk hitung mundur 🏁 — semuanya dokumen kecil
+  // (3 Okt 2026). Arsip Race & profil sudah dilanggan Today, jadi liveDoc
+  // berbagi listener-nya: tidak menambah pembacaan.
+  const [weightLog, setWeightLog] = useState<FitWeightLog>(EMPTY_FIT_WEIGHT_LOG);
+  const [bodyLog, setBodyLog] = useState<WeightPoint[]>([]);
+  const [weekStats, setWeekStats] = useState<WeekStatsMap>({});
+  const [fun, setFun] = useState<FunData>(EMPTY_FUN);
   const [error, setError] = useState<string | null>(null);
 
   // Jam berjalan — badge Exercise baru menyala jam 16.00 dan ikut kereset
@@ -100,6 +119,10 @@ export default function FitnessScreen() {
       subscribeHealthProfile(uid, setProfile, fail),
       subscribeWeightTarget(uid, setTarget, fail),
       subscribeFitNotes(uid, setNotes, fail),
+      subscribeFitWeightLog(uid, setWeightLog, fail),
+      subscribeWeightLog(uid, setBodyLog, fail),
+      subscribeWeekStats(uid, setWeekStats, fail),
+      subscribeFun(uid, setFun, fail),
     ],
     { onError: setError, deps: [dayId] },
   );
@@ -118,6 +141,10 @@ export default function FitnessScreen() {
     // boleh menutupi layar latihan dengan pesan error.
     settleFitDays(user.uid, new Date()).catch(() => {});
   }, [user, dayId]);
+
+  // 🏁 Race terdekat yang belum lewat — hitung mundur di Exercise & saran
+  // blok C menjelang hari-H.
+  const race = nextRace(fun, now);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -145,20 +172,28 @@ export default function FitnessScreen() {
       <ScreenError message={error} />
 
       <View style={styles.body} key={scrollKey}>
-        {tab === 'program' ? (
-          <ProgramTab weights={weights} day={day} dayId={dayId} />
-        ) : tab === 'exercise' ? (
+        {tab === 'exercise' ? (
           <ExerciseTab
             weights={weights}
+            weightLog={weightLog}
             day={day}
             dayId={dayId}
             streak={streak}
             bodyWeightKg={profile?.weightKg ?? null}
+            race={race}
           />
         ) : tab === 'record' ? (
           <RecordTab watch={watch} day={day} dayId={dayId} />
         ) : tab === 'progress' ? (
-          <ProgressTab streak={streak} profile={profile} target={target} />
+          <ProgressTab
+            streak={streak}
+            profile={profile}
+            target={target}
+            bodyLog={bodyLog}
+            weights={weights}
+            weightLog={weightLog}
+            weekStats={weekStats}
+          />
         ) : (
           <NotesTab notes={notes} />
         )}

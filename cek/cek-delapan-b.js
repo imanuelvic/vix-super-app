@@ -191,8 +191,14 @@ console.log('\n=== 3. Steps: target mingguan sendiri + tulisan "sisa" ===');
   c('keterangan bertele-tele di tiap kartu dibuang',
     !/^\s*sub="/m.test(steps) && !/\{sub\}/.test(steps) &&
       !/Anjuran dewasa: ±150 menit/.test(steps));
+  // 3 Okt 2026 (review Health, disetujui pemilik app): anjuran umumnya tidak
+  // lagi jadi kartu kedua di Steps — target mingguan cukup SATU, milikmu.
+  // Anjurannya tetap terpisah dari target pribadi: jadi garis patokan di
+  // grafik konsistensi Fitness › Progress.
+  const progres = baca('components/fitness/ProgressTab.tsx');
   c('anjuran kesehatan umum dipisahkan dari target pribadi',
-    /🩺 Anjuran Kesehatan/.test(steps) && !/🎯 Target Sehat Mingguan/.test(steps));
+    !/Anjuran Kesehatan/.test(steps) && !/🎯 Target Sehat Mingguan/.test(steps) &&
+      /goal=\{WEEK_GYM_GOAL\}/.test(progres) && /goal=\{WEEK_STEP_GOAL\}/.test(progres));
   c('reset tiap Senin tetap dari sumber yang sama (weekDayIds)',
     /const hariMinggu = weekDayIds\(now\);/.test(steps) &&
       /stepsInDays\(stepDays, hariMinggu\)/.test(steps));

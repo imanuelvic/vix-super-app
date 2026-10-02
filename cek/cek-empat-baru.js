@@ -92,16 +92,20 @@ c('fotonya cuma untuk Race yang memang punya medali',
   /item\.category === 'race' && item\.medalPhoto/.test(arsip));
 
 // =====================================================================
-console.log('\n== 2. Program: dropdown hari + Blok C ==');
+console.log('\n== 2. Program (kini di sheet Pick Exercise) + Blok C ==');
 // =====================================================================
-const prog = baca('components/fitness/ProgramTab.tsx');
+// 3 Okt 2026: tab Program DILEBUR ke sheet "Pick Exercise" di Exercise —
+// etalasenya ada tepat di tempat paketnya dipilih. Yang dijaga sekarang:
+// berkas tab lamanya tidak ada, dan etalasenya tetap menunjukkan blok yang
+// disarankan, paket saran hari ini, & gerakan tiap paket.
+const prog = baca('components/fitness/ExerciseTab.tsx');
 
-c('harinya dipilih lewat dropdown, bukan ditumpuk ketujuhnya',
-  /<SelectField/.test(prog) && !/FIT_PROGRAM\[block\]\.map/.test(prog));
-c('bawaannya HARI INI', /useState\(String\(todayWeekday\)\)/.test(prog));
-c('ganti blok TIDAK memindahkan harinya (tiap blok punya ketujuh hari)',
-  !/setHari\(/.test(prog.slice(prog.indexOf('<SegmentTabs'), prog.indexOf('</SegmentTabs') + 1)));
-c('hari ini ditandai di daftar pilihannya', /● hari ini/.test(prog));
+c('tab Program tidak ada lagi sebagai berkas sendiri',
+  !ada('components/fitness/ProgramTab.tsx'));
+c('blok yang disarankan disebut di sheet-nya', /💡 Program minggu ini: blok/.test(prog));
+c('paket saran hari ini ditandai di daftar pilihannya', /💡 saran hari ini · /.test(prog));
+c('tiap paket bisa diintip gerakannya sebelum dipilih',
+  /onPress=\{\(\) => intip\(s\.id\)\}/.test(prog) && /useAccordion<string>\(\)/.test(prog));
 
 console.log('\n   Blok C');
 c('bloknya bertiga sekarang',
@@ -135,7 +139,7 @@ c('Minggu di blok A & B tetap disarankan jalan pagi',
 // hari istimewa. Yang perlu diberitahu sekarang justru hal yang lebih besar:
 // seluruh halaman ini cuma saran, dan yang memutuskan kamu.
 c('halaman ini menawarkan, bukan menentukan',
-  /Ambil untuk hari ini/.test(prog) && /applyFitPicks\(/.test(prog));
+  /const ambilSaran = /.test(prog) && /applyFitPicks\(/.test(prog));
 // Blok pengingat pemulihan dihapus pemiliknya dari halaman ini (10 Sep 2026).
 // Yang dijaga tinggal pokoknya: hari jalan TIDAK boleh dipatok "Rabu & Minggu"
 // di mana pun, karena blok C tidak begitu — dan sekarang hari mana pun boleh
