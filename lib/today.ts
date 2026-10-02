@@ -58,6 +58,8 @@ import {
   type FitDay,
 } from './fitness';
 import {
+  dayId as dayIdOf,
+  dayIdToDate,
   daysBetween,
   formatDayDate,
   formatMonthsDays,
@@ -114,7 +116,9 @@ import {
 import {
   effectiveOtherTask,
   otherTaskDaysUntil,
+  parseTaskTime,
   TASK_CATEGORIES,
+  taskTimeLabel,
   type OtherTask,
   type Task,
   type TaskCategory,
@@ -251,7 +255,39 @@ export type TodayModel = {
    * app-nya kebetulan terakhir dibuka hari Kamis.
    */
   timeline: TodayTimeline;
+  /**
+   * ⏰ Reminder berjam yang belum selesai, hari ini s.d. 6 hari ke depan,
+   * urut waktunya. Penjadwal pengingat (lib/notify.ts) memberi masing-masing
+   * satu notifikasi tepat di jamnya.
+   *
+   * Kolomnya sendiri, bukan dibaca dari baris `today`: baris Today cuma hari
+   * ini dan dipangkas ke TODAY_MAX, sedangkan jadwal HP harus tetap lengkap
+   * untuk hari-hari depan walau app-nya tidak dibuka.
+   */
+  timed: TodayTimed[];
 };
+
+/** Satu reminder berjam yang perlu dijadwalkan ke HP. */
+export type TodayTimed = {
+  id: string;
+  title: string;
+  emoji: string;
+  /** "YYYY-MM-DD" — tanggal berbunyinya. */
+  dayId: string;
+  hour: number;
+  minute: number;
+  href: TodayHref;
+};
+
+/**
+ * Batas reminder berjam yang dijadwalkan sekaligus. iOS cuma menyimpan 64
+ * notifikasi terjadwal per app, dan pengingat harian lain sudah memakai
+ * ±23 — jadi 20 menyisakan ruang aman.
+ */
+export const TIMED_MAX = 20;
+
+/** Seberapa jauh ke depan reminder berjam dijadwalkan (hari ini + 6 hari). */
+const TIMED_DAYS = 7;
 
 /** Wishlist 📍 bulan berjalan yang masih menunggu. */
 export type TodayTimeline = {
@@ -654,6 +690,7 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
   // ============================ Task & prioritas ============================
   // Task harian yang belum selesai → bagian ikut kategorinya.
   for (const t of input.tasks.filter((t) => t.dayId === todayId && !t.done)) {
+    const jam = taskTimeLabel(t.time);
     push({
       id: `task-${t.id}`,
       section: sectionOfTaskCategory(t.category),
@@ -661,6 +698,7 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
       rank: 2,
       emoji: catIcon(t.category) || '✅',
       title: t.title,
+      ...(jam ? { detail: `⏰ ${jam}` } : {}),
       href: { pathname: '/tasks', params: { category: t.category } },
     });
   }
@@ -1160,6 +1198,40 @@ export function buildToday(input: TodayInput, now: Date, todayId: string): Today
       month: MONTH_NAMES[now.getMonth()],
       titles: wishlistBulanIni.slice(0, 2).map((i) => i.title),
     },
+    timed: timedTasks(input.tasks, todayId),
   };
+}
+
+/**
+ * Reminder berjam yang perlu dijadwalkan: belum selesai, tanggalnya hari ini
+ * s.d. TIMED_DAYS - 1 hari ke depan, urut tanggal lalu jam, paling banyak
+ * TIMED_MAX. Jam yang sudah lewat hari ini TETAP ikut di sini (fungsi ini
+ * murni, tidak tahu jam berapa sekarang); penjadwalnya yang melewatinya.
+ */
+function timedTasks(tasks: Task[], todayId: string): TodayTimed[] {
+  const awal = dayIdToDate(todayId);
+  const batas = dayIdOf(
+    new Date(awal.getFullYear(), awal.getMonth(), awal.getDate() + TIMED_DAYS - 1),
+  );
+  const hasil: TodayTimed[] = [];
+  for (const t of tasks) {
+    const jam = parseTaskTime(t.time);
+    if (!jam || t.done || t.dayId < todayId || t.dayId > batas) continue;
+    hasil.push({
+      id: t.id,
+      title: t.title,
+      emoji: catIcon(t.category) || '✅',
+      dayId: t.dayId,
+      hour: jam.hour,
+      minute: jam.minute,
+      href: { pathname: '/tasks', params: { category: t.category } },
+    });
+  }
+  return hasil
+    .sort(
+      (a, b) =>
+        a.dayId.localeCompare(b.dayId) || a.hour * 60 + a.minute - (b.hour * 60 + b.minute),
+    )
+    .slice(0, TIMED_MAX);
 }
 

@@ -44,7 +44,6 @@ import {
     meetingKindMeta,
     meetingLeaderNames,
     needsPdfShare,
-    newVisitationId,
     saveVisitations,
     VISIT_TIPS,
     visitDaysUntil,
@@ -201,16 +200,13 @@ export function VisitationTab({
 
   async function handleSave() {
     if (!user || !editing || busy) return;
-    if (form.leaderIds.length === 0) {
-      setFormError('Pilih CORE Leader-nya dulu.');
+    // Pemeriksaan & perakitannya milik bersama — hooks/useVisitationForm.ts.
+    const masalah = form.problem();
+    if (masalah) {
+      setFormError(masalah);
       return;
     }
-    const data: Visitation = {
-      id: editing === 'new' ? newVisitationId() : editing.id,
-      ...form.payload(),
-      // Catatan kirim PDF milik jadwalnya, bukan formnya — dipertahankan.
-      pdfSentDayId: editing === 'new' ? null : editing.pdfSentDayId,
-    };
+    const data = form.build(editing === 'new' ? null : editing);
     const next =
       editing === 'new'
         ? [...visitations, data]

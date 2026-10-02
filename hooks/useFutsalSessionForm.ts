@@ -2,7 +2,14 @@ import { useState } from 'react';
 
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
-import { dayIdToDate, groupDigits, parseAmount, dayId as toDayId } from '@/lib/format';
+import {
+  dayIdToDate,
+  formatHourMinute,
+  formatTime,
+  groupDigits,
+  parseAmount,
+  dayId as toDayId,
+} from '@/lib/format';
 import {
   gangMembers,
   lastSession,
@@ -49,9 +56,7 @@ export function useFutsalSessionForm(data: FutsalData, gang: FutsalGangKey) {
   function tambahJam(teks: string, jamTambahan: number): string {
     const [j, m] = teks.split('.').map((n) => Number(n) || 0);
     const total = Math.min(j * 60 + m + jamTambahan * 60, 23 * 60 + 59);
-    return `${String(Math.floor(total / 60)).padStart(2, '0')}.${String(
-      total % 60,
-    ).padStart(2, '0')}`;
+    return formatHourMinute(Math.floor(total / 60), total % 60);
   }
 
   /** Jam "20.00" → Date hari ini pada jam itu (isian jam memakai Date). */
@@ -120,8 +125,9 @@ export function useFutsalSessionForm(data: FutsalData, gang: FutsalGangKey) {
       id: edit?.id ?? newFutsalId(now),
       gang,
       dayId: toDayId(tanggal),
-      time: jamTeks(jam),
-      endTime: jamTeks(jamSelesai),
+      // Bentuk yang disimpan "18.00" = formatTime apa adanya.
+      time: formatTime(jam),
+      endTime: formatTime(jamSelesai),
       venue: venue.trim(),
       mapsUrl: maps.trim(),
       bank: bank.trim(),
@@ -143,13 +149,6 @@ export function useFutsalSessionForm(data: FutsalData, gang: FutsalGangKey) {
       });
       setOpen(false);
     });
-  }
-
-  /** Date → "18.00" (bentuk yang disimpan). */
-  function jamTeks(d: Date): string {
-    return `${String(d.getHours()).padStart(2, '0')}.${String(
-      d.getMinutes(),
-    ).padStart(2, '0')}`;
   }
 
   /** Menit sejak 00.00 — untuk membandingkan dua jam. */

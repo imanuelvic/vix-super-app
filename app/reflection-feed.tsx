@@ -9,16 +9,17 @@ import { ActionStack } from '@/components/common/ActionStack';
 import { CardPreview } from '@/components/common/CardPreview';
 import { Chip } from '@/components/common/Chip';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
+import { PhotoSavedNote } from '@/components/common/PhotoSavedNote';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { VixText } from '@/components/common/VixText';
 import { ReflectionFeedCard } from '@/components/spiritual/ReflectionFeedCard';
 import { useAuth } from '@/contexts/auth';
-import { useBusyTask } from '@/hooks/useBusyTask';
 import { useCardPng } from '@/hooks/useCardPng';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useNow } from '@/hooks/useNow';
+import { useSaveToPhotos, type PhotoMode } from '@/hooks/useSaveToPhotos';
 import { formatFullDate } from '@/lib/format';
 import {
   habitNoteDone,
@@ -35,9 +36,6 @@ import {
   FEED_W,
   feedFileName,
   markFeedGenerated,
-  openInstagram,
-  photoErrorMessage,
-  saveFeedToPhotos,
 } from '@/lib/reflectionFeed';
 
 // Daily Reflection Journal 📓 → gambar Instagram Feed 4:5.
@@ -52,14 +50,6 @@ export default function ReflectionFeedScreen() {
   const [habits, setHabits] = useState<ScheduledHabit[] | null>(null);
   const [day, setDay] = useState<HabitDay | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Tombol mana yang sedang bekerja — dua tombol, satu proses; yang lain ikut
-  // mati supaya tidak dobel.
-  const kerja = useBusyTask<'save' | 'ig'>();
-  // Gambar mana yang SUDAH tersimpan di Foto (kunci = rupa + isi tulisannya).
-  // Dipakai supaya menekan "Buka Instagram" sesudah "Simpan" tidak menyimpan
-  // gambar yang sama dua kali ke galerimu.
-  const [saved, setSaved] = useState<string | null>(null);
-
   const [pickedKey, setPickedKey] = useState<string>(FEED_DESIGNS[0].key);
 
   const { svgRef, buatPng } = useCardPng(FEED_W, FEED_H);
@@ -77,36 +67,26 @@ export default function ReflectionFeedScreen() {
   const ada = habitNoteDone(text);
   const design = designOf(pickedKey);
 
-  /** Simpan ke Foto — dilewati kalau gambar yang persis sama sudah tersimpan. */
-  async function simpanKeFoto(): Promise<void> {
-    const kunci = `${design.key}|${text}`;
-    if (saved === kunci) return;
-    await saveFeedToPhotos(await buatPng(), feedFileName(todayId));
-    setSaved(kunci);
-  }
+  // 💾 Simpan ke Foto / 📸 simpan lalu buka Instagram — alurnya milik bersama
+  // ketiga layar kartu (hooks/useSaveToPhotos.ts). Kunci gambarnya = rupa +
+  // isi tulisannya.
+  const foto = useSaveToPhotos({
+    kunci: `${design.key}|${text}`,
+    buatPng,
+    namaBerkas: feedFileName(todayId),
+    instagram: 'app',
+    setError,
+    // Tombol "Generate Feed" di Home berhenti menagih setelah ini. Sengaja
+    // ditandai SESUDAH gambarnya jadi — gagal di tengah jalan tidak boleh
+    // membuat tombolnya hilang.
+    sesudah: async () => {
+      if (user) await markFeedGenerated(user.uid, todayId);
+    },
+  });
 
-  /**
-   * `save` = simpan ke Foto saja.
-   * `ig`   = simpan ke Foto LALU buka Instagram. Urutannya memang begitu:
-   *          iOS tidak mengizinkan app lain menaruh gambar langsung ke dalam
-   *          Instagram, jadi gambarnya harus sudah ada di galeri dulu — begitu
-   *          Instagram terbuka, dia jadi foto paling baru & tinggal dipilih.
-   */
-  async function jalankan(mode: 'save' | 'ig') {
+  function jalankan(mode: PhotoMode) {
     if (!user) return;
-    await kerja.run({
-      key: mode,
-      start: () => setError(null),
-      task: async () => {
-        await simpanKeFoto();
-        if (mode === 'ig') await openInstagram('app');
-        // Tombol "Generate Feed" di Home berhenti menagih setelah ini. Sengaja
-        // ditandai SESUDAH gambarnya jadi — gagal di tengah jalan tidak boleh
-        // membuat tombolnya hilang.
-        await markFeedGenerated(user.uid, todayId);
-      },
-      fail: (e) => setError(photoErrorMessage(e)),
-    });
+    return foto.jalankan(mode);
   }
 
   return (
@@ -158,22 +138,18 @@ export default function ReflectionFeedScreen() {
           <ActionStack>
             <PrimaryButton
               label="💾 Simpan ke Foto"
-              busy={kerja.busy === 'save'}
+              busy={foto.busy === 'save'}
               onPress={() => jalankan('save')}
               background={Color.MAIN_DARK}
             />
             <PrimaryButton
               label="📸 Buka Instagram"
-              busy={kerja.busy === 'ig'}
+              busy={foto.busy === 'ig'}
               onPress={() => jalankan('ig')}
               background={Color.SPIRITUAL_DARK}
             />
 
-            {saved === `${design.key}|${text}` && (
-              <VixText heading="label" additionalStyle={styles.savedNote}>
-                ✅ Tersimpan di Photos
-              </VixText>
-            )}
+            <PhotoSavedNote show={foto.tersimpan} />
           </ActionStack>
         </ScrollView>
       )}
@@ -188,5 +164,4 @@ const styles = StyleSheet.create({
   empty: { textAlign: 'center' },
   sectionTitle: { ...SECTION_SPACE },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  savedNote: { textAlign: 'center', color: Color.SUCCESS },
 });

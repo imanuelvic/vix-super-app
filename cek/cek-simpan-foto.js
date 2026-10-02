@@ -220,22 +220,29 @@ async function main() {
   // =====================================================================
   console.log('\n=== 4. Tombol & alurnya di layar ===');
   // =====================================================================
+  // 2 Okt 2026 (/rapihin): alur simpan-lalu-buka-Instagram ketiga layar kartu
+  // pindah ke SATU hook, hooks/useSaveToPhotos.ts. Urutan & penjaganya kini
+  // diperiksa di hook itu (sekali), layarnya cukup menyebut tujuannya.
+  const hook = baca('hooks/useSaveToPhotos.ts');
+  // Buka Instagram HARUS menyimpan dulu — kalau tidak, gambarnya tidak ada
+  // di galeri dan Instagram terbuka tanpa apa-apa untuk dipilih.
+  c('hook: Buka Instagram menyimpan dulu, baru membuka',
+    /await simpanKeFoto\(\);\s*\n\s*if \(mode === 'ig'\) await openInstagram\(instagram\);/.test(hook));
+  c('hook: gambar yang sama tidak disimpan dua kali',
+    /if \(saved === kunci\) return;/.test(hook));
+  c('hook: tak ada sisa share sheet', !/sharePng|Sharing\./.test(hook));
   const TOMBOL = [
-    ['app/reflection-feed.tsx', '💾 Simpan ke Foto', '📸 Buka Instagram', "openInstagram('app')"],
-    ['app/bible-story.tsx', '💾 Simpan ke Foto', '📸 Buka Instagram Story', "openInstagram('story')"],
+    ['app/reflection-feed.tsx', '💾 Simpan ke Foto', '📸 Buka Instagram', "instagram: 'app'"],
+    ['app/bible-story.tsx', '💾 Simpan ke Foto', '📸 Buka Instagram Story', "instagram: 'story'"],
   ];
-  for (const [f, simpan, ig, panggilan] of TOMBOL) {
+  for (const [f, simpan, ig, tujuan] of TOMBOL) {
     const src = baca(f);
     const nama = f.replace('app/', '').padEnd(22);
     c(`${nama} tombol 1 = "${simpan}"`, src.includes(`label="${simpan}"`));
     c(`${nama} tombol 2 = "${ig}"`, src.includes(`label="${ig}"`));
-    c(`${nama} tombol 2 mengarah ke Instagram`, src.includes(panggilan));
-    // Buka Instagram HARUS menyimpan dulu — kalau tidak, gambarnya tidak ada
-    // di galeri dan Instagram terbuka tanpa apa-apa untuk dipilih.
-    c(`${nama} Buka Instagram menyimpan dulu, baru membuka`,
-      new RegExp(`await simpanKeFoto\\(\\);\\s*\\n\\s*if \\(mode === 'ig'\\) await ${panggilan.replace(/[()']/g, (m) => '\\' + m)}`).test(src));
-    c(`${nama} gambar yang sama tidak disimpan dua kali`,
-      /if \(saved === kunci\) return;/.test(src));
+    c(`${nama} tombol 2 mengarah ke Instagram`, src.includes(tujuan));
+    c(`${nama} memakai alur bersamanya, bukan salinan`,
+      /useSaveToPhotos\(\{/.test(src) && !/simpanKeFoto|openInstagram\(/.test(src));
     c(`${nama} tak ada sisa share sheet`,
       !/sharePng|Sharing\./.test(src));
   }

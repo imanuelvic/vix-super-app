@@ -178,10 +178,14 @@ c('rupa, nomor arsip, pemenggal baris & penyimpan gambar kini di lib/shareImage'
 c('reflectionFeed TIDAK lagi menyalinnya sendiri',
   !/function wrapLines/.test(feed) && !/const FEED_DESIGNS: /.test(feed) &&
     !/function archiveNo/.test(feed) && !/function shareFeedPng/.test(feed));
+// 2 Okt 2026 (/rapihin): terusan `saveFeedToPhotos`, `openInstagram`, &
+// `photoErrorMessage` dibuang — simpan & buka Instagram kini lewat
+// hooks/useSaveToPhotos.ts, jadi terusan itu tak punya pemakai lagi.
 c('nama lamanya tetap tersedia → kartu Feed tak perlu diubah',
   /SHARE_DESIGNS as FEED_DESIGNS/.test(feed) &&
-    /savePngToPhotos as saveFeedToPhotos/.test(feed) &&
-    /type ShareDesign as FeedDesign/.test(feed));
+    /type ShareDesign as FeedDesign/.test(feed) &&
+    !/saveFeedToPhotos|openInstagram|photoErrorMessage/.test(
+      feed.replace(/^\s*\/\/.*$/gm, '')));
 c('bibleStory memakai bahan yang sama, tidak menyalin ulang',
   /from '\.\/shareImage'/.test(story) && !/function wrapLines/.test(story));
 // Urutan & namanya diubah pemiliknya jadi urutan waktu baca (Morning🌅 →

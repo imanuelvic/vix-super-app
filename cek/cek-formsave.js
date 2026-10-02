@@ -293,7 +293,14 @@ function lanjut3() {
     sisa.length === 0, sisa.join(', '));
 
   // Pemeriksaan isian TETAP di pemanggilnya — pesannya khas tiap form.
-  const punyaPesanSendiri = F.filter((f) => /setFormError\('[^']+'\)/.test(badan(baca(f))));
+  // (2 Okt 2026, /rapihin: kedua layar pertemuan kini bertanya ke formnya
+  // sendiri lewat `form.problem()` — pemeriksaannya tetap di handleSave
+  // layarnya & tetap milik form itu, bukan pindah ke useFormSave.)
+  const punyaPesanSendiri = F.filter((f) => {
+    const b = badan(baca(f));
+    return /setFormError\('[^']+'\)/.test(b) ||
+      /const masalah = form\.problem\(\);\s*\n\s*if \(masalah\) \{\s*\n\s*setFormError\(masalah\);/.test(b);
+  });
   c('pemeriksaan isian tetap di formnya masing-masing (pesannya beda-beda)',
     punyaPesanSendiri.length >= 17, `${punyaPesanSendiri.length}/18 form`);
 

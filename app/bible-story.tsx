@@ -10,15 +10,16 @@ import { ActionStack } from '@/components/common/ActionStack';
 import { CardPreview } from '@/components/common/CardPreview';
 import { Chip } from '@/components/common/Chip';
 import { FormInput } from '@/components/common/FormInput';
+import { PhotoSavedNote } from '@/components/common/PhotoSavedNote';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { ScreenError } from '@/components/common/ScreenError';
 import { ScreenHeader } from '@/components/common/ScreenHeader';
 import { ShareStylePicker } from '@/components/common/ShareStylePicker';
 import { VixText } from '@/components/common/VixText';
 import { BibleStoryCard } from '@/components/spiritual/BibleStoryCard';
-import { useBusyTask } from '@/hooks/useBusyTask';
 import { useCardPng } from '@/hooks/useCardPng';
 import { useNow } from '@/hooks/useNow';
+import { useSaveToPhotos } from '@/hooks/useSaveToPhotos';
 import {
   storyFileName,
   storyRefs,
@@ -27,14 +28,7 @@ import {
 } from '@/lib/bibleStory';
 import { bibleRefText, parseBibleRef } from '@/lib/bible';
 import { formatFullDate } from '@/lib/format';
-import {
-  archiveNo,
-  designOf,
-  openInstagram,
-  photoErrorMessage,
-  savePngToPhotos,
-  SHARE_DESIGNS,
-} from '@/lib/shareImage';
+import { archiveNo, designOf, SHARE_DESIGNS } from '@/lib/shareImage';
 import {
   BIBLE_VERSION_DEFAULT,
   bibleSessionMeta,
@@ -97,12 +91,6 @@ export default function BibleStoryScreen() {
   const [ayatSampai, setAyatSampai] = useState(awal.verseTo);
   const [verse, setVerse] = useState(bunyiAyat);
   const [pickedKey, setPickedKey] = useState(SHARE_DESIGNS[0].key);
-  // Tombol mana yang sedang bekerja — dua tombol, satu proses.
-  const kerja = useBusyTask<'save' | 'ig'>();
-  // Gambar mana yang SUDAH tersimpan di Foto (kunci = rupa + acuan + ayatnya).
-  // Dipakai supaya menekan "Buka Instagram" sesudah "Simpan" tidak menyimpan
-  // gambar yang sama dua kali ke galerimu.
-  const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { svgRef, buatPng } = useCardPng(STORY_W, STORY_H);
@@ -119,32 +107,16 @@ export default function BibleStoryScreen() {
   const reference =
     bibleRefText(dasar.book, dasar.chapter, ayatDari, ayatSampai) || dipilih;
 
-  /** Simpan ke Foto — dilewati kalau gambar yang persis sama sudah tersimpan. */
-  async function simpanKeFoto(): Promise<void> {
-    const kunci = `${design.key}|${reference}|${verse}`;
-    if (saved === kunci) return;
-    await savePngToPhotos(await buatPng(), storyFileName(todayId, reference));
-    setSaved(kunci);
-  }
-
-  /**
-   * `save` = simpan ke Foto saja.
-   * `ig`   = simpan ke Foto LALU buka kamera Story Instagram. Urutannya memang
-   *          begitu: iOS tidak mengizinkan app lain menaruh gambar langsung ke
-   *          dalam Instagram, jadi gambarnya harus sudah ada di galeri dulu —
-   *          di kamera Story, foto terbaru muncul di pojok kiri bawah.
-   */
-  async function buatStory(mode: 'save' | 'ig') {
-    await kerja.run({
-      key: mode,
-      start: () => setError(null),
-      task: async () => {
-        await simpanKeFoto();
-        if (mode === 'ig') await openInstagram('story');
-      },
-      fail: (e) => setError(photoErrorMessage(e)),
-    });
-  }
+  // 💾 Simpan ke Foto / 📸 simpan lalu buka kamera Story — alurnya milik
+  // bersama ketiga layar kartu (hooks/useSaveToPhotos.ts). Kunci gambarnya =
+  // rupa + acuan + ayatnya.
+  const foto = useSaveToPhotos({
+    kunci: `${design.key}|${reference}|${verse}`,
+    buatPng,
+    namaBerkas: storyFileName(todayId, reference),
+    instagram: 'story',
+    setError,
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -206,7 +178,7 @@ export default function BibleStoryScreen() {
                 keyboardType="number-pad"
                 value={ayatDari}
                 onChangeText={(v) => setAyatDari(v.replace(/\D/g, ''))}
-                editable={kerja.busy === null}
+                editable={foto.busy === null}
               />
             </View>
             <View style={styles.ayatBox}>
@@ -218,7 +190,7 @@ export default function BibleStoryScreen() {
                 keyboardType="number-pad"
                 value={ayatSampai}
                 onChangeText={(v) => setAyatSampai(v.replace(/\D/g, ''))}
-                editable={kerja.busy === null && !!ayatDari}
+                editable={foto.busy === null && !!ayatDari}
               />
             </View>
           </View>
@@ -229,7 +201,7 @@ export default function BibleStoryScreen() {
             value={verse}
             onChangeText={setVerse}
             multiline
-            editable={kerja.busy === null}
+            editable={foto.busy === null}
           />
 
           <CardPreview width={STORY_W} height={STORY_H} max={260}>
@@ -251,22 +223,18 @@ export default function BibleStoryScreen() {
           <ActionStack>
             <PrimaryButton
               label="💾 Simpan ke Foto"
-              busy={kerja.busy === 'save'}
-              onPress={() => buatStory('save')}
+              busy={foto.busy === 'save'}
+              onPress={() => foto.jalankan('save')}
               background={Color.MAIN_DARK}
             />
             <PrimaryButton
               label="📸 Buka Instagram Story"
-              busy={kerja.busy === 'ig'}
-              onPress={() => buatStory('ig')}
+              busy={foto.busy === 'ig'}
+              onPress={() => foto.jalankan('ig')}
               background={Color.SPIRITUAL_DARK}
             />
 
-            {saved === `${design.key}|${reference}|${verse}` && (
-              <VixText heading="label" additionalStyle={styles.savedNote}>
-                ✅ Tersimpan di Photos
-              </VixText>
-            )}
+            <PhotoSavedNote show={foto.tersimpan} />
           </ActionStack>
         </ScrollView>
       )}
@@ -287,5 +255,4 @@ const styles = StyleSheet.create({
   ayatBox: { flex: 1, gap: 4 },
   ayatLabel: { marginLeft: 2 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  savedNote: { textAlign: 'center', color: Color.SUCCESS },
 });

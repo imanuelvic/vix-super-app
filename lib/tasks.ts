@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  increment,
   limit,
   orderBy,
   query,
@@ -15,7 +16,7 @@ import {
 
 import { db } from './firebase';
 import { liveList } from './liveDoc';
-import { daysBetween } from './format';
+import { daysBetween, formatHourMinute } from './format';
 import { dayDocId } from './health';
 
 // Kategori task yang sudah pasti — ganti kategori = ganti to-do list.
@@ -48,8 +49,59 @@ export type Task = {
   done: boolean;
   category: TaskCategory;
   dayId: string; // "YYYY-MM-DD" — task milik hari apa
+  /** Catatan/detail di bawah judul (2 Okt 2026). Data lama tidak punya. */
+  note?: string;
+  /**
+   * ⏰ Jam pengingat "HH:MM" (24 jam), opsional (2 Okt 2026). Ada jamnya =
+   * HP berbunyi tepat di jam itu pada tanggal `dayId` (lib/notify.ts).
+   * null / tidak ada = tanpa jam, ikut pengingat kelompok seperti dulu.
+   */
+  time?: string | null;
+  /**
+   * Berapa kali task ini sudah ikut rollover (dipindah dari hari yang lewat
+   * ke hari ini). Belum ditampilkan; dicatat dulu supaya kebiasaan menunda
+   * bisa dibaca dari datanya nanti. Data lama tidak punya = 0.
+   */
+  carried?: number;
   createdAt: Timestamp | null;
 };
+
+/** "07:05" → { hour: 7, minute: 5 }. Apa pun yang bukan jam sah → null. */
+export function parseTaskTime(
+  time: string | null | undefined,
+): { hour: number; minute: number } | null {
+  const m = /^(\d{2}):(\d{2})$/.exec(time ?? '');
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  return hour < 24 && minute < 60 ? { hour, minute } : null;
+}
+
+/** Jam dari roda TimeField → "HH:MM", bentuk yang disimpan. */
+export function taskTimeOf(d: Date): string {
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+/** "07:05" → "07.05", gaya jam Indonesia seperti formatTime. '' kalau tanpa jam. */
+export function taskTimeLabel(time: string | null | undefined): string {
+  const t = parseTaskTime(time);
+  return t ? formatHourMinute(t.hour, t.minute) : '';
+}
+
+/**
+ * Urutan dalam satu hari: yang BERJAM dulu, urut jamnya; sesudahnya yang
+ * tanpa jam, urut dibuat (yang dibuat duluan di atas). `list` datang dari
+ * langganan yang terurut terbaru-dulu, jadi dibalik dulu, lalu diurut stabil.
+ */
+export function orderDayTasks(list: Task[]): Task[] {
+  const kunci = (t: Task) => {
+    const j = parseTaskTime(t.time);
+    return j ? j.hour * 60 + j.minute : 24 * 60;
+  };
+  return [...list].reverse().sort((a, b) => kunci(a) - kunci(b));
+}
 
 // Semua task milik satu user disimpan di: users/{uid}/tasks
 // Struktur ini bikin security rules gampang: kunci data ke pemiliknya.
@@ -96,24 +148,36 @@ export function subscribeTasks(
 
 export function addTask(
   uid: string,
-  title: string,
-  category: TaskCategory,
-  dayId: string,
+  data: {
+    title: string;
+    category: TaskCategory;
+    dayId: string;
+    note: string;
+    time: string | null;
+  },
 ) {
   return addDoc(tasksCollection(uid), {
-    title: title.trim(),
+    title: data.title.trim(),
+    note: data.note.trim(),
+    time: data.time,
     done: false,
-    category,
-    dayId,
+    category: data.category,
+    dayId: data.dayId,
     createdAt: serverTimestamp(),
   });
 }
 
-/** Ubah judul, pindahkan ke hari lain, dan/atau ganti kategori. */
+/** Ubah judul/catatan/jam, pindahkan ke hari lain, dan/atau ganti kategori. */
 export function updateTask(
   uid: string,
   id: string,
-  data: { title?: string; dayId?: string; category?: TaskCategory },
+  data: {
+    title?: string;
+    dayId?: string;
+    category?: TaskCategory;
+    note?: string;
+    time?: string | null;
+  },
 ) {
   return updateDoc(doc(db, 'users', uid, 'tasks', id), data);
 }
@@ -163,11 +227,14 @@ export function addRecurringTasks(
   title: string,
   category: TaskCategory,
   days: string[],
+  time: string | null,
 ) {
   const batch = writeBatch(db);
   for (const dayId of days) {
     batch.set(doc(tasksCollection(uid)), {
       title: title.trim(),
+      note: '',
+      time,
       done: false,
       category,
       dayId,
@@ -179,7 +246,8 @@ export function addRecurringTasks(
 
 /**
  * Beres-beres harian (satu batch):
- * - task lama yang BELUM selesai → pindah ke hari ini,
+ * - task lama yang BELUM selesai → pindah ke hari ini, dan hitungan
+ *   `carried`-nya naik satu (increment di server, jadi tidak perlu dibaca dulu),
  * - task lama yang SUDAH selesai → dihapus otomatis (biar bersih & hemat).
  */
 export function rolloverTasks(
@@ -190,7 +258,10 @@ export function rolloverTasks(
 ) {
   const batch = writeBatch(db);
   for (const t of moveTasks) {
-    batch.update(doc(db, 'users', uid, 'tasks', t.id), { dayId: todayId });
+    batch.update(doc(db, 'users', uid, 'tasks', t.id), {
+      dayId: todayId,
+      carried: increment(1),
+    });
   }
   for (const t of deleteTasks) {
     batch.delete(doc(db, 'users', uid, 'tasks', t.id));

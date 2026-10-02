@@ -38,11 +38,20 @@ ok(
 );
 const iHero = steps.indexOf('👣 Langkah hari ini');
 const iTutupHero = steps.indexOf('</SummaryCard>', iHero);
-const iRefresh = steps.indexOf('arrow.triangle.2.circlepath');
+// 2 Okt 2026: ikon hijau ➕ & 🔄 di kartu gelap ini diganti TULISAN putih
+// ("Tambah" · "Perbarui") di pil putih redup — ikonnya tenggelam di latar
+// merah tua kartu Health. Yang dijaga tetap tempat & syaratnya.
+const iRefresh = steps.indexOf("{hkBusy ? 'Memuat…' : 'Perbarui'}");
 ok('tombol muat-ulang sekarang DI DALAM kartu langkah hari ini',
   iRefresh > iHero && iRefresh < iTutupHero);
 ok('tombolnya cuma muncul kalau Apple Health memang aktif',
-  /hkStatus === 'ok' && \(\s*<PressableScale onPress=\{loadHk\}/.test(steps));
+  /hkStatus === 'ok' && \(\s*<PressableScale[\s\S]{0,120}onPress=\{loadHk\}/.test(steps));
+const kartuHero = steps.slice(iHero, iTutupHero);
+ok('kedua tombolnya tulisan PUTIH di pil putih redup, bukan ikon hijau',
+  /heroPillText: \{ color: Color\.TEXT_REVERSE \}/.test(steps) &&
+    /backgroundColor: Color\.SURFACE_ON_DARK/.test(steps) &&
+    />\s*Tambah\s*</.test(kartuHero) &&
+    !/<IconSymbol/.test(kartuHero) && !/color=\{Color\.MAIN\}/.test(kartuHero));
 ok('mati sementara saat sedang memuat', /disabled=\{hkBusy\}/.test(steps));
 ok('kotak statistik yang tak terpakai ikut dibuang (tak ada kode mati)',
   !/StatTile/.test(steps) && !/statTile/.test(steps) && !/STEP_TIERS/.test(steps));

@@ -261,6 +261,9 @@ console.log('\n=== 8. Pengingat 🌙 22.00 ===');
     // 30 Sep 2026: penagih 📍 wishlist bulan berjalan (tiap Senin) ikut
     // membacanya. Sama alasannya: yang diuji di blok ini cuma slot 🌙.
     timeline: { pending: 0, month: 'September', titles: [] },
+    // 2 Okt 2026: ⏰ reminder berjam juga dibaca penjadwal. Sama alasannya:
+    // yang diuji di blok ini cuma slot 🌙, jadi tidak ada yang diberi jam.
+    timed: [],
   });
   const slot = (night) =>
     N.buildSlots(model(night), null, { dayId: HARI }).find((s) => s.id === 'night-prayer');

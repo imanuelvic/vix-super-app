@@ -13,6 +13,12 @@ export const DELETE_ERROR = 'Gagal menghapus. Coba lagi.';
 /** Gagal mengambil/memilih foto (kamera atau galeri). */
 export const PHOTO_ERROR = 'Gagal mengambil foto. Coba lagi.';
 
+/**
+ * Isian yang menahan simpan karena CORE Leader-nya belum dipilih — formulir
+ * pertemuan (sub-tab Visitation & Visitation History) dan anggota Main Team.
+ */
+export const PICK_LEADER_FIRST = 'Pilih CORE Leader-nya dulu.';
+
 // ---------- Versi yang menyebut APA yang gagal ----------
 // Beberapa layar sengaja menyebut isinya ("Gagal memuat mutasi") — di layar
 // yang memuat beberapa hal sekaligus, "Gagal memuat data" tidak memberi tahu

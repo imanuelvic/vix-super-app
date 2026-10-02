@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED } from '@/assets/style/layout';
 import { attentionBorder, AttentionMark } from '@/components/common/Badge';
 import { CheckCircle } from '@/components/common/CheckCircle';
 import { Chip } from '@/components/common/Chip';
@@ -19,6 +19,7 @@ import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { SelectField } from '@/components/common/SelectField';
 import { SheetModal } from '@/components/common/SheetModal';
+import { StickyTop } from '@/components/common/StickyTop';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { useAuth } from '@/contexts/auth';
@@ -173,6 +174,16 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
 
   return (
     <View style={styles.flex}>
+      {/* Tombol tambah DIPATOK di atas daftar (standar app 28 Sep 2026):
+          tidak ikut tergulung saat daftarnya panjang. */}
+      <StickyTop>
+        <PrimaryButton
+          label="Tambah Reminder Prioritas"
+          icon="plus"
+          onPress={openAdd}
+        />
+      </StickyTop>
+
       <ScrollView
         ref={scrollRef}
         onContentSizeChange={onContentSizeChange}
@@ -189,13 +200,6 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
             </VixText>
           </VixText>
         </SummaryCard>
-
-        <PrimaryButton
-          label="Tambah Reminder Prioritas"
-          icon="plus"
-          onPress={openAdd}
-          additionalStyle={styles.addButton}
-        />
 
         {/* Filter kategori — emoji & urutan sama dengan sub-tab Reminder */}
         <FilterChips
@@ -375,10 +379,10 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { ...SCREEN_CONTENT, paddingBottom: 24 },
+  // Jarak atasnya 0: tombol tambah yang dipatok (StickyTop) sudah memegangnya.
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 24 },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
   heroCard: { gap: 2, marginBottom: CARD_GAP },
-  addButton: { marginBottom: CARD_GAP },
   card: {
     ...PANEL,
     flexDirection: 'row',

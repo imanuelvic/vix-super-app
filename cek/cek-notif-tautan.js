@@ -77,6 +77,9 @@ const model = (over = {}) => ({
   // 30 Sep 2026: penagih 📍 wishlist bulan berjalan (tiap Senin) ikut
   // membacanya. pending 0 = tidak ada yang ditagih, jadi slotnya diam.
   timeline: over.timeline || { pending: 0, month: 'September', titles: [] },
+  // 2 Okt 2026: ⏰ reminder berjam ikut dibaca penjadwal. Kosong = tidak ada
+  // yang diberi jam, jadi tidak ada slot sekali-jalan.
+  timed: over.timed || [],
 });
 const item = (section, id, href) => ({
   id, section, tier: 'today', rank: 3, emoji: '🔔', title: id, href,
@@ -261,8 +264,9 @@ console.log('\n=== 8. Layar Notification 📳 ===');
     !/\b(tekan|ditekan|menekan|ketuk|diketuk|tap)\b/i.test(s.replace(/^\s*\/\/.*$/gm, '')));
   // 27 Sep 2026: + kelompok 🎓 Target Learning (Sen · Rab · Jum · Min).
   // 30 Sep 2026: + kelompok 📍 Wishlist bulan ini (tiap Senin 08.00).
-  ok('ketiga belas kelompok punya keterangan tujuannya',
-    N.NOTIFY_GROUPS.length === 13 && N.NOTIFY_GROUPS.every((g) => typeof g.opens === 'string' && g.opens.length > 0));
+  // 2 Okt 2026: + kelompok ⏰ Reminder berjam (tepat di jam reminder-nya).
+  ok('keempat belas kelompok punya keterangan tujuannya',
+    N.NOTIFY_GROUPS.length === 14 && N.NOTIFY_GROUPS.every((g) => typeof g.opens === 'string' && g.opens.length > 0));
   const teks = N.NOTIFY_GROUPS.map((g) => `${g.label} ${g.when} ${g.opens}`);
   ok('tanpa em dash di teks yang terbaca',
     teks.every((t) => !t.includes(String.fromCharCode(0x2014))) &&

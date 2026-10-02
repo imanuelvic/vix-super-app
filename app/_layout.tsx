@@ -101,7 +101,6 @@ function RootNavigator() {
         <Stack.Screen name="revive" />
         <Stack.Screen name="revive-history" />
         {/* Riwayat Morning Journey (refleksi, respons, doa pagi per hari) */}
-        <Stack.Screen name="journey-history" />
         <Stack.Screen name="bible-reading" />
         {/* Ayat yang dibaca → gambar Instagram Story (vixtory.archive) */}
         <Stack.Screen name="bible-story" />

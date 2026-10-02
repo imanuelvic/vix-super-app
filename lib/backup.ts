@@ -87,11 +87,11 @@ export function backupDue(info: BackupInfo, todayId: string): boolean {
  */
 export function backupLine(info: BackupInfo, todayId: string): string {
   const umur = backupAgeDays(info, todayId);
-  if (umur === null) return '📦 Belum pernah diekspor sama sekali';
+  if (umur === null) return '📦 Belum pernah diekspor';
   const kapan =
     umur === 0 ? 'hari ini' : umur === 1 ? 'kemarin' : `${umur} hari lalu`;
   const tanggal = formatShortDayDate(dayIdToDate(info.lastDayId));
-  return `📦 Terakhir diekspor ${tanggal} (${kapan}) · ${info.docCount} dokumen`;
+  return `📦 Terakhir diekspor{"\n"}${tanggal} (${kapan}) · ${info.docCount} docs`;
 }
 
 /** Ajakan mencadangkan lagi — dipakai kartu System & baris Today. */

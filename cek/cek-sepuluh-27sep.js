@@ -251,8 +251,9 @@ console.log('\n=== 7. Notifikasi target Learning sesuai hari & jamnya ===');
   const notify = baca('lib/notify.ts');
   ok('slot berhari-tetap dijadwalkan WEEKLY, yang lain tetap DAILY',
     /s\.weekday === undefined\s*\n\s*\? \{ type: DAILY, hour: s\.hour, minute: s\.minute \}\s*\n\s*: \{ type: WEEKLY, weekday: s\.weekday, hour: s\.hour, minute: s\.minute \}/.test(notify));
+  // 2 Okt 2026: tanggal slot sekali-jalan (⏰ reminder berjam) ikut di depannya.
   ok('harinya ikut masuk sidik jadwal (ganti hari = dijadwalkan ulang)',
-    /\$\{s\.weekday \?\? '\*'\}/.test(notify));
+    /\$\{s\.date \?\? s\.weekday \?\? '\*'\}/.test(notify));
   ok('kelompoknya bisa dimatikan sendiri seperti kelompok lain',
     /\{ key: 'learning', emoji: '🎓', label: 'Target Learning'/.test(notify));
   // buildSlots itu fungsi MURNI — harinya harus datang dari dayId yang

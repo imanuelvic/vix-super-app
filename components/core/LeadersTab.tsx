@@ -54,7 +54,7 @@ import {
 } from '@/lib/core';
 import { dayId, dayIdToDate, MONTH_NAMES } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
-import { DELETE_ERROR, SAVE_ERROR } from '@/lib/messages';
+import { DELETE_ERROR, PICK_LEADER_FIRST, SAVE_ERROR } from '@/lib/messages';
 import { localPhone } from '@/lib/phone';
 
 /**
@@ -323,7 +323,7 @@ export function LeadersTab({
       return;
     }
     if (!mtLeaderId) {
-      setMtFormError('Pilih CORE Leader-nya dulu.');
+      setMtFormError(PICK_LEADER_FIRST);
       return;
     }
     setBusy(true);

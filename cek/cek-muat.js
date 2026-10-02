@@ -314,9 +314,13 @@ async function jalan() {
     !/healthKitStatus/.test(stepsTab) && !/healthKitStatus/.test(stepsScreen));
 
   console.log('\n=== Yang tidak boleh berubah di layarnya ===');
-  ok('tombol 🔄 Steps tetap padam selagi mengambil',
+  // 2 Okt 2026: ikon 🔄 jadi tulisan putih "Perbarui" (ikon hijaunya tenggelam
+  // di kartu gelap). Padamnya kini: tombol mati, tulisannya "Memuat…", pilnya
+  // diredupkan.
+  ok('tombol Perbarui Steps tetap padam selagi mengambil',
     /disabled=\{hkBusy\}/.test(stepsTab) &&
-    /hkBusy \? Color\.TEXT_PLACEHOLDER : Color\.MAIN/.test(stepsTab));
+    /\{hkBusy \? 'Memuat…' : 'Perbarui'\}/.test(stepsTab) &&
+    /hkBusy && styles\.heroPillBusy/.test(stepsTab));
   ok('backfill riwayat Apple Health tetap sekali per buka (tidak ikut diutak-atik)',
     /backfilled\.current = true/.test(stepsTab) &&
     /backfilledRef\.current = true/.test(stepsScreen));

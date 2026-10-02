@@ -67,7 +67,6 @@ const ROUTE_FEATURE: Record<string, string> = {
   gratitude: 'spiritual',
   'morning-journey': 'spiritual',
   'night-prayer': 'spiritual',
-  'journey-history': 'spiritual',
   'pause-pray': 'spiritual',
   'reflection-feed': 'spiritual',
   'reminder-share': 'spiritual',

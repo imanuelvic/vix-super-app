@@ -3,6 +3,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import type { RewardHint } from './reward';
 import { PACE_EMOJI } from './financeInsight';
+import { formatHourMinute } from './format';
 import {
   isi,
   pilihKalimat,
@@ -114,6 +115,7 @@ export type NotifyGroup =
   | 'core'
   | 'work'
   | 'life'
+  | 'reminder'
   | 'finance'
   | 'reflection'
   | 'reward'
@@ -139,6 +141,9 @@ export const NOTIFY_GROUPS: NotifyGroupMeta[] = [
   { key: 'core', emoji: '👥', label: 'CORE hari ini', when: 'Tiap pagi 08.30, kalau ada yang menunggu', opens: 'CORE 👥, atau layar barisnya' },
   { key: 'work', emoji: '💼', label: 'Work hari ini', when: 'Tiap pagi 09.30, kalau ada tenggat', opens: 'Work 💼, atau layar barisnya' },
   { key: 'life', emoji: '🌿', label: 'Life hari ini', when: 'Tiap sore 17.30, kalau ada yang belum', opens: 'All Reminder 🔔, atau layar barisnya' },
+  // 2 Okt 2026: reminder yang diberi jam berbunyi SENDIRI tepat di jamnya,
+  // satu notifikasi per reminder, bukan digabung seperti kelompok di atas.
+  { key: 'reminder', emoji: '⏰', label: 'Reminder berjam', when: 'Tepat di jam yang dipilih di Reminder, kalau belum dicentang', opens: 'Reminder 🔔, di kategori reminder itu' },
   { key: 'finance', emoji: '💰', label: 'Finance', when: 'Pagi 07.30 status · malam 20.30 catat pengeluaran', opens: 'Finance 💰' },
   { key: 'reward', emoji: '🏆', label: 'Pencapaian', when: 'Tiap malam 19.00, kalau ada yang hampir kebuka', opens: 'Reward 🏆' },
   { key: 'fitness', emoji: '💪', label: 'Olahraga hari ini', when: 'Tiap malam 21.00, kalau belum dicatat & tidak dilewati', opens: 'Fitness 💪, sub-tab Exercise' },
@@ -243,7 +248,20 @@ export type NotifySlot = {
    * berbunyi juga hari Selasa — dan itu menagih hal yang belum jadi giliran.
    */
   weekday?: number;
+  /**
+   * Berbunyi SEKALI saja, di tanggal ini ("YYYY-MM-DD"), bukan berulang.
+   * Dipakai ⏰ reminder berjam (2 Okt 2026): tiap reminder punya tanggal &
+   * jamnya sendiri, jadi pemicu harian/mingguan salah untuknya.
+   */
+  date?: string;
 };
+
+/** Saat berbunyinya slot sekali-jalan (`date`), dalam jam lokal. */
+export function saatSlot(s: NotifySlot): Date | null {
+  if (!s.date) return null;
+  const [y, m, d] = s.date.split('-').map(Number);
+  return new Date(y, m - 1, d, s.hour, s.minute);
+}
 
 /** Layar induk tiap kelompok. Bentuknya polos, sama dengan href baris Today. */
 const RUTE_JOURNEY: TodayHref = { pathname: '/morning-journey' };
@@ -581,6 +599,24 @@ export function buildSlots(
     }
   }
 
+  // ⏰ Reminder berjam — satu notifikasi per reminder, sekali jalan di
+  // tanggal & jamnya sendiri. Daftarnya sudah dipangkas Today Engine
+  // (TIMED_MAX), jadi jumlahnya tetap jauh di bawah batas 64 milik iOS.
+  // Judulnya jamnya, isinya reminder-nya, sama seperti baris Today-nya.
+  for (const t of model.timed) {
+    slots.push({
+      id: `reminder-${t.id}`,
+      group: 'reminder',
+      date: t.dayId,
+      hour: t.hour,
+      minute: t.minute,
+      title: `⏰ Reminder ${formatHourMinute(t.hour, t.minute)}`,
+      // Judul reminder boleh berparagraf; lock screen cuma butuh satu baris.
+      body: `${t.emoji} ${t.title.replace(/\s+/g, ' ').trim()}`.slice(0, 180),
+      route: t.href,
+    });
+  }
+
   // Bacaan yang jendelanya sedang terbuka & belum diisi disebut lebih tegas,
   // dan tujuan click-nya memakai href baris Todaynya sendiri.
   for (const b of bacaan) {
@@ -794,8 +830,14 @@ export async function syncNotifications(
   };
 
   const slots: NotifySlot[] = [];
+  const sekarang = Date.now();
   for (const s of buildSlots(model, finance, opts)) {
     if (s.body === null) continue;
+    // ⏰ Sekali-jalan yang jamnya sudah lewat tidak dijadwalkan: pemicu
+    // tanggal di masa lalu ditolak sistem, dan penolakan itu akan menggagalkan
+    // seluruh jadwal di bawahnya (catch → semua diulang dari nol).
+    const saat = saatSlot(s);
+    if (saat && saat.getTime() <= sekarang) continue;
     if (!(await groupEnabled(s.group))) continue;
     slots.push(s);
   }
@@ -803,7 +845,7 @@ export async function syncNotifications(
   const sidik = `${jumlahHariIni}|${slots
     .map(
       (s) =>
-        `${s.id}@${s.weekday ?? '*'}/${s.hour}:${s.minute}|${s.title}|${s.body}|${tujuanTeks(s.route)}`,
+        `${s.id}@${s.date ?? s.weekday ?? '*'}/${s.hour}:${s.minute}|${s.title}|${s.body}|${tujuanTeks(s.route)}`,
     )
     .join('\n')}`;
   if (sidik === terakhir) return;
@@ -818,8 +860,11 @@ export async function syncNotifications(
     // hari. iOS yang mengurus harinya, jadi ia tetap tepat walau app-nya
     // seminggu tidak dibuka.
     const WEEKLY = mod.SchedulableTriggerInputTypes.WEEKLY;
+    // Pemicu TANGGAL untuk ⏰ reminder berjam: berbunyi sekali, lalu selesai.
+    const DATE = mod.SchedulableTriggerInputTypes.DATE;
     const ids: string[] = [];
     for (const s of slots) {
+      const saat = saatSlot(s);
       ids.push(
         await mod.scheduleNotificationAsync({
           content: {
@@ -834,8 +879,9 @@ export async function syncNotifications(
               group: s.group,
             },
           },
-          trigger:
-            s.weekday === undefined
+          trigger: saat
+            ? { type: DATE, date: saat }
+            : s.weekday === undefined
               ? { type: DAILY, hour: s.hour, minute: s.minute }
               : { type: WEEKLY, weekday: s.weekday, hour: s.hour, minute: s.minute },
         }),

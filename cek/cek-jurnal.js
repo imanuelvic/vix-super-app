@@ -212,14 +212,20 @@ ok('gambarnya dibuat pada ukuran SEBENARNYA, bukan sebesar pratinjau',
   /useCardPng\(FEED_W, FEED_H\)/.test(layar) && /width=\{FEED_W\}/.test(layar) &&
     /toDataURL\(\(data\) => resolve\(data\), \{ width, height \}\)/.test(
       baca('hooks/useCardPng.ts')));
+// 2 Okt 2026 (/rapihin): alur simpan-lalu-buka-Instagram pindah ke hook
+// bersama ketiga layar kartu (hooks/useSaveToPhotos.ts). Penandanya kini
+// langkah `sesudah` milik hook itu — dijalankan SESUDAH simpan & buka.
+const alurFoto = kodeSaja(baca('hooks/useSaveToPhotos.ts'));
 ok('ditandai sudah dibuat SESUDAH gambarnya jadi',
-  /await simpanKeFoto\(\);[\s\S]{0,200}await markFeedGenerated\(user\.uid, todayId\);/.test(layar));
+  /await simpanKeFoto\(\);\s*\n\s*if \(mode === 'ig'\) await openInstagram\(instagram\);\s*\n\s*if \(sesudah\) await sesudah\(\);/.test(alurFoto) &&
+    /sesudah: async \(\) => \{\s*\n\s*if \(user\) await markFeedGenerated\(user\.uid, todayId\);/.test(layar));
 ok('belum menulis refleksi → dijelaskan, bukan layar kosong',
   /Refleksi hari ini belum ditulis/.test(layar));
 ok('dua tombol tidak bisa ditekan berbarengan',
-  /useBusyTask<'save' \| 'ig'>\(\)/.test(layar) &&
-    /busy=\{kerja\.busy === 'save'\}/.test(layar) &&
-    /busy=\{kerja\.busy === 'ig'\}/.test(layar));
+  /export type PhotoMode = 'save' \| 'ig';/.test(alurFoto) &&
+    /useBusyTask<PhotoMode>\(\)/.test(alurFoto) &&
+    /busy=\{foto\.busy === 'save'\}/.test(layar) &&
+    /busy=\{foto\.busy === 'ig'\}/.test(layar));
 
 // ================= 8. Tombol Generate Feed di Home =================
 // 22 Sep 2026: kartu Refleksi Home → blok Refleksi di Today (Today Engine +

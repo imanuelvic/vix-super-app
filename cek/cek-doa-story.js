@@ -160,11 +160,16 @@ c('ukuran & rasio Story dipakai apa adanya', /STORY_W/.test(doa) && /STORY_H/.te
 c('tiga style yang sama (Morning/Midday/Night)',
   /<ShareStylePicker value=\{design\.key\} onChange=\{setPickedKey\} \/>/.test(doa) &&
     /SHARE_DESIGNS\.map/.test(baca('components/common/ShareStylePicker.tsx')));
-c('simpan ke Foto', /savePngToPhotos/.test(doa));
-c('buka kamera Story Instagram', /openInstagram\('story'\)/.test(doa));
+// 2 Okt 2026 (/rapihin): simpan & buka Instagram lewat hook bersama ketiga
+// layar kartu (hooks/useSaveToPhotos.ts); urutan & penjaganya diuji di
+// cek-simpan-foto.js.
+const alurFoto = kode('hooks/useSaveToPhotos.ts');
+c('simpan ke Foto', /useSaveToPhotos\(\{/.test(doa) && /savePngToPhotos/.test(alurFoto));
+c('buka kamera Story Instagram', /instagram: 'story'/.test(doa));
 c('nomor arsip vixtory ikut', /archiveNo\(todayId\)/.test(doa));
 c('nama berkasnya lewat helper bersama', /storyFileName\(todayId, NAMA_BERKAS\)/.test(doa));
-c('gambar sama tidak tersimpan dua kali ke galeri', /if \(saved === kunci\) return;/.test(doa));
+c('gambar sama tidak tersimpan dua kali ke galeri',
+  /kunci: `\$\{design\.key\}\|\$\{doa\}`/.test(doa) && /if \(saved === kunci\) return;/.test(alurFoto));
 c('doa kosong tidak bisa disimpan', /if \(!doa\) return;/.test(doa));
 // 23 Sep 2026: hitungan pratinjaunya pindah ke <CardPreview/> (satu tempat
 // untuk keempat layar kartu). Jaminannya sama: kanvas penuh, lalu dikecilkan.

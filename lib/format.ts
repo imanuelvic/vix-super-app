@@ -34,9 +34,17 @@ export function formatFullDate(d: Date): string {
 
 /** "14.05" — jam:menit gaya Indonesia (pemisah titik), selalu 2 digit. */
 export function formatTime(d: Date): string {
-  const h = String(d.getHours()).padStart(2, '0');
-  const m = String(d.getMinutes()).padStart(2, '0');
-  return `${h}.${m}`;
+  return formatHourMinute(d.getHours(), d.getMinutes());
+}
+
+/**
+ * Bentuk yang sama dengan `formatTime`, tapi dari angka jam & menit — untuk
+ * jam yang tidak hidup sebagai Date (jam reminder, slot pengingat, hitungan
+ * menit). Satu penulis "HH.MM" untuk seluruh app, jadi jam 7 lewat 5 tidak
+ * tercetak "7.5" di satu tempat dan "07.05" di tempat lain.
+ */
+export function formatHourMinute(hour: number, minute: number): string {
+  return `${String(hour).padStart(2, '0')}.${String(minute).padStart(2, '0')}`;
 }
 
 /** Rabu, 22 Juli 2026 · 14.05 */

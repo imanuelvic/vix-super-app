@@ -39,7 +39,6 @@ export const FEATURE_INDEX: FeatureEntry[] = [
   e('🙏', 'Riwayat Syukur', 'Walk', { pathname: '/gratitude' }, 'syukur', 'gratitude', 'bersyukur', '3 hal'),
   e('⏸️', 'Pause & Pray', 'Walk', { pathname: '/pause-pray' }, 'pause', 'pray', 'doa singkat', 'story'),
   e('🖼️', 'Reflection Feed', 'Walk', { pathname: '/reflection-feed' }, 'feed', 'instagram', 'refleksi', 'jurnal gambar'),
-  e('🌤️', 'Riwayat Morning Journey', 'Walk', { pathname: '/journey-history' }, 'riwayat journey', 'pagi'),
   e('🕊️', 'Bagikan Reminder', 'Walk', { pathname: '/reminder-share' }, 'reminder', 'bagikan', 'kartu'),
 
   // 👥 CORE

@@ -103,10 +103,14 @@ console.log('\n=== 1. Kelompok & jam ===');
     jam(cari(s, 'bible-daytime')) === '12.30' && jam(cari(s, 'bible-night')) === '21.15' &&
     jam(cari(s, 'finance-morning')) === '7.30' && jam(cari(s, 'finance-evening')) === '20.30' &&
     jam(cari(s, 'reflection')) === '21.30' && jam(cari(s, 'night-prayer')) === '22.00');
+  // 2 Okt 2026: + ⏰ Reminder berjam. Kelompok ke-14 ini cuma punya slot
+  // kalau ada reminder yang diberi jam, jadi di fixture kosong ini yang
+  // terpakai tetap 13 (dijalankan atas fixture berisi di cek-reminder-jam.js).
   ok('tiap kelompok punya keterangan jam di layar pengaturan',
-    N.NOTIFY_GROUPS.length === 13 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
-  ok('kelompoknya sama dengan yang dipakai slot',
-    new Set(s.map((x) => x.group)).size === 13);
+    N.NOTIFY_GROUPS.length === 14 && N.NOTIFY_GROUPS.every((g) => g.emoji && g.label && g.when));
+  ok('kelompoknya sama dengan yang dipakai slot (⏰ menunggu reminder berjam)',
+    new Set(s.map((x) => x.group)).size === 13 &&
+    N.NOTIFY_GROUPS.filter((g) => !s.some((x) => x.group === g.key)).map((g) => g.key).join() === 'reminder');
 }
 
 // =====================================================================

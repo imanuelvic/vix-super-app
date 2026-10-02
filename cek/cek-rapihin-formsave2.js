@@ -87,8 +87,10 @@ ok('LOAD_ERROR untuk saran tetap lewat useAsyncData', /useAsyncData\(muatSaran, 
 console.log('\n=== Tasks ✅: sheet task ===');
 ok('memakai hook + setBusy untuk hapus',
   /const \{ busy, setBusy, formError, setFormError, save \} = useFormSave\(\);/.test(tasks));
+// 2 Okt 2026: addTask & updateTask kini membawa catatan & jam (⏰), jadi isi
+// di antaranya lebih panjang; bentuk alurnya tetap sama persis.
 ok('simpan sheet lewat save(): baru → addTask, ubah → updateTask (pindah hari)',
-  /await save\(async \(\) => \{\s*\n\s*if \(editing === 'new'\) \{\s*\n\s*await addTask\([\s\S]{0,300}setEditing\(null\);\s*\n\s*\}\);/.test(tasks));
+  /await save\(async \(\) => \{\s*\n\s*if \(editing === 'new'\) \{\s*\n\s*await addTask\([\s\S]{0,500}setEditing\(null\);\s*\n\s*\}\);/.test(tasks));
 ok('hapus task TIDAK berubah: tanpa catch, sheet selalu ditutup di finally',
   /async function handleDelete\(\) \{[\s\S]{0,120}setBusy\(true\);\s*\n\s*try \{\s*\n\s*await deleteTask\(user\.uid, editing\.id\);\s*\n\s*\} finally \{\s*\n\s*setEditing\(null\);\s*\n\s*setBusy\(false\);/.test(tasks));
 ok('reminder berulang tetap pesan khususnya sendiri (rBusy/rError)',

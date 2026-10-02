@@ -216,13 +216,10 @@ console.log('\n=== 2. 🙏 Chip kategori pokok doa di langkah Pray ===');
     /prayer: '',\s*\n\s*prayerTopics: \[\],/.test(spi));
 
   // ---- Terbaca lagi di riwayat ----
+  // (2 Okt 2026: layar Riwayat Morning Journey dihapus; arsip Revive yang
+  // dibuka dari Revive History jadi satu-satunya tempat membacanya.)
   ok('kategori doanya ikut terlihat di arsip Revive',
     /prayerTopicsLine\(entry\.prayerTopics\)/.test(baca('app/revive.tsx')));
-  const rh = baca('app/journey-history.tsx');
-  ok('…dan di Riwayat Morning Journey',
-    /prayerTopicsLine\(d\.entry\?\.prayerTopics\)/.test(rh));
-  ok('…termasuk ikut tercari lewat kolom cari',
-    /prayerTopicsLine\(e\?\.prayerTopics\)/.test(rh));
 }
 
 // =====================================================================

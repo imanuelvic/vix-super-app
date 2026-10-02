@@ -141,9 +141,6 @@ export function RecordTab({
           ))}
         </View>
 
-        {/* Jam besarnya. Angkanya `tabular-nums` lewat lebar tetap font Inter
-            tidak ada, jadi yang menjaga ia tidak bergoyang tiap detik adalah
-            `textAlign: center` di kotak selebar layar. */}
         <View style={styles.watchCard}>
           <VixText heading="label" additionalStyle={styles.watchKind}>
             {meta.emoji} {meta.label}
@@ -152,18 +149,8 @@ export function RecordTab({
           <VixText additionalStyle={styles.watchTime}>
             {formatClock(watch.seconds)}
           </VixText>
-          <VixText heading="label" additionalStyle={styles.watchHint}>
-            {!watch.active
-              ? 'Click Mulai, lalu HP boleh dikantongi'
-              : watch.running
-                ? 'Sedang berjalan · waktunya tetap jalan walau layar mati'
-                : 'Dijeda · lanjutkan atau selesaikan'}
-          </VixText>
         </View>
 
-        {/* Tombolnya tiga keadaan, dan tiap keadaan cuma menawarkan yang masuk
-            akal saat itu. Sebelum mulai tidak ada "Selesai", karena belum ada
-            yang bisa diselesaikan. */}
         {!watch.active ? (
           <PressableScale
             style={[styles.bigButton, !watch.ready && styles.disabled]}
@@ -217,8 +204,7 @@ export function RecordTab({
 
         {day.logs.length === 0 ? (
           <EmptyText>
-            Belum ada sesi yang direkam hari ini. Yang kamu rekam di sini masuk
-            ke riwayat olahraga, terpisah dari centang gerakan di Exercise ⏱️
+            Belum ada rekam hari ini.
           </EmptyText>
         ) : (
           day.logs.map((l, i) => {
@@ -388,7 +374,6 @@ const styles = StyleSheet.create({
     lineHeight: 64,
     fontFamily: 'Inter_700Bold',
   },
-  watchHint: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   bigButton: {
     backgroundColor: Color.FITNESS_DARK,
     borderRadius: 999,

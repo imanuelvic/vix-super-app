@@ -14,9 +14,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FIELD } from '@/assets/style/card';
+import { CARD, FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
+import { SCREEN_CONTENT_PINNED, SCREEN_SAFE } from '@/assets/style/layout';
 import { AttentionMark } from '@/components/common/Badge';
 import {
     BottomTabs,
@@ -34,17 +34,26 @@ import { FormInput } from '@/components/common/FormInput';
 import { LoadingCenter } from '@/components/common/LoadingCenter';
 import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
+import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { SheetModal } from '@/components/common/SheetModal';
+import { StickyTop } from '@/components/common/StickyTop';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { PriorityTab } from '@/components/tasks/PriorityTab';
+import { ReminderTimeField } from '@/components/tasks/ReminderTimeField';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useFormSave } from '@/hooks/useFormSave';
 import { useLiveAll } from '@/hooks/useLiveAll';
 import { useMonthCursor } from '@/hooks/useMonthCursor';
 import { useScrollTop } from '@/hooks/useScrollTop';
-import { dayIdToDate, formatDayMonth, MONTH_NAMES } from '@/lib/format';
+import {
+    dayIdToDate,
+    formatDayMonth,
+    MONTH_NAMES,
+    monthId,
+    whenLabel,
+} from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { loadErrorOf, saveErrorOf } from '@/lib/messages';
 import {
@@ -54,12 +63,19 @@ import {
     effectiveOtherTask,
     generateRecurringDays,
     MAX_RECURRING,
+    OTHER_REMINDER_DAYS,
+    orderDayTasks,
+    otherTaskDaysUntil,
+    parseTaskTime,
     pruneOrphanTasks,
     rolloverTasks,
+    setOtherTaskDone,
     setTaskDone,
     subscribeOtherTasks,
     subscribeTasks,
     TASK_CATEGORIES,
+    taskTimeLabel,
+    taskTimeOf,
     updateTask,
     type OtherTask,
     type Task,
@@ -79,6 +95,13 @@ type DropRect = { key: string; x: number; y: number; w: number; h: number };
 // arahkan kotaknya ke target, bukan jarinya.
 const GHOST_HEIGHT = 43;
 const DROP_DY = GHOST_HEIGHT / 2; // jarak dari jari ke tengah kotak (titik jatuh)
+
+/** Jam bawaan saat "Pakai Jam" dipilih: jam bulat berikutnya (14.20 → 15.00). */
+function nextHour(): Date {
+  const d = new Date();
+  d.setHours(d.getHours() + 1, 0, 0, 0);
+  return d;
+}
 
 // Tab bar bawah layar Task — Harian (planner) & Prioritas (catatan penting).
 const MAIN_TABS: BottomTab<MainTab>[] = [
@@ -163,7 +186,11 @@ export default function TasksScreen() {
   // Sheet tambah/edit task.
   const [editing, setEditing] = useState<Task | 'new' | null>(null);
   const [fTitle, setFTitle] = useState('');
+  const [fNote, setFNote] = useState('');
   const [fDate, setFDate] = useState(new Date());
+  // ⏰ Jam pengingat: dipakai atau tidak, dan jamnya (cuma jam-menit).
+  const [fTimeOn, setFTimeOn] = useState(false);
+  const [fTime, setFTime] = useState(nextHour);
   // Penanda sibuk + pesan gagal sheet task (hook bersama); setBusy-nya
   // dipakai handleDelete yang sengaja tanpa pesan gagal.
   const { busy, setBusy, formError, setFormError, save } = useFormSave();
@@ -183,6 +210,8 @@ export default function TasksScreen() {
   const [rFreq, setRFreq] = useState<'weekly' | 'monthly'>('weekly');
   const [rStart, setRStart] = useState(new Date());
   const [rEnd, setREnd] = useState(new Date());
+  const [rTimeOn, setRTimeOn] = useState(false);
+  const [rTime, setRTime] = useState(nextHour);
   const [rError, setRError] = useState<string | null>(null);
   const [rBusy, setRBusy] = useState(false);
 
@@ -214,7 +243,7 @@ export default function TasksScreen() {
         setLoading(false);
       },
       () => {
-        setError(loadErrorOf('task'));
+        setError(loadErrorOf('reminder'));
         setLoading(false);
       },
     ),
@@ -231,7 +260,7 @@ export default function TasksScreen() {
     const toDelete = past.filter((t) => t.done);
     rolling.current = true;
     rolloverTasks(user.uid, toMove, toDelete, todayId)
-      .catch(() => setError('Gagal membereskan task lama. Coba buka ulang.'))
+      .catch(() => setError('Gagal membereskan reminder lama. Coba buka ulang.'))
       .finally(() => {
         rolling.current = false;
       });
@@ -255,9 +284,28 @@ export default function TasksScreen() {
   }
 
   const shown = tasks.filter((t) => t.category === category);
-  const remaining = shown.filter((t) => !t.done).length;
+  // Angka di samping nama bulan = yang BELUM selesai di bulan yang sedang
+  // dilihat, mulai hari ini (hari lewat memang tidak digambar). Dulu ia
+  // menghitung seluruh bulan sekaligus, jadi tidak cocok dengan daftarnya.
+  const monthPrefix = `${monthId(year, month)}-`;
+  const remaining = shown.filter(
+    (t) => !t.done && t.dayId.startsWith(monthPrefix) && t.dayId >= todayId,
+  ).length;
   const activeMeta = TASK_CATEGORIES.find((c) => c.key === category)!;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // 📌 Deadline dekat — Reminder Prioritas kategori ini yang belum selesai &
+  // deadline-nya sudah masuk H-7 (termasuk yang lewat), ditaruh di atas daftar
+  // Daily supaya tidak perlu pindah tab untuk melihatnya. Aturan H-7 & P1
+  // efektifnya SAMA dengan tab Priority (effectiveOtherTask), bukan salinan.
+  const deadlineSoon = otherTasks
+    .filter((t) => !t.done && (t.category ?? 'personal') === category)
+    .map((t) => ({ item: effectiveOtherTask(t, now), days: otherTaskDaysUntil(t, now) }))
+    .filter(
+      (x): x is { item: OtherTask; days: number } =>
+        x.days !== null && x.days <= OTHER_REMINDER_DAYS,
+    )
+    .sort((a, b) => a.days - b.days);
 
   async function handleToggle(item: Task) {
     if (!user) return;
@@ -269,19 +317,38 @@ export default function TasksScreen() {
     }
   }
 
+  // Centang reminder prioritas langsung dari section 📌 (selesai → hilang
+  // dari section ini, tetap tercatat selesai di tab Priority).
+  async function handleTogglePriority(item: OtherTask) {
+    if (!user) return;
+    setError(null);
+    try {
+      await setOtherTaskDone(user.uid, item.id, !item.done);
+    } catch {
+      setError(saveErrorOf('perubahan'));
+    }
+  }
+
   function openAdd(date: Date) {
     setEditing('new');
     setFTitle('');
+    setFNote('');
     setFDate(date);
+    setFTimeOn(false);
+    setFTime(nextHour());
     setFormError(null);
   }
 
   function openEdit(item: Task) {
     setEditing(item);
     setFTitle(item.title);
+    setFNote(item.note ?? '');
     // dayId "YYYY-MM-DD" → Date lokal.
     const [y, m, d] = item.dayId.split('-').map(Number);
     setFDate(new Date(y, m - 1, d));
+    const jam = parseTaskTime(item.time);
+    setFTimeOn(jam !== null);
+    setFTime(jam ? new Date(y, m - 1, d, jam.hour, jam.minute) : nextHour());
     setFormError(null);
   }
 
@@ -289,17 +356,26 @@ export default function TasksScreen() {
     if (!user || !editing || busy) return;
     const title = fTitle.trim();
     if (!title) {
-      setFormError('Isi task-nya dulu ya.');
+      setFormError('Isi reminder-nya dulu ya.');
       return;
     }
+    const time = fTimeOn ? taskTimeOf(fTime) : null;
     await save(async () => {
       if (editing === 'new') {
-        await addTask(user.uid, title, category, dayDocId(fDate));
+        await addTask(user.uid, {
+          title,
+          category,
+          dayId: dayDocId(fDate),
+          note: fNote,
+          time,
+        });
       } else {
         // Ganti tanggal = pindah hari (pengganti drag & drop).
         await updateTask(user.uid, editing.id, {
           title,
           dayId: dayDocId(fDate),
+          note: fNote.trim(),
+          time,
         });
       }
       setEditing(null);
@@ -324,6 +400,8 @@ export default function TasksScreen() {
     setRStart(start);
     // Default rentang: satu bulan ke depan.
     setREnd(new Date(start.getFullYear(), start.getMonth() + 1, start.getDate()));
+    setRTimeOn(false);
+    setRTime(nextHour());
     setRError(null);
     setSheetView('recur');
   }
@@ -350,13 +428,19 @@ export default function TasksScreen() {
       return;
     }
     if (recurDays.length > MAX_RECURRING) {
-      setRError(`Maksimal ${MAX_RECURRING} task, persempit rentangnya.`);
+      setRError(`Maksimal ${MAX_RECURRING} reminder, persempit rentangnya.`);
       return;
     }
     setRBusy(true);
     setRError(null);
     try {
-      await addRecurringTasks(user.uid, rTitle, category, recurDays);
+      await addRecurringTasks(
+        user.uid,
+        rTitle,
+        category,
+        recurDays,
+        rTimeOn ? taskTimeOf(rTime) : null,
+      );
       setSheetView(null);
     } catch {
       setRError('Gagal membuat reminder. Cek koneksi internet.');
@@ -516,7 +600,7 @@ export default function TasksScreen() {
               <IconSymbol name="chevron.right" size={20} color={Color.MAIN} />
             </PressableScale>
             <VixText heading="label" additionalStyle={styles.remainingText}>
-              {remaining} task tercatat
+              {remaining} belum selesai
             </VixText>
           </View>
         )}
@@ -580,6 +664,19 @@ export default function TasksScreen() {
             })}
           </ChipRow>
 
+          {/* Tombol tambah DIPATOK di atas daftar (standar app 28 Sep 2026):
+              tidak ikut tergulung, jadi tak perlu menggulung balik ke atas.
+              Bulan berjalan → tanggal hari ini; bulan lain → tanggal 1-nya. */}
+          <StickyTop>
+            <PrimaryButton
+              label="Tambah Reminder"
+              icon="plus"
+              onPress={() =>
+                openAdd(atMinMonth ? new Date() : new Date(year, month, 1))
+              }
+            />
+          </StickyTop>
+
           {/* Petunjuk muncul saat menyeret task */}
           {dragTask && (
             <VixText heading="label" additionalStyle={styles.dragHint}>
@@ -597,7 +694,41 @@ export default function TasksScreen() {
               ref={scrollRef}
               style={styles.listScroll}
               scrollEnabled={dragTask === null}
-              contentContainerStyle={styles.listContent}>
+              contentContainerStyle={styles.content}>
+              {/* 📌 Deadline dekat — cuma di bulan berjalan, karena isinya
+                  memang soal minggu ini. Click isinya → tab Priority. */}
+              {atMinMonth && deadlineSoon.length > 0 && (
+                <View style={styles.dueBlock}>
+                  <VixText heading="bold" additionalStyle={styles.dueHead}>
+                    📌 Deadline Dekat
+                  </VixText>
+                  {deadlineSoon.map(({ item, days }) => (
+                    <View key={item.id} style={styles.dueRow}>
+                      <PressableScale
+                        onPress={() => handleTogglePriority(item)}
+                        hitSlop={8}>
+                        <CheckCircle checked={item.done} size={22} />
+                      </PressableScale>
+                      <PressableScale
+                        style={styles.dueMain}
+                        onPress={() => onTabPress('priority')}>
+                        <PriorityBadge priority={item.priority} />
+                        <VixText
+                          heading="paragraph"
+                          numberOfLines={1}
+                          additionalStyle={styles.dueTitle}>
+                          {item.title}
+                        </VixText>
+                        <VixText
+                          heading="label"
+                          additionalStyle={days < 0 ? styles.dueLate : styles.dueSoon}>
+                          {whenLabel(days)}
+                        </VixText>
+                      </PressableScale>
+                    </View>
+                  ))}
+                </View>
+              )}
               {Array.from({ length: daysInMonth }, (_, i) => {
                 const date = new Date(year, month, i + 1);
                 const dayId = dayDocId(date);
@@ -605,8 +736,9 @@ export default function TasksScreen() {
                 if (dayId < todayId) return null;
                 const isToday = dayId === todayId;
                 const hovered = hoverKey === `day:${dayId}`;
-                // Urutan dalam satu hari: yang dibuat duluan di atas.
-                const dayTasks = shown.filter((t) => t.dayId === dayId).reverse();
+                // Urutan dalam satu hari: yang berjam dulu (urut jamnya),
+                // lalu yang tanpa jam — yang dibuat duluan di atas.
+                const dayTasks = orderDayTasks(shown.filter((t) => t.dayId === dayId));
                 return (
                   <View
                     key={dayId}
@@ -717,12 +849,14 @@ export default function TasksScreen() {
         style={[styles.fabArea, mainTab !== 'daily' && styles.hidden]}
         pointerEvents={mainTab === 'daily' ? 'box-none' : 'none'}>
         {/* `order` = jarak dari FAB (0 = paling dekat) — dipakai untuk
-            stagger: keluar dari bawah ke atas, masuk dari atas ke bawah. */}
+            stagger: keluar dari bawah ke atas, masuk dari atas ke bawah.
+            (2 Okt 2026: "Tambah hari ini" keluar dari sini — tombol
+            Tambah Reminder kini dipatok di atas daftar.) */}
         {fabOpen && (
           <>
             <FabAction
-              order={2}
-              label="Cari task"
+              order={1}
+              label="Cari reminder"
               icon="magnifyingglass"
               onPress={() => {
                 setFabOpen(false);
@@ -731,21 +865,12 @@ export default function TasksScreen() {
               }}
             />
             <FabAction
-              order={1}
+              order={0}
               label="Reminder berulang"
               icon="repeat"
               onPress={() => {
                 setFabOpen(false);
                 openRecur();
-              }}
-            />
-            <FabAction
-              order={0}
-              label="Tambah hari ini"
-              icon="plus"
-              onPress={() => {
-                setFabOpen(false);
-                openAdd(new Date());
               }}
             />
           </>
@@ -799,7 +924,7 @@ export default function TasksScreen() {
               })}
               {query.trim() !== '' && results.length === 0 && (
                 <VixText heading="label" additionalStyle={styles.searchEmpty}>
-                  Tidak ada task dengan judul itu.
+                  Tidak ada reminder dengan judul itu.
                 </VixText>
               )}
             </>
@@ -843,6 +968,15 @@ export default function TasksScreen() {
             <View style={styles.formGap}>
               <DateField key="r-end" value={rEnd} onChange={setREnd} />
             </View>
+            {/* ⏰ Jam yang sama untuk tiap reminder di seri ini */}
+            <ReminderTimeField
+              on={rTimeOn}
+              onToggle={setRTimeOn}
+              value={rTime}
+              onChange={setRTime}
+              day={rStart}
+              pickerKey="r-time"
+            />
             {/* Pratinjau: berapa task yang akan dibuat */}
             <VixText heading="label" additionalStyle={styles.recurPreview}>
               {recurDays.length === 0
@@ -876,6 +1010,15 @@ export default function TasksScreen() {
           multiline
           editable={!busy}
         />
+        {/* 📝 Catatan opsional — detail yang tidak perlu ikut jadi judul */}
+        <FormInput
+          style={styles.noteInput}
+          placeholder="Catatan (opsional)"
+          value={fNote}
+          onChangeText={setFNote}
+          multiline
+          editable={!busy}
+        />
         <VixText heading="label" additionalStyle={styles.fieldLabel}>
           📆 Tanggal
         </VixText>
@@ -887,10 +1030,18 @@ export default function TasksScreen() {
             onChange={setFDate}
           />
         </View>
+        <ReminderTimeField
+          on={fTimeOn}
+          onToggle={setFTimeOn}
+          value={fTime}
+          onChange={setFTime}
+          day={fDate}
+          pickerKey={`t-${editing === 'new' ? 'new' : editing?.id}`}
+        />
         <FormError message={formError} gap="none" additionalStyle={styles.error} />
         <EditDelete
           editing={editing}
-          label="Hapus task ini"
+          label="Hapus reminder ini"
           busy={busy}
           onDelete={handleDelete}
         />
@@ -949,7 +1100,16 @@ const styles = StyleSheet.create({
   },
   chipBadgeText: { color: Color.TEXT_REVERSE },
   error: { paddingHorizontal: 20, marginBottom: 8 },
-  listContent: { ...SCREEN_CONTENT, paddingBottom: 120 },
+  // Jarak atasnya 0: tombol tambah yang dipatok (StickyTop) sudah memegangnya.
+  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 120 },
+  // 📌 Deadline dekat di atas blok tanggal
+  dueBlock: { ...CARD, gap: 6, marginBottom: 6 },
+  dueHead: { color: Color.TEXT_TITLE },
+  dueRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dueMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dueTitle: { flex: 1, color: Color.TEXT_TITLE },
+  dueSoon: { color: Color.WARNING },
+  dueLate: { color: Color.DANGER },
   dayBlock: {
     paddingVertical: 10,
     borderBottomWidth: 1,
@@ -989,6 +1149,8 @@ const styles = StyleSheet.create({
   },
   taskMain: { flex: 1 },
   taskText: { color: Color.TEXT_TITLE, flexShrink: 1 },
+  taskTime: { color: Color.MAIN_DARK },
+  taskNote: { color: Color.TEXT_LABEL },
   taskTextDone: {
     color: Color.TEXT_PLACEHOLDER,
     textDecorationLine: 'line-through',
@@ -1052,6 +1214,12 @@ const styles = StyleSheet.create({
   taskInput: {
     marginBottom: 10,
     minHeight: 120,
+    textAlignVertical: 'top',
+  },
+  // Catatan: kotak kedua yang lebih pendek dari judul.
+  noteInput: {
+    marginBottom: 10,
+    minHeight: 80,
     textAlignVertical: 'top',
   },
   fieldLabel: { marginBottom: 6 },
@@ -1162,6 +1330,8 @@ function DraggableTaskRow({
       });
   }, [item, dragX, dragY, onStart, onDrop, onMove]);
 
+  const jam = taskTimeLabel(item.time);
+
   return (
     <GestureDetector gesture={pan}>
       <View style={[styles.taskRow, dragging && styles.taskRowDragging]}>
@@ -1179,13 +1349,27 @@ function DraggableTaskRow({
             ]}>
             {item.title}
           </VixText>
+          {/* ⏰ jam & 📝 catatan — baris kecil, cuma kalau memang diisi */}
+          {jam ? (
+            <VixText heading="label" additionalStyle={styles.taskTime}>
+              ⏰ {jam}
+            </VixText>
+          ) : null}
+          {item.note ? (
+            <VixText
+              heading="label"
+              numberOfLines={2}
+              additionalStyle={styles.taskNote}>
+              {item.note}
+            </VixText>
+          ) : null}
         </PressableScale>
       </View>
     </GestureDetector>
   );
 }
 
-const FAB_ACTIONS = 3; // jumlah tombol speed-dial (untuk hitung stagger)
+const FAB_ACTIONS = 2; // jumlah tombol speed-dial (untuk hitung stagger)
 
 // Satu tombol kecil speed-dial: label pill + lingkaran ikon.
 // Naik mulus sekali dari arah FAB (tanpa mantul), lalu turun kembali saat
@@ -1198,7 +1382,7 @@ function FabAction({
 }: {
   order: number;
   label: string;
-  icon: 'plus' | 'magnifyingglass' | 'repeat';
+  icon: 'magnifyingglass' | 'repeat';
   onPress: () => void;
 }) {
   return (

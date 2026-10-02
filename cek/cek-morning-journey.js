@@ -275,23 +275,24 @@ ok('riwayat Revive: hari yang cuma berisi journey tetap tampil ("🌤️ Morning
   /\{e\.title \|\| '🌤️ Morning Journey'\}/.test(baca('app/revive-history.tsx')) &&
   /\$\{e\.prayer \?\? ''\}/.test(baca('app/revive-history.tsx')));
 
-console.log('\n=== Riwayat Morning Journey ===');
-const riwayat = baca('app/journey-history.tsx');
-ok('kartu "🌤️ Morning Journey" di sub-tab Revive → /journey-history; rute & tema terdaftar',
-  /🌤️ Morning Journey/.test(spiritual) && /router\.push\('\/journey-history'\)/.test(spiritual) &&
-  /<Stack\.Screen name="journey-history" \/>/.test(baca('app/_layout.tsx')) &&
-  /'journey-history': 'spiritual',/.test(baca('lib/featureTheme.ts')) &&
-  /journey-history/.test(baca('.expo/types/router.d.ts')));
-ok('layar riwayat menjahit Revive + catatan jurnal per hari, hanya hari yang ada isinya, terbaru dulu, bisa dicari',
-  /subscribeReviveEntries\(uid, setEntries, fail\)/.test(riwayat) &&
-  /subscribeHabitNotes\(uid, journalId \?\? '', setNotes, fail, 90\)/.test(riwayat) &&
-  /when: journalId !== null/.test(riwayat) &&
-  /\.filter\(adaIsi\)/.test(riwayat) && /b\.dayId\.localeCompare\(a\.dayId\)/.test(riwayat) &&
-  /<SearchBar/.test(riwayat) && /usePagination\(semua\)/.test(riwayat));
-ok('click satu hari → Revive hari itu', /pathname: '\/revive', params: \{ day: d\.dayId \}/.test(riwayat));
+// 2 Okt 2026: layar riwayat Morning Journey (/journey-history) DIHAPUS atas
+// permintaan pemilik app — isinya sama dengan Revive History, tempat isian
+// journey memang tersimpan. Yang dijaga sekarang: tidak ada sisa pintunya, dan
+// baris "sudah dijalani" di Today membuka Revive History.
+console.log('\n=== Riwayat Morning Journey dihapus, isinya di Revive History ===');
+ok('berkas layarnya tidak ada lagi', !fs.existsSync(path.join(ROOT, 'app/journey-history.tsx')));
+ok('tidak ada pintu yang tersisa: kartu Walk, rute, tema, indeks cari, tipe rute',
+  !/journey-history/.test(spiritual) && !/journeyCard/.test(spiritual) &&
+  !/journey-history/.test(baca('app/_layout.tsx')) &&
+  !/journey-history/.test(baca('lib/featureTheme.ts')) &&
+  !/journey-history/.test(baca('lib/featureIndex.ts')) &&
+  !/journey-history/.test(baca('.expo/types/router.d.ts')));
+ok('Today: "✓ Morning Journey" yang sudah dijalani → Revive History',
+  /router\.push\('\/revive-history'\)/.test(baca('components/today/GodHero.tsx')) &&
+  !/journey-history/.test(baca('components/today/GodHero.tsx')));
 
 console.log('\n=== Istilah ===');
-const semuaBaru = [layar, steps, kartu, trail, rute, riwayat, baca('lib/journey.ts')].join('\n');
+const semuaBaru = [layar, steps, kartu, trail, rute, baca('lib/journey.ts')].join('\n');
 ok('tanpa tekan/ketuk/tap/klik', !/\b(tekan|ditekan|menekan|ketuk|diketuk|tap|klik)\b/i.test(semuaBaru));
 ok('tanpa tanda pisah panjang di string/JSX (komentar boleh)',
   !/["'`][^"'`\n]*\u2014[^"'`\n]*["'`]/.test(semuaBaru.replace(/^\s*\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '')));

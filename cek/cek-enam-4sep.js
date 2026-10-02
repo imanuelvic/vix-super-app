@@ -61,8 +61,10 @@ c('rodanya tidak bisa diputar ke bawah jam mulai',
 c('penjagaan kedua saat menyimpan, bukan cuma di rodanya',
   /if \(menit\(jamSelesai\) <= menit\(jam\)\) \{/.test(form) &&
   /Jam selesainya harus lebih malam dari jam mulai\./.test(form));
+// (2 Okt 2026, /rapihin: penulis "18.00" milik sendiri `jamTeks` dibuang —
+// bentuknya sama persis dengan `formatTime` di lib/format.ts.)
 c('tersimpan di sesinya', /endTime\?: string;/.test(baca('lib/futsal.ts')) &&
-  /endTime: jamTeks\(jamSelesai\)/.test(form));
+  /endTime: formatTime\(jamSelesai\)/.test(form));
 c('lama mainnya diwarisi (bawaan 2 jam sesudah mulai)',
   /setJamSelesai\(\s*\n?\s*keJam\(terakhir\?\.endTime \?\? tambahJam/.test(form));
 

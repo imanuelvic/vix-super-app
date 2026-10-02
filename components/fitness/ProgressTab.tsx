@@ -73,30 +73,12 @@ export function ProgressTab({
   // utuh, tempatnya di layar Workout History.
   const rekaman = fitRouteLogs(fitLogsOfDays(weekDays)).slice(0, 5);
 
-  const count = streak?.count ?? 0;
   const best = streak?.best ?? 0;
   const total = streak?.total ?? 0;
-  // 5 sesi = 1 minggu penuh; dipakai untuk menerjemahkan streak jadi "minggu".
-  const weeks = Math.floor(count / 5);
   const bmi = profile ? bmiValue(profile.weightKg, profile.heightCm) : 0;
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.hero}>
-        <VixText additionalStyle={styles.heroEmoji}>🔥</VixText>
-        <VixText heading="subheader" additionalStyle={styles.heroValue}>
-          {count}{' '}
-          <VixText heading="label" additionalStyle={styles.heroLabel}>
-            sesi streak
-          </VixText>
-        </VixText>
-        <VixText heading="label" additionalStyle={styles.heroLabel}>
-          {weeks > 0
-            ? `≈ ${weeks} minggu tanpa bolos 💪`
-            : 'Selesaikan semua gerakan untuk menyalakan streak'}
-        </VixText>
-      </View>
-
       <View style={styles.statRow}>
         <View style={styles.statCard}>
           <VixText heading="subheader" additionalStyle={styles.statValue}>
@@ -127,15 +109,6 @@ export function ProgressTab({
         </View>
       )}
 
-      {/* ⏱️ Riwayat sesi yang DIREKAM stopwatch (2 Okt 2026).
-          Sengaja terpisah dari kartu "Lari minggu ini" di atas: yang itu hasil
-          sesi yang kamu RENCANAKAN & ketik di Exercise, yang ini sesi yang
-          benar-benar kamu jalani lewat Record. Menjumlahkan keduanya berarti
-          menebak bahwa keduanya lari yang sama, dan tebakan yang salah
-          melipatgandakan jarak mingguanmu tanpa kelihatan.
-
-          Dihitung dari `weekDays` yang SUDAH dibaca di atas → nol pembacaan
-          Firestore tambahan. Riwayat lengkapnya di layar Workout History. */}
       <PressableScale
         style={styles.logCard}
         onPress={() => router.push('/fitness-history')}>
@@ -149,8 +122,7 @@ export function ProgressTab({
         </View>
         {rekaman.length === 0 ? (
           <VixText heading="label" additionalStyle={styles.logEmpty}>
-            Belum ada lari atau jalan yang direkam minggu ini. Buka sub-tab
-            Record ⏱️, pilih olahraganya, lalu click Mulai.
+            Belum ada lari atau jalan yang direkam minggu ini.
           </VixText>
         ) : (
           rekaman.map((l, i) => {
@@ -235,17 +207,6 @@ const styles = StyleSheet.create({
   runValue: { color: Color.TEXT_TITLE },
   runSub: { color: Color.FITNESS_DARK },
   content: { ...SCREEN_CONTENT, paddingBottom: 28 },
-  hero: {
-    backgroundColor: Color.FITNESS_DARK,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    gap: 2,
-    marginBottom: 10,
-  },
-  heroEmoji: { fontSize: 40, lineHeight: 50 },
-  heroValue: { color: Color.TEXT_REVERSE },
-  heroLabel: { color: Color.TEXT_ON_DARK_MUTED, textAlign: 'center' },
   statRow: { flexDirection: 'row', gap: 10 },
   statCard: {
     ...PANEL,

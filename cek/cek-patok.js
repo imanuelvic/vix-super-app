@@ -213,6 +213,20 @@ const multi = cekPatok('Multiplication 🌱', 'components/core/MultiplicationTab
 ok('daftar multiplikasi tetap di ScrollView di bawah bar-nya',
   multi.indexOf('<FormError') > multi.indexOf('</StickyTop>'));
 
+// ---------- Reminder 🔔 (2 Okt 2026: kedua tab ikut dipatok) ----------
+// Daily: tombolnya di bawah chip kategori, di atas daftar tanggal. paddingBottom
+// 120 tetap, karena FAB ⋯ (cari & berulang) masih mengambang di atas daftar.
+const reminder = cekPatok('Reminder › Daily 🔔', 'app/tasks.tsx',
+  'label="Tambah Reminder"', { paddingBottom: 120 });
+ok('tombol tambah di bawah chip kategori (chip tetap jadi sasaran seret)',
+  reminder.indexOf('</ChipRow>') > -1 &&
+  reminder.indexOf('</ChipRow>') < reminder.indexOf('<StickyTop>'));
+cekPatok('Reminder › Priority 📌', 'components/tasks/PriorityTab.tsx',
+  'label="Tambah Reminder Prioritas"', {
+    paddingBottom: 24,
+    margin: [['tombol Tambah Reminder Prioritas (addButton)', /addButton:\s*{\s*marginBottom/]],
+  });
+
 // ---------- Ketiga tombol utama sama persis bentuknya ----------
 console.log('\nTiga tombol utama: satu bentuk, satu jarak');
 ok('Jadwalkan Visitasi, Buat Rapat Bulanan, Buat Rencana Multiplikasi semua PrimaryButton ikon plus tanpa gaya tambahan',

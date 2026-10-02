@@ -30,15 +30,14 @@ export const FEED_H = 1350;
 
 // Nama lamanya dipertahankan supaya layar & kartu yang sudah ada tidak perlu
 // ikut diubah — isinya kini satu sumber dengan Story ayat Alkitab.
+// (2 Okt 2026: simpan ke Foto & buka Instagram tidak lewat sini lagi — alurnya
+// pindah ke hooks/useSaveToPhotos.ts, jadi ketiga terusan itu ikut dibuang.)
 export {
   ARCHIVE_NAME,
   archiveNo,
   designOf,
-  openInstagram,
-  photoErrorMessage,
   wrapLines,
   SHARE_DESIGNS as FEED_DESIGNS,
-  savePngToPhotos as saveFeedToPhotos,
   type ShareDesign as FeedDesign,
 } from './shareImage';
 

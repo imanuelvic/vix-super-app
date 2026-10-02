@@ -1,6 +1,9 @@
 // ❤️ Respons hati (2 Okt 2026) — tiga permintaan pemilik app sekaligus:
 // chip pilihannya ditambah, ada rekap "yang paling sering aku pilih", dan
 // responsnya bisa dibagikan ke WhatsApp sebelum lanjut ke 🎵 Worship.
+// (Sore harinya rekap itu dihapus bersama layar Riwayat Morning Journey;
+// alasan nomor 1 & 2 di bawah tinggal sejarah, bagian 2 kini menjaga
+// supaya keduanya tidak tertinggal sebagai kode mati.)
 //
 // Kenapa perlu penjaga sendiri:
 //
@@ -51,7 +54,6 @@ const J = jalankan('lib/journey.ts', {
 
 const steps = baca('components/spiritual/journey/JourneySteps.tsx');
 const layar = baca('components/spiritual/MorningJourney.tsx');
-const riwayat = baca('app/journey-history.tsx');
 const modul = baca('lib/journey.ts');
 
 // =====================================================================
@@ -84,72 +86,19 @@ c('kunci baru pun punya labelnya, bukan dicetak mentah',
     J.responsesLine(['trust', 'love']) === '🤲 Percaya · 🫶 Mengasihi');
 
 // =====================================================================
-console.log('\n=== 2. Rekap "yang paling sering aku pilih" ===');
+console.log('\n=== 2. Rekap respons dihapus bersama layar riwayatnya ===');
 // =====================================================================
 
-{
-  // Tiga pagi: grateful 3×, grow 2×, brave 1×.
-  const pagi = [
-    ['grateful', 'grow'],
-    ['grateful', 'grow', 'brave'],
-    ['grateful'],
-  ];
-  const r = J.tallyResponses(pagi);
-  const peta = Object.fromEntries(r.map((x) => [x.key, x.count]));
-  c('menghitung tiap respons dari banyak pagi',
-    peta.grateful === 3 && peta.grow === 2 && peta.brave === 1,
-    JSON.stringify(peta));
-  c('terbanyak di urutan pertama',
-    r[0].key === 'grateful' && r[1].key === 'grow' && r[2].key === 'brave',
-    r.slice(0, 3).map((x) => x.key).join(','));
-  // Yang belum pernah dipilih justru kabar yang paling berguna — kalau
-  // disaring di sini, layarnya tidak punya cara membedakan "nol" dari
-  // "tidak ada pilihannya".
-  c('yang belum pernah dipilih ikut, dengan angka 0',
-    r.length === 10 && peta.repent === 0 && peta.love === 0,
-    String(r.length));
-  // Urutan yang seri harus TETAP, bukan berganti-ganti tiap layar dibuka.
-  const seri = J.tallyResponses([['surrender', 'forgive']]);
-  const nol = seri.filter((x) => x.count === 0).map((x) => x.key).join(',');
-  c('yang seri mengikuti urutan daftarnya (hasilnya tidak berubah-ubah)',
-    seri[0].key === 'surrender' && seri[1].key === 'forgive' &&
-      nol === 'grateful,brave,grow,trust,repent,hope,calm,love',
-    `${seri[0].key},${seri[1].key} | ${nol}`);
-  c('dijalankan dua kali hasilnya sama persis',
-    JSON.stringify(J.tallyResponses(pagi)) === JSON.stringify(J.tallyResponses(pagi)));
-}
-// Catatan lama bisa memakai kunci yang sudah tidak ada di daftar. Membuangnya
-// diam-diam membuat angka totalmu menyusut tanpa ada yang memberi tahu.
-{
-  const r = J.tallyResponses([['married', 'grateful'], ['married']]);
-  const asing = r.find((x) => x.key === 'married');
-  c('kunci asing dari catatan lama tetap dihitung, bukan dibuang diam-diam',
-    !!asing && asing.count === 2 && asing.label === 'married', JSON.stringify(asing));
-  c('kunci asing tetap dapat lambang, jadi barisnya tidak kosong',
-    !!asing && asing.emoji.length > 0);
-}
-c('tanpa catatan sama sekali: semua 0, bukan meledak',
-  J.tallyResponses([]).length === 10 &&
-    J.tallyResponses([undefined, undefined]).every((x) => x.count === 0));
-
-// Kartunya menumpang data yang MEMANG sudah dilanggan layar riwayat.
-c('rekapnya tidak menambah satu pun pembacaan Firestore',
-  /<ResponsRekap pagi=\{semua\} \/>/.test(riwayat) &&
-    !/getDocs|fetch[A-Z]/.test(riwayat));
-c('dihitung dari seluruh pagi, bukan dari halaman yang sedang dibuka',
-  /tallyResponses\(pagi\.map\(\(d\) => d\.entry\?\.responses\)\)/.test(riwayat) &&
-    !/tallyResponses\(pageItems/.test(riwayat));
-// Angka "paling sering" yang ikut menyusut mengikuti kata kunci tidak menjawab
-// pertanyaan apa pun; ia cuma terbaca seperti rekapmu tiba-tiba berubah.
-c('disembunyikan selagi mencari', /\{!q && <ResponsRekap/.test(riwayat));
-c('yang teratas diberi kalimatnya sendiri, bukan cuma baris teratas',
-  /paling sering, \{teratas\.count\}×/.test(riwayat));
-c('yang belum pernah dipilih ikut disebut di kaki kartunya',
-  /Belum pernah: \{belum\.map/.test(riwayat));
-c('panjang batangnya relatif terhadap yang teratas',
-  /\(r\.count \/ tertinggi\) \* 100/.test(riwayat));
-c('kartunya tidak digambar kalau memang belum ada yang pernah dipilih',
-  /if \(terpakai\.length === 0\) return null;/.test(riwayat));
+// Sore 2 Okt 2026: layar Riwayat Morning Journey DIHAPUS atas permintaan
+// pemilik app (isinya sama dengan Revive History). Kartu rekap ❤️ cuma hidup
+// di layar itu, jadi ia ikut pergi bersama rumusnya. Dijaga di sini supaya
+// tidak tertinggal sebagai kode mati.
+c('layar Riwayat Morning Journey tidak ada lagi',
+  !fs.existsSync(R + 'app/journey-history.tsx'));
+c('rumus rekapnya ikut dibuang, bukan jadi ekspor mati',
+  typeof J.tallyResponses === 'undefined' && !/tallyResponses|ResponseTally/.test(modul));
+c('respons hati tetap terbaca di arsip Revive (dibuka dari Revive History)',
+  /responsesLine\(entry\.responses\)/.test(baca('app/revive.tsx')));
 
 // =====================================================================
 console.log('\n=== 3. Dibagikan ke WhatsApp, sebelum 🎵 Worship ===');
@@ -247,7 +196,7 @@ c('tanggalnya dioper dari layarnya, bukan dihitung di dalam kartu',
 console.log('\n=== 4. Aturan repo ===');
 // =====================================================================
 
-for (const f of ['lib/journey.ts', 'app/journey-history.tsx']) {
+for (const f of ['lib/journey.ts']) {
   const s = baca(f);
   c(`${f}: tidak ada "tekan"`, !/\btekan\b|ditekan|menekan/i.test(s));
   c(`${f}: tidak ada "Klik" (yang dipakai "click")`, !/\bklik\b/i.test(s));

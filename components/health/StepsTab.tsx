@@ -14,7 +14,6 @@ import { SheetModal } from '@/components/common/SheetModal';
 import { SummaryCard, summaryText } from '@/components/common/SummaryCard';
 import { VixText } from '@/components/common/VixText';
 import { WeekTargetCard } from '@/components/health/WeekTargetCard';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth';
 import { useHealthToday } from '@/hooks/useHealthToday';
 import { useLive } from '@/hooks/useLive';
@@ -23,30 +22,30 @@ import {
   dayDocId,
   manualInDays,
   monthDayIds,
+  quarterMonthIds,
+  quarterOfDate,
   recordStepDays,
   recordStepWeeks,
-  setManualSteps,
-  STEP_MANUAL_MAX,
-  subscribeManualSteps,
-  type StepManualMap,
-  WEEK_GYM_GOAL,
-  WEEK_STEP_GOAL,
-  weekStartId,
-  type WeekStatsMap,
-  runMilestoneOf,
   RUN_DAY_MILESTONES,
   RUN_MONTH_MILESTONES,
   RUN_QUARTER_MILESTONES,
   RUN_WEEK_MILESTONES,
   RUN_YEAR_MILESTONES,
-  quarterMonthIds,
-  quarterOfDate,
+  runMilestoneOf,
+  setManualSteps,
+  STEP_MANUAL_MAX,
   stepsInDays,
   stepsInPrefixes,
   stepsToKm,
+  subscribeManualSteps,
+  WEEK_GYM_GOAL,
+  WEEK_STEP_GOAL,
   weekDayIds,
+  weekStartId,
   type HealthProfile,
   type StepDaysMap,
+  type StepManualMap,
+  type WeekStatsMap,
 } from '@/lib/health';
 import { readRecentDailySteps } from '@/lib/healthkit';
 import { SAVE_ERROR } from '@/lib/messages';
@@ -207,25 +206,35 @@ export function StepsTab({
           <VixText heading="label" additionalStyle={summaryText.label}>
             👣 Langkah hari ini
           </VixText>
+          {/* Dua tombolnya TULISAN putih di pil putih redup (2 Okt 2026).
+              Dulu ikon hijau (Color.MAIN) yang tenggelam di latar merah tua
+              kartu ini, sampai hampir tidak terlihat. */}
           <View style={styles.heroActions}>
             {/* Tambah sendiri — untuk jalan yang tidak terbawa HP. Selalu ada,
                 tidak bergantung izin Apple Health: justru saat Apple Health
                 tidak mencatat apa-apa inilah tombol ini paling dibutuhkan. */}
             <PressableScale
+              style={styles.heroPill}
               onPress={() => {
                 setBukaKe((n) => n + 1);
                 setTambahBuka(true);
               }}
               hitSlop={10}>
-              <IconSymbol name="plus" size={20} color={Color.MAIN} />
+              <VixText heading="label" additionalStyle={styles.heroPillText}>
+                Tambah
+              </VixText>
             </PressableScale>
+            {/* Muat ulang angka Apple Health. Selagi memuat, tulisannya
+                berganti & tombolnya mati, jadi tidak bisa ditekan dua kali. */}
             {hkStatus === 'ok' && (
-              <PressableScale onPress={loadHk} hitSlop={10} disabled={hkBusy}>
-                <IconSymbol
-                  name="arrow.triangle.2.circlepath"
-                  size={20}
-                  color={hkBusy ? Color.TEXT_PLACEHOLDER : Color.MAIN}
-                />
+              <PressableScale
+                style={[styles.heroPill, hkBusy && styles.heroPillBusy]}
+                onPress={loadHk}
+                hitSlop={10}
+                disabled={hkBusy}>
+                <VixText heading="label" additionalStyle={styles.heroPillText}>
+                  {hkBusy ? 'Memuat…' : 'Perbarui'}
+                </VixText>
               </PressableScale>
             )}
           </View>
@@ -597,7 +606,18 @@ const styles = StyleSheet.create({
   sectionTitle: { ...SECTION_SPACE },
   // Bentuk & warna kartunya dari <SummaryCard>; di sini cuma selisihnya.
   heroCard: { gap: 2, marginBottom: CARD_GAP },
-  heroActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  heroActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Pil tombol DI ATAS kartu gelap: latar putih redup + tulisan putih. Dua
+  // warna itu yang tetap terbaca di atas warna fitur apa pun (merah tua di
+  // Health), bukan warna hijau merek yang justru tenggelam.
+  heroPill: {
+    backgroundColor: Color.SURFACE_ON_DARK,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  heroPillBusy: { opacity: 0.5 },
+  heroPillText: { color: Color.TEXT_REVERSE },
   modalHint: { color: Color.TEXT_LABEL, marginBottom: 10 },
   // Judul kartu + tombol muat-ulang Apple Health di ujung kanannya.
   heroTop: {

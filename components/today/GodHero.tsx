@@ -88,9 +88,11 @@ export function GodHero({
           />
         </View>
       ) : god.state === 'done' ? (
+        // Sudah dijalani → isiannya dibaca di Revive History (2 Okt 2026:
+        // layar riwayat Morning Journey dihapus, isinya sama persis di sana).
         <PressableScale
           style={styles.doneRow}
-          onPress={() => router.push('/journey-history')}
+          onPress={() => router.push('/revive-history')}
           hitSlop={6}>
           <IconSymbol name="checkmark" size={16} color={Color.MAIN} />
           <VixText heading="label" additionalStyle={styles.doneText}>

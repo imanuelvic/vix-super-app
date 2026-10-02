@@ -172,14 +172,27 @@ for (const [nama, src] of [['Pertemuan', vt], ['Riwayat', vs]]) {
     !/function changeKind/.test(src) && !/function toggleLeader/.test(src));
   c(`${nama}: memakai hook & komponen bersama`,
     /const form = useVisitationForm\(\)/.test(src) && /<VisitationFormFields/.test(src));
-  c(`${nama}: pdfSentDayId tetap dipertahankan saat simpan`, /pdfSentDayId/.test(src));
+  // 2 Okt 2026 (/rapihin): perakitan jadwalnya pindah ke hook (`form.build`),
+  // jadi yang dijaga di layar: memakainya, bukan merakit sendiri.
+  c(`${nama}: jadwal dirakit lewat form.build (pdfSentDayId dipertahankan di sana)`,
+    /const data = form\.build\(/.test(src) && !/\.\.\.form\.payload\(\)/.test(src));
 }
+c('hook: id & pdfSentDayId lama dipertahankan, jadwal baru dapat id baru & belum dikirim',
+  /id: existing \? existing\.id : newVisitationId\(\),/.test(hook) &&
+    /pdfSentDayId: existing \? existing\.pdfSentDayId : null,/.test(hook));
+c('Pertemuan: jadwal baru → build(null), ubah → build(jadwal itu)',
+  /form\.build\(editing === 'new' \? null : editing\)/.test(vt));
+c('Riwayat: cuma mengubah → build(jadwal itu)', /form\.build\(editing\)/.test(vs));
 c('Riwayat: hapus tetap PERMANEN (array ditulis ulang tanpa item itu)',
   /saveVisitations\(user\.uid, all\.filter\(\(v\) => v\.id !== editing\.id\)\)/.test(vs));
 c('Pertemuan: hapus tetap PERMANEN',
   /visitations\.filter\(\(v\) => v\.id !== editing\.id\)/.test(vt));
+// 2 Okt 2026 (/rapihin): pemeriksaannya pindah ke hook (`form.problem`) dan
+// kalimatnya ke lib/messages.ts (PICK_LEADER_FIRST); bunyinya tetap persis.
 c('validasi "Pilih CORE Leader-nya dulu." tetap di kedua layar',
-  /Pilih CORE Leader-nya dulu\./.test(vt) && /Pilih CORE Leader-nya dulu\./.test(vs));
+  /const masalah = form\.problem\(\);/.test(vt) && /const masalah = form\.problem\(\);/.test(vs) &&
+    /return leaderIds\.length === 0 \? PICK_LEADER_FIRST : null;/.test(hook) &&
+    /export const PICK_LEADER_FIRST = 'Pilih CORE Leader-nya dulu\.';/.test(baca('lib/messages.ts')));
 
 console.log('\n' + (ok ? 'LULUS' : 'GAGAL'));
 console.log('\nperilaku buka tautan — sebelum → sesudah (tetap sama):');

@@ -130,60 +130,9 @@ export function responseLabel(key: string): string {
   return o ? `${o.emoji} ${o.label}` : key;
 }
 
-/** "💚 Bersyukur · 🌱 Bertumbuh" — untuk baris riwayat & arsip Revive. */
+/** "💚 Bersyukur · 🌱 Bertumbuh" — untuk arsip Revive & teks yang dibagikan. */
 export function responsesLine(keys: string[] | undefined): string {
   return (keys ?? []).map(responseLabel).join(' · ');
-}
-
-// ---------------------- Yang paling sering dipilih ----------------------
-// "Respons apa yang paling sering muncul di hatiku?" — pertanyaan yang cuma
-// bisa dijawab kalau pagi-pagi sebelumnya dihitung bersama. Dihitung dari
-// data yang SUDAH dilanggan layar riwayat, jadi tidak ada pembacaan tambahan.
-
-export type ResponseTally = {
-  key: string;
-  emoji: string;
-  label: string;
-  count: number;
-};
-
-/**
- * Hitung tiap respons dari banyak pagi, terbanyak dulu.
- *
- * Yang belum pernah dipilih IKUT dikembalikan dengan angka 0 — justru itu
- * kabar yang paling berguna ("setahun ini aku tidak pernah menandai
- * Bertobat"), dan kalau disaring di sini, layarnya tidak punya cara untuk
- * tahu bedanya "nol" dengan "tidak ada pilihannya".
- *
- * Kunci asing (dari catatan lama, atau pilihan yang suatu saat dihapus dari
- * daftar) tetap dihitung dan dicetak apa adanya, bukan dibuang diam-diam.
- *
- * Urutannya: angka terbesar dulu; yang seri mengikuti urutan daftar aslinya,
- * supaya hasilnya tidak berganti-ganti sendiri tiap kali layarnya dibuka.
- */
-export function tallyResponses(pagi: (string[] | undefined)[]): ResponseTally[] {
-  const urutan = new Map(RESPONSE_OPTIONS.map((o, i) => [o.key as string, i]));
-  const hitung = new Map<string, number>();
-  for (const o of RESPONSE_OPTIONS) hitung.set(o.key, 0);
-  for (const keys of pagi) {
-    for (const k of keys ?? []) hitung.set(k, (hitung.get(k) ?? 0) + 1);
-  }
-  return [...hitung.entries()]
-    .map(([key, count]) => {
-      const o = RESPONSE_OPTIONS.find((x) => x.key === key);
-      return {
-        key,
-        emoji: o?.emoji ?? '🏷️',
-        label: o?.label ?? key,
-        count,
-      };
-    })
-    .sort(
-      (a, b) =>
-        b.count - a.count ||
-        (urutan.get(a.key) ?? 999) - (urutan.get(b.key) ?? 999) ||
-        a.key.localeCompare(b.key),
-    );
 }
 
 // ---------------------- Dibagikan ke WhatsApp ----------------------

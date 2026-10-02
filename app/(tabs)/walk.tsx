@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CARD_GAP, PANEL } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
 import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { RewardButton } from '@/components/common/RewardButton';
@@ -334,24 +333,6 @@ export default function SpiritualScreen() {
                 additionalStyle={styles.skippedGap}
               />
             )}
-
-            {/* 🌤️ Morning Journey — refleksi, respons, & doa pagi hari-hari
-                sebelumnya (isiannya menumpang di Revive & jurnal Habits). */}
-            <PressableScale
-              style={styles.journeyCard}
-              onPress={() => router.push('/journey-history')}>
-              <View style={styles.journeyMain}>
-                <VixText heading="bold" additionalStyle={styles.journeyTitle}>
-                  🌤️ Morning Journey
-                </VixText>
-                <VixText heading="label" additionalStyle={styles.journeySub}>
-                  Lihat refleksi, respons, & doa pagi sebelumnya
-                </VixText>
-              </View>
-              <VixText heading="label" additionalStyle={styles.journeySub}>
-                ›
-              </VixText>
-            </PressableScale>
           </ScrollView>
         ) : tab === 'sermon' ? (
           <SermonTab sermons={sermons} />
@@ -395,19 +376,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   todayTitle: { color: Color.TEXT_TITLE },
-  // Kartu pintu riwayat Morning Journey — kartu blok biasa (putih, bergaris).
-  journeyCard: {
-    ...PANEL,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: CARD_GAP,
-  },
-  journeyMain: { flex: 1, gap: 1 },
-  journeyTitle: { color: Color.SPIRITUAL_DARK },
-  journeySub: { color: Color.TEXT_LABEL },
   todayPassage: { color: Color.SPIRITUAL_DARK },
   todayReflection: { color: Color.SPIRITUAL_DARK },
 });

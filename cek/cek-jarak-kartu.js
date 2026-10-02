@@ -98,11 +98,12 @@ ok('tidak ada tombol tambah dengan marginBottom angka lepas', tombol.length === 
 // (16 Sep 2026: tiga tombol CORE yang dipatok tidak lagi bermargin sendiri;
 // jaraknya milik StickyTop → paddingBottom CARD_GAP. 28 Sep 2026: enam tombol
 // lagi ikut dipatok — Catat Tanggal Penting, Tulis Janji Tuhan, Tambah Puasa
-// Baru, Tambah Kartu, Tambah Proyek, Tambah Ide — jadi sisanya 14.)
+// Baru, Tambah Kartu, Tambah Proyek, Tambah Ide — jadi sisanya 14.
+// 2 Okt 2026: Tambah Reminder Prioritas ikut dipatok — sisanya 13.)
 const bermargin = semua.filter((f) =>
   /add(Button|Btn): \{ marginBottom: CARD_GAP \}/.test(baca(f)));
 ok(`tombol tambah yang IKUT TERGULUNG memakai CARD_GAP (${bermargin.length} berkas)`,
-  bermargin.length >= 14);
+  bermargin.length >= 13);
 // Sisi sebaliknya, dan ini yang benar-benar dijaga: tombol yang DIPATOK tidak
 // boleh punya margin sendiri sama sekali — dua jarak yang bertumpuk membuat
 // bar patoknya berdiri lebih tinggi daripada sub-tab sebelah.
