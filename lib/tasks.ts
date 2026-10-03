@@ -342,6 +342,24 @@ export function effectiveOtherTask(item: OtherTask, today: Date): OtherTask {
   return otherTaskUrgent(item, today) ? { ...item, priority: 1 } : item;
 }
 
+/**
+ * Deadline-nya SUDAH TIBA (hari-H) atau lewat & belum dicentang. Satu aturan
+ * untuk tiga tempat: badge sub-tab Priority, titik merah di kartunya, dan
+ * 📌 Deadline Dekat di tab Daily. 3 Okt 2026: dulu ketiganya sudah menyala
+ * sejak H-7 ("4 hari lagi"); sekarang baru di hari-H, lalu tetap tinggal
+ * walau tanggalnya terlewat, sampai dicentang. Aturan H-7 → P1 tidak berubah.
+ */
+export function otherTaskDue(item: OtherTask, today: Date): boolean {
+  const days = otherTaskDaysUntil(item, today);
+  return !item.done && days !== null && days <= 0;
+}
+
+/** 0 → "HARI INI", -5 → "sudah lewat 5 hari" (3 → "3 hari lagi"). */
+export function otherTaskDueLabel(days: number): string {
+  if (days < 0) return `sudah lewat ${-days} hari`;
+  return days === 0 ? 'HARI INI' : `${days} hari lagi`;
+}
+
 function otherTasksCollection(uid: string) {
   return collection(db, 'users', uid, 'otherTasks');
 }

@@ -1,10 +1,15 @@
 // 2 Okt 2026: lima perubahan Reminder 🔔 yang disetujui pemilik app.
 //   1. ⏰ jam pengingat per reminder → notifikasi HP tepat di jam itu
-//   2. 📌 deadline dekat (Reminder Prioritas H-7) di atas daftar Daily
+//   2. 📌 deadline dekat (Reminder Prioritas) di atas daftar Daily
 //   3. tombol tambah DIPATOK di kedua tab (dijaga juga oleh cek-patok.js)
 //   4. kata "reminder" seragam di layar + angka di samping bulan diperbaiki
 //   5. lib/tasks.ts: kolom opsional `note` & `carried`, rollover menaikkan
 //      `carried` lewat increment(1)
+// 3 Okt 2026, permintaan lanjutan pemilik app:
+//   • tombol tambah Daily DIBUANG lagi (tiap tanggal sudah punya +)
+//   • 📌 Deadline Dekat, badge Priority, & titik merah di kartunya baru
+//     menyala di hari-H (dulu H-7) dan tetap tinggal sesudah lewat;
+//     tulisannya "HARI INI" / "sudah lewat N hari"
 // Bagian mesinnya (Today Engine → jadwal notifikasi) DIJALANKAN atas fixture,
 // bukan cuma dibaca tulisannya.
 const AKAR = require('./akar');
@@ -190,20 +195,37 @@ console.log('\n=== 4. Layar Reminder ===');
   ok('jamnya tampil di baris reminder', /⏰ \{jam\}/.test(t));
   ok('urutan satu hari memakai orderDayTasks', /orderDayTasks\(shown\.filter/.test(t));
 
-  ok('📌 Deadline Dekat memakai aturan H-7 & P1 efektif yang sama dengan tab Priority',
-    /effectiveOtherTask\(t, now\)/.test(t) && /otherTaskDaysUntil\(t, now\)/.test(t) &&
-    /x\.days <= OTHER_REMINDER_DAYS/.test(t) && /📌 Deadline Dekat/.test(t));
+  // 3 Okt 2026: dulu sejak H-7 (x.days <= OTHER_REMINDER_DAYS); sekarang baru
+  // di hari-H & tetap tinggal sesudah lewat, satu aturan dengan badge-nya.
+  ok('📌 Deadline Dekat memakai aturan hari-H yang SAMA dengan badge Priority',
+    /otherTaskDue\(t, now\) && \(t\.category \?\? 'personal'\) === category/.test(t) &&
+    /priority: otherTasks\.filter\(\(x\) => otherTaskDue\(x, now\)\)\.length/.test(t) &&
+    !/OTHER_REMINDER_DAYS/.test(t) && /📌 Deadline Dekat/.test(t));
+  ok('P1 efektif tetap dipakai untuk lencana P-nya',
+    /item: effectiveOtherTask\(t, now\)/.test(t));
+  ok('tulisannya "HARI INI" / "sudah lewat N hari", bukan "N hari lagi"',
+    /\{otherTaskDueLabel\(days\)\}/.test(t) && !/whenLabel/.test(t));
   ok('section itu cuma di bulan berjalan & ikut kategori yang dibuka',
-    /atMinMonth && deadlineSoon\.length > 0/.test(t) &&
-    /\(t\.category \?\? 'personal'\) === category/.test(t));
+    /atMinMonth && duePriority\.length > 0/.test(t));
+
+  const p = kode('components/tasks/PriorityTab.tsx');
+  ok('tab Priority: titik, garis merah, & lompatannya ikut aturan badge (bukan semua P1)',
+    /const due = otherTaskDue\(item, today\);/.test(p) && /attentionBorder\(due\)/.test(p) &&
+    /\{due && <AttentionMark corner \/>\}/.test(p) &&
+    /sorted\.find\(\(i\) => otherTaskDue\(i, today\)\)/.test(p) &&
+    !/item\.priority === 1/.test(p));
+  ok('tab Priority memakai kata yang sama untuk deadline yang tiba/lewat',
+    /due \? `, \$\{otherTaskDueLabel\(days!\)\}` : ` - \$\{days\} hari lagi`/.test(p));
 
   ok('angka di samping bulan = belum selesai di bulan yang TAMPIL, mulai hari ini',
     /t\.dayId\.startsWith\(monthPrefix\) && t\.dayId >= todayId/.test(t) &&
     /\{remaining\} belum selesai/.test(t) && !/task tercatat/.test(t));
   ok('kata yang terbaca di layar: reminder, bukan task',
     !/Cari task|Hapus task ini|Isi task-nya|Tidak ada task|Maksimal \$\{MAX_RECURRING\} task|task lama|loadErrorOf\('task'\)/.test(t));
-  ok('"Tambah hari ini" keluar dari speed-dial (tombolnya sudah dipatok)',
-    !/Tambah hari ini/.test(t) && /const FAB_ACTIONS = 2;/.test(t));
+  // 3 Okt 2026: tombol patoknya ikut dibuang; menambah lewat + tiap tanggal.
+  ok('tanpa tombol tambah besar: "Tambah hari ini" & tombol patok sama-sama tidak ada',
+    !/Tambah hari ini/.test(t) && /const FAB_ACTIONS = 2;/.test(t) &&
+    !/<StickyTop>/.test(t) && /onPress=\{\(\) => openAdd\(date\)\}/.test(t));
   ok('drag & drop tetap utuh (pemilik app memilih mempertahankannya)',
     /DraggableTaskRow/.test(t) && /catRefs\.current\[c\.key\] = r;/.test(t) && /measureTargets/.test(t));
 }
@@ -218,6 +240,28 @@ console.log('\n=== 5. lib/tasks.ts ===');
   ok('reminder berulang ikut membawa jamnya', /note: '',\s*\n\s*time,/.test(k));
   ok('kolomnya opsional: data lama tanpa note/time/carried tetap sah',
     /note\?: string;/.test(k) && /time\?: string \| null;/.test(k) && /carried\?: number;/.test(k));
+
+  // 3 Okt 2026: aturan "deadline sudah tiba" DIJALANKAN atas fixture.
+  const ts = (d) => ({ toDate: () => d, toMillis: () => d.getTime() });
+  const prio = (id, deadline, over = {}) => ({
+    id, title: id, note: '', priority: 2, done: false, category: 'work',
+    deadline: deadline ? ts(deadline) : null, createdAt: null, ...over,
+  });
+  const PAGI3 = new Date(2026, 9, 3, 8, 0);
+  ok('hari-H (walau jamnya nanti malam) & yang sudah lewat dihitung',
+    K.otherTaskDue(prio('h', new Date(2026, 9, 3, 23, 0)), PAGI3) &&
+    K.otherTaskDue(prio('lewat', new Date(2026, 8, 28)), PAGI3));
+  ok('H-1, H-4, tanpa deadline, & yang sudah dicentang tidak dihitung',
+    !K.otherTaskDue(prio('besok', new Date(2026, 9, 4)), PAGI3) &&
+    !K.otherTaskDue(prio('h4', new Date(2026, 9, 7)), PAGI3) &&
+    !K.otherTaskDue(prio('kosong', null), PAGI3) &&
+    !K.otherTaskDue(prio('beres', new Date(2026, 8, 28), { done: true }), PAGI3));
+  ok('aturan H-7 → P1 tidak ikut berubah',
+    K.effectiveOtherTask(prio('h4', new Date(2026, 9, 7)), PAGI3).priority === 1 &&
+    K.effectiveOtherTask(prio('jauh', new Date(2026, 9, 20)), PAGI3).priority === 2);
+  ok('tulisannya: HARI INI · sudah lewat 5 hari · 3 hari lagi',
+    K.otherTaskDueLabel(0) === 'HARI INI' && K.otherTaskDueLabel(-5) === 'sudah lewat 5 hari' &&
+    K.otherTaskDueLabel(3) === '3 hari lagi');
 }
 
 // =====================================================================
@@ -227,6 +271,11 @@ console.log('\n=== 6. Riwayat versi ===');
   ok('perubahannya tercatat di entri paling atas lib/changelog.ts',
     /'⏰ Reminder bisa diberi jam, HP berbunyi tepat di jam itu'/.test(log) &&
     log.indexOf('⏰ Reminder bisa diberi jam') < log.indexOf("version: '2.0.0'"));
+  ok('perubahan 3 Okt ikut tercatat, baris tombol patok yang lama dibuang',
+    /'🔔 Tombol Tambah Reminder di Daily dihapus, cukup \+ di tiap tanggal'/.test(log) &&
+    /'📌 Badge Priority kini menghitung deadline yang sudah tiba atau lewat'/.test(log) &&
+    !/Tombol tambah reminder kini menempel/.test(log) &&
+    log.indexOf('📌 Badge Priority') < log.indexOf("version: '2.0.0'"));
 }
 
 console.log(gagal === 0 ? '\n✅ LULUS — reminder berjam & rapihnya Reminder terjaga.'

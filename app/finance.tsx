@@ -34,6 +34,7 @@ import {
   type BudgetDoc,
   type SubcategoryMap,
 } from '@/lib/budgets';
+import { type FinanceType } from '@/lib/categories';
 import { debtUrgentCount, subscribeDebts, type Debt } from '@/lib/debts';
 import { subscribeFinanceFocus, type FocusItem } from '@/lib/financeFocus';
 import { historySlices, HISTORY_MONTHS } from '@/lib/financeInsight';
@@ -87,6 +88,15 @@ export default function FinanceScreen() {
   const items = loaded ?? [];
   const loading = loaded === null;
   const [error, setError] = useState<string | null>(null);
+
+  // 📋 Salin transaksi dari bulan lain → layar pindah ke bulan berjalan (lihat
+  // handleCopy di TransactionsTab). Daftarnya terpasang ulang karena bulannya
+  // berganti, jadi jenis salinannya dititipkan di sini supaya ia terbuka di
+  // jenis itu, bukan Expense bawaan. Titipannya cuma berlaku di bulan tujuan.
+  const [copyLanding, setCopyLanding] = useState<{
+    month: string;
+    type: FinanceType;
+  } | null>(null);
 
   // Budget bulan ini (dokumen utuh: alokasi + status kunci) — satu langganan
   // dipakai bersama sub-menu Transaksi (mewarnai pilihan kategori), Budgeting
@@ -336,6 +346,13 @@ export default function FinanceScreen() {
             year={year}
             month={month}
             onShowBudget={() => onTabPress('budgeting')}
+            initialType={
+              copyLanding?.month === monthId(year, month) ? copyLanding.type : undefined
+            }
+            onShowToday={(type) => {
+              setCopyLanding({ month: monthId(now.getFullYear(), now.getMonth()), type });
+              goNow();
+            }}
           />
         ) : (
           <BudgetingTab

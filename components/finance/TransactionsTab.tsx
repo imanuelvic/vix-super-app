@@ -85,6 +85,8 @@ export function TransactionsTab({
   year,
   month,
   onShowBudget,
+  initialType,
+  onShowToday,
 }: {
   items: Transaction[];
   budget: BudgetMap;
@@ -99,6 +101,14 @@ export function TransactionsTab({
   month: number;
   /** "Lihat Budget" di Quick check → pindah ke sub-tab Budgeting. */
   onShowBudget: () => void;
+  /** Jenis yang terbuka saat daftar ini dipasang (bawaan: Expense). */
+  initialType?: FinanceType;
+  /**
+   * 📋 Salin dari bulan lain → minta layar Finance pindah ke bulan berjalan,
+   * dibuka di jenis salinannya. Salinannya bertanggal hari ini, jadi hanya di
+   * bulan berjalan ia kelihatan.
+   */
+  onShowToday: (type: FinanceType) => void;
 }) {
   const { user } = useAuth();
 
@@ -107,7 +117,7 @@ export function TransactionsTab({
   const [error, setError] = useState<string | null>(null);
 
   // Form tambah transaksi.
-  const [type, setType] = useState<FinanceType>('expense');
+  const [type, setType] = useState<FinanceType>(initialType ?? 'expense');
   // Kategori SELALU default kosong (empty pick) — tidak diingat lintas sesi.
   const [category, setCategory] = useState<string | null>(null);
   // Sub-kategori (opsional) — pilihannya baru muncul kalau kategori terpilih
@@ -348,6 +358,11 @@ export function TransactionsTab({
    * yang tampil di modal (nominal, catatan, sub, liter), kecuali TANGGALNYA
    * yang otomatis jadi hari ini (saat tombol Salin ditekan). Transaksi aslinya
    * tidak diubah sama sekali.
+   *
+   * Sesudahnya layar langsung menunjukkan salinannya (3 Okt 2026): mode cari
+   * ditutup, dan kalau yang dilihat bulan lain, layar pindah ke bulan berjalan.
+   * Dulu layar diam di bulan & mode cari yang sedang dibuka, jadi salinannya
+   * tidak kelihatan sama sekali.
    */
   async function handleCopy() {
     if (!user || !editing || copying) return;
@@ -400,9 +415,23 @@ export function TransactionsTab({
       }
       setConfirmCopy(false);
       setEditing(null);
-      // Salinan bertanggal hari ini → posisinya paling atas daftar. Langsung
-      // digulir ke atas biar hasilnya kelihatan tanpa perlu scroll manual.
-      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      const now = new Date();
+      if (now.getFullYear() !== year || now.getMonth() !== month) {
+        // Bulan lain → pindah ke bulan berjalan. Daftar ini ikut dipasang
+        // ulang di sana, jadi mode carinya otomatis tertutup. Ditunda sampai
+        // sheet selesai turun (animasinya 220 ms): kalau daftarnya keburu
+        // dilepas, sheet lenyap mendadak di tengah jalan.
+        const copiedType = editing.type;
+        setTimeout(() => onShowToday(copiedType), 300);
+      } else if (searchMode) {
+        // Bulan berjalan tapi sedang mencari → tutup mode cari (kata &
+        // urutannya direset, daftar lompat ke atas). Salinannya paling atas.
+        toggleSearch();
+      } else {
+        // Salinan bertanggal hari ini → posisinya paling atas daftar. Langsung
+        // digulir ke atas biar hasilnya kelihatan tanpa perlu scroll manual.
+        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      }
     } catch {
       setEditError(SAVE_ERROR);
     } finally {

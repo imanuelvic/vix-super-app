@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CARD, FIELD } from '@/assets/style/card';
 import { Color } from '@/assets/style/color';
-import { SCREEN_CONTENT_PINNED, SCREEN_SAFE } from '@/assets/style/layout';
+import { SCREEN_CONTENT, SCREEN_SAFE } from '@/assets/style/layout';
 import { AttentionMark } from '@/components/common/Badge';
 import {
     BottomTabs,
@@ -36,7 +36,6 @@ import { PressableScale } from '@/components/common/PressableScale';
 import { PrimaryButton } from '@/components/common/PrimaryButton';
 import { PriorityBadge } from '@/components/common/PriorityBadge';
 import { SheetModal } from '@/components/common/SheetModal';
-import { StickyTop } from '@/components/common/StickyTop';
 import { useTabScroll } from '@/components/common/useTabScroll';
 import { VixText } from '@/components/common/VixText';
 import { PriorityTab } from '@/components/tasks/PriorityTab';
@@ -52,7 +51,6 @@ import {
     formatDayMonth,
     MONTH_NAMES,
     monthId,
-    whenLabel,
 } from '@/lib/format';
 import { dayDocId } from '@/lib/health';
 import { loadErrorOf, saveErrorOf } from '@/lib/messages';
@@ -63,9 +61,10 @@ import {
     effectiveOtherTask,
     generateRecurringDays,
     MAX_RECURRING,
-    OTHER_REMINDER_DAYS,
     orderDayTasks,
     otherTaskDaysUntil,
+    otherTaskDue,
+    otherTaskDueLabel,
     parseTaskTime,
     pruneOrphanTasks,
     rolloverTasks,
@@ -294,17 +293,15 @@ export default function TasksScreen() {
   const activeMeta = TASK_CATEGORIES.find((c) => c.key === category)!;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // 📌 Deadline dekat — Reminder Prioritas kategori ini yang belum selesai &
-  // deadline-nya sudah masuk H-7 (termasuk yang lewat), ditaruh di atas daftar
-  // Daily supaya tidak perlu pindah tab untuk melihatnya. Aturan H-7 & P1
-  // efektifnya SAMA dengan tab Priority (effectiveOtherTask), bukan salinan.
-  const deadlineSoon = otherTasks
-    .filter((t) => !t.done && (t.category ?? 'personal') === category)
-    .map((t) => ({ item: effectiveOtherTask(t, now), days: otherTaskDaysUntil(t, now) }))
-    .filter(
-      (x): x is { item: OtherTask; days: number } =>
-        x.days !== null && x.days <= OTHER_REMINDER_DAYS,
-    )
+  // 📌 Deadline Dekat — Reminder Prioritas kategori ini yang deadline-nya
+  // SUDAH TIBA atau lewat & belum dicentang, ditaruh di atas daftar Daily
+  // supaya tidak perlu pindah tab untuk melihatnya. 3 Okt 2026: dulu sudah
+  // muncul sejak H-7 ("4 hari lagi"); sekarang baru di hari-H, lalu tetap
+  // tinggal walau tanggalnya terlewat. Aturannya SATU dengan badge sub-tab
+  // Priority (otherTaskDue), bukan salinan.
+  const duePriority = otherTasks
+    .filter((t) => otherTaskDue(t, now) && (t.category ?? 'personal') === category)
+    .map((t) => ({ item: effectiveOtherTask(t, now), days: otherTaskDaysUntil(t, now)! }))
     .sort((a, b) => a.days - b.days);
 
   async function handleToggle(item: Task) {
@@ -664,18 +661,9 @@ export default function TasksScreen() {
             })}
           </ChipRow>
 
-          {/* Tombol tambah DIPATOK di atas daftar (standar app 28 Sep 2026):
-              tidak ikut tergulung, jadi tak perlu menggulung balik ke atas.
-              Bulan berjalan → tanggal hari ini; bulan lain → tanggal 1-nya. */}
-          <StickyTop>
-            <PrimaryButton
-              label="Tambah Reminder"
-              icon="plus"
-              onPress={() =>
-                openAdd(atMinMonth ? new Date() : new Date(year, month, 1))
-              }
-            />
-          </StickyTop>
+          {/* Tanpa tombol "Tambah Reminder" di sini (3 Okt 2026): tiap tanggal
+              sudah punya tombol + sendiri, jadi tombol besar di atas daftar
+              cuma mengulang yang sudah ada. */}
 
           {/* Petunjuk muncul saat menyeret task */}
           {dragTask && (
@@ -695,14 +683,14 @@ export default function TasksScreen() {
               style={styles.listScroll}
               scrollEnabled={dragTask === null}
               contentContainerStyle={styles.content}>
-              {/* 📌 Deadline dekat — cuma di bulan berjalan, karena isinya
-                  memang soal minggu ini. Click isinya → tab Priority. */}
-              {atMinMonth && deadlineSoon.length > 0 && (
+              {/* 📌 Deadline Dekat — cuma di bulan berjalan, karena isinya
+                  memang soal hari ini. Click isinya → tab Priority. */}
+              {atMinMonth && duePriority.length > 0 && (
                 <View style={styles.dueBlock}>
                   <VixText heading="bold" additionalStyle={styles.dueHead}>
                     📌 Deadline Dekat
                   </VixText>
-                  {deadlineSoon.map(({ item, days }) => (
+                  {duePriority.map(({ item, days }) => (
                     <View key={item.id} style={styles.dueRow}>
                       <PressableScale
                         onPress={() => handleTogglePriority(item)}
@@ -722,7 +710,7 @@ export default function TasksScreen() {
                         <VixText
                           heading="label"
                           additionalStyle={days < 0 ? styles.dueLate : styles.dueSoon}>
-                          {whenLabel(days)}
+                          {otherTaskDueLabel(days)}
                         </VixText>
                       </PressableScale>
                     </View>
@@ -805,14 +793,15 @@ export default function TasksScreen() {
       </View>
 
       {/* Tab bar bawah: Harian (planner) / Prioritas (catatan penting).
-          Badge memakai perhitungan yang SAMA dengan badge tile Reminder di
-          Home: task hari ini yang belum selesai, dan prioritas yang sudah P1. */}
+          Badge Daily = reminder hari ini yang belum selesai. Badge Priority =
+          reminder prioritas yang deadline-nya sudah tiba atau lewat
+          (otherTaskDue): isinya sama dengan 📌 Deadline Dekat (semua
+          kategori) & titik merah di tab Priority. 3 Okt 2026: dulu ia
+          menghitung semua P1, termasuk yang baru H-7. */}
       <BottomTabs
         tabs={withBadge(MAIN_TABS, {
           daily: tasks.filter((x) => !x.done && x.dayId === todayId).length,
-          priority: otherTasks.filter(
-            (x) => !x.done && effectiveOtherTask(x, new Date()).priority === 1,
-          ).length,
+          priority: otherTasks.filter((x) => otherTaskDue(x, now)).length,
         })}
         value={mainTab}
         onChange={onTabPress}
@@ -850,8 +839,8 @@ export default function TasksScreen() {
         pointerEvents={mainTab === 'daily' ? 'box-none' : 'none'}>
         {/* `order` = jarak dari FAB (0 = paling dekat) — dipakai untuk
             stagger: keluar dari bawah ke atas, masuk dari atas ke bawah.
-            (2 Okt 2026: "Tambah hari ini" keluar dari sini — tombol
-            Tambah Reminder kini dipatok di atas daftar.) */}
+            (2 Okt 2026: "Tambah hari ini" keluar dari sini. Menambah
+            reminder cukup lewat tombol + di tiap tanggal.) */}
         {fabOpen && (
           <>
             <FabAction
@@ -1100,8 +1089,8 @@ const styles = StyleSheet.create({
   },
   chipBadgeText: { color: Color.TEXT_REVERSE },
   error: { paddingHorizontal: 20, marginBottom: 8 },
-  // Jarak atasnya 0: tombol tambah yang dipatok (StickyTop) sudah memegangnya.
-  content: { ...SCREEN_CONTENT_PINNED, paddingBottom: 120 },
+  // paddingBottom 120: FAB ⋯ (cari & berulang) mengambang di atas daftar.
+  content: { ...SCREEN_CONTENT, paddingBottom: 120 },
   // 📌 Deadline dekat di atas blok tanggal
   dueBlock: { ...CARD, gap: 6, marginBottom: 6 },
   dueHead: { color: Color.TEXT_TITLE },
@@ -1147,9 +1136,12 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 2,
   },
-  taskMain: { flex: 1 },
+  // Isi (judul + catatan) melebar, jam ⏰ menempel kecil di kanannya.
+  taskMain: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  taskBody: { flex: 1 },
   taskText: { color: Color.TEXT_TITLE, flexShrink: 1 },
-  taskTime: { color: Color.MAIN_DARK },
+  // marginTop 1,5 = (22,5 − 19,5) / 2: jamnya sejajar baris PERTAMA judul.
+  taskTime: { color: Color.MAIN_DARK, marginTop: 1.5 },
   taskNote: { color: Color.TEXT_LABEL },
   taskTextDone: {
     color: Color.TEXT_PLACEHOLDER,
@@ -1341,26 +1333,30 @@ function DraggableTaskRow({
         </PressableScale>
         {/* Tekan teksnya → edit; tahan lalu geser → pindah */}
         <PressableScale style={styles.taskMain} onPress={() => onEdit(item)}>
-          <VixText
-            heading="paragraph"
-            additionalStyle={[
-              styles.taskText,
-              item.done && styles.taskTextDone,
-            ]}>
-            {item.title}
-          </VixText>
-          {/* ⏰ jam & 📝 catatan — baris kecil, cuma kalau memang diisi */}
+          <View style={styles.taskBody}>
+            <VixText
+              heading="paragraph"
+              additionalStyle={[
+                styles.taskText,
+                item.done && styles.taskTextDone,
+              ]}>
+              {item.title}
+            </VixText>
+            {/* 📝 catatan — baris kecil, cuma kalau memang diisi */}
+            {item.note ? (
+              <VixText
+                heading="label"
+                numberOfLines={2}
+                additionalStyle={styles.taskNote}>
+                {item.note}
+              </VixText>
+            ) : null}
+          </View>
+          {/* ⏰ jam di ujung kanan baris (3 Okt 2026: dulu satu baris sendiri
+              di bawah judul), jadi judulnya tetap lega */}
           {jam ? (
             <VixText heading="label" additionalStyle={styles.taskTime}>
               ⏰ {jam}
-            </VixText>
-          ) : null}
-          {item.note ? (
-            <VixText
-              heading="label"
-              numberOfLines={2}
-              additionalStyle={styles.taskNote}>
-              {item.note}
             </VixText>
           ) : null}
         </PressableScale>

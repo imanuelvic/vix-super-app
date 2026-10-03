@@ -34,6 +34,8 @@ import {
     effectiveOtherTask,
     OTHER_REMINDER_DAYS,
     otherTaskDaysUntil,
+    otherTaskDue,
+    otherTaskDueLabel,
     setOtherTaskDone,
     TASK_CATEGORIES,
     updateOtherTask,
@@ -98,11 +100,12 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
     });
   const activeCount = items.filter((i) => !i.done).length;
 
-  // Buka sub-tab ini → daftarnya langsung datang ke P1 pertama yang belum
-  // selesai, yaitu isi badge merahnya. ScrollView-nya sudah punya ref sendiri
-  // (useScrollTop), jadi ref itu yang dioper — bukan dipasang ref kedua.
+  // Buka sub-tab ini → daftarnya langsung datang ke reminder pertama yang
+  // deadline-nya sudah tiba atau lewat, yaitu isi badge merahnya.
+  // ScrollView-nya sudah punya ref sendiri (useScrollTop), jadi ref itu yang
+  // dioper — bukan dipasang ref kedua.
   const { setRowY, onContentSizeChange, onLayout } = useDueJump(
-    sorted.find((i) => !i.done && i.priority === 1)?.id ?? null,
+    sorted.find((i) => otherTaskDue(i, today))?.id ?? null,
     scrollRef,
   );
 
@@ -227,22 +230,21 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
           const days = otherTaskDaysUntil(item, today);
           const late = days !== null && days < 0;
           const soon = days !== null && days <= OTHER_REMINDER_DAYS;
+          // Deadline sudah tiba/lewat & belum dicentang = yang dihitung badge
+          // merah sub-tab Priority. Dihitung SEKALI lalu dipakai titik & garis
+          // merahnya, jadi mustahil ada kartu bergaris tanpa titik. 3 Okt 2026:
+          // dulu semua P1 ditandai, termasuk yang baru H-7.
+          const due = otherTaskDue(item, today);
           return (
             <View
               key={item.id}
               style={[
                 styles.card,
                 item.done && styles.cardDone,
-                attentionBorder(!item.done && item.priority === 1),
+                attentionBorder(due),
               ]}
               onLayout={(e) => setRowY(item.id, e.nativeEvent.layout.y)}>
-              {/* P1 yang belum selesai = yang dihitung badge merah tile
-                  Reminder & sub-tab Prioritas. Termasuk yang OTOMATIS naik P1
-                  karena deadline-nya sudah H-7 — makanya prioritasnya dibaca
-                  dari `item` yang sudah efektif, bukan dari angka tersimpan. */}
-              {!item.done && item.priority === 1 && (
-                <AttentionMark corner />
-              )}
+              {due && <AttentionMark corner />}
               {/* Lingkaran = tandai selesai */}
               <PressableScale onPress={() => handleToggle(item)} hitSlop={8}>
                 <CheckCircle checked={item.done} size={24} />
@@ -281,11 +283,8 @@ export function PriorityTab({ items }: { items: OtherTask[] }) {
                           : styles.dueNormal
                     }>
                     🗓️ {formatDate(item.deadline.toDate())}
-                    {days === 0
-                      ? ', HARI INI!'
-                      : late
-                        ? `, lewat ${-days!} hari`
-                        : ` - ${days} hari lagi`}
+                    {/* Kata yang sama dengan 📌 Deadline Dekat di tab Daily */}
+                    {due ? `, ${otherTaskDueLabel(days!)}` : ` - ${days} hari lagi`}
                   </VixText>
                 ) : null}
               </PressableScale>

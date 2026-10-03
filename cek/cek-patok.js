@@ -213,14 +213,23 @@ const multi = cekPatok('Multiplication 🌱', 'components/core/MultiplicationTab
 ok('daftar multiplikasi tetap di ScrollView di bawah bar-nya',
   multi.indexOf('<FormError') > multi.indexOf('</StickyTop>'));
 
-// ---------- Reminder 🔔 (2 Okt 2026: kedua tab ikut dipatok) ----------
-// Daily: tombolnya di bawah chip kategori, di atas daftar tanggal. paddingBottom
-// 120 tetap, karena FAB ⋯ (cari & berulang) masih mengambang di atas daftar.
-const reminder = cekPatok('Reminder › Daily 🔔', 'app/tasks.tsx',
-  'label="Tambah Reminder"', { paddingBottom: 120 });
-ok('tombol tambah di bawah chip kategori (chip tetap jadi sasaran seret)',
-  reminder.indexOf('</ChipRow>') > -1 &&
-  reminder.indexOf('</ChipRow>') < reminder.indexOf('<StickyTop>'));
+// ---------- Reminder 🔔 ----------
+// 2 Okt 2026 kedua tab sempat dipatok. 3 Okt 2026 tombol Daily DIBUANG atas
+// permintaan pemilik app: tiap tanggal sudah punya tombol + sendiri. Yang
+// dijaga di Daily sekarang kebalikannya: tanpa bar patok, isi daftarnya
+// kembali memegang jarak atasnya sendiri (SCREEN_CONTENT), tombol + per
+// tanggal tetap ada. paddingBottom 120 tetap untuk FAB ⋯ (cari & berulang).
+console.log('\nReminder › Daily 🔔 (app/tasks.tsx)');
+{
+  const daily = baca('app/tasks.tsx');
+  ok('tidak ada lagi tombol "Tambah Reminder" yang dipatok',
+    !/<StickyTop>/.test(daily) && !/label="Tambah Reminder"/.test(daily));
+  ok('isi daftar kembali dari SCREEN_CONTENT (bukan PINNED), paddingBottom 120',
+    /content:\s*{\s*\.\.\.SCREEN_CONTENT,\s*paddingBottom: 120\s*}/.test(daily) &&
+    !/SCREEN_CONTENT_PINNED/.test(daily));
+  ok('tiap tanggal tetap punya tombol + sendiri',
+    /onPress=\{\(\) => openAdd\(date\)\}/.test(daily));
+}
 cekPatok('Reminder › Priority 📌', 'components/tasks/PriorityTab.tsx',
   'label="Tambah Reminder Prioritas"', {
     paddingBottom: 24,
